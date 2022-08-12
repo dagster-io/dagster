@@ -1,3 +1,8 @@
+---
+title: Building Graphs of Assets | Dagster
+description: Software-defined assets can depend on other software-defined assets
+---
+
 # Building Graphs of Assets
 
 Software-defined assets can depend on other software-defined assets. An asset dependency means that the contents of an "upstream" asset are used to compute the contents of the "downstream" asset.
@@ -49,7 +54,7 @@ Let's visualize these assets in Dagit:
 dagit -f serial_asset_graph.py
 ```
 
-Navigate to <http://127.0.0.1:3000>. From the **Assets** page, click an asset and then the **Lineage** tab:
+Navigate to <http://127.0.0.1:3000>:
 
 <Image
 alt="Serial asset graph"
@@ -125,7 +130,7 @@ Let's visualize these assets in Dagit:
 dagit -f complex_asset_graph.py
 ```
 
-Navigate to <http://127.0.0.1:3000>. From the **Assets** page, click an asset and then the **Lineage** tab:
+Navigate to <http://127.0.0.1:3000>:
 
 <Image
 alt="Complex asset graph"

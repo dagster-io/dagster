@@ -1,0 +1,115 @@
+---
+title: Assets without Arguments and Return Values | Dagster
+description: Often we don’t want to build or load our assets as Python objects in memory
+---
+
+# Assets without Arguments and Return Values
+
+So far, all the assets we’ve looked at are straightforward to work with as Python objects in memory - e.g. `nabisco_cereals` is created by constructing a list of row objects and then storing that list in a file.
+
+However, often we don’t want to build or load our assets as Python objects in memory. For example, we might compute an asset by copying a file, by issuing a `create table` statement to a database, or by executing a command-line utility.
+
+In those situations, we can define assets whose functions don't have return values or arguments. And we can mix those assets with assets that do have return values or arguments.
+
+---
+
+## Bringing in cereal ratings
+
+We'd like to augment our cereal assets with a dataset of cereal ratings from a consumer reporting organization. We've found a separate data source with this information, and it lives in a zip file that we can download from the internet. We'd like to use it to compute three assets:
+
+- `cereal_ratings_zip` - A zip file on our local filesystem, which contains the cereal ratings.
+- `cereal_ratings_csv` - A CSV file on our local filesystem, which contains the unzipped contents of `cereal_ratings_zip`.
+- `nabisco_cereal_ratings` - A pickle file containing the cereal ratings data from `cereal_ratings_csv` joined with the cereals in our `nabisco_cereals` asset.
+
+### A zip file of cereal ratings from the internet
+
+Let's start with `cereal_ratings_zip`. We'll add this to the same Python source file we used to store the complex asset graph in the previous section:
+
+```python file=/guides/dagster/asset_tutorial/non_argument_deps.py startafter=cereal_ratings_zip_start endbefore=cereal_ratings_zip_end
+import urllib.request
+
+
+@asset
+def cereal_ratings_zip() -> None:
+    urllib.request.urlretrieve(
+        "https://dagster-git-tutorial-nothing-elementl.vercel.app/assets/cereal-ratings.csv.zip",
+        "cereal-ratings.csv.zip",
+    )
+```
+
+The implementation downloads a zip file from the internet to our local filesystem. It looks a lot like the assets we defined earlier in this tutorial, with two differences:
+
+- **It doesn't have a return statement.** Instead of returning an object and letting the I/O manager write it to storage, the function handles writing to storage itself.
+- **It has a `None` annotation for its return type.** This helps Dagster understand what we already know by looking at it - that the function never returns any values.
+
+### An unzipped CSV of cereal ratings
+
+Let's define an asset that contains the unzipped contents of our zip file:
+
+```python file=/guides/dagster/asset_tutorial/non_argument_deps.py startafter=cereal_ratings_csv_start endbefore=cereal_ratings_csv_end
+import zipfile
+
+
+@asset(non_argument_deps={"cereal_ratings_zip"})
+def cereal_ratings_csv() -> None:
+    with zipfile.ZipFile("cereal-ratings.csv.zip", "r") as zip_ref:
+        zip_ref.extractall(".")
+```
+
+The implementation extracts our zip file to a CSV file in the same directory. It looks a lot like the assets we defined earlier in this tutorial, with one main difference.
+
+In the assets we've seen so far, we indicate the asset dependencies by including function arguments with the name of the upstream assets. Dagster then invokes an I/O manager to load the asset as a Python object and supply it to our function.
+
+However, in this case, we don't want a Python object for the upstream asset, we just want to work with the file directly. So we instead supply `"cereal_ratings_zip"` to the `non_argument_deps` parameter of the `@asset` decorator. This lets us tell Dagster that the `cereal_ratings_csv` asset depends on the `cereal_ratings_zip` asset, without telling it to load `cereal_ratings_zip` for us.
+
+### Nabisco cereal ratings
+
+Finally, let's define an asset that joins the cereal ratings data from `cereal_ratings_csv` with the cereals in our `nabisco_cereals` asset:
+
+```python file=/guides/dagster/asset_tutorial/non_argument_deps.py startafter=nabisco_cereal_ratings_start endbefore=nabisco_cereal_ratings_end
+@asset(non_argument_deps={"cereal_ratings_csv"})
+def nabisco_cereal_ratings(nabisco_cereals):
+    with open("cereal-ratings.csv", "r") as f:
+        cereal_ratings = {
+            row["name"]: row["rating"] for row in csv.DictReader(f.readlines())
+        }
+
+    result = {}
+    for nabisco_cereal in nabisco_cereals:
+        name = nabisco_cereal["name"]
+        result[name] = cereal_ratings[name]
+
+    return result
+```
+
+This asset mixes and matches argument-based dependencies with non-argument-based dependencies. It depends on the `nabisco_cereals` asset, which we defined in the previous section of the tutorial, and it relies on Dagster to load that asset's value into memory. It also depends on the `cereal_ratings_csv` asset, and the decorated function takes responsibility for loading that asset's value into memory.
+
+Now let's visualize all these assets in Dagit:
+
+```bash
+dagit -f complex_asset_graph.py
+```
+
+Navigate to <http://127.0.0.1:3000>:
+
+<!-- ![asset graph](/images/guides/asset-tutorial/non-argument-dep-assets.png) -->
+
+<Image
+alt="asset graph"
+src="/images/guides/asset-tutorial/non-argument-deps-asset-graph.png"
+width={2662}
+height={1618}
+/>
+
+---
+
+## When to use assets without arguments and return values
+
+In prior sections, we saw assets with return values and arguments — where business logic and I/O are kept separate. In this section, we saw assets with no return values and no arguments — where there's no separation between business logic and I/O. When should you use one instead of the other?
+
+In general, doing the former is preferred - to use return values and arguments in the `@asset`-decorated function and to keep any custom I/O code inside an [I/O manager](/concepts/io-management/io-managers). A couple of the reasons are:
+
+- Separating business logic from I/O makes it easier to write lightweight tests for the business logic.
+- There are fewer opportunities for bugs. In the implementation of `cereal_ratings_csv`, it would be easy to accidentally read from the wrong file.
+
+However, sometimes this is impossible or inconvenient. When you're working with tools that aren't designed for a clean separation between business logic and I/O, it's often not worth going through contortions to fit them into the argument/return model. For those cases, use the patterns shown in this section.
