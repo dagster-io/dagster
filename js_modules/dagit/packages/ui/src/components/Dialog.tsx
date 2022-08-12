@@ -45,10 +45,10 @@ export const DialogHeader: React.FC<HeaderProps> = (props) => {
       padding={{vertical: 16, horizontal: 20}}
       border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
     >
-      <Group direction="row" spacing={8} alignItems="center">
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         {icon ? <Icon name={icon} color={Colors.Gray800} /> : null}
         <DialogHeaderText>{label}</DialogHeaderText>
-      </Group>
+      </Box>
     </Box>
   );
 };
