@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple
 from dagster_buildkite.defines import DO_COVERAGE
 from dagster_buildkite.steps.coverage import build_coverage_step
 from dagster_buildkite.steps.dagit_ui import build_dagit_ui_steps
-from dagster_buildkite.steps.dagster import build_dagster_steps
+from dagster_buildkite.steps.dagster import build_dagster_steps, build_repo_wide_steps
 from dagster_buildkite.steps.docs import build_docs_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.trigger import build_trigger_step
@@ -69,6 +69,9 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
                 },
             ),
         )
+
+    # Always include repo wide steps
+    steps += build_repo_wide_steps()
 
     # Skip non-dagit-ui steps if we are on a feature branch with only dagit-ui (web app) changes.
     logging.info(f"dagit_ui_only: {dagit_ui_only_diff}, docs_only: {docs_only_diff}")

@@ -13,6 +13,16 @@ from .test_project import build_test_project_steps
 branch_name = safe_getenv("BUILDKITE_BRANCH")
 
 
+def build_repo_wide_steps() -> List[BuildkiteStep]:
+    # Other linters are run in per-package environments because they rely on the dependencies of the
+    # target. `black`, `isort`, and `check-manifest` are run for the whole repo at once.
+    return [
+        *build_repo_wide_isort_steps(),
+        *build_repo_wide_black_steps(),
+        *build_repo_wide_check_manifest_steps(),
+    ]
+
+
 def build_dagster_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
 
@@ -24,12 +34,6 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     # instances, a directory of unrelated scripts counts as a package. All packages must have a
     # toxfile that defines the tests for that package.
     steps += build_library_packages_steps()
-
-    # Other linters are run in per-package environments because they rely on the dependencies of the
-    # target. `black`, `isort`, and `check-manifest` are run for the whole repo at once.
-    steps += build_repo_wide_isort_steps()
-    steps += build_repo_wide_black_steps()
-    steps += build_repo_wide_check_manifest_steps()
 
     steps += build_helm_steps()
     steps += build_sql_schema_check_steps()
