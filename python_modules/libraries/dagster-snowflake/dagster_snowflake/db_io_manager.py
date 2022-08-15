@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import (
+    Any,
     Dict,
     Generic,
     Mapping,
@@ -67,7 +68,12 @@ class DbClient:
 
 
 class DbIOManager(IOManager):
-    def __init__(self, type_handlers: Sequence[DbTypeHandler], db_client: DbClient):
+    def __init__(
+        self,
+        type_handlers: Sequence[DbTypeHandler],
+        db_client: DbClient,
+        default_load_type: Optional[Type] = None,
+    ):
         self._handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
         for type_handler in type_handlers:
             for handled_type in type_handler.supported_types:
@@ -81,6 +87,7 @@ class DbIOManager(IOManager):
                 self._handlers_by_type[handled_type] = type_handler
 
         self._db_client = db_client
+        self._default_load_type = default_load_type
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
         table_slice = self._get_table_slice(context, context)
@@ -102,12 +109,17 @@ class DbIOManager(IOManager):
 
     def load_input(self, context: InputContext) -> object:
         obj_type = context.dagster_type.typing_type
+        if obj_type is Any and self._default_load_type is not None:
+            load_type = self._default_load_type
+        else:
+            load_type = obj_type
+
         check.invariant(
-            obj_type in self._handlers_by_type,
-            f"DbIOManager does not have a handler for type '{obj_type}'. Has handlers "
+            load_type in self._handlers_by_type,
+            f"DbIOManager does not have a handler for type '{load_type}'. Has handlers "
             f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
         )
-        return self._handlers_by_type[obj_type].load_input(
+        return self._handlers_by_type[load_type].load_input(
             context, self._get_table_slice(context, cast(OutputContext, context.upstream_output))
         )
 

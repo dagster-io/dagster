@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Optional, Sequence, Type
 
 from snowflake.connector import ProgrammingError
 
@@ -10,13 +10,16 @@ from .resources import SnowflakeConnection
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
+def build_snowflake_io_manager(
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to Snowflake.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
             slices of Snowflake tables and an in-memory type - e.g. a Pandas DataFrame.
+        default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
         IOManagerDefinition
@@ -46,7 +49,11 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
         }
     )
     def snowflake_io_manager():
-        return DbIOManager(type_handlers=type_handlers, db_client=SnowflakeDbClient())
+        return DbIOManager(
+            type_handlers=type_handlers,
+            db_client=SnowflakeDbClient(),
+            default_load_type=default_load_type,
+        )
 
     return snowflake_io_manager
 
