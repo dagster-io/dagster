@@ -58,6 +58,10 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
                 raise e
 
             if retry_policy:
+                # if Failure with allow_retries set to false, disregard retry policy and raise
+                if isinstance(e, Failure) and not e.allow_retries:
+                    raise e
+
                 raise RetryRequested(
                     max_retries=retry_policy.max_retries,
                     seconds_to_wait=retry_policy.calculate_delay(

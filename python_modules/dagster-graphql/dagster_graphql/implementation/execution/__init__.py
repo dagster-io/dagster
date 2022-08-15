@@ -1,6 +1,6 @@
 import sys
 
-from graphql.execution.base import ResolveInfo
+from graphene import ResolveInfo
 from rx import Observable
 
 import dagster._check as check

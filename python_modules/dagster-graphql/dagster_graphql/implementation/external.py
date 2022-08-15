@@ -1,6 +1,6 @@
 import sys
 
-from graphql.execution.base import ResolveInfo
+from graphene import ResolveInfo
 
 import dagster._check as check
 from dagster._config import validate_config_from_snap

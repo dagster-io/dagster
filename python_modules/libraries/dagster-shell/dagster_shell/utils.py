@@ -29,14 +29,19 @@ OUTPUT_LOGGING_OPTIONS = ["STREAM", "BUFFER", "NONE"]
 
 
 def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=None):
-    """Execute a shell script file specified by the argument ``shell_command``. The script will be
+    """Execute a shell script file specified by the argument ``shell_script_path``. The script will be
     invoked via ``subprocess.Popen(['bash', shell_script_path], ...)``.
 
     In the Popen invocation, ``stdout=PIPE, stderr=STDOUT`` is used, and the combined stdout/stderr
     output is retrieved.
 
+    Examples:
+
+        .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_script_utility.py
+           :language: python
+
     Args:
-        shell_command (str): The shell command to execute
+        shell_script_path (str): The shell script to execute.
         output_logging (str): The logging mode to use. Supports STREAM, BUFFER, and NONE.
         log (Union[logging.Logger, DagsterLogManager]): Any logger which responds to .info()
         cwd (str, optional): Working directory for the shell command to use. Defaults to the
@@ -50,7 +55,8 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
             enum.
 
     Returns:
-        str: The combined stdout/stderr output of running the shell script.
+        Tuple[str, int]: A tuple where the first element is the combined stdout/stderr output of running the shell
+        command and the second element is the return code.
     """
     check.str_param(shell_script_path, "shell_script_path")
     check.str_param(output_logging, "output_logging")
@@ -116,11 +122,20 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
 
 
 def execute(shell_command, output_logging, log, cwd=None, env=None):
-    """Execute a shell script specified by the argument ``shell_command``. The script will be written
+    """
+    This function is a utility for executing shell commands from within a Dagster op (or from Python in general).
+    It can be used to execute shell commands on either op input data, or any data generated within a generic python op.
+
+    Internally, it executes a shell script specified by the argument ``shell_command``. The script will be written
     to a temporary file first and invoked via ``subprocess.Popen(['bash', shell_script_path], ...)``.
 
     In the Popen invocation, ``stdout=PIPE, stderr=STDOUT`` is used, and the combined stdout/stderr
     output is retrieved.
+
+    Examples:
+
+        .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_command_utility.py
+           :language: python
 
     Args:
         shell_command (str): The shell command to execute
@@ -132,7 +147,8 @@ def execute(shell_command, output_logging, log, cwd=None, env=None):
             Unused by default.
 
     Returns:
-        str: The combined stdout/stderr output of running the shell command.
+        Tuple[str, int]: A tuple where the first element is the combined stdout/stderr output of running the shell
+        command and the second element is the return code.
     """
     check.str_param(shell_command, "shell_command")
     # other args checked in execute_file
