@@ -86,5 +86,9 @@ def raise_interrupts_as(error_cls):
 
         yield
     finally:
-        if signal_replaced:
+        # If this code block is running during deletion, then
+        # original_signal_handler may have already been garbage collected
+        # (garbage collection order is random in python 3.x).
+        # Only attempt to replace the signal if this isn't the case.
+        if signal_replaced and original_signal_handler:
             _replace_interrupt_signal(original_signal_handler)
