@@ -260,7 +260,7 @@ def custom_multi_asset_sensor(context):
 def asset_a_and_b_sensor(context, asset_events):
     # this sensor will run when both asset_a and asset_b have been materialized
     # asset_events is a dictionary, mapping asset keys to event log entries
-    if all(asset_events):
+    if all(asset_events.values()):
         logger_str = f"Assets {asset_events[AssetKey('asset_a')].dagster_event.asset_key.path} and {asset_events[AssetKey('asset_b')].dagster_event.asset_key.path} materialized"
         return RunRequest(
             run_key=context.cursor,

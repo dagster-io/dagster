@@ -206,7 +206,7 @@ def asset_b():
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
 )
 def asset_a_and_b_sensor(context, events):
-    if all(events):
+    if all(events.values()):
         return RunRequest(run_key=context.cursor, run_config={})
 
 
@@ -214,7 +214,7 @@ def asset_a_and_b_sensor(context, events):
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
 )
 def asset_a_or_b_sensor(context, events):
-    if any(events):
+    if any(events.values()):
         return RunRequest(run_key=context.cursor, run_config={})
 
 

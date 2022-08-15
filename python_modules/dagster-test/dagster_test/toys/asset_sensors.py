@@ -1,4 +1,4 @@
-from dagster import AssetKey, Out, RunRequest, asset, job, multi_asset, multi_asset_sensor, op
+from dagster import AssetKey, Out, RunRequest, asset, job, multi_asset, multi_asset_sensor, op, SkipReason
 
 
 @asset
@@ -46,7 +46,8 @@ def log_asset_sensor_job():
     job=log_asset_sensor_job,
 )
 def asset_a_and_b_sensor(context, asset_events):
-    if all(asset_events):
+    if all(asset_events.values()):
+        print("returning run request in the sensor")
         return RunRequest(
             run_key=context.cursor,
             run_config={
@@ -55,15 +56,17 @@ def asset_a_and_b_sensor(context, asset_events):
                 }
             },
         )
+    else:
+        print("Returning None in the sensor")
+        return None
 
 
 @multi_asset_sensor(
     asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
-    trigger_fn=lambda x: any(x.values()),
     job=log_asset_sensor_job,
 )
 def asset_c_or_d_sensor(context, asset_events):
-    if any(asset_events):
+    if any(asset_events.values()):
         return RunRequest(
             run_key=context.cursor,
             run_config={
@@ -72,6 +75,8 @@ def asset_c_or_d_sensor(context, asset_events):
                 }
             },
         )
+    else:
+        return None
 
 
 @multi_asset_sensor(
@@ -79,7 +84,7 @@ def asset_c_or_d_sensor(context, asset_events):
     job=log_asset_sensor_job,
 )
 def asset_string_and_int_sensor(context, asset_events):
-    if all(asset_events):
+    if all(asset_events.values()):
         return RunRequest(
             run_key=context.cursor,
             run_config={
@@ -88,6 +93,8 @@ def asset_string_and_int_sensor(context, asset_events):
                 }
             },
         )
+    else:
+        return None
 
 
 def get_asset_sensors_repo():

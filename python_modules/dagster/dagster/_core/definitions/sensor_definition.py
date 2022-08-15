@@ -732,6 +732,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
                         limit=1,
                     )
 
+                    print(f"Event records for asset {a.to_user_string()} is {len(event_records) if event_records else event_records}")
+
                     if event_records:
                         asset_event_records[a.to_user_string()] = event_records[0].event_log_entry
                         cursor_update_dict[a.to_user_string()] = event_records[0].storage_id
@@ -739,15 +741,33 @@ class MultiAssetSensorDefinition(SensorDefinition):
                         asset_event_records[a.to_user_string()] = None
                         cursor_update_dict[a.to_user_string()] = cursor_dict.get(a.to_user_string())
 
+                # import pdb; pdb.set_trace()
                 result = materialization_fn(context, asset_event_records)
+                print(result)
                 if result is None:
                     return
+
+                # because the materialization_fn can yield results (see _wrapped_fn in multi_asset_sensor decorator),
+                # even if you return None, it will still cause in inspect.isgenerator(result) == True.
+                # So start a yield_count to see if we actually return any values and should update the cursor
+                yield_count = 0
                 if inspect.isgenerator(result) or isinstance(result, list):
+                    if inspect.isgenerator(result):
+                        print("in def function, result is generator")
+                    if isinstance(result, list):
+                        print("in def function, result is list")
                     for item in result:
+                        print(f"item {item}")
+                        yield_count +=1
                         yield item
                 elif isinstance(result, (SkipReason, RunRequest)):
+                    print("in def function. result is a single item ")
+                    yield_count += 1
                     yield result
-                context.update_cursor(json.dumps(cursor_update_dict))
+
+                if yield_count > 0:
+                    print(f"UPDATING CURSOR WITH {cursor_update_dict}")
+                    context.update_cursor(json.dumps(cursor_update_dict))
 
             return _fn
 

@@ -207,8 +207,13 @@ def multi_asset_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        def _wrapped_fn(context, event):
-            result = fn(context, event)
+        def _wrapped_fn(context, events):
+            result = fn(context, events)
+            print(f"in wrapped fn. result is {result}")
+
+            if result is None:
+                print("returning None")
+                return None
 
             if inspect.isgenerator(result) or isinstance(result, list):
                 for item in result:
@@ -224,6 +229,10 @@ def multi_asset_sensor(
                         "RunRequest objects."
                     ).format(sensor_name=sensor_name, result=result, type_=type(result))
                 )
+            print("We are at the end of the wrapped fn")
+            return None
+
+
 
         return MultiAssetSensorDefinition(
             name=sensor_name,
