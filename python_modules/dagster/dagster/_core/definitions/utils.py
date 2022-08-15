@@ -4,7 +4,6 @@ import re
 from glob import glob
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
-import pkg_resources
 import yaml
 
 import dagster._check as check
@@ -220,6 +219,8 @@ def config_from_pkg_resources(pkg_resource_defs: List[Tuple[str, str]]) -> Dict[
         DagsterInvariantViolationError: When one of the YAML documents is invalid and has a
             parse error.
     """
+    import pkg_resources  # expensive, import only on use
+
     pkg_resource_defs = check.list_param(pkg_resource_defs, "pkg_resource_defs", of_type=tuple)
 
     try:

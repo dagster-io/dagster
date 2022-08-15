@@ -175,7 +175,7 @@ def get_workspace_load_target(kwargs: Dict[str, str]):
 def get_workspace_process_context_from_kwargs(
     instance: DagsterInstance, version: str, read_only: bool, kwargs: Dict[str, str]
 ) -> "WorkspaceProcessContext":
-    from dagster._core.workspace import WorkspaceProcessContext
+    from dagster._core.workspace.context import WorkspaceProcessContext
 
     return WorkspaceProcessContext(
         instance, get_workspace_load_target(kwargs), version=version, read_only=read_only

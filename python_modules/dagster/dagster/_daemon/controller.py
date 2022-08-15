@@ -11,7 +11,7 @@ import pendulum
 import dagster._check as check
 from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster._core.instance import DagsterInstance
-from dagster._core.workspace import IWorkspace
+from dagster._core.workspace.context import IWorkspace
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 from dagster._daemon.daemon import (

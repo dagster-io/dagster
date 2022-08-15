@@ -6,6 +6,7 @@ from typing import Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 import dagster._check as check
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey
+from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import AssetEntry, AssetRecord
@@ -19,7 +20,6 @@ from .base import (
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
-    RunShardedEventsCursor,
 )
 
 

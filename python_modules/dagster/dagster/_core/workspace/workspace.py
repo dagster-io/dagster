@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Dict, NamedTuple, Optional
 
-from dagster._core.host_representation import RepositoryLocation, RepositoryLocationOrigin
 from dagster._utils.error import SerializableErrorInfo
 
+if TYPE_CHECKING:
+    from dagster._core.host_representation import RepositoryLocation, RepositoryLocationOrigin
 
 # For locations that are loaded asynchronously
 class WorkspaceLocationLoadStatus(Enum):
@@ -13,8 +14,8 @@ class WorkspaceLocationLoadStatus(Enum):
 
 
 class WorkspaceLocationEntry(NamedTuple):
-    origin: RepositoryLocationOrigin
-    repository_location: Optional[RepositoryLocation]
+    origin: "RepositoryLocationOrigin"
+    repository_location: Optional["RepositoryLocation"]
     load_error: Optional[SerializableErrorInfo]
     load_status: WorkspaceLocationLoadStatus
     display_metadata: Dict[str, str]
@@ -27,7 +28,7 @@ class IWorkspace(ABC):
     """
 
     @abstractmethod
-    def get_repository_location(self, location_name: str) -> RepositoryLocation:
+    def get_repository_location(self, location_name: str) -> "RepositoryLocation":
         """Return the RepositoryLocation for the given location name, or raise an error if there is an error loading it."""
 
     @abstractmethod

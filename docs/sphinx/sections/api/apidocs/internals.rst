@@ -119,7 +119,7 @@ See also: :py:class:`dagster_postgres.PostgresRunStorage` and :py:class:`dagster
 Event log storage
 -----------------
 
-.. currentmodule:: dagster._core.storage.event_log
+.. currentmodule:: dagster
 
 .. autoclass:: EventLogEntry
 
@@ -128,6 +128,8 @@ Event log storage
 .. autoclass:: EventRecordsFilter
 
 .. autoclass:: RunShardedEventsCursor
+
+.. currentmodule:: dagster._core.storage.event_log
 
 .. autoclass:: EventLogStorage
 

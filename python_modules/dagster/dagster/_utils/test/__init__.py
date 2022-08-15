@@ -246,39 +246,6 @@ def execute_solid_within_pipeline(
     )[solid_name]
 
 
-@contextmanager
-def yield_empty_pipeline_context(
-    run_id: Optional[str] = None, instance: Optional[DagsterInstance] = None
-) -> Generator[PlanExecutionContext, None, None]:
-    pipeline = InMemoryPipeline(PipelineDefinition([], "empty"))
-    pipeline_def = pipeline.get_definition()
-    instance = check.opt_inst_param(
-        instance, "instance", DagsterInstance, default=DagsterInstance.ephemeral()
-    )
-
-    execution_plan = create_execution_plan(pipeline)
-
-    pipeline_run = instance.create_run(
-        pipeline_name="<empty>",
-        run_id=run_id,
-        run_config=None,
-        mode=None,
-        solids_to_execute=None,
-        step_keys_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
-        execution_plan_snapshot=snapshot_from_execution_plan(
-            execution_plan, pipeline_def.get_pipeline_snapshot_id()
-        ),
-        parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
-    )
-    with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
-        yield context
-
-
 @overload
 def execute_solid(
     solid_def: CompositeSolidDefinition,
@@ -365,52 +332,6 @@ def execute_solid(
         raise_on_error=raise_on_error,
     )
     return result.result_for_handle(solid_def.name)
-
-
-def check_dagster_type(dagster_type, value):
-    """Test a custom Dagster type.
-
-    Args:
-        dagster_type (Any): The Dagster type to test. Should be one of the
-            :ref:`built-in types <builtin>`, a dagster type explicitly constructed with
-            :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type>`, or
-            :py:func:`PythonObjectDagsterType`, or a Python type.
-        value (Any): The runtime value to test.
-
-    Returns:
-        TypeCheck: The result of the type check.
-
-
-    Examples:
-
-        .. code-block:: python
-
-            assert check_dagster_type(Dict[Any, Any], {'foo': 'bar'}).success
-    """
-
-    if is_typing_type(dagster_type):
-        raise DagsterInvariantViolationError(
-            (
-                "Must pass in a type from dagster module. You passed {dagster_type} "
-                "which is part of python's typing module."
-            ).format(dagster_type=dagster_type)
-        )
-
-    dagster_type = resolve_dagster_type(dagster_type)
-    with yield_empty_pipeline_context() as pipeline_context:
-        context = pipeline_context.for_type(dagster_type)
-        try:
-            type_check = dagster_type.type_check(context, value)
-        except Failure as failure:
-            return TypeCheck(success=False, description=failure.description)
-
-        if not isinstance(type_check, TypeCheck):
-            raise DagsterInvariantViolationError(
-                "Type checks can only return TypeCheck. Type {type_name} returned {value}.".format(
-                    type_name=dagster_type.display_name, value=repr(type_check)
-                )
-            )
-        return type_check
 
 
 @contextmanager

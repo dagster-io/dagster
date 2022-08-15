@@ -14,7 +14,7 @@ from dagster._cli.workspace import (
 from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
-from dagster._core.workspace import WorkspaceProcessContext
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.log import configure_loggers
 
