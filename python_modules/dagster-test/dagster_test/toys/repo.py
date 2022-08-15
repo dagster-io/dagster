@@ -8,7 +8,6 @@ warnings.filterwarnings("ignore", category=ExperimentalWarning)
 import pendulum
 from dagster_test.toys.asset_lineage import asset_lineage_job, asset_lineage_partition_set
 from dagster_test.toys.asset_sensors import get_asset_sensors_repo
-
 from dagster_test.toys.big_honkin_asset_graph import big_honkin_asset_group
 from dagster_test.toys.branches import branch_failed_job, branch_job
 from dagster_test.toys.composition import composition_job
@@ -154,6 +153,7 @@ def downstream_assets_repository2():
 @repository
 def graph_backed_asset_repository():
     return [graph_backed_group]
+
 
 @repository
 def assets_with_sensors_repository():

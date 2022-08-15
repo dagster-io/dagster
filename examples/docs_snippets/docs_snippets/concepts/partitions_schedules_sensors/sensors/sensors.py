@@ -254,7 +254,6 @@ def custom_multi_asset_sensor(context):
 
 @multi_asset_sensor(
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
     job=my_job,
 )
 def asset_a_and_b_sensor(context, asset_events):
@@ -275,7 +274,6 @@ def asset_a_and_b_sensor(context, asset_events):
 
 @multi_asset_sensor(
     asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
-    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
     trigger_fn=lambda x: any(x.values()),
     job=my_job,
 )
@@ -283,6 +281,11 @@ def asset_c_or_d_sensor(context, asset_events):
     # this sensor will run when only asset_c and not asset_d have been materialized
     if asset_events["asset_c"] is not None and asset_events["asset_d"] is None:
         return RunRequest(run_key=context.cursor)
+    else:
+        # you can optionally return a SkipReason
+        return SkipReason(
+            f"asset_c {'not' if not asset_events['asset_c'] else ''} materialized and asset_d {'not' if not asset_events['asset_d'] else ''} materialized."
+        )
 
 
 # end_multi_asset_sensor_custom_fn_marker

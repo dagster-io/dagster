@@ -1,4 +1,14 @@
-from dagster import AssetKey, Out, RunRequest, asset, job, multi_asset, multi_asset_sensor, op, SkipReason
+from dagster import (
+    AssetKey,
+    Out,
+    RunRequest,
+    SkipReason,
+    asset,
+    job,
+    multi_asset,
+    multi_asset_sensor,
+    op,
+)
 
 
 @asset
@@ -47,7 +57,6 @@ def log_asset_sensor_job():
 )
 def asset_a_and_b_sensor(context, asset_events):
     if all(asset_events.values()):
-        print("returning run request in the sensor")
         return RunRequest(
             run_key=context.cursor,
             run_config={
@@ -57,7 +66,6 @@ def asset_a_and_b_sensor(context, asset_events):
             },
         )
     else:
-        print("Returning None in the sensor")
         return None
 
 
@@ -76,7 +84,7 @@ def asset_c_or_d_sensor(context, asset_events):
             },
         )
     else:
-        return None
+        return SkipReason("Condition not met")
 
 
 @multi_asset_sensor(
@@ -93,8 +101,6 @@ def asset_string_and_int_sensor(context, asset_events):
                 }
             },
         )
-    else:
-        return None
 
 
 def get_asset_sensors_repo():
