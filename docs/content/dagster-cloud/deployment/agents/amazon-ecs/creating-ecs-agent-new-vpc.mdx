@@ -59,7 +59,8 @@ If the installation fails, verify that your AWS account [meets the requirements 
 After the stack is installed, you'll be prompted to configure it. In the ECS wizard, fill in the following fields:
 
 - **Dagster Cloud Organization**: Enter the name of your Dagster Cloud organization.
-- **Dagster Cloud Deployment**: Enter the name of the Dagster Cloud deployment you want to use.
+- **Dagster Cloud Deployment**: Enter the name of the Dagster Cloud deployment you want to use. Leave this field empty if the agent will only serve Branch deployments.
+- **Enable Branch Deployments**: Whether to have this agent serve your ephemeral [Branch deployments](/dagster-cloud/developing-testing/branch-deployments). Only a single agent should have this setting enabled.
 - **Agent Token**: Paste the agent token you generated in [Step 1](#step-1-generate-a-dagster-cloud-agent-token).
 
 The page should look similar to the following image. In this example, our organization name is `hooli` and our deployment is `prod`:
