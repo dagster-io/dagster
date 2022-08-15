@@ -127,7 +127,7 @@ export const TimestampColumn: React.FC<{time: string | null}> = React.memo((prop
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: false,
+        hourCycle: 'h23',
         timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
       });
       const fractionalSec = (timeNumber % 1000) / 1000;
