@@ -90,6 +90,8 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
+        sla=None,
+        processing_time=None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
     ):
@@ -154,6 +156,8 @@ class AssetsDefinition(ResourceAddable):
                 node_def.resolve_output_to_origin(output_name, None)[0].metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+        self._sla = sla
+        self._processing_time = processing_time
 
     def __call__(self, *args, **kwargs):
         from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
@@ -621,6 +625,42 @@ class AssetsDefinition(ResourceAddable):
             selected_asset_keys=selected_asset_keys & self.keys,
             resource_defs=self.resource_defs,
             group_names_by_key=self.group_names_by_key,
+        )
+
+    def with_sla(self, sla) -> "AssetsDefinition":
+        return AssetsDefinition(
+            # keep track of the original mapping
+            keys_by_input_name=self._keys_by_input_name,
+            keys_by_output_name=self._keys_by_output_name,
+            # TODO: subset this properly for graph-backed-assets
+            node_def=self.node_def,
+            partitions_def=self.partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self._asset_deps,
+            can_subset=self.can_subset,
+            selected_asset_keys=self._selected_asset_keys,
+            resource_defs=self.resource_defs,
+            group_names_by_key=self.group_names_by_key,
+            sla=sla,
+            processing_time=self._processing_time,
+        )
+
+    def with_processing_time(self, processing_time) -> "AssetsDefinition":
+        return AssetsDefinition(
+            # keep track of the original mapping
+            keys_by_input_name=self._keys_by_input_name,
+            keys_by_output_name=self._keys_by_output_name,
+            # TODO: subset this properly for graph-backed-assets
+            node_def=self.node_def,
+            partitions_def=self.partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self._asset_deps,
+            can_subset=self.can_subset,
+            selected_asset_keys=self._selected_asset_keys,
+            resource_defs=self.resource_defs,
+            group_names_by_key=self.group_names_by_key,
+            sla=self._sla,
+            processing_time=processing_time,
         )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
