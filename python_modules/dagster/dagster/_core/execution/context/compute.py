@@ -49,23 +49,18 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
 
     @property
     @abstractmethod
-    def solid_def(self) -> SolidDefinition:
-        """The solid definition corresponding to the execution step being executed."""
+    def op_def(self) -> OpDefinition:
+        """The op definition corresponding to the execution step being executed."""
 
     @property
     @abstractmethod
-    def solid(self) -> Node:
-        """The solid corresponding to the execution step being executed."""
+    def job_def(self) -> JobDefinition:
+        """The job being executed."""
 
     @property
     @abstractmethod
-    def pipeline_def(self) -> PipelineDefinition:
-        """The pipeline being executed."""
-
-    @property
-    @abstractmethod
-    def pipeline_run(self) -> PipelineRun:
-        """The PipelineRun object corresponding to the execution."""
+    def run(self) -> DagsterRun:
+        """The DagsterRun object corresponding to the execution."""
 
     @property
     @abstractmethod
@@ -79,12 +74,8 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
 
     @property
     @abstractmethod
-    def solid_config(self) -> Any:
-        """The parsed config specific to this solid."""
-
-    @property
     def op_config(self) -> Any:
-        return self.solid_config
+        """The parsed config specific to this op."""
 
 
 class SolidExecutionContext(AbstractComputeExecutionContext):

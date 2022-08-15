@@ -1,4 +1,4 @@
-from graphql.execution.base import ResolveInfo
+from graphene import ResolveInfo
 
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType

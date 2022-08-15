@@ -707,6 +707,9 @@ class Failure(Exception):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
+        allow_retries (Optional[bool]):
+            Whether this Failure should respect the retry policy or bypass it and immediately fail.
+            Defaults to True, respecting the retry policy and allowing retries.
     """
 
     def __init__(
@@ -714,6 +717,7 @@ class Failure(Exception):
         description: Optional[str] = None,
         metadata_entries: Optional[List[MetadataEntry]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        allow_retries: Optional[bool] = None,
     ):
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
@@ -723,6 +727,7 @@ class Failure(Exception):
         super(Failure, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
         self.metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self.allow_retries = check.opt_bool_param(allow_retries, "allow_retries", True)
 
 
 class RetryRequested(Exception):

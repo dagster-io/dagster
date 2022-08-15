@@ -3,8 +3,7 @@ import time
 from datetime import datetime
 from random import random
 
-from dagster import AssetMaterialization, Nothing, fs_io_manager
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
+from dagster import AssetMaterialization, In, Nothing, Out, fs_io_manager, graph, op
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 TRAFFIC_CONSTANTS = {
@@ -50,7 +49,7 @@ class IntentionalRandomFailure(Exception):
     """To distinguish from other errors"""
 
 
-def make_solid(
+def make_op(
     name,
     asset_key=None,
     error_rate=None,
@@ -58,14 +57,14 @@ def make_solid(
     sleep_factor=None,
     has_input=False,
 ):
-    @solid(
+    @op(
         name=name,
         config_schema={"partition": str},
-        input_defs=[InputDefinition("the_input", dagster_type=Nothing)] if has_input else [],
-        output_defs=[OutputDefinition(Nothing)],
+        ins={"the_input": In(dagster_type=Nothing)} if has_input else {},
+        out=Out(dagster_type=Nothing),
     )
-    def made_solid(context):
-        partition_date = datetime.strptime(context.solid_config["partition"], DEFAULT_DATE_FORMAT)
+    def made_op(context):
+        partition_date = datetime.strptime(context.op_config["partition"], DEFAULT_DATE_FORMAT)
         if data_size_fn:
             data_size = data_size_fn(partition_date)
             sleep_time = sleep_factor * data_size
@@ -82,29 +81,22 @@ def make_solid(
             yield AssetMaterialization(
                 asset_key=asset_key,
                 metadata=metadata,
-                partition=context.solid_config.get("partition"),
+                partition=context.op_config.get("partition"),
             )
 
-    return made_solid
+    return made_op
 
 
-@pipeline(
-    description=(
-        "Demo pipeline that simulates updating tables of users and video views and training a "
-        "video recommendation model. The growth of execution-time and data-throughput follows"
-        "a sigmoidal curve."
-    ),
-    mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
-)
-def longitudinal_pipeline():
-    ingest_raw_video_views = make_solid(
+@graph
+def longitudinal():
+    ingest_raw_video_views = make_op(
         "ingest_raw_video_views",
         asset_key="raw_video_views",
         error_rate=0.15,
         sleep_factor=SLEEP_INGEST,
         data_size_fn=video_views_data_size,
     )
-    update_video_views_table = make_solid(
+    update_video_views_table = make_op(
         "update_video_views_table",
         asset_key="video_views",
         has_input=True,
@@ -112,14 +104,14 @@ def longitudinal_pipeline():
         sleep_factor=SLEEP_PERSIST,
         data_size_fn=video_views_data_size,
     )
-    ingest_raw_users = make_solid(
+    ingest_raw_users = make_op(
         "ingest_raw_users",
         "raw_users",
         error_rate=0.1,
         sleep_factor=SLEEP_INGEST,
         data_size_fn=users_data_size,
     )
-    update_users_table = make_solid(
+    update_users_table = make_op(
         "update_users_table",
         asset_key="users",
         has_input=True,
@@ -127,7 +119,7 @@ def longitudinal_pipeline():
         data_size_fn=users_data_size,
         error_rate=0.01,
     )
-    train_video_recommender_model = make_solid(
+    train_video_recommender_model = make_op(
         "train_video_recommender_model",
         has_input=True,
         sleep_factor=SLEEP_TRAIN,
@@ -137,3 +129,14 @@ def longitudinal_pipeline():
     video_views = update_video_views_table(ingest_raw_video_views())
     users = update_users_table(ingest_raw_users())
     train_video_recommender_model([video_views, users])
+
+
+longitudinal_job = longitudinal.to_job(
+    name="longitudinal_no_schedule",
+    description=(
+        "Demo job that simulates updating tables of users and video views and training a "
+        "video recommendation model. The growth of execution-time and data-throughput follows"
+        "a sigmoidal curve."
+    ),
+    resource_defs={"io_manager": fs_io_manager},
+)

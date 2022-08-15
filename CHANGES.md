@@ -1,5 +1,31 @@
 # Changelog
 
+# 1.0.3
+
+### New
+
+* `Failure` now has an `allow_retries` argument, allowing a means to manually bypass retry policies.
+* `dagstermill.get_context` and `dagstermill.DagstermillExecutionContext` have been updated to reflect stable dagster-1.0 APIs. `pipeline`/`solid` referencing arguments / properties will be removed in the next major version bump of `dagstermill`.
+* `TimeWindowPartitionsDefinition` now exposes a `get_cron_schedule` method.
+
+### Bugfixes
+
+* In some situations where an asset was materialized and that asset that depended on a partitioned asset, and that upstream partitioned asset wasn’t part of the run, the partition-related methods of InputContext returned incorrect values or failed erroneously. This was fixed.
+* Schedules and sensors with the same names but in different repositories no longer affect each others idempotence checks.
+* In some circumstances, reloading a repository in Dagit could lead to an error that would crash the page. This has been fixed.
+
+### Community Contributions
+
+* @will-holley added an optional `key` argument to GCSFileManager methods to set the GCS blob key, thank you!
+* Fix for sensors in [fully featured example](https://docs.dagster.io/guides/dagster/example_project#fully-featured-project), thanks @pwachira!
+
+### Documentation
+
+* New documentation for getting started with Dagster Cloud, including:
+    * [Serverless deployment documentation](https://docs.dagster.io/dagster-cloud/getting-started/getting-started-with-serverless-deployment)
+    * [Hybrid deployment documentation](https://docs.dagster.io/dagster-cloud/getting-started/getting-started-with-hybrid-deployment)
+
+
 # 1.0.2
 
 ### New
