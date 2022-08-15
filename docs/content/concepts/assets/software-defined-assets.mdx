@@ -591,7 +591,8 @@ def test_uses_context():
 ## Examples
 
 - [Multi-component asset keys](#multi-component-asset-keys)
-- [Attaching metadata](#attaching-metadata)
+- [Recording materialization metadata](#recording-materialization-metadata)
+- [Attaching definition metadata](#attaching-definition-metadata)
 
 ### Multi-component asset keys
 
@@ -611,17 +612,35 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 ```
 
-### Attaching metadata
+### Recording materialization metadata
 
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataEntry) to assets. To attach metadata, supply a `metadata` dictionary to the asset:
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataEntry) to asset materializations. This metadata will be displayed on the "Activity" tab of the "Asset Details" page in Dagit. If it's numeric, it will be plotted. To attach metadata, your asset's op can return an <PyObject object="Output" /> object that contains the output value and a dictionary of metadata:
 
-```python file=/concepts/assets/asset_metadata.py startafter=start_example endbefore=end_example
-@asset(metadata={"cereal_name": "Sugar Sprinkles"})
-def cereal_asset():
-    return 5
+```python file=/concepts/assets/asset_materialization_metadata.py
+from pandas import DataFrame
+
+from dagster import Output, asset
+
+
+@asset
+def table1() -> Output[DataFrame]:
+    df = DataFrame({"col1": [1, 2], "col2": [3, 4]})
+    return Output(df, metadata={"num_rows": df.shape[0]})
 ```
 
-Asset metadata can be viewed in Dagit on the [Asset Detail page](/concepts/dagit/dagit#asset-details).
+Sometimes it's useful to record the same metadata for all assets that are stored in the same way. E.g. if you have a set of assets that are all stored on a filesystem, you might want to record the number of bytes they occupy on disk every time one is materialized. You can achieve this by [recording metadata from an I/O manager](/concepts/io-management/io-managers#recording-metadata-from-an-io-manager) that's shared by the assets.
+
+### Attaching definition metadata
+
+Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataEntry) to asset definitions. This metadata will be displayed on the "Definition" tab of the "Asset Details" page in Dagit. This is useful for metadata that describes how the asset should be handled, rather than metadata describes the contents that were produced by a particular run.
+
+To attach metadata, supply a `metadata` dictionary to the asset:
+
+```python file=/concepts/assets/asset_definition_metadata.py startafter=start_example endbefore=end_example
+@asset(metadata={"owner": "alice@mycompany.com", "priority": "high"})
+def my_asset():
+    return 5
+```
 
 ---
 
