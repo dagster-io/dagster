@@ -3,7 +3,7 @@ import random
 from dagster import AssetKey, Output, RunRequest, asset, asset_sensor, job, op
 
 
-@asset(always_materialize=False)
+@asset(output_required=False)
 def may_not_materialize(context):
     random.seed()
     rand_num = random.randint(1, 10)

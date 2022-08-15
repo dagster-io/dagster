@@ -291,7 +291,7 @@ def test_materialize_provided_resources():
 def test_conditional_materialize():
     should_materialize = True
 
-    @asset(always_materialize=False)
+    @asset(output_required=False)
     def the_asset():
         if should_materialize:
             yield Output(5)
