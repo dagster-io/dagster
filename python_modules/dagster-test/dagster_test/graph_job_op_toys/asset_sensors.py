@@ -1,14 +1,4 @@
-from dagster import (
-    AssetKey,
-    DagsterEventType,
-    Out,
-    RunRequest,
-    asset,
-    asset_status_sensor,
-    job,
-    multi_asset,
-    op,
-)
+from dagster import AssetKey, Out, RunRequest, asset, job, multi_asset, multi_asset_sensor, op
 
 
 @asset
@@ -51,9 +41,8 @@ def log_asset_sensor_job():
     log_asset_sensor()
 
 
-@asset_status_sensor(
+@multi_asset_sensor(
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
     job=log_asset_sensor_job,
 )
 def asset_a_and_b_sensor(context, asset_events):
@@ -68,9 +57,8 @@ def asset_a_and_b_sensor(context, asset_events):
         )
 
 
-@asset_status_sensor(
+@multi_asset_sensor(
     asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
-    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
     trigger_fn=lambda x: any(x.values()),
     job=log_asset_sensor_job,
 )
@@ -86,9 +74,8 @@ def asset_c_or_d_sensor(context, asset_events):
         )
 
 
-@asset_status_sensor(
+@multi_asset_sensor(
     asset_keys=[AssetKey("my_string_asset"), AssetKey("my_int_asset")],
-    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
     job=log_asset_sensor_job,
 )
 def asset_string_and_int_sensor(context, asset_events):

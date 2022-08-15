@@ -5,6 +5,7 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Callable,
+    Dict,
     Iterator,
     List,
     NamedTuple,
@@ -559,10 +560,15 @@ def build_sensor_context(
 
 
 AssetMaterializationFunctionReturn = Union[
-    Iterator[Union[RunRequest, SkipReason]], Sequence[RunRequest], RunRequest, SkipReason
+    Iterator[Union[RunRequest, SkipReason]], Sequence[RunRequest], RunRequest, SkipReason, None
 ]
 AssetMaterializationFunction = Callable[
     ["SensorExecutionContext", "EventLogEntry"],
+    AssetMaterializationFunctionReturn,
+]
+
+MultiAssetMaterializationFunction = Callable[
+    ["SensorExecutionContext", Dict["AssetKey", "EventLogEntry"]],
     AssetMaterializationFunctionReturn,
 ]
 
@@ -664,14 +670,13 @@ class AssetSensorDefinition(SensorDefinition):
         return self._asset_key
 
 
-class AssetStatusSensorDefinition(SensorDefinition):
-    """Define an asset sensor that initiates a set of runs based on the materialization of a given
-    asset.
+class MultiAssetSensorDefinition(SensorDefinition):
+    """Define an asset sensor that initiates a set of runs based on the materialization of a list of
+    assets.
 
     Args:
         name (str): The name of the sensor to create.
         asset_keys (List[AssetKey]): The asset_keys this sensor monitors.
-        asset_status (DagsterEventType): The event the sensor should monitor
         asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
             evaluation function for the sensor, which is run at an interval to determine whether a
             run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
@@ -694,10 +699,9 @@ class AssetStatusSensorDefinition(SensorDefinition):
         self,
         name: str,
         asset_keys: List[AssetKey],
-        asset_status,
         job_name: Optional[str],
         asset_materialization_fn: Callable[
-            ["SensorExecutionContext", "EventLogEntry"],
+            ["SensorExecutionContext", Dict["AssetKey", "EventLogEntry"]],
             RawSensorEvaluationFunctionReturn,
         ],
         minimum_interval_seconds: Optional[int] = None,
@@ -708,6 +712,7 @@ class AssetStatusSensorDefinition(SensorDefinition):
     ):
         self._asset_keys = check.list_param(asset_keys, "asset_keys", AssetKey)
 
+        from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
         def _wrap_asset_fn(materialization_fn):
@@ -719,7 +724,7 @@ class AssetStatusSensorDefinition(SensorDefinition):
                 for a in self._asset_keys:
                     event_records = context.instance.get_event_records(
                         EventRecordsFilter(
-                            event_type=asset_status,
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
                             asset_key=a,
                             after_cursor=cursor_dict.get(a.to_user_string()),
                         ),
@@ -746,7 +751,7 @@ class AssetStatusSensorDefinition(SensorDefinition):
 
             return _fn
 
-        super(AssetStatusSensorDefinition, self).__init__(
+        super(MultiAssetSensorDefinition, self).__init__(
             name=check_valid_name(name),
             job_name=job_name,
             evaluation_fn=_wrap_asset_fn(

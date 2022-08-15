@@ -138,12 +138,12 @@ def my_asset_sensor(context, asset_event):
 
 ### Multi-asset sensors
 
-Multi-asset sensors, which can trigger job executions based on  multiple asset materialization event streams, can be handled using the <PyObject object="asset_status_sesnor" decorator/> decorator.
+Multi-asset sensors, which can trigger job executions based on  multiple asset materialization event streams, can be handled using the <PyObject object="multi_asset_sesnor" decorator/> decorator.
 
 In the body of the sensor, you have access to the event log information for each asset. If a monitored asset has not been materialized, the event log information will be `None`.
 
 
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_status_sensor_marker endbefore=end_asset_status_sensor_marker
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_custom_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
 @asset_status_sensor(
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     asset_status=DagsterEventType.ASSET_MATERIALIZATION,
@@ -161,7 +161,7 @@ def asset_a_and_b_sensor(context, asset_events):
 
 You can use the provided `asset_events` to only yield `RunRequests` when a certain condition is met:
 
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_status_sensor_or_marker endbefore=end_asset_status_sensor_or_marker
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_custom_fn_marker endbefore=end_multi_asset_sensor_custom_fn_marker
 @asset_status_sensor(
     asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
     asset_status=DagsterEventType.ASSET_MATERIALIZATION,
@@ -649,7 +649,7 @@ If a resource you want to initialize has dependencies on other resources, those 
 
 If the built in `asset_status_sensor` does not meet your needs, you can work with the asset event streams directly to write a sensor that meets your needs. These asset event streams can be queried using the `instance` attribute off of the <PyObject object="SensorEvaluationContext" /> object.
 
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_custom_multi_asset_sensor_marker endbefore=end_custom_multi_asset_sensor_marker
 import json
 from dagster import EventRecordsFilter, DagsterEventType
 

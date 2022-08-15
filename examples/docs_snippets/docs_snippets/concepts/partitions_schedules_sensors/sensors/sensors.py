@@ -7,7 +7,7 @@ from dagster import (
     SkipReason,
     asset,
     define_asset_job,
-    asset_status_sensor,
+    multi_asset_sensor,
 )
 
 
@@ -197,7 +197,7 @@ def my_asset_sensor(context, asset_event):
 
 # end_asset_sensor_marker
 
-# start_multi_asset_sensor_marker
+# start_custom_multi_asset_sensor_marker
 import json
 from dagster import EventRecordsFilter, DagsterEventType
 
@@ -247,12 +247,12 @@ def custom_multi_asset_sensor(context):
     )
 
 
-# end_multi_asset_sensor_marker
+# end_custom_multi_asset_sensor_marker
 
-# start_asset_status_sensor_marker
+# start_multi_asset_sensor_marker
 
 
-@asset_status_sensor(
+@multi_asset_sensor(
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     asset_status=DagsterEventType.ASSET_MATERIALIZATION,
     job=my_job,
@@ -268,12 +268,12 @@ def asset_a_and_b_sensor(context, asset_events):
         )
 
 
-# end_asset_status_sensor_marker
+# end_multi_asset_sensor_marker
 
-# start_asset_status_sensor_or_marker
+# start_multi_asset_sensor_custom_fn_marker
 
 
-@asset_status_sensor(
+@multi_asset_sensor(
     asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
     asset_status=DagsterEventType.ASSET_MATERIALIZATION,
     trigger_fn=lambda x: any(x.values()),
@@ -285,7 +285,7 @@ def asset_c_or_d_sensor(context, asset_events):
         return RunRequest(run_key=context.cursor)
 
 
-# end_asset_status_sensor_or_marker
+# end_multi_asset_sensor_custom_fn_marker
 
 
 # start_s3_sensors_marker

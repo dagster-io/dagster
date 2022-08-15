@@ -10,8 +10,9 @@ from ..events import AssetKey
 from ..sensor_definition import (
     AssetMaterializationFunction,
     AssetSensorDefinition,
-    AssetStatusSensorDefinition,
     DefaultSensorStatus,
+    MultiAssetMaterializationFunction,
+    MultiAssetSensorDefinition,
     RawSensorEvaluationFunction,
     RunRequest,
     SensorDefinition,
@@ -159,10 +160,9 @@ def asset_sensor(
     return inner
 
 
-def asset_status_sensor(
+def multi_asset_sensor(
     asset_keys: List[AssetKey],
     *,
-    asset_status,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
@@ -170,10 +170,9 @@ def asset_status_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[AssetMaterializationFunction,], AssetStatusSensorDefinition,]:
+) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
     """
-    Creates an asset sensor that runs when the assets monitored match the specified status in the
-    configuration specified by the trigger_fn.
+    Creates an asset sensor that can monitor multiple assets
 
     The decorated function is used as the asset sensor's evaluation
     function.  The decorated function may:
@@ -189,7 +188,6 @@ def asset_status_sensor(
 
     Args:
         asset_keys (List[AssetKey]): The asset_keys this sensor monitors.
-        asset_status (DagsterEventType): The event the sensor should monitor
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
@@ -205,7 +203,7 @@ def asset_status_sensor(
 
     check.opt_str_param(name, "name")
 
-    def inner(fn: AssetMaterializationFunction) -> AssetStatusSensorDefinition:
+    def inner(fn: MultiAssetMaterializationFunction) -> MultiAssetSensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
@@ -227,10 +225,9 @@ def asset_status_sensor(
                     ).format(sensor_name=sensor_name, result=result, type_=type(result))
                 )
 
-        return AssetStatusSensorDefinition(
+        return MultiAssetSensorDefinition(
             name=sensor_name,
             asset_keys=asset_keys,
-            asset_status=asset_status,
             job_name=job_name,
             asset_materialization_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,

@@ -17,9 +17,9 @@ from dagster import (
     Field,
     Output,
     asset,
-    asset_status_sensor,
     graph,
     materialize,
+    multi_asset_sensor,
     repository,
     run_failure_sensor,
 )
@@ -202,18 +202,16 @@ def asset_b():
     return 2
 
 
-@asset_status_sensor(
+@multi_asset_sensor(
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
 )
 def asset_a_and_b_sensor(context, events):
     if all(events):
         return RunRequest(run_key=context.cursor, run_config={})
 
 
-@asset_status_sensor(
+@multi_asset_sensor(
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
 )
 def asset_a_or_b_sensor(context, events):
     if any(events):
