@@ -260,11 +260,12 @@ def custom_multi_asset_sensor(context):
 def asset_a_and_b_sensor(context, asset_events):
     # this sensor will run when both asset_a and asset_b have been materialized
     # asset_events is a dictionary, mapping asset keys to event log entries
-    logger_str = f"Assets {asset_events[AssetKey('asset_a')].dagster_event.asset_key.path} and {asset_events[AssetKey('asset_b')].dagster_event.asset_key.path} materialized"
-    return RunRequest(
-        run_key=context.cursor,
-        run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
-    )
+    if all(asset_events):
+        logger_str = f"Assets {asset_events[AssetKey('asset_a')].dagster_event.asset_key.path} and {asset_events[AssetKey('asset_b')].dagster_event.asset_key.path} materialized"
+        return RunRequest(
+            run_key=context.cursor,
+            run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
+        )
 
 
 # end_asset_status_sensor_marker
@@ -278,9 +279,10 @@ def asset_a_and_b_sensor(context, asset_events):
     trigger_fn=lambda x: any(x.values()),
     job=my_job,
 )
-def asset_c_or_d_sensor(context, _asset_events):
-    # this sensor will run when either asset_c or asset_d have been materialized
-    return RunRequest(run_key=context.cursor)
+def asset_c_or_d_sensor(context, asset_events):
+    # this sensor will run when only asset_c and not asset_d have been materialized
+    if asset_events["asset_c"] is not None and asset_events["asset_d"] is None:
+        return RunRequest(run_key=context.cursor)
 
 
 # end_asset_status_sensor_or_marker

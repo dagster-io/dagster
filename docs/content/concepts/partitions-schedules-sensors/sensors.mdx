@@ -138,11 +138,10 @@ def my_asset_sensor(context, asset_event):
 
 ### Multi-asset sensors
 
-Multi-asset sensors, which can trigger job executions based on some combination of states from multiple asset materialization event streams, can be handled using the <PyObject object="asset_status_sesnor" decorator/> decorator.
+Multi-asset sensors, which can trigger job executions based on  multiple asset materialization event streams, can be handled using the <PyObject object="asset_status_sesnor" decorator/> decorator.
 
-When writing an `asset_status_sensor` you can specify which event to monitor and provide a custom function to determine whether the sensor should run.
+In the body of the sensor, you have access to the event log information for each asset. If a monitored asset has not been materialized, the event log information will be `None`.
 
-In the default case, the asset status sensor will run whenever _all_ of the listed assets have the specified status.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_status_sensor_marker endbefore=end_asset_status_sensor_marker
 @asset_status_sensor(
@@ -160,7 +159,7 @@ def asset_a_and_b_sensor(context, asset_events):
     )
 ```
 
-You can provide a custom function to run the sensor when a different condition is met:
+You can use the provided `asset_events` to only yield `RunRequests` when a certain condition is met:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_status_sensor_or_marker endbefore=end_asset_status_sensor_or_marker
 @asset_status_sensor(

@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Callable, List, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
@@ -162,8 +162,7 @@ def asset_sensor(
 def asset_status_sensor(
     asset_keys: List[AssetKey],
     *,
-    asset_status: "DagsterEventType",
-    trigger_fn: Callable[[Dict[AssetKey, bool]], bool] = lambda x: all(x.values()),
+    asset_status,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
@@ -191,9 +190,6 @@ def asset_status_sensor(
     Args:
         asset_keys (List[AssetKey]): The asset_keys this sensor monitors.
         asset_status (DagsterEventType): The event the sensor should monitor
-        trigger_fn (Callable[Dict[AssetKey, bool], bool]): Function that determines if the sensor should run. Must
-            take a dict of AssetKeys to booleans as input, where the dict maps each AssetKey to whether it has the
-            asset_status being monitored. Defaults to lambda x: all(x.values())
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
@@ -235,7 +231,6 @@ def asset_status_sensor(
             name=sensor_name,
             asset_keys=asset_keys,
             asset_status=asset_status,
-            trigger_fn=trigger_fn,
             job_name=job_name,
             asset_materialization_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,

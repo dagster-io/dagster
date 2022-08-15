@@ -206,17 +206,18 @@ def asset_b():
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     asset_status=DagsterEventType.ASSET_MATERIALIZATION,
 )
-def asset_a_and_b_sensor(context, _events):
-    return RunRequest(run_key=context.cursor, run_config={})
+def asset_a_and_b_sensor(context, events):
+    if all(events):
+        return RunRequest(run_key=context.cursor, run_config={})
 
 
 @asset_status_sensor(
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     asset_status=DagsterEventType.ASSET_MATERIALIZATION,
-    trigger_fn=lambda x: any(x.values()),
 )
-def asset_a_or_b_sensor(context, _events):
-    return RunRequest(run_key=context.cursor, run_config={})
+def asset_a_or_b_sensor(context, events):
+    if any(events):
+        return RunRequest(run_key=context.cursor, run_config={})
 
 
 def _random_string(length):

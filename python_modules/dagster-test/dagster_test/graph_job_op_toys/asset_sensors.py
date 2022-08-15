@@ -57,14 +57,15 @@ def log_asset_sensor_job():
     job=log_asset_sensor_job,
 )
 def asset_a_and_b_sensor(context, asset_events):
-    return RunRequest(
-        run_key=context.cursor,
-        run_config={
-            "ops": {
-                "log_asset_sensor": {"config": {"message": f"Asset events dict {asset_events}"}}
-            }
-        },
-    )
+    if all(asset_events):
+        return RunRequest(
+            run_key=context.cursor,
+            run_config={
+                "ops": {
+                    "log_asset_sensor": {"config": {"message": f"Asset events dict {asset_events}"}}
+                }
+            },
+        )
 
 
 @asset_status_sensor(
@@ -74,14 +75,15 @@ def asset_a_and_b_sensor(context, asset_events):
     job=log_asset_sensor_job,
 )
 def asset_c_or_d_sensor(context, asset_events):
-    return RunRequest(
-        run_key=context.cursor,
-        run_config={
-            "ops": {
-                "log_asset_sensor": {"config": {"message": f"Asset events dict {asset_events}"}}
-            }
-        },
-    )
+    if any(asset_events):
+        return RunRequest(
+            run_key=context.cursor,
+            run_config={
+                "ops": {
+                    "log_asset_sensor": {"config": {"message": f"Asset events dict {asset_events}"}}
+                }
+            },
+        )
 
 
 @asset_status_sensor(
@@ -90,14 +92,15 @@ def asset_c_or_d_sensor(context, asset_events):
     job=log_asset_sensor_job,
 )
 def asset_string_and_int_sensor(context, asset_events):
-    return RunRequest(
-        run_key=context.cursor,
-        run_config={
-            "ops": {
-                "log_asset_sensor": {"config": {"message": f"Asset events dict {asset_events}"}}
-            }
-        },
-    )
+    if all(asset_events):
+        return RunRequest(
+            run_key=context.cursor,
+            run_config={
+                "ops": {
+                    "log_asset_sensor": {"config": {"message": f"Asset events dict {asset_events}"}}
+                }
+            },
+        )
 
 
 def get_asset_sensors_repo():
