@@ -16,20 +16,16 @@ from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
+    In,
     MultiDependencyDefinition,
     Nothing,
+    Out,
 )
 from dagster import _check as check
-from dagster import repository
+from dagster import op, repository
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    SolidDefinition,
-    solid,
-)
+from dagster._legacy import PipelineDefinition, SolidDefinition
 
 
 class DagsterAirflowError(Exception):
@@ -411,10 +407,10 @@ def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, uni
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
 
-    @solid(
+    @op(
         name=normalized_name(task.task_id, unique_id),
-        input_defs=[InputDefinition("airflow_task_ready", Nothing)],
-        output_defs=[OutputDefinition(Nothing, "airflow_task_complete")],
+        ins={"airflow_task_ready": In(Nothing)},
+        out={"airflow_task_complete": Out(Nothing)},
     )
     def _solid(context):  # pylint: disable=unused-argument
         if AIRFLOW_EXECUTION_DATE_STR not in context.pipeline_run.tags:
