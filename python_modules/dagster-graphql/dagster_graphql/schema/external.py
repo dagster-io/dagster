@@ -10,7 +10,7 @@ from dagster._core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
-from dagster._core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
+from dagster._core.workspace.context import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
 from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError

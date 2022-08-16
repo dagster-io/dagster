@@ -21,7 +21,7 @@ from dagster._core.storage.runs import InMemoryRunStorage
 from dagster._core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 from dagster._core.test_utils import ExplodingRunLauncher, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace import WorkspaceProcessContext
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import (
     GrpcServerTarget,
     ModuleTarget,

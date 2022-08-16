@@ -27,7 +27,7 @@ from dagster._core.test_utils import (
     poll_for_step_start,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace import WorkspaceProcessContext
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import GrpcServerTarget, PythonFileTarget
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerProcess
