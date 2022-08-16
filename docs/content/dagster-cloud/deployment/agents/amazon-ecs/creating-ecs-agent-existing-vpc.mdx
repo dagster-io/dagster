@@ -39,7 +39,9 @@ To complete the steps in this guide, you'll need:
 
 ## Step 2: Install the CloudFormation stack in AWS
 
-Click [this link](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent.yaml) to install the CloudFormation stack in your AWS account.
+Press the "Launch Stack" button below to install the CloudFormation stack in your AWS account.
+
+[<img src="https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png"/>](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent.yaml)
 
 **Note**: Creating the CloudFormation stack may take a few minutes. Refresh the [AWS console **Stacks** page](https://console.aws.amazon.com/cloudformation/home#/stacks) to check the status.
 
@@ -53,6 +55,9 @@ After the stack is installed, you'll be prompted to configure it. In the ECS wiz
 - **Dagster Cloud Deployment**: Enter the name of the Dagster Cloud deployment you want to use. Leave this field empty if the agent will only serve Branch deployments.
 - **Enable Branch Deployments**: Whether to have this agent serve your ephemeral [Branch deployments](/dagster-cloud/developing-testing/branch-deployments). Only a single agent should have this setting enabled.
 - **Agent Token**: Paste the agent token you generated in [Step 1](#step-1-generate-a-dagster-cloud-agent-token).
+- **Deploy VPC**: The existing VPC to deploy the agent into.
+- **Deploy VPC Subnet**: A public subnet of the existing VPC to deploy the agent into.
+- **Existing ECS Cluster**: Optionally, the name of an existing ECS cluster to deploy the agent in. Leave blank to create a new cluster
 
 The page should look similar to the following image. In this example, our organization name is `hooli` and our deployment is `prod`:
 
