@@ -10,7 +10,7 @@ In this guide, you'll set up and deploy an Amazon Elastic Container Service (ECS
 
 Our CloudFormation template allows you to quickly spin up the ECS agent stack. This template sets up an ECS agent from scratch, creating a new VPC and ECS cluster for the agent to run in. The template code can be found [here](https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-vpc.yaml). Refer to the [CloudFormation docs](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html) for more info about CloudFormation.
 
-**For info about deploying an ECS agent in an existing VPC**, check out the [ECS agents in existing VPCs guide](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc)).
+**For info about deploying an ECS agent in an existing VPC**, check out the [ECS agents in existing VPCs guide](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc).
 
 ---
 
@@ -70,8 +70,8 @@ The page should look similar to the following image. In this example, our organi
 <Image
 alt="Example Configuration for the ECS Agent CloudFormation Template"
 src="/images/dagster-cloud/agents/aws-ecs-stack-wizard-new.png"
-width={689}
-height={663}
+width={970}
+height={794}
 />
 
 After you've finished configuring the stack in AWS, you can view the agent in Dagster Cloud. To do so, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
