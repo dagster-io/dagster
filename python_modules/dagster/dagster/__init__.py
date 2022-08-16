@@ -438,7 +438,8 @@ from dagster._core.launcher.default_run_launcher import (
 from dagster._core.log_manager import (
     DagsterLogManager as DagsterLogManager,
 )
-from dagster._core.storage.event_log.base import (
+
+from dagster._core.event_api import (
     EventLogRecord as EventLogRecord,
     EventRecordsFilter as EventRecordsFilter,
     RunShardedEventsCursor as RunShardedEventsCursor,
@@ -527,7 +528,8 @@ from dagster._utils.backcompat import (
 from dagster._utils.log import (
     get_dagster_logger as get_dagster_logger,
 )
-from dagster._utils.test import (
+
+from dagster._utils.dagster_type import (
     check_dagster_type as check_dagster_type,
 )
 

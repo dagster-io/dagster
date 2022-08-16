@@ -15,9 +15,12 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     DagsterInstance,
+    EventLogRecord,
+    EventRecordsFilter,
     Field,
     Output,
     RetryRequested,
+    RunShardedEventsCursor,
 )
 from dagster import _check as check
 from dagster import _seven as seven
@@ -39,11 +42,6 @@ from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
-from dagster._core.storage.event_log.base import (
-    EventLogRecord,
-    EventRecordsFilter,
-    RunShardedEventsCursor,
-)
 from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
     migrate_asset_key_data,
