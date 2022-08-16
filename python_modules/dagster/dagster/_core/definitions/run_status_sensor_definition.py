@@ -185,15 +185,35 @@ def build_run_status_sensor_context(
     )
 
 
+class JobAddress(
+    NamedTuple(
+        "_JobAddress",
+        [("repository_location", str), ("repository", str), ("job_name", str)],
+    )
+):
+    def __new__(
+        cls,
+        repository_location: str,
+        repository: str,
+        job_name: str,
+    ):
+        return super(JobAddress, cls).__new__(
+            cls,
+            repository_location=check.str_param(repository_location, "repository_location"),
+            repository=check.str_param(repository, "repository"),
+            job_name=check.str_param(job_name, "job_name"),
+        )
+
+
 def run_failure_sensor(
     name: Optional[Union[Callable[..., Any], str]] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]]
     ] = None,
     job_selection: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]]
     ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
@@ -296,7 +316,9 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         monitored_jobs: Optional[
-            List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+            List[
+                Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]
+            ]
         ] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
@@ -314,7 +336,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         check.opt_list_param(
             monitored_jobs,
             "monitored_jobs",
-            (PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition),
+            (PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress),
         )
         check.inst_param(default_status, "default_status", DefaultSensorStatus)
 
@@ -366,6 +388,16 @@ class RunStatusSensorDefinition(SensorDefinition):
                 limit=5,
             )
 
+            # split jobs into those specified by definition objects vs JobAddresses
+            job_address_jobs = (
+                [x for x in monitored_jobs if isinstance(x, JobAddress)] if monitored_jobs else []
+            )
+            definition_jobs = (
+                [x for x in monitored_jobs if not isinstance(x, JobAddress)]
+                if monitored_jobs
+                else []
+            )
+
             for event_record in event_records:
                 event_log_entry = event_record.event_log_entry
                 storage_id = event_record.storage_id
@@ -393,21 +425,43 @@ class RunStatusSensorDefinition(SensorDefinition):
                 pipeline_run = run_records[0].pipeline_run
                 update_timestamp = run_records[0].update_timestamp
 
-                # skip if any of of the followings happens:
+                job_match = False
+
+                # check against jobs specified by definition
                 if (
-                    # the pipeline does not have a repository (manually executed)
-                    not pipeline_run.external_pipeline_origin
-                    or
-                    # the pipeline does not belong to the current repository
+                    # the pipeline has a repository (not manually executed)
+                    pipeline_run.external_pipeline_origin
+                    and
+                    # the pipeline belongs to the current repository
                     pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
-                    != context.repository_name
-                    or
-                    # if job not selected
-                    (
-                        monitored_jobs
-                        and pipeline_run.pipeline_name not in map(lambda x: x.name, monitored_jobs)
-                    )
+                    == context.repository_name
                 ):
+                    if definition_jobs:
+                        if pipeline_run.pipeline_name in map(lambda x: x.name, definition_jobs):
+                            job_match = True
+                    else:
+                        job_match = True
+
+                # check against jobs specified by JobAddress
+                for job_address in job_address_jobs:
+                    if (
+                        # the pipeline has a repository (not manually executed)
+                        pipeline_run.external_pipeline_origin
+                        and
+                        # the pipeline belongs to the job address repository location
+                        pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
+                        == job_address.repository_location
+                        and
+                        # the pipeline belongs to the job address repository
+                        pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
+                        == job_address.repository
+                        and
+                        # the job has the same name
+                        job_address.job_name == pipeline_run.pipeline_name
+                    ):
+                        job_match = True
+
+                if not job_match:
                     context.update_cursor(
                         RunStatusSensorCursor(
                             record_id=storage_id, update_timestamp=update_timestamp.isoformat()
@@ -527,10 +581,10 @@ def run_status_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]]
     ] = None,
     job_selection: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]]
     ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
@@ -552,10 +606,10 @@ def run_status_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]):
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]]]):
             Jobs that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the repository matches the requested run_status.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, JobAddress]]]): (deprecated in favor of monitored_jobs)
             Jobs that will be monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default

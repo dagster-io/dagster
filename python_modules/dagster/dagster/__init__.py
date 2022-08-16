@@ -287,6 +287,7 @@ from dagster._core.definitions.run_status_sensor_definition import (
     build_run_status_sensor_context as build_run_status_sensor_context,
     run_failure_sensor as run_failure_sensor,
     run_status_sensor as run_status_sensor,
+    JobAddress as JobAddress,
 )
 from dagster._core.definitions.schedule_definition import (
     DefaultScheduleStatus as DefaultScheduleStatus,

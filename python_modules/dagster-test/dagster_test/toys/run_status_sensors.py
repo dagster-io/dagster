@@ -2,6 +2,7 @@ from time import time
 
 from dagster import (
     DagsterRunStatus,
+    JobAddress,
     RunRequest,
     SkipReason,
     job,
@@ -149,3 +150,27 @@ def return_multi_run_request_success_sensor(context):
         return reqs
     else:
         return SkipReason("Don't report status of status_job.")
+
+
+@run_failure_sensor(
+    monitored_jobs=[
+        fails_job,
+        JobAddress(
+            repository_location="dagster_test.toys.repo",
+            repository="more_toys_repository",
+            job_name="fails_job",
+        ),
+    ],
+    request_job=status_job,
+)
+def cross_repo_sensor(context):
+    return RunRequest(
+        run_key=None,
+        run_config={
+            "ops": {
+                "status_printer": {
+                    "config": {"message": f"{context.dagster_run.pipeline_name} job failed!!!"}
+                }
+            }
+        },
+    )

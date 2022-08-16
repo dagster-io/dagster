@@ -10,7 +10,10 @@ from dagster._utils.backcompat import deprecation_warning
 if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.pipeline_definition import PipelineDefinition
-    from dagster._core.definitions.run_status_sensor_definition import RunFailureSensorContext
+    from dagster._core.definitions.run_status_sensor_definition import (
+        JobAddress,
+        RunFailureSensorContext,
+    )
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
@@ -85,10 +88,24 @@ def make_email_on_run_failure_sensor(
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     monitored_jobs: Optional[
-        List[Union["PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"]]
+        List[
+            Union[
+                "PipelineDefinition",
+                "GraphDefinition",
+                "UnresolvedAssetJobDefinition",
+                "JobAddress",
+            ]
+        ]
     ] = None,
     job_selection: Optional[
-        List[Union["PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"]]
+        List[
+            Union[
+                "PipelineDefinition",
+                "GraphDefinition",
+                "UnresolvedAssetJobDefinition",
+                "JobAddress",
+            ]
+        ]
     ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
