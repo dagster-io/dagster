@@ -39,10 +39,7 @@ WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f
 
 
 def _cli_load_invariant(condition: object, msg=None) -> None:
-    msg = (
-        msg
-        or "Invalid set of CLI arguments for loading repository/pipeline. See --help for details."
-    )
+    msg = msg or "Invalid set of CLI arguments for loading repository/job. See --help for details."
     if not condition:
         raise UsageError(msg)
 
@@ -192,12 +189,12 @@ def get_workspace_from_kwargs(
         yield workspace_process_context.create_request_context()
 
 
-def python_target_click_options(is_using_job_op_graph_apis: bool = False):
+def python_target_click_options():
     return [
         click.option(
             "--working-directory",
             "-d",
-            help=f"Specify working directory to use when loading the repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'}.",
+            help="Specify working directory to use when loading the repository or job.",
             envvar="DAGSTER_WORKING_DIRECTORY",
         ),
         click.option(
@@ -206,26 +203,26 @@ def python_target_click_options(is_using_job_op_graph_apis: bool = False):
             # Checks that the path actually exists lower in the stack, where we
             # are better equipped to surface errors
             type=click.Path(exists=False),
-            help=f"Specify python file where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
+            help="Specify python file where repository or job function lives",
             envvar="DAGSTER_PYTHON_FILE",
         ),
         click.option(
             "--package-name",
-            help=f"Specify Python package where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
+            help="Specify Python package where repository or job function lives",
             envvar="DAGSTER_PACKAGE_NAME",
         ),
         click.option(
             "--module-name",
             "-m",
-            help=f"Specify module where repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} function lives",
+            help="Specify module where repository or job function lives",
             envvar="DAGSTER_MODULE_NAME",
         ),
         click.option(
             "--attribute",
             "-a",
             help=(
-                f"Attribute that is either a 1) repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'} or "
-                f"2) a function that returns a repository or {'job' if is_using_job_op_graph_apis else 'pipeline/job'}"
+                "Attribute that is either a 1) repository or job or "
+                "2) a function that returns a repository or job"
             ),
             envvar="DAGSTER_ATTRIBUTE",
         ),
@@ -261,7 +258,7 @@ def grpc_server_target_click_options():
     ]
 
 
-def workspace_target_click_options(using_job_op_graph_apis: bool = False):
+def workspace_target_click_options():
     return (
         [
             click.option("--empty-workspace", is_flag=True, help="Allow an empty workspace"),
@@ -273,28 +270,14 @@ def workspace_target_click_options(using_job_op_graph_apis: bool = False):
                 help=("Path to workspace file. Argument can be provided multiple times."),
             ),
         ]
-        + python_target_click_options(using_job_op_graph_apis)
+        + python_target_click_options()
         + grpc_server_target_click_options()
-    )
-
-
-def python_pipeline_target_click_options():
-    return (
-        python_target_click_options()
-        + [
-            click.option(
-                "--repository",
-                "-r",
-                help=("Repository name, necessary if more than one repository is present."),
-            )
-        ]
-        + [pipeline_option()]
     )
 
 
 def python_job_target_click_options():
     return (
-        python_target_click_options(is_using_job_op_graph_apis=True)
+        python_target_click_options()
         + [
             click.option(
                 "--repository",
@@ -306,7 +289,7 @@ def python_job_target_click_options():
     )
 
 
-def target_with_config_option(command_name, using_job_op_graph_apis):
+def target_with_config_option(command_name):
     return click.option(
         "-c",
         "--config",
@@ -319,23 +302,19 @@ def target_with_config_option(command_name, using_job_op_graph_apis):
             "files at the key-level granularity. If the file is a pattern then you must "
             "enclose it in double quotes"
             "\n\nExample: "
-            "dagster {pipeline_or_job} {name} -f hello_world.py {pipeline_or_job_flag} pandas_hello_world "
+            f"dagster job {command_name} -f hello_world.py -j pandas_hello_world "
             '-c "pandas_hello_world/*.yaml"'
             "\n\nYou can also specify multiple files:"
             "\n\nExample: "
-            "dagster {pipeline_or_job} {name} -f hello_world.py {pipeline_or_job_flag} pandas_hello_world "
-            "-c pandas_hello_world/solids.yaml -c pandas_hello_world/env.yaml"
-        ).format(
-            name=command_name,
-            pipeline_or_job="job" if using_job_op_graph_apis else "pipeline",
-            pipeline_or_job_flag="-j" if using_job_op_graph_apis else "-p",
+            f"dagster job {command_name} -f hello_world.py -j pandas_hello_world "
+            "-c pandas_hello_world/ops.yaml -c pandas_hello_world/env.yaml"
         ),
     )
 
 
-def python_pipeline_or_job_config_argument(command_name, using_job_op_graph_apis=False):
+def python_pipeline_or_job_config_argument(command_name):
     def wrap(f):
-        return target_with_config_option(command_name, using_job_op_graph_apis)(f)
+        return target_with_config_option(command_name)(f)
 
     return wrap
 
@@ -355,7 +334,7 @@ def workspace_target_argument(f):
 def job_workspace_target_argument(f):
     from dagster._cli.job import apply_click_params
 
-    return apply_click_params(f, *workspace_target_click_options(using_job_op_graph_apis=True))
+    return apply_click_params(f, *workspace_target_click_options())
 
 
 def grpc_server_origin_target_argument(f):
@@ -403,28 +382,11 @@ def job_repository_target_argument(f):
     return apply_click_params(job_workspace_target_argument(f), *repository_click_options())
 
 
-def pipeline_option():
-    return click.option(
-        "--pipeline",
-        "-p",
-        "pipeline_or_job",
-        help=(
-            "Pipeline/Job within the repository, necessary if more than one pipeline/job is present."
-        ),
-    )
-
-
-def pipeline_target_argument(f):
-    from dagster._cli.job import apply_click_params
-
-    return apply_click_params(repository_target_argument(f), pipeline_option())
-
-
 def job_option():
     return click.option(
         "--job",
         "-j",
-        "pipeline_or_job",
+        "job",
         help=("Job within the repository, necessary if more than one job is present."),
     )
 
@@ -435,39 +397,37 @@ def job_target_argument(f):
     return apply_click_params(job_repository_target_argument(f), job_option())
 
 
-def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_apis=False):
+def get_job_python_origin_from_kwargs(kwargs):
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
     provided_pipeline_name = kwargs.get("pipeline_or_job")
 
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_definition = recon_repo.get_definition()
 
-    pipeline_or_job_names = set(
-        repo_definition.job_names if using_job_op_graph_apis else repo_definition.pipeline_names
-    )
+    job_names = set(repo_definition.job_names)
 
-    if provided_pipeline_name is None and len(pipeline_or_job_names) == 1:
-        pipeline_name = next(iter(pipeline_or_job_names))
+    if provided_pipeline_name is None and len(job_names) == 1:
+        pipeline_name = next(iter(job_names))
     elif provided_pipeline_name is None:
         raise click.UsageError(
             (
-                "Must provide {flag} as there is more than one pipeline/job "
+                "Must provide {flag} as there is more than one job "
                 "in {repository}. Options are: {pipelines}."
             ).format(
-                flag="--job" if using_job_op_graph_apis else "--pipeline",
+                flag="--job",
                 repository=repo_definition.name,
-                pipelines=_sorted_quoted(pipeline_or_job_names),
+                pipelines=_sorted_quoted(job_names),
             )
         )
-    elif not provided_pipeline_name in pipeline_or_job_names:
+    elif not provided_pipeline_name in job_names:
         raise click.UsageError(
             (
-                'Pipeline/Job "{provided_pipeline_name}" not found in repository "{repository_name}". '
+                'Job "{provided_pipeline_name}" not found in repository "{repository_name}". '
                 "Found {found_names} instead."
             ).format(
                 provided_pipeline_name=provided_pipeline_name,
                 repository_name=repo_definition.name,
-                found_names=_sorted_quoted(pipeline_or_job_names),
+                found_names=_sorted_quoted(job_names),
             )
         )
     else:
@@ -688,19 +648,11 @@ def get_external_repository_from_kwargs(instance, version, kwargs):
 def get_external_pipeline_or_job_from_external_repo(
     external_repo: ExternalRepository,
     provided_pipeline_or_job_name: Optional[str],
-    using_job_op_graph_apis: bool = False,
 ) -> ExternalPipeline:
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_str_param(provided_pipeline_or_job_name, "provided_pipeline_or_job_name")
 
-    external_pipelines = {
-        ep.name: ep
-        for ep in (
-            external_repo.get_external_jobs()
-            if using_job_op_graph_apis
-            else external_repo.get_all_external_pipelines()
-        )
-    }
+    external_pipelines = {ep.name: ep for ep in (external_repo.get_external_jobs())}
 
     check.invariant(external_pipelines)
 
@@ -713,7 +665,7 @@ def get_external_pipeline_or_job_from_external_repo(
                 "Must provide {flag} as there is more than one pipeline/job "
                 "in {repository}. Options are: {pipelines}."
             ).format(
-                flag="--job" if using_job_op_graph_apis else "--pipeline",
+                flag="--job",
                 repository=external_repo.name,
                 pipelines=_sorted_quoted(external_pipelines.keys()),
             )
@@ -722,10 +674,9 @@ def get_external_pipeline_or_job_from_external_repo(
     if not provided_pipeline_or_job_name in external_pipelines:
         raise click.UsageError(
             (
-                '{pipeline_or_job} "{provided_pipeline_name}" not found in repository "{repository_name}". '
+                'Job "{provided_pipeline_name}" not found in repository "{repository_name}". '
                 "Found {found_names} instead."
             ).format(
-                pipeline_or_job="Job" if using_job_op_graph_apis else "Pipeline",
                 provided_pipeline_name=provided_pipeline_or_job_name,
                 repository_name=external_repo.name,
                 found_names=_sorted_quoted(external_pipelines.keys()),
@@ -736,15 +687,13 @@ def get_external_pipeline_or_job_from_external_repo(
 
 
 @contextmanager
-def get_external_pipeline_or_job_from_kwargs(
-    instance, version, kwargs, using_job_op_graph_apis=False
-):
+def get_external_pipeline_or_job_from_kwargs(instance, version, kwargs):
     # Instance isn't strictly required to load an ExternalPipeline, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
     with get_external_repository_from_kwargs(instance, version, kwargs) as external_repo:
         provided_pipeline_or_job_name = kwargs.get("pipeline_or_job")
         yield get_external_pipeline_or_job_from_external_repo(
-            external_repo, provided_pipeline_or_job_name, using_job_op_graph_apis
+            external_repo, provided_pipeline_or_job_name
         )
 
 
