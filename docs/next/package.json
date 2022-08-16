@@ -10,7 +10,8 @@
     "snapshot": "ts-node -O '{\"module\": \"commonjs\"}' scripts/snapshot.ts && yarn format",
     "test": "jest",
     "typecheck": "tsc",
-    "format": "prettier --config ./.prettierrc.js --write \"../content/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content/**/*.mdx\" --output --silent"
+    "lint": "eslint . --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
+    "format": "prettier --config ../.prettierrc.markdown.js --write \"../content/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content/**/*.mdx\" --output --silent"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.18.0",
@@ -59,15 +60,17 @@
     "yarn": "^1.22.10"
   },
   "devDependencies": {
+    "@dagster-io/eslint-config": "1.0.4",
     "@tailwindcss/jit": "^0.1.1",
     "@types/classnames": "^2.2.11",
     "@types/jest": "^27.4.0",
     "@types/node": "^14.14.22",
     "@types/react": "^17.0.0",
+    "eslint": "^8.21.0",
     "html-react-parser": "^2.0.0",
     "jest": "^27.5.1",
     "node-html-parser": "^5.3.3",
-    "prettier": "^2.2.1",
+    "prettier": "^2.7.1",
     "remark-cli": "^9.0.0",
     "remark-gfm": "^1.0.0",
     "remark-preset-prettier": "^0.4.1",

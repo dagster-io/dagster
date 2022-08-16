@@ -1,12 +1,12 @@
-import * as React from "react";
+import * as React from 'react';
 
 export const SignInButton = () => {
   const onClick = () => {
-    const url = new URL("https://dagster.cloud");
+    const url = new URL('https://dagster.cloud');
     const anonymousId = window.analytics?.user().anonymousId();
     if (anonymousId) {
       const params = new URLSearchParams();
-      params.append("ajs_aid", anonymousId);
+      params.append('ajs_aid', anonymousId);
       url.search = params.toString();
     }
     window.location.assign(url.toString());

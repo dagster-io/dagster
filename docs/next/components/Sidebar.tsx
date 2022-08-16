@@ -1,26 +1,19 @@
-import React, { useState } from "react";
+import {Transition} from '@headlessui/react';
+import cx from 'classnames';
+import {Search} from 'components/Search';
+import NextLink from 'next/link';
+import React, {useState} from 'react';
 
-import { Transition } from "@headlessui/react";
+import Icons from '../components/Icons';
+import {useNavigation, flatten, getNavKey, getNavLvl} from '../util/useNavigation';
+import {useVersion} from '../util/useVersion';
 
-import { Search } from "components/Search";
-import Icons from "../components/Icons";
-import Link from "./Link";
-import NextLink from "next/link";
-import cx from "classnames";
-import {
-  useNavigation,
-  flatten,
-  getNavKey,
-  getNavLvl,
-} from "../util/useNavigation";
-import { useVersion } from "../util/useVersion";
+import Link from './Link';
 
-const getCurrentSection = (navigation) => {
-  const { asPath } = useVersion();
-  const match = navigation.find(
-    (item) => item.path !== "/" && asPath.startsWith(item.path)
-  );
-  return match || navigation.find((item) => item.path === "/");
+const useCurrentSection = (navigation) => {
+  const {asPath} = useVersion();
+  const match = navigation.find((item) => item.path !== '/' && asPath.startsWith(item.path));
+  return match || navigation.find((item) => item.path === '/');
 };
 interface MenuItemProps {
   item: any;
@@ -30,33 +23,47 @@ interface MenuItemProps {
   expanded: boolean;
 }
 
-const MenuItem = React.forwardRef<
-  HTMLAnchorElement,
-  React.PropsWithChildren<MenuItemProps>
->(({ item, match, lvl, onClick, expanded }, ref) => {
-  const rightIcon = item.isExternalLink
-    ? Icons["ExternalLink"]
-    : item.children &&
-      (expanded ? Icons["ChevronDown"] : Icons["ChevronRight"]);
+const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<MenuItemProps>>(
+  ({item, match, lvl, onClick, expanded}, ref) => {
+    const rightIcon = item.isExternalLink
+      ? Icons['ExternalLink']
+      : item.children && (expanded ? Icons['ChevronDown'] : Icons['ChevronRight']);
 
-  const itemClassName = cx(
-    "w-full transition group flex justify-between items-center rounded-md text-gray-700 dark:text-gray-200",
-    {
-      "hover:bg-lavender hover:bg-opacity-50 text-blurple": match,
-      "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50": !match,
-      "px-2 py-2 pl-3 pr-2 font-semibold": lvl === 0,
-      "py-2 pl-3 pr-2 font-medium": lvl >= 1,
-      "px-3 py-1 text-sm": lvl >= 2,
-    }
-  );
-  const children: JSX.Element = (
-    <>
-      <div className="flex justify-start">
-        {item.icon && (
+    const itemClassName = cx(
+      'w-full transition group flex justify-between items-center rounded-md text-gray-700 dark:text-gray-200',
+      {
+        'hover:bg-lavender hover:bg-opacity-50 text-blurple': match,
+        'hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50': !match,
+        'px-2 py-2 pl-3 pr-2 font-semibold': lvl === 0,
+        'py-2 pl-3 pr-2 font-medium': lvl >= 1,
+        'px-3 py-1 text-sm': lvl >= 2,
+      },
+    );
+    const children: JSX.Element = (
+      <>
+        <div className="flex justify-start">
+          {item.icon && (
+            <svg
+              className={cx('mr-3 h-6 w-6 text-gray-400 transition', {
+                'text-blurple': match,
+                'group-hover:text-gray-600': !match,
+              })}
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              {Icons[item.icon]}
+            </svg>
+          )}
+          <span>{item.title}</span>
+        </div>
+        {rightIcon && (
           <svg
-            className={cx("mr-3 h-6 w-6 text-gray-400 transition", {
-              "text-blurple": match,
-              "group-hover:text-gray-600": !match,
+            className={cx('mr-2 h-4 w-4 text-gray-400 transition flex-shrink-0', {
+              'text-blurple': match,
+              'group-hover:text-gray-600': !match,
             })}
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -64,61 +71,45 @@ const MenuItem = React.forwardRef<
             stroke="currentColor"
             aria-hidden="true"
           >
-            {Icons[item.icon]}
+            {rightIcon}
           </svg>
         )}
-        <span>{item.title}</span>
-      </div>
-      {rightIcon && (
-        <svg
-          className={cx("mr-2 h-4 w-4 text-gray-400 transition flex-shrink-0", {
-            "text-blurple": match,
-            "group-hover:text-gray-600": !match,
-          })}
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          {rightIcon}
-        </svg>
-      )}
-    </>
-  );
-  const hyperlink: JSX.Element = (
-    <a
-      className={itemClassName}
-      href={item.path}
-      onClick={onClick}
-      ref={ref}
-      target={item.isExternalLink ? "_blank" : "_self"}
-      rel="noopener noreferrer"
-    >
-      {children}
-    </a>
-  );
+      </>
+    );
+    const hyperlink: JSX.Element = (
+      <a
+        className={itemClassName}
+        href={item.path}
+        onClick={onClick}
+        ref={ref}
+        target={item.isExternalLink ? '_blank' : '_self'}
+        rel="noopener noreferrer"
+      >
+        {children}
+      </a>
+    );
 
-  return item.path === undefined ? (
-    // no link
-    <button className={itemClassName} onClick={onClick}>
-      {children}
-    </button>
-  ) : item.isExternalLink ? (
-    // external link
-    hyperlink
-  ) : item.isUnversioned ? (
-    // unversioned link
-    <NextLink href={item.path} passHref>
-      {hyperlink}
-    </NextLink>
-  ) : (
-    // versioned link
-    <Link href={item.path} passHref>
-      {hyperlink}
-    </Link>
-  );
-});
+    return item.path === undefined ? (
+      // no link
+      <button className={itemClassName} onClick={onClick}>
+        {children}
+      </button>
+    ) : item.isExternalLink ? (
+      // external link
+      hyperlink
+    ) : item.isUnversioned ? (
+      // unversioned link
+      <NextLink href={item.path} passHref>
+        {hyperlink}
+      </NextLink>
+    ) : (
+      // versioned link
+      <Link href={item.path} passHref>
+        {hyperlink}
+      </Link>
+    );
+  },
+);
 
 const RecursiveNavigation = ({
   itemOrSection,
@@ -127,22 +118,22 @@ const RecursiveNavigation = ({
   navKeysToExpanded,
   setNavKeysToExpanded,
 }) => {
-  const { asPathWithoutAnchor } = useVersion();
+  const {asPathWithoutAnchor} = useVersion();
   const navigation = useNavigation();
-  const currentSection = getCurrentSection(navigation);
+  const currentSection = useCurrentSection(navigation);
   const navKey = getNavKey(parentKey, idx);
   const lvl = getNavLvl(navKey);
 
   const onClick = (key) => {
     setNavKeysToExpanded((prevState) => {
-      const updatedValues = { [key]: !prevState[key] };
-      return { ...prevState, ...updatedValues };
+      const updatedValues = {[key]: !prevState[key]};
+      return {...prevState, ...updatedValues};
     });
   };
 
   // Note: this logic is based on path which could be improved by having parent info in itemOrSection
   const match =
-    itemOrSection == currentSection ||
+    itemOrSection === currentSection ||
     itemOrSection.path === asPathWithoutAnchor ||
     (itemOrSection.children &&
       itemOrSection.children.find((item) => item.path === asPathWithoutAnchor));
@@ -166,7 +157,7 @@ const RecursiveNavigation = ({
   return (
     <div
       className={cx({
-        "mt-1 ml-1 space-y-1": lvl >= 2,
+        'mt-1 ml-1 space-y-1': lvl >= 2,
       })}
       role="group"
       aria-labelledby={`${lvl + 1}-level-nav`}
@@ -206,7 +197,7 @@ const TopLevelNavigation = () => {
     flatten(navigation).reduce((map, obj) => {
       map[obj.key] = obj.isDefaultOpen;
       return map;
-    })
+    }),
   );
 
   return (
@@ -216,7 +207,7 @@ const TopLevelNavigation = () => {
           <RecursiveNavigation
             key={idx}
             itemOrSection={itemOrSection}
-            parentKey={""}
+            parentKey=""
             idx={idx}
             navKeysToExpanded={navKeysToExpanded}
             setNavKeysToExpanded={setNavKeysToExpanded}
@@ -249,7 +240,7 @@ const SidebarContents = () => {
   );
 };
 
-const Sidebar = ({ isMobileDocsMenuOpen, closeMobileDocsMenu }) => {
+const Sidebar = ({isMobileDocsMenuOpen, closeMobileDocsMenu}) => {
   return (
     <>
       {/* Off-canvas menu for mobile, show/hide based on off-canvas menu state. */}

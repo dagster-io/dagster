@@ -1,38 +1,38 @@
-import fs, { link } from "fs";
-import path from "path";
-import fg from "fast-glob";
-import { Node } from "hast";
-import visit from "unist-util-visit";
-import matter from "gray-matter";
+import fs from 'fs';
+import path from 'path';
+
+import fg from 'fast-glob';
+import matter from 'gray-matter';
+import {Node} from 'hast';
+import remark from 'remark';
+import mdx from 'remark-mdx';
+import visit from 'unist-util-visit';
 
 // remark
-import mdx from "remark-mdx";
-import remark from "remark";
 
-const ROOT_DIR = path.resolve(__dirname, "../../");
-const DOCS_DIR = path.resolve(ROOT_DIR, "content");
-const DAGSTER_DIR = path.resolve(ROOT_DIR, "..")
+const ROOT_DIR = path.resolve(__dirname, '../../');
+const DOCS_DIR = path.resolve(ROOT_DIR, 'content');
+const DAGSTER_DIR = path.resolve(ROOT_DIR, '..');
 interface LinkElement extends Node {
-  type: "link" | "image";
+  type: 'link' | 'image';
   url: string;
 }
 
+test('No dead external MDX links', async () => {
+  const allMdxFilePaths = await fg(['**/*.mdx'], {cwd: DOCS_DIR});
 
-test("No dead external MDX links", async () => {
-  const allMdxFilePaths = await fg(["**/*.mdx"], { cwd: DOCS_DIR });
-
-  const astStore: { [filePath: string]: Node } = {};
-  const allExternalLinksStore: { [filePath: string]: Array<string> } = {};
+  const astStore: {[filePath: string]: Node} = {};
+  const allExternalLinksStore: {[filePath: string]: Array<string>} = {};
 
   // Parse mdx files to find all internal links and populate the store
   await Promise.all(
     allMdxFilePaths.map(async (relativeFilePath) => {
       const absolutePath = path.resolve(DOCS_DIR, relativeFilePath);
-      const fileContent = await fs.promises.readFile(absolutePath, "utf-8");
+      const fileContent = await fs.promises.readFile(absolutePath, 'utf-8');
       // separate content and front matter data
-      const { content, data } = matter(fileContent);
+      const {content} = matter(fileContent);
       astStore[relativeFilePath] = remark().use(mdx).parse(content);
-    })
+    }),
   );
 
   for (const filePath in astStore) {
@@ -40,7 +40,7 @@ test("No dead external MDX links", async () => {
     allExternalLinksStore[filePath] = externalLinks;
   }
 
-  const deadLinks: Array<{ sourceFile: string; deadLink: string }> = [];
+  const deadLinks: Array<{sourceFile: string; deadLink: string}> = [];
 
   let linkCount = 0;
 
@@ -64,28 +64,23 @@ test("No dead external MDX links", async () => {
   expect(deadLinks).toEqual([]);
 });
 
-
-function isLinkLegit(
-  rawTarget: string,
-): boolean {
+function isLinkLegit(rawTarget: string): boolean {
   // TODO: Validate links to API Docs
 
-  const splitter = new RegExp('\/master\/')
+  const splitter = new RegExp('/master/');
 
-  const filePath = rawTarget.split(splitter)[1]
+  const filePath = rawTarget.split(splitter)[1];
 
-  return fileExists(path.resolve(DAGSTER_DIR, filePath))
+  return fileExists(path.resolve(DAGSTER_DIR, filePath));
 }
 
 // traverse the mdx ast to find all links to our examples
-function collectExternalLinks(
-  tree: Node,
-): Array<string> {
+function collectExternalLinks(tree: Node): Array<string> {
   const externalLinkRegex = /^(https?:\/\/github\.com\/dagster\-io\/dagster\/.*\/master)/;
   const result: Array<string> = [];
 
-  visit(tree, ["link", "image"], (node: LinkElement, index) => {
-    const { url } = node;
+  visit(tree, ['link', 'image'], (node: LinkElement) => {
+    const {url} = node;
     if (url.match(externalLinkRegex)) {
       result.push(url);
     } else {
@@ -97,7 +92,6 @@ function collectExternalLinks(
 }
 
 function fileExists(filePath: string): boolean {
-
   try {
     fs.statSync(filePath);
     return true;

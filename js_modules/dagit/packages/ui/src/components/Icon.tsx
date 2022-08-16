@@ -44,6 +44,7 @@ import expand_more from '../icon-svgs/expand_more.svg';
 import filter_alt from '../icon-svgs/filter_alt.svg';
 import folder from '../icon-svgs/folder.svg';
 import folder_open from '../icon-svgs/folder_open.svg';
+import forum from '../icon-svgs/forum.svg';
 import gantt_flat from '../icon-svgs/gantt_flat.svg';
 import gantt_waterfall from '../icon-svgs/gantt_waterfall.svg';
 import github from '../icon-svgs/github.svg';
@@ -206,6 +207,7 @@ export const Icons = {
   expand_more,
   filter_alt,
   folder_open,
+  forum,
   info,
   history,
   history_toggle_off,

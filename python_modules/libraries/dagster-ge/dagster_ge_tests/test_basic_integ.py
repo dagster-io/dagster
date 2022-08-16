@@ -3,8 +3,8 @@
 import pytest
 from dagster_ge.factory import (
     ge_data_context,
-    ge_validation_solid_factory,
-    ge_validation_solid_factory_v3,
+    ge_validation_op_factory,
+    ge_validation_op_factory_v3,
 )
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
@@ -40,9 +40,7 @@ def reyielder(_context, res):
 )
 def hello_world_pandas_pipeline_v2():
     return reyielder(
-        ge_validation_solid_factory("ge_validation_solid", "getest", "basic.warning")(
-            pandas_yielder()
-        )
+        ge_validation_op_factory("ge_validation_solid", "getest", "basic.warning")(pandas_yielder())
     )
 
 
@@ -51,7 +49,7 @@ def hello_world_pandas_pipeline_v2():
 )
 def hello_world_pandas_pipeline_v3():
     return reyielder(
-        ge_validation_solid_factory_v3(
+        ge_validation_op_factory_v3(
             name="ge_validation_solid",
             datasource_name="getest",
             data_connector_name="my_runtime_data_connector",
@@ -74,7 +72,7 @@ def hello_world_pandas_pipeline_v3():
     ],
 )
 def hello_world_pyspark_pipeline():
-    validate = ge_validation_solid_factory(
+    validate = ge_validation_op_factory(
         "ge_validation_solid",
         "getestspark",
         "basic.warning",
