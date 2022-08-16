@@ -1,6 +1,6 @@
 from dagster import (
     AssetKey,
-    Out,
+    AssetOut,
     RunRequest,
     SkipReason,
     asset,
@@ -33,8 +33,8 @@ def asset_d():
 
 @multi_asset(
     outs={
-        "my_string_asset": Out(),
-        "my_int_asset": Out(),
+        "my_string_asset": AssetOut(),
+        "my_int_asset": AssetOut(),
     }
 )
 def multi_asset_a():

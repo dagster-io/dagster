@@ -1604,7 +1604,7 @@ def test_asset_status_sensor(executor):
         with pendulum.test(freeze_datetime):
 
             # should generate asset_a
-            materialize(asset_a, instance=instance)
+            materialize([asset_a], instance=instance)
 
             # sensor should not fire
             ticks = instance.get_ticks(
@@ -1623,7 +1623,7 @@ def test_asset_status_sensor(executor):
         with pendulum.test(freeze_datetime):
 
             # should generate asset_b
-            materialize(asset_b, instance=instance)
+            materialize([asset_b], instance=instance)
 
             # should fire the asset sensor
             evaluate_sensors(instance, workspace, executor)
@@ -1675,7 +1675,7 @@ def test_asset_status_sensor_w_custom_fn(executor):
         with pendulum.test(freeze_datetime):
 
             # should generate asset_a
-            materialize(asset_a, instance=instance)
+            materialize([asset_a], instance=instance)
 
             # sensor should not fire
             # should fire the asset sensor
@@ -1700,7 +1700,7 @@ def test_asset_status_sensor_w_custom_fn(executor):
         with pendulum.test(freeze_datetime):
 
             # should generate asset_b
-            materialize(asset_b, instance=instance)
+            materialize([asset_b], instance=instance)
 
             # should fire the asset sensor
             evaluate_sensors(instance, workspace, executor)

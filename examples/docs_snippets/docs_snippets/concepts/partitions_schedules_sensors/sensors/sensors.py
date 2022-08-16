@@ -274,7 +274,6 @@ def asset_a_and_b_sensor(context, asset_events):
 
 @multi_asset_sensor(
     asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
-    trigger_fn=lambda x: any(x.values()),
     job=my_job,
 )
 def asset_c_or_d_sensor(context, asset_events):

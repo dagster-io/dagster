@@ -163,7 +163,6 @@ You can use the provided `asset_events` to only yield `RunRequests` when a certa
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_custom_fn_marker endbefore=end_multi_asset_sensor_custom_fn_marker
 @multi_asset_sensor(
     asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
-    trigger_fn=lambda x: any(x.values()),
     job=my_job,
 )
 def asset_c_or_d_sensor(context, asset_events):
@@ -172,7 +171,9 @@ def asset_c_or_d_sensor(context, asset_events):
         return RunRequest(run_key=context.cursor)
     else:
         # you can optionally return a SkipReason
-        return SkipReason(f"asset_c {'not' if not asset_events['asset_c'] else ''} materialized and asset_d {'not' if not asset_events['asset_d'] else ''} materialized.")
+        return SkipReason(
+            f"asset_c {'not' if not asset_events['asset_c'] else ''} materialized and asset_d {'not' if not asset_events['asset_d'] else ''} materialized."
+        )
 ```
 
 ## Idempotence and Cursors
