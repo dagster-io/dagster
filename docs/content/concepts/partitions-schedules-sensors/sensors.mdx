@@ -142,6 +142,8 @@ Multi-asset sensors, which can trigger job executions based on multiple asset ma
 
 In the body of the sensor, you have access to the event log information for each asset. If a monitored asset has not been materialized, the event log information will be `None`.
 
+You can use the provided `asset_events` to only yield `RunRequests` when a certain condition is met:
+
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
 @multi_asset_sensor(
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
@@ -158,7 +160,7 @@ def asset_a_and_b_sensor(context, asset_events):
         )
 ```
 
-You can use the provided `asset_events` to only yield `RunRequests` when a certain condition is met:
+You can also return a `SkipReason` to document why the sensor didn't launch a run.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_custom_fn_marker endbefore=end_multi_asset_sensor_custom_fn_marker
 @multi_asset_sensor(
@@ -167,7 +169,7 @@ You can use the provided `asset_events` to only yield `RunRequests` when a certa
 )
 def asset_c_or_d_sensor(context, asset_events):
     # this sensor will run when only asset_c and not asset_d have been materialized
-    if asset_events["asset_c"] is not None and asset_events["asset_d"] is None:
+    if asset_events["asset_c"] is not None or asset_events["asset_d"] is None:
         return RunRequest(run_key=context.cursor)
     else:
         # you can optionally return a SkipReason
