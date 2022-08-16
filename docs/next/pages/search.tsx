@@ -19,6 +19,7 @@ import visit from "unist-util-visit";
 import { Shimmer } from "components/Shimmer";
 import algoliasearch from "algoliasearch";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Highlight } from "react-instantsearch-dom";
 
 const client = algoliasearch(
   process.env.NEXT_PUBLIC_ALGOLIA_APP_ID,
@@ -26,19 +27,23 @@ const client = algoliasearch(
 );
 
 const index = client.initIndex(process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME);
+// index.setSettings({ attributesToHighlight: ["*"] });
 
 export default function SearchPage() {
-  const [query, setQuery] = useState(null);
+  const [query, setQuery] = useState("");
+  const [hits, setHits] = useState([]);
   useEffect(() => {
     const path = window.location.href;
+    const urlQuery = decodeURIComponent(path.substring(path.indexOf("=") + 1));
 
-    if (path.includes("?")) {
-      setQuery(decodeURIComponent(path.substring(path.indexOf("?") + 1)));
-    }
-  });
+    setQuery(urlQuery);
+    index.search(urlQuery, { hitsPerPage: 50 }).then(({ hits }) => {
+      console.log(hits);
+      setHits(hits);
+    });
+  }, []);
+
   const router = useRouter();
-
-  console.log(query);
 
   // If the page is not yet generated, this shimmer/skeleton will be displayed
   // initially until getStaticProps() finishes running
@@ -46,8 +51,48 @@ export default function SearchPage() {
     return <Shimmer />;
   }
 
-  index.search(query).then(({ hits }) => {
-    console.log(hits);
-  });
-  return <div>foo</div>;
+  function parsedLevel(name) {
+    if (name == "Title" || name == null) {
+      return "";
+    }
+    return name;
+  }
+
+  function renderHit(hit) {
+    const hierarchy = hit._highlightResult.hierarchy_camel[0];
+    let highlightedLevel = "";
+    for (let key in hierarchy) {
+      if (hierarchy[key].matchedWords.length > 0) {
+        highlightedLevel = key;
+        break;
+      }
+    }
+
+    const lvl0 = parsedLevel(hit.hierarchy.lvl0);
+    const lvl1 = parsedLevel(hit.hierarchy.lvl1);
+    const lvl2 = parsedLevel(hit.hierarchy.lvl2);
+
+    const page = `${lvl0} ${lvl1 ? ">" : ""} ${lvl1} ${
+      lvl2 ? ">" : ""
+    } ${lvl2}`;
+
+    // let element = document.create
+    return <Highlight hit={hit} attribute="name" />;
+  }
+
+  function onChange(e) {
+    setQuery(e.target.value);
+    index.search(query, { hitsPerPage: 50 }).then(({ hits }) => {
+      setHits(hits);
+    });
+  }
+
+  return (
+    <div>
+      <input type="text" value={query} onChange={onChange} />
+      {hits.map((hit) => {
+        return renderHit(hit);
+      })}
+    </div>
+  );
 }

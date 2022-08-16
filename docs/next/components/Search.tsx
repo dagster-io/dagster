@@ -164,7 +164,7 @@ export function Search() {
             resultsFooterComponent={({ state }) => {
               return (
                 <a onClick={() => footerClick(state.query)}>
-                  Full search results
+                  {state.context.nbHits} search results
                 </a>
               );
             }}
