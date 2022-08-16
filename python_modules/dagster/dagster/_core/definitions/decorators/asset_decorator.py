@@ -65,6 +65,7 @@ def asset(
     partitions_def: Optional[PartitionsDefinition] = ...,
     op_tags: Optional[Dict[str, Any]] = ...,
     group_name: Optional[str] = ...,
+    output_required: bool = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
