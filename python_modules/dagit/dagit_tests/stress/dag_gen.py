@@ -1,12 +1,12 @@
 import random
 from collections import defaultdict
+from typing import Dict
 
-from dagster import DependencyDefinition, Field, Output
+from dagster import DependencyDefinition, Field, GraphDefinition, In, OpDefinition, Out, Output
 from dagster import _check as check
-from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, SolidDefinition
 
 
-def generate_solid(solid_id, num_inputs, num_outputs, num_cfg):
+def generate_op(op_id, num_inputs, num_outputs, num_cfg) -> OpDefinition:
     def compute_fn(_context, **_kwargs):
         for i in range(num_outputs):
             yield Output(i, "out_{}".format(i))
@@ -15,19 +15,16 @@ def generate_solid(solid_id, num_inputs, num_outputs, num_cfg):
     for i in range(num_cfg):
         config[f"field_{i}"] = Field(str, is_required=False)
 
-    return SolidDefinition(
-        name=solid_id,
-        input_defs=[
-            InputDefinition(name="in_{}".format(i), default_value="default")
-            for i in range(num_inputs)
-        ],
-        output_defs=[OutputDefinition(name="out_{}".format(i)) for i in range(num_outputs)],
+    return OpDefinition(
+        name=op_id,
+        ins={f"in_{i}": In(default_value="default") for i in range(num_inputs)},
+        outs={f"out_{i}": Out() for i in range(num_outputs)},
         compute_fn=compute_fn,
         config_schema=config,
     )
 
 
-def generate_pipeline(name, size, connect_factor=1.0):
+def generate_job(name, size, connect_factor=1.0):
     check.int_param(size, "size")
     check.invariant(size > 3, "Can not create pipelines with less than 3 nodes")
     check.float_param(connect_factor, "connect_factor")
@@ -35,38 +32,36 @@ def generate_pipeline(name, size, connect_factor=1.0):
     random.seed(name)
 
     # generate nodes
-    solids = {}
+    ops: Dict[str, OpDefinition] = {}
     for i in range(size):
         num_inputs = random.randint(1, 3)
         num_outputs = random.randint(1, 3)
         num_cfg = random.randint(0, 5)
-        solid_id = "{}_solid_{}".format(name, i)
-        solids[solid_id] = generate_solid(
-            solid_id=solid_id,
+        op_id = "{}_op_{}".format(name, i)
+        ops[op_id] = generate_op(
+            op_id=op_id,
             num_inputs=num_inputs,
             num_outputs=num_outputs,
             num_cfg=num_cfg,
         )
 
-    solid_ids = list(solids.keys())
+    op_ids = list(ops.keys())
     # connections
     deps = defaultdict(dict)
     for i in range(int(size * connect_factor)):
         # choose output
-        out_idx = random.randint(0, len(solid_ids) - 2)
-        out_solid_id = solid_ids[out_idx]
-        output_solid = solids[out_solid_id]
-        output_name = output_solid.output_defs[
-            random.randint(0, len(output_solid.output_defs) - 1)
-        ].name
+        out_idx = random.randint(0, len(op_ids) - 2)
+        out_op_id = op_ids[out_idx]
+        output_op = ops[out_op_id]
+        output_name = output_op.output_defs[random.randint(0, len(output_op.output_defs) - 1)].name
 
         # choose input
-        in_idx = random.randint(out_idx + 1, len(solid_ids) - 1)
-        in_solid_id = solid_ids[in_idx]
-        input_solid = solids[in_solid_id]
-        input_name = input_solid.input_defs[random.randint(0, len(input_solid.input_defs) - 1)].name
+        in_idx = random.randint(out_idx + 1, len(op_ids) - 1)
+        in_op_id = op_ids[in_idx]
+        input_op = ops[in_op_id]
+        input_name = input_op.input_defs[random.randint(0, len(input_op.input_defs) - 1)].name
 
         # map
-        deps[in_solid_id][input_name] = DependencyDefinition(out_solid_id, output_name)
+        deps[in_op_id][input_name] = DependencyDefinition(out_op_id, output_name)
 
-    return PipelineDefinition(name=name, solid_defs=list(solids.values()), dependencies=deps)
+    return GraphDefinition(name=name, node_defs=list(ops.values()), dependencies=deps).to_job()
