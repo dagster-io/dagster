@@ -12,6 +12,7 @@ from dagster import (
     List,
     Out,
     ResourceDefinition,
+    In,
     String,
     fs_io_manager,
     job,
@@ -64,20 +65,9 @@ def nb_test_path(name):
     return file_relative_path(__file__, f"notebooks/{name}.ipynb")
 
 
-def test_nb_solid(name, **kwargs):
-    output_defs = kwargs.pop("output_defs", [OutputDefinition(is_required=False)])
-
-    return dagstermill.factory.define_dagstermill_solid(
-        name=name,
-        notebook_path=nb_test_path(name),
-        output_notebook_name="notebook",
-        output_defs=output_defs,
-        **kwargs,
-    )
-
-
-def test_nb_op(name, path, **kwargs):
+def test_nb_op(name, **kwargs):
     outs = kwargs.pop("outs", {DEFAULT_OUTPUT: Out(is_required=False)})
+    path = kwargs.pop("path", nb_test_path(name))
 
     return dagstermill.define_dagstermill_op(
         name=name,
@@ -98,7 +88,7 @@ default_mode_defs = [
 ]
 
 
-hello_world = test_nb_solid("hello_world", output_defs=[])
+hello_world = test_nb_op("hello_world", outs={})
 
 
 @pipeline(mode_defs=default_mode_defs)
@@ -108,7 +98,7 @@ def hello_world_pipeline():
 
 hello_world_op = test_nb_op(
     "hello_world_op",
-    nb_test_path("hello_world"),
+    path=nb_test_path("hello_world"),
     outs={},
 )
 
@@ -139,7 +129,7 @@ def hello_world_with_custom_tags_and_description_pipeline():
     hello_world_with_custom_tags_and_description()
 
 
-hello_world_config = test_nb_solid(
+hello_world_config = test_nb_op(
     "hello_world_config",
     config_schema={"greeting": Field(String, is_required=False, default_value="hello")},
 )
@@ -198,7 +188,7 @@ def hello_world_no_output_notebook_pipeline():
     hello_world_no_output_notebook()
 
 
-hello_world_output = test_nb_solid("hello_world_output", output_defs=[OutputDefinition(str)])
+hello_world_output = test_nb_op("hello_world_output", outs={DEFAULT_OUTPUT: Out(str)})
 
 
 @pipeline(mode_defs=default_mode_defs)
@@ -206,8 +196,8 @@ def hello_world_output_pipeline():
     hello_world_output()
 
 
-hello_world_explicit_yield = test_nb_solid(
-    "hello_world_explicit_yield", output_defs=[OutputDefinition(str)]
+hello_world_explicit_yield = test_nb_op(
+    "hello_world_explicit_yield", outs={DEFAULT_OUTPUT: Out(str)}
 )
 
 
@@ -216,7 +206,7 @@ def hello_world_explicit_yield_pipeline():
     hello_world_explicit_yield()
 
 
-hello_logging = test_nb_solid("hello_logging")
+hello_logging = test_nb_op("hello_logging")
 
 
 @pipeline(mode_defs=default_mode_defs)
@@ -224,23 +214,15 @@ def hello_logging_pipeline():
     hello_logging()
 
 
-add_two_numbers = test_nb_solid(
+add_two_numbers = test_nb_op(
     "add_two_numbers",
-    input_defs=[
-        InputDefinition(name="a", dagster_type=Int),
-        InputDefinition(name="b", dagster_type=Int),
-    ],
-    output_defs=[OutputDefinition(Int)],
+    ins={"a": In(int), "b": In(int)},
+    outs={DEFAULT_OUTPUT: Out(int)},
 )
 
 
-mult_two_numbers = test_nb_solid(
-    "mult_two_numbers",
-    input_defs=[
-        InputDefinition(name="a", dagster_type=Int),
-        InputDefinition(name="b", dagster_type=Int),
-    ],
-    output_defs=[OutputDefinition(Int)],
+mult_two_numbers = test_nb_op(
+    "mult_two_numbers", ins={"a": In(int), "b": In(int)}, outs={DEFAULT_OUTPUT: Out(int)}
 )
 
 
@@ -288,7 +270,7 @@ def notebook_dag_pipeline():
     mult_two_numbers(num, b)
 
 
-error_notebook = test_nb_solid("error_notebook")
+error_notebook = test_nb_op("error_notebook")
 
 
 @pipeline(mode_defs=default_mode_defs)
@@ -298,18 +280,12 @@ def error_pipeline():
 
 if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
 
-    clean_data = test_nb_solid("clean_data", output_defs=[OutputDefinition(DataFrame)])
+    clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})
 
     # FIXME add an output to this
-    tutorial_LR = test_nb_solid(
-        "tutorial_LR",
-        input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
-    )
+    tutorial_LR = test_nb_op("tutorial_LR", ins={"df": In(DataFrame)})
 
-    tutorial_RF = test_nb_solid(
-        "tutorial_RF",
-        input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
-    )
+    tutorial_RF = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})
 
     @pipeline(mode_defs=default_mode_defs)
     def tutorial_pipeline():
@@ -325,15 +301,15 @@ def resource_solid(context):
     return True
 
 
-hello_world_resource = test_nb_solid(
+hello_world_resource = test_nb_op(
     "hello_world_resource",
-    input_defs=[InputDefinition("nonce")],
+    ins={"nonce": In()},
     required_resource_keys={"list"},
 )
 
-hello_world_resource_with_exception = test_nb_solid(
+hello_world_resource_with_exception = test_nb_op(
     "hello_world_resource_with_exception",
-    input_defs=[InputDefinition("nonce")],
+    ins={"nonce": In()},
     required_resource_keys={"list"},
 )
 
@@ -421,7 +397,7 @@ def resource_with_exception_pipeline():
     hello_world_resource_with_exception(resource_solid())
 
 
-bad_kernel = test_nb_solid("bad_kernel")
+bad_kernel = test_nb_op("bad_kernel")
 
 
 @pipeline(mode_defs=default_mode_defs)
@@ -429,11 +405,7 @@ def bad_kernel_pipeline():
     bad_kernel()
 
 
-reimport = test_nb_solid(
-    "reimport",
-    input_defs=[InputDefinition("l", List[int])],
-    output_defs=[OutputDefinition(int)],
-)
+reimport = test_nb_op("reimport", ins={"l": In(List[int])}, outs={DEFAULT_OUTPUT: Out(int)})
 
 
 @solid
@@ -446,7 +418,7 @@ def reimport_pipeline():
     reimport(lister())
 
 
-yield_3 = test_nb_solid("yield_3", output_defs=[OutputDefinition(Int)])
+yield_3 = test_nb_op("yield_3", outs={DEFAULT_OUTPUT: Out(int)})
 
 
 @pipeline(mode_defs=default_mode_defs)
@@ -454,7 +426,7 @@ def yield_3_pipeline():
     yield_3()
 
 
-yield_obj = test_nb_solid("yield_obj")
+yield_obj = test_nb_op("yield_obj")
 
 
 @pipeline(mode_defs=default_mode_defs)
@@ -464,20 +436,18 @@ def yield_obj_pipeline():
 
 @pipeline(mode_defs=default_mode_defs)
 def retries_pipeline():
-    test_nb_solid("raise_retry")()
-    test_nb_solid("yield_retry")()
+    test_nb_op("raise_retry")()
+    test_nb_op("yield_retry")()
 
 
 @pipeline(mode_defs=default_mode_defs)
 def failure_pipeline():
-    test_nb_solid("raise_failure")()
-    test_nb_solid("yield_failure")()
+    test_nb_op("raise_failure")()
+    test_nb_op("yield_failure")()
 
 
-yield_something = test_nb_solid(
-    "yield_something",
-    input_defs=[InputDefinition("obj", str)],
-    output_defs=[OutputDefinition(str, "result")],
+yield_something = test_nb_op(
+    "yield_something", ins={"obj": In(str)}, outs={DEFAULT_OUTPUT: Out(str)}
 )
 
 
