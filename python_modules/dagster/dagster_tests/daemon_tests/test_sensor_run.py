@@ -202,17 +202,13 @@ def asset_b():
     return 2
 
 
-@multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-)
+@multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def asset_a_and_b_sensor(context, events):
     if all(events.values()):
         return RunRequest(run_key=context.cursor, run_config={})
 
 
-@multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-)
+@multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def asset_a_or_b_sensor(context, events):
     if any(events.values()):
         return RunRequest(run_key=context.cursor, run_config={})
@@ -1573,7 +1569,7 @@ def test_asset_sensor_not_triggered_on_observation(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_asset_status_sensor(executor):
+def test_multi_asset_sensor(executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
@@ -1606,11 +1602,13 @@ def test_asset_status_sensor(executor):
             # should generate asset_a
             materialize([asset_a], instance=instance)
 
+            evaluate_sensors(instance, workspace, executor)
+
             # sensor should not fire
             ticks = instance.get_ticks(
                 a_and_b_sensor.get_external_origin_id(), a_and_b_sensor.selector_id
             )
-            assert len(ticks) == 1
+            assert len(ticks) == 2
             validate_tick(
                 ticks[0],
                 a_and_b_sensor,
@@ -1625,12 +1623,14 @@ def test_asset_status_sensor(executor):
             # should generate asset_b
             materialize([asset_b], instance=instance)
 
+            evaluate_sensors(instance, workspace, executor)
+
             # should fire the asset sensor
             evaluate_sensors(instance, workspace, executor)
             ticks = instance.get_ticks(
                 a_and_b_sensor.get_external_origin_id(), a_and_b_sensor.selector_id
             )
-            assert len(ticks) == 2
+            assert len(ticks) == 3
             validate_tick(
                 ticks[0],
                 a_and_b_sensor,
@@ -1644,7 +1644,7 @@ def test_asset_status_sensor(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_asset_status_sensor_w_custom_fn(executor):
+def test_multi_asset_sensor_w_custom_fn(executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
@@ -1677,6 +1677,8 @@ def test_asset_status_sensor_w_custom_fn(executor):
             # should generate asset_a
             materialize([asset_a], instance=instance)
 
+            evaluate_sensors(instance, workspace, executor)
+
             # sensor should not fire
             # should fire the asset sensor
             evaluate_sensors(instance, workspace, executor)
@@ -1702,12 +1704,14 @@ def test_asset_status_sensor_w_custom_fn(executor):
             # should generate asset_b
             materialize([asset_b], instance=instance)
 
+            evaluate_sensors(instance, workspace, executor)
+
             # should fire the asset sensor
             evaluate_sensors(instance, workspace, executor)
             ticks = instance.get_ticks(
                 a_or_b_sensor.get_external_origin_id(), a_or_b_sensor.selector_id
             )
-            assert len(ticks) == 2
+            assert len(ticks) == 3
             validate_tick(
                 ticks[0],
                 a_or_b_sensor,
