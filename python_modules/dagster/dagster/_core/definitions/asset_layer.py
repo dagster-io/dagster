@@ -536,10 +536,18 @@ class AssetLayer:
                 node_output_handle = NodeOutputHandle(
                     check.not_none(inner_node_handle), inner_output_def.name
                 )
-                partition_fn = lambda context: {context.partition_key}
+
+                def partitions_fn(context: "OutputContext"):
+                    if context.has_partition_key:
+                        return {context.partition_key}
+
+                    return assets_def.partitions_def.get_partition_keys_in_range(
+                        context.asset_partition_key_range
+                    )
+
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
                     asset_key,
-                    partitions_fn=partition_fn if assets_def.partitions_def else None,
+                    partitions_fn=partitions_fn if assets_def.partitions_def else None,
                     partitions_def=assets_def.partitions_def,
                     is_required=asset_key in assets_def.keys,
                 )

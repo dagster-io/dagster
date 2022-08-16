@@ -40,6 +40,7 @@ from ..errors import (
 )
 from ..storage.pipeline_run import PipelineRun
 from .mode import DEFAULT_MODE_NAME
+from .partition_key_range import PartitionKeyRange
 from .run_request import RunRequest, SkipReason
 from .schedule_definition import (
     DefaultScheduleStatus,
@@ -220,6 +221,29 @@ class PartitionsDefinition(ABC, Generic[T]):
         from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 
         return IdentityPartitionMapping()
+
+    def get_partition_key_ranges_for_partition_keys(
+        self, partition_keys: Sequence[str]
+    ) -> Sequence[PartitionKeyRange]:
+        all_partition_keys = self.get_partition_keys()
+        result: List[PartitionKeyRange] = []
+        i = j = 0
+        while i < len(partition_keys) and j < len(all_partition_keys):
+            range_start = partition_keys[i]
+            while all_partition_keys[j] != range_start:
+                j += 1
+
+            while all_partition_keys[j] == partition_keys[i]:
+                j += 1
+                i += 1
+
+            result.append(PartitionKeyRange(range_start, partition_keys[i]))
+
+            i += 1
+
+        check.invariant(i == len(partition_keys))
+
+        return result
 
 
 class StaticPartitionsDefinition(

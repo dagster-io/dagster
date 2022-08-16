@@ -110,6 +110,9 @@ from dagster._core.definitions.asset_selection import (
 from dagster._core.definitions.assets import (
     AssetsDefinition as AssetsDefinition,
 )
+from dagster._core.definitions.backfill_strategy import (
+    backfill_strategy as backfill_strategy,
+)
 from dagster._core.definitions.config import (
     ConfigMapping as ConfigMapping,
 )
@@ -378,6 +381,9 @@ from dagster._core.execution.api import (
 )
 from dagster._core.execution.build_resources import (
     build_resources as build_resources,
+)
+from dagster._core.execution.context.backfill_strategy import (
+    BackfillStrategyContext as BackfillStrategyContext,
 )
 from dagster._core.execution.context.compute import (
     OpExecutionContext as OpExecutionContext,

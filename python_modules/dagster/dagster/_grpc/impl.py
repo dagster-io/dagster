@@ -44,6 +44,7 @@ from dagster._core.snap.execution_plan_snapshot import (
     snapshot_from_execution_plan,
 )
 from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.tags import PARTITION_KEY_RANGE_END_TAG, PARTITION_KEY_RANGE_START_TAG
 from dagster._grpc.types import ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_as
 from dagster._serdes.ipc import IPCErrorMessage
@@ -420,39 +421,49 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
 def get_partition_set_execution_param_data(recon_repo, partition_set_name, partition_names):
     repo_definition = recon_repo.get_definition()
     partition_set_def = repo_definition.get_partition_set_def(partition_set_name)
+    partitions_def = partition_set_def.partitions_def
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
             lambda: "Error occurred during the partition generation for "
             f"{_get_target_for_partition_execution_error(partition_set_def)}",
         ):
-            all_partitions = partition_set_def.get_partitions()
+            all_partitions_keys = partition_set_def.partitions_def.get_partition_keys()
+
+        backfill_strategy = partition_set_def.backfill_strategy
+        backfill_strategy_context = BackfillStrategyContext(
+            partition_key_ranges=partitions_def.get_partition_key_ranges_for_partition_keys(
+                partition_names
+            )
+        )
+
         partitions = [
-            partition for partition in all_partitions if partition.name in partition_names
+            partition for partition in all_partitions_keys if partition.name in partition_names
         ]
 
         partition_data = []
-        for partition in partitions:
 
-            def _error_message_fn(partition_name):
-                return lambda: (
-                    "Error occurred during the partition config and tag generation for "
-                    f"'{partition_name}' in {_get_target_for_partition_execution_error(partition_set_def)}"
-                )
-
-            with user_code_error_boundary(
-                PartitionExecutionError, _error_message_fn(partition.name)
-            ):
-                run_config = partition_set_def.run_config_for_partition(partition)
-                tags = partition_set_def.tags_for_partition(partition)
-
-            partition_data.append(
-                ExternalPartitionExecutionParamData(
-                    name=partition.name,
-                    tags=tags,
-                    run_config=run_config,
-                )
+        def _error_message_fn(partition_name):
+            return lambda: (
+                "Error occurred during the partition config and tag generation for "
+                f"'{partition_name}' in {_get_target_for_partition_execution_error(partition_set_def)}"
             )
+
+        with user_code_error_boundary(PartitionExecutionError, _error_message_fn("TODO")):
+            run_config = {}
+            # tags = partition_set_def.tags_for_partition(partition)
+            tags = {
+                PARTITION_KEY_RANGE_START_TAG: partition_names[0],
+                PARTITION_KEY_RANGE_END_TAG: partition_names[-1],
+            }
+
+        partition_data.append(
+            ExternalPartitionExecutionParamData(
+                name=partition_names[0],
+                tags=tags,
+                run_config=run_config,
+            )
+        )
 
         return ExternalPartitionSetExecutionParamData(partition_data=partition_data)
 

@@ -4,6 +4,7 @@ import string
 import sys
 import time
 from contextlib import contextmanager
+from typing import Sequence
 
 import pendulum
 import pytest
@@ -11,12 +12,16 @@ import pytest
 from dagster import (
     Any,
     AssetKey,
+    AssetSelection,
     AssetsDefinition,
+    BackfillStrategyContext,
     Field,
     In,
     Nothing,
     Out,
+    PartitionKeyRange,
     asset,
+    backfill_strategy,
     daily_partitioned_config,
     define_asset_job,
     fs_io_manager,
@@ -32,7 +37,13 @@ from dagster._core.host_representation import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
+    PARTITION_KEY_RANGE_END_TAG,
+    PARTITION_KEY_RANGE_START_TAG,
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+)
 from dagster._core.test_utils import (
     create_test_daemon_workspace,
     instance_for_test,
@@ -195,47 +206,101 @@ def _unloadable_partition_set_origin():
     ).get_partition_set_origin("doesnt_exist")
 
 
+def build_single_run_backfill_assets():
+    from dagster import DailyPartitionsDefinition, asset
+
+    partitions_def = DailyPartitionsDefinition(start_date="2022-06-06")
+
+    @backfill_strategy
+    def my_backfill_strategy(context: BackfillStrategyContext) -> Sequence[PartitionKeyRange]:
+        return context.partition_key_ranges
+
+    @asset(partitions_def=partitions_def, backfill_strategy=my_backfill_strategy)
+    def asset1(context) -> None:
+        assert context.partition_key_range == PartitionKeyRange("2022-06-07", "2022-06-09")
+        assert context.asset_partition_key_range_for_output() == PartitionKeyRange(
+            "2022-06-07", "2022-06-09"
+        )
+
+    @asset(
+        partitions_def=partitions_def,
+        backfill_strategy=my_backfill_strategy,
+        non_argument_deps={"asset1"},
+    )
+    def asset2(context) -> None:
+        assert context.partition_key_range == PartitionKeyRange("2022-06-07", "2022-06-09")
+        assert context.asset_partition_key_range_for_input("asset1") == PartitionKeyRange(
+            "2022-06-07", "2022-06-09"
+        )
+        assert context.asset_partition_key_range_for_output() == PartitionKeyRange(
+            "2022-06-07", "2022-06-09"
+        )
+
+    return [
+        asset1,
+        asset2,
+        define_asset_job(
+            "single_run_backfill_assets", selection=AssetSelection.assets(asset1, asset2)
+        ),
+    ]
+
+
 static_partitions = StaticPartitionsDefinition(["x", "y", "z"])
 
 
-@asset(partitions_def=static_partitions)
-def foo():
-    return 1
+def build_twisted_asset_mess():
+    # the lineage graph defined with these assets is such that: foo -> a1 -> bar -> b1
+    # this requires ab1 to be split into two separate asset definitions using the automatic
+    # subsetting capabilities. ab2 is defines similarly, so in total 4 copies of the "reusable"
+    # op will exist in the full plan, whereas onle a single copy will be needed for a subset
+    # plan which only materializes foo -> a1 -> bar
 
+    @asset(partitions_def=static_partitions)
+    def foo():
+        return 1
 
-@asset(partitions_def=static_partitions)
-def bar(a1):
-    return a1
+    @asset(partitions_def=static_partitions)
+    def bar(a1):
+        return a1
 
+    @op(ins={"in1": In(Nothing), "in2": In(Nothing)}, out={"out1": Out(), "out2": Out()})
+    def reusable():
+        return 1, 2
 
-@op(ins={"in1": In(Nothing), "in2": In(Nothing)}, out={"out1": Out(), "out2": Out()})
-def reusable():
-    return 1, 2
+    ab1 = AssetsDefinition(
+        node_def=reusable,
+        keys_by_input_name={
+            "in1": AssetKey("foo"),
+            "in2": AssetKey("bar"),
+        },
+        keys_by_output_name={"out1": AssetKey("a1"), "out2": AssetKey("b1")},
+        partitions_def=static_partitions,
+        can_subset=True,
+        asset_deps={AssetKey("a1"): {AssetKey("foo")}, AssetKey("b1"): {AssetKey("bar")}},
+    )
 
+    ab2 = AssetsDefinition(
+        node_def=reusable,
+        keys_by_input_name={
+            "in1": AssetKey("foo"),
+            "in2": AssetKey("bar"),
+        },
+        keys_by_output_name={"out1": AssetKey("a2"), "out2": AssetKey("b2")},
+        partitions_def=static_partitions,
+        can_subset=True,
+        asset_deps={AssetKey("a2"): {AssetKey("foo")}, AssetKey("b2"): {AssetKey("bar")}},
+    )
 
-ab1 = AssetsDefinition(
-    node_def=reusable,
-    keys_by_input_name={
-        "in1": AssetKey("foo"),
-        "in2": AssetKey("bar"),
-    },
-    keys_by_output_name={"out1": AssetKey("a1"), "out2": AssetKey("b1")},
-    partitions_def=static_partitions,
-    can_subset=True,
-    asset_deps={AssetKey("a1"): {AssetKey("foo")}, AssetKey("b1"): {AssetKey("bar")}},
-)
+    assets = [foo, bar, ab1, ab2]
 
-ab2 = AssetsDefinition(
-    node_def=reusable,
-    keys_by_input_name={
-        "in1": AssetKey("foo"),
-        "in2": AssetKey("bar"),
-    },
-    keys_by_output_name={"out1": AssetKey("a2"), "out2": AssetKey("b2")},
-    partitions_def=static_partitions,
-    can_subset=True,
-    asset_deps={AssetKey("a2"): {AssetKey("foo")}, AssetKey("b2"): {AssetKey("bar")}},
-)
+    return [
+        *assets,
+        define_asset_job(
+            "twisted_asset_mess",
+            selection=AssetSelection.assets(*assets),
+            partitions_def=static_partitions,
+        ),
+    ]
 
 
 @repository
@@ -252,16 +317,8 @@ def the_repo():
         always_succeed_job,
         parallel_failure_partition_set,
         parallel_failure_pipeline,
-        # the lineage graph defined with these assets is such that: foo -> a1 -> bar -> b1
-        # this requires ab1 to be split into two separate asset definitions using the automatic
-        # subsetting capabilities. ab2 is defines similarly, so in total 4 copies of the "reusable"
-        # op will exist in the full plan, whereas onle a single copy will be needed for a subset
-        # plan which only materializes foo -> a1 -> bar
-        foo,
-        bar,
-        ab1,
-        ab2,
-        define_asset_job("twisted_asset_mess", selection="*", partitions_def=static_partitions),
+        *build_single_run_backfill_assets(),
+        *build_twisted_asset_mess(),
     ]
 
 
@@ -821,3 +878,41 @@ def test_backfill_from_failure_for_subselection():
         assert run.solid_selection
         assert len(run.solids_to_execute) == 2
         assert len(run.solid_selection) == 2
+
+
+def test_single_run_backfill_assets():
+    with instance_for_context(default_repo) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        external_partition_set = external_repo.get_external_partition_set(
+            "single_run_backfill_assets_partition_set"
+        )
+        instance.add_backfill(
+            PartitionBackfill(
+                backfill_id="whatever",
+                partition_set_origin=external_partition_set.get_external_origin(),
+                status=BulkActionStatus.REQUESTED,
+                partition_names=["2022-06-07", "2022-06-08", "2022-06-09"],
+                from_failure=False,
+                reexecution_steps=None,
+                tags=None,
+                backfill_timestamp=pendulum.now().timestamp(),
+            )
+        )
+        assert instance.get_runs_count() == 0
+
+        list(
+            execute_backfill_iteration(
+                instance, workspace, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+
+        wait_for_all_runs_to_finish(instance)
+
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.status == PipelineRunStatus.SUCCESS
+        assert run.tags[PARTITION_KEY_RANGE_START_TAG] == "2022-06-07"
+        assert run.tags[PARTITION_KEY_RANGE_END_TAG] == "2022-06-09"

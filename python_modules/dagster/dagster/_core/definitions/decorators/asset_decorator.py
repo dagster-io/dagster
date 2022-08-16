@@ -30,6 +30,7 @@ from dagster._utils.backcompat import (
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
 from ..assets import AssetsDefinition
+from ..backfill_strategy import BackfillStrategy
 from ..decorators.op_decorator import _Op
 from ..events import AssetKey, CoercibleToAssetKeyPrefix
 from ..input import In
@@ -66,6 +67,7 @@ def asset(
     op_tags: Optional[Dict[str, Any]] = ...,
     group_name: Optional[str] = ...,
     output_required: bool = ...,
+    backfill_strategy: Optional[BackfillStrategy] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -90,6 +92,7 @@ def asset(
     op_tags: Optional[Dict[str, Any]] = None,
     group_name: Optional[str] = None,
     output_required: bool = True,
+    backfill_strategy: Optional[BackfillStrategy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -144,6 +147,8 @@ def asset(
         output_required (bool): Whether the decorated function will always materialize an asset.
             Defaults to True. If False, the function can return None, which will not be materialized to
             storage and will halt execution of downstream assets.
+        backfill_strategy (Optional[BackfillStrategy]): Specifies the strategy to use when
+            backfilling the asset.
 
     Examples:
 
@@ -184,6 +189,7 @@ def asset(
             op_tags=op_tags,
             group_name=group_name,
             output_required=output_required,
+            backfill_strategy=backfill_strategy,
         )(fn)
 
     return inner
@@ -208,6 +214,7 @@ class _Asset:
         op_tags: Optional[Dict[str, Any]] = None,
         group_name: Optional[str] = None,
         output_required: bool = True,
+        backfill_strategy: Optional[BackfillStrategy] = None,
     ):
         self.name = name
 
@@ -230,6 +237,7 @@ class _Asset:
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         self.group_name = group_name
         self.output_required = output_required
+        self.backfill_strategy = backfill_strategy
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -294,6 +302,7 @@ class _Asset:
             partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=self.resource_defs,
             group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
+            backfill_strategy=self.backfill_strategy,
         )
 
 

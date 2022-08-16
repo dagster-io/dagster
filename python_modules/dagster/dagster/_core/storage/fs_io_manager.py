@@ -129,8 +129,6 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         """
         check.inst_param(context, "context", OutputContext)
 
-        filepath = self._get_path(context)
-
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
@@ -138,6 +136,8 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                 f"that was not None and was of type {type(obj)}.",
             )
             return None
+
+        filepath = self._get_path(context)
 
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))

@@ -28,6 +28,7 @@ from dagster._utils.backcompat import (
     experimental_arg_warning,
 )
 
+from .backfill_strategy import BackfillStrategy
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
@@ -75,6 +76,7 @@ class AssetsDefinition(ResourceAddable):
     _selected_asset_keys: AbstractSet[AssetKey]
     _can_subset: bool
     _metadata_by_key: Mapping[AssetKey, MetadataUserInput]
+    _backfill_strategy: Optional[BackfillStrategy]
 
     def __init__(
         self,
@@ -90,7 +92,8 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
-        # if adding new fields, make sure to handle them in the with_prefix_or_group
+        backfill_strategy: Optional[BackfillStrategy] = None,
+        # if adding new fields, make sure to handle them in the with_prefix_or_group, from_op,
         # and from_graph methods
     ):
         from .graph_definition import GraphDefinition
@@ -113,6 +116,7 @@ class AssetsDefinition(ResourceAddable):
         )
 
         self._partitions_def = partitions_def
+        self._backfill_strategy = backfill_strategy
         self._partition_mappings = partition_mappings or {}
 
         # if not specified assume all output assets depend on all input assets
@@ -198,6 +202,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        backfill_strategy: Optional[BackfillStrategy] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -237,6 +242,8 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
+            backfill_strategy (Optional[BackfillStrategy]): Specifies the strategy to use when
+                backfilling the asset.
         """
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
@@ -251,6 +258,7 @@ class AssetsDefinition(ResourceAddable):
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
+            backfill_strategy=backfill_strategy,
         )
 
     @public
@@ -266,6 +274,7 @@ class AssetsDefinition(ResourceAddable):
         group_name: Optional[str] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        backfill_strategy: Optional[BackfillStrategy] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from an OpDefinition.
@@ -301,6 +310,8 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
+            backfill_strategy (Optional[BackfillStrategy]): Specifies the strategy to use when
+                backfilling the asset.
         """
         return AssetsDefinition._from_node(
             node_def=op_def,
@@ -312,6 +323,7 @@ class AssetsDefinition(ResourceAddable):
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
+            backfill_strategy=backfill_strategy,
         )
 
     @staticmethod
@@ -327,6 +339,7 @@ class AssetsDefinition(ResourceAddable):
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+        backfill_strategy: Optional[BackfillStrategy] = None,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
@@ -400,6 +413,7 @@ class AssetsDefinition(ResourceAddable):
             }
             if metadata_by_output_name
             else None,
+            backfill_strategy=backfill_strategy,
         )
 
     @public  # type: ignore
@@ -594,6 +608,7 @@ class AssetsDefinition(ResourceAddable):
                 **replaced_group_names_by_key,
                 **group_names_by_key,
             },
+            backfill_strategy=self._backfill_strategy,
         )
 
     def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
