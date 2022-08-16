@@ -1,7 +1,8 @@
-import * as React from "react";
-import { useState } from "react";
-import { SignInButton } from "./SignInButton";
-import { JoinSlackButton } from "components/JoinSlackButton";
+import {JoinSlackButton} from 'components/JoinSlackButton';
+import * as React from 'react';
+import {useState} from 'react';
+
+import {SignInButton} from './SignInButton';
 
 const COLLAPSING_PX = -16;
 
@@ -14,40 +15,33 @@ const Header = () => {
 
   React.useEffect(() => {
     const handler = () => {
-      if (!headerRef.current || !headerBgRef.current) return;
+      if (!headerRef.current || !headerBgRef.current) {
+        return;
+      }
       const dy = window.scrollY - lastScrollY.current;
 
       const alpha = Math.min(Math.max(0, (window.scrollY - 30) / 70), 1);
       headerBgRef.current.style.opacity = `${alpha}`;
 
       const targetTop = dy < 0 || window.scrollY < 30 ? 0 : COLLAPSING_PX;
-      const currentTop = Number(headerRef.current.style.top.replace("px", ""));
+      const currentTop = Number(headerRef.current.style.top.replace('px', ''));
 
       if (targetTop !== currentTop) {
-        headerRef.current.style.top = `${Math.min(
-          0,
-          Math.max(COLLAPSING_PX, currentTop - dy)
-        )}px`;
+        headerRef.current.style.top = `${Math.min(0, Math.max(COLLAPSING_PX, currentTop - dy))}px`;
       }
       lastScrollY.current = window.scrollY;
     };
 
-    document.addEventListener("scroll", handler);
+    document.addEventListener('scroll', handler);
     handler();
     return () => {
-      document.removeEventListener("scroll", handler);
+      document.removeEventListener('scroll', handler);
     };
   }, [headerRef, headerBgRef]);
 
   return (
-    <div
-      className="fixed top-0 pt-6 pb-2 w-full z-50 px-2 lg:px-10 flex flex-col"
-      ref={headerRef}
-    >
-      <div
-        className="absolute z-0 inset-0 bg-white shadow-sm"
-        ref={headerBgRef}
-      />
+    <div className="fixed top-0 pt-6 pb-2 w-full z-50 px-2 lg:px-10 flex flex-col" ref={headerRef}>
+      <div className="absolute z-0 inset-0 bg-white shadow-sm" ref={headerBgRef} />
       <div className="hidden md:block" />
       <nav className="z-10 flex justify-between items-center text-gable-green px-4">
         <a
@@ -63,43 +57,43 @@ const Header = () => {
         <div className="hidden lg:flex my-1 text-lg text-gable-green gap-0 w-10/12 md:w-6/12 justify-center">
           <a
             href="https://dagster.io/platform"
-            className={`whitespace-nowrap py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent`}
+            className="whitespace-nowrap py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Platform
           </a>
           <a
             href="https://dagster.io/cloud"
-            className={`whitespace-nowrap py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent`}
+            className="whitespace-nowrap py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
-            Cloud{" "}
+            Cloud{' '}
             <div
               className="inline-block text-sm border border-dotted border-gray-700 rounded-xl p-1"
-              style={{ lineHeight: 1, transform: "translate(5px, -2px)" }}
+              style={{lineHeight: 1, transform: 'translate(5px, -2px)'}}
             >
               New
             </div>
           </a>
           <a
             href="https://dagster.io/pricing"
-            className={`py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent`}
+            className="py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Pricing
           </a>
           <a
             href="https://dagster.io/blog"
-            className={`py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent`}
+            className="py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Blog
           </a>
           <a
             href="https://dagster.io/community"
-            className={`hidden xl:block py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent`}
+            className="hidden xl:block py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Community
           </a>
           <a
             href="/"
-            className={`py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent bg-lavender bg-opacity-100`}
+            className="py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent bg-lavender bg-opacity-100"
           >
             Docs
           </a>
@@ -137,12 +131,7 @@ const Header = () => {
             className="inline-flex items-center bg-white bg-opacity-50 justify-center p-2 rounded-md text-gable-green hover:text-gable-green-darker hover:bg-opacity-100 focus:outline-none focus:bg-opacity-100 focus:text-gray-500 transition duration-150 ease-in-out"
           >
             {/* Menu open: "hidden", Menu closed: "block" */}
-            <svg
-              className="block h-6 w-6"
-              stroke="currentColor"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
+            <svg className="block h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -151,12 +140,7 @@ const Header = () => {
               />
             </svg>
             {/* Menu open: "block", Menu closed: "hidden" */}
-            <svg
-              className="hidden h-6 w-6"
-              stroke="currentColor"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
+            <svg className="hidden h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -173,7 +157,7 @@ const Header = () => {
         */}
         <div
           className={`${
-            isMobileHeaderOpen ? "block" : "hidden"
+            isMobileHeaderOpen ? 'block' : 'hidden'
           } lg:hidden pb-2 absolute bg-white w-full top-0 left-0 right-0 pt-36 px-6 shadow-xl`}
         >
           <div className="pt-2 pb-3">

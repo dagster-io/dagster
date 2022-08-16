@@ -1,10 +1,11 @@
-import { Node } from "hast";
-import path from "path";
-import visit from "unist-util-visit";
-import { parse } from "node-html-parser";
-const sizeOf = require("image-size");
+import path from 'path';
 
-const PUBLIC_DIR = path.join(__dirname, "../public/");
+import {Node} from 'hast';
+import sizeOf from 'image-size';
+import {parse} from 'node-html-parser';
+import visit from 'unist-util-visit';
+
+const PUBLIC_DIR = path.join(__dirname, '../public/');
 
 interface ImageNode extends Node {
   type: string;
@@ -24,9 +25,9 @@ interface ImageTransformerOptions {
 
 const getHTMLImageElement = (node: ImageNode) => {
   // handle <img>
-  if (node.type === "html") {
+  if (node.type === 'html') {
     const root = parse(node.value);
-    const imgElements = root.querySelectorAll("img");
+    const imgElements = root.querySelectorAll('img');
     if (imgElements.length > 0) {
       return imgElements[0];
     }
@@ -34,7 +35,7 @@ const getHTMLImageElement = (node: ImageNode) => {
   return;
 };
 
-export default ({ setImageStats }: ImageTransformerOptions) =>
+export default ({setImageStats}: ImageTransformerOptions) =>
   async (tree: Node) => {
     const stats: ImageStats = {
       totalImages: 0,
@@ -42,8 +43,8 @@ export default ({ setImageStats }: ImageTransformerOptions) =>
     };
     const images: ImageNode[] = [];
 
-    visit(tree, ["image", "html"], (node: ImageNode) => {
-      if (node.type === "html") {
+    visit(tree, ['image', 'html'], (node: ImageNode) => {
+      if (node.type === 'html') {
         if (getHTMLImageElement(node)) {
           images.push(node);
         }
@@ -58,19 +59,17 @@ export default ({ setImageStats }: ImageTransformerOptions) =>
       const imageAlt = imgElement ? imgElement.attrs.alt : node.alt;
 
       // Skip external images
-      if (imageUrl.startsWith("/")) {
+      if (imageUrl.startsWith('/')) {
         stats.totalImages++;
         const fileAbsPath = path.join(PUBLIC_DIR, imageUrl);
         const dimensions = sizeOf(fileAbsPath);
         const imageValue = `<Image ${
-          imageAlt ? `alt="${imageAlt}" ` : ""
-        }src="${imageUrl}" width={${dimensions.width}} height={${
-          dimensions.height
-        }} />`;
+          imageAlt ? `alt="${imageAlt}" ` : ''
+        }src="${imageUrl}" width={${dimensions.width}} height={${dimensions.height}} />`;
 
         // Convert original node to Image
         if (node.value !== imageValue) {
-          node.type = "html";
+          node.type = 'html';
           node.value = imageValue;
           stats.updatedImages.push(node.value as string);
         }

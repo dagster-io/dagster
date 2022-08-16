@@ -1,8 +1,9 @@
-import React from "react";
-import { normalizeVersionPath, useVersion } from "../util/useVersion";
+import path from 'path';
 
-import NextLink from "next/link";
-import path from "path";
+import NextLink from 'next/link';
+import React from 'react';
+
+import {normalizeVersionPath, useVersion} from '../util/useVersion';
 
 interface LinkProps {
   href: string;
@@ -19,15 +20,13 @@ interface LinkProps {
 */
 }
 
-const Link = ({ href, children, version, passHref = false }: LinkProps) => {
-  const { asPath } = normalizeVersionPath(href);
-  const { version: currentVersion, defaultVersion } = useVersion();
+const Link = ({href, children, version, passHref = false}: LinkProps) => {
+  const {asPath} = normalizeVersionPath(href);
+  const {version: currentVersion, defaultVersion} = useVersion();
 
   if (version) {
     const versionedHref =
-      version === defaultVersion
-        ? path.join("/", asPath)
-        : path.join("/", version, asPath);
+      version === defaultVersion ? path.join('/', asPath) : path.join('/', version, asPath);
     return (
       <NextLink href={versionedHref} passHref={passHref}>
         {children}
@@ -36,7 +35,7 @@ const Link = ({ href, children, version, passHref = false }: LinkProps) => {
   }
 
   if (currentVersion === defaultVersion) {
-    const versionedHref = path.join("/", href);
+    const versionedHref = path.join('/', href);
     return (
       <NextLink href={versionedHref} passHref={passHref}>
         {children}
@@ -44,7 +43,7 @@ const Link = ({ href, children, version, passHref = false }: LinkProps) => {
     );
   }
 
-  const versionedHref = path.join("/", currentVersion, href);
+  const versionedHref = path.join('/', currentVersion, href);
   return (
     <NextLink href={versionedHref} passHref={passHref}>
       {children}

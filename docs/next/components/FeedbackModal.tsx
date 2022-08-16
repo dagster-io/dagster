@@ -1,22 +1,16 @@
-import React, { useEffect, useState } from "react";
+import {Transition} from '@headlessui/react';
+import newGithubIssueUrl from 'new-github-issue-url';
+import React, {useEffect, useState} from 'react';
 
-import { Transition } from "@headlessui/react";
-import newGithubIssueUrl from "new-github-issue-url";
-import { useVersion } from "../util/useVersion";
+import {useVersion} from '../util/useVersion';
 
-const FeedbackModal = ({
-  isOpen,
-  closeFeedback,
-}: {
-  isOpen: boolean;
-  closeFeedback: () => void;
-}) => {
-  const { asPath, version } = useVersion();
+const FeedbackModal = ({isOpen, closeFeedback}: {isOpen: boolean; closeFeedback: () => void}) => {
+  const {asPath, version} = useVersion();
   const [currentPage, setCurrentPage] = useState<string>(asPath);
   const [currentVersion, setCurrentVersion] = useState<string>(version);
-  const [description, setDescription] = useState<string>("");
-  const [title, setTitle] = useState<string>("");
-  const [submitOption, setSubmitOption] = useState<string>("GH");
+  const [description, setDescription] = useState<string>('');
+  const [title, setTitle] = useState<string>('');
+  const [submitOption, setSubmitOption] = useState<string>('GH');
 
   const enablePrivateSubmition = false;
 
@@ -30,14 +24,14 @@ const FeedbackModal = ({
     e.preventDefault();
 
     const url = newGithubIssueUrl({
-      user: "dagster-io",
-      repo: "dagster",
+      user: 'dagster-io',
+      repo: 'dagster',
       title: `[Documentation Feedback] ${title}`,
       body: description,
-      labels: ["documentation"],
+      labels: ['documentation'],
     });
 
-    window.open(url, "_blank");
+    window.open(url, '_blank');
     closeFeedback();
   };
 
@@ -60,10 +54,7 @@ const FeedbackModal = ({
               <div className="flex-1 h-0 overflow-y-auto">
                 <div className="py-6 px-4 bg-gray-800 sm:px-6">
                   <div className="flex items-center justify-between">
-                    <h2
-                      id="slide-over-heading"
-                      className="text-lg font-medium text-white"
-                    >
+                    <h2 id="slide-over-heading" className="text-lg font-medium text-white">
                       Submit Feedback
                     </h2>
                     <div className="ml-3 h-7 flex items-center">
@@ -94,8 +85,8 @@ const FeedbackModal = ({
                   </div>
                   <div className="mt-6">
                     <p className="text-sm text-gray-300">
-                      Feedback helps us improve our documentation so you can be
-                      more productive. Please let us know about anything!
+                      Feedback helps us improve our documentation so you can be more productive.
+                      Please let us know about anything!
                     </p>
                   </div>
                 </div>
@@ -116,9 +107,7 @@ const FeedbackModal = ({
                             id="project_name"
                             className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
                             value={currentPage}
-                            onChange={(event) =>
-                              setCurrentPage(event.target.value)
-                            }
+                            onChange={(event) => setCurrentPage(event.target.value)}
                           />
                         </div>
                       </div>
@@ -136,9 +125,7 @@ const FeedbackModal = ({
                             id="project_name"
                             className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
                             value={currentVersion}
-                            onChange={(event) =>
-                              setCurrentVersion(event.target.value)
-                            }
+                            onChange={(event) => setCurrentVersion(event.target.value)}
                           />
                         </div>
                       </div>
@@ -174,7 +161,7 @@ const FeedbackModal = ({
                             name="description"
                             rows={4}
                             className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
-                            defaultValue={""}
+                            defaultValue=""
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                           />
@@ -184,9 +171,7 @@ const FeedbackModal = ({
                       {enablePrivateSubmition && (
                         <>
                           <fieldset>
-                            <legend className="sr-only">
-                              Submit as Public Github Issue
-                            </legend>
+                            <legend className="sr-only">Submit as Public Github Issue</legend>
                             <div className="bg-white rounded-md -space-y-px">
                               {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
                               <div className="relative border rounded-tl-md rounded-tr-md p-4 flex">
@@ -198,10 +183,8 @@ const FeedbackModal = ({
                                     type="radio"
                                     className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
                                     defaultChecked
-                                    checked={submitOption === "GH"}
-                                    onChange={(e) =>
-                                      setSubmitOption(e.target.value)
-                                    }
+                                    checked={submitOption === 'GH'}
+                                    onChange={(e) => setSubmitOption(e.target.value)}
                                   />
                                 </div>
                                 <label
@@ -214,8 +197,7 @@ const FeedbackModal = ({
                                   </span>
                                   {/* On: "text-indigo-700", Off: "text-gray-500" */}
                                   <span className="block text-sm">
-                                    Submit this feedback to our public issue
-                                    tracker at{" "}
+                                    Submit this feedback to our public issue tracker at{' '}
                                     <a href="#" className="underline">
                                       https://github.com/dagster-io/dagster/issues
                                     </a>
@@ -231,10 +213,8 @@ const FeedbackModal = ({
                                     value="Private"
                                     type="radio"
                                     className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
-                                    checked={submitOption === "Private"}
-                                    onChange={(e) =>
-                                      setSubmitOption(e.target.value)
-                                    }
+                                    checked={submitOption === 'Private'}
+                                    onChange={(e) => setSubmitOption(e.target.value)}
                                   />
                                 </div>
                                 <label
@@ -247,8 +227,7 @@ const FeedbackModal = ({
                                   </span>
                                   {/* On: "text-indigo-700", Off: "text-gray-500" */}
                                   <span className="block text-sm">
-                                    Send this feedback privately to the Dagster
-                                    team
+                                    Send this feedback privately to the Dagster team
                                   </span>
                                 </label>
                               </div>
@@ -256,7 +235,7 @@ const FeedbackModal = ({
                             </div>
                           </fieldset>
 
-                          {submitOption == "Private" && (
+                          {submitOption === 'Private' && (
                             <>
                               <div>
                                 <label

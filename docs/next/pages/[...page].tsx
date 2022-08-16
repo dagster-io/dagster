@@ -1,33 +1,26 @@
-import React, { useState } from "react";
+import {promises as fs} from 'fs';
+import path from 'path';
+import {latestAllVersionedPaths} from 'util/useNavigation';
 
-import MDXRenderer, {
-  MDXData,
-  VersionedContentLayout,
-} from "../components/mdx/MDXRenderer";
-import MDXComponents, {
-  SearchIndexContext,
-} from "../components/mdx/MDXComponents";
-import FeedbackModal from "components/FeedbackModal";
+import axios from 'axios';
+import FeedbackModal from 'components/FeedbackModal';
+import {Shimmer} from 'components/Shimmer';
+import {getItems} from 'components/mdx/SidebarNavigation';
+import rehypePlugins from 'components/mdx/rehypePlugins';
+import matter from 'gray-matter';
+import generateToc from 'mdast-util-toc';
+import {GetStaticProps} from 'next';
+import renderToString from 'next-mdx-remote/render-to-string';
+import {MdxRemote} from 'next-mdx-remote/types';
+import {useRouter} from 'next/router';
+import React, {useState} from 'react';
+import remark from 'remark';
+import mdx from 'remark-mdx';
 
-import { SphinxPrefix, sphinxPrefixFromPage } from "../util/useSphinx";
-import { versionFromPage } from "../util/useVersion";
-
-import axios from "axios";
-import { GetStaticProps } from "next";
-import { MdxRemote } from "next-mdx-remote/types";
-import { latestAllVersionedPaths } from "util/useNavigation";
-import { promises as fs } from "fs";
-import generateToc from "mdast-util-toc";
-import matter from "gray-matter";
-import mdx from "remark-mdx";
-import path from "path";
-import rehypePlugins from "components/mdx/rehypePlugins";
-import remark from "remark";
-import renderToString from "next-mdx-remote/render-to-string";
-import { useRouter } from "next/router";
-
-import { Shimmer } from "components/Shimmer";
-import { getItems } from "components/mdx/SidebarNavigation";
+import MDXComponents, {SearchIndexContext} from '../components/mdx/MDXComponents';
+import MDXRenderer, {MDXData, VersionedContentLayout} from '../components/mdx/MDXRenderer';
+import {SphinxPrefix, sphinxPrefixFromPage} from '../util/useSphinx';
+import {versionFromPage} from '../util/useVersion';
 
 const components: MdxRemote.Components = MDXComponents;
 
@@ -37,8 +30,8 @@ type HTMLData = {
 };
 
 enum PageType {
-  MDX = "MDX",
-  HTML = "HTML",
+  MDX = 'MDX',
+  HTML = 'HTML',
 }
 
 type Props =
@@ -46,18 +39,12 @@ type Props =
       type: PageType.MDX;
       data: MDXData;
     }
-  | { type: PageType.HTML; data: HTMLData };
+  | {type: PageType.HTML; data: HTMLData};
 
-function HTMLRenderer({
-  data,
-  toggleFeedback,
-}: {
-  data: HTMLData;
-  toggleFeedback: any;
-}) {
-  const { body, toc } = data;
-  const markup = { __html: body };
-  const tocMarkup = { __html: toc };
+function HTMLRenderer({data}: {data: HTMLData}) {
+  const {body, toc} = data;
+  const markup = {__html: body};
+  const tocMarkup = {__html: toc};
 
   return (
     <>
@@ -104,31 +91,28 @@ export default function MdxPage(props: Props) {
   return (
     <>
       <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
-      {props.type == PageType.MDX ? (
+      {props.type === PageType.MDX ? (
         <MDXRenderer data={props.data} toggleFeedback={toggleFeedback} />
       ) : (
-        <HTMLRenderer data={props.data} toggleFeedback={toggleFeedback} />
+        <HTMLRenderer data={props.data} />
       )}
     </>
   );
 }
 
-async function getVersionedContent(
-  version: string,
-  asPath: string
-): Promise<string> {
-  const bucket = "dagster-docs-versioned-content";
-  const region = "us-west-1";
-  const folder = "versioned_content";
+async function getVersionedContent(version: string, asPath: string): Promise<string> {
+  const bucket = 'dagster-docs-versioned-content';
+  const region = 'us-west-1';
+  const folder = 'versioned_content';
   const url = `https://${bucket}.s3.${region}.amazonaws.com/${folder}/${version}${asPath}`;
-  const response = await axios.get(url, { transformResponse: (x) => x });
+  const response = await axios.get(url, {transformResponse: (x) => x});
   return response.data;
 }
 
 async function getContent(version: string, asPath: string) {
-  if (version == "master") {
+  if (version === 'master') {
     // render files from the local content folder
-    const basePath = path.resolve("../content");
+    const basePath = path.resolve('../content');
     const pathToFile = path.join(basePath, asPath);
     const buffer = await fs.readFile(pathToFile);
     const contentString = buffer.toString();
@@ -140,15 +124,11 @@ async function getContent(version: string, asPath: string) {
   }
 }
 
-async function getSphinxData(
-  sphinxPrefix: SphinxPrefix,
-  version: string,
-  page: string[]
-) {
+async function getSphinxData(sphinxPrefix: SphinxPrefix, version: string, page: string[]) {
   if (sphinxPrefix === SphinxPrefix.API_DOCS) {
-    const content = await getContent(version, "/api/sections.json");
+    const content = await getContent(version, '/api/sections.json');
     const {
-      api: { apidocs: data },
+      api: {apidocs: data},
     } = JSON.parse(content);
 
     let curr = data;
@@ -156,63 +136,59 @@ async function getSphinxData(
       curr = curr[part];
     }
 
-    const { body, toc } = curr;
+    const {body, toc} = curr;
 
     return {
-      props: { type: PageType.HTML, data: { body, toc } },
+      props: {type: PageType.HTML, data: {body, toc}},
     };
   } else {
-    const content = await getContent(version, "/api/modules.json");
+    const content = await getContent(version, '/api/modules.json');
     const data = JSON.parse(content);
     let curr = data;
     for (const part of page) {
       curr = curr[part];
     }
 
-    const { body } = curr;
+    const {body} = curr;
 
     return {
-      props: { type: PageType.HTML, data: { body } },
+      props: {type: PageType.HTML, data: {body}},
     };
   }
 }
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const { page } = params;
-  const { version, asPath } = versionFromPage(page);
+export const getStaticProps: GetStaticProps = async ({params}) => {
+  const {page} = params;
+  const {version, asPath} = versionFromPage(page);
 
-  const { sphinxPrefix, asPath: subPath } = sphinxPrefixFromPage(asPath);
+  const {sphinxPrefix, asPath: subPath} = sphinxPrefixFromPage(asPath);
   // If the subPath == "/", then we continue onto the MDX render to render the _apidocs.mdx page
-  if (sphinxPrefix && subPath !== "/") {
+  if (sphinxPrefix && subPath !== '/') {
     try {
-      return getSphinxData(sphinxPrefix, version, subPath.split("/").splice(1));
+      return getSphinxData(sphinxPrefix, version, subPath.split('/').splice(1));
     } catch (err) {
       console.log(err);
-      return { notFound: true };
+      return {notFound: true};
     }
   }
 
   const githubLink = new URL(
-    path.join(
-      "dagster-io/dagster/tree/master/docs/content",
-      "/",
-      asPath + ".mdx"
-    ),
-    "https://github.com"
+    path.join('dagster-io/dagster/tree/master/docs/content', '/', asPath + '.mdx'),
+    'https://github.com',
   ).href;
 
   try {
     // 1. Read and parse versioned search
-    const searchContent = await getContent(version, "/api/searchindex.json");
+    const searchContent = await getContent(version, '/api/searchindex.json');
     const searchIndex = JSON.parse(searchContent);
 
     // 2. Read and parse versioned MDX content
-    const source = await getContent(version, asPath + ".mdx");
-    const { content, data } = matter(source);
+    const source = await getContent(version, asPath + '.mdx');
+    const {content, data} = matter(source);
 
     // 3. Extract table of contents from MDX
     const tree = remark().use(mdx).parse(content);
-    const node = generateToc(tree, { maxDepth: 4 });
+    const node = generateToc(tree, {maxDepth: 4});
     const tableOfContents = getItems(node.map, {});
 
     // 4. Render MDX
@@ -220,10 +196,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       components,
       provider: {
         component: SearchIndexContext.Provider,
-        props: { value: searchIndex },
+        props: {value: searchIndex},
       },
       mdxOptions: {
-        rehypePlugins: rehypePlugins,
+        rehypePlugins,
       },
       scope: data,
     });
@@ -232,9 +208,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       props: {
         type: PageType.MDX,
         data: {
-          mdxSource: mdxSource,
+          mdxSource,
           frontMatter: data,
-          searchIndex: searchIndex,
+          searchIndex,
           tableOfContents,
           githubLink,
           asPath,

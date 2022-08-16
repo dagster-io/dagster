@@ -3,7 +3,7 @@ import os
 import duckdb
 import pandas as pd
 
-from dagster import Field
+from dagster import Field, PartitionKeyRange
 from dagster import _check as check
 from dagster import io_manager
 from dagster._seven.temp_dir import get_system_temp_directory
@@ -31,7 +31,15 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
             )
 
     def load_input(self, context):
-        check.invariant(not context.has_asset_partitions, "Can't load partitioned inputs")
+        partitions_def = context.asset_partitions_def
+        check.invariant(
+            not context.has_asset_partitions
+            or context.asset_partition_key_range
+            == PartitionKeyRange(
+                partitions_def.get_first_partition_key(), partitions_def.get_last_partition_key()
+            ),
+            "Loading a subselection of partitions is not yet supported",
+        )
 
         if context.dagster_type.typing_type == pd.DataFrame:
             con = self._connect_duckdb(context)

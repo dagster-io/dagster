@@ -5,20 +5,23 @@
 // For example, if you need to update `PyObject`, rename the existing component to `PyObjectLegacy`
 // and update all existing usage of it
 
-import React, { useContext, useRef, useState } from "react";
+import path from 'path';
 
-import Icons from "../Icons";
-import Link from "../Link";
-import NextLink from "next/link";
-import { useVersion } from "../../util/useVersion";
-import Image from "next/image";
-import Zoom from "react-medium-image-zoom";
-import "react-medium-image-zoom/dist/styles.css";
+import {Tab, Transition} from '@headlessui/react';
+import Image from 'next/image';
+import NextLink from 'next/link';
+import React, {useContext, useRef, useState} from 'react';
+import Zoom from 'react-medium-image-zoom';
+
+import {useVersion} from '../../util/useVersion';
+import Icons from '../Icons';
+import Link from '../Link';
+
+import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
+import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
+import 'react-medium-image-zoom/dist/styles.css';
+
 export const SearchIndexContext = React.createContext(null);
-import path from "path";
-import GenerateAgentToken from "./includes/dagster-cloud/GenerateAgentToken.mdx";
-import BDCreateConfigureAgent from "./includes/dagster-cloud/BDCreateConfigureAgent.mdx";
-import { Tab, Transition } from "@headlessui/react";
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -27,14 +30,7 @@ const PyObject: React.FunctionComponent<{
   displayText?: string;
   pluralize?: boolean;
   decorator?: boolean;
-}> = ({
-  module = "dagster",
-  object,
-  method,
-  displayText,
-  pluralize = false,
-  decorator = false,
-}) => {
+}> = ({module = 'dagster', object, method, displayText, pluralize = false, decorator = false}) => {
   const value = useContext(SearchIndexContext);
   if (!value) {
     return null;
@@ -46,13 +42,13 @@ const PyObject: React.FunctionComponent<{
 
   let textValue = displayText || object;
   if (pluralize) {
-    textValue += "s";
+    textValue += 's';
   }
   if (decorator) {
-    textValue = "@" + textValue;
+    textValue = '@' + textValue;
   }
   if (method) {
-    textValue += "." + method;
+    textValue += '.' + method;
   }
 
   if (!moduleObjects || !objectData) {
@@ -69,11 +65,11 @@ const PyObject: React.FunctionComponent<{
   // TODO: refer to all anchors available in apidocs
   // https://github.com/dagster-io/dagster/issues/3568
   const doc = value.docnames[fileIndex];
-  const link = doc.replace("sections/api/apidocs/", "/_apidocs/");
-  const methodSuffix = method ? "." + method : "";
+  const link = doc.replace('sections/api/apidocs/', '/_apidocs/');
+  const methodSuffix = method ? '.' + method : '';
 
   return (
-    <Link href={link + "#" + module + "." + object + methodSuffix}>
+    <Link href={link + '#' + module + '.' + object + methodSuffix}>
       <a className="no-underline hover:underline">
         <code className="bg-blue-100 dark:bg-gray-700 p-1">{textValue}</code>
       </a>
@@ -115,7 +111,7 @@ const Cross = () => {
   );
 };
 
-const LinkGrid = ({ children }) => {
+const LinkGrid = ({children}) => {
   return (
     <div className="rounded-lg bg-gray-200 dark:bg-gray-700 p-4 overflow-hidden shadow divide-y divide-gray-200 sm:divide-y-0 sm:grid sm:grid-cols-2 sm:gap-px">
       {children}
@@ -131,30 +127,26 @@ interface LinkGridItem {
 
 function hashCode(str) {
   return str
-    .split("")
-    .reduce(
-      (prevHash, currVal) =>
-        ((prevHash << 5) - prevHash + currVal.charCodeAt(0)) | 0,
-      0
-    );
+    .split('')
+    .reduce((prevHash, currVal) => ((prevHash << 5) - prevHash + currVal.charCodeAt(0)) | 0, 0);
 }
 
 const getColorForString = (s: string) => {
   const colors = [
-    ["bg-yellow-100 text-yellow-800"],
-    ["bg-green-100 text-green-800"],
-    ["bg-blue-100 text-blue-800"],
-    ["bg-red-100 text-red-800"],
-    ["bg-indigo-100 text-indigo-800"],
-    ["bg-pink-100 text-pink-800"],
-    ["bg-purple-100 text-purple-800"],
-    ["bg-gray-100 text-gray-800"],
+    ['bg-yellow-100 text-yellow-800'],
+    ['bg-green-100 text-green-800'],
+    ['bg-blue-100 text-blue-800'],
+    ['bg-red-100 text-red-800'],
+    ['bg-indigo-100 text-indigo-800'],
+    ['bg-pink-100 text-pink-800'],
+    ['bg-purple-100 text-purple-800'],
+    ['bg-gray-100 text-gray-800'],
   ];
 
   return colors[Math.abs(hashCode(s)) % colors.length];
 };
 
-const Badge = ({ text }) => {
+const Badge = ({text}) => {
   const colors = getColorForString(text);
   return (
     <span
@@ -165,7 +157,7 @@ const Badge = ({ text }) => {
   );
 };
 
-const LinkGridItem = ({ title, href, children, tags = [] }) => {
+const LinkGridItem = ({title, href, children, tags = []}) => {
   return (
     <div className="rounded-tl-lg rounded-tr-lg sm:rounded-tr-none relative group bg-white dark:bg-gray-800 p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500 hover:bg-gray-50 transition-colors">
       <div className="mt-8">
@@ -205,24 +197,22 @@ const LinkGridItem = ({ title, href, children, tags = [] }) => {
 const ADMONITION_STYLES = {
   note: {
     colors: {
-      bg: "primary-100",
-      borderIcon: "primary-500",
-      text: "primary-500",
+      bg: 'primary-100',
+      borderIcon: 'primary-500',
+      text: 'primary-500',
     },
     icon: Icons.InfoCircle,
   },
   warning: {
-    colors: { bg: "yellow-50", borderIcon: "yellow-400", text: "yellow-700" },
+    colors: {bg: 'yellow-50', borderIcon: 'yellow-400', text: 'yellow-700'},
     icon: Icons.Warning,
   },
 };
 
-const Admonition = ({ style, children }) => {
-  const { colors, icon } = ADMONITION_STYLES[style];
+const Admonition = ({style, children}) => {
+  const {colors, icon} = ADMONITION_STYLES[style];
   return (
-    <div
-      className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} px-4 my-4`}
-    >
+    <div className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} px-4 my-4`}>
       <div className="flex items-center">
         <div className="flex-shrink-0">
           <svg
@@ -243,16 +233,16 @@ const Admonition = ({ style, children }) => {
   );
 };
 
-const Note = ({ children }) => {
+const Note = ({children}) => {
   return <Admonition style="note">{children}</Admonition>;
 };
 
-const Warning = ({ children }) => {
+const Warning = ({children}) => {
   return <Admonition style="warning">{children}</Admonition>;
 };
 
-const CodeReferenceLink = ({ filePath, isInline, children }) => {
-  const { version } = useVersion();
+const CodeReferenceLink = ({filePath, isInline, children}) => {
+  const {version} = useVersion();
   const url = `https://github.com/dagster-io/dagster/tree/${version}/${filePath}`;
 
   if (isInline) {
@@ -261,11 +251,7 @@ const CodeReferenceLink = ({ filePath, isInline, children }) => {
     return (
       <div className="bg-primary-100 rounded flex item-center p-4">
         <div>
-          <svg
-            className="h-8 w-8 text-primary-900"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg className="h-8 w-8 text-primary-900" fill="currentColor" viewBox="0 0 24 24">
             <path d="M8.128 19.825a1.586 1.586 0 0 1-1.643-.117 1.543 1.543 0 0 1-.53-.662 1.515 1.515 0 0 1-.096-.837l.736-4.247-3.13-3a1.514 1.514 0 0 1-.39-1.569c.09-.271.254-.513.475-.698.22-.185.49-.306.776-.35L8.66 7.73l1.925-3.862c.128-.26.328-.48.577-.633a1.584 1.584 0 0 1 1.662 0c.25.153.45.373.577.633l1.925 3.847 4.334.615c.29.042.562.162.785.348.224.186.39.43.48.704a1.514 1.514 0 0 1-.404 1.58l-3.13 3 .736 4.247c.047.282.014.572-.096.837-.111.265-.294.494-.53.662a1.582 1.582 0 0 1-1.643.117l-3.865-2-3.865 2z" />
           </svg>
         </div>
@@ -277,12 +263,12 @@ const CodeReferenceLink = ({ filePath, isInline, children }) => {
   }
 };
 
-const ReferenceTable = ({ children }) => {
+const ReferenceTable = ({children}) => {
   return (
     <table
       className="table"
       style={{
-        width: "100%",
+        width: '100%',
       }}
     >
       <thead>
@@ -291,31 +277,27 @@ const ReferenceTable = ({ children }) => {
           <th>Description</th>
         </tr>
       </thead>
-      <tbody>
-        {children}
-      </tbody>
+      <tbody>{children}</tbody>
     </table>
   );
 };
 
-const ReferenceTableItem = ({ propertyName, children }) => {
+const ReferenceTableItem = ({propertyName, children}) => {
   return (
     <tr>
       <td
         style={{
-        width: "40%",
+          width: '40%',
         }}
-        >
+      >
         {propertyName}
       </td>
-      <td>
-        {children}
-      </td>
+      <td>{children}</td>
     </tr>
   );
 };
 
-const InstanceDiagramBox = ({ href = "#", className = "", children }) => {
+const InstanceDiagramBox = ({href = '#', className = '', children}) => {
   return (
     <a
       href={href}
@@ -334,7 +316,7 @@ const TODO = () => {
   );
 };
 
-const PlaceholderImage = ({ caption = "Placeholder Image" }) => {
+const PlaceholderImage = ({caption = 'Placeholder Image'}) => {
   return (
     <div className="h-48 w-full bg-gray-100 flex justify-center items-center rounded-lg">
       <span className="font-bold">{caption}</span>
@@ -350,7 +332,7 @@ const Experimental = () => {
   );
 };
 
-const Pre = ({ children, ...props }) => {
+const Pre = ({children, ...props}) => {
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
 
@@ -359,7 +341,7 @@ const Pre = ({ children, ...props }) => {
       await navigator.clipboard.writeText(preRef.current?.innerText);
       setCopied(true);
     } catch (err) {
-      console.log("Fail to copy", err);
+      console.log('Fail to copy', err);
     }
 
     setTimeout(() => {
@@ -419,14 +401,14 @@ const Pre = ({ children, ...props }) => {
   );
 };
 
-const ArticleList = ({ children }) => {
+const ArticleList = ({children}) => {
   return (
     <div className="category-container">
       <div className="category-inner-container">
         <ul
           style={{
             columnCount: 2,
-            columnGap: "20px",
+            columnGap: '20px',
             padding: 0,
             margin: 0,
           }}
@@ -438,14 +420,14 @@ const ArticleList = ({ children }) => {
   );
 };
 
-const ArticleListItem = ({ title, href }) => {
+const ArticleListItem = ({title, href}) => {
   return (
     <li
       style={{
         marginTop: 0,
       }}
     >
-      {href.startsWith("http") ? (
+      {href.startsWith('http') ? (
         <NextLink href={href}>{title}</NextLink>
       ) : (
         <Link href={href}>{title}</Link>
@@ -454,12 +436,10 @@ const ArticleListItem = ({ title, href }) => {
   );
 };
 
-const ExampleItemSmall = ({ title, hrefCode, tags = [] }) => {
+const ExampleItemSmall = ({title, tags = []}) => {
   return (
     <button className="w-full h-full py-3 px-4 rounded-lg bg-white border hover:border-gray-500 text-gray-500">
-        <span className="font-bold text-gable-green hover:no-underline">
-          {title}
-        </span>
+      <span className="font-bold text-gable-green hover:no-underline">{title}</span>
       <div className="mt-2 text-sm space-x-1 space-y-1 bg-opacity-70">
         {tags.map((tag) => (
           <Badge key={tag} text={tag} />
@@ -469,14 +449,7 @@ const ExampleItemSmall = ({ title, hrefCode, tags = [] }) => {
   );
 };
 
-const ExampleItem = ({
-  title,
-  hrefCloud,
-  hrefDoc = null,
-  hrefCode,
-  children,
-  tags = [],
-}) => {
+const ExampleItem = ({title, hrefDoc = null, hrefCode, children, tags = []}) => {
   return (
     <div className="px-6 py-4 rounded-lg shadow-lg shadow-cyan-500/50 relative group bg-white">
       <span className="font-bold text-2xl text-gable-green">{title}</span>
@@ -510,10 +483,10 @@ interface Entry {
 }
 
 function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
-function TabGroup({ entries }: { entries: Entry[] }) {
+function TabGroup({entries}: {entries: Entry[]}) {
   return (
     <div className="w-full px-2 py-2 sm:px-0">
       <Tab.Group>
@@ -521,13 +494,13 @@ function TabGroup({ entries }: { entries: Entry[] }) {
           {entries.map((entry, idx) => (
             <Tab
               key={idx}
-              className={({ selected }) =>
+              className={({selected}) =>
                 classNames(
-                  "w-full py-3 text-sm font-bold leading-5",
-                  "focus:outline-none border-gray-200",
+                  'w-full py-3 text-sm font-bold leading-5',
+                  'focus:outline-none border-gray-200',
                   selected
-                    ? "border-b-2 border-primary-500 text-primary-500"
-                    : "border-b hover:border-gray-500 hover:text-gray-700"
+                    ? 'border-b-2 border-primary-500 text-primary-500'
+                    : 'border-b hover:border-gray-500 hover:text-gray-700',
                 )
               }
             >
@@ -537,7 +510,7 @@ function TabGroup({ entries }: { entries: Entry[] }) {
         </Tab.List>
         <Tab.Panels>
           {entries.map((entry, idx) => (
-            <Tab.Panel key={idx} className={classNames("p-3")}>
+            <Tab.Panel key={idx} className={classNames('p-3')}>
               {entry?.content}
             </Tab.Panel>
           ))}
@@ -548,9 +521,9 @@ function TabGroup({ entries }: { entries: Entry[] }) {
 }
 
 export default {
-  a: ({ children, ...props }) => {
+  a: ({children, ...props}) => {
     // Skip in-page links and external links
-    if (!props.href.startsWith("/")) {
+    if (!props.href.startsWith('/')) {
       return <a {...props}>{children}</a>;
     }
     // Hydrate the links in raw MDX to include versions
@@ -560,20 +533,20 @@ export default {
       </Link>
     );
   },
-  img: ({ children, ...props }) => (
+  img: ({children, ...props}) => (
     <span className="block mx-auto">
       <img {...(props as any)} />
     </span>
   ),
-  Image: ({ children, ...props }) => {
+  Image: ({children, ...props}) => {
     /* Only version images when all conditions meet:
      * - use <Image> component in mdx
      * - on non-master version
      * - in public/images/ dir
      */
-    const { version } = useVersion();
-    const { src } = props;
-    if (!src.startsWith("/images/")) {
+    const {version} = useVersion();
+    const {src} = props;
+    if (!src.startsWith('/images/')) {
       return (
         <span className="block mx-auto">
           <Image {...(props as any)} />
@@ -582,22 +555,17 @@ export default {
     }
 
     const resolvedPath =
-      version === "master"
+      version === 'master'
         ? src
         : new URL(
-            path.join("versioned_images", version, src.replace("/images/", "")),
-            "https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com"
+            path.join('versioned_images', version, src.replace('/images/', '')),
+            'https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com',
           ).href;
 
     return (
-      <Zoom wrapElement="span" wrapStyle={{ display: "block" }}>
+      <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
         <span className="block mx-auto">
-          <Image
-            src={resolvedPath}
-            width={props.width}
-            height={props.height}
-            alt={props.alt}
-          />
+          <Image src={resolvedPath} width={props.width} height={props.height} alt={props.alt} />
         </span>
       </Zoom>
     );
