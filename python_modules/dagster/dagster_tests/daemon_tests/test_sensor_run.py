@@ -14,7 +14,9 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    DagsterRunStatus,
     Field,
+    JobAddress,
     Output,
     graph,
     repository,
@@ -31,7 +33,6 @@ from dagster._core.host_representation import ExternalInstigatorOrigin, External
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
-from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace,
@@ -234,12 +235,12 @@ def my_run_failure_sensor_that_itself_fails(context):
     raise Exception("How meta")
 
 
-@run_status_sensor(run_status=PipelineRunStatus.SUCCESS)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_pipeline_success_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
-@run_status_sensor(run_status=PipelineRunStatus.STARTED)
+@run_status_sensor(run_status=DagsterRunStatus.STARTED)
 def my_pipeline_started_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
@@ -281,6 +282,20 @@ def request_list_sensor(_ctx):
     return [RunRequest(run_key="1"), RunRequest(run_key="2")]
 
 
+@run_status_sensor(
+    monitored_jobs=[
+        JobAddress(
+            repository_location="test_location",
+            repository="the_other_repo",
+            job_name="the_pipeline",
+        )
+    ],
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def cross_repo_sensor(context):
+    assert isinstance(context.instance, DagsterInstance)
+
+
 @repository
 def the_repo():
     return [
@@ -313,6 +328,7 @@ def the_repo():
         bad_request_mismatch,
         bad_request_unspecified,
         request_list_sensor,
+        cross_repo_sensor,
     ]
 
 
@@ -427,12 +443,12 @@ def validate_tick(
 def validate_run_started(run, expected_success=True):
     if expected_success:
         assert (
-            run.status == PipelineRunStatus.STARTED
-            or run.status == PipelineRunStatus.SUCCESS
-            or run.status == PipelineRunStatus.STARTING
+            run.status == DagsterRunStatus.STARTED
+            or run.status == DagsterRunStatus.SUCCESS
+            or run.status == DagsterRunStatus.STARTING
         )
     else:
-        assert run.status == PipelineRunStatus.FAILURE
+        assert run.status == DagsterRunStatus.FAILURE
 
 
 def wait_for_all_runs_to_start(instance, timeout=10):
@@ -443,7 +459,7 @@ def wait_for_all_runs_to_start(instance, timeout=10):
         time.sleep(0.5)
 
         not_started_runs = [
-            run for run in instance.get_runs() if run.status == PipelineRunStatus.NOT_STARTED
+            run for run in instance.get_runs() if run.status == DagsterRunStatus.NOT_STARTED
         ]
 
         if len(not_started_runs) == 0:
@@ -453,9 +469,9 @@ def wait_for_all_runs_to_start(instance, timeout=10):
 def wait_for_all_runs_to_finish(instance, timeout=10):
     start_time = time.time()
     FINISHED_STATES = [
-        PipelineRunStatus.SUCCESS,
-        PipelineRunStatus.FAILURE,
-        PipelineRunStatus.CANCELED,
+        DagsterRunStatus.SUCCESS,
+        DagsterRunStatus.FAILURE,
+        DagsterRunStatus.CANCELED,
     ]
     while True:
         if time.time() - start_time > timeout:
@@ -1577,7 +1593,7 @@ def test_run_failure_sensor(executor):
             instance.submit_run(run.run_id, workspace)
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
-            assert run.status == PipelineRunStatus.FAILURE
+            assert run.status == DagsterRunStatus.FAILURE
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
@@ -1637,7 +1653,7 @@ def test_run_failure_sensor_that_fails(executor):
             instance.submit_run(run.run_id, workspace)
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
-            assert run.status == PipelineRunStatus.FAILURE
+            assert run.status == DagsterRunStatus.FAILURE
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
@@ -1713,7 +1729,7 @@ def test_run_failure_sensor_filtered(executor):
             instance.submit_run(run.run_id, workspace)
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
-            assert run.status == PipelineRunStatus.FAILURE
+            assert run.status == DagsterRunStatus.FAILURE
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
@@ -1745,7 +1761,7 @@ def test_run_failure_sensor_filtered(executor):
             instance.submit_run(run.run_id, workspace)
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
-            assert run.status == PipelineRunStatus.FAILURE
+            assert run.status == DagsterRunStatus.FAILURE
 
             freeze_datetime = freeze_datetime.add(seconds=60)
 
@@ -1807,7 +1823,7 @@ def test_run_status_sensor(capfd, executor):
             instance.submit_run(run.run_id, workspace)
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
-            assert run.status == PipelineRunStatus.FAILURE
+            assert run.status == DagsterRunStatus.FAILURE
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
@@ -1847,7 +1863,7 @@ def test_run_status_sensor(capfd, executor):
             instance.submit_run(run.run_id, workspace)
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
-            assert run.status == PipelineRunStatus.SUCCESS
+            assert run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         capfd.readouterr()
@@ -1978,7 +1994,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
                 instance.report_run_failed(run2)
                 freeze_datetime = freeze_datetime.add(seconds=60)
                 run = instance.get_runs()[0]
-                assert run.status == PipelineRunStatus.FAILURE
+                assert run.status == DagsterRunStatus.FAILURE
                 assert run.run_id == run2.run_id
 
             # check sensor
@@ -2095,6 +2111,71 @@ def test_run_failure_sensor_empty_run_records(storage_config_fn, executor):
                     failure_sensor,
                     freeze_datetime,
                     TickStatus.SKIPPED,
+                )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_cross_repo_run_status_sensor(capfd, executor):
+    freeze_datetime = pendulum.now()
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        the_repo,
+    ):
+        with instance_with_sensors(attribute="the_other_repo") as (
+            the_other_instance,
+            the_other_workspace,
+            the_other_repo,
+        ):
+
+            # pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
+            # import pdb; pdb.set_trace()
+            with pendulum.test(freeze_datetime):
+                cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
+                instance.start_sensor(cross_repo_sensor)
+
+                evaluate_sensors(instance, workspace, executor)
+
+                ticks = instance.get_ticks(
+                    cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                )
+                assert len(ticks) == 1
+                validate_tick(
+                    ticks[0],
+                    cross_repo_sensor,
+                    freeze_datetime,
+                    TickStatus.SKIPPED,
+                )
+
+                freeze_datetime = freeze_datetime.add(seconds=60)
+                time.sleep(1)
+
+            with pendulum.test(freeze_datetime):
+                external_pipeline = the_other_repo.get_full_external_pipeline("the_pipeline")
+                run = the_other_instance.create_run_for_pipeline(
+                    the_pipeline,
+                    external_pipeline_origin=external_pipeline.get_external_origin(),
+                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                )
+                the_other_instance.submit_run(run.run_id, the_other_workspace)
+                wait_for_all_runs_to_finish(the_other_instance)
+                run = the_other_instance.get_runs()[0]
+                assert run.status == DagsterRunStatus.SUCCESS
+                freeze_datetime = freeze_datetime.add(seconds=60)
+
+            with pendulum.test(freeze_datetime):
+
+                evaluate_sensors(instance, workspace, executor)
+
+                ticks = instance.get_ticks(
+                    cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                )
+                assert len(ticks) == 2
+                validate_tick(
+                    ticks[0],
+                    cross_repo_sensor,
+                    freeze_datetime,
+                    TickStatus.SUCCESS,
                 )
 
 
