@@ -297,7 +297,7 @@ def cross_repo_sensor(context):
 
 
 @repository
-def the_repo():
+def the_repo(): 
     return [
         the_pipeline,
         the_job,

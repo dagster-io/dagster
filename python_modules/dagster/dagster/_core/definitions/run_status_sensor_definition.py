@@ -205,7 +205,7 @@ class JobAddress(
         )
 
     def __eq__(self, other):
-        return self.repository == other.repository and self.job_name == other.job_name
+        return self.job_name == other.job_name
 
 
 def run_failure_sensor(
@@ -466,7 +466,9 @@ class RunStatusSensorDefinition(SensorDefinition):
                             record_id=storage_id, update_timestamp=update_timestamp.isoformat()
                         ).to_json()
                     )
-                    continue
+                    # continue
+                yield SkipReason(pipeline_run_address)
+                return
 
                 serializable_error = None
 
