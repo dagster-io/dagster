@@ -14,9 +14,9 @@ from dagster import (
     Out,
     Output,
     StringSource,
-    op,
-    resource,
 )
+from dagster import _check as check
+from dagster import op, resource
 
 try:
     # ge < v0.13.0
@@ -61,6 +61,10 @@ def ge_validation_op_factory(
         An op that takes in a set of data and yields both an expectation with relevant metadata
         and an output with all the metadata (for user processing)
     """
+    check.str_param(datasource_name, "datasource_name")
+    check.str_param(suite_name, "suite_name")
+    check.opt_str_param(validation_operator_name, "validation_operator_name")
+    batch_kwargs = check.opt_dict_param(batch_kwargs, "batch_kwargs")
 
     @op(
         name=name,
@@ -169,6 +173,12 @@ def ge_validation_op_factory_v3(
         an output with all the metadata (for user processing)
 
     """
+
+    check.str_param(datasource_name, "datasource_name")
+    check.str_param(data_connector_name, "data_connector_name")
+    check.str_param(suite_name, "suite_name")
+
+    extra_kwargs = check.opt_dict_param(extra_kwargs, "extra_kwargs")
 
     @op(
         name=name,
