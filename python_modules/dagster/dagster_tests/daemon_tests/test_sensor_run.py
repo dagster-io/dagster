@@ -297,7 +297,7 @@ def cross_repo_sensor(context):
 
 
 @repository
-def the_repo(): 
+def the_repo():
     return [
         the_pipeline,
         the_job,
@@ -377,6 +377,21 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
                 next(
                     iter(workspace.get_workspace_snapshot().values())
                 ).repository_location.get_repository(attribute),
+            )
+
+
+@contextmanager
+def instance_with_multiple_repos_with_sensors(overrides=None):
+    with instance_for_test(overrides) as instance:
+        with create_test_daemon_workspace(
+            workspace_load_target(None), instance=instance
+        ) as workspace:
+            yield (
+                instance,
+                workspace,
+                next(
+                    iter(workspace.get_workspace_snapshot().values())
+                ).repository_location.get_repositories(),
             )
 
 
@@ -2115,7 +2130,67 @@ def test_run_failure_sensor_empty_run_records(storage_config_fn, executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_cross_repo_run_status_sensor(capfd, executor):
+def test_cross_repo_run_status_sensor(executor):
+    freeze_datetime = pendulum.now()
+    with instance_with_multiple_repos_with_sensors() as (
+        instance,
+        workspace,
+        repos,
+    ):
+        the_repo = repos["the_repo"]
+        the_other_repo = repos["the_other_repo"]
+
+        with pendulum.test(freeze_datetime):
+            cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
+            instance.start_sensor(cross_repo_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(
+                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                cross_repo_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+            time.sleep(1)
+
+        with pendulum.test(freeze_datetime):
+            external_pipeline = the_other_repo.get_full_external_pipeline("the_pipeline")
+            run = instance.create_run_for_pipeline(
+                the_pipeline,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            instance.submit_run(run.run_id, workspace)
+            wait_for_all_runs_to_finish(instance)
+            run = instance.get_runs()[0]
+            assert run.status == DagsterRunStatus.SUCCESS
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(
+                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+            )
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                cross_repo_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_different_instance_run_status_sensor(executor):
     freeze_datetime = pendulum.now()
     with instance_with_sensors() as (
         instance,
@@ -2128,8 +2203,6 @@ def test_cross_repo_run_status_sensor(capfd, executor):
             the_other_repo,
         ):
 
-            # pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
-            # import pdb; pdb.set_trace()
             with pendulum.test(freeze_datetime):
                 cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
                 instance.start_sensor(cross_repo_sensor)
@@ -2171,11 +2244,12 @@ def test_cross_repo_run_status_sensor(capfd, executor):
                     cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
                 )
                 assert len(ticks) == 2
+                # the_pipeline was run in another instance, so the cross_repo_sensor should not trigger
                 validate_tick(
                     ticks[0],
                     cross_repo_sensor,
                     freeze_datetime,
-                    TickStatus.SUCCESS,
+                    TickStatus.SKIPPED,
                 )
 
 

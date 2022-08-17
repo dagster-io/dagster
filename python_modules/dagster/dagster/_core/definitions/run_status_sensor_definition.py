@@ -447,11 +447,6 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 # check against jobs specified by JobAddress
                 # make a JobAddress for the run in question
-                print("***************")
-                print(
-                    pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
-                )
-                # import pdb; pdb.set_trace()
                 pipeline_run_address = JobAddress(
                     repository_location=pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name,
                     repository=pipeline_run.external_pipeline_origin.external_repository_origin.repository_name,
@@ -466,9 +461,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                             record_id=storage_id, update_timestamp=update_timestamp.isoformat()
                         ).to_json()
                     )
-                    # continue
-                yield SkipReason(pipeline_run_address)
-                return
+                    continue
 
                 serializable_error = None
 
