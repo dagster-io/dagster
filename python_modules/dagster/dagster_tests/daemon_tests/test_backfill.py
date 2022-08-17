@@ -749,6 +749,8 @@ def test_backfill_with_asset_selection():
                 instance, workspace, get_default_daemon_logger("BackfillDaemon")
             )
         )
+        wait_for_all_runs_to_start(instance)
+        assert instance.get_runs_count() == 3
         wait_for_all_runs_to_finish(instance)
 
         assert instance.get_runs_count() == 3

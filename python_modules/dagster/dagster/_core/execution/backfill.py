@@ -77,6 +77,10 @@ class PartitionBackfill(
         error: Optional[SerializableErrorInfo] = None,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
+        check.invariant(
+            not (asset_selection and reexecution_steps),
+            "Can't supply both an asset_selection and reexecution_steps to a PartitionBackfill.",
+        )
         return super(PartitionBackfill, cls).__new__(
             cls,
             check.str_param(backfill_id, "backfill_id"),

@@ -145,7 +145,7 @@ class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.NonNull(GraphenePartitionSetSelector)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
-    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+    assetSelection = graphene.Field(graphene.List(graphene.NonNull(GrapheneAssetKeyInput)))
     fromFailure = graphene.Boolean()
     allPartitions = graphene.Boolean()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
