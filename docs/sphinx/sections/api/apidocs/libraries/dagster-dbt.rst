@@ -5,8 +5,62 @@ This library provides a Dagster integration with `dbt <https://getdbt.com/>`_ (d
 
 .. currentmodule:: dagster_dbt
 
+Assets
+======
+
+.. autofunction:: load_assets_from_dbt_project
+
+.. autofunction:: load_assets_from_dbt_manifest
+
+Resources
+=========
+
+CLI Resources
+~~~~~~~~~~~~~
+
+.. autoclass:: DbtCliResource
+    :members:
+
+.. autoclass:: DbtCliOutput
+    :members:
+
+.. autoconfigurable:: dbt_cli_resource
+    :annotation: ResourceDefinition
+
+dbt Cloud Resources
+~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: DbtCloudResourceV2
+    :members:
+
+.. autoconfigurable:: dbt_cloud_resource
+    :annotation: ResourceDefinition
+
+RPC Resources
+~~~~~~~~~~~~~
+
+.. autoclass:: DbtRpcResource
+    :members:
+
+.. autoclass:: DbtRpcSyncResource
+    :members:
+
+.. autoclass:: DbtRpcOutput
+    :members:
+
+.. autodata:: local_dbt_rpc_resource
+    :annotation: ResourceDefinition
+
+.. autoconfigurable:: dbt_rpc_resource
+    :annotation: ResourceDefinition
+
+.. autoconfigurable:: dbt_rpc_sync_resource
+    :annotation: ResourceDefinition
+
 Ops
 ===
+
+If you're using asset-based dbt APIs like `load_assets_from_dbt_project`, you usually will not also use the below op-based APIs.
 
 dbt Core Ops
 ~~~~~~~~~~~~
@@ -32,59 +86,6 @@ dbt Cloud Ops
 ~~~~~~~~~~~~~
 
 .. autoconfigurable:: dbt_cloud_run_op
-
-Resources
-=========
-
-CLI Resources
-~~~~~~~~~~~~~
-
-.. autoclass:: DbtCliResource
-    :members:
-
-.. autoclass:: DbtCliOutput
-    :members:
-
-.. autoconfigurable:: dbt_cli_resource
-    :annotation: ResourceDefinition
-
-
-RPC Resources
-~~~~~~~~~~~~~
-
-.. autoclass:: DbtRpcResource
-    :members:
-
-.. autoclass:: DbtRpcSyncResource
-    :members:
-
-.. autoclass:: DbtRpcOutput
-    :members:
-
-.. autodata:: local_dbt_rpc_resource
-    :annotation: ResourceDefinition
-
-.. autoconfigurable:: dbt_rpc_resource
-    :annotation: ResourceDefinition
-
-.. autoconfigurable:: dbt_rpc_sync_resource
-    :annotation: ResourceDefinition
-
-dbt Cloud Resources
-~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: DbtCloudResourceV2
-    :members:
-
-.. autoconfigurable:: dbt_cloud_resource
-    :annotation: ResourceDefinition
-
-Assets
-======
-
-.. autofunction:: load_assets_from_dbt_project
-
-.. autofunction:: load_assets_from_dbt_manifest
 
 Types
 =====
