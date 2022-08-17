@@ -204,9 +204,6 @@ class JobAddress(
             job_name=check.str_param(job_name, "job_name"),
         )
 
-    def __eq__(self, other):
-        return self.job_name == other.job_name
-
 
 def run_failure_sensor(
     name: Optional[Union[Callable[..., Any], str]] = None,
@@ -430,7 +427,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 job_match = False
 
-                # check that run is in the current repository and one of jobs specified by definition (if specified)
+                # check if the run is in the current repository and (if provided) one of jobs specified by definition
                 if (
                     # the pipeline has a repository (not manually executed)
                     pipeline_run.external_pipeline_origin
@@ -445,7 +442,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     else:
                         job_match = True
 
-                # check against jobs specified by JobAddress
+                # check if the run is one of the jobs specified by JobAddress
                 # make a JobAddress for the run in question
                 pipeline_run_address = JobAddress(
                     repository_location=pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name,
