@@ -427,7 +427,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 job_match = False
 
-                # check against jobs specified by definition
+                # check that run is in the current repository and one of jobs specified by definition (if specified)
                 if (
                     # the pipeline has a repository (not manually executed)
                     pipeline_run.external_pipeline_origin
@@ -443,23 +443,14 @@ class RunStatusSensorDefinition(SensorDefinition):
                         job_match = True
 
                 # check against jobs specified by JobAddress
-                for job_address in job_address_jobs:
-                    if (
-                        # the pipeline has a repository (not manually executed)
-                        pipeline_run.external_pipeline_origin
-                        and
-                        # the pipeline belongs to the job address repository location
-                        pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
-                        == job_address.repository_location
-                        and
-                        # the pipeline belongs to the job address repository
-                        pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
-                        == job_address.repository
-                        and
-                        # the job has the same name
-                        job_address.job_name == pipeline_run.pipeline_name
-                    ):
-                        job_match = True
+                # make a JobAddress for the run in question
+                pipeline_run_address = JobAddress(
+                    repository_location=pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name,
+                    repository=pipeline_run.external_pipeline_origin.external_repository_origin.repository_name,
+                    job_name=pipeline_run.pipeline_name,
+                )
+                if pipeline_run_address in job_address_jobs:
+                    job_match = True
 
                 if not job_match:
                     context.update_cursor(
