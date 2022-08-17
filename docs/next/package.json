@@ -41,6 +41,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-github-btn": "^1.2.2",
+    "react-instantsearch-dom": "^6.31.1",
     "react-intersection-observer": "^8.31.0",
     "react-medium-image-zoom": "^4.3.5",
     "react-use": "^17.1.0",
