@@ -549,10 +549,11 @@ def test_subsetting(
 
 @pytest.mark.parametrize("load_from_manifest", [True, False])
 @pytest.mark.parametrize(
-    "select,expected_asset_names",
+    "select,exclude,expected_asset_names",
     [
         (
             "*",
+            None,
             {
                 "sort_by_calories",
                 "cold_schema/sort_cold_cereals_by_calories",
@@ -562,14 +563,17 @@ def test_subsetting(
         ),
         (
             "+least_caloric",
+            None,
             {"sort_by_calories", "subdir_schema/least_caloric"},
         ),
         (
             "sort_by_calories least_caloric",
+            None,
             {"sort_by_calories", "subdir_schema/least_caloric"},
         ),
         (
             "tag:bar+",
+            None,
             {
                 "sort_by_calories",
                 "cold_schema/sort_cold_cereals_by_calories",
@@ -579,21 +583,44 @@ def test_subsetting(
         ),
         (
             "tag:foo",
+            None,
             {"sort_by_calories", "cold_schema/sort_cold_cereals_by_calories"},
         ),
         (
             "tag:foo,tag:bar",
+            None,
             {"sort_by_calories"},
         ),
+        (
+            None,
+            "sort_hot_cereals_by_calories",
+            {
+                "sort_by_calories",
+                "cold_schema/sort_cold_cereals_by_calories",
+                "subdir_schema/least_caloric",
+            },
+        ),
+        (
+            None,
+            "+least_caloric",
+            {"cold_schema/sort_cold_cereals_by_calories", "sort_hot_cereals_by_calories"},
+        ),
+        (
+            None,
+            "sort_by_calories least_caloric",
+            {"cold_schema/sort_cold_cereals_by_calories", "sort_hot_cereals_by_calories"},
+        ),
+        (None, "tag:foo", {"subdir_schema/least_caloric", "sort_hot_cereals_by_calories"}),
     ],
 )
-def test_dbt_selects(
+def test_dbt_selections(
     dbt_build,
     conn_string,
     test_project_dir,
     dbt_config_dir,
     load_from_manifest,
     select,
+    exclude,
     expected_asset_names,
 ):  # pylint: disable=unused-argument
     if load_from_manifest:
@@ -601,10 +628,13 @@ def test_dbt_selects(
         with open(manifest_path, "r", encoding="utf8") as f:
             manifest_json = json.load(f)
 
-        dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select)
+        dbt_assets = load_assets_from_dbt_manifest(manifest_json, select=select, exclude=exclude)
     else:
         dbt_assets = load_assets_from_dbt_project(
-            project_dir=test_project_dir, profiles_dir=dbt_config_dir, select=select
+            project_dir=test_project_dir,
+            profiles_dir=dbt_config_dir,
+            select=select,
+            exclude=exclude,
         )
 
     expected_asset_keys = {AssetKey(key.split("/")) for key in expected_asset_names}
