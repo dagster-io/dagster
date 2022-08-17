@@ -1,4 +1,4 @@
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -7,6 +7,8 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
+from dagster._core.definitions.input import NoValueSentinel
+from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster._utils.backcompat import canonicalize_backcompat_args
 
 from .partition_mapping import PartitionMapping
@@ -21,6 +23,7 @@ class AssetIn(
             ("key_prefix", PublicAttr[Optional[Sequence[str]]]),
             ("input_manager_key", PublicAttr[Optional[str]]),
             ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
+            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
         ],
     )
 ):
@@ -41,6 +44,8 @@ class AssetIn(
             the upstream asset. If not provided, defaults to the default partition mapping for the
             partitions definition, which is typically maps partition keys to the same partition keys
             in upstream assets.
+        dagster_type (DagsterType): Allows specifying type validation functions that
+            will be executed on the input of the decorated function before it runs.
     """
 
     def __new__(
@@ -51,6 +56,7 @@ class AssetIn(
         asset_key: Optional[CoercibleToAssetKey] = None,
         input_manager_key: Optional[str] = None,
         partition_mapping: Optional[PartitionMapping] = None,
+        dagster_type: Union[DagsterType, Type[NoValueSentinel]] = NoValueSentinel,
     ):
         key = canonicalize_backcompat_args(key, "key", asset_key, "asset_key", "1.0.0")
         if isinstance(key_prefix, str):
@@ -69,4 +75,7 @@ class AssetIn(
             partition_mapping=check.opt_inst_param(
                 partition_mapping, "partition_mapping", PartitionMapping
             ),
+            dagster_type=NoValueSentinel
+            if dagster_type is NoValueSentinel
+            else resolve_dagster_type(dagster_type),
         )
