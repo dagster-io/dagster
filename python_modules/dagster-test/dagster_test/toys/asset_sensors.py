@@ -56,6 +56,7 @@ def log_asset_sensor_job():
     job=log_asset_sensor_job,
 )
 def asset_a_and_b_sensor(context, asset_events):
+    asset_events = context.get_latest_event([AssetKey("asset_a"), AssetKey("asset_b")])
     if all(asset_events.values()):
         return RunRequest(
             run_key=context.cursor,
@@ -73,7 +74,8 @@ def asset_a_and_b_sensor(context, asset_events):
     asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
     job=log_asset_sensor_job,
 )
-def asset_c_or_d_sensor(context, asset_events):
+def asset_c_or_d_sensor(context):
+    asset_events = context.get_latest_event([AssetKey("asset_c"), AssetKey("asset_d")])
     if any(asset_events.values()):
         return RunRequest(
             run_key=context.cursor,
@@ -91,7 +93,8 @@ def asset_c_or_d_sensor(context, asset_events):
     asset_keys=[AssetKey("my_string_asset"), AssetKey("my_int_asset")],
     job=log_asset_sensor_job,
 )
-def asset_string_and_int_sensor(context, asset_events):
+def asset_string_and_int_sensor(context):
+    asset_events = context.get_latest_event([AssetKey("my_string_asset"), AssetKey("my_int_asset")])
     if all(asset_events.values()):
         return RunRequest(
             run_key=context.cursor,
