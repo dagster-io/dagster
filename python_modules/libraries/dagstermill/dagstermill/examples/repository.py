@@ -8,11 +8,11 @@ from dagstermill.io_managers import local_output_notebook_io_manager
 from dagster import (
     Field,
     FileHandle,
+    In,
     Int,
     List,
     Out,
     ResourceDefinition,
-    In,
     String,
     fs_io_manager,
     job,
@@ -21,14 +21,7 @@ from dagster import (
 )
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.storage.file_manager import local_file_manager
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    composite_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import InputDefinition, ModeDefinition, composite_solid, pipeline, solid
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
 try:
