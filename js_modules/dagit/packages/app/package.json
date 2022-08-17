@@ -5,7 +5,7 @@
   "description": "Dagit Application Shell",
   "license": "Apache-2.0",
   "dependencies": {
-    "@apollo/client": "3.3.16",
+    "@apollo/client": "3.6.9",
     "@blueprintjs/core": "^3.45.0",
     "@blueprintjs/popover2": "0.10.1",
     "@blueprintjs/select": "^3.16.4",
