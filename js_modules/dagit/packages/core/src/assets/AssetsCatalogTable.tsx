@@ -360,6 +360,7 @@ function buildNamespaceProps(assets: Asset[], prefixPath: string[], cursor: stri
   const namespaceForAsset = (asset: Asset) => {
     return asset.key.path.slice(prefixPath.length, prefixPath.length + 1);
   };
+
   const namespaces = Array.from(
     new Set(assets.map((asset) => JSON.stringify(namespaceForAsset(asset)))),
   )
@@ -378,21 +379,21 @@ function buildNamespaceProps(assets: Asset[], prefixPath: string[], cursor: stri
     };
   }
 
-  const slice = namespaces.slice(cursorIndex, cursorIndex + PAGE_SIZE);
   const prevPageIndex = Math.max(0, cursorIndex - PAGE_SIZE);
   const prevCursor = cursorIndex !== 0 ? cursorValue(namespaces[prevPageIndex]) : undefined;
   const nextPageIndex = cursorIndex + PAGE_SIZE;
   const nextCursor =
     namespaces.length > nextPageIndex ? cursorValue(namespaces[nextPageIndex]) : undefined;
+  const displayed = filterAssetsByNamespace(
+    assets,
+    namespaces.map((ns) => [...prefixPath, ...ns]),
+  ).slice(cursorIndex, cursorIndex + PAGE_SIZE);
 
   return {
     nextCursor,
     prevCursor,
     displayPathForAsset: namespaceForAsset,
-    displayed: filterAssetsByNamespace(
-      assets,
-      slice.map((ns) => [...prefixPath, ...ns]),
-    ),
+    displayed,
   };
 }
 
