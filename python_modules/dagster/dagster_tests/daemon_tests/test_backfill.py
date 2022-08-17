@@ -751,7 +751,7 @@ def test_backfill_with_asset_selection():
         )
         wait_for_all_runs_to_start(instance)
         assert instance.get_runs_count() == 3
-        wait_for_all_runs_to_finish(instance)
+        wait_for_all_runs_to_finish(instance, timeout=45)
 
         assert instance.get_runs_count() == 3
         runs = reversed(instance.get_runs())
