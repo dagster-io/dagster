@@ -277,14 +277,12 @@ def asset_a_and_b_sensor(context, asset_events):
     job=my_job,
 )
 def asset_c_or_d_sensor(context, asset_events):
-    # this sensor will run when only asset_c and not asset_d have been materialized
-    if asset_events["asset_c"] is not None and asset_events["asset_d"] is None:
+    # this sensor will run when either asset_c or asset_d materialize
+    if any(asset_events.value()):
         return RunRequest(run_key=context.cursor)
     else:
         # you can optionally return a SkipReason
-        return SkipReason(
-            f"asset_c {'not' if not asset_events['asset_c'] else ''} materialized and asset_d {'not' if not asset_events['asset_d'] else ''} materialized."
-        )
+        return SkipReason("asset_c and asset_d not materialized.")
 
 
 # end_multi_asset_sensor_custom_fn_marker
