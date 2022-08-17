@@ -10,8 +10,8 @@
     "test": "jest",
     "typecheck": "tsc",
     "lint": "eslint . --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
-    "mdx-format": "yarn mdx-transform && prettier --config ./.prettierrc.markdown.js --write \"../content/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content/**/*.mdx\" --output --silent",
-    "mdx-transform": "ts-node -O '{\"module\": \"commonjs\"}' scripts/mdx-transform.ts",
+    "mdx-format": "yarn mdx-transform && prettier --config ../.prettierrc.markdown.js --write \"../content/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content/**/*.mdx\" --output --silent",
+    "mdx-transform": "ts-node -O '{\"module\": \"commonjs\"}' scripts/mdx-transform.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.18.0",

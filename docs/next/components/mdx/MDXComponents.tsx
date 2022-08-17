@@ -8,7 +8,7 @@
 import path from 'path';
 
 import {Tab, Transition} from '@headlessui/react';
-import Image as NextImage from 'next/image';
+import NextImage from 'next/image';
 import NextLink from 'next/link';
 import React, {useContext, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
@@ -520,16 +520,15 @@ function TabGroup({entries}: {entries: Entry[]}) {
   );
 }
 
-const Image = ({ children, ...props }) => {
-
+const Image = ({children, ...props}) => {
   /* Only version images when all conditions meet:
    * - use <Image> component in mdx
    * - on non-master version
    * - in public/images/ dir
    */
-  const { version } = useVersion();
-  const { src } = props;
-  if (!src.startsWith("/images/")) {
+  const {version} = useVersion();
+  const {src} = props;
+  if (!src.startsWith('/images/')) {
     return (
       <span className="block mx-auto">
         <NextImage {...(props as any)} />
@@ -538,22 +537,17 @@ const Image = ({ children, ...props }) => {
   }
 
   const resolvedPath =
-    version === "master"
+    version === 'master'
       ? src
       : new URL(
-          path.join("versioned_images", version, src.replace("/images/", "")),
-          "https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com"
+          path.join('versioned_images', version, src.replace('/images/', '')),
+          'https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com',
         ).href;
 
   return (
-    <Zoom wrapElement="span" wrapStyle={{ display: "block" }}>
+    <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
       <span className="block mx-auto">
-        <NextImage
-          src={resolvedPath}
-          width={props.width}
-          height={props.height}
-          alt={props.alt}
-        />
+        <NextImage src={resolvedPath} width={props.width} height={props.height} alt={props.alt} />
       </span>
     </Zoom>
   );
