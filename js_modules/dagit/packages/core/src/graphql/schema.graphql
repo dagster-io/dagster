@@ -2683,6 +2683,7 @@ input LaunchBackfillParams {
   selector: PartitionSetSelector!
   partitionNames: [String!]
   reexecutionSteps: [String!]
+  assetSelection: [AssetKeyInput!]
   fromFailure: Boolean
   allPartitions: Boolean
   tags: [ExecutionTag!]
