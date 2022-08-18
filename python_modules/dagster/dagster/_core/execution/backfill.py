@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, FrozenSet, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
@@ -75,7 +75,7 @@ class PartitionBackfill(
         backfill_timestamp: float,
         last_submitted_partition_name: Optional[str] = None,
         error: Optional[SerializableErrorInfo] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[List[AssetKey]] = None,
     ):
         check.invariant(
             not (asset_selection and reexecution_steps),
