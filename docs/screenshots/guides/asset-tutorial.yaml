@@ -1,0 +1,29 @@
+- id: defining_an_asset.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  route: /instance/assets/cereals?view=activity
+
+- id: asset_run.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  route: /
+  steps:
+    - launch a run and click on the run
+
+- id: asset_details.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  route: /instance/assets/cereals
+  steps:
+    - hit the materialize button and then close the run toast
+
+- id: serial_asset_graph.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/serial_asset_graph.py
+  route: /
+  steps:
+    - Click asset, navigate to Lineage tab
+
+- id: complex_asset_graph.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/complex_asset_graph.py
+  route: /
+  steps:
+    - Click asset, navigate to Lineage tab
+
+
