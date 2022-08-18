@@ -3,6 +3,7 @@ import os
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
+from typing import List, Optional, Tuple, Union
 
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver
@@ -12,8 +13,15 @@ from dagster import _check as check
 from dagster._core.execution.compute_logs import mirror_stream_to_file
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._seven import json
 from dagster._utils import ensure_dir, touch_file
 
+from .captured_log_manager import (
+    CapturedLogData,
+    CapturedLogManager,
+    CapturedLogMetadata,
+    CapturedLogSubscription,
+)
 from .compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
@@ -29,7 +37,7 @@ IO_TYPE_EXTENSION = {ComputeIOType.STDOUT: "out", ComputeIOType.STDERR: "err"}
 MAX_FILENAME_LENGTH = 255
 
 
-class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
+class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableClass):
     """Stores copies of stdout & stderr for each compute step locally on disk."""
 
     def __init__(self, base_dir, polling_timeout=None, inst_data=None):
@@ -39,18 +47,6 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         )
         self._subscription_manager = LocalComputeLogSubscriptionManager(self)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-
-    @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        check.opt_str_param(step_key, "step_key")
-
-        key = self.get_key(pipeline_run, step_key)
-        outpath = self.get_local_path(pipeline_run.run_id, key, ComputeIOType.STDOUT)
-        errpath = self.get_local_path(pipeline_run.run_id, key, ComputeIOType.STDERR)
-        with mirror_stream_to_file(sys.stdout, outpath):
-            with mirror_stream_to_file(sys.stderr, errpath):
-                yield
 
     @property
     def inst_data(self):
@@ -71,21 +67,181 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return LocalComputeLogManager(inst_data=inst_data, **config_value)
 
-    def _run_directory(self, run_id):
-        return os.path.join(self._base_dir, run_id, "compute_logs")
+    @contextmanager
+    def capture_logs(self, log_key: List[str]):
+        outpath = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT])
+        errpath = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR])
+        with mirror_stream_to_file(sys.stdout, outpath):
+            with mirror_stream_to_file(sys.stderr, errpath):
+                yield
+
+        # leave artifact on filesystem so that we know the capture is completed
+        touch_file(self.complete_artifact_path(log_key))
+
+    def is_capture_complete(self, log_key: List[str]):
+        return os.path.exists(self.complete_artifact_path(log_key))
+
+    def get_log_data(
+        self, log_key: List[str], cursor: Optional[str] = None, max_bytes: Optional[int] = None
+    ) -> CapturedLogData:
+        stdout_cursor, stderr_cursor = self._parse_cursor(cursor)
+        stdout, stdout_offset = self._read_bytes(
+            log_key, ComputeIOType.STDOUT, offset=stdout_cursor, max_bytes=max_bytes
+        )
+        stderr, stderr_offset = self._read_bytes(
+            log_key, ComputeIOType.STDERR, offset=stderr_cursor, max_bytes=max_bytes
+        )
+        return CapturedLogData(
+            log_key=log_key,
+            stdout=stdout,
+            stderr=stderr,
+            cursor=self._build_cursor(stdout_offset, stderr_offset),
+        )
+
+    def get_contextual_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
+        return CapturedLogMetadata(
+            stdout_location=self.get_captured_local_path(
+                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
+            ),
+            stderr_location=self.get_captured_local_path(
+                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR]
+            ),
+            stdout_download_url=self._captured_log_download_url(log_key, ComputeIOType.STDOUT),
+            stderr_download_url=self._captured_log_download_url(log_key, ComputeIOType.STDERR),
+        )
+
+    def _read_bytes(
+        self,
+        log_key: List[str],
+        io_type: ComputeIOType,
+        offset: Optional[int] = 0,
+        max_bytes: Optional[int] = None,
+    ):
+        path = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+
+        if not os.path.exists(path) or not os.path.isfile(path):
+            return None, offset
+
+        with open(path, "rb") as f:
+            f.seek(offset or 0, os.SEEK_SET)
+            if max_bytes is None:
+                data = f.read()
+            else:
+                data = f.read(max_bytes)
+            new_offset = f.tell()
+        return data, new_offset
+
+    def _parse_cursor(self, cursor: Optional[str] = None) -> Tuple[int, int]:
+        # Translates a string cursor into a set of byte offsets for stdout, stderr
+        if not cursor:
+            return 0, 0
+
+        parts = cursor.split(":")
+        if not parts or len(parts) != 2:
+            return 0, 0
+
+        try:
+            stdout, stderr = [int(_) for _ in parts]
+        except ValueError:
+            return 0, 0
+
+        return stdout, stderr
+
+    def _build_cursor(self, stdout_offset: int, stderr_offset: int) -> str:
+        return f"{stdout_offset}:{stderr_offset}"
+
+    def complete_artifact_path(self, log_key):
+        return self.get_captured_local_path(log_key, "complete")
+
+    def on_progress(self, log_key: List[str]):
+        pass
+
+    def _read_path(
+        self,
+        path: str,
+        offset: int = 0,
+        max_bytes: Optional[int] = None,
+    ):
+        if not os.path.exists(path) or not os.path.isfile(path):
+            return None, offset
+
+        with open(path, "rb") as f:
+            f.seek(offset, os.SEEK_SET)
+            if max_bytes is None:
+                data = f.read()
+            else:
+                data = f.read(max_bytes)
+            new_offset = f.tell()
+        return data, new_offset
+
+    def _captured_log_download_url(self, log_key, io_type):
+        check.inst_param(io_type, "io_type", ComputeIOType)
+        url = "/logs"
+        for part in log_key:
+            url = f"{url}/{part}"
+
+        return f"{url}/{IO_TYPE_EXTENSION[io_type]}"
+
+    def get_captured_local_path(self, log_key: List[str], extension: str, partial=False):
+        [*namespace, filebase] = log_key
+        filename = f"{filebase}.{extension}"
+        if partial:
+            filename = f"{filename}.partial"
+        if len(filename) > MAX_FILENAME_LENGTH:
+            filename = "{}.{}".format(hashlib.md5(filebase.encode("utf-8")).hexdigest(), extension)
+        return os.path.join(self._base_dir, *namespace, filename)
+
+    def subscribe(
+        self, log_key: List[str], cursor: Optional[str] = None
+    ) -> CapturedLogSubscription:
+        subscription = CapturedLogSubscription(self, log_key, cursor)
+        self.on_subscribe(subscription)
+        return subscription
+
+    def unsubscribe(self, subscription):
+        self.on_unsubscribe(subscription)
+
+    def get_in_progress_log_keys(self, prefix: Optional[List[str]] = None) -> List[List[str]]:
+        # maybe instead need to keep track using the contextmanager, in memory
+        prefix = check.opt_list_param(prefix, "prefix", of_type=str)
+
+        fileset = set()
+        parent_dir = os.path.join(self._base_dir, *prefix)
+
+        if not os.path.exists(parent_dir) or not os.path.isdir(parent_dir):
+            return []
+
+        for filename in os.listdir(parent_dir):
+            filepath = os.path.join(parent_dir, filename)
+            if not os.path.isfile(filepath):
+                continue
+
+            if filepath.endswith(IO_TYPE_EXTENSION[ComputeIOType.STDERR]):
+                fileset.add(os.path.splitext(filename)[0])
+
+        return [[*prefix, key] for key in fileset]
+
+    ###############################################
+    #
+    # Methods for the ComputeLogManager interface
+    #
+    ###############################################
+    @contextmanager
+    def _watch_logs(self, pipeline_run, step_key=None):
+        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.opt_str_param(step_key, "step_key")
+
+        log_key = self.build_log_key_for_run(
+            pipeline_run.run_id, step_key or pipeline_run.pipeline_name
+        )
+        with self.capture_logs(log_key):
+            yield
 
     def get_local_path(self, run_id, key, io_type):
+        """Legacy adapter from compute log manager to more generic captured log manager API"""
         check.inst_param(io_type, "io_type", ComputeIOType)
-        return self._get_local_path(run_id, key, IO_TYPE_EXTENSION[io_type])
-
-    def complete_artifact_path(self, run_id, key):
-        return self._get_local_path(run_id, key, "complete")
-
-    def _get_local_path(self, run_id, key, extension):
-        filename = "{}.{}".format(key, extension)
-        if len(filename) > MAX_FILENAME_LENGTH:
-            filename = "{}.{}".format(hashlib.md5(key.encode("utf-8")).hexdigest(), extension)
-        return os.path.join(self._run_directory(run_id), filename)
+        log_key = self.build_log_key_for_run(run_id, key)
+        return self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
 
     def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
         path = self.get_local_path(run_id, key, io_type)
@@ -110,22 +266,25 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
             download_url=download_url,
         )
 
-    def is_watch_completed(self, run_id, key):
-        return os.path.exists(self.complete_artifact_path(run_id, key))
-
-    def on_watch_start(self, pipeline_run, step_key):
-        pass
-
     def get_key(self, pipeline_run, step_key):
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
         check.opt_str_param(step_key, "step_key")
         return step_key or pipeline_run.pipeline_name
 
+    def is_watch_completed(self, run_id, key):
+        log_key = self.build_log_key_for_run(run_id, key)
+        return self.is_capture_complete(log_key)
+
+    def on_watch_start(self, pipeline_run, step_key):
+        pass
+
     def on_watch_finish(self, pipeline_run, step_key=None):
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
         check.opt_str_param(step_key, "step_key")
-        key = self.get_key(pipeline_run, step_key)
-        touchpath = self.complete_artifact_path(pipeline_run.run_id, key)
+        log_key = self.build_log_key_for_run(
+            pipeline_run.run_id, step_key or pipeline_run.pipeline_name
+        )
+        touchpath = self.complete_artifact_path(log_key)
         touch_file(touchpath)
 
     def download_url(self, run_id, key, io_type):
@@ -149,43 +308,77 @@ class LocalComputeLogSubscriptionManager:
         self._watchers = {}
         self._observer = None
 
-    def _watch_key(self, run_id, key):
-        return "{}:{}".format(run_id, key)
+    def add_subscription(
+        self, subscription: Union[ComputeLogSubscription, CapturedLogSubscription]
+    ):
+        check.inst_param(
+            subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
+        )
 
-    def add_subscription(self, subscription):
-        check.inst_param(subscription, "subscription", ComputeLogSubscription)
-        if self._manager.is_watch_completed(subscription.run_id, subscription.key):
+        if self.is_complete(subscription):
             subscription.fetch()
             subscription.complete()
         else:
-            watch_key = self._watch_key(subscription.run_id, subscription.key)
+            log_key = self._log_key(subscription)
+            watch_key = self._watch_key(log_key)
             self._subscriptions[watch_key].append(subscription)
-            self.watch(subscription.run_id, subscription.key)
+            self.watch(subscription)
+
+    def is_complete(self, subscription: Union[ComputeLogSubscription, CapturedLogSubscription]):
+        check.inst_param(
+            subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
+        )
+
+        if isinstance(subscription, ComputeLogSubscription):
+            return self._manager.is_watch_completed(subscription.run_id, subscription.key)
+        return self._manager.is_capture_complete(subscription.log_key)
 
     def remove_subscription(self, subscription):
-        check.inst_param(subscription, "subscription", ComputeLogSubscription)
-        watch_key = self._watch_key(subscription.run_id, subscription.key)
+        check.inst_param(
+            subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
+        )
+        log_key = self._log_key(subscription)
+        watch_key = self._watch_key(log_key)
         if subscription in self._subscriptions[watch_key]:
             self._subscriptions[watch_key].remove(subscription)
             subscription.complete()
 
-    def remove_all_subscriptions(self, run_id, step_key):
-        watch_key = self._watch_key(run_id, step_key)
+    def _log_key(self, subscription):
+        check.inst_param(
+            subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
+        )
+
+        if isinstance(subscription, ComputeLogSubscription):
+            return self._manager.build_log_key_for_run(subscription.run_id, subscription.key)
+        return subscription.log_key
+
+    def _watch_key(self, log_key: List[str]) -> str:
+        return json.dumps(log_key)
+
+    def remove_all_subscriptions(self, log_key):
+        watch_key = self._watch_key(log_key)
         for subscription in self._subscriptions.pop(watch_key, []):
             subscription.complete()
 
-    def watch(self, run_id, step_key):
-        watch_key = self._watch_key(run_id, step_key)
+    def watch(self, subscription):
+        log_key = self._log_key(subscription)
+        watch_key = self._watch_key(log_key)
         if watch_key in self._watchers:
             return
 
         update_paths = [
-            self._manager.get_local_path(run_id, step_key, ComputeIOType.STDOUT),
-            self._manager.get_local_path(run_id, step_key, ComputeIOType.STDERR),
+            self._manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]),
+            self._manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR]),
+            self._manager.get_captured_local_path(
+                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT], partial=True
+            ),
+            self._manager.get_captured_local_path(
+                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR], partial=True
+            ),
         ]
-        complete_paths = [self._manager.complete_artifact_path(run_id, step_key)]
+        complete_paths = [self._manager.complete_artifact_path(log_key)]
         directory = os.path.dirname(
-            self._manager.get_local_path(run_id, step_key, ComputeIOType.STDERR)
+            self._manager.get_captured_local_path(log_key, ComputeIOType.STDERR),
         )
 
         if not self._observer:
@@ -195,19 +388,17 @@ class LocalComputeLogSubscriptionManager:
         ensure_dir(directory)
 
         self._watchers[watch_key] = self._observer.schedule(
-            LocalComputeLogFilesystemEventHandler(
-                self, run_id, step_key, update_paths, complete_paths
-            ),
+            LocalComputeLogFilesystemEventHandler(self, log_key, update_paths, complete_paths),
             str(directory),
         )
 
-    def notify_subscriptions(self, run_id, step_key):
-        watch_key = self._watch_key(run_id, step_key)
+    def notify_subscriptions(self, log_key):
+        watch_key = self._watch_key(log_key)
         for subscription in self._subscriptions[watch_key]:
             subscription.fetch()
 
-    def unwatch(self, run_id, step_key, handler):
-        watch_key = self._watch_key(run_id, step_key)
+    def unwatch(self, log_key, handler):
+        watch_key = self._watch_key(log_key)
         if watch_key in self._watchers:
             self._observer.remove_handler_for_watch(handler, self._watchers[watch_key])
         del self._watchers[watch_key]
@@ -219,10 +410,9 @@ class LocalComputeLogSubscriptionManager:
 
 
 class LocalComputeLogFilesystemEventHandler(PatternMatchingEventHandler):
-    def __init__(self, manager, run_id, key, update_paths, complete_paths):
+    def __init__(self, manager, log_key, update_paths, complete_paths):
         self.manager = manager
-        self.run_id = run_id
-        self.key = key
+        self.log_key = log_key
         self.update_paths = update_paths
         self.complete_paths = complete_paths
         patterns = update_paths + complete_paths
@@ -230,9 +420,9 @@ class LocalComputeLogFilesystemEventHandler(PatternMatchingEventHandler):
 
     def on_created(self, event):
         if event.src_path in self.complete_paths:
-            self.manager.remove_all_subscriptions(self.run_id, self.key)
-            self.manager.unwatch(self.run_id, self.key, self)
+            self.manager.remove_all_subscriptions(self.log_key)
+            self.manager.unwatch(self.log_key, self)
 
     def on_modified(self, event):
         if event.src_path in self.update_paths:
-            self.manager.notify_subscriptions(self.run_id, self.key)
+            self.manager.notify_subscriptions(self.log_key)
