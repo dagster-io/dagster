@@ -5,7 +5,7 @@ import {RunStatus} from '../types/globalTypes';
 export const generateRunMocks = (runCount: number, range: [number, number]) => {
   const [start, end] = range;
   const now = Date.now();
-  return [...new Array(6)]
+  return [...new Array(runCount)]
     .map(() => faker.date.between(new Date(start), new Date(end)))
     .map((startDate) => {
       const endTime = Math.min(startDate.getTime() + faker.datatype.number() * 10, now);
