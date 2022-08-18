@@ -98,7 +98,12 @@ def _select_unique_ids_from_manifest_json(
     )
 
     # create a parsed selection from the select string
-    parsed_spec = graph_cli.parse_difference([select], [exclude])
+    parsed_spec = graph_cli.parse_union([select], True)
+
+    if exclude:
+        parsed_spec = graph_cli.SelectionDifference(
+            components=[parsed_spec, graph_cli.parse_union([exclude], True)]
+        )
 
     # execute this selection against the graph
     selector = graph_selector.NodeSelector(graph, manifest)
