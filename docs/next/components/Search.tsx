@@ -162,7 +162,7 @@ export function Search() {
               return (
                 <Link
                   href={{
-                    pathname: '/search',
+                    pathname: '/searchpage',
                     query: {query: encodeURIComponent(state.query)},
                   }}
                 >
