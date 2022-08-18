@@ -34,7 +34,11 @@ ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
 
 
 def _load_manifest_for_project(
-    project_dir: str, profiles_dir: str, target_dir: str, select: str
+    project_dir: str,
+    profiles_dir: str,
+    target_dir: str,
+    select: str,
+    exclude: str,
 ) -> Tuple[Mapping[str, Any], DbtCliOutput]:
     # running "dbt ls" regenerates the manifest.json, which includes a superset of the actual
     # "dbt ls" output
@@ -46,6 +50,7 @@ def _load_manifest_for_project(
             "project-dir": project_dir,
             "profiles-dir": profiles_dir,
             "select": select,
+            "exclude": exclude,
             "output": "json",
         },
         warn_error=False,
@@ -60,7 +65,7 @@ def _load_manifest_for_project(
 
 
 def _select_unique_ids_from_manifest_json(
-    manifest_json: Mapping[str, Any], select: str
+    manifest_json: Mapping[str, Any], select: str, exclude: str
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     try:
@@ -94,6 +99,11 @@ def _select_unique_ids_from_manifest_json(
 
     # create a parsed selection from the select string
     parsed_spec = graph_cli.parse_union([select], True)
+
+    if exclude:
+        parsed_spec = graph_cli.SelectionDifference(
+            components=[parsed_spec, graph_cli.parse_union([exclude], True)]
+        )
 
     # execute this selection against the graph
     selector = graph_selector.NodeSelector(graph, manifest)
@@ -189,6 +199,7 @@ def _get_dbt_op(
     ins: Dict[str, In],
     outs: Dict[str, Out],
     select: str,
+    exclude: str,
     use_build_command: bool,
     fqns_by_output_name: Dict[str, str],
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
@@ -212,18 +223,19 @@ def _get_dbt_op(
 
         # in the case that we're running everything, opt for the cleaner selection string
         if len(context.selected_output_names) == len(outs):
-            subselect = select
+            kwargs = {"select": select, "exclude": exclude}
         else:
             # for each output that we want to emit, translate to a dbt select string by converting
             # the out to its corresponding fqn
-            subselect = [
-                ".".join(fqns_by_output_name[output_name])
-                for output_name in context.selected_output_names
-            ]
+            kwargs = {
+                "select": [
+                    ".".join(fqns_by_output_name[output_name])
+                    for output_name in context.selected_output_names
+                ]
+            }
 
         try:
             # variables to pass into the command
-            kwargs = {"select": subselect}
             if partition_key_to_vars_fn:
                 kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
 
@@ -260,6 +272,7 @@ def _get_dbt_op(
 def _dbt_nodes_to_assets(
     dbt_nodes: Mapping[str, Any],
     select: str,
+    exclude: str,
     selected_unique_ids: AbstractSet[str],
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
@@ -330,14 +343,15 @@ def _dbt_nodes_to_assets(
 
     # prevent op name collisions between multiple dbt multi-assets
     op_name = f"run_dbt_{package_name}"
-    if select != "*":
-        op_name += "_" + hashlib.md5(select.encode()).hexdigest()[-5:]
+    if select != "*" or exclude:
+        op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
 
     dbt_op = _get_dbt_op(
         op_name=op_name,
         ins=dict(asset_ins.values()),
         outs=dict(asset_outs.values()),
         select=select,
+        exclude=exclude,
         use_build_command=use_build_command,
         fqns_by_output_name=fqns_by_output_name,
         node_info_to_asset_key=node_info_to_asset_key,
@@ -365,6 +379,7 @@ def load_assets_from_dbt_project(
     profiles_dir: Optional[str] = None,
     target_dir: Optional[str] = None,
     select: Optional[str] = None,
+    exclude: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
@@ -391,6 +406,8 @@ def load_assets_from_dbt_project(
             Defaults to "target" underneath the project_dir.
         select (Optional[str]): A dbt selection string for the models in a project that you want
             to include. Defaults to "*".
+        exclude (Optional[str]): A dbt selection string for the models in a project that you want
+            to exclude. Defaults to "".
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
             project. Does not apply to sources.
         source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
@@ -422,9 +439,10 @@ def load_assets_from_dbt_project(
     )
     target_dir = check.opt_str_param(target_dir, "target_dir", os.path.join(project_dir, "target"))
     select = check.opt_str_param(select, "select", "*")
+    exclude = check.opt_str_param(exclude, "exclude", "")
 
     manifest_json, cli_output = _load_manifest_for_project(
-        project_dir, profiles_dir, target_dir, select
+        project_dir, profiles_dir, target_dir, select, exclude
     )
     selected_unique_ids: Set[str] = set(
         filter(None, (line.get("unique_id") for line in cli_output.logs))
@@ -432,6 +450,7 @@ def load_assets_from_dbt_project(
     return load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
         select=select,
+        exclude=exclude,
         key_prefix=key_prefix,
         source_key_prefix=source_key_prefix,
         runtime_metadata_fn=runtime_metadata_fn,
@@ -448,6 +467,7 @@ def load_assets_from_dbt_project(
 def load_assets_from_dbt_manifest(
     manifest_json: Mapping[str, Any],
     select: Optional[str] = None,
+    exclude: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
@@ -472,6 +492,8 @@ def load_assets_from_dbt_manifest(
             a set of models to load into assets.
         select (Optional[str]): A dbt selection string for the models in a project that you want
             to include. Defaults to "*".
+        exclude (Optional[str]): A dbt selection string for the models in a project that you want
+            to exclude. Defaults to "".
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
             project. Does not apply to sources.
         source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
@@ -509,24 +531,25 @@ def load_assets_from_dbt_manifest(
 
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
 
-    if select is None:
-        if selected_unique_ids:
-            # generate selection string from unique ids
-            select = " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
-        else:
-            # if no selection specified, default to "*"
-            select = "*"
-            selected_unique_ids = manifest_json["nodes"].keys()
+    if selected_unique_ids:
+        select = (
+            " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
+            if select is None
+            else select
+        )
+        exclude = "" if exclude is None else exclude
+    else:
+        select = select if select is not None else "*"
+        exclude = exclude if exclude is not None else ""
 
-    if selected_unique_ids is None:
-        # must resolve the selection string using the existing manifest.json data (hacky)
-        selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select)
+        selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select, exclude)
 
     dbt_assets_def = _dbt_nodes_to_assets(
         dbt_nodes,
         runtime_metadata_fn=runtime_metadata_fn,
         io_manager_key=io_manager_key,
         select=select,
+        exclude=exclude,
         selected_unique_ids=selected_unique_ids,
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
