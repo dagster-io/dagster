@@ -1,5 +1,6 @@
 import {DocSearchModal, useDocSearchKeyboardEvents} from '@docsearch/react';
 import Head from 'next/head';
+import Link from 'next/link';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
@@ -20,10 +21,6 @@ function Hit({hit, children}) {
   };
   return <a onClick={onClick}>{children}</a>;
 }
-
-const footerClick = (query) => {
-  window.location.href = `/search?query=${encodeURIComponent(query)}`;
-};
 
 export function Search() {
   const [isOpen, setIsOpen] = useState(false);
@@ -161,11 +158,21 @@ export function Search() {
                 };
               });
             }}
-            resultsFooterComponent={({ state }) => {
+            resultsFooterComponent={({state}) => {
               return (
-                <a onClick={() => footerClick(state.query)}>
-                  {state.context.nbHits} search results
-                </a>
+                <Link
+                  href={{
+                    pathname: '/search',
+                    query: {query: encodeURIComponent(state.query)},
+                  }}
+                >
+                  <a
+                    onClick={() => setIsOpen(false)}
+                    className="justify-center flex mt-3 text-gray-500"
+                  >
+                    See all {state.context.nbHits} search results
+                  </a>
+                </Link>
               );
             }}
           />,
