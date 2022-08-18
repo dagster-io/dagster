@@ -84,7 +84,6 @@ class RunRequest(
             run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
             job_name=check.opt_str_param(job_name, "job_name"),
-            # convert all sequence inputs to lists
             asset_selection=check.opt_list_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
