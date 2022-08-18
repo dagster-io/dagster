@@ -1,18 +1,11 @@
-apidoc-build:
-	tox -e sphinx && python scripts/pack_json.py
+docs_dev_install:
+	cd next; yarn; cd ..;
 
-apidoc-watch-build:
-	watchmedo shell-command \
-		--patterns='*.rst;conf.py;_ext/*.py' \
-		--command='make apidoc-build' \
-		--recursive \
-		sphinx
+dev:
+	cd next; yarn dev;
 
-next-dev-install:
-	yarn --cwd=next install
+build:
+	cd sphinx && make clean && make json SPHINXOPTS="-W --keep-going" && cd .. && python pack_json.py
 
-next-watch-build:
-	yarn --cwd=next dev
-
-mdx-format:
-	yarn --cwd=next mdx-format
+snapshot:
+	cd next; yarn snapshot; cd ..;

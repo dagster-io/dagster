@@ -5,7 +5,7 @@ from dagster_buildkite.steps.tox import build_tox_step
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteLeafStep, BuildkiteStep, GroupStep
-from .packages import build_dagit_screenshot_steps, build_example_packages_steps
+from .packages import build_example_packages_steps
 
 
 def build_docs_steps() -> List[BuildkiteStep]:
@@ -19,41 +19,39 @@ def build_docs_steps() -> List[BuildkiteStep]:
         #       the underlying code that the literalinclude is pointing to.
         # To fix this, run 'make snapshot' in the /docs directory to update the snapshots.
         # Be sure to check the diff to make sure the literalincludes are as you expect them."
-        CommandStepBuilder("docs code snippets")
-        .run("cd docs", "make next-dev-install", "make mdx-format", "git diff --exit-code")
+        CommandStepBuilder("docs code snapshots")
+        .run("pushd docs; make docs_dev_install; make snapshot", "git diff --exit-code")
         .on_test_image(AvailablePythonVersion.V3_7)
         .build(),
         # Make sure the docs site can build end-to-end.
         CommandStepBuilder("docs next")
         .run(
-            "cd docs/next",
-            "yarn install",
+            "pushd docs/next",
+            "yarn",
             "yarn test",
             "yarn build-master",
         )
         .on_test_image(AvailablePythonVersion.V3_7)
         .build(),
         # Make sure docs sphinx build runs.
-        CommandStepBuilder("docs apidoc build")
+        CommandStepBuilder("docs sphinx json build")
         .run(
             "pip install -U virtualenv",
             "cd docs",
-            "make apidoc-build",
-            "python scripts/pack_json.py",
-            # "echo '--- Checking git diff (ignoring whitespace) after docs build...'",
-            # "git diff --ignore-all-space --stat",
-            # "git diff --exit-code --ignore-all-space --no-patch",
+            "tox -vv -e py38-sphinx",
         )
-        .on_test_image(AvailablePythonVersion.V3_9)
+        .on_test_image(AvailablePythonVersion.V3_8)
         .build(),
         # Verify screenshot integrity.
-        build_tox_step("docs", "audit-screenshots"),
+        CommandStepBuilder("docs screenshot spec")
+        .run("python docs/screenshot_capture/match_screenshots.py")
+        .on_test_image(AvailablePythonVersion.V3_8)
+        .build(),
         # mypy for build scripts
         build_tox_step("docs", "mypy", command_type="mypy"),
         # pylint for build scripts
         build_tox_step("docs", "pylint", command_type="pylint"),
     ]
-
     steps += [
         GroupStep(
             group=":book: docs",
@@ -63,6 +61,5 @@ def build_docs_steps() -> List[BuildkiteStep]:
     ]
 
     steps += build_example_packages_steps()
-    steps += build_dagit_screenshot_steps()
 
     return steps
