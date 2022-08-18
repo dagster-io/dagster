@@ -122,7 +122,13 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         return StreamingResponse(result, media_type="application/gzip")
 
     async def download_notebook(self, request: Request):
-        import nbformat
+        try:
+            import nbconvert
+        except ImportError:
+            return HTMLResponse(
+                "Notebook support requires nbconvert, which is not installed. You can install nbconvert using Dagit's 'notebook' extra via <code>pip install dagit[notebook]</code>"
+            )
+
         from nbconvert import HTMLExporter
 
         context = self.make_request_context(request)
