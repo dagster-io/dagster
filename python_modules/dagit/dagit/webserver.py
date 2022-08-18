@@ -4,6 +4,7 @@ import uuid
 from os import path
 from typing import Generic, List, TypeVar
 
+import nbformat
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
 from graphene import Schema
