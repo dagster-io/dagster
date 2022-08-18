@@ -532,8 +532,12 @@ def load_assets_from_dbt_manifest(
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
 
     if selected_unique_ids:
-        select = " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
-        exclude = ""
+        select = (
+            " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
+            if select is None
+            else select
+        )
+        exclude = "" if exclude is None else exclude
     else:
         select = select if select is not None else "*"
         exclude = exclude if exclude is not None else ""
