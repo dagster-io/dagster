@@ -158,3 +158,9 @@ def graph_backed_asset_repository():
 @repository
 def conditional_assets_repository():
     return get_conditional_assets_repo()
+
+@repository
+def jamie_asset_repository():
+    from . import jamie_assets
+
+    return load_assets_from_modules([jamie_assets])
