@@ -14,6 +14,8 @@ from dagster._core.errors import (
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, PipelineRun, RunsFilter
+
+# from dagster._core.host_representation import JobSelector, RepositorySelector
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -41,6 +43,33 @@ from .sensor_definition import (
     is_context_provided,
 )
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+
+
+@whitelist_for_serdes
+class JobSelector(
+    NamedTuple(
+        "_JobSelector", [("location_name", str), ("repository_name", str), ("job_name", str)]
+    )
+):
+    def __new__(cls, location_name: str, repository_name: str, job_name: str):
+        return super(JobSelector, cls).__new__(
+            cls,
+            location_name=check.str_param(location_name, "location_name"),
+            repository_name=check.str_param(repository_name, "repository_name"),
+            job_name=check.str_param(job_name, "job_name"),
+        )
+
+
+@whitelist_for_serdes
+class RepositorySelector(
+    NamedTuple("_RepositorySelector", [("location_name", str), ("repository_name", str)])
+):
+    def __new__(cls, location_name: str, repository_name: str):
+        return super(RepositorySelector, cls).__new__(
+            cls,
+            location_name=check.str_param(location_name, "location_name"),
+            repository_name=check.str_param(repository_name, "repository_name"),
+        )
 
 
 @whitelist_for_serdes
@@ -185,36 +214,17 @@ def build_run_status_sensor_context(
     )
 
 
-class JobAddress(
-    NamedTuple(
-        "_JobAddress",
-        [("repository_location", str), ("repository", str), ("job_name", str)],
-    )
-):
-    def __new__(
-        cls,
-        repository_location: str,
-        repository: str,
-        job_name: str,
-    ):
-        return super(JobAddress, cls).__new__(
-            cls,
-            repository_location=check.str_param(repository_location, "repository_location"),
-            repository=check.str_param(repository, "repository"),
-            job_name=check.str_param(job_name, "job_name"),
-        )
-
-
 def run_failure_sensor(
     name: Optional[Union[Callable[..., Any], str]] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]]
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
     job_selection: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]]
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
+    monitored: Optional[List[Union[RepositorySelector, JobSelector]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -240,6 +250,8 @@ def run_failure_sensor(
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
             The jobs that will be monitored by this failure sensor. Defaults to None, which means
             the alert will be sent when any job in the repository fails.
+        monitored (Optional[List[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
+            sensor should monitor. Defaults to None, meaning that no jobs in other repositories will be monitored.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
@@ -267,6 +279,7 @@ def run_failure_sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             monitored_jobs=jobs,
+            monitored=monitored,
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,
@@ -316,10 +329,9 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         monitored_jobs: Optional[
-            List[
-                Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]
-            ]
+            List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
         ] = None,
+        monitored: Optional[List[Union[RepositorySelector, JobSelector]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -336,8 +348,9 @@ class RunStatusSensorDefinition(SensorDefinition):
         check.opt_list_param(
             monitored_jobs,
             "monitored_jobs",
-            (PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress),
+            (PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition),
         )
+        check.opt_list_param(monitored, "monitored", (RepositorySelector, JobSelector))
         check.inst_param(default_status, "default_status", DefaultSensorStatus)
 
         self._run_status_sensor_fn = check.callable_param(
@@ -388,14 +401,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                 limit=5,
             )
 
-            # split jobs into those specified by definition objects vs JobAddresses
-            job_address_jobs = (
-                [x for x in monitored_jobs if isinstance(x, JobAddress)] if monitored_jobs else []
+            # split monitored into full repos and specific jobs
+            other_repos = (
+                [x for x in monitored if isinstance(x, RepositorySelector)] if monitored else []
             )
-            definition_jobs = (
-                [x for x in monitored_jobs if not isinstance(x, JobAddress)]
-                if monitored_jobs
-                else []
+            other_repo_jobs = (
+                [x for x in monitored if isinstance(x, JobSelector)] if monitored else []
             )
 
             for event_record in event_records:
@@ -427,7 +438,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 job_match = False
 
-                # check if the run is in the current repository and (if provided) one of jobs specified by definition
+                # check if the run is in the current repository and (if provided) one of jobs specified in monitored_jobs
                 if (
                     # the pipeline has a repository (not manually executed)
                     pipeline_run.external_pipeline_origin
@@ -436,20 +447,28 @@ class RunStatusSensorDefinition(SensorDefinition):
                     pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
                     == context.repository_name
                 ):
-                    if definition_jobs:
-                        if pipeline_run.pipeline_name in map(lambda x: x.name, definition_jobs):
+                    if monitored_jobs:
+                        if pipeline_run.pipeline_name in map(lambda x: x.name, monitored_jobs):
                             job_match = True
                     else:
                         job_match = True
 
-                # check if the run is one of the jobs specified by JobAddress
-                # make a JobAddress for the run in question
-                pipeline_run_address = JobAddress(
-                    repository_location=pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name,
-                    repository=pipeline_run.external_pipeline_origin.external_repository_origin.repository_name,
+                # check if the run is one of the jobs specified by monitored (ie in another repo)
+                # make a JobSelector for the run in question
+                run_job_selector = JobSelector(
+                    location_name=pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name,
+                    repository_name=pipeline_run.external_pipeline_origin.external_repository_origin.repository_name,
                     job_name=pipeline_run.pipeline_name,
                 )
-                if pipeline_run_address in job_address_jobs:
+                if run_job_selector in other_repo_jobs:
+                    job_match = True
+
+                # make a RepositorySelector for the run in question
+                run_repo_selector = RepositorySelector(
+                    location_name=pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name,
+                    repository_name=pipeline_run.external_pipeline_origin.external_repository_origin.repository_name,
+                )
+                if run_repo_selector in other_repos:
                     job_match = True
 
                 if not job_match:
@@ -572,11 +591,12 @@ def run_status_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]]
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
     job_selection: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobAddress]]
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
+    monitored: Optional[List[Union[RepositorySelector, JobSelector]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -603,6 +623,8 @@ def run_status_sensor(
         job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, JobAddress]]]): (deprecated in favor of monitored_jobs)
             Jobs that will be monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.
+        monitored (Optional[List[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
+            sensor should monitor. Defaults to None, meaning that no jobs in other repositories will be monitored.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
@@ -629,6 +651,7 @@ def run_status_sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             monitored_jobs=jobs,
+            monitored=monitored,
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,

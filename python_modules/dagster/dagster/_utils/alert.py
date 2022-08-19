@@ -11,7 +11,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.pipeline_definition import PipelineDefinition
     from dagster._core.definitions.run_status_sensor_definition import (
-        JobAddress,
+        JobSelector,
+        RepositorySelector,
         RunFailureSensorContext,
     )
     from dagster._core.definitions.unresolved_asset_job_definition import (
@@ -93,7 +94,6 @@ def make_email_on_run_failure_sensor(
                 "PipelineDefinition",
                 "GraphDefinition",
                 "UnresolvedAssetJobDefinition",
-                "JobAddress",
             ]
         ]
     ] = None,
@@ -103,10 +103,10 @@ def make_email_on_run_failure_sensor(
                 "PipelineDefinition",
                 "GraphDefinition",
                 "UnresolvedAssetJobDefinition",
-                "JobAddress",
             ]
         ]
     ] = None,
+    monitored: Optional[Union["RepositorySelector", "JobSelector"]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a job failure sensor that sends email via the SMTP protocol.
@@ -130,6 +130,8 @@ def make_email_on_run_failure_sensor(
         monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
+        monitored (Optional[List[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
+            sensor should monitor. Defaults to None, meaning that no jobs in other repositories will be monitored.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition]]]):
             (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure
             sensor. Defaults to None, which means the alert will be sent when any job in the repository fails.
@@ -179,7 +181,7 @@ def make_email_on_run_failure_sensor(
         deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
     jobs = monitored_jobs if monitored_jobs else job_selection
 
-    @run_failure_sensor(name=name, monitored_jobs=jobs, default_status=default_status)
+    @run_failure_sensor(name=name, monitored_jobs=jobs, default_status=default_status, monitored=monitored)
     def email_on_run_failure(context: RunFailureSensorContext):
 
         email_body = email_body_fn(context)

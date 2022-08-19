@@ -16,8 +16,9 @@ from dagster import (
     AssetObservation,
     DagsterRunStatus,
     Field,
-    JobAddress,
+    JobSelector,
     Output,
+    RepositorySelector,
     graph,
     repository,
     run_failure_sensor,
@@ -283,11 +284,24 @@ def request_list_sensor(_ctx):
 
 
 @run_status_sensor(
-    monitored_jobs=[
-        JobAddress(
-            repository_location="test_location",
-            repository="the_other_repo",
+    monitored=[
+        JobSelector(
+            location_name="test_location",
+            repository_name="the_other_repo",
             job_name="the_pipeline",
+        )
+    ],
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def cross_repo_job_sensor(context):
+    assert isinstance(context.instance, DagsterInstance)
+
+
+@run_status_sensor(
+    monitored=[
+        RepositorySelector(
+            location_name="test_location",
+            repository_name="the_other_repo",
         )
     ],
     run_status=DagsterRunStatus.SUCCESS,
@@ -329,6 +343,7 @@ def the_repo():
         bad_request_unspecified,
         request_list_sensor,
         cross_repo_sensor,
+        cross_repo_job_sensor,
     ]
 
 
@@ -2142,6 +2157,66 @@ def test_cross_repo_run_status_sensor(executor):
 
         with pendulum.test(freeze_datetime):
             cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
+            instance.start_sensor(cross_repo_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(
+                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                cross_repo_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+            time.sleep(1)
+
+        with pendulum.test(freeze_datetime):
+            external_pipeline = the_other_repo.get_full_external_pipeline("the_pipeline")
+            run = instance.create_run_for_pipeline(
+                the_pipeline,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            instance.submit_run(run.run_id, workspace)
+            wait_for_all_runs_to_finish(instance)
+            run = instance.get_runs()[0]
+            assert run.status == DagsterRunStatus.SUCCESS
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(
+                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+            )
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                cross_repo_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_cross_repo_job_run_status_sensor(executor):
+    freeze_datetime = pendulum.now()
+    with instance_with_multiple_repos_with_sensors() as (
+        instance,
+        workspace,
+        repos,
+    ):
+        the_repo = repos["the_repo"]
+        the_other_repo = repos["the_other_repo"]
+
+        with pendulum.test(freeze_datetime):
+            cross_repo_sensor = the_repo.get_external_sensor("cross_repo_job_sensor")
             instance.start_sensor(cross_repo_sensor)
 
             evaluate_sensors(instance, workspace, executor)

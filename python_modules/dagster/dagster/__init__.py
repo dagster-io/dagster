@@ -287,7 +287,8 @@ from dagster._core.definitions.run_status_sensor_definition import (
     build_run_status_sensor_context as build_run_status_sensor_context,
     run_failure_sensor as run_failure_sensor,
     run_status_sensor as run_status_sensor,
-    JobAddress as JobAddress,
+    RepositorySelector as RepositorySelector,
+    JobSelector as JobSelector,
 )
 from dagster._core.definitions.schedule_definition import (
     DefaultScheduleStatus as DefaultScheduleStatus,
@@ -428,6 +429,11 @@ from dagster._core.executor.base import (
 from dagster._core.executor.init import (
     InitExecutorContext as InitExecutorContext,
 )
+
+# from dagster._core.host_representation.selector import (
+#     RepositorySelector as RepositorySelector,
+#     JobSelector as JobSelector,
+# )
 from dagster._core.instance import (
     DagsterInstance as DagsterInstance,
 )
