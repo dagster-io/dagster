@@ -27,11 +27,13 @@ from dagster._utils.backcompat import (
     deprecation_warning,
     experimental_arg_warning,
 )
+from dagster._core.selector.subset_selector import AssetSelectionData
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
+from .graph_definition import GraphDefinition
 from .partition import PartitionsDefinition
 from .partition_mapping import AllPartitionMapping, PartitionMapping
 from .resource_definition import ResourceDefinition
@@ -198,6 +200,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        can_subset: bool = False,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -251,6 +254,7 @@ class AssetsDefinition(ResourceAddable):
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
+            can_subset=can_subset,
         )
 
     @public
@@ -327,6 +331,7 @@ class AssetsDefinition(ResourceAddable):
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+        can_subset: bool = False,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
@@ -400,6 +405,7 @@ class AssetsDefinition(ResourceAddable):
             }
             if metadata_by_output_name
             else None,
+            can_subset=can_subset,
         )
 
     @public  # type: ignore
@@ -596,7 +602,11 @@ class AssetsDefinition(ResourceAddable):
             },
         )
 
-    def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
+    def subset_for(
+        self,
+        selected_asset_keys: AbstractSet[AssetKey],
+        asset_selection_data: AssetSelectionData,
+    ) -> "AssetsDefinition":
         """
         Create a subset of this AssetsDefinition that will only materialize the assets in the
         selected set.
@@ -604,19 +614,64 @@ class AssetsDefinition(ResourceAddable):
         Args:
             selected_asset_keys (AbstractSet[AssetKey]): The total set of asset keys
         """
+        from .job_definition import get_subselected_graph_definition, parse_op_selection
+
         check.invariant(
             self.can_subset,
             f"Attempted to subset AssetsDefinition for {self.node_def.name}, but can_subset=False.",
         )
+
+        subsetted_node = self.node_def
+        subsetted_keys_by_input_name = self._keys_by_input_name
+        subsetted_keys_by_output_name = self._keys_by_output_name
+
+        if isinstance(self.node_def, GraphDefinition):
+
+            parent_job = asset_selection_data.parent_job_def
+            dep_node_handles_by_asset_key = (
+                parent_job.asset_layer.dependency_node_handles_by_asset_key
+            )
+            op_selection = []
+            for asset_key in selected_asset_keys:
+                if asset_key in self.keys:
+                    dep_node_handles = dep_node_handles_by_asset_key[asset_key]
+                    for dep_node_handle in dep_node_handles:
+                        str_op_path = ".".join(dep_node_handle.path)
+                        op_selection.append(str_op_path)
+
+            subsetted_node = get_subselected_graph_definition(
+                parent_job.graph, parse_op_selection(parent_job, op_selection)
+            )
+
+            subsetted_node = subsetted_node.node_defs[0]
+
+            subsetted_input_names = [input_def.name for input_def in subsetted_node.input_defs]
+            subsetted_output_names = [output_def.name for output_def in subsetted_node.output_defs]
+            subsetted_keys_by_input_name = {
+                key: value
+                for key, value in self.node_keys_by_input_name.items()
+                if key in subsetted_input_names
+            }
+            subsetted_keys_by_output_name = {
+                key: value
+                for key, value in self.node_keys_by_output_name.items()
+                if key in subsetted_output_names
+            }
+
+        subsetted_asset_deps = {
+            out_asset_key: set(subsetted_keys_by_input_name.values())
+            for out_asset_key in selected_asset_keys
+        }
+
         return AssetsDefinition(
             # keep track of the original mapping
-            keys_by_input_name=self._keys_by_input_name,
-            keys_by_output_name=self._keys_by_output_name,
+            keys_by_input_name=subsetted_keys_by_input_name,
+            keys_by_output_name=subsetted_keys_by_output_name,
             # TODO: subset this properly for graph-backed-assets
-            node_def=self.node_def,
+            node_def=subsetted_node,
             partitions_def=self.partitions_def,
             partition_mappings=self._partition_mappings,
-            asset_deps=self._asset_deps,
+            asset_deps=subsetted_asset_deps,
             can_subset=self.can_subset,
             selected_asset_keys=selected_asset_keys & self.keys,
             resource_defs=self.resource_defs,

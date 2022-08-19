@@ -528,7 +528,11 @@ class AssetLayer:
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = resolved_asset_key
 
+            print("is_required")
+            print(node_handle.name)
+            print(assets_def.keys)
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
+                print(asset_key)
                 # resolve graph output to the op output it comes from
                 inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
                     output_name, handle=node_handle
@@ -541,7 +545,7 @@ class AssetLayer:
                     asset_key,
                     partitions_fn=partition_fn if assets_def.partitions_def else None,
                     partitions_def=assets_def.partitions_def,
-                    is_required=asset_key in assets_def.keys,
+                    is_required=asset_key in assets_def.keys,  # code here
                 )
                 io_manager_by_asset[asset_key] = inner_output_def.io_manager_key
 
@@ -677,9 +681,9 @@ def build_asset_selection_job(
 ) -> "JobDefinition":
     from dagster._core.definitions import build_assets_job
 
-    if asset_selection:
+    if asset_selection and asset_selection_data:
         included_assets, excluded_assets = _subset_assets_defs(
-            assets, source_assets, asset_selection
+            assets, source_assets, asset_selection, asset_selection_data
         )
     else:
         included_assets = cast(Iterable["AssetsDefinition"], assets)
@@ -716,6 +720,7 @@ def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     source_assets: Iterable["SourceAsset"],
     selected_asset_keys: AbstractSet[AssetKey],
+    asset_selection_data: AssetSelectionData,
 ) -> Tuple[Iterable["AssetsDefinition"], Sequence[Union["AssetsDefinition", "SourceAsset"]]]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
@@ -739,10 +744,12 @@ def _subset_assets_defs(
             excluded_assets.add(asset)
         elif asset.can_subset:
             # subset of the asset that we want
-            subset_asset = asset.subset_for(selected_asset_keys)
+            subset_asset = asset.subset_for(selected_asset_keys, asset_selection_data)
             included_assets.add(subset_asset)
             # subset of the asset that we don't want
-            excluded_assets.add(asset.subset_for(asset.keys - subset_asset.keys))
+            excluded_assets.add(
+                asset.subset_for(asset.keys - subset_asset.keys, asset_selection_data)
+            )
         else:
             raise DagsterInvalidSubsetError(
                 f"When building job, the AssetsDefinition '{asset.node_def.name}' "
