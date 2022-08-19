@@ -31,6 +31,7 @@ const PyObject: React.FunctionComponent<{
   pluralize?: boolean;
   decorator?: boolean;
 }> = ({module = 'dagster', object, method, displayText, pluralize = false, decorator = false}) => {
+  console.log('Rendering pyobject');
   const value = useContext(SearchIndexContext);
   if (!value) {
     return null;
@@ -38,7 +39,8 @@ const PyObject: React.FunctionComponent<{
 
   const objects = value.objects as any;
   const moduleObjects = objects[module];
-  const objectData = moduleObjects && moduleObjects[object];
+  // fifth field is the name of the object
+  const objectData = moduleObjects && moduleObjects.find(([, , , , name]) => name === object);
 
   let textValue = displayText || object;
   if (pluralize) {
