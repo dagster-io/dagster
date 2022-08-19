@@ -315,7 +315,7 @@ def config_map_loggers(
     {'loggers': {'console': <dict or None>}}          []                     use only the loggers listed in run_config (with default defs)     all loggers on run config
 
     The behavior of `run_config.loggers` as a source of truth for logger selection comes from:
-    python_modules/dagster/dagster/core/execution/context_creation_pipeline.py#create_log_manager
+    python_modules/dagster/dagster/_core/execution/context_creation_pipeline.py#create_log_manager
     See that codepath for more info on how the behavior in the above table is implemented. The logic
     in that function is tightly coupled to this one and changes in either path should be confirmed
     in the other.
