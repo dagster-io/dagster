@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, List, Optional, Sequence
+from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
@@ -161,7 +161,7 @@ def asset_sensor(
 
 
 def multi_asset_sensor(
-    asset_keys: List[AssetKey],
+    asset_keys: Sequence[AssetKey],
     *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
@@ -183,11 +183,10 @@ def multi_asset_sensor(
     4. Return nothing (skipping without providing a reason)
     5. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
 
-    Takes a :py:class:`~dagster.SensorEvaluationContext` and an EventLogEntry corresponding to an
-    AssetMaterialization event.
+    Takes a :py:class:`~dagster.MultiAssetSensorEvaluationContext`.
 
     Args:
-        asset_keys (List[AssetKey]): The asset_keys this sensor monitors.
+        asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
@@ -207,8 +206,8 @@ def multi_asset_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        def _wrapped_fn(context, events):
-            result = fn(context, events)
+        def _wrapped_fn(context):
+            result = fn(context)
 
             if inspect.isgenerator(result) or isinstance(result, list):
                 for item in result:

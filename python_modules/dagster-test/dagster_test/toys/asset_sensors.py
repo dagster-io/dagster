@@ -55,9 +55,10 @@ def log_asset_sensor_job():
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     job=log_asset_sensor_job,
 )
-def asset_a_and_b_sensor(context, asset_events):
-    asset_events = context.get_latest_event([AssetKey("asset_a"), AssetKey("asset_b")])
+def asset_a_and_b_sensor(context):
+    asset_events = context.latest_materializations_by_key()
     if all(asset_events.values()):
+        context.advance_all_cursors()
         return RunRequest(
             run_key=context.cursor,
             run_config={
@@ -75,8 +76,9 @@ def asset_a_and_b_sensor(context, asset_events):
     job=log_asset_sensor_job,
 )
 def asset_c_or_d_sensor(context):
-    asset_events = context.get_latest_event([AssetKey("asset_c"), AssetKey("asset_d")])
+    asset_events = context.latest_materializations_by_key()
     if any(asset_events.values()):
+        context.advance_all_cursors()
         return RunRequest(
             run_key=context.cursor,
             run_config={
@@ -94,13 +96,35 @@ def asset_c_or_d_sensor(context):
     job=log_asset_sensor_job,
 )
 def asset_string_and_int_sensor(context):
-    asset_events = context.get_latest_event([AssetKey("my_string_asset"), AssetKey("my_int_asset")])
+    asset_events = context.latest_materializations_by_key()
     if all(asset_events.values()):
+        context.advance_all_cursors()
         return RunRequest(
             run_key=context.cursor,
             run_config={
                 "ops": {
                     "log_asset_sensor": {"config": {"message": f"Asset events dict {asset_events}"}}
+                }
+            },
+        )
+
+
+@multi_asset_sensor(
+    asset_keys=[AssetKey("asset_a")],
+    job=log_asset_sensor_job,
+)
+def every_fifth_materialization_sensor(context):
+    all_asset_a_events = context.materializations_for_key(asset_key=AssetKey("asset_a"), limit=5)
+
+    if len(all_asset_a_events) == 5:
+        context.advance_cursor({AssetKey("asset_a"): all_asset_a_events[-1]})
+        return RunRequest(
+            run_key=context.cursor,
+            run_config={
+                "ops": {
+                    "log_asset_sensor": {
+                        "config": {"message": f"Asset events dict {all_asset_a_events}"}
+                    }
                 }
             },
         )
@@ -116,4 +140,5 @@ def get_asset_sensors_repo():
         asset_c_or_d_sensor,
         multi_asset_a,
         asset_string_and_int_sensor,
+        every_fifth_materialization_sensor,
     ]

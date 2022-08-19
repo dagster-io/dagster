@@ -10,7 +10,11 @@ import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
-from dagster._core.definitions.sensor_definition import SensorEvaluationContext, MultiAssetSensorDefinition, MultiAssetSensorEvaluationContext
+from dagster._core.definitions.sensor_definition import (
+    MultiAssetSensorDefinition,
+    MultiAssetSensorEvaluationContext,
+    SensorEvaluationContext,
+)
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
     DagsterRunNotFoundError,
@@ -290,6 +294,7 @@ def get_external_sensor_execution(
             last_run_key=last_run_key,
             cursor=cursor,
             repository_name=recon_repo.get_definition().name,
+            asset_keys=sensor_def.asset_keys,
         ) as sensor_context:
             try:
                 with user_code_error_boundary(

@@ -203,15 +203,27 @@ def asset_b():
 
 
 @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
-def asset_a_and_b_sensor(context, events):
-    if all(events.values()):
-        return RunRequest(run_key=context.cursor, run_config={})
+def asset_a_and_b_sensor(context):
+    asset_events = context.latest_materializations_by_key()
+    if all(asset_events.values()):
+        context.advance_all_cursors()
+        return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
 @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
-def asset_a_or_b_sensor(context, events):
-    if any(events.values()):
-        return RunRequest(run_key=context.cursor, run_config={})
+def doesnt_update_cursor_sensor(context):
+    asset_events = context.latest_materializations_by_key()
+    if any(asset_events.values()):
+        # doesn't update cursor, should raise exception
+        return RunRequest(run_key=f"{context.cursor}", run_config={})
+
+
+@multi_asset_sensor(asset_keys=[AssetKey("asset_a")], job=the_job)
+def backlog_sensor(context):
+    asset_events = context.materializations_for_key(asset_key=AssetKey("asset_a"), limit=2)
+    if len(asset_events) == 2:
+        context.advance_cursor({AssetKey("asset_a"): asset_events[-1]})
+        return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
 def _random_string(length):
@@ -341,7 +353,8 @@ def the_repo():
         asset_a,
         asset_b,
         asset_a_and_b_sensor,
-        asset_a_or_b_sensor,
+        doesnt_update_cursor_sensor,
+        backlog_sensor,
     ]
 
 
@@ -1623,8 +1636,6 @@ def test_multi_asset_sensor(executor):
             # should generate asset_b
             materialize([asset_b], instance=instance)
 
-            evaluate_sensors(instance, workspace, executor)
-
             # should fire the asset sensor
             evaluate_sensors(instance, workspace, executor)
             ticks = instance.get_ticks(
@@ -1644,7 +1655,7 @@ def test_multi_asset_sensor(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_multi_asset_sensor_w_custom_fn(executor):
+def test_multi_asset_sensor_w_many_events(executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
@@ -1655,18 +1666,90 @@ def test_multi_asset_sensor_w_custom_fn(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            a_or_b_sensor = external_repo.get_external_sensor("asset_a_or_b_sensor")
-            instance.start_sensor(a_or_b_sensor)
+            backlog_sensor = external_repo.get_external_sensor("backlog_sensor")
+            instance.start_sensor(backlog_sensor)
 
             evaluate_sensors(instance, workspace, executor)
 
             ticks = instance.get_ticks(
-                a_or_b_sensor.get_external_origin_id(), a_or_b_sensor.selector_id
+                backlog_sensor.get_external_origin_id(), backlog_sensor.selector_id
             )
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
-                a_or_b_sensor,
+                backlog_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            # should generate asset_a
+            materialize([asset_a], instance=instance)
+
+            # sensor should not fire
+            evaluate_sensors(instance, workspace, executor)
+            ticks = instance.get_ticks(
+                backlog_sensor.get_external_origin_id(), backlog_sensor.selector_id
+            )
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                backlog_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            # should generate asset_a
+            materialize([asset_a], instance=instance)
+
+            # should fire the asset sensor
+            evaluate_sensors(instance, workspace, executor)
+            ticks = instance.get_ticks(
+                backlog_sensor.get_external_origin_id(), backlog_sensor.selector_id
+            )
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                backlog_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+            run = instance.get_runs()[0]
+            assert run.run_config == {}
+            assert run.tags
+            assert run.tags.get("dagster/sensor_name") == "backlog_sensor"
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_multi_asset_sensor_w_no_cursor_update(executor):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            cursor_sensor = external_repo.get_external_sensor("doesnt_update_cursor_sensor")
+            instance.start_sensor(cursor_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(
+                cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                cursor_sensor,
                 freeze_datetime,
                 TickStatus.SKIPPED,
             )
@@ -1678,50 +1761,16 @@ def test_multi_asset_sensor_w_custom_fn(executor):
             materialize([asset_a], instance=instance)
 
             evaluate_sensors(instance, workspace, executor)
-
-            # sensor should not fire
-            # should fire the asset sensor
-            evaluate_sensors(instance, workspace, executor)
             ticks = instance.get_ticks(
-                a_or_b_sensor.get_external_origin_id(), a_or_b_sensor.selector_id
+                cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
             )
             assert len(ticks) == 2
             validate_tick(
                 ticks[0],
-                a_or_b_sensor,
+                cursor_sensor,
                 freeze_datetime,
-                TickStatus.SUCCESS,
+                TickStatus.FAILURE,
             )
-            run = instance.get_runs()[0]
-            assert run.run_config == {}
-            assert run.tags
-            assert run.tags.get("dagster/sensor_name") == "asset_a_or_b_sensor"
-
-            freeze_datetime = freeze_datetime.add(seconds=60)
-
-        with pendulum.test(freeze_datetime):
-
-            # should generate asset_b
-            materialize([asset_b], instance=instance)
-
-            evaluate_sensors(instance, workspace, executor)
-
-            # should fire the asset sensor
-            evaluate_sensors(instance, workspace, executor)
-            ticks = instance.get_ticks(
-                a_or_b_sensor.get_external_origin_id(), a_or_b_sensor.selector_id
-            )
-            assert len(ticks) == 3
-            validate_tick(
-                ticks[0],
-                a_or_b_sensor,
-                freeze_datetime,
-                TickStatus.SUCCESS,
-            )
-            run = instance.get_runs()[0]
-            assert run.run_config == {}
-            assert run.tags
-            assert run.tags.get("dagster/sensor_name") == "asset_a_or_b_sensor"
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
