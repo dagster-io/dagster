@@ -181,10 +181,10 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     .. code-block:: python
 
-        from dagster import sensor, SensorEvaluationContext
+        from dagster import multi_asset_sensor, MultiAssetSensorEvaluationContext
 
-        @sensor
-        def the_sensor(context: SensorEvaluationContext):
+        @multi_asset_sensor(asset_keys=[AssetKey("asset_1), AssetKey("asset_2)])
+        def the_sensor(context: MultiAssetSensorEvaluationContext):
             ...
 
     """
@@ -228,7 +228,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
                     asset_key=a,
-                    after_cursor=cursor_dict.get(a.to_user_string()),
+                    after_cursor=cursor_dict.get(a),
                 ),
                 ascending=False,
                 limit=1,
@@ -251,7 +251,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
-                after_cursor=cursor_dict.get(asset_key.to_user_string()),
+                after_cursor=cursor_dict.get(asset_key),
             ),
             ascending=True,
             limit=limit,
@@ -262,7 +262,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     ):  # TODO - how do i get type annotations in here if i can't import EventLogEntry?
         cursor_dict = json.loads(self.cursor) if self.cursor else {}
         update_dict = {
-            k.to_user_string(): v.storage_id if v else cursor_dict.get(k.to_user_string)
+            k: v.storage_id if v else cursor_dict.get(k)
             for k, v in materializations_by_key.items()
         }
         self.update_cursor(json.dumps(update_dict))
@@ -698,8 +698,9 @@ def build_multi_asset_sensor_context(
 
         .. code-block:: python
 
-            context = build_multi_asset_sensor_context()
-            my_asset_sensor(context)
+            with instance_for_test() as instance:
+                context = build_multi_asset_sensor_context(asset_keys=[AssetKey("asset_1"), AssetKey("asset_2")], instance=instance)
+                my_asset_sensor(context)
 
     """
 

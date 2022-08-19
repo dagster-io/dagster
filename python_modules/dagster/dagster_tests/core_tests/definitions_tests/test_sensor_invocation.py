@@ -260,7 +260,7 @@ def test_run_failure_w_run_request():
     assert basic_sensor_w_arg(context).run_config == {}
 
 
-def test_multi_asset_sensor_no_cursor_update():
+def test_multi_asset_sensor():
     @op
     def an_op():
         return 1
