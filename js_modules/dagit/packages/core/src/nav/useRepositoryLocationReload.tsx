@@ -187,8 +187,8 @@ export const useRepositoryLocationReload = ({
 
         invalidateConfigs(repositories);
 
-        // Clear and refetch all the queries bound to the UI.
-        apollo.resetStore();
+        // Refetch all the queries bound to the UI.
+        apollo.refetchQueries({include: 'active'});
       },
     },
   );

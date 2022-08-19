@@ -31,12 +31,12 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
             )
 
     def load_input(self, context):
-        partitions_def = context.asset_partitions_def
         check.invariant(
             not context.has_asset_partitions
             or context.asset_partition_key_range
             == PartitionKeyRange(
-                partitions_def.get_first_partition_key(), partitions_def.get_last_partition_key()
+                context.asset_partitions_def.get_first_partition_key(),
+                context.asset_partitions_def.get_last_partition_key(),
             ),
             "Loading a subselection of partitions is not yet supported",
         )

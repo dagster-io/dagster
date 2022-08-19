@@ -99,7 +99,11 @@ class DbtCliResource(DbtResource):
         )
 
     def compile(
-        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        models: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        select: Optional[List[str]] = None,
+        **kwargs,
     ) -> DbtCliOutput:
         """
         Run the ``compile`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -107,28 +111,34 @@ class DbtCliResource(DbtResource):
         Args:
             models (List[str], optional): the models to include in compilation.
             exclude (List[str]), optional): the models to exclude from compilation.
+            select (List[str], optional): the models to include in compilation.
 
         Returns:
             DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
-        return self.cli("compile", models=models, exclude=exclude, **kwargs)
+        return self.cli("compile", models=models, exclude=exclude, select=select, **kwargs)
 
     def run(
-        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        models: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        select: Optional[List[str]] = None,
+        **kwargs,
     ) -> DbtCliOutput:
         """
         Run the ``run`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
-            models (List[str], optional): the models to include in compilation.
-            exclude (List[str]), optional): the models to exclude from compilation.
+            models (List[str], optional): the models to include in the run.
+            exclude (List[str]), optional): the models to exclude from the run.
+            select (List[str], optional): the models to include in the run.
 
         Returns:
             DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
-        return self.cli("run", models=models, exclude=exclude, **kwargs)
+        return self.cli("run", models=models, exclude=exclude, select=select, **kwargs)
 
     def snapshot(
         self, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
@@ -152,6 +162,7 @@ class DbtCliResource(DbtResource):
         exclude: Optional[List[str]] = None,
         data: bool = True,
         schema: bool = True,
+        select: Optional[List[str]] = None,
         **kwargs,
     ) -> DbtCliOutput:
         """
@@ -162,6 +173,7 @@ class DbtCliResource(DbtResource):
             exclude (List[str], optional): the models to exclude from testing.
             data (bool, optional): If ``True`` (default), then run data tests.
             schema (bool, optional): If ``True`` (default), then run schema tests.
+            select (List[str], optional): the models to include in testing.
 
         Returns:
             DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
@@ -172,7 +184,15 @@ class DbtCliResource(DbtResource):
             # versions of dbt, and for older versions the functionality is the same regardless of
             # if both are set or neither are set.
             return self.cli("test", models=models, exclude=exclude, **kwargs)
-        return self.cli("test", models=models, exclude=exclude, data=data, schema=schema, **kwargs)
+        return self.cli(
+            "test",
+            models=models,
+            exclude=exclude,
+            data=data,
+            schema=schema,
+            select=select,
+            **kwargs,
+        )
 
     def seed(
         self,

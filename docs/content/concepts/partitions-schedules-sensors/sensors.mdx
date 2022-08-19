@@ -373,7 +373,7 @@ height={1400}
 
 ## Run status sensors
 
-If you want to act on the status of a job run, Dagster provides a way to create a sensor that reacts to run statuses. You can use <PyObject object="run_status_sensor" /> with a specified <PyObject object="DagsterRunStatus" /> to decorate a function that will run when the given status occurs. This can be used to launch runs of other jobs, send alerts to a monitoring service on job failure, or report a run success.
+If you want to act on the status of a job run, Dagster provides a way to create a sensor that reacts to run statuses. You can use <PyObject object="run_status_sensor" /> with a specified <PyObject object="DagsterRunStatus" /> to decorate a function that will run when the given status occurs. This can be used to launch runs of other jobs, send alerts to a monitoring service on run failure, or report a run success.
 
 Here is an example of a run status sensor that launches a run of `status_reporting_job` if a run is successful
 
@@ -428,9 +428,9 @@ def my_repository():
     return my_jobs + [my_slack_on_run_success]
 ```
 
-### Job failure sensor
+### Run failure sensor
 
-Dagster provides a set of special run status sensor decorators for defining sensors that monitor job failure events. You can use <PyObject object="run_failure_sensor" /> to decorate a function that will run when a run fails.
+Dagster provides a set of special run status sensor decorators for defining sensors that monitor run failure events. You can use <PyObject object="run_failure_sensor" /> to decorate a function that will run when a run fails.
 
 ```python file=concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py startafter=start_job_failure endbefore=end_job_failure
 @run_failure_sensor(request_job=status_reporting_job)
@@ -441,7 +441,7 @@ def report_failure_sensor(context):
     return RunRequest(run_key=None, run_config=run_config)
 ```
 
-This job failure sensor sends a slack message when it runs:
+This run failure sensor sends a slack message when it runs:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_alert_sensor_marker endbefore=end_alert_sensor_marker
 import os
@@ -459,10 +459,10 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
     )
 ```
 
-**Dagster also provides the following out-of-box job failure sensors:**
+**Dagster also provides the following out-of-box run failure sensors:**
 
 <PyObject module="dagster_slack" object="make_slack_on_run_failure_sensor" /> helps
-you create a job failure sensor that will message a given Slack channel:
+you create a run failure sensor that will message a given Slack channel:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_slack_marker endbefore=end_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
@@ -472,7 +472,7 @@ slack_on_run_failure = make_slack_on_run_failure_sensor(
 )
 ```
 
-<PyObject object="make_email_on_run_failure_sensor" /> helps you create a job failure
+<PyObject object="make_email_on_run_failure_sensor" /> helps you create a run failure
 sensor that will send emails via the SMTP protocol:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_email_marker endbefore=end_email_marker
