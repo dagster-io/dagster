@@ -1,3 +1,4 @@
+from select import select
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -605,7 +606,7 @@ class AssetsDefinition(ResourceAddable):
     def subset_for(
         self,
         selected_asset_keys: AbstractSet[AssetKey],
-        asset_selection_data: AssetSelectionData,
+        asset_selection_data: Optional[AssetSelectionData] = None,
     ) -> "AssetsDefinition":
         """
         Create a subset of this AssetsDefinition that will only materialize the assets in the
@@ -621,11 +622,11 @@ class AssetsDefinition(ResourceAddable):
             f"Attempted to subset AssetsDefinition for {self.node_def.name}, but can_subset=False.",
         )
 
-        subsetted_node = self.node_def
-        subsetted_keys_by_input_name = self._keys_by_input_name
-        subsetted_keys_by_output_name = self._keys_by_output_name
-
-        if isinstance(self.node_def, GraphDefinition):
+        if isinstance(self.node_def, GraphDefinition):  # node is graph-backed asset
+            if asset_selection_data is None:
+                raise DagsterInvalidInvocationError(
+                    "asset selection data must be provided to subset a graph-backed asset"
+                )
 
             parent_job = asset_selection_data.parent_job_def
             dep_node_handles_by_asset_key = (
@@ -658,25 +659,43 @@ class AssetsDefinition(ResourceAddable):
                 if key in subsetted_output_names
             }
 
-        subsetted_asset_deps = {
-            out_asset_key: set(subsetted_keys_by_input_name.values())
-            for out_asset_key in selected_asset_keys
-        }
+            # An op within the graph-backed asset that yields multiple assets will be run
+            # when not all of its output assets are selected. We default to the same behavior
+            # as multi-asset subsetting in that case and retain the original input/output mapping.
 
-        return AssetsDefinition(
-            # keep track of the original mapping
-            keys_by_input_name=subsetted_keys_by_input_name,
-            keys_by_output_name=subsetted_keys_by_output_name,
-            # TODO: subset this properly for graph-backed-assets
-            node_def=subsetted_node,
-            partitions_def=self.partitions_def,
-            partition_mappings=self._partition_mappings,
-            asset_deps=subsetted_asset_deps,
-            can_subset=self.can_subset,
-            selected_asset_keys=selected_asset_keys & self.keys,
-            resource_defs=self.resource_defs,
-            group_names_by_key=self.group_names_by_key,
-        )
+            subsetted_asset_deps = {
+                out_asset_key: set(self._keys_by_input_name.values())
+                for out_asset_key in subsetted_keys_by_output_name.values()
+            }
+
+            return AssetsDefinition(
+                # keep track of the original mapping
+                keys_by_input_name=subsetted_keys_by_input_name,
+                keys_by_output_name=subsetted_keys_by_output_name,
+                node_def=subsetted_node,
+                partitions_def=self.partitions_def,
+                partition_mappings=self._partition_mappings,
+                asset_deps=subsetted_asset_deps,
+                can_subset=self.can_subset,
+                selected_asset_keys=selected_asset_keys & self.keys,
+                resource_defs=self.resource_defs,
+                group_names_by_key=self.group_names_by_key,
+            )
+        else:  # multi asset subsetting
+
+            return AssetsDefinition(
+                # keep track of the original mapping
+                keys_by_input_name=self._keys_by_input_name,
+                keys_by_output_name=self._keys_by_output_name,
+                node_def=self.node_def,
+                partitions_def=self.partitions_def,
+                partition_mappings=self._partition_mappings,
+                asset_deps=self._asset_deps,
+                can_subset=self.can_subset,
+                selected_asset_keys=selected_asset_keys & self.keys,
+                resource_defs=self.resource_defs,
+                group_names_by_key=self.group_names_by_key,
+            )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
         result = []

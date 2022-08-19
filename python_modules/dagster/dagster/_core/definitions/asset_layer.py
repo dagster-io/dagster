@@ -528,11 +528,7 @@ class AssetLayer:
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = resolved_asset_key
 
-            print("is_required")
-            print(node_handle.name)
-            print(assets_def.keys)
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
-                print(asset_key)
                 # resolve graph output to the op output it comes from
                 inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
                     output_name, handle=node_handle
@@ -720,7 +716,7 @@ def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     source_assets: Iterable["SourceAsset"],
     selected_asset_keys: AbstractSet[AssetKey],
-    asset_selection_data: AssetSelectionData,
+    asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> Tuple[Iterable["AssetsDefinition"], Sequence[Union["AssetsDefinition", "SourceAsset"]]]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.

@@ -100,7 +100,7 @@ def build_assets_job(
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
-        assets = _attempt_resolve_cycles(assets, resolved_source_assets)
+        assets = _attempt_resolve_cycles(assets, resolved_source_assets, _asset_selection_data)
         resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
 
         deps, assets_defs_by_node_handle = build_node_deps(assets, resolved_asset_deps)
@@ -248,7 +248,9 @@ def _has_cycles(deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefi
 
 
 def _attempt_resolve_cycles(
-    assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
+    assets_defs: Iterable["AssetsDefinition"],
+    source_assets: Iterable["SourceAsset"],
+    asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> Sequence["AssetsDefinition"]:
     """
     DFS starting at root nodes to color the asset dependency graph. Each time you leave your
@@ -323,7 +325,7 @@ def _attempt_resolve_cycles(
             ret.append(assets_def)
         else:
             for asset_keys in color_mapping.values():
-                ret.append(assets_def.subset_for(asset_keys))
+                ret.append(assets_def.subset_for(asset_keys, asset_selection_data))
 
     return ret
 

@@ -16,6 +16,10 @@ from dagster import (
     materialize_to_memory,
     op,
     resource,
+    define_asset_job,
+    GraphOut,
+    DagsterEventType,
+    EventRecordsFilter,
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
@@ -673,3 +677,158 @@ def test_from_op_w_configured():
 
     the_asset = AssetsDefinition.from_op(op_def=foo.configured({"bar": "abc"}, name="foo2"))
     assert the_asset.keys_by_output_name["result"].path == ["foo2"]
+
+
+def get_step_keys_from_run(instance, run_result):
+    engine_events = list(
+        instance.get_event_records(EventRecordsFilter(DagsterEventType.ENGINE_EVENT))
+    )
+    metadata_entries = engine_events[
+        0
+    ].event_log_entry.dagster_event.engine_event_data.metadata_entries
+    step_metadata = next(
+        iter([metadata for metadata in metadata_entries if metadata.label == "step_keys"])
+    )
+    return eval(step_metadata.value.value)
+
+
+def test_graph_backed_asset_subset():
+    @op()
+    def foo():
+        return 1
+
+    @op
+    def bar(foo):
+        return foo
+
+    @graph(out={"one": GraphOut(), "two": GraphOut()})
+    def my_graph():
+        one = foo()
+        return bar.alias("bar_1")(one), bar.alias("bar_2")(one)
+
+    asset_job = define_asset_job("yay").resolve(
+        [
+            AssetsDefinition.from_graph(my_graph, can_subset=True),
+        ],
+        [],
+    )
+
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("one")])
+        materialization_planned = list(
+            instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        )
+        assert len(materialization_planned) == 1
+        step_keys = get_step_keys_from_run(instance, result)
+        assert set(step_keys) == set(["my_graph.foo", "my_graph.bar_1"])
+
+
+def test_graph_backed_asset_partial_output_selection():
+    @op(out={"a": Out(), "b": Out()})
+    def foo():
+        return 1, 2
+
+    @graph(out={"one": GraphOut(), "two": GraphOut()})
+    def graph_asset():
+        one, two = foo()
+        return one, two
+
+    asset_job = define_asset_job("yay").resolve(
+        [
+            AssetsDefinition.from_graph(graph_asset, can_subset=True),
+        ],
+        [],
+    )
+
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("one")])
+        materialization_planned = list(
+            instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        )
+        assert len(materialization_planned) == 1
+        step_keys = get_step_keys_from_run(instance, result)
+        assert set(step_keys) == set(["graph_asset.foo"])
+
+
+def test_input_subsetting_graph_backed_asset():
+    @asset
+    def upstream_1():
+        return 1
+
+    @asset
+    def upstream_2():
+        return 1
+
+    @op
+    def bar(foo):
+        return foo
+
+    @op
+    def baz(up_1, up_2):
+        return up_1 + up_2
+
+    @graph(out={"one": GraphOut(), "two": GraphOut(), "three": GraphOut()})
+    def my_graph(upstream_1, upstream_2):
+        return (
+            bar.alias("bar_1")(upstream_1),
+            bar.alias("bar_2")(upstream_2),
+            baz(upstream_1, upstream_2),
+        )
+
+    asset_job = define_asset_job("yay").resolve(
+        [
+            upstream_1,
+            upstream_2,
+            AssetsDefinition.from_graph(my_graph, can_subset=True),
+        ],
+        [],
+    )
+
+    # test first "bar" alias
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("one"), AssetKey("upstream_1"), AssetKey("upstream_2")],
+        )
+        materialization_planned = list(
+            instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        )
+        assert len(materialization_planned) == 3
+        step_keys = get_step_keys_from_run(instance, result)
+        assert set(step_keys) == set(["my_graph.bar_1", "upstream_1", "upstream_2"])
+
+    # test second "bar" alias
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("two"), AssetKey("upstream_1"), AssetKey("upstream_2")],
+        )
+        materialization_planned = list(
+            instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        )
+        assert len(materialization_planned) == 3
+        step_keys = get_step_keys_from_run(instance, result)
+        assert set(step_keys) == set(["my_graph.bar_2", "upstream_1", "upstream_2"])
+
+    # test "baz" which uses both inputs
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("three"), AssetKey("upstream_1"), AssetKey("upstream_2")],
+        )
+        materialization_planned = list(
+            instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        )
+        assert len(materialization_planned) == 3
+        step_keys = get_step_keys_from_run(instance, result)
+        assert set(step_keys) == set(["my_graph.baz", "upstream_1", "upstream_2"])
