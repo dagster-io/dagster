@@ -35,6 +35,10 @@ if __name__ == "__main__":
             "full": [
                 "click",
                 "matplotlib",
+                # matplotlib-inline 0.1.5 is causing mysterious
+                # "'NoneType' object has no attribute 'canvas'" errors in the tests that involve
+                # Jupyter notebooks
+                "matplotlib-inline<=0.1.3",
                 "moto==1.3.16",
                 "numpy",
                 "pandas",

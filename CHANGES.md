@@ -1,5 +1,31 @@
 # Changelog
 
+# 1.0.4
+
+### New
+
+* Assets can now be materialized to storage conditionally by setting `output_required=False`. If this is set and no result is yielded from the asset, Dagster will not create an asset materialization event, the I/O manager will not be invoked, downstream assets will not be materialized, and asset sensors monitoring the asset will not trigger.
+* `JobDefinition.run_request_for_partition` can now be used inside sensors that target multiple jobs (Thanks Metin Senturk!)
+* The environment variable `DAGSTER_GRPC_TIMEOUT_SECONDS` now allows  for overriding the default timeout for communications between host processes like dagit and the daemon and user code servers.
+* Import time for the `dagster` module has been reduced, by approximately 50% in initial measurements.
+* `AssetIn` now accepts a `dagster_type` argument, for specifying runtime checks on asset input values.
+* [dagit] The column names on the Activity tab of the asset details page no longer reference the legacy term “Pipeline”.
+* [dagster-snowflake] The `execute_query` method of the snowflake resource now accepts a `use_pandas_result` argument, which fetches the result of the query as a Pandas dataframe. (Thanks @swotai!)
+* [dagster-shell] Made the execute and execute_script_file utilities in dagster_shell part of the public API (Thanks Fahad Khan!)
+* [dagster-dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now support the `exclude` parameter. (Thanks @flvndh!)
+
+### Bugfixes
+
+* [dagit] Removed the x-frame-options response header from Dagit, allowing the Dagit UI to be rendered in an iframe.
+* [fully-featured project example] Fixed the duckdb IO manager so the comment_stories step can load data successfully.
+* [dagster-dbt] Previously, if a `select` parameter was configured on the `dbt_cli_resource`, it would not be passed into invocations of `context.resources.dbt.run()` (and other similar commands). This has been fixed.
+* [dagster-ge] An incompatibility between `dagster_ge_validation_factory` and dagster 1.0 has been fixed.
+* [dagstermill] Previously, updated arguments and properties to `DagstermillExecutionContext` were not exposed. This has since been fixed.
+
+### Documentation
+
+* The integrations page on the docs site now has a section for links to community-hosted integrations. The first linked integration is @silentsokolov’s Vault integration.
+
 # 1.0.3
 
 ### New

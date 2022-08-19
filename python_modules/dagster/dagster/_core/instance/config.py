@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 from dagster import Array, Bool
 from dagster import _check as check
-from dagster._config import Field, Permissive, ScalarUnion, Selector, validate_config
+from dagster._config import Field, Permissive, ScalarUnion, Selector, StringSource, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
@@ -112,7 +112,7 @@ def storage_config_schema():
             {
                 "postgres": Field(pg_config()),
                 "mysql": Field(mysql_config()),
-                "sqlite": Field({"base_dir": str}),
+                "sqlite": Field({"base_dir": StringSource}),
                 "custom": Field(configurable_class_schema()),
             }
         ),

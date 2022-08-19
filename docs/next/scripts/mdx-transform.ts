@@ -5,25 +5,24 @@ import frontmatter from 'remark-frontmatter';
 import mdx from 'remark-mdx';
 import {read, write} from 'to-vfile';
 import {parse as yaml} from 'yaml';
-
-import preset from '../.remarkrc.js';
-import codeTransformer, {SnapshotStats} from '../util/codeTransformer';
-import imageTransformer, {ImageStats} from '../util/imageTransformer';
+import preset from "../.remarkrc.js";
+import codeTransformer, { CodeBlockStats } from "../util/codeBlockTransformer";
+import imageTransformer, { ImageStats } from "../util/imageTransformer";
 
 // Main
 (async () => {
   const stream = fg.stream(['../content/**/*.mdx']);
 
-  const stats: SnapshotStats & ImageStats = {
-    totalSnapshots: 0,
-    updatedSnapshots: [],
+  let stats: CodeBlockStats & ImageStats = {
+    totalCodeBlocks: 0,
+    updatedCodeBlocks: [],
     totalImages: 0,
     updatedImages: [],
   };
-  const setSnapshotStats = (newStats: SnapshotStats) => {
-    const {totalSnapshots, updatedSnapshots} = newStats;
-    stats.totalSnapshots += totalSnapshots;
-    stats.updatedSnapshots = stats.updatedSnapshots.concat(updatedSnapshots);
+  const setCodeBlockStats = (newStats: CodeBlockStats) => {
+    const { totalCodeBlocks, updatedCodeBlocks } = newStats;
+    stats.totalCodeBlocks += totalCodeBlocks;
+    stats.updatedCodeBlocks = stats.updatedCodeBlocks.concat(updatedCodeBlocks);
   };
   const setImageStats = (newStats: ImageStats) => {
     const {totalImages, updatedImages} = newStats;
@@ -36,8 +35,8 @@ import imageTransformer, {ImageStats} from '../util/imageTransformer';
       .use(frontmatter)
       .use(extract, {yaml})
       .use(mdx)
-      .use(codeTransformer, {setSnapshotStats})
-      .use(imageTransformer, {setImageStats})
+      .use(codeTransformer, { setCodeBlockStats })
+      .use(imageTransformer, { setImageStats })
       .use(preset)
       .process(file);
 
@@ -47,12 +46,12 @@ import imageTransformer, {ImageStats} from '../util/imageTransformer';
     });
   }
 
-  console.log(`✅ ${stats.totalSnapshots} snapshots parsed`);
-  if (stats.updatedSnapshots.length) {
-    console.log(`⚡️ ${stats.updatedSnapshots.length} updated:`);
-    console.log(`\t${stats.updatedSnapshots.join('\n\t')}`);
+  console.log(`✅ ${stats.totalCodeBlocks} code blocks parsed`);
+  if (stats.updatedCodeBlocks.length) {
+    console.log(`⚡️ ${stats.updatedCodeBlocks.length} updated:`);
+    console.log(`\t${stats.updatedCodeBlocks.join("\n\t")}`);
   } else {
-    console.log(`✨ No snapshots were updated`);
+    console.log(`✨ No code blocks were updated`);
   }
 
   console.log(`✅ ${stats.totalImages} images parsed`);

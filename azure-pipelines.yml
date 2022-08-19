@@ -17,6 +17,7 @@ parameters:
       - core_tests
       - general_tests
       - daemon_tests
+      - daemon_sensor_tests
       - scheduler_tests
 jobs:
   - job: "dagster"
