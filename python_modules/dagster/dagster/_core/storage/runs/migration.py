@@ -11,12 +11,19 @@ from ...execution.bulk_actions import BulkActionType
 from ..pipeline_run import PipelineRun, PipelineRunStatus
 from ..runs.base import RunStorage
 from ..runs.schema import BulkActionsTable, RunTagsTable, RunsTable
-from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
+from ..tags import (
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    REPOSITORY_LABEL_TAG,
+    SOLID_SELECTION_TAG,
+    OP_SELECTION_TAG,
+)
 
 RUN_PARTITIONS = "run_partitions"
 RUN_START_END = "run_start_end_overwritten"  # was run_start_end, but renamed to overwrite bad timestamps written
 RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 BULK_ACTION_TYPES = "bulk_action_types"
+OP_SELECTION_TAG = "op_selection_tag"
 
 # for `dagster instance migrate`, paired with schema changes
 REQUIRED_DATA_MIGRATIONS = {
@@ -27,6 +34,7 @@ REQUIRED_DATA_MIGRATIONS = {
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS = {
     RUN_START_END: lambda: migrate_run_start_end,
+    OP_SELECTION_TAG: lambda: migrate_selection_tag,
 }
 
 CHUNK_SIZE = 100
@@ -253,3 +261,18 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn=None):
                     .where(BulkActionsTable.c.id == storage_id)
                 )
                 cursor = storage_id
+
+
+def migrate_selection_tag(run_storage: RunStorage, print_fn=None):
+    if print_fn:
+        print_fn("Querying run storage.")
+
+    for run in chunked_run_iterator(run_storage, print_fn):
+        if SOLID_SELECTION_TAG not in run.tags:
+            continue
+        if OP_SELECTION_TAG in run.tags:
+            continue
+
+        selection_val = run.tags[SOLID_SELECTION_TAG]
+        new_tags = dict({OP_SELECTION_TAG: selection_val, **run.tags})
+        run_storage.add_run_tags(run.run_id, new_tags)
