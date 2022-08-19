@@ -16,7 +16,10 @@ from dagster import (
     AssetObservation,
     Field,
     Output,
+    asset,
+    define_asset_job,
     graph,
+    load_assets_from_current_module,
     repository,
     run_failure_sensor,
 )
@@ -44,6 +47,24 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster._legacy import pipeline, solid
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+
+
+@asset
+def a():
+    return 1
+
+
+@asset
+def b(a):
+    return a + 1
+
+
+@asset
+def c(a):
+    return a + 2
+
+
+asset_job = define_asset_job("abc", selection="*")
 
 
 @solid
@@ -209,6 +230,11 @@ def large_sensor(_context):
         yield RunRequest(run_key=None, run_config=config, tags=tags_garbage)
 
 
+@sensor(job=asset_job)
+def asset_selection_sensor(_context):
+    return RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
+
+
 @asset_sensor(job_name="the_pipeline", asset_key=AssetKey("foo"))
 def asset_foo_sensor(context, _event):
     return RunRequest(run_key=context.cursor, run_config={})
@@ -313,6 +339,8 @@ def the_repo():
         bad_request_mismatch,
         bad_request_unspecified,
         request_list_sensor,
+        load_assets_from_current_module(),
+        asset_selection_sensor,
     ]
 
 
@@ -1389,6 +1417,49 @@ def test_cursor_sensor(executor):
                 TickStatus.SUCCESS,
             )
             assert run_ticks[0].cursor == "2"
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_asset_selection_sensor(executor):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            external_sensor = external_repo.get_external_sensor("asset_selection_sensor")
+            external_origin_id = external_sensor.get_external_origin_id()
+            instance.start_sensor(external_sensor)
+
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+            assert len(ticks) == 0
+
+            evaluate_sensors(instance, workspace, executor)
+
+            assert instance.get_runs_count() == 1
+            run = instance.get_runs()[0]
+            assert run.asset_selection == {AssetKey("a"), AssetKey("b")}
+            ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id],
+            )
+            planned_asset_keys = {
+                record.event_log_entry.dagster_event.event_specific_data.asset_key
+                for record in instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+                )
+            }
+            assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
