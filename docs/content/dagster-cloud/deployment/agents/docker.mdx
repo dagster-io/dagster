@@ -72,7 +72,29 @@ To complete the steps in this guide, you'll need:
 
 ---
 
-## Step 3: Start the agent
+## Step 3: Granting registry access to Docker agent
+
+The third step is to ensure you have set up credentials in order to access your user code images.
+
+The Docker agent runs Docker operations from within the `dagster-cloud-agent` container, including pulling user code images and running them as new Docker containers. The `dagster-cloud-agent` container requires access to credentials in order to perform these operations.
+
+Depending on the registry provider you are using, the authorization process may look different. Typically, credentials are stored in the Docker config file; `~/.docker/config.json`.
+
+### Using Google Container Regsitry
+
+The easiest way to grant the agent container access to a GCR repository is to use the [standalone GCR credential helper](https://github.com/GoogleCloudPlatform/docker-credential-gcr) to create an access token:
+
+```shell
+# Replace $YOUR_REGISTRY with the GCR registry you are using, e.g. https://gcr.io
+GCR_ACCESS_TOKEN="$(echo $YOUR_REGISTRY | docker-credential-gcr get | jq '.Secret')"
+docker login -u _token -p "${GCR_ACCESS_TOKEN}" $YOUR_REGISTRY
+```
+
+These credentials will be stored in `~/.docker/config.json`, at which point they can be mounted into the agent container, as shown in the next step.
+
+---
+
+## Step 4: Start the agent
 
 Next, you'll start the agent as a container. Run the following command in the same folder as your `dagster.yaml` file:
 
@@ -84,6 +106,12 @@ docker run \
   --restart on-failure \
   -it docker.io/dagster/dagster-cloud-agent:latest \
   dagster-cloud agent run /opt/dagster/app
+```
+
+If using credentials to pull your user code images, you will need to mount the Docker credentials file into the agent by specifiying the additional volume mount:
+
+```shell
+  --volume ~/.docker:/root/.docker
 ```
 
 This command:
@@ -99,41 +127,6 @@ src="/images/dagster-cloud/agents/dagster-cloud-instance-status.png"
 width={1152}
 height={320}
 />
-
----
-
-## Granting Registry Access to Docker Agent
-
-The Docker agent runs Docker operations from within the `dagster-cloud-agent` container, including pulling user code images and running them as new containers. The `dagster-cloud-agent` container requires access to credentials in order to perform these operations. Depending on the registry provider you are using, authentication may look different. Often, credentials are stored in the Docker config file; `~/.docker/config.json`.
-
-In some cases, you will need to mount this file into the agent by specifiying the additional volume mount:
-
-```shell
-  --volume ~/.docker:/root/.docker
-```
-
-For example:
-
-```shell
-docker run \
-  --network=dagster_cloud_agent \
-  --volume $PWD/dagster.yaml:/opt/dagster/app/dagster.yaml:ro \
-  --volume /var/run/docker.sock:/var/run/docker.sock \
-  --volume ~/.docker:/root/.docker \
-  --restart on-failure \
-  -it docker.io/dagster/dagster-cloud-agent:latest \
-  dagster-cloud agent run /opt/dagster/app
-```
-
-### Using Google Container Regsitry
-
-The easiest way to grant the agent container access to a GCR repository is to use the [standalone GCR credential helper](https://github.com/GoogleCloudPlatform/docker-credential-gcr) to create an access token:
-
-    # Replace $YOUR_REGISTRY with the GCR registry you are using, e.g. https://gcr.io
-    GCR_ACCESS_TOKEN="$(echo $YOUR_REGISTRY | docker-credential-gcr get | jq '.Secret')"
-    docker login -u _token -p "${GCR_ACCESS_TOKEN}" $YOUR_REGISTRY
-
-These credentials will be stored in `~/.docker/config.json`, at which point they can be mounted into the agent container following the above example.
 
 ---
 
