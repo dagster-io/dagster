@@ -1,4 +1,4 @@
 {{ config(tags=["foo"], schema="cold_schema") }}
 SELECT *
-FROM {{ ref('sort_by_calories') }}
+FROM {{ ref('ephem2') }}
 WHERE type='C'
