@@ -173,6 +173,14 @@ class DatabricksJobRunner:
         # since they're imported by our scripts.
         # Add them if they're not already added by users in config.
         libraries = list(run_config.get("libraries", []))
+        python_libraries = {
+            x["pypi"]["package"].split("==")[0].replace("_", "-") for x in libraries if "pypi" in x
+        }
+        for library in ["dagster", "dagster-databricks", "dagster-pyspark"]:
+            if library not in python_libraries:
+                libraries.append(
+                    {"pypi": {"package": "{}=={}".format(library, dagster.__version__)}}
+                )
 
         # Only one task should be able to be chosen really; make sure of that here.
         check.invariant(
