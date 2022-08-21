@@ -18,7 +18,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
     runner = DatabricksJobRunner(HOST, TOKEN)
     task = databricks_run_config.pop("task")
     runner.submit_run(databricks_run_config, task)
-    mock_submit_run.assert_called_once_with(
+    mock_submit_run.assert_called_with(
         run_name=databricks_run_config["run_name"],
         new_cluster=None,
         existing_cluster_id=databricks_run_config["cluster"]["existing"],
@@ -28,6 +28,16 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
             {"pypi": {"package": "dagster-databricks=={}".format(dagster.__version__)}},
             {"pypi": {"package": "dagster-pyspark=={}".format(dagster.__version__)}},
         ],
+    )
+
+    databricks_run_config["install_default_libraries"] = False
+    runner.submit_run(databricks_run_config, task)
+    mock_submit_run.assert_called_with(
+        run_name=databricks_run_config["run_name"],
+        new_cluster=None,
+        existing_cluster_id=databricks_run_config["cluster"]["existing"],
+        spark_jar_task=task["spark_jar_task"],
+        libraries=[],
     )
 
 
