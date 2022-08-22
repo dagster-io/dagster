@@ -1,7 +1,20 @@
 import pytest
 
-from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    DailyPartitionsDefinition,
+    GraphOut,
+    In,
+    Out,
+    StaticPartitionsDefinition,
+    define_asset_job,
+    graph,
+    job,
+    op,
+)
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster._core.definitions.composite_partitions import CompositePartitionsDefinition
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -12,6 +25,7 @@ from dagster._core.host_representation.external_data import (
     ExternalSensorData,
     ExternalTargetData,
     external_asset_graph_from_defs,
+    external_partitions_definition_from_def,
 )
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
@@ -957,3 +971,11 @@ def test_back_compat_external_sensor():
     target = external_sensor_data.target_dict["my_pipeline"]
     assert isinstance(target, ExternalTargetData)
     assert target.pipeline_name == "my_pipeline"
+
+
+def test_composite_partition_definition():
+    time_window_partitions = DailyPartitionsDefinition(start_date="2021-05-05")
+    static_partitions = StaticPartitionsDefinition(["a", "b", "c"])
+    composite = CompositePartitionsDefinition([time_window_partitions, static_partitions])
+    external_partitions_def = external_partitions_definition_from_def(composite)
+    assert external_partitions_def.get_partitions_definition() == composite
