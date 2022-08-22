@@ -106,7 +106,7 @@ def make_email_on_run_failure_sensor(
             ]
         ]
     ] = None,
-    monitored: Optional[Union["RepositorySelector", "JobSelector"]] = None,
+    monitored: Optional[List[Union[RepositorySelector, JobSelector]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a job failure sensor that sends email via the SMTP protocol.
@@ -181,7 +181,9 @@ def make_email_on_run_failure_sensor(
         deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
     jobs = monitored_jobs if monitored_jobs else job_selection
 
-    @run_failure_sensor(name=name, monitored_jobs=jobs, default_status=default_status, monitored=monitored)
+    @run_failure_sensor(
+        name=name, monitored_jobs=jobs, default_status=default_status, monitored=monitored
+    )
     def email_on_run_failure(context: RunFailureSensorContext):
 
         email_body = email_body_fn(context)

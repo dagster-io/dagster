@@ -581,6 +581,7 @@ def _evaluate_sensor(
             repository_name=sensor_origin.external_repository_origin.repository_name,
             pipeline_name=target_data.pipeline_name,
             solid_selection=target_data.solid_selection,
+            asset_selection=run_request.asset_selection,
         )
         external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
         run = _get_or_create_sensor_run(
@@ -788,4 +789,5 @@ def _create_sensor_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        asset_selection=set(run_request.asset_selection),
     )

@@ -30,3 +30,23 @@ export const Basic = () => {
     </Group>
   );
 };
+
+export const Loading = () => {
+  return (
+    <Group direction="column" spacing={8}>
+      {INTENTS.map((intent) => (
+        <Group direction="row" spacing={8} key={intent}>
+          <Tag intent={intent} icon="alternate_email" rightIcon="spinner">
+            Lorem
+          </Tag>
+          <Tag intent={intent} icon="spinner" rightIcon="toggle_off">
+            Lorem
+          </Tag>
+          <Tag intent={intent} icon="spinner">
+            Lorem
+          </Tag>
+        </Group>
+      ))}
+    </Group>
+  );
+};
