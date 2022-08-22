@@ -3,35 +3,39 @@ import {Alert, Box, Colors} from '@dagster-io/ui';
 import React from 'react';
 
 import {buildRepoPath} from '../workspace/buildRepoAddress';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {AssetKey} from './types';
-import {AssetIdScanQuery} from './types/AssetIdScanQuery';
+import {
+  AssetDefinitionCollisionQuery,
+  AssetDefinitionCollisionQueryVariables,
+} from './types/AssetDefinitionCollisionQuery';
 
 export const AssetDefinedInMultipleReposNotice: React.FC<{
   assetKey: AssetKey;
   loadedFromRepo: RepoAddress;
-}> = ({assetKey, loadedFromRepo}) => {
-  const {data} = useQuery<AssetIdScanQuery>(ASSET_ID_SCAN_QUERY);
-  const otherRepos =
-    data?.repositoriesOrError.__typename === 'RepositoryConnection'
-      ? data.repositoriesOrError.nodes.filter(
-          (r) => r.name !== loadedFromRepo.name || r.location.name !== loadedFromRepo.location,
-        )
-      : [];
-  const otherReposWithAsset = otherRepos.filter((r) =>
-    r.assetNodes.some(
-      (a) => JSON.stringify(a.assetKey) === JSON.stringify(assetKey) && a.opNames.length,
-    ),
+  padding?: boolean;
+}> = ({assetKey, loadedFromRepo, padding}) => {
+  const {data} = useQuery<AssetDefinitionCollisionQuery, AssetDefinitionCollisionQueryVariables>(
+    ASSET_DEFINITION_COLLISION_QUERY,
+    {variables: {assetKeys: [{path: assetKey.path}]}},
   );
 
-  if (otherReposWithAsset.length === 0) {
+  const collision = data?.assetNodeDefinitionCollisions[0];
+  if (!collision) {
     return <span />;
   }
 
+  const otherReposWithAsset = collision.repositories.filter(
+    (r) =>
+      repoAddressAsString({location: r.location.name, name: r.name}) !==
+      repoAddressAsString(loadedFromRepo),
+  );
+
   return (
     <Box
-      padding={{vertical: 16, left: 24, right: 12}}
+      padding={padding ? {vertical: 16, left: 24, right: 12} : {}}
       border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
     >
       <Alert
@@ -41,31 +45,24 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
           loadedFromRepo.location,
         )} below. (Also found in ${otherReposWithAsset
           .map((o) => buildRepoPath(o.name, o.location.name))
-          .join(', ')}). You may want to consider renaming to avoid collisions.`}
+          .join(', ')}). You should rename these assets to avoid collisions.`}
       />
     </Box>
   );
 };
 
-const ASSET_ID_SCAN_QUERY = gql`
-  query AssetIdScanQuery {
-    repositoriesOrError {
-      __typename
-      ... on RepositoryConnection {
-        nodes {
+const ASSET_DEFINITION_COLLISION_QUERY = gql`
+  query AssetDefinitionCollisionQuery($assetKeys: [AssetKeyInput!]!) {
+    assetNodeDefinitionCollisions(assetKeys: $assetKeys) {
+      assetKey {
+        path
+      }
+      repositories {
+        id
+        name
+        location {
           id
           name
-          location {
-            id
-            name
-          }
-          assetNodes {
-            id
-            opNames
-            assetKey {
-              path
-            }
-          }
         }
       }
     }

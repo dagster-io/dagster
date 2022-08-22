@@ -91,6 +91,14 @@ class GrapheneAssetLatestInfo(graphene.ObjectType):
         name = "AssetLatestInfo"
 
 
+class GrapheneAssetNodeDefinitionCollision(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    repositories = non_null_list(lambda: external.GrapheneRepository)
+
+    class Meta:
+        name = "AssetNodeDefinitionCollision"
+
+
 class GrapheneAssetNode(graphene.ObjectType):
 
     _depended_by_loader: Optional[CrossRepoAssetDependedByLoader]
