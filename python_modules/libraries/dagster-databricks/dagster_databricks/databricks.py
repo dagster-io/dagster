@@ -174,9 +174,11 @@ class DatabricksJobRunner:
         # Add them if they're not already added by users in config.
         libraries = list(run_config.get("libraries", []))
         install_default_libraries = run_config.get("install_default_libraries", True)
-        if install_default_libraries == True:
+        if install_default_libraries:
             python_libraries = {
-                x["pypi"]["package"].split("==")[0].replace("_", "-") for x in libraries if "pypi" in x
+                x["pypi"]["package"].split("==")[0].replace("_", "-")
+                for x in libraries
+                if "pypi" in x
             }
             for library in ["dagster", "dagster-databricks", "dagster-pyspark"]:
                 if library not in python_libraries:
