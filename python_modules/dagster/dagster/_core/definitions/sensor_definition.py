@@ -196,7 +196,7 @@ class MultiAssetSensorEvaluationContext:
         instance_ref: Optional[InstanceRef],
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
-        cursor: Optional[Mapping[AssetKey, str]],
+        cursor: Optional[Mapping[str, str]],
         repository_name: Optional[str],
         asset_keys: Sequence[AssetKey],
         instance: Optional[DagsterInstance] = None,
@@ -210,7 +210,7 @@ class MultiAssetSensorEvaluationContext:
             last_completion_time, "last_completion_time"
         )
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
-        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=AssetKey, value_type=str)
+        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=str, value_type=str)
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
 
@@ -247,12 +247,12 @@ class MultiAssetSensorEvaluationContext:
 
     @public  # type: ignore
     @property
-    def cursor(self) -> Optional[Mapping[AssetKey, str]]:
+    def cursor(self) -> Optional[Mapping[str, str]]:
         """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
         return self._cursor
 
     @public
-    def update_cursor(self, cursor: Optional[Mapping[AssetKey, str]]) -> None:
+    def update_cursor(self, cursor: Optional[Mapping[str, str]]) -> None:
         """Updates the cursor value for this sensor, which will be provided on the context for the
         next sensor evaluation.
 
@@ -262,7 +262,7 @@ class MultiAssetSensorEvaluationContext:
         Args:
             cursor (Optional[Mapping[AssetKey, str]]):
         """
-        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=AssetKey, value_type=str)
+        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=str, value_type=str)
 
     @public  # type: ignore
     @property
@@ -329,7 +329,7 @@ class MultiAssetSensorEvaluationContext:
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
-                after_cursor=cursor_dict.get(asset_key),
+                after_cursor=cursor_dict.get(asset_key.to_user_string()),
             ),
             ascending=ascending,
             limit=limit,
@@ -348,7 +348,8 @@ class MultiAssetSensorEvaluationContext:
         """
         cursor_dict = json.loads(self.cursor) if self.cursor else {}
         update_dict = {
-            k: v.storage_id if v else cursor_dict.get(k) for k, v in materializations_by_key.items()
+            k.to_user_string(): v.storage_id if v else cursor_dict.get(k)
+            for k, v in materialization_records_by_key.items()
         }
         self.update_cursor(json.dumps(update_dict))
         self.cursor_has_been_updated = True
@@ -768,7 +769,7 @@ def build_multi_asset_sensor_context(
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[Mapping[AssetKey, str]] = None,
     repository_name: Optional[str] = None,
-) -> SensorEvaluationContext:
+) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context using the provided parameters.
 
     This function can be used to provide a context to the invocation of a multi asset sensor definition. If
@@ -1002,6 +1003,48 @@ class MultiAssetSensorDefinition(SensorDefinition):
             jobs=jobs,
             default_status=default_status,
         )
+
+    def __call__(self, *args, **kwargs):
+
+        if is_context_provided(self._raw_fn):
+            if len(args) + len(kwargs) == 0:
+                raise DagsterInvalidInvocationError(
+                    "Sensor evaluation function expected context argument, but no context argument "
+                    "was provided when invoking."
+                )
+            if len(args) + len(kwargs) > 1:
+                raise DagsterInvalidInvocationError(
+                    "Sensor invocation received multiple arguments. Only a first "
+                    "positional context parameter should be provided when invoking."
+                )
+
+            context_param_name = get_function_params(self._raw_fn)[0].name
+
+            if args:
+                context = check.opt_inst_param(
+                    args[0], context_param_name, MultiAssetSensorEvaluationContext
+                )
+            else:
+                if context_param_name not in kwargs:
+                    raise DagsterInvalidInvocationError(
+                        f"Sensor invocation expected argument '{context_param_name}'."
+                    )
+                context = check.opt_inst_param(
+                    kwargs[context_param_name], context_param_name, SensorEvaluationContext
+                )
+
+            context = context if context else build_multi_asset_sensor_context()
+
+            return self._raw_fn(context)
+
+        else:
+            if len(args) + len(kwargs) > 0:
+                raise DagsterInvalidInvocationError(
+                    "Sensor decorated function has no arguments, but arguments were provided to "
+                    "invocation."
+                )
+
+            return self._raw_fn()  # type: ignore [TypeGuard limitation]
 
     @public  # type: ignore
     @property

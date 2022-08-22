@@ -138,42 +138,57 @@ def my_asset_sensor(context, asset_event):
 
 ### Multi-asset sensors
 
-Multi-asset sensors, which can trigger job executions based on multiple asset materialization event streams, can be handled using the <PyObject object="multi_asset_sesnor" decorator/> decorator.
+Multi-asset sensors, which can trigger job executions based on multiple asset materialization event streams, can be handled using the <PyObject object="multi_asset_sensor" decorator/> decorator.
 
-In the body of the sensor, you have access to the event log information for each asset. If a monitored asset has not been materialized, the event log information will be `None`.
+In the body of the sensor, you have access to the materialization event records for each asset via the `context`. The context provides two methods for fetching the materialization event records:
 
-You can use the provided `asset_events` to only yield `RunRequests` when a certain condition is met:
+* <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_key"/>:
+Returns a dictionary mapping the `AssetKey` for each monitored asset to the
+most recent materialization record. If there is no materialization event, the
+mapped value will be `None`
+
+*  <PyObject object="MultiAssetSensorEvaluationContext" method="materialization_records_for_key"/>:
+Returns a list of materialization event records for a specified `AssetKey`.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
 @multi_asset_sensor(
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     job=my_job,
 )
-def asset_a_and_b_sensor(context, asset_events):
-    # this sensor will run when both asset_a and asset_b have been materialized
-    # asset_events is a dictionary, mapping asset keys to event log entries
+def asset_a_and_b_sensor(context):
+    asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
-        logger_str = f"Assets {asset_events[AssetKey('asset_a')].dagster_event.asset_key.path} and {asset_events[AssetKey('asset_b')].dagster_event.asset_key.path} materialized"
-        return RunRequest(
-            run_key=context.cursor,
+        logger_str = (
+            f"Assets {asset_events[AssetKey('asset_a')].event_log_entry.dagster_event.asset_key.path} "
+            f"and {asset_events[AssetKey('asset_b')].event_log_entry.dagster_event.asset_key.path} materialized"
+        )
+        yield RunRequest(
+            run_key=f"{context.cursor}",
             run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
         )
+        context.advance_all_cursors()
 ```
+
+Note the `context.advance_all_cursors` call near the end of the sensor. The cursor helps keep track of which materialization events have been processed by the sensor so that the next time the sensor runs, only newer events are fetched. Since `multi_asset_sensor`s provide increased flexibility to determine what conditions should result in `RunRequest`s, the sensor must manually update the cursor if a `RunRequest` is returned.
 
 You can also return a `SkipReason` to document why the sensor didn't launch a run.
 
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_custom_fn_marker endbefore=end_multi_asset_sensor_custom_fn_marker
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_w_skip_reason endbefore=end_multi_asset_sensor_w_skip_reason
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
+    asset_keys=[AssetKey("asset_c")],
     job=my_job,
 )
-def asset_c_or_d_sensor(context, asset_events):
-    # this sensor will run when either asset_c or asset_d materialize
-    if any(asset_events.value()):
-        return RunRequest(run_key=context.cursor)
+def every_fifth_asset_c_sensor(context):
+    # this sensor will return a run request every fifth materialization of asset_c
+    asset_events = context.materialization_records_for_key(asset_key=AssetKey("asset_c"), limit=5)
+    if len(asset_events) == 5:
+        yield RunRequest(run_key=f"{context.cursor}")
+        context.advance_cursor({AssetKey("asset_c"): asset_events[-1]})
     else:
         # you can optionally return a SkipReason
-        return SkipReason("asset_c and asset_d not materialized.")
+        # we don't update the cursor here since we want to keep fetching the same events until we
+        # fetch 5 events
+        return SkipReason(f"asset_c only materialized {len(asset_events)} times.")
 ```
 
 ## Idempotence and Cursors
@@ -647,7 +662,6 @@ def uses_db_connection():
 ```
 
 If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>. For more in-depth usage, check out the [Initializing Resources Outside of Execution](/concepts/resources#initializing-resources-outside-of-execution) section.
-
 
 ## See it in action
 

@@ -256,39 +256,45 @@ def custom_multi_asset_sensor(context):
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     job=my_job,
 )
-def asset_a_and_b_sensor(context, asset_events):
-    # this sensor will run when both asset_a and asset_b have been materialized
-    # asset_events is a dictionary, mapping asset keys to event log entries
+def asset_a_and_b_sensor(context):
+    asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
         logger_str = (
-            f"Assets {asset_events[AssetKey('asset_a')].dagster_event.asset_key.path} "
-            f"and {asset_events[AssetKey('asset_b')].dagster_event.asset_key.path} materialized"
+            f"Assets {asset_events[AssetKey('asset_a')].event_log_entry.dagster_event.asset_key.path} "
+            f"and {asset_events[AssetKey('asset_b')].event_log_entry.dagster_event.asset_key.path} materialized"
         )
-        return RunRequest(
-            run_key=context.cursor,
+        yield RunRequest(
+            run_key=f"{context.cursor}",
             run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
         )
+        context.advance_all_cursors()
 
 
 # end_multi_asset_sensor_marker
 
-# start_multi_asset_sensor_custom_fn_marker
+# start_multi_asset_sensor_w_skip_reason
 
 
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
+    asset_keys=[AssetKey("asset_c")],
     job=my_job,
 )
-def asset_c_or_d_sensor(context, asset_events):
-    # this sensor will run when either asset_c or asset_d materialize
-    if any(asset_events.values()):
-        return RunRequest(run_key=context.cursor)
+def every_fifth_asset_c_sensor(context):
+    # this sensor will return a run request every fifth materialization of asset_c
+    asset_events = context.materialization_records_for_key(
+        asset_key=AssetKey("asset_c"), limit=5
+    )
+    if len(asset_events) == 5:
+        yield RunRequest(run_key=f"{context.cursor}")
+        context.advance_cursor({AssetKey("asset_c"): asset_events[-1]})
     else:
         # you can optionally return a SkipReason
-        return SkipReason("asset_c and asset_d not materialized.")
+        # we don't update the cursor here since we want to keep fetching the same events until we
+        # fetch 5 events
+        return SkipReason(f"asset_c only materialized {len(asset_events)} times.")
 
 
-# end_multi_asset_sensor_custom_fn_marker
+# end_multi_asset_sensor_w_skip_reason
 
 
 # start_s3_sensors_marker
