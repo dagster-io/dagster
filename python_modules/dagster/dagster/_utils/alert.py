@@ -1,8 +1,9 @@
 import datetime
 import smtplib
 import ssl
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, Sequence, Union
 
+from dagster._core.definitions.run_status_sensor_definition import JobSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.backcompat import deprecation_warning
@@ -10,11 +11,7 @@ from dagster._utils.backcompat import deprecation_warning
 if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.pipeline_definition import PipelineDefinition
-    from dagster._core.definitions.run_status_sensor_definition import (
-        JobSelector,
-        RepositorySelector,
-        RunFailureSensorContext,
-    )
+    from dagster._core.definitions.run_status_sensor_definition import RunFailureSensorContext
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
@@ -106,7 +103,7 @@ def make_email_on_run_failure_sensor(
             ]
         ]
     ] = None,
-    monitored: Optional[List[Union[RepositorySelector, JobSelector]]] = None,
+    monitored: Optional[Sequence[Union[RepositorySelector, JobSelector]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a job failure sensor that sends email via the SMTP protocol.
@@ -130,7 +127,7 @@ def make_email_on_run_failure_sensor(
         monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
-        monitored (Optional[List[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
+        monitored (Optional[Sequence[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
             sensor should monitor. Defaults to None, meaning that no jobs in other repositories will be monitored.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition]]]):
             (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure
