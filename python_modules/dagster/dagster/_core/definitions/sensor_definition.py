@@ -1,5 +1,4 @@
 import inspect
-import json
 from contextlib import ExitStack
 from enum import Enum
 from typing import (
@@ -170,7 +169,7 @@ class MultiAssetSensorEvaluationContext:
 
     Attributes:
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
-        cursor (Optional[Mapping[AssetKey, str]]): The cursor, passed back from the last sensor evaluation via
+        cursor (Optional[Mapping[AssetKey, int]]): The cursor, passed back from the last sensor evaluation via
             the cursor attribute of SkipReason and RunRequest
         last_completion_time (float): DEPRECATED The last time that the sensor was evaluated (UTC).
         last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
@@ -196,7 +195,7 @@ class MultiAssetSensorEvaluationContext:
         instance_ref: Optional[InstanceRef],
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
-        cursor: Optional[Mapping[str, str]],
+        cursor: Optional[Mapping[AssetKey, int]],
         repository_name: Optional[str],
         asset_keys: Sequence[AssetKey],
         instance: Optional[DagsterInstance] = None,
@@ -210,7 +209,7 @@ class MultiAssetSensorEvaluationContext:
             last_completion_time, "last_completion_time"
         )
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
-        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=str, value_type=str)
+        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=AssetKey)
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
 
@@ -247,12 +246,12 @@ class MultiAssetSensorEvaluationContext:
 
     @public  # type: ignore
     @property
-    def cursor(self) -> Optional[Mapping[str, str]]:
+    def cursor(self) -> Optional[Mapping[AssetKey, Optional[int]]]:
         """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
         return self._cursor
 
     @public
-    def update_cursor(self, cursor: Optional[Mapping[str, str]]) -> None:
+    def update_cursor(self, cursor: Optional[Mapping[AssetKey, Optional[int]]]) -> None:
         """Updates the cursor value for this sensor, which will be provided on the context for the
         next sensor evaluation.
 
@@ -260,9 +259,9 @@ class MultiAssetSensorEvaluationContext:
         evaluations.
 
         Args:
-            cursor (Optional[Mapping[AssetKey, str]]):
+            cursor (Optional[Mapping[AssetKey, int]]):
         """
-        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=str, value_type=str)
+        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=AssetKey)
 
     @public  # type: ignore
     @property
@@ -288,7 +287,7 @@ class MultiAssetSensorEvaluationContext:
         if asset_keys is None:
             asset_keys = self._asset_keys
 
-        cursor_dict = json.loads(self.cursor) if self.cursor else {}
+        cursor_dict = self.cursor if self.cursor else {}
         asset_event_records = {}
         for a in asset_keys:
             event_records = self.instance.get_event_records(
@@ -323,13 +322,12 @@ class MultiAssetSensorEvaluationContext:
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        cursor_dict = json.loads(self.cursor) if self.cursor else {}
-
+        cursor_dict = self.cursor if self.cursor else {}
         return self.instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
-                after_cursor=cursor_dict.get(asset_key.to_user_string()),
+                after_cursor=cursor_dict.get(asset_key),
             ),
             ascending=ascending,
             limit=limit,
@@ -346,12 +344,12 @@ class MultiAssetSensorEvaluationContext:
                 an EventLogRecord is provided, the cursor for the AssetKey will be updated and future calls to fetch asset materialization events
                 will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
         """
-        cursor_dict = json.loads(self.cursor) if self.cursor else {}
+        cursor_dict = self.cursor if self.cursor else {}
         update_dict = {
-            k.to_user_string(): v.storage_id if v else cursor_dict.get(k)
+            k: v.storage_id if v else cursor_dict.get(k)
             for k, v in materialization_records_by_key.items()
         }
-        self.update_cursor(json.dumps(update_dict))
+        self.update_cursor(update_dict)
         self.cursor_has_been_updated = True
 
     @public
@@ -767,7 +765,7 @@ def build_sensor_context(
 def build_multi_asset_sensor_context(
     asset_keys: Sequence[AssetKey],
     instance: Optional[DagsterInstance] = None,
-    cursor: Optional[Mapping[AssetKey, str]] = None,
+    cursor: Optional[Mapping[AssetKey, int]] = None,
     repository_name: Optional[str] = None,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context using the provided parameters.
@@ -779,7 +777,7 @@ def build_multi_asset_sensor_context(
     Args:
         asset_keys (Sequence[AssetKey]): The list of asset keys monitored by the sensor
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
-        cursor (Optional[Mapping[AssetKey, str]]): A dictionary of cursor values to provide to the evaluation of the sensor.
+        cursor (Optional[Mapping[AssetKey, int]]): A dictionary of cursor values to provide to the evaluation of the sensor.
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
 
     Examples:
@@ -793,7 +791,7 @@ def build_multi_asset_sensor_context(
     """
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
-    check.opt_dict_param(cursor, "cursor", key_type=AssetKey, value_type=str)
+    check.opt_dict_param(cursor, "cursor", key_type=AssetKey)
     check.opt_str_param(repository_name, "repository_name")
     check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
     return MultiAssetSensorEvaluationContext(
