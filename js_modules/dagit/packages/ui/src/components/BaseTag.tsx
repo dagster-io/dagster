@@ -3,6 +3,7 @@ import styled from 'styled-components/macro';
 
 import {Colors} from './Colors';
 import {IconWrapper} from './Icon';
+import {SpinnerWrapper} from './Spinner';
 
 interface Props {
   fillColor?: string;
@@ -82,17 +83,18 @@ export const StyledTag = styled.div<StyledTagProps>`
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-  > ${IconWrapper}:first-child {
+
+  > ${IconWrapper}:first-child, > ${SpinnerWrapper}:first-child {
     margin-right: 4px;
     margin-left: -4px;
   }
 
-  > ${IconWrapper}:last-child {
+  > ${IconWrapper}:last-child, > ${SpinnerWrapper}:last-child {
     margin-left: 4px;
     margin-right: -4px;
   }
 
-  > ${IconWrapper}:first-child:last-child {
+  > ${IconWrapper}:first-child:last-child, > ${SpinnerWrapper}:first-child:last-child {
     margin: 0 -4px;
   }
 `;
