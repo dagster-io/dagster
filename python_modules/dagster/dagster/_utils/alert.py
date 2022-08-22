@@ -3,7 +3,6 @@ import smtplib
 import ssl
 from typing import TYPE_CHECKING, Callable, List, Optional, Sequence, Union
 
-from dagster._core.definitions.run_status_sensor_definition import JobSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.backcompat import deprecation_warning
@@ -15,6 +14,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
+    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
 
 
 def _default_failure_email_body(context) -> str:
@@ -103,7 +103,7 @@ def make_email_on_run_failure_sensor(
             ]
         ]
     ] = None,
-    monitored: Optional[Sequence[Union[RepositorySelector, JobSelector]]] = None,
+    monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a job failure sensor that sends email via the SMTP protocol.

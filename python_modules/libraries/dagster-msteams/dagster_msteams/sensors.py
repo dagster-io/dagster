@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, Sequence, Union
 
 from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient
@@ -6,12 +6,13 @@ from dagster_msteams.client import TeamsClient
 from dagster import DefaultSensorStatus
 from dagster._core.definitions import GraphDefinition, PipelineDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
-    JobSelector,
-    RepositorySelector,
     RunFailureSensorContext,
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+
+if TYPE_CHECKING:
+    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
 
 
 def _default_failure_message(context: RunFailureSensorContext) -> str:
@@ -37,7 +38,7 @@ def make_teams_on_run_failure_sensor(
     monitored_jobs: Optional[
         List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
-    monitored: Optional[Sequence[Union[RepositorySelector, JobSelector]]] = None,
+    monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
 ):
     """Create a sensor on run failures that will message the given MS Teams webhook URL.
 

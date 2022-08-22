@@ -1,18 +1,30 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from slack_sdk.web.client import WebClient
 
 from dagster import DefaultSensorStatus
 from dagster._core.definitions import GraphDefinition, PipelineDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
-    JobSelector,
-    RepositorySelector,
     RunFailureSensorContext,
     RunStatusSensorContext,
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.backcompat import deprecation_warning
+
+if TYPE_CHECKING:
+    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
 
 T = TypeVar("T", bound=RunStatusSensorContext)
 
@@ -77,7 +89,7 @@ def make_slack_on_run_failure_sensor(
     job_selection: Optional[
         List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
-    monitored: Optional[Sequence[Union[RepositorySelector, JobSelector]]] = None,
+    monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a sensor on job failures that will message the given Slack channel.

@@ -1,6 +1,6 @@
 import warnings
 from datetime import datetime
-from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Sequence, Union, cast
 
 import pendulum
 
@@ -14,8 +14,6 @@ from dagster._core.errors import (
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, PipelineRun, RunsFilter
-
-# from dagster._core.host_representation import JobSelector, RepositorySelector
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -44,32 +42,8 @@ from .sensor_definition import (
 )
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
-
-@whitelist_for_serdes
-class JobSelector(
-    NamedTuple(
-        "_JobSelector", [("location_name", str), ("repository_name", str), ("job_name", str)]
-    )
-):
-    def __new__(cls, location_name: str, repository_name: str, job_name: str):
-        return super(JobSelector, cls).__new__(
-            cls,
-            location_name=check.str_param(location_name, "location_name"),
-            repository_name=check.str_param(repository_name, "repository_name"),
-            job_name=check.str_param(job_name, "job_name"),
-        )
-
-
-@whitelist_for_serdes
-class RepositorySelector(
-    NamedTuple("_RepositorySelector", [("location_name", str), ("repository_name", str)])
-):
-    def __new__(cls, location_name: str, repository_name: str):
-        return super(RepositorySelector, cls).__new__(
-            cls,
-            location_name=check.str_param(location_name, "location_name"),
-            repository_name=check.str_param(repository_name, "repository_name"),
-        )
+if TYPE_CHECKING:
+    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
 
 
 @whitelist_for_serdes
@@ -224,7 +198,7 @@ def run_failure_sensor(
     job_selection: Optional[
         List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
-    monitored: Optional[Sequence[Union[RepositorySelector, JobSelector]]] = None,
+    monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -333,13 +307,14 @@ class RunStatusSensorDefinition(SensorDefinition):
         monitored_jobs: Optional[
             List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
         ] = None,
-        monitored: Optional[Sequence[Union[RepositorySelector, JobSelector]]] = None,
+        monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     ):
 
         from dagster._core.event_api import RunShardedEventsCursor
+        from dagster._core.host_representation.selector import JobSelector, RepositorySelector
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
         check.str_param(name, "name")
@@ -598,7 +573,7 @@ def run_status_sensor(
     job_selection: Optional[
         List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
-    monitored: Optional[Sequence[Union[RepositorySelector, JobSelector]]] = None,
+    monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
