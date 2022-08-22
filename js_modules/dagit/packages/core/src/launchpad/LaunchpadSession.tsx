@@ -540,6 +540,18 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     launchButtonTitle = 'Materialize';
   }
 
+  let launchButtonWarning: string | undefined;
+  if (
+    partitionSets.results.length &&
+    currentSession.base &&
+    'partitionsSetName' in currentSession.base &&
+    !currentSession.base.partitionName
+  ) {
+    launchButtonWarning =
+      'This job is partitioned. Are you sure you want to launch' +
+      ' a run without a partition specified?';
+  }
+
   return (
     <>
       <SplitPanelContainer
@@ -709,6 +721,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       <LaunchButtonContainer launchpadType={launchpadType}>
         <LaunchRootExecutionButton
           title={launchButtonTitle}
+          warning={launchButtonWarning}
           pipelineName={pipeline.name}
           getVariables={buildExecutionVariables}
           disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}
