@@ -3,8 +3,21 @@ from datetime import datetime
 import pendulum
 import pytest
 
-from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    DailyPartitionsDefinition,
+    GraphOut,
+    In,
+    Out,
+    StaticPartitionsDefinition,
+    define_asset_job,
+    graph,
+    job,
+    op,
+)
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster._core.definitions.composite_partitions import CompositePartitionsDefinition
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster._core.definitions.partition import ScheduleType
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
@@ -19,6 +32,7 @@ from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
     external_asset_graph_from_defs,
     external_time_window_partitions_definition_from_def,
+    external_partitions_definition_from_def,
 )
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -1010,3 +1024,11 @@ def test_external_time_window_partitions_def_cron_schedule():
     ).get_partitions_definition()
 
     _check_partitions_def_equal(external, partitions_def)
+
+
+def test_composite_partition_definition():
+    time_window_partitions = DailyPartitionsDefinition(start_date="2021-05-05")
+    static_partitions = StaticPartitionsDefinition(["a", "b", "c"])
+    composite = CompositePartitionsDefinition([time_window_partitions, static_partitions])
+    external_partitions_def = external_partitions_definition_from_def(composite)
+    assert external_partitions_def.get_partitions_definition() == composite

@@ -23,6 +23,7 @@ from dagster._core.definitions import (
     SourceAsset,
 )
 from dagster._core.definitions.asset_layer import AssetOutputInfo
+from dagster._core.definitions.composite_partitions import CompositePartitionsDefinition
 from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
@@ -603,6 +604,23 @@ class ExternalStaticPartitionsDefinitionData(
 
 
 @whitelist_for_serdes
+class ExternalCompositePartitionsDefinitionData(
+    ExternalPartitionsDefinitionData,
+    NamedTuple(
+        "_ExternalCompositePartitionsDefinitionData",
+        [("external_partitions_defs", Sequence[ExternalPartitionsDefinitionData])],
+    ),
+):
+    def get_partitions_definition(self):
+        return CompositePartitionsDefinition(
+            [
+                external_partitions_def.get_partitions_definition()
+                for external_partitions_def in self.external_partitions_defs
+            ]
+        )
+
+
+@whitelist_for_serdes
 class ExternalPartitionSetData(
     NamedTuple(
         "_ExternalPartitionSetData",
@@ -1014,16 +1032,7 @@ def external_asset_graph_from_defs(
 
         partitions_def = asset_info.partitions_def
         if partitions_def:
-            if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-                partitions_def_data = external_time_window_partitions_definition_from_def(
-                    partitions_def
-                )
-            elif isinstance(partitions_def, StaticPartitionsDefinition):
-                partitions_def_data = external_static_partitions_definition_from_def(partitions_def)
-            else:
-                raise DagsterInvalidDefinitionError(
-                    "Only static partition and time window partitions are currently supported."
-                )
+            partitions_def_data = external_partitions_definition_from_def(partitions_def)
 
         # if the asset is produced by an op at the top level of the graph, graph_name should be None
         graph_name = None
@@ -1113,6 +1122,21 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
     )
 
 
+def external_partitions_definition_from_def(
+    partitions_def: PartitionsDefinition,
+) -> ExternalPartitionsDefinitionData:
+    if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        return external_time_window_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, StaticPartitionsDefinition):
+        return external_static_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, CompositePartitionsDefinition):
+        return external_composite_partitions_definition_from_def(partitions_def)
+    else:
+        raise DagsterInvalidDefinitionError(
+            "Only static, time window, and composite partitions are currently supported."
+        )
+
+
 def external_time_window_partitions_definition_from_def(
     partitions_def: TimeWindowPartitionsDefinition,
 ) -> ExternalTimeWindowPartitionsDefinitionData:
@@ -1133,6 +1157,15 @@ def external_static_partitions_definition_from_def(
     return ExternalStaticPartitionsDefinitionData(
         partition_keys=partitions_def.get_partition_keys()
     )
+
+
+def external_composite_partitions_definition_from_def(
+    partitions_def: CompositePartitionsDefinition,
+) -> ExternalCompositePartitionsDefinitionData:
+    external_partitions_defs = []
+    for sub_partitions_def in partitions_def.partitions_defs:
+        external_partitions_defs.append(external_partitions_definition_from_def(sub_partitions_def))
+    return ExternalCompositePartitionsDefinitionData(external_partitions_defs)
 
 
 def external_partition_set_data_from_def(
