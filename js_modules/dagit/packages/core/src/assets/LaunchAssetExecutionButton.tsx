@@ -19,6 +19,7 @@ import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
+import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {AssetKey} from './types';
 import {
@@ -375,7 +376,7 @@ export function executionParamsForAssetJob(
 
 function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
   return {
-    title: 'Multiple Asset Definitions Found',
+    title: MULTIPLE_DEFINITIONS_WARNING,
     body: (
       <div style={{overflow: 'auto'}}>
         One or more of the selected assets are defined in multiple repositories in your workspace.

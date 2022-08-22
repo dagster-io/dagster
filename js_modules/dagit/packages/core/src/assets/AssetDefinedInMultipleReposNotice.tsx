@@ -1,7 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, Colors} from '@dagster-io/ui';
+import {Alert, Box, ButtonLink, Colors} from '@dagster-io/ui';
 import React from 'react';
 
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -12,11 +14,13 @@ import {
   AssetDefinitionCollisionQueryVariables,
 } from './types/AssetDefinitionCollisionQuery';
 
+export const MULTIPLE_DEFINITIONS_WARNING = 'Multiple asset definitions found';
+
 export const AssetDefinedInMultipleReposNotice: React.FC<{
   assetKey: AssetKey;
   loadedFromRepo: RepoAddress;
-  padding?: boolean;
-}> = ({assetKey, loadedFromRepo, padding}) => {
+  padded?: boolean;
+}> = ({assetKey, loadedFromRepo, padded}) => {
   const {data} = useQuery<AssetDefinitionCollisionQuery, AssetDefinitionCollisionQueryVariables>(
     ASSET_DEFINITION_COLLISION_QUERY,
     {variables: {assetKeys: [{path: assetKey.path}]}},
@@ -27,25 +31,47 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
     return <span />;
   }
 
-  const otherReposWithAsset = collision.repositories.filter(
-    (r) =>
-      repoAddressAsString({location: r.location.name, name: r.name}) !==
-      repoAddressAsString(loadedFromRepo),
+  const allReposWithAsset = collision.repositories.map((r) =>
+    repoAddressAsString({name: r.name, location: r.location.name}),
   );
 
   return (
     <Box
-      padding={padding ? {vertical: 16, left: 24, right: 12} : {}}
+      padding={padded ? {vertical: 16, left: 24, right: 12} : {}}
       border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
     >
       <Alert
-        intent="info"
-        title={`Multiple repositories in your workspace include assets with this name. Showing the definition from ${buildRepoPath(
-          loadedFromRepo.name,
-          loadedFromRepo.location,
-        )} below. (Also found in ${otherReposWithAsset
-          .map((o) => buildRepoPath(o.name, o.location.name))
-          .join(', ')}). You should rename these assets to avoid collisions.`}
+        intent="warning"
+        title={MULTIPLE_DEFINITIONS_WARNING}
+        description={
+          <>
+            This asset was loaded from {buildRepoPath(loadedFromRepo.name, loadedFromRepo.location)}
+            , but duplicate definitions were found in{' '}
+            <ButtonLink
+              underline="always"
+              color={Colors.Yellow700}
+              onClick={() =>
+                showCustomAlert({
+                  title: MULTIPLE_DEFINITIONS_WARNING,
+                  body: (
+                    <>
+                      Repositories containing an asset definition for{' '}
+                      <strong>{displayNameForAssetKey(assetKey)}</strong>:
+                      <ul>
+                        {allReposWithAsset.map((addr) => (
+                          <li key={addr}>{addr}</li>
+                        ))}
+                      </ul>
+                    </>
+                  ),
+                })
+              }
+            >
+              {allReposWithAsset.length - 1} other repo{allReposWithAsset.length === 2 ? '' : 's'}
+            </ButtonLink>
+            . You should rename these assets to avoid collisions.
+          </>
+        }
       />
     </Box>
   );

@@ -65,7 +65,6 @@ from ..backfill import (
 )
 from ..external import (
     GrapheneRepositoriesOrError,
-    GrapheneRepository,
     GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
     GrapheneWorkspaceOrError,

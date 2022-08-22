@@ -63,7 +63,7 @@ export const SidebarAssetInfo: React.FC<{
       <AssetDefinedInMultipleReposNotice
         assetKey={assetKey}
         loadedFromRepo={repoAddress}
-        padding={false}
+        padded={false}
       />
 
       <AssetEvents
