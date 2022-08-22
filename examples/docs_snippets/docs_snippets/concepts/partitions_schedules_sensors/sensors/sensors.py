@@ -281,7 +281,7 @@ def asset_a_and_b_sensor(context, asset_events):
 )
 def asset_c_or_d_sensor(context, asset_events):
     # this sensor will run when either asset_c or asset_d materialize
-    if any(asset_events.value()):
+    if any(asset_events.values()):
         return RunRequest(run_key=context.cursor)
     else:
         # you can optionally return a SkipReason

@@ -5,6 +5,7 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Callable,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -43,6 +44,7 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
+    from dagster._core.storage.event_log.base import EventLogRecord
 
 
 @whitelist_for_serdes
@@ -159,7 +161,7 @@ class SensorEvaluationContext:
         return self._repository_name
 
 
-class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
+class MultiAssetSensorEvaluationContext:
     """The context object available as the argument to the evaluation function of a :py:class:`dagster.MultiAssetSensorDefinition`.
 
     Users should not instantiate this object directly. To construct a
@@ -202,8 +204,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._asset_keys = asset_keys
         self.cursor_has_been_updated = False
 
-        super(MultiAssetSensorEvaluationContext, self).__init__(None, None, None, None, None, None)
-
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         self._last_completion_time = check.opt_float_param(
@@ -214,7 +214,74 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
 
-    def latest_materializations_by_key(self, asset_keys: Optional[Sequence[AssetKey]] = None):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._exit_stack.close()
+
+    @public  # type: ignore
+    @property
+    def instance(self) -> DagsterInstance:
+        # self._instance_ref should only ever be None when this MultiAssetSensorEvaluationContext was
+        # constructed under test.
+        if not self._instance:
+            if not self._instance_ref:
+                raise DagsterInvariantViolationError(
+                    "Attempted to initialize dagster instance, but no instance reference was provided."
+                )
+            self._instance = self._exit_stack.enter_context(
+                DagsterInstance.from_ref(self._instance_ref)
+            )
+        return cast(DagsterInstance, self._instance)
+
+    @public  # type: ignore
+    @property
+    def last_completion_time(self) -> Optional[float]:
+        return self._last_completion_time
+
+    @public  # type: ignore
+    @property
+    def last_run_key(self) -> Optional[str]:
+        return self._last_run_key
+
+    @public  # type: ignore
+    @property
+    def cursor(self) -> Optional[Mapping[AssetKey, str]]:
+        """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
+        return self._cursor
+
+    @public
+    def update_cursor(self, cursor: Optional[Mapping[AssetKey, str]]) -> None:
+        """Updates the cursor value for this sensor, which will be provided on the context for the
+        next sensor evaluation.
+
+        This can be used to keep track of progress and avoid duplicate work across sensor
+        evaluations.
+
+        Args:
+            cursor (Optional[Mapping[AssetKey, str]]):
+        """
+        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=AssetKey, value_type=str)
+
+    @public  # type: ignore
+    @property
+    def repository_name(self) -> Optional[str]:
+        return self._repository_name
+
+    @public
+    def latest_materialization_records_by_key(
+        self, asset_keys: Optional[Sequence[AssetKey]] = None
+    ) -> Mapping[AssetKey, Optional["EventLogRecord"]]:
+        """Fetches the most recent materialization event record for each asset in asset_keys.
+
+        Args:
+            asset_keys (Optional[Sequence[AssetKey]]): list of asset keys to fetch events for. If not specified, the
+                latest materialization will be fetched for all assets the multi_asset_sensor monitors.
+
+        Returns: Mapping of AssetKey to EventLogRecord where the EventLogRecord is the latest materialization event for the asset. If there
+            is no materialization event for the asset, the value in the mapping will be None.
+        """
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
@@ -241,7 +308,18 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         return asset_event_records
 
-    def materializations_for_key(self, asset_key: AssetKey, limit: int):
+    @public
+    def materialization_records_for_key(
+        self, asset_key: AssetKey, limit: int, ascending: bool = True
+    ) -> Iterable["EventLogRecord"]:
+        """Fetches asset materialization event records for asset_key
+
+        Args:
+            asset_key (AssetKey): The asset to fetch materialization events for
+            limit (int): The number of events to fetch
+            ascending (bool): If True, materialization events will be returned with the earliest event first. If False, the most recent
+                materialization event will be returned first. Defaults to True.
+        """
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
@@ -253,23 +331,32 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 asset_key=asset_key,
                 after_cursor=cursor_dict.get(asset_key),
             ),
-            ascending=True,
+            ascending=ascending,
             limit=limit,
         )
 
+    @public
     def advance_cursor(
-        self, materializations_by_key
-    ):  # TODO - how do i get type annotations in here if i can't import EventLogEntry?
+        self, materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]]
+    ):
+        """Advances the cursor for a group of AssetKeys based on the EventLogRecord provided for each AssetKey.
+
+        Args:
+            materialization_records_by_key (Mapping[AssetKey, Optional[EventLogRecord]]): Mapping of AssetKeys to EventLogRecord or None. If
+                an EventLogRecord is provided, the cursor for the AssetKey will be updated and future calls to fetch asset materialization events
+                will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
+        """
         cursor_dict = json.loads(self.cursor) if self.cursor else {}
         update_dict = {
-            k: v.storage_id if v else cursor_dict.get(k)
-            for k, v in materializations_by_key.items()
+            k: v.storage_id if v else cursor_dict.get(k) for k, v in materializations_by_key.items()
         }
         self.update_cursor(json.dumps(update_dict))
         self.cursor_has_been_updated = True
 
+    @public
     def advance_all_cursors(self):
-        materializations_by_key = self.latest_materializations_by_key()
+        """Updates the cursor to the most recent materialization event for all assets monitored by the multi_asset_sensor"""
+        materializations_by_key = self.latest_materialization_records_by_key()
         self.advance_cursor(materializations_by_key)
 
 
