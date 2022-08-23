@@ -4,7 +4,6 @@ import uuid
 from os import path
 from typing import Generic, List, TypeVar
 
-import nbformat
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
 from graphene import Schema
@@ -123,6 +122,7 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
 
     async def download_notebook(self, request: Request):
         try:
+            import nbformat  # nbconvert dependency
             from nbconvert import HTMLExporter
         except ImportError:
             return HTMLResponse(
