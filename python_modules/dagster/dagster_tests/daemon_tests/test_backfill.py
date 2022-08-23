@@ -8,8 +8,23 @@ from contextlib import contextmanager
 import pendulum
 import pytest
 
-from dagster import Any, Field, daily_partitioned_config, fs_io_manager, graph, repository
-from dagster._core.definitions import Partition, PartitionSetDefinition
+from dagster import (
+    Any,
+    AssetKey,
+    AssetsDefinition,
+    Field,
+    In,
+    Nothing,
+    Out,
+    asset,
+    daily_partitioned_config,
+    define_asset_job,
+    fs_io_manager,
+    graph,
+    op,
+    repository,
+)
+from dagster._core.definitions import Partition, PartitionSetDefinition, StaticPartitionsDefinition
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
@@ -180,6 +195,49 @@ def _unloadable_partition_set_origin():
     ).get_partition_set_origin("doesnt_exist")
 
 
+static_partitions = StaticPartitionsDefinition(["x", "y", "z"])
+
+
+@asset(partitions_def=static_partitions)
+def foo():
+    return 1
+
+
+@asset(partitions_def=static_partitions)
+def bar(a1):
+    return a1
+
+
+@op(ins={"in1": In(Nothing), "in2": In(Nothing)}, out={"out1": Out(), "out2": Out()})
+def reusable():
+    return 1, 2
+
+
+ab1 = AssetsDefinition(
+    node_def=reusable,
+    keys_by_input_name={
+        "in1": AssetKey("foo"),
+        "in2": AssetKey("bar"),
+    },
+    keys_by_output_name={"out1": AssetKey("a1"), "out2": AssetKey("b1")},
+    partitions_def=static_partitions,
+    can_subset=True,
+    asset_deps={AssetKey("a1"): {AssetKey("foo")}, AssetKey("b1"): {AssetKey("bar")}},
+)
+
+ab2 = AssetsDefinition(
+    node_def=reusable,
+    keys_by_input_name={
+        "in1": AssetKey("foo"),
+        "in2": AssetKey("bar"),
+    },
+    keys_by_output_name={"out1": AssetKey("a2"), "out2": AssetKey("b2")},
+    partitions_def=static_partitions,
+    can_subset=True,
+    asset_deps={AssetKey("a2"): {AssetKey("foo")}, AssetKey("b2"): {AssetKey("bar")}},
+)
+
+
 @repository
 def the_repo():
     return [
@@ -194,6 +252,16 @@ def the_repo():
         always_succeed_job,
         parallel_failure_partition_set,
         parallel_failure_pipeline,
+        # the lineage graph defined with these assets is such that: foo -> a1 -> bar -> b1
+        # this requires ab1 to be split into two separate asset definitions using the automatic
+        # subsetting capabilities. ab2 is defines similarly, so in total 4 copies of the "reusable"
+        # op will exist in the full plan, whereas onle a single copy will be needed for a subset
+        # plan which only materializes foo -> a1 -> bar
+        foo,
+        bar,
+        ab1,
+        ab2,
+        define_asset_job("twisted_asset_mess", selection="*", partitions_def=static_partitions),
     ]
 
 
@@ -648,6 +716,58 @@ def test_backfill_from_partitioned_job():
             assert run.tags[BACKFILL_ID_TAG] == "partition_schedule_from_job"
             assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
             assert run.tags[PARTITION_SET_TAG] == "comp_always_succeed_partition_set"
+
+
+def test_backfill_with_asset_selection():
+    partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
+    with instance_for_context(default_repo) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        external_partition_set = external_repo.get_external_partition_set(
+            "twisted_asset_mess_partition_set"
+        )
+        asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
+        instance.add_backfill(
+            PartitionBackfill(
+                backfill_id="backfill_with_asset_selection",
+                partition_set_origin=external_partition_set.get_external_origin(),
+                status=BulkActionStatus.REQUESTED,
+                partition_names=partition_name_list,
+                from_failure=False,
+                reexecution_steps=None,
+                tags=None,
+                backfill_timestamp=pendulum.now().timestamp(),
+                asset_selection=asset_selection,
+            )
+        )
+        assert instance.get_runs_count() == 0
+
+        list(
+            execute_backfill_iteration(
+                instance, workspace, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+        wait_for_all_runs_to_start(instance, timeout=30)
+        assert instance.get_runs_count() == 3
+        wait_for_all_runs_to_finish(instance, timeout=30)
+
+        assert instance.get_runs_count() == 3
+        runs = reversed(instance.get_runs())
+        for idx, run in enumerate(runs):
+            assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
+            assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
+            assert run.tags[PARTITION_SET_TAG] == "twisted_asset_mess_partition_set"
+            assert step_succeeded(instance, run, "foo")
+            assert step_succeeded(instance, run, "reusable")
+            assert step_succeeded(instance, run, "bar")
+        # selected
+        for asset_key in asset_selection:
+            assert len(instance.run_ids_for_asset_key(asset_key)) == 3
+        # not selected
+        for asset_key in [AssetKey("a2"), AssetKey("b2")]:
+            assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
 
 def test_backfill_from_failure_for_subselection():

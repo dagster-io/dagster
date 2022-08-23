@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
-
-import cx from "classnames";
-import visit from "unist-util-visit";
+import cx from 'classnames';
+import {useEffect, useState} from 'react';
+import visit from 'unist-util-visit';
 
 // Travel the tree to get the headings
 export function getItems(node, current) {
@@ -10,16 +9,16 @@ export function getItems(node, current) {
   } else if (node.type === `paragraph`) {
     visit(node, (item) => {
       if (item.type === `link`) {
-        const url: string = item["url"];
+        const url: string = item['url'];
         // workaround for https://github.com/syntax-tree/mdast-util-toc/issues/70
         // remove ids of HTML elements from the headings, i.e. "experimental", "cross", "check"
         current.url = url
-          .replace(/^#cross-/, "#")
-          .replace(/^#check-/, "#")
-          .replace(/-experimental-?$/, "");
+          .replace(/^#cross-/, '#')
+          .replace(/^#check-/, '#')
+          .replace(/-experimental-?$/, '');
       }
       if (item.type === `text`) {
-        current.title = item["value"];
+        current.title = item['value'];
       }
     });
     return current;
@@ -84,7 +83,7 @@ const useActiveId = (itemIds) => {
           }
         });
       },
-      { rootMargin: `0% 0% -50% 0%` }
+      {rootMargin: `0% 0% -50% 0%`},
     );
     itemIds.forEach((id) => {
       if (document.getElementById(id)) {
@@ -102,32 +101,24 @@ const useActiveId = (itemIds) => {
   return activeId;
 };
 
-const MARGINS = ["ml-0", "ml-2", "ml-4", "ml-8"];
+const MARGINS = ['ml-0', 'ml-2', 'ml-4', 'ml-8'];
 
 const renderItems = (items, activeId, depth, key) => {
   return (
     <ol key={key}>
       {items.map((item, idx) => {
         return item.url ? (
-          <li
-            key={`${key}-${idx}`}
-            className={cx(MARGINS[depth], "mt-3 list-inside")}
-          >
+          <li key={`${key}-${idx}`} className={cx(MARGINS[depth], 'mt-3 list-inside')}>
             <a
               href={item.url}
-              className={cx(
-                "font-semibold text-sm text-gray-500 hover:text-gray-800 transition",
-                {
-                  "text-gray-800": activeId === item.url.slice(1),
-                  "text-gray-500 hover:text-gray-800 transition":
-                    activeId !== item.url.slice(1),
-                }
-              )}
+              className={cx('font-semibold text-sm text-gray-500 hover:text-gray-800 transition', {
+                'text-gray-800': activeId === item.url.slice(1),
+                'text-gray-500 hover:text-gray-800 transition': activeId !== item.url.slice(1),
+              })}
             >
               {item.title}
             </a>
-            {item.items &&
-              renderItems(item.items, activeId, depth + 1, `${key}-${idx}`)}
+            {item.items && renderItems(item.items, activeId, depth + 1, `${key}-${idx}`)}
           </li>
         ) : (
           renderItems(item.items, activeId, depth, `${key}-${idx}`)
@@ -137,12 +128,12 @@ const renderItems = (items, activeId, depth, key) => {
   );
 };
 
-const SidebarNavigation = ({ items }) => {
+const SidebarNavigation = ({items}) => {
+  const idList = getIds(items);
+  const activeId = useActiveId(idList);
   if (!items) {
     return null;
   }
-  const idList = getIds(items);
-  const activeId = useActiveId(idList);
   return renderItems(items, activeId, 0, 0);
 };
 

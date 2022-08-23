@@ -323,7 +323,17 @@
         "children": [
           {
             "title": "Getting started",
-            "path": "/dagster-cloud/getting-started"
+            "path": "/dagster-cloud/getting-started",
+            "children": [
+              {
+                "title": "Serverless Deployment",
+                "path": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment"
+              },
+              {
+                "title": "Hybrid Deployment",
+                "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment"
+              }
+            ]
           },
           {
             "title": "Deployment types",
@@ -419,15 +429,19 @@
             "children": [
               {
                 "title": "dagster-cloud CLI",
-                "path": "/dagster-cloud/developing-testing"
+                "path": "/dagster-cloud/developing-testing/dagster-cloud-cli"
               },
               {
                 "title": "Code locations",
-                "path": "/dagster-cloud/developing-testing"
+                "path": "/dagster-cloud/developing-testing/code-locations"
               },
               {
                 "title": "Branch deployments",
-                "path": "/dagster-cloud/developing-testing"
+                "path": "/dagster-cloud/developing-testing/branch-deployments"
+              },
+              {
+                "title": "Environment variables",
+                "path": "/dagster-cloud/developing-testing/environment-variables"
               }
             ]
           }

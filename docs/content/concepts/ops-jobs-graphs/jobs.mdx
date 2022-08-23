@@ -39,7 +39,7 @@ Jobs can be created in several ways:
 
 ### From software-defined assets
 
-Asset jobs can materialize a fixed set of assets each time they run. Additionally, multiple jobs in the same repository can target overlapping sets of assets:
+Asset jobs materialize a fixed set of assets each time they run. Additionally, multiple jobs in the same repository can target overlapping sets of assets:
 
 ```python file=/concepts/assets/build_job.py startafter=start_marker endbefore=end_marker
 from dagster import asset, define_asset_job, repository

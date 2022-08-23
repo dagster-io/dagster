@@ -1,8 +1,8 @@
 ---
-title: "Using the Dagster Cloud CLI | Dagster Docs"
+title: "Using the dagster-cloud CLI | Dagster Docs"
 ---
 
-# Using the Dagster Cloud CLI
+# Using the dagster-cloud CLI
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
@@ -91,7 +91,7 @@ $ dagster-cloud config setup
 
 When prompted, specify the following:
 
-- **Organization** - Your organization name as it appears in the Dagit URL. For example, if your Dagster Cloud instance is `https://hooli.dagster.cloud/`, this would be `hooli`.
+- **Organization** - Your organization name as it appears in your Dagster Cloud URL. For example, if your Dagster Cloud instance is `https://hooli.dagster.cloud/`, this would be `hooli`.
 - **User token** - The user token.
 - **Default deployment** - **Optional**. A default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster Cloud organization is `prod`.
 
@@ -150,7 +150,7 @@ Point the CLI at an alternate config location by specifying the `DAGSTER_CLOUD_C
 
 ### Environment variables and CLI options
 
-Environment variables and CLI options can be used in place of the CLI configuration file or to override the configuration file.
+Environment variables and CLI options can be used in place of or to override the CLI configuration file.
 
 The priority of these items is as follows:
 
@@ -158,7 +158,7 @@ The priority of these items is as follows:
 - **Environment variables**
 - **CLI configuration** - lowest
 
-| Setting      | Environment Variable         | CLI Flag               | CLI config value     |
+| Setting      | Environment variable         | CLI flag               | CLI config value     |
 | ------------ | ---------------------------- | ---------------------- | -------------------- |
 | Organization | `DAGSTER_CLOUD_ORGANIZATION` | `--organization`, `-o` | `organization`       |
 | Deployment   | `DAGSTER_CLOUD_DEPLOYMENT`   | `--deployment`, `-d`   | `default_deployment` |

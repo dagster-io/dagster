@@ -3,9 +3,7 @@ While you can use your existing production agent, we recommend creating a dedica
 <details>
   <summary><strong>AMAZON ECS AGENTS</strong></summary>
 
-1. **Create a new Amazon ECS agent**. [Click here to spin up the agent](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-branch-deployments.yaml) using our CloudFormation template.
-
-   **Note**: Creating the CloudFormation stack may take a few minutes; refreshing the [AWS console Stacks page](https://console.aws.amazon.com/cloudformation/home#/stacks) will show its status. For more information, see the [ECS agent setup guide](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc).
+1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-cloud/deployment/agents#amazon-ecs) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
 
 2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 

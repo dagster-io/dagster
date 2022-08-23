@@ -5,12 +5,8 @@ import dagster._seven as seven
 from dagster import Bool, Field
 from dagster import _check as check
 from dagster._core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
-from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
-from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.types import CancelExecutionRequest, ExecuteExternalPipelineArgs, StartRunResult
 from dagster._serdes import (
     ConfigurableClass,
     deserialize_as,
@@ -21,6 +17,7 @@ from dagster._utils import merge_dicts
 from .base import LaunchRunContext, RunLauncher
 
 
+# note: this class is a top level export, so we defer many imports til use for performance
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     """Launches runs against running GRPC servers."""
 
@@ -55,6 +52,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     @staticmethod
     def launch_run_from_grpc_client(instance, run, grpc_client):
+        # defer for perf
+        from dagster._grpc.types import ExecuteExternalPipelineArgs, StartRunResult
+
         instance.add_run_tags(
             run.run_id,
             {
@@ -90,6 +90,11 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
 
     def launch_run(self, context: LaunchRunContext) -> None:
+        # defer for perf
+        from dagster._core.host_representation.repository_location import (
+            GrpcServerRepositoryLocation,
+        )
+
         run = context.pipeline_run
 
         check.inst_param(run, "run", PipelineRun)
@@ -120,6 +125,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             self._locations_to_wait_for.append(repository_location)
 
     def _get_grpc_client_for_termination(self, run_id):
+        # defer for perf
+        from dagster._grpc.client import DagsterGrpcClient
+
         if not self._instance:
             return None
 
@@ -142,6 +150,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def terminate(self, run_id):
+        # defer for perf
+        from dagster._grpc.types import CancelExecutionRequest
+
         check.str_param(run_id, "run_id")
         if not self._instance:
             return False
@@ -199,6 +210,12 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             interval = interval * 2
 
     def dispose(self):
+        # defer for perf
+        from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+        from dagster._core.host_representation.repository_location import (
+            GrpcServerRepositoryLocation,
+        )
+
         if not self._wait_for_processes:
             return
 

@@ -6,9 +6,8 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["with_pyspark_emr_tests"]),
         install_requires=[
             "dagster",
-            "dagit",
-            "pytest",
             "dagster-aws",
             "dagster-pyspark",
         ],
+        extras_require={"dev": ["dagit", "pytest"]},
     )

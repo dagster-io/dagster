@@ -97,7 +97,7 @@ def scope_input_manager():
 
         def load_input(self, context) -> pd.DataFrame:
             """Load the contents of a table as a pandas DataFrame."""
-            table_name = context.upstream_output.asset_key.path[-1]
+            table_name = context.asset_key.path[-1]
             return pd.read_sql(f"SELECT * FROM {table_name}", con=self._con)
 
     @io_manager(config_schema={"con_string": str})

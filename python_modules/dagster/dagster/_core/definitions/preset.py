@@ -1,7 +1,5 @@
 from typing import Dict, List, NamedTuple, Optional
 
-import pkg_resources
-
 import dagster._check as check
 from dagster._core.definitions.utils import config_from_files, config_from_yaml_strings
 from dagster._core.errors import DagsterInvariantViolationError
@@ -176,6 +174,8 @@ class PresetDefinition(
             DagsterInvariantViolationError: When one of the YAML documents is invalid and has a
                 parse error.
         """
+        import pkg_resources  # expensive, import only on use
+
         pkg_resource_defs = check.opt_list_param(
             pkg_resource_defs, "pkg_resource_defs", of_type=tuple
         )

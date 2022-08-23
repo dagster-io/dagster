@@ -78,8 +78,7 @@ export const RepositoryLocationStateObserver = () => {
               underline="always"
               onClick={() => {
                 setUpdatedLocations([]);
-                refetch();
-                client.resetStore();
+                client.refetchQueries({include: 'active'});
               }}
             >
               Update data

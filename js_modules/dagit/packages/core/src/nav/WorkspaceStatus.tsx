@@ -81,11 +81,11 @@ export const WorkspaceStatus = React.memo(() => {
   // and/or b) a toast indicating that a code location is being reloaded.
   React.useEffect(() => {
     const previousEntries =
-      previousData?.workspaceOrError.__typename === 'Workspace'
+      previousData?.workspaceOrError?.__typename === 'Workspace'
         ? previousData?.workspaceOrError.locationEntries
         : [];
     const currentEntries =
-      data?.workspaceOrError.__typename === 'Workspace'
+      data?.workspaceOrError?.__typename === 'Workspace'
         ? data?.workspaceOrError.locationEntries
         : [];
 

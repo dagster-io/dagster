@@ -54,7 +54,6 @@ from dagster._grpc.types import GetCurrentImageResult
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils import merge_dicts
-from dagster._utils.hosted_user_process import external_repo_from_def
 
 from .selector import PipelineSelector
 
@@ -268,6 +267,7 @@ class RepositoryLocation(AbstractContextManager):
 class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, origin: InProcessRepositoryLocationOrigin):
         from dagster._grpc.server import LoadedRepositories
+        from dagster._utils.hosted_user_process import external_repo_from_def
 
         self._origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
 

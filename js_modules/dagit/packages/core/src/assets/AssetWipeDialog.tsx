@@ -35,16 +35,20 @@ export const AssetWipeDialog: React.FC<{
   };
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      title={`Wipe materializations of ${
-        assetKeys.length === 1 ? displayNameForAssetKey(assetKeys[0]) : 'selected assets'
-      }?`}
-      onClose={onClose}
-      style={{width: 400}}
-    >
+    <Dialog isOpen={isOpen} title="Wipe materializations" onClose={onClose} style={{width: 600}}>
       <DialogBody>
-        <Group direction="column" spacing={8}>
+        <Group direction="column" spacing={16}>
+          <div>Are you sure you want to wipe materializations for these assets?</div>
+          <ul style={{paddingLeft: 32, margin: 0}}>
+            {assetKeys.map((assetKey) => {
+              const name = displayNameForAssetKey(assetKey);
+              return (
+                <li style={{marginBottom: 4}} key={name}>
+                  {name}
+                </li>
+              );
+            })}
+          </ul>
           <div>
             Assets defined only by their historical materializations will disappear from the Asset
             Catalog. Software-defined assets will remain unless their definition is also deleted
@@ -53,7 +57,7 @@ export const AssetWipeDialog: React.FC<{
           <strong>This action cannot be undone.</strong>
         </Group>
       </DialogBody>
-      <DialogFooter>
+      <DialogFooter topBorder>
         <Button intent="none" onClick={onClose}>
           Cancel
         </Button>

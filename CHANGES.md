@@ -1,5 +1,79 @@
 # Changelog
 
+# 1.0.4
+
+### New
+
+* Assets can now be materialized to storage conditionally by setting `output_required=False`. If this is set and no result is yielded from the asset, Dagster will not create an asset materialization event, the I/O manager will not be invoked, downstream assets will not be materialized, and asset sensors monitoring the asset will not trigger.
+* `JobDefinition.run_request_for_partition` can now be used inside sensors that target multiple jobs (Thanks Metin Senturk!)
+* The environment variable `DAGSTER_GRPC_TIMEOUT_SECONDS` now allows  for overriding the default timeout for communications between host processes like dagit and the daemon and user code servers.
+* Import time for the `dagster` module has been reduced, by approximately 50% in initial measurements.
+* `AssetIn` now accepts a `dagster_type` argument, for specifying runtime checks on asset input values.
+* [dagit] The column names on the Activity tab of the asset details page no longer reference the legacy term “Pipeline”.
+* [dagster-snowflake] The `execute_query` method of the snowflake resource now accepts a `use_pandas_result` argument, which fetches the result of the query as a Pandas dataframe. (Thanks @swotai!)
+* [dagster-shell] Made the execute and execute_script_file utilities in dagster_shell part of the public API (Thanks Fahad Khan!)
+* [dagster-dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now support the `exclude` parameter. (Thanks @flvndh!)
+
+### Bugfixes
+
+* [dagit] Removed the x-frame-options response header from Dagit, allowing the Dagit UI to be rendered in an iframe.
+* [fully-featured project example] Fixed the duckdb IO manager so the comment_stories step can load data successfully.
+* [dagster-dbt] Previously, if a `select` parameter was configured on the `dbt_cli_resource`, it would not be passed into invocations of `context.resources.dbt.run()` (and other similar commands). This has been fixed.
+* [dagster-ge] An incompatibility between `dagster_ge_validation_factory` and dagster 1.0 has been fixed.
+* [dagstermill] Previously, updated arguments and properties to `DagstermillExecutionContext` were not exposed. This has since been fixed.
+
+### Documentation
+
+* The integrations page on the docs site now has a section for links to community-hosted integrations. The first linked integration is @silentsokolov’s Vault integration.
+
+# 1.0.3
+
+### New
+
+* `Failure` now has an `allow_retries` argument, allowing a means to manually bypass retry policies.
+* `dagstermill.get_context` and `dagstermill.DagstermillExecutionContext` have been updated to reflect stable dagster-1.0 APIs. `pipeline`/`solid` referencing arguments / properties will be removed in the next major version bump of `dagstermill`.
+* `TimeWindowPartitionsDefinition` now exposes a `get_cron_schedule` method.
+
+### Bugfixes
+
+* In some situations where an asset was materialized and that asset that depended on a partitioned asset, and that upstream partitioned asset wasn’t part of the run, the partition-related methods of InputContext returned incorrect values or failed erroneously. This was fixed.
+* Schedules and sensors with the same names but in different repositories no longer affect each others idempotence checks.
+* In some circumstances, reloading a repository in Dagit could lead to an error that would crash the page. This has been fixed.
+
+### Community Contributions
+
+* @will-holley added an optional `key` argument to GCSFileManager methods to set the GCS blob key, thank you!
+* Fix for sensors in [fully featured example](https://docs.dagster.io/guides/dagster/example_project#fully-featured-project), thanks @pwachira!
+
+### Documentation
+
+* New documentation for getting started with Dagster Cloud, including:
+    * [Serverless deployment documentation](https://docs.dagster.io/dagster-cloud/getting-started/getting-started-with-serverless-deployment)
+    * [Hybrid deployment documentation](https://docs.dagster.io/dagster-cloud/getting-started/getting-started-with-hybrid-deployment)
+
+
+# 1.0.2
+
+### New
+
+* When the workpace is updated, a notification will appear in Dagit, and the Workspace tab will automatically refresh.
+
+### Bugfixes
+
+* Restored the correct version mismatch warnings between dagster core and dagster integration libraries
+* `Field.__init__` has been typed, which resolves an error that pylance would raise about `default_value`
+* Previously, `dagster_type_materializer` and `dagster_type_loader` expected functions to take a context argument from an internal dagster import. We’ve added `DagsterTypeMaterializerContext` and `DagsterTypeLoaderContext` so that functions annotated with these decorators can annotate their arguments properly.
+* Previously, a single-output op with a return description would not pick up the description of the return. This has been rectified.
+
+### Community Contributions
+
+* Fixed the `dagster_slack` documentation examples. Thanks @ssingh13-rms!
+
+### Documentation
+
+* New documentation for [Dagster Cloud environment variables](https://docs.dagster.io/dagster-cloud/developing-testing/environment-variables).
+* The full list of APIs removed in 1.0 has been added to the [migration guide](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md).
+
 # 1.0.1
 
 ### Bugfixes
@@ -61,7 +135,7 @@ this should be converted to:
 pip install dagster=={DAGSTER_VERSION} dagster-somelibrary
 ```
 
-to make sure the correct library version is installed. 
+to make sure the correct library version is installed.
 
 ## New since 0.15.8
 

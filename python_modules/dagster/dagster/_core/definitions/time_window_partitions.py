@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Se
 import pendulum
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import schedule_execution_time_iterator
 
@@ -132,6 +132,49 @@ class TimeWindowPartitionsDefinition(
                 break
 
         return result
+
+    @public
+    def get_cron_schedule(
+        self,
+        minute_of_hour: Optional[int] = None,
+        hour_of_day: Optional[int] = None,
+        day_of_week: Optional[int] = None,
+        day_of_month: Optional[int] = None,
+    ):
+        """The schedule executes at the cadence specified by the partitioning."""
+        minute_of_hour = cast(
+            int,
+            check.opt_int_param(minute_of_hour, "minute_of_hour", default=self.minute_offset),
+        )
+
+        if self.schedule_type == ScheduleType.HOURLY:
+            check.invariant(
+                hour_of_day is None, "Cannot set hour parameter with hourly partitions."
+            )
+
+        hour_of_day = cast(
+            int, check.opt_int_param(hour_of_day, "hour_of_day", default=self.hour_offset)
+        )
+        execution_time = time(minute=minute_of_hour, hour=hour_of_day)
+
+        if self.schedule_type == ScheduleType.DAILY:
+            check.invariant(
+                day_of_week is None, "Cannot set day of week parameter with daily partitions."
+            )
+            check.invariant(
+                day_of_month is None, "Cannot set day of month parameter with daily partitions."
+            )
+
+        if self.schedule_type == ScheduleType.MONTHLY:
+            default = self.day_offset or 1
+            execution_day = check.opt_int_param(day_of_month, "day_of_month", default=default)
+        elif self.schedule_type == ScheduleType.WEEKLY:
+            default = self.day_offset or 0
+            execution_day = check.opt_int_param(day_of_week, "day_of_week", default=default)
+        else:
+            execution_day = 0
+
+        return get_cron_schedule(self.schedule_type, execution_time, execution_day)
 
     def _iterate_time_windows(self, start: datetime) -> Iterable[TimeWindow]:
         """

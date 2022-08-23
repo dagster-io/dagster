@@ -303,7 +303,8 @@ class RunStatusSensorDefinition(SensorDefinition):
         request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     ):
 
-        from dagster._core.storage.event_log.base import EventRecordsFilter, RunShardedEventsCursor
+        from dagster._core.event_api import RunShardedEventsCursor
+        from dagster._core.storage.event_log.base import EventRecordsFilter
 
         check.str_param(name, "name")
         check.inst_param(run_status, "run_status", DagsterRunStatus)

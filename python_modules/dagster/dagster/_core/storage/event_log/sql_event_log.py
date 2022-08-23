@@ -12,6 +12,7 @@ import dagster._seven as seven
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import DagsterEventLogInvalidForRun
+from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import MARKER_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import build_run_step_stats_from_events
@@ -32,7 +33,6 @@ from .base import (
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
-    RunShardedEventsCursor,
 )
 from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable

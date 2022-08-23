@@ -79,7 +79,6 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             "Feature-Policy": "microphone 'none'; camera 'none'",
             "Referrer-Policy": "strict-origin-when-cross-origin",
             "X-Content-Type-Options": "nosniff",
-            "X-Frame-Options": "deny",
         }
 
     def make_csp_header(self, nonce: str) -> str:

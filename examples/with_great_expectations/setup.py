@@ -6,9 +6,8 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["with_great_expectations_tests"]),
         install_requires=[
             "dagster",
-            "dagit",
-            "pytest",
             "dagster-ge",
             "great_expectations>=0.14.12",  # pinned because pip is using the cached wheel for 0.13.14
         ],
+        extras_require={"dev": ["dagit", "pytest"]},
     )

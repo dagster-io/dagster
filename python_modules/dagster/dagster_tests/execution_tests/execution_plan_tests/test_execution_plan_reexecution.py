@@ -6,7 +6,11 @@ import pytest
 import dagster._check as check
 from dagster import DependencyDefinition, Int
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterExecutionStepNotFoundError,
+    DagsterInvariantViolationError,
+    DagsterRunNotFoundError,
+)
 from dagster._core.events import get_step_output_event
 from dagster._core.execution.api import execute_plan
 from dagster._core.execution.plan.plan import ExecutionPlan
@@ -117,6 +121,15 @@ def test_execution_plan_reexecution():
 
     assert not get_step_output_event(step_events, "add_one")
     assert get_step_output_event(step_events, "add_two")
+
+    # delete ancestor run
+    instance.delete_run(result.run_id)
+    # ensure failure raises appropriate error
+    with pytest.raises(DagsterRunNotFoundError):
+        KnownExecutionState.build_for_reexecution(
+            instance,
+            pipeline_run,
+        )
 
 
 def _check_known_state(known_state: KnownExecutionState):

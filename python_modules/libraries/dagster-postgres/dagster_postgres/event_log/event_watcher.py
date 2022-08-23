@@ -130,6 +130,7 @@ class PostgresEventWatcher:
     def close(self):
         if self._watcher_thread:
             self._watcher_thread_exit.set()
-            self._watcher_thread.join()
+            if self._watcher_thread.is_alive():
+                self._watcher_thread.join()
             self._watcher_thread_exit = None
             self._watcher_thread = None

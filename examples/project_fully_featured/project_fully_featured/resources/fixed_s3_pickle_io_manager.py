@@ -11,7 +11,7 @@ def s3_client():
 
 class FixedS3PickleIOManager(IOManager):
     def load_input(self, context):
-        key = context.upstream_output.asset_key.path[-1]
+        key = context.asset_key.path[-1]
         bucket = context.resource_config["bucket"]
         return pickle.loads(s3_client().get_object(Bucket=bucket, Key=key)["Body"].read())
 

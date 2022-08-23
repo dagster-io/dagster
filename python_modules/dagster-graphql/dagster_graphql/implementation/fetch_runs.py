@@ -3,7 +3,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Dict, Iterable, KeysView, List, Mapping, Optional, cast
 
 from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
-from graphql.execution.base import ResolveInfo
+from graphene import ResolveInfo
 
 from dagster import AssetKey
 from dagster import _check as check

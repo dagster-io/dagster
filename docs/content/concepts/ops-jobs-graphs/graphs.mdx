@@ -7,9 +7,11 @@ description: Graphs are sets of interconnected ops or sub-graphs and form the co
 
 A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
 
-Dagster supports using [graphs to create assets](#to-back-assets), allowing you to produce multiple assets with a single graph and easily track cross-job lineage.
+Graphs can be used in three different ways:
 
-Graphs form the core of [jobs](/concepts/ops-jobs-graphs/jobs).
+- [**To back assets**](/concepts/assets/software-defined-assets#graph-backed-assets) - Basic software-defined assets are computed using a single op, but if computing one of your assets requires multiple discrete steps, you can compute it using a graph instead.
+- [**Directly inside a job**](/concepts/ops-jobs-graphs/jobs) - Each non-asset job contains a graph.
+- [**Inside other graphs**](/concepts/ops-jobs-graphs/nesting-graphs) - You can build complex graphs out of simpler graphs.
 
 ---
 
@@ -26,8 +28,7 @@ Graphs form the core of [jobs](/concepts/ops-jobs-graphs/jobs).
 ## Creating graphs
 
 - [Using the @graph decorator](#using-the-graph-decorator)
-- [To back assets](#to-back-assets)
-- [With graph patterns](#with-graph-patterns)
+- [Graph patterns](#graph-patterns)
 
 ### Using the @graph decorator
 
@@ -54,15 +55,9 @@ def linear():
     add_one(add_one(add_one(return_one())))
 ```
 
-### To back assets
+### Graph patterns
 
-Graphs can be used to create [software-defined assets](/concepts/assets/software-defined-assets). Graph-backed assets are useful if you have an existing graph that produces and consumes assets.
-
-Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph. Refer to the [Software-defined assets documentation](/concepts/assets/software-defined-assets#graph-backed-assets) for more info and examples.
-
-### With graph patterns
-
-Need some inspiration? Using these patterns, you can build graphs:
+Need some inspiration? Using the patterns below, you can build graphs:
 
 - [That re-use ops](#that-re-use-ops)
 - [With multiple inputs](#with-multiple-inputs)
@@ -369,7 +364,18 @@ def define_dep_dsl_graph() -> GraphDefinition:
 
 ---
 
-## Building jobs
+## Using graphs
+
+- [Inside assets](#inside-assets)
+- [Directly inside jobs](#directly-inside-jobs)
+
+### Inside assets
+
+Graphs can be used to create [software-defined assets](/concepts/assets/software-defined-assets). Graph-backed assets are useful if you have an existing graph that produces and consumes assets.
+
+Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph. Refer to the [Software-defined assets documentation](/concepts/assets/software-defined-assets#graph-backed-assets) for more info and examples.
+
+### Directly inside jobs
 
 Ready to start using your graphs in Dagster jobs? Refer to the [Jobs documentation](/concepts/ops-jobs-graphs/jobs) for detailed info and examples.
 
