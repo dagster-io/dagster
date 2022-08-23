@@ -10,7 +10,7 @@ import {
   Subheading,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
+import {Link, Redirect} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {useTrackPageView} from '../app/analytics';
@@ -27,6 +27,10 @@ export const WorkspaceOverviewRoot = () => {
 
   const {flagNewWorkspace} = useFeatureFlags();
   const {loading, error, options} = useRepositoryOptions();
+
+  if (flagNewWorkspace) {
+    return <Redirect to="/workspace/jobs" />;
+  }
 
   const content = () => {
     if (loading) {

@@ -5,16 +5,16 @@ import * as React from 'react';
 import {usePermissions} from '../app/Permissions';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
 import {RunFragments} from '../runs/RunFragments';
+import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {useJobReExecution} from '../runs/useJobReExecution';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-import {OverviewJobFragment} from './types/OverviewJobFragment';
 import {RunReExecutionQuery} from './types/RunReExecutionQuery';
 
 interface Props {
-  job: OverviewJobFragment;
+  job: {isJob: boolean; name: string; runs: RunTimeFragment[]};
   repoAddress: RepoAddress;
 }
 
@@ -24,14 +24,14 @@ interface Props {
  */
 export const JobMenu = (props: Props) => {
   const {job, repoAddress} = props;
-  const lastRun = job.runs[0];
+  const lastRun = job.runs.length ? job.runs[0] : null;
   const {canLaunchPipelineReexecution} = usePermissions();
   const [fetchHasExecutionPlan, {data}] = useLazyQuery<RunReExecutionQuery>(RUN_RE_EXECUTION_QUERY);
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError : null;
 
   const fetchIfPossible = React.useCallback(() => {
-    if (lastRun.id) {
+    if (lastRun?.id) {
       fetchHasExecutionPlan({variables: {runId: lastRun.id}});
     }
   }, [lastRun, fetchHasExecutionPlan]);
