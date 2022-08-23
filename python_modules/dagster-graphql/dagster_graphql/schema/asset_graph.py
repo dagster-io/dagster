@@ -25,6 +25,7 @@ from ..implementation.fetch_runs import AssetComputeStatus
 from ..implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
 from . import external
 from .asset_key import GrapheneAssetKey
+from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .errors import GrapheneAssetNotFoundError
 from .logs.events import GrapheneMaterializationEvent
 from .pipelines.pipeline import GrapheneMaterializationCount, GraphenePipeline, GrapheneRun
@@ -133,6 +134,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     partitionDefinition = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
+    type = graphene.Field(GrapheneDagsterType)
 
     class Meta:
         name = "AssetNode"
@@ -190,6 +192,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node
 
     def get_external_pipeline(self) -> ExternalPipeline:
+        print(self.assetKey)
+        print(self._external_asset_node.job_names)
         if self._external_pipeline is None:
             check.invariant(
                 len(self._external_asset_node.job_names) >= 1,
@@ -502,6 +506,18 @@ class GrapheneAssetNode(graphene.ObjectType):
         node_def_snap = self.get_node_definition_snap()
         all_unique_keys = self.get_required_resource_keys(node_def_snap)
         return [GrapheneResourceRequirement(key) for key in all_unique_keys]
+
+    def resolve_type(self, _graphene_info) -> Optional[str]:
+        external_pipeline = self.get_external_pipeline()
+        output_name = self.external_asset_node.output_name
+        if output_name:
+            for output_def in self.get_node_definition_snap().output_def_snaps:
+                if output_def.name == output_name:
+                    return to_dagster_type(
+                        external_pipeline.pipeline_snapshot,
+                        output_def.dagster_type_key,
+                    )
+        return None
 
 
 class GrapheneAssetGroup(graphene.ObjectType):
