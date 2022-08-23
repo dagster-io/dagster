@@ -505,16 +505,26 @@ Sometimes, you may want to monitor jobs in a repository other than the one where
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cross_repo_run_status_sensor endbefore=end_cross_repo_run_status_sensor
 @run_status_sensor(
-    monitored_jobs=[RepositorySelector(location_name="repository.location", repository_name="team_a_repository")],
+    monitored_jobs=[
+        RepositorySelector(
+            location_name="repository.location", repository_name="team_a_repository"
+        )
+    ],
     run_status=DagsterRunStatus.SUCCESS,
 )
 def team_a_repo_sensor():
     # when any job in team_a_repository succeeds, this sensor will trigger
     send_slack_alert()
 
+
 @run_failure_sensor(
-    monitored_jobs=[JobSelector(location_name="repository.location", repository_name="team_a_repository", job_name="data_update")],
-    run_status=DagsterRunStatus.SUCCESS,
+    monitored_jobs=[
+        JobSelector(
+            location_name="repository.location",
+            repository_name="team_a_repository",
+            job_name="data_update",
+        )
+    ],
 )
 def team_a_data_update_failure_sensor():
     # when the data_update job in team_a_repository fails, this sensor will trigger

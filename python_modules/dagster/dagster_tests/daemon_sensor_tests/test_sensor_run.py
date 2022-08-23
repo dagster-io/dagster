@@ -310,7 +310,7 @@ def request_list_sensor(_ctx):
 
 
 @run_status_sensor(
-    monitored=[
+    monitored_jobs=[
         JobSelector(
             location_name="test_location",
             repository_name="the_other_repo",
@@ -324,7 +324,7 @@ def cross_repo_job_sensor(context):
 
 
 @run_status_sensor(
-    monitored=[
+    monitored_jobs=[
         RepositorySelector(
             location_name="test_location",
             repository_name="the_other_repo",
