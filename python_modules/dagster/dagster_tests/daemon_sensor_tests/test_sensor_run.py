@@ -224,7 +224,7 @@ def asset_b():
 
 @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def asset_a_and_b_sensor(context):
-    asset_events = context.latest_materializations_by_key()
+    asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
         context.advance_all_cursors()
         return RunRequest(run_key=f"{context.cursor}", run_config={})
@@ -232,7 +232,7 @@ def asset_a_and_b_sensor(context):
 
 @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def doesnt_update_cursor_sensor(context):
-    asset_events = context.latest_materializations_by_key()
+    asset_events = context.latest_materialization_records_by_key()
     if any(asset_events.values()):
         # doesn't update cursor, should raise exception
         return RunRequest(run_key=f"{context.cursor}", run_config={})
@@ -240,7 +240,7 @@ def doesnt_update_cursor_sensor(context):
 
 @multi_asset_sensor(asset_keys=[AssetKey("asset_a")], job=the_job)
 def backlog_sensor(context):
-    asset_events = context.materializations_for_key(asset_key=AssetKey("asset_a"), limit=2)
+    asset_events = context.materialization_records_for_key(asset_key=AssetKey("asset_a"), limit=2)
     if len(asset_events) == 2:
         context.advance_cursor({AssetKey("asset_a"): asset_events[-1]})
         return RunRequest(run_key=f"{context.cursor}", run_config={})

@@ -279,7 +279,7 @@ def test_multi_asset_sensor():
 
     @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
     def a_and_b_sensor(context):
-        asset_events = context.latest_materializations_by_key()
+        asset_events = context.latest_materialization_records_by_key()
         if all(asset_events.values()):
             context.advance_all_cursors()
             return RunRequest(run_key=context.cursor, run_config={})
