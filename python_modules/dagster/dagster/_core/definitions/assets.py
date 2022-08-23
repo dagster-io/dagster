@@ -31,7 +31,6 @@ from dagster._utils.backcompat import (
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix
-from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
@@ -614,23 +613,23 @@ class AssetsDefinition(ResourceAddable):
         Args:
             selected_asset_keys (AbstractSet[AssetKey]): The total set of asset keys
         """
+        from dagster._core.definitions.graph_definition import GraphDefinition
 
         check.invariant(
             self.can_subset,
             f"Attempted to subset AssetsDefinition for {self.node_def.name}, but can_subset=False.",
         )
 
-        if isinstance(self.node_def, GraphDefinition):  # node is graph-backed asset
+        # Set of assets within selected_asset_keys which are outputted by this AssetDefinition
+        asset_subselection = selected_asset_keys & self.keys
+        # Early escape if all assets in AssetsDefinition are selected
+        if asset_subselection == self.keys:
+            return self
+        elif isinstance(self.node_def, GraphDefinition):  # Node is graph-backed asset
             if asset_selection_data is None:
                 raise DagsterInvalidInvocationError(
                     "asset selection data must be provided to subset a graph-backed asset"
                 )
-
-            # set of assets within selected_asset_keys which are outputted by this AssetDefinition
-            asset_subselection = set()
-            for asset_key in selected_asset_keys:
-                if asset_key in self.keys:
-                    asset_subselection.add(asset_key)
 
             subsetted_node = _subset_graph_backed_asset(asset_subselection, asset_selection_data)
 
@@ -677,7 +676,7 @@ class AssetsDefinition(ResourceAddable):
                 group_names_by_key=self.group_names_by_key,
             )
         else:
-            # multi asset subsetting
+            # multi_asset subsetting
             return AssetsDefinition(
                 # keep track of the original mapping
                 keys_by_input_name=self._keys_by_input_name,
@@ -687,7 +686,7 @@ class AssetsDefinition(ResourceAddable):
                 partition_mappings=self._partition_mappings,
                 asset_deps=self._asset_deps,
                 can_subset=self.can_subset,
-                selected_asset_keys=selected_asset_keys & self.keys,
+                selected_asset_keys=asset_subselection,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
             )

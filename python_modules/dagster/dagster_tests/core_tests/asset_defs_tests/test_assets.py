@@ -1,3 +1,5 @@
+import ast
+
 import pytest
 
 from dagster import (
@@ -679,7 +681,7 @@ def test_from_op_w_configured():
     assert the_asset.keys_by_output_name["result"].path == ["foo2"]
 
 
-def get_step_keys_from_run(instance, run_result):
+def get_step_keys_from_run(instance):
     engine_events = list(
         instance.get_event_records(EventRecordsFilter(DagsterEventType.ENGINE_EVENT))
     )
@@ -689,7 +691,7 @@ def get_step_keys_from_run(instance, run_result):
     step_metadata = next(
         iter([metadata for metadata in metadata_entries if metadata.label == "step_keys"])
     )
-    return eval(step_metadata.value.value)
+    return ast.literal_eval(step_metadata.value.value)
 
 
 def test_graph_backed_asset_subset():
@@ -714,14 +716,14 @@ def test_graph_backed_asset_subset():
     )
 
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("one")])
+        asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("one")])
         materialization_planned = list(
             instance.get_event_records(
                 EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
             )
         )
         assert len(materialization_planned) == 1
-        step_keys = get_step_keys_from_run(instance, result)
+        step_keys = get_step_keys_from_run(instance)
         assert set(step_keys) == set(["my_graph.foo", "my_graph.bar_1"])
 
 
@@ -743,14 +745,14 @@ def test_graph_backed_asset_partial_output_selection():
     )
 
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("one")])
+        asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("one")])
         materialization_planned = list(
             instance.get_event_records(
                 EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
             )
         )
         assert len(materialization_planned) == 1
-        step_keys = get_step_keys_from_run(instance, result)
+        step_keys = get_step_keys_from_run(instance)
         assert set(step_keys) == set(["graph_asset.foo"])
 
 
@@ -790,7 +792,7 @@ def test_input_subsetting_graph_backed_asset():
 
     # test first "bar" alias
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(
+        asset_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("one"), AssetKey("upstream_1"), AssetKey("upstream_2")],
         )
@@ -800,12 +802,12 @@ def test_input_subsetting_graph_backed_asset():
             )
         )
         assert len(materialization_planned) == 3
-        step_keys = get_step_keys_from_run(instance, result)
+        step_keys = get_step_keys_from_run(instance)
         assert set(step_keys) == set(["my_graph.bar_1", "upstream_1", "upstream_2"])
 
     # test second "bar" alias
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(
+        asset_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("two"), AssetKey("upstream_1"), AssetKey("upstream_2")],
         )
@@ -815,12 +817,12 @@ def test_input_subsetting_graph_backed_asset():
             )
         )
         assert len(materialization_planned) == 3
-        step_keys = get_step_keys_from_run(instance, result)
+        step_keys = get_step_keys_from_run(instance)
         assert set(step_keys) == set(["my_graph.bar_2", "upstream_1", "upstream_2"])
 
     # test "baz" which uses both inputs
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(
+        asset_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("three"), AssetKey("upstream_1"), AssetKey("upstream_2")],
         )
@@ -830,5 +832,5 @@ def test_input_subsetting_graph_backed_asset():
             )
         )
         assert len(materialization_planned) == 3
-        step_keys = get_step_keys_from_run(instance, result)
+        step_keys = get_step_keys_from_run(instance)
         assert set(step_keys) == set(["my_graph.baz", "upstream_1", "upstream_2"])
