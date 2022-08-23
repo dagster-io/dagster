@@ -6,18 +6,36 @@ import {Link} from 'react-router-dom';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {timingStringForStatus} from '../runs/RunDetails';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
+import {DagsterTag} from '../runs/RunTag';
 import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {RepoAddress} from '../workspace/types';
 
 import {LatestRunTagQuery, LatestRunTagQueryVariables} from './types/LatestRunTagQuery';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
-export const LatestRunTag: React.FC<{pipelineName: string}> = ({pipelineName}) => {
+export const LatestRunTag: React.FC<{pipelineName: string; repoAddress: RepoAddress}> = ({
+  pipelineName,
+  repoAddress,
+}) => {
   const lastRunQuery = useQuery<LatestRunTagQuery, LatestRunTagQueryVariables>(
     LATEST_RUN_TAG_QUERY,
-    {variables: {runsFilter: {pipelineName}}, notifyOnNetworkStatusChange: true},
+    {
+      variables: {
+        runsFilter: {
+          pipelineName,
+          tags: [
+            {
+              key: DagsterTag.RepositoryLabelTag,
+              value: `${repoAddress.name}@${repoAddress.location}`,
+            },
+          ],
+        },
+      },
+      notifyOnNetworkStatusChange: true,
+    },
   );
 
   useQueryRefreshAtInterval(lastRunQuery, FIFTEEN_SECONDS);
