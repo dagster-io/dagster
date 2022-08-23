@@ -4,11 +4,9 @@ import uuid
 from os import path
 from typing import Generic, List, TypeVar
 
-import nbformat
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
 from graphene import Schema
-from nbconvert import HTMLExporter
 from starlette.datastructures import MutableHeaders
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
@@ -123,6 +121,16 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         return StreamingResponse(result, media_type="application/gzip")
 
     async def download_notebook(self, request: Request):
+        try:
+            import nbformat  # nbconvert dependency
+            from nbconvert import HTMLExporter
+        except ImportError:
+            return HTMLResponse(
+                "Notebook support requires nbconvert, which is not installed. You can install "
+                "nbconvert using Dagit's 'notebook' extra via "
+                "<code>pip install dagit[notebook]</code>"
+            )
+
         context = self.make_request_context(request)
         repo_location_name = request.query_params["repoLocName"]
 
