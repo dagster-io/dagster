@@ -154,8 +154,8 @@ def return_multi_run_request_success_sensor(context):
 
 
 @run_failure_sensor(
-    monitored_jobs=[fails_job],
-    monitored=[
+    monitored_jobs=[
+        fails_job,
         JobSelector(
             location_name="dagster_test.toys.repo",
             repository_name="more_toys_repository",
@@ -178,8 +178,8 @@ def cross_repo_job_sensor(context):
 
 
 @run_failure_sensor(
-    monitored_jobs=[fails_job],
-    monitored=[
+    monitored_jobs=[
+        fails_job,
         RepositorySelector(
             location_name="dagster_test.toys.repo",
             repository_name="more_toys_repository",

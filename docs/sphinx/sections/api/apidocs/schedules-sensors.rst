@@ -66,6 +66,9 @@ Sensors
 
 .. autoclass:: RunFailureSensorContext
 
+.. autoclass:: JobSelector
+.. autoclass:: RepositorySelector
+
 .. autofunction:: build_run_status_sensor_context
 
 .. autodecorator:: run_status_sensor
