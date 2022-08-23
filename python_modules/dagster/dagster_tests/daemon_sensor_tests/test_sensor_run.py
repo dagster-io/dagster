@@ -17,11 +17,11 @@ from dagster import (
     Field,
     Output,
     asset,
+    define_asset_job,
     graph,
+    load_assets_from_current_module,
     materialize,
     multi_asset_sensor,
-    define_asset_job,
-    load_assets_from_current_module,
     repository,
     run_failure_sensor,
 )

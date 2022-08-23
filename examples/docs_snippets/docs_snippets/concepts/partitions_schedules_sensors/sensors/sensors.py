@@ -197,58 +197,6 @@ def my_asset_sensor(context, asset_event):
 
 # end_asset_sensor_marker
 
-# start_custom_multi_asset_sensor_marker
-import json
-from dagster import EventRecordsFilter, DagsterEventType
-
-
-@sensor(job=my_job)
-def custom_multi_asset_sensor(context):
-    cursor_dict = json.loads(context.cursor) if context.cursor else {}
-    a_cursor = cursor_dict.get("a")
-    b_cursor = cursor_dict.get("b")
-
-    # in this sensor we want to monitor for two different asset events
-    a_event_records = context.instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=AssetKey("table_a"),
-            after_cursor=a_cursor,
-        ),
-        ascending=False,
-        limit=1,
-    )
-    b_event_records = context.instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-            asset_key=AssetKey("table_b"),
-            after_cursor=b_cursor,
-        ),
-        ascending=False,
-        limit=1,
-    )
-
-    if not a_event_records or not b_event_records:
-        return
-
-    # make sure we only generate events if both table_a and table_b have been materialized since
-    # the last evaluation.
-    yield RunRequest(run_key=None)
-
-    # update the sensor cursor by combining the individual event cursors from the two separate
-    # asset event streams
-    context.update_cursor(
-        json.dumps(
-            {
-                "a": a_event_records[0].storage_id,
-                "b": b_event_records[0].storage_id,
-            }
-        )
-    )
-
-
-# end_custom_multi_asset_sensor_marker
-
 # start_multi_asset_sensor_marker
 
 

@@ -1,4 +1,5 @@
 import inspect
+import json
 from contextlib import ExitStack
 from enum import Enum
 from typing import (
@@ -169,8 +170,9 @@ class MultiAssetSensorEvaluationContext:
 
     Attributes:
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
-        cursor (Optional[Mapping[AssetKey, int]]): The cursor, passed back from the last sensor evaluation via
-            the cursor attribute of SkipReason and RunRequest
+        cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
+            the cursor attribute of SkipReason and RunRequest. Must be a dictionary of asset key strings to ints
+            that has been converted to a json string
         last_completion_time (float): DEPRECATED The last time that the sensor was evaluated (UTC).
         last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
             sensor. Use the preferred `cursor` attribute instead.
@@ -195,7 +197,7 @@ class MultiAssetSensorEvaluationContext:
         instance_ref: Optional[InstanceRef],
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
-        cursor: Optional[Mapping[AssetKey, int]],
+        cursor: Optional[str],
         repository_name: Optional[str],
         asset_keys: Sequence[AssetKey],
         instance: Optional[DagsterInstance] = None,
@@ -209,7 +211,7 @@ class MultiAssetSensorEvaluationContext:
             last_completion_time, "last_completion_time"
         )
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
-        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=AssetKey)
+        self._cursor = check.opt_str_param(cursor, "cursor")
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
 
@@ -246,22 +248,9 @@ class MultiAssetSensorEvaluationContext:
 
     @public  # type: ignore
     @property
-    def cursor(self) -> Optional[Mapping[AssetKey, Optional[int]]]:
+    def cursor(self) -> Optional[str]:
         """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
         return self._cursor
-
-    @public
-    def update_cursor(self, cursor: Optional[Mapping[AssetKey, Optional[int]]]) -> None:
-        """Updates the cursor value for this sensor, which will be provided on the context for the
-        next sensor evaluation.
-
-        This can be used to keep track of progress and avoid duplicate work across sensor
-        evaluations.
-
-        Args:
-            cursor (Optional[Mapping[AssetKey, int]]):
-        """
-        self._cursor = check.opt_dict_param(cursor, "cursor", key_type=AssetKey)
 
     @public  # type: ignore
     @property
@@ -287,14 +276,14 @@ class MultiAssetSensorEvaluationContext:
         if asset_keys is None:
             asset_keys = self._asset_keys
 
-        cursor_dict = self.cursor if self.cursor else {}
+        cursor_dict = json.loads(self.cursor) if self.cursor else {}
         asset_event_records = {}
         for a in asset_keys:
             event_records = self.instance.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
                     asset_key=a,
-                    after_cursor=cursor_dict.get(a),
+                    after_cursor=cursor_dict.get(str(a)),
                 ),
                 ascending=False,
                 limit=1,
@@ -309,27 +298,25 @@ class MultiAssetSensorEvaluationContext:
 
     @public
     def materialization_records_for_key(
-        self, asset_key: AssetKey, limit: int, ascending: bool = True
+        self, asset_key: AssetKey, limit: int
     ) -> Iterable["EventLogRecord"]:
-        """Fetches asset materialization event records for asset_key
+        """Fetches asset materialization event records for asset_key, with the earliest event first.
 
         Args:
             asset_key (AssetKey): The asset to fetch materialization events for
             limit (int): The number of events to fetch
-            ascending (bool): If True, materialization events will be returned with the earliest event first. If False, the most recent
-                materialization event will be returned first. Defaults to True.
         """
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        cursor_dict = self.cursor if self.cursor else {}
+        cursor_dict = json.loads(self.cursor) if self.cursor else {}
         return self.instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
-                after_cursor=cursor_dict.get(asset_key),
+                after_cursor=cursor_dict.get(str(asset_key)),
             ),
-            ascending=ascending,
+            ascending=True,
             limit=limit,
         )
 
@@ -344,12 +331,13 @@ class MultiAssetSensorEvaluationContext:
                 an EventLogRecord is provided, the cursor for the AssetKey will be updated and future calls to fetch asset materialization events
                 will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
         """
-        cursor_dict = self.cursor if self.cursor else {}
+        cursor_dict = json.loads(self.cursor) if self.cursor else {}
         update_dict = {
-            k: v.storage_id if v else cursor_dict.get(k)
+            str(k): v.storage_id if v else cursor_dict.get(str(k))
             for k, v in materialization_records_by_key.items()
         }
-        self.update_cursor(update_dict)
+        cursor_str = json.dumps(update_dict)
+        self._cursor = check.opt_str_param(cursor_str, "cursor")
         self.cursor_has_been_updated = True
 
     @public
@@ -765,7 +753,7 @@ def build_sensor_context(
 def build_multi_asset_sensor_context(
     asset_keys: Sequence[AssetKey],
     instance: Optional[DagsterInstance] = None,
-    cursor: Optional[Mapping[AssetKey, int]] = None,
+    cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context using the provided parameters.
@@ -777,7 +765,8 @@ def build_multi_asset_sensor_context(
     Args:
         asset_keys (Sequence[AssetKey]): The list of asset keys monitored by the sensor
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
-        cursor (Optional[Mapping[AssetKey, int]]): A dictionary of cursor values to provide to the evaluation of the sensor.
+        cursor (Optional[str]): A string cursor to provide to the evaluation of the sensor. Must be
+            a dictionary of asset key strings to ints that has been converted to a json string
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
 
     Examples:
@@ -791,7 +780,7 @@ def build_multi_asset_sensor_context(
     """
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
-    check.opt_dict_param(cursor, "cursor", key_type=AssetKey)
+    check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
     check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
     return MultiAssetSensorEvaluationContext(

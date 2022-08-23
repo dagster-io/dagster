@@ -297,11 +297,11 @@ from dagster._core.definitions.schedule_definition import (
 )
 from dagster._core.definitions.sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
-    MultiAssetSensorDefinition as MultiAssetSensorDefinition,
     DefaultSensorStatus as DefaultSensorStatus,
+    MultiAssetSensorDefinition as MultiAssetSensorDefinition,
+    MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
-    MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
     build_sensor_context as build_sensor_context,
     build_multi_asset_sensor_context as build_multi_asset_sensor_context,
 )
