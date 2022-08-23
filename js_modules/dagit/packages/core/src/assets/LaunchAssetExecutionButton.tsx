@@ -229,15 +229,6 @@ async function stateForLaunchingAssets(
   const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
 
   const anyAssetsHaveRequiredConfig = assets.some((a) => a.configField?.isRequired);
-  if ((anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig) && partitionDefinition) {
-    return {
-      type: 'error',
-      error:
-        'Cannot materialize assets using both partitions and asset or required resource config.',
-    };
-  }
-
-  // Ok! Assertions met, how do we launch this run
 
   if (partitionDefinition) {
     const assetKeys = new Set(assets.map((a) => JSON.stringify(a.assetKey)));
