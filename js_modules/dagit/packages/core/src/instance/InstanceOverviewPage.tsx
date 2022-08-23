@@ -22,6 +22,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {HourWindow, makeJobKey, QueryfulRunTimeline} from '../runs/QueryfulRunTimeline';
 import {RunStatusPezList} from '../runs/RunStatusPez';
 import {
   failedStatuses,
@@ -29,7 +30,7 @@ import {
   queuedStatuses,
   successStatuses,
 } from '../runs/RunStatuses';
-import {RunTimelineContainer, TimelineJob, makeJobKey, HourWindow} from '../runs/RunTimeline';
+import {TimelineJob} from '../runs/RunTimeline';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
@@ -374,6 +375,7 @@ const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}
   const timelineJobs: TimelineJob[] = jobs.map((job) => ({
     key: makeJobKey(job.repoAddress, job.job.name),
     jobName: job.job.name,
+    repoAddress: job.repoAddress,
     path: workspacePipelinePath({
       repoName: job.repoAddress.name,
       repoLocation: job.repoAddress.location,
@@ -417,7 +419,7 @@ const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}
         </Box>
       </Box>
       {shown ? (
-        <RunTimelineContainer range={[start, end]} jobs={timelineJobs} hourWindow={hourWindow} />
+        <QueryfulRunTimeline range={[start, end]} jobs={timelineJobs} hourWindow={hourWindow} />
       ) : null}
     </>
   );
