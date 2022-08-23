@@ -109,7 +109,7 @@ def make_slack_on_run_failure_sensor(
             The usage of the `text_fn` changes depending on whether you're using `blocks_fn`. If you
             are using `blocks_fn`, this is used as a fallback string to display in notifications. If
             you aren't, this is the main body text of the message. It can be formatted as plain text,
-            or with markdwn.
+            or with markdown.
             See more details in https://api.slack.com/methods/chat.postMessage#text_usage
         blocks_fn (Callable[[RunFailureSensorContext], List[Dict]]): Function which takes in
             the ``RunFailureSensorContext`` and outputs the message blocks you want to send.

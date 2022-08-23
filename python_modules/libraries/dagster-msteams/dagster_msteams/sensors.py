@@ -66,8 +66,6 @@ def make_teams_on_run_failure_sensor(
         monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]):
             Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the repository matches the requested run_status. To monitor jobs in external repositories, use RepositorySelector and JobSelector
-        monitored (Optional[Sequence[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
-            sensor should monitor. Defaults to None, meaning that no jobs in other repositories will be monitored.
 
     Examples:
 

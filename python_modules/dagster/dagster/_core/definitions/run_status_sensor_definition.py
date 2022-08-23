@@ -299,8 +299,6 @@ class RunStatusSensorDefinition(SensorDefinition):
         monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]): The jobs
             in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will be sent
             when any job in the repository fails.
-        monitored (Optional[Sequence[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
-            sensor should monitor. Defaults to None, meaning that no jobs in other repositories will be monitored.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
@@ -402,7 +400,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                 limit=5,
             )
 
-            # split monitored into full repos and specific jobs
+            # split monitored_jobs into external repos, external jobs, and jobs in the current repo
             other_repos = (
                 [x for x in monitored_jobs if isinstance(x, RepositorySelector)]
                 if monitored_jobs
