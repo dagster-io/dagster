@@ -124,13 +124,13 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
 
     async def download_notebook(self, request: Request):
         try:
-            import nbconvert
+            from nbconvert import HTMLExporter
         except ImportError:
             return HTMLResponse(
-                "Notebook support requires nbconvert, which is not installed. You can install nbconvert using Dagit's 'notebook' extra via <code>pip install dagit[notebook]</code>"
+                "Notebook support requires nbconvert, which is not installed. You can install "
+                "nbconvert using Dagit's 'notebook' extra via "
+                "<code>pip install dagit[notebook]</code>"
             )
-
-        from nbconvert import HTMLExporter
 
         context = self.make_request_context(request)
         repo_location_name = request.query_params["repoLocName"]
