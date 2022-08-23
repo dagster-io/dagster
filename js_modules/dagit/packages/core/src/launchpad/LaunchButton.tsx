@@ -12,11 +12,13 @@ import {
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 
 export interface LaunchButtonConfiguration {
   title: string;
   disabled: boolean;
+  warning?: React.ReactNode;
   scope?: string;
   onClick: () => Promise<any>;
   icon?: IconName | JSX.Element | 'dagster-spinner';
@@ -173,6 +175,7 @@ export const LaunchButtonDropdown = ({
 
 interface ButtonWithConfigurationProps {
   title: string;
+  warning?: React.ReactNode;
   status: LaunchButtonStatus;
   style?: React.CSSProperties;
   icon?: IconName | JSX.Element | 'dagster-spinner';
@@ -188,12 +191,29 @@ const ButtonWithConfiguration: React.FC<ButtonWithConfigurationProps> = ({
   tooltip,
   icon,
   title,
+  warning,
   status,
   style,
   onClick,
   joined,
   disabled,
 }) => {
+  const confirm = useConfirmation();
+
+  const onClickWithWarning = async () => {
+    if (!onClick || disabled) {
+      return;
+    }
+    if (warning) {
+      try {
+        await confirm({title: 'Are you sure?', description: warning});
+      } catch {
+        return;
+      }
+    }
+    onClick();
+  };
+
   return (
     <Tooltip position="left" openOnTargetFocus={false} targetTagName="div" content={tooltip || ''}>
       <ButtonContainer
@@ -201,7 +221,7 @@ const ButtonWithConfiguration: React.FC<ButtonWithConfigurationProps> = ({
         intent="primary"
         style={{...style}}
         status={status}
-        onClick={onClick}
+        onClick={onClickWithWarning}
         joined={joined}
         disabled={disabled}
         icon={
