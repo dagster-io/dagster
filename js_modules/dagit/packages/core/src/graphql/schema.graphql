@@ -411,6 +411,7 @@ type AssetNode {
   partitionDefinition: String
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
+  type: DagsterType
 }
 
 type AssetKey {

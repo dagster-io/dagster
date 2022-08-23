@@ -12,7 +12,7 @@ import {AssetNodeOpMetadataFragment} from './types/AssetNodeOpMetadataFragment';
 export const metadataForAssetNode = (
   assetNode: AssetNodeOpMetadataFragment,
 ): {assetType?: DagsterTypeFragment; assetMetadata: MetadataEntryFragment[]} => {
-  const assetType = assetNode.op?.outputDefinitions[0]?.type;
+  const assetType = assetNode.type ? assetNode.type : undefined;
   const assetMetadata = assetNode.metadataEntries || [];
   return {assetType, assetMetadata};
 };
@@ -39,12 +39,8 @@ export const ASSET_NODE_OP_METADATA_FRAGMENT = gql`
     metadataEntries {
       ...MetadataEntryFragment
     }
-    op {
-      outputDefinitions {
-        type {
-          ...DagsterTypeFragment
-        }
-      }
+    type {
+      ...DagsterTypeFragment
     }
   }
   ${METADATA_ENTRY_FRAGMENT}
