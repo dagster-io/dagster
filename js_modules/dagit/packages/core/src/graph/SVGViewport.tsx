@@ -1,9 +1,12 @@
 import {Box, Colors, Icon, IconWrapper, Slider} from '@dagster-io/ui';
 import animate from 'amator';
 import * as React from 'react';
+import ReactDOM from 'react-dom';
+import {MemoryRouter} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {IBounds} from './common';
+import {makeSVGPortable} from './makeSVGPortable';
 
 export interface SVGViewportInteractor {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
@@ -152,6 +155,15 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             }}
           >
             <Icon size={24} name="zoom_out" color={Colors.Gray300} />
+          </IconButton>
+        </Box>
+        <Box margin={{top: 8}}>
+          <IconButton
+            onClick={() => {
+              viewport.onExportToSVG();
+            }}
+          >
+            <Icon size={24} name="download_for_offline" color={Colors.Gray300} />
           </IconButton>
         </Box>
       </ZoomSliderContainer>
@@ -438,6 +450,35 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     this.props.onDoubleClick && this.props.onDoubleClick(event);
   };
 
+  onExportToSVG = async () => {
+    const unclippedViewport = {
+      top: 0,
+      left: 0,
+      right: this.props.graphWidth,
+      bottom: this.props.graphHeight,
+    };
+
+    const div = document.createElement('div');
+    document.getElementById('root')!.appendChild(div);
+    ReactDOM.render(
+      <MemoryRouter>{this.props.children(this.state, unclippedViewport)}</MemoryRouter>,
+      div,
+    );
+    const svg = div.querySelector('svg') as SVGElement;
+    await makeSVGPortable(svg);
+
+    const text = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([text], {type: 'image/svg+xml'});
+    const a = document.createElement('a');
+    a.setAttribute(
+      'download',
+      `${document.title.replace(/[: \/]/g, '_').replace(/__+/g, '_')}.svg`,
+    );
+    a.setAttribute('href', URL.createObjectURL(blob));
+    a.click();
+    div.remove();
+  };
+
   render() {
     const {children, onClick, interactor} = this.props;
     const {x, y, scale} = this.state;
@@ -490,5 +531,6 @@ const ZoomSliderContainer = styled.div`
   right: 0;
   width: 30px;
   padding: 10px 8px;
+  padding-bottom: 0;
   background: rgba(245, 248, 250, 0.4);
 `;

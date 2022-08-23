@@ -2,6 +2,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.errors import DagsterError
+from dagster._core.events import AssetKey
 from dagster._core.execution.backfill import (
     BulkActionStatus,
     PartitionBackfill,
@@ -67,6 +68,12 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
         reexecution_steps=backfill_params.get("reexecutionSteps"),
         tags={t["key"]: t["value"] for t in backfill_params.get("tags", [])},
         backfill_timestamp=pendulum.now("UTC").timestamp(),
+        asset_selection=[
+            AssetKey.from_graphql_input(asset_key)
+            for asset_key in backfill_params.get("assetSelection")
+        ]
+        if backfill_params.get("assetSelection")
+        else None,
     )
 
     if backfill_params.get("forceSynchronousSubmission"):

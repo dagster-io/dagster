@@ -700,42 +700,42 @@ export interface AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadata
 
 export type AssetNodeDefinitionFragment_metadataEntries = AssetNodeDefinitionFragment_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_BoolMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PathMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_JsonMetadataEntry {
   __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_UrlMetadataEntry {
   __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TextMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TextMetadataEntry {
   __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_MarkdownMetadataEntry {
   __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_PythonArtifactMetadataEntry {
   __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
@@ -743,14 +743,14 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataE
   name: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_FloatMetadataEntry {
   __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_IntMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_IntMetadataEntry {
   __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
@@ -758,107 +758,107 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataE
   intRepr: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_BoolMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_BoolMetadataEntry {
   __typename: "BoolMetadataEntry";
   label: string;
   description: string | null;
   boolValue: boolean | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry_assetKey {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_AssetMetadataEntry {
   __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry_assetKey;
+  assetKey: AssetNodeDefinitionFragment_type_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+  constraints: AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_constraints {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns[];
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+  columns: AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema;
+  schema: AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry {
   __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table;
+  table: AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: AssetNodeDefinitionFragment_type_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+  columns: AssetNodeDefinitionFragment_type_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetNodeDefinitionFragment_type_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_metadataEntries_TableSchemaMetadataEntry {
   __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema;
+  schema: AssetNodeDefinitionFragment_type_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries = AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_BoolMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry;
+export type AssetNodeDefinitionFragment_type_metadataEntries = AssetNodeDefinitionFragment_type_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_BoolMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_type_metadataEntries_TableSchemaMetadataEntry;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -866,23 +866,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -891,7 +891,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -900,16 +900,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -919,7 +919,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -928,24 +928,24 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -953,23 +953,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -978,7 +978,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -987,16 +987,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1006,7 +1006,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -1015,20 +1015,20 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_values[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
+  values: AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_values[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -1036,23 +1036,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -1061,7 +1061,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -1070,16 +1070,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1089,7 +1089,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -1098,19 +1098,19 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -1119,7 +1119,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -1127,23 +1127,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -1152,7 +1152,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -1161,16 +1161,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1180,7 +1180,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -1189,19 +1189,19 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_fields[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes[];
+  fields: AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_fields[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -1209,23 +1209,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -1234,7 +1234,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -1243,16 +1243,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1262,7 +1262,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -1271,9 +1271,9 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1281,10 +1281,10 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
   scalarTypeKey: string;
   nonScalarTypeKey: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -1292,23 +1292,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -1317,7 +1317,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -1326,16 +1326,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1345,7 +1345,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -1354,21 +1354,21 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSche
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   keyLabelName: string | null;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType_recursiveConfigTypes[];
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType = AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType_MapConfigType;
+export type AssetNodeDefinitionFragment_type_inputSchemaType = AssetNodeDefinitionFragment_type_inputSchemaType_ArrayConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_EnumConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_RegularConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_CompositeConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_inputSchemaType_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -1376,23 +1376,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -1401,7 +1401,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -1410,16 +1410,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1429,7 +1429,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -1438,107 +1438,24 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
-  __typename: "EnumConfigValue";
-  value: string;
-  description: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
-  __typename: "MapConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  keyLabelName: string | null;
-}
-
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_values[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -1546,23 +1463,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -1571,7 +1488,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -1580,16 +1497,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1599,7 +1516,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -1608,28 +1525,20 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType {
-  __typename: "RegularConfigType";
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType {
+  __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes[];
+  values: AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_values[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -1637,23 +1546,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -1662,7 +1571,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -1671,16 +1580,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1690,7 +1599,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -1699,19 +1608,28 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType {
-  __typename: "CompositeConfigType";
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType {
+  __typename: "RegularConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_fields[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes[];
+  givenName: string;
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -1719,23 +1637,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -1744,7 +1662,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -1753,16 +1671,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1772,7 +1690,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -1781,20 +1699,19 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
+  fields: AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_fields[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -1802,23 +1719,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -1827,7 +1744,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -1836,16 +1753,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -1855,7 +1772,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -1864,56 +1781,139 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSch
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  values: AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
+}
+
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   keyLabelName: string | null;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes[];
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType = AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType_MapConfigType;
+export type AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType_recursiveConfigTypes[];
+}
+
+export type AssetNodeDefinitionFragment_type_outputSchemaType = AssetNodeDefinitionFragment_type_outputSchemaType_ArrayConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_EnumConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_RegularConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_CompositeConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_outputSchemaType_MapConfigType;
+
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_JsonMetadataEntry {
   __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_UrlMetadataEntry {
   __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TextMetadataEntry {
   __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_MarkdownMetadataEntry {
   __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry {
   __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
@@ -1921,14 +1921,14 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   name: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_FloatMetadataEntry {
   __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_IntMetadataEntry {
   __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
@@ -1936,107 +1936,107 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   intRepr: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_BoolMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_BoolMetadataEntry {
   __typename: "BoolMetadataEntry";
   label: string;
   description: string | null;
   boolValue: boolean | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry_assetKey {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_AssetMetadataEntry {
   __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry_assetKey;
+  assetKey: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+  constraints: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_constraints {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns[];
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+  columns: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema;
+  schema: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry {
   __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table;
+  table: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+  columns: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry {
+export interface AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry {
   __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
+  schema: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_BoolMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
+export type AssetNodeDefinitionFragment_type_innerTypes_metadataEntries = AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_BoolMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2044,23 +2044,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -2069,7 +2069,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2078,16 +2078,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2097,7 +2097,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -2106,24 +2106,24 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2131,23 +2131,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -2156,7 +2156,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2165,16 +2165,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2184,7 +2184,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -2193,20 +2193,20 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_values[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_values[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2214,23 +2214,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -2239,7 +2239,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2248,16 +2248,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2267,7 +2267,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -2276,19 +2276,19 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2297,7 +2297,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2305,23 +2305,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -2330,7 +2330,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2339,16 +2339,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2358,7 +2358,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -2367,19 +2367,19 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_fields[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_fields[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2387,23 +2387,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -2412,7 +2412,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2421,16 +2421,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2440,7 +2440,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -2449,9 +2449,9 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2459,10 +2459,10 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
   scalarTypeKey: string;
   nonScalarTypeKey: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2470,23 +2470,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -2495,7 +2495,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2504,16 +2504,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2523,7 +2523,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -2532,21 +2532,21 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   keyLabelName: string | null;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes[];
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType = AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2554,23 +2554,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -2579,7 +2579,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2588,16 +2588,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2607,7 +2607,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -2616,107 +2616,24 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
-  __typename: "EnumConfigValue";
-  value: string;
-  description: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
-  __typename: "MapConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  keyLabelName: string | null;
-}
-
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_values[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2724,23 +2641,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -2749,7 +2666,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2758,16 +2675,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2777,7 +2694,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -2786,28 +2703,20 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType {
-  __typename: "RegularConfigType";
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType {
+  __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_values[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-  configTypeKey: string;
-  defaultValueAsJson: string | null;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2815,23 +2724,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -2840,7 +2749,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2849,16 +2758,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2868,7 +2777,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -2877,19 +2786,28 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType {
-  __typename: "CompositeConfigType";
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType {
+  __typename: "RegularConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_fields[];
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes[];
+  givenName: string;
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2897,23 +2815,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -2922,7 +2840,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -2931,16 +2849,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -2950,7 +2868,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -2959,20 +2877,19 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_fields[];
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
@@ -2980,23 +2897,23 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   typeParamKeys: string[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
   __typename: "EnumConfigValue";
   value: string;
   description: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
-  values: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
+  values: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
   __typename: "RegularConfigType";
   key: string;
   description: string | null;
@@ -3005,7 +2922,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   givenName: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -3014,16 +2931,16 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   defaultValueAsJson: string | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
   __typename: "ScalarUnionConfigType";
   key: string;
   description: string | null;
@@ -3033,7 +2950,7 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   nonScalarTypeKey: string;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
@@ -3042,21 +2959,104 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   keyLabelName: string | null;
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  values: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
+}
+
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+  defaultValueAsJson: string | null;
+}
+
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
   __typename: "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   keyLabelName: string | null;
-  recursiveConfigTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes[];
 }
 
-export type AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType = AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType | AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType;
+export type AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes = AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes {
+export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+  recursiveConfigTypes: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes[];
+}
+
+export type AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType = AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType;
+
+export interface AssetNodeDefinitionFragment_type_innerTypes {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   key: string;
   name: string | null;
@@ -3066,12 +3066,12 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_innerType
   isList: boolean;
   isBuiltin: boolean;
   isNothing: boolean;
-  metadataEntries: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_metadataEntries[];
-  inputSchemaType: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_inputSchemaType | null;
-  outputSchemaType: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes_outputSchemaType | null;
+  metadataEntries: AssetNodeDefinitionFragment_type_innerTypes_metadataEntries[];
+  inputSchemaType: AssetNodeDefinitionFragment_type_innerTypes_inputSchemaType | null;
+  outputSchemaType: AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType | null;
 }
 
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_type {
+export interface AssetNodeDefinitionFragment_type {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   key: string;
   name: string | null;
@@ -3081,20 +3081,10 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type {
   isList: boolean;
   isBuiltin: boolean;
   isNothing: boolean;
-  metadataEntries: AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries[];
-  inputSchemaType: AssetNodeDefinitionFragment_op_outputDefinitions_type_inputSchemaType | null;
-  outputSchemaType: AssetNodeDefinitionFragment_op_outputDefinitions_type_outputSchemaType | null;
-  innerTypes: AssetNodeDefinitionFragment_op_outputDefinitions_type_innerTypes[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions {
-  __typename: "OutputDefinition";
-  type: AssetNodeDefinitionFragment_op_outputDefinitions_type;
-}
-
-export interface AssetNodeDefinitionFragment_op {
-  __typename: "SolidDefinition";
-  outputDefinitions: AssetNodeDefinitionFragment_op_outputDefinitions[];
+  metadataEntries: AssetNodeDefinitionFragment_type_metadataEntries[];
+  inputSchemaType: AssetNodeDefinitionFragment_type_inputSchemaType | null;
+  outputSchemaType: AssetNodeDefinitionFragment_type_outputSchemaType | null;
+  innerTypes: AssetNodeDefinitionFragment_type_innerTypes[];
 }
 
 export interface AssetNodeDefinitionFragment {
@@ -3110,5 +3100,5 @@ export interface AssetNodeDefinitionFragment {
   computeKind: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;
   metadataEntries: AssetNodeDefinitionFragment_metadataEntries[];
-  op: AssetNodeDefinitionFragment_op | null;
+  type: AssetNodeDefinitionFragment_type | null;
 }

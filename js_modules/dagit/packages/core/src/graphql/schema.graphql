@@ -411,6 +411,7 @@ type AssetNode {
   partitionDefinition: String
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
+  type: DagsterType
 }
 
 type AssetKey {
@@ -2683,6 +2684,7 @@ input LaunchBackfillParams {
   selector: PartitionSetSelector!
   partitionNames: [String!]
   reexecutionSteps: [String!]
+  assetSelection: [AssetKeyInput!]
   fromFailure: Boolean
   allPartitions: Boolean
   tags: [ExecutionTag!]

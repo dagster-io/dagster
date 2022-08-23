@@ -50,11 +50,10 @@ if __name__ == "__main__":
             "requests",
             # watchdog
             "watchdog>=0.8.3",
-            # notebooks support
-            "nbconvert",
             "starlette",
             "uvicorn[standard]",
         ],
+        extras_require={"notebook": ["nbconvert"]},  # notebooks support
         entry_points={
             "console_scripts": ["dagit = dagit.cli:main", "dagit-debug = dagit.debug:main"]
         },

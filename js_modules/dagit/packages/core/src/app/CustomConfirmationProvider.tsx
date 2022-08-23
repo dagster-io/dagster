@@ -4,7 +4,7 @@ import * as React from 'react';
 interface ConfirmationOptions {
   catchOnCancel?: boolean;
   title?: string;
-  description?: JSX.Element | string;
+  description?: React.ReactNode;
 }
 
 interface ConfirmationDialogProps extends ConfirmationOptions {

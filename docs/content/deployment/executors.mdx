@@ -71,8 +71,7 @@ Executing a job via <PyObject object="JobDefinition" method="execute_in_process"
 Example executors include:
 
 - <PyObject module="dagster" object="in_process_executor" />: Execution plan
-  executes serially within the [run
-  worker](/deployment/overview#job-execution-flow) itself.
+  executes serially within the run worker itself.
 - <PyObject module="dagster" object="multiprocess_executor" />: Each step
   executes within its own spawned process. Has configurable level of
   parallelism.

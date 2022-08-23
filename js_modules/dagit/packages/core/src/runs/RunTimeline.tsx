@@ -1,36 +1,38 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Popover, Mono, FontFamily} from '@dagster-io/ui';
+import {
+  Box,
+  Colors,
+  Popover,
+  Mono,
+  FontFamily,
+  Icon,
+  Tag,
+  Tooltip,
+  IconWrapper,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
-import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
-import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {InstigationStatus, RunStatus} from '../types/globalTypes';
-import {LoadingSpinner} from '../ui/Loading';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {RunStatus} from '../types/globalTypes';
+import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
+import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
-import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {RunStatusDot} from './RunStatusDots';
-import {
-  doneStatuses,
-  failedStatuses,
-  inProgressStatuses,
-  queuedStatuses,
-  successStatuses,
-} from './RunStatuses';
+import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
-import {batchRunsForTimeline, overlap, RunBatch} from './batchRunsForTimeline';
-import {RunTimelineQuery, RunTimelineQueryVariables} from './types/RunTimelineQuery';
+import {batchRunsForTimeline, RunBatch} from './batchRunsForTimeline';
 
-const ROW_HEIGHT = 24;
+const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 36;
-const LABEL_WIDTH = 232;
+const SECTION_HEADER_HEIGHT = 32;
+const EMPTY_STATE_HEIGHT = 48;
+const LABEL_WIDTH = 320;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
 
@@ -43,169 +45,25 @@ export type TimelineRun = {
 
 export type TimelineJob = {
   key: string;
+  repoAddress: RepoAddress;
   jobName: string;
   path: string;
   runs: TimelineRun[];
 };
 
-export type HourWindow = '1' | '6' | '12' | '24';
-
-export const makeJobKey = (repoAddress: RepoAddress, jobName: string) => {
-  return `${jobName}-${repoAddressAsString(repoAddress)}`;
-};
-
-export const RunTimelineContainer = ({
-  range,
-  jobs,
-  hourWindow,
-}: {
-  range: [number, number];
+interface Props {
+  bucketByRepo?: boolean;
   jobs: TimelineJob[];
-  hourWindow: HourWindow;
-}) => {
-  const [start, end] = range;
-  const [jobsWithRuns, setJobsWithRuns] = React.useState<TimelineJob[]>([]);
-  const [loadedWindow, setLoadedWindow] = React.useState<HourWindow>();
+  range: [number, number];
+}
 
-  const {data, loading} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(
-    RUN_TIMELINE_QUERY,
-    {
-      fetchPolicy: 'network-only',
-      notifyOnNetworkStatusChange: true,
-      variables: {
-        inProgressFilter: {
-          statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-          createdBefore: end / 1000.0,
-        },
-        terminatedFilter: {
-          statuses: Array.from(doneStatuses),
-          createdBefore: end / 1000.0,
-          updatedAfter: start / 1000.0,
-        },
-      },
-    },
-  );
-  const jobsByKey = React.useMemo(() => {
-    return jobs.reduce((accum, job: TimelineJob) => {
-      return {...accum, [job.key]: job};
-    }, {} as {[key: string]: TimelineJob});
-  }, [jobs]);
+const EXPANSION_STATE_STORAGE_KEY = 'timeline-expansion-state';
 
-  React.useEffect(() => {
-    if (loading) {
-      return;
-    }
-    const {unterminated, terminated, workspaceOrError} = data || {};
-
-    const runsByJob: {[jobName: string]: TimelineRun[]} = {};
-    const now = Date.now();
-
-    // fetch all the runs in the given range
-    [
-      ...(unterminated?.__typename === 'Runs' ? unterminated.results : []),
-      ...(terminated?.__typename === 'Runs' ? terminated.results : []),
-    ].forEach((run) => {
-      if (!run.startTime) {
-        return;
-      }
-      if (
-        !overlap(
-          {start, end},
-          {
-            start: run.startTime * 1000,
-            end: run.endTime ? run.endTime * 1000 : now,
-          },
-        )
-      ) {
-        return;
-      }
-      runsByJob[run.pipelineName] = [
-        ...(runsByJob[run.pipelineName] || []),
-        {
-          id: run.id,
-          status: run.status,
-          startTime: run.startTime * 1000,
-          endTime: run.endTime ? run.endTime * 1000 : now,
-        },
-      ];
-    });
-
-    const jobs = [];
-    if (workspaceOrError && workspaceOrError.__typename === 'Workspace') {
-      for (const locationEntry of workspaceOrError.locationEntries) {
-        if (
-          locationEntry.__typename === 'WorkspaceLocationEntry' &&
-          locationEntry.locationOrLoadError?.__typename === 'RepositoryLocation'
-        ) {
-          for (const repository of locationEntry.locationOrLoadError.repositories) {
-            const repoAddress = buildRepoAddress(
-              repository.name,
-              locationEntry.locationOrLoadError.name,
-            );
-            for (const pipeline of repository.pipelines) {
-              const jobKey = makeJobKey(repoAddress, pipeline.name);
-              if (!(jobKey in jobsByKey)) {
-                continue;
-              }
-
-              const schedules = (repository.schedules || []).filter(
-                (schedule) => schedule.pipelineName === pipeline.name,
-              );
-
-              const jobTicks: TimelineRun[] = [];
-              for (const schedule of schedules) {
-                if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
-                  schedule.futureTicks.results.forEach(({timestamp}) => {
-                    const startTime = timestamp * 1000;
-                    if (overlap({start, end}, {start: startTime, end: startTime})) {
-                      jobTicks.push({
-                        id: `${schedule.pipelineName}-future-run-${timestamp}`,
-                        status: 'SCHEDULED',
-                        startTime,
-                        endTime: startTime + 10 * 1000,
-                      });
-                    }
-                  });
-                }
-              }
-
-              const jobRuns = runsByJob[pipeline.name] || [];
-              if (jobTicks.length || jobRuns.length) {
-                jobs.push({
-                  key: jobKey,
-                  jobName: pipeline.name,
-                  path: workspacePipelinePath({
-                    repoName: repoAddress.name,
-                    repoLocation: repoAddress.location,
-                    pipelineName: pipeline.name,
-                    isJob: pipeline.isJob,
-                  }),
-                  runs: [...jobRuns, ...jobTicks],
-                });
-              }
-            }
-          }
-        }
-      }
-    }
-
-    const earliest = jobs.reduce((accum, job) => {
-      const startTimes = job.runs.map((job) => job.startTime);
-      return {...accum, [job.key]: Math.min(...startTimes)};
-    }, {} as {[jobKey: string]: number});
-
-    setJobsWithRuns(jobs.sort((a, b) => earliest[a.key] - earliest[b.key]));
-    setLoadedWindow(hourWindow);
-  }, [data, start, end, loading, jobsByKey, hourWindow]);
-
-  if (loading && hourWindow !== loadedWindow) {
-    return <LoadingSpinner purpose="section" />;
-  }
-  return <RunTimeline range={[start, end]} jobs={jobsWithRuns} />;
-};
-
-export const RunTimeline = ({jobs, range}: {jobs: TimelineJob[]; range: [number, number]}) => {
+export const RunTimeline = (props: Props) => {
+  const {bucketByRepo = false, jobs, range} = props;
   const [width, setWidth] = React.useState<number | null>(null);
+  const {expandedKeys, onToggle} = useRepoExpansionState(EXPANSION_STATE_STORAGE_KEY);
+
   const observer = React.useRef<ResizeObserver | null>(null);
 
   const containerRef = React.useCallback((node) => {
@@ -220,33 +78,187 @@ export const RunTimeline = ({jobs, range}: {jobs: TimelineJob[]; range: [number,
     }
   }, []);
 
-  const height = ROW_HEIGHT * (jobs.length || 1);
+  if (!width || !jobs.length) {
+    return (
+      <Timeline $height={TIME_HEADER_HEIGHT + EMPTY_STATE_HEIGHT} ref={containerRef}>
+        {width ? <NoRunsTimeline /> : null}
+      </Timeline>
+    );
+  }
+
+  if (!bucketByRepo) {
+    const height = ROW_HEIGHT * (jobs.length || 1);
+    return (
+      <Timeline $height={TIME_HEADER_HEIGHT + height} ref={containerRef}>
+        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
+        <div>
+          {jobs.map((job, ii) => (
+            <RunTimelineRow
+              key={job.key}
+              job={job}
+              top={ii * ROW_HEIGHT + TIME_HEADER_HEIGHT}
+              range={range}
+              width={width}
+            />
+          ))}
+        </div>
+      </Timeline>
+    );
+  }
+
+  const buckets = jobs.reduce((accum, job) => {
+    const {repoAddress} = job;
+    const repoKey = repoAddressAsString(repoAddress);
+    const jobsForRepo = accum[repoKey] || [];
+    return {...accum, [repoKey]: [...jobsForRepo, job]};
+  }, {});
+
+  const repoOrder = Object.keys(buckets).sort((a, b) =>
+    a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()),
+  );
+
+  let nextTop = TIME_HEADER_HEIGHT;
+  const expandedRepos = repoOrder.filter((repoKey) => expandedKeys.includes(repoKey));
+  const expandedJobCount = expandedRepos.reduce(
+    (accum, repoKey) => accum + buckets[repoKey].length,
+    0,
+  );
+  const height = repoOrder.length * SECTION_HEADER_HEIGHT + ROW_HEIGHT * expandedJobCount;
+  const duplicateRepoNames = findDuplicateRepoNames(
+    repoOrder.map((repoKey) => repoAddressFromPath(repoKey)?.name || ''),
+  );
 
   return (
     <Timeline $height={TIME_HEADER_HEIGHT + height} ref={containerRef}>
-      {width ? (
-        jobs.length ? (
-          <>
-            <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
-            <div>
-              {jobs.map((job, ii) => (
-                <RunTimelineRow
-                  key={job.key}
-                  job={job}
-                  top={ii * ROW_HEIGHT + TIME_HEADER_HEIGHT}
-                  range={range}
-                  width={width}
-                />
-              ))}
-            </div>
-          </>
-        ) : (
-          <NoRunsTimeline />
-        )
-      ) : null}
+      <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
+      {repoOrder.map((repoKey) => {
+        const name = repoAddressFromPath(repoKey)?.name;
+        const jobs = buckets[repoKey];
+        const top = nextTop;
+        const expanded = expandedKeys.includes(repoKey);
+        nextTop = top + SECTION_HEADER_HEIGHT + (expanded ? jobs.length * ROW_HEIGHT : 0);
+        return (
+          <TimelineSection
+            expanded={expanded}
+            range={range}
+            top={top}
+            key={repoKey}
+            repoKey={repoKey}
+            isDuplicateRepoName={!!(name && duplicateRepoNames.has(name))}
+            jobs={buckets[repoKey]}
+            onToggle={onToggle}
+            width={width}
+          />
+        );
+      })}
     </Timeline>
   );
 };
+
+interface TimelineSectionProps {
+  expanded: boolean;
+  repoKey: string;
+  isDuplicateRepoName: boolean;
+  jobs: TimelineJob[];
+  top: number;
+  range: [number, number];
+  width: number;
+  onToggle: (repoAddress: RepoAddress) => void;
+}
+
+const TimelineSection = (props: TimelineSectionProps) => {
+  const {expanded, onToggle, repoKey, isDuplicateRepoName, jobs, range, top, width} = props;
+  const repoAddress = repoAddressFromPath(repoKey);
+  const name = repoAddress?.name || 'Unknown repo';
+  const location = repoAddress?.location || 'Unknown location';
+  const onClick = React.useCallback(() => {
+    repoAddress && onToggle(repoAddress);
+  }, [onToggle, repoAddress]);
+
+  return (
+    <div>
+      <SectionHeader $top={top} $open={expanded} onClick={onClick}>
+        <Box
+          flex={{alignItems: 'center', justifyContent: 'space-between'}}
+          padding={{left: 20, right: 20}}
+        >
+          <Box flex={{alignItems: 'center', gap: 8}}>
+            <Icon name="folder" color={Colors.Dark} />
+            <div>
+              <RepoName>{name}</RepoName>
+              {isDuplicateRepoName ? <RepoLocation>{`@${location}`}</RepoLocation> : null}
+            </div>
+          </Box>
+          <Box flex={{alignItems: 'center', gap: 8}}>
+            <Tooltip
+              content={
+                <span style={{whiteSpace: 'nowrap'}}>
+                  {jobs.length === 1 ? '1 job with runs' : `${jobs.length} jobs with runs`}
+                </span>
+              }
+              placement="top"
+            >
+              <Tag intent="primary">{jobs.length}</Tag>
+            </Tooltip>
+            <Box margin={{top: 2}}>
+              <Icon name="arrow_drop_down" />
+            </Box>
+          </Box>
+        </Box>
+      </SectionHeader>
+      {expanded
+        ? jobs.map((job, ii) => (
+            <RunTimelineRow
+              key={job.key}
+              job={job}
+              top={top + SECTION_HEADER_HEIGHT + ii * ROW_HEIGHT}
+              range={range}
+              width={width}
+            />
+          ))
+        : null}
+    </div>
+  );
+};
+
+const SectionHeader = styled.button<{$top: number; $open: boolean}>`
+  background-color: ${Colors.Gray50};
+  border: 0;
+  box-shadow: inset 0px -1px 0 ${Colors.KeylineGray}, inset 0px 1px 0 ${Colors.KeylineGray};
+  cursor: pointer;
+  margin: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: ${SECTION_HEADER_HEIGHT}px;
+  text-align: left;
+
+  ${({$top}) => `transform: translateY(${$top}px);`}
+
+  :focus,
+  :active {
+    outline: none;
+  }
+
+  :hover {
+    background-color: ${Colors.Gray100};
+  }
+
+  ${IconWrapper}[aria-label="arrow_drop_down"] {
+    transition: transform 100ms linear;
+    ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
+  }
+`;
+
+const RepoName = styled.span`
+  font-weight: 600;
+`;
+
+const RepoLocation = styled.span`
+  font-weight: 400;
+  color: ${Colors.Gray700};
+`;
 
 type TimeMarker = {
   key: string;
@@ -301,6 +313,7 @@ const TimeDividers = (props: TimeDividersProps) => {
         ))}
       </DividerLabels>
       <DividerLines>
+        <DividerLine style={{left: 0, backgroundColor: Colors.Gray200}} />
         {timeMarkers.map((marker) => (
           <DividerLine key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}} />
         ))}
@@ -503,8 +516,10 @@ const Row = styled.div<{$top: number}>`
 `;
 
 const JobName = styled.div`
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  align-items: center;
+  display: flex;
+  font-size: 13px;
+  justify-content: space-between;
   line-height: 16px;
   overflow: hidden;
   padding: 0 12px 0 24px;
@@ -545,6 +560,7 @@ const RunChunk = styled.div<ChunkProps>`
 const BatchCount = styled.div`
   color: ${Colors.White};
   cursor: default;
+  font-family: ${FontFamily.monospace};
   font-size: 12px;
   user-select: none;
 `;
@@ -599,67 +615,4 @@ const HoverContentJobName = styled.strong`
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
-`;
-
-const RUN_TIMELINE_QUERY = gql`
-  query RunTimelineQuery($inProgressFilter: RunsFilter!, $terminatedFilter: RunsFilter!) {
-    unterminated: runsOrError(filter: $inProgressFilter) {
-      ... on Runs {
-        results {
-          id
-          pipelineName
-          ...RunTimeFragment
-        }
-      }
-    }
-    terminated: runsOrError(filter: $terminatedFilter) {
-      ... on Runs {
-        results {
-          id
-          pipelineName
-          ...RunTimeFragment
-        }
-      }
-    }
-    workspaceOrError {
-      ... on Workspace {
-        locationEntries {
-          id
-          name
-          loadStatus
-          displayMetadata {
-            key
-            value
-          }
-          locationOrLoadError {
-            ... on RepositoryLocation {
-              id
-              name
-              repositories {
-                id
-                name
-                pipelines {
-                  id
-                  name
-                  isJob
-                }
-                schedules {
-                  id
-                  name
-                  pipelineName
-                  scheduleState {
-                    id
-                    status
-                  }
-                  ...ScheduleFutureTicksFragment
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  ${RUN_TIME_FRAGMENT}
-  ${SCHEDULE_FUTURE_TICKS_FRAGMENT}
 `;
