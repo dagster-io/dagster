@@ -12,6 +12,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {useTrackPageView} from '../app/analytics';
 import {LoadingSpinner} from '../ui/Loading';
 
@@ -23,6 +24,8 @@ import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   useTrackPageView();
+
+  const {flagNewWorkspace} = useFeatureFlags();
   const {loading, error, options} = useRepositoryOptions();
 
   const content = () => {
@@ -121,15 +124,19 @@ export const WorkspaceOverviewRoot = () => {
   return (
     <Page>
       <PageHeader title={<Heading>Workspace</Heading>} />
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <Group direction="row" spacing={12} alignItems="center">
-          <Subheading id="repository-locations">Locations</Subheading>
-          <ReloadAllButton />
-        </Group>
-      </Box>
-      <Box padding={{bottom: 24}}>
-        <RepositoryLocationsList />
-      </Box>
+      {flagNewWorkspace ? null : (
+        <>
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            <Group direction="row" spacing={12} alignItems="center">
+              <Subheading id="repository-locations">Locations</Subheading>
+              <ReloadAllButton />
+            </Group>
+          </Box>
+          <Box padding={{bottom: 24}}>
+            <RepositoryLocationsList />
+          </Box>
+        </>
+      )}
       <Box
         padding={{vertical: 16, horizontal: 24}}
         border={{side: 'top', width: 1, color: Colors.KeylineGray}}
