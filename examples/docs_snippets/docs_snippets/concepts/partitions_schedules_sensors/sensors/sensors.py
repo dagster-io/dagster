@@ -341,7 +341,6 @@ def team_a_repo_sensor():
             job_name="data_update",
         )
     ],
-    run_status=DagsterRunStatus.SUCCESS,
 )
 def team_a_data_update_failure_sensor():
     # when the data_update job in team_a_repository fails, this sensor will trigger
