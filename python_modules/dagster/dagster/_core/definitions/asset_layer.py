@@ -541,7 +541,7 @@ class AssetLayer:
                     asset_key,
                     partitions_fn=partition_fn if assets_def.partitions_def else None,
                     partitions_def=assets_def.partitions_def,
-                    is_required=asset_key in assets_def.keys,  # code here
+                    is_required=asset_key in assets_def.keys,
                 )
                 io_manager_by_asset[asset_key] = inner_output_def.io_manager_key
 
@@ -677,7 +677,7 @@ def build_asset_selection_job(
 ) -> "JobDefinition":
     from dagster._core.definitions import build_assets_job
 
-    if asset_selection and asset_selection_data:
+    if asset_selection:
         included_assets, excluded_assets = _subset_assets_defs(
             assets, source_assets, asset_selection, asset_selection_data
         )

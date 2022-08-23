@@ -1,4 +1,3 @@
-from select import select
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -22,19 +21,19 @@ from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils import merge_dicts
 from dagster._utils.backcompat import (
     ExperimentalWarning,
     deprecation_warning,
     experimental_arg_warning,
 )
-from dagster._core.selector.subset_selector import AssetSelectionData
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix
+from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
-from .graph_definition import GraphDefinition
 from .partition import PartitionsDefinition
 from .partition_mapping import AllPartitionMapping, PartitionMapping
 from .resource_definition import ResourceDefinition
@@ -615,7 +614,6 @@ class AssetsDefinition(ResourceAddable):
         Args:
             selected_asset_keys (AbstractSet[AssetKey]): The total set of asset keys
         """
-        from .job_definition import get_subselected_graph_definition, parse_op_selection
 
         check.invariant(
             self.can_subset,
@@ -628,31 +626,24 @@ class AssetsDefinition(ResourceAddable):
                     "asset selection data must be provided to subset a graph-backed asset"
                 )
 
-            parent_job = asset_selection_data.parent_job_def
-            dep_node_handles_by_asset_key = (
-                parent_job.asset_layer.dependency_node_handles_by_asset_key
-            )
-            op_selection = []
+            # set of assets within selected_asset_keys which are outputted by this AssetDefinition
+            asset_subselection = set()
             for asset_key in selected_asset_keys:
                 if asset_key in self.keys:
-                    dep_node_handles = dep_node_handles_by_asset_key[asset_key]
-                    for dep_node_handle in dep_node_handles:
-                        str_op_path = ".".join(dep_node_handle.path)
-                        op_selection.append(str_op_path)
+                    asset_subselection.add(asset_key)
 
-            subsetted_node = get_subselected_graph_definition(
-                parent_job.graph, parse_op_selection(parent_job, op_selection)
-            )
+            subsetted_node = _subset_graph_backed_asset(asset_subselection, asset_selection_data)
 
-            subsetted_node = subsetted_node.node_defs[0]
-
+            # The subsetted node should only include asset inputs that are dependencies of the
+            # selected set of assets.
             subsetted_input_names = [input_def.name for input_def in subsetted_node.input_defs]
-            subsetted_output_names = [output_def.name for output_def in subsetted_node.output_defs]
             subsetted_keys_by_input_name = {
                 key: value
                 for key, value in self.node_keys_by_input_name.items()
                 if key in subsetted_input_names
             }
+
+            subsetted_output_names = [output_def.name for output_def in subsetted_node.output_defs]
             subsetted_keys_by_output_name = {
                 key: value
                 for key, value in self.node_keys_by_output_name.items()
@@ -660,8 +651,13 @@ class AssetsDefinition(ResourceAddable):
             }
 
             # An op within the graph-backed asset that yields multiple assets will be run
-            # when not all of its output assets are selected. We default to the same behavior
-            # as multi-asset subsetting in that case and retain the original input/output mapping.
+            # any time any of its output assets are selected. Thus, if an op yields multiple assets
+            # and only one of them is selected, the op will still run and potentially unexpectedly
+            # materialize the unselected asset.
+            #
+            # Thus, we include unselected assets that may be accidentally materialized in
+            # keys_by_output_name and asset_deps so that Dagit can populate an warning when this
+            # occurs. This is the same behavior as multi-asset subsetting.
 
             subsetted_asset_deps = {
                 out_asset_key: set(self._keys_by_input_name.values())
@@ -669,7 +665,6 @@ class AssetsDefinition(ResourceAddable):
             }
 
             return AssetsDefinition(
-                # keep track of the original mapping
                 keys_by_input_name=subsetted_keys_by_input_name,
                 keys_by_output_name=subsetted_keys_by_output_name,
                 node_def=subsetted_node,
@@ -681,8 +676,8 @@ class AssetsDefinition(ResourceAddable):
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
             )
-        else:  # multi asset subsetting
-
+        else:
+            # multi asset subsetting
             return AssetsDefinition(
                 # keep track of the original mapping
                 keys_by_input_name=self._keys_by_input_name,
@@ -779,6 +774,32 @@ class AssetsDefinition(ResourceAddable):
             resource_defs=relevant_resource_defs,
             group_names_by_key=self.group_names_by_key,
         )
+
+
+def _subset_graph_backed_asset(
+    selected_asset_keys: AbstractSet[AssetKey],
+    asset_selection_data: AssetSelectionData,
+):
+    from .job_definition import get_subselected_graph_definition, parse_op_selection
+
+    # All asset keys in selected_asset_keys are outputted from the same top-level graph backed asset
+    parent_job = asset_selection_data.parent_job_def
+    dep_node_handles_by_asset_key = parent_job.asset_layer.dependency_node_handles_by_asset_key
+    op_selection = []
+    for asset_key in selected_asset_keys:
+        dep_node_handles = dep_node_handles_by_asset_key[asset_key]
+        for dep_node_handle in dep_node_handles:
+            str_op_path = ".".join(dep_node_handle.path)
+            op_selection.append(str_op_path)
+
+    # Pass an op selection into the original job containing only the ops necessary to
+    # generate the selected assets. The ops should all be nested within a top-level graph
+    # node in the original job.
+    subsetted_job = get_subselected_graph_definition(
+        parent_job.graph, parse_op_selection(parent_job, op_selection)
+    )
+    check.invariant(len(subsetted_job.node_defs) == 1, "Expected 1 node in subsetted job")
+    return subsetted_job.node_defs[0]
 
 
 def _infer_keys_by_input_names(
