@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, Union
 
 from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient
@@ -36,9 +36,16 @@ def make_teams_on_run_failure_sensor(
     dagit_base_url: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     monitored_jobs: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+            ]
+        ]
     ] = None,
-    monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
 ):
     """Create a sensor on run failures that will message the given MS Teams webhook URL.
 
@@ -56,9 +63,9 @@ def make_teams_on_run_failure_sensor(
             messages to include deeplinks to the failed run.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]):
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]):
             Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will
-            be sent when any job in the repository matches the requested run_status.
+            be sent when any job in the repository matches the requested run_status. To monitor jobs in external repositories, use RepositorySelector and JobSelector
         monitored (Optional[Sequence[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
             sensor should monitor. Defaults to None, meaning that no jobs in other repositories will be monitored.
 
@@ -99,9 +106,7 @@ def make_teams_on_run_failure_sensor(
         verify=verify,
     )
 
-    @run_failure_sensor(
-        name=name, default_status=default_status, monitored=monitored, monitored_jobs=monitored_jobs
-    )
+    @run_failure_sensor(name=name, default_status=default_status, monitored_jobs=monitored_jobs)
     def teams_on_run_failure(context: RunFailureSensorContext):
 
         text = message_fn(context)

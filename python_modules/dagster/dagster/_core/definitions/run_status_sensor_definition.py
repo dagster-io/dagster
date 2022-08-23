@@ -193,12 +193,27 @@ def run_failure_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+            ]
+        ]
     ] = None,
     job_selection: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+            ]
+        ]
     ] = None,
-    monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -218,14 +233,12 @@ def run_failure_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]): The jobs
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]): The jobs
             in the current repository that will be monitored by this failure sensor. Defaults to None, which means the alert will
-            be sent when any job in the repository fails.
-        job_selection (Optional[List[Union[JobDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
+            be sent when any job in the current repository fails. Jobs in external repositories can be specified using RepositorySelector and JobSelector.
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): (deprecated in favor of monitored_jobs)
             The jobs in the current repository that will be monitored by this failure sensor. Defaults to None, which means
             the alert will be sent when any job in the repository fails.
-        monitored (Optional[Sequence[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
-            sensor should monitor. Defaults to None, meaning that no jobs in other repositories will be monitored.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
@@ -253,7 +266,6 @@ def run_failure_sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             monitored_jobs=jobs,
-            monitored=monitored,
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,
@@ -305,9 +317,16 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         monitored_jobs: Optional[
-            List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+            List[
+                Union[
+                    PipelineDefinition,
+                    GraphDefinition,
+                    UnresolvedAssetJobDefinition,
+                    "RepositorySelector",
+                    "JobSelector",
+                ]
+            ]
         ] = None,
-        monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -325,9 +344,14 @@ class RunStatusSensorDefinition(SensorDefinition):
         check.opt_list_param(
             monitored_jobs,
             "monitored_jobs",
-            (PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition),
+            (
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                RepositorySelector,
+                JobSelector,
+            ),
         )
-        check.opt_list_param(monitored, "monitored", (RepositorySelector, JobSelector))
         check.inst_param(default_status, "default_status", DefaultSensorStatus)
 
         self._run_status_sensor_fn = check.callable_param(
@@ -380,10 +404,18 @@ class RunStatusSensorDefinition(SensorDefinition):
 
             # split monitored into full repos and specific jobs
             other_repos = (
-                [x for x in monitored if isinstance(x, RepositorySelector)] if monitored else []
+                [x for x in monitored_jobs if isinstance(x, RepositorySelector)]
+                if monitored_jobs
+                else []
             )
             other_repo_jobs = (
-                [x for x in monitored if isinstance(x, JobSelector)] if monitored else []
+                [x for x in monitored_jobs if isinstance(x, JobSelector)] if monitored_jobs else []
+            )
+
+            current_repo_jobs = (
+                [x for x in monitored_jobs if not isinstance(x, (JobSelector, RepositorySelector))]
+                if monitored_jobs
+                else []
             )
 
             for event_record in event_records:
@@ -424,8 +456,8 @@ class RunStatusSensorDefinition(SensorDefinition):
                     pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
                     == context.repository_name
                 ):
-                    if monitored_jobs:
-                        if pipeline_run.pipeline_name in map(lambda x: x.name, monitored_jobs):
+                    if current_repo_jobs:
+                        if pipeline_run.pipeline_name in map(lambda x: x.name, current_repo_jobs):
                             job_match = True
                     else:
                         job_match = True
@@ -568,12 +600,27 @@ def run_status_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+            ]
+        ]
     ] = None,
     job_selection: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+            ]
+        ]
     ] = None,
-    monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -594,14 +641,13 @@ def run_status_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]):
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]):
             Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will
-            be sent when any job in the repository matches the requested run_status.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
+            be sent when any job in the repository matches the requested run_status. Jobs in external repositories can be monitored by using
+            RepositorySelector or JobSelector.
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): (deprecated in favor of monitored_jobs)
             Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.
-        monitored (Optional[Sequence[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
-            sensor should monitor. Defaults to None, meaning that no jobs in other repositories will be monitored.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
@@ -628,7 +674,6 @@ def run_status_sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             monitored_jobs=jobs,
-            monitored=monitored,
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,

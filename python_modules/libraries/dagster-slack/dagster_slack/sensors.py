@@ -1,15 +1,4 @@
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 from slack_sdk.web.client import WebClient
 
@@ -84,12 +73,27 @@ def make_slack_on_run_failure_sensor(
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     monitored_jobs: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+            ]
+        ]
     ] = None,
     job_selection: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+            ]
+        ]
     ] = None,
-    monitored: Optional[Sequence[Union["RepositorySelector", "JobSelector"]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a sensor on job failures that will message the given Slack channel.
@@ -113,14 +117,12 @@ def make_slack_on_run_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "slack_on_run_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed job run.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): The jobs in the
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): The jobs in the
             current repository that will be monitored by this failure sensor. Defaults to None, which
-            means the alert will be sent when any job in the repository fails.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
+            means the alert will be sent when any job in the repository fails. To monitor jobs in external repositories, use RepositorySelector and JobSelector
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): (deprecated in favor of monitored_jobs)
             The jobs in the current repository that will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
-        monitored (Optional[Sequence[Union[RepositorySelector, JobSelector]]]): Other repositories or jobs in other repositories that this
-            sensor should monitor. Defaults to None, meaning that no jobs in other repositories will be monitored.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
 
@@ -161,9 +163,7 @@ def make_slack_on_run_failure_sensor(
         deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
     jobs = monitored_jobs if monitored_jobs else job_selection
 
-    @run_failure_sensor(
-        name=name, monitored_jobs=jobs, monitored=monitored, default_status=default_status
-    )
+    @run_failure_sensor(name=name, monitored_jobs=jobs, default_status=default_status)
     def slack_on_run_failure(context: RunFailureSensorContext):
         blocks, main_body_text = _build_slack_blocks_and_text(
             context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url
