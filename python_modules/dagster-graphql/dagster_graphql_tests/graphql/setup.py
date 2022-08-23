@@ -72,7 +72,6 @@ from dagster import (
     resource,
     usable_as_dagster_type,
 )
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.metadata import MetadataValue

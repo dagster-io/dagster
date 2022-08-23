@@ -192,8 +192,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node
 
     def get_external_pipeline(self) -> ExternalPipeline:
-        print(self.assetKey)
-        print(self._external_asset_node.job_names)
         if self._external_pipeline is None:
             check.invariant(
                 len(self._external_asset_node.job_names) >= 1,
