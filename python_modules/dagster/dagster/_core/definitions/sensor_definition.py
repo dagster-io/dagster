@@ -161,7 +161,7 @@ class SensorEvaluationContext:
         return self._repository_name
 
 
-class MultiAssetSensorEvaluationContext:
+class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     """The context object available as the argument to the evaluation function of a :py:class:`dagster.MultiAssetSensorDefinition`.
 
     Users should not instantiate this object directly. To construct a
@@ -205,57 +205,14 @@ class MultiAssetSensorEvaluationContext:
         self._asset_keys = asset_keys
         self.cursor_has_been_updated = False
 
-        self._exit_stack = ExitStack()
-        self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
-        self._last_completion_time = check.opt_float_param(
-            last_completion_time, "last_completion_time"
+        super(MultiAssetSensorEvaluationContext, self).__init__(
+            instance_ref=instance_ref,
+            last_completion_time=last_completion_time,
+            last_run_key=last_run_key,
+            cursor=cursor,
+            repository_name=repository_name,
+            instance=instance,
         )
-        self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
-        self._cursor = check.opt_str_param(cursor, "cursor")
-        self._repository_name = check.opt_str_param(repository_name, "repository_name")
-        self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, _exception_type, _exception_value, _traceback):
-        self._exit_stack.close()
-
-    @public  # type: ignore
-    @property
-    def instance(self) -> DagsterInstance:
-        # self._instance_ref should only ever be None when this MultiAssetSensorEvaluationContext was
-        # constructed under test.
-        if not self._instance:
-            if not self._instance_ref:
-                raise DagsterInvariantViolationError(
-                    "Attempted to initialize dagster instance, but no instance reference was provided."
-                )
-            self._instance = self._exit_stack.enter_context(
-                DagsterInstance.from_ref(self._instance_ref)
-            )
-        return cast(DagsterInstance, self._instance)
-
-    @public  # type: ignore
-    @property
-    def last_completion_time(self) -> Optional[float]:
-        return self._last_completion_time
-
-    @public  # type: ignore
-    @property
-    def last_run_key(self) -> Optional[str]:
-        return self._last_run_key
-
-    @public  # type: ignore
-    @property
-    def cursor(self) -> Optional[str]:
-        """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
-        return self._cursor
-
-    @public  # type: ignore
-    @property
-    def repository_name(self) -> Optional[str]:
-        return self._repository_name
 
     @public
     def latest_materialization_records_by_key(
