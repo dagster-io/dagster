@@ -22,7 +22,7 @@ from dagit_screenshot.defaults import DEFAULT_OUTPUT_ROOT, DEFAULT_SPEC_DB, DEFA
     "--spec-db",
     type=click.Path(exists=True),
     default=DEFAULT_SPEC_DB,
-    help="Path to YAML file containing array of screenshot specs.",
+    help="Path to directory containing a tree of YAML files with screenshot specs."
 )
 @click.option(
     "--workspace-root",
