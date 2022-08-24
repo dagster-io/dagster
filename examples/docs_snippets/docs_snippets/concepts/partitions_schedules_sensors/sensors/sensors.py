@@ -1,7 +1,18 @@
 # isort: skip_file
 # pylint: disable=unnecessary-ellipsis
 
-from dagster import repository, DefaultSensorStatus, SkipReason, asset, define_asset_job
+from dagster import (
+    repository,
+    DefaultSensorStatus,
+    SkipReason,
+    asset,
+    define_asset_job,
+    JobSelector,
+    RepositorySelector,
+    DagsterRunStatus,
+    run_status_sensor,
+    run_failure_sensor,
+)
 
 
 # start_sensor_job_marker
@@ -300,3 +311,40 @@ def uses_db_connection():
 @repository
 def my_repository():
     return [my_job, log_file_job, my_directory_sensor, sensor_A, sensor_B]
+
+
+def send_slack_alert():
+    pass
+
+
+# start_cross_repo_run_status_sensor
+
+
+@run_status_sensor(
+    monitored_jobs=[
+        RepositorySelector(
+            location_name="repository.location", repository_name="team_a_repository"
+        )
+    ],
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def team_a_repo_sensor():
+    # when any job in team_a_repository succeeds, this sensor will trigger
+    send_slack_alert()
+
+
+@run_failure_sensor(
+    monitored_jobs=[
+        JobSelector(
+            location_name="repository.location",
+            repository_name="team_a_repository",
+            job_name="data_update",
+        )
+    ],
+)
+def team_a_data_update_failure_sensor():
+    # when the data_update job in team_a_repository fails, this sensor will trigger
+    send_slack_alert()
+
+
+# end_cross_repo_run_status_sensor

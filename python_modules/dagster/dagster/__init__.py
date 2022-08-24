@@ -427,6 +427,11 @@ from dagster._core.executor.base import (
 from dagster._core.executor.init import (
     InitExecutorContext as InitExecutorContext,
 )
+
+from dagster._core.host_representation.selector import (
+    RepositorySelector as RepositorySelector,
+    JobSelector as JobSelector,
+)
 from dagster._core.instance import (
     DagsterInstance as DagsterInstance,
 )
