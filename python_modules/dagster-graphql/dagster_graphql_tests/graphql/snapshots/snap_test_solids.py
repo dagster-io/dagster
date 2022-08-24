@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_query_all_solids 1'] = {
@@ -1812,6 +1813,54 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'typed_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'typed_assets'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'typed_multi_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_multi_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'typed_assets'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_multi_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'unconnected'
                 },
                 'invocations': [
@@ -1853,6 +1902,30 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'ungrouped_asset_5'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'untyped_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB'
+                        },
+                        'solidHandle': {
+                            'handleID': 'untyped_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'typed_assets'
+                        },
+                        'solidHandle': {
+                            'handleID': 'untyped_asset'
                         }
                     }
                 ]

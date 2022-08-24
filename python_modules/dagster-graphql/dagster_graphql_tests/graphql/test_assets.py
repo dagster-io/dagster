@@ -302,6 +302,28 @@ GET_RUN_MATERIALIZATIONS = """
     }
 """
 
+GET_ASSET_TYPE = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!) {
+        assetNodes(pipeline: $pipelineSelector) {
+            id
+            assetKey {
+                path
+            }
+            type {
+                ..._DagsterTypeFragment
+                innerTypes {
+                ..._DagsterTypeFragment
+                }
+            }
+        }
+    }
+    fragment _DagsterTypeFragment on DagsterType {
+        key
+        name
+        displayName
+    }
+"""
+
 
 def _create_run(
     graphql_context, pipeline_name, mode="default", step_keys=None, asset_selection=None
@@ -1006,6 +1028,25 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert (
             expected_default_group_members & default_group_members
         ) == expected_default_group_members
+
+    def test_typed_assets(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "typed_assets")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_TYPE,
+            variables={
+                "pipelineSelector": selector,
+            },
+        )
+        sorted_asset_nodes = sorted(result.data["assetNodes"], key=lambda x: x["assetKey"]["path"])
+        assert sorted_asset_nodes[0]["assetKey"] == {"path": ["int_asset"]}
+        assert sorted_asset_nodes[0]["type"]["displayName"] == "Int"
+        assert sorted_asset_nodes[1]["assetKey"] == {"path": ["str_asset"]}
+        assert sorted_asset_nodes[1]["type"]["displayName"] == "String"
+        assert sorted_asset_nodes[2]["assetKey"] == {"path": ["typed_asset"]}
+        assert sorted_asset_nodes[2]["type"]["displayName"] == "Int"
+        assert sorted_asset_nodes[3]["assetKey"] == {"path": ["untyped_asset"]}
+        assert sorted_asset_nodes[3]["type"]["displayName"] == "Any"
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

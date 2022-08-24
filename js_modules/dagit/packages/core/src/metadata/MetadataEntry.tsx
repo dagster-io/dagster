@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Colors,
-  DialogBody,
   DialogFooter,
   Dialog,
   Group,
@@ -101,7 +100,7 @@ export const MetadataEntry: React.FC<{
               margin={{bottom: 12}}
               padding={24}
               border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-              style={{whiteSpace: 'pre-wrap', fontFamily: FontFamily.monospace}}
+              style={{whiteSpace: 'pre-wrap', fontFamily: FontFamily.monospace, overflow: 'auto'}}
             >
               {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
             </Box>
@@ -132,9 +131,14 @@ export const MetadataEntry: React.FC<{
           label={entry.label}
           copyContent={() => entry.mdStr}
           content={() => (
-            <DialogBody>
+            <Box
+              padding={{vertical: 16, horizontal: 20}}
+              background={Colors.White}
+              style={{overflow: 'auto'}}
+              margin={{bottom: 12}}
+            >
               <Markdown>{entry.mdStr}</Markdown>
-            </DialogBody>
+            </Box>
           )}
         >
           [Show Markdown]

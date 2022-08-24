@@ -20,6 +20,7 @@ import {showLaunchError} from './showLaunchError';
 
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
+  warning?: React.ReactNode;
   getVariables: () => undefined | LaunchPipelineExecutionVariables;
   behavior: LaunchBehavior;
   pipelineName: string;
@@ -83,6 +84,7 @@ export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps>
         onClick: onLaunch,
         icon: props.icon || 'open_in_new',
         title: props.title || 'Launch Run',
+        warning: props.warning || undefined,
         disabled: props.disabled || !canLaunchPipelineExecution.enabled,
         tooltip: !canLaunchPipelineExecution.enabled
           ? canLaunchPipelineExecution.disabledReason

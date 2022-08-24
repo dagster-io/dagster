@@ -89,7 +89,7 @@ dagster-cloud serverless deploy \
 
 Often you'll need to securely access secrets from your jobs. With Dagster Cloud Serverless, secrets are added as environment variables that can be read using APIs like [StringSource](/guides/dagster/transitioning-data-pipelines-from-development-to-production#part-two-deployment).
 
-- If you're using our GitHub integration, all [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) are available as environment variables.
+- If you're using our GitHub integration, you can pass in secrets as a JSON string input to the serverless deploy step in your repository's Github action script.
 - If you're using the CLI directly, you can pass `KEY=VALUE` pairs using the `--env` flag. Run `dagster-cloud serverless deploy --help` to learn more.
 
 ---
