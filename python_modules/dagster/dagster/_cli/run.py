@@ -87,7 +87,6 @@ def run_wipe_command(force):
     "-f",
     "from_label",
     help="The repository from which to migrate (format: <repository_name>@<location_name>)",
-    prompt_required=True,
 )
 @job_target_argument
 def run_migrate_command(from_label, **kwargs):
