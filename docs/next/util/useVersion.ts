@@ -1,5 +1,4 @@
 import {useRouter} from 'next/router';
-import {useEffect, useState} from 'react';
 
 import ALL_VERSIONS from '../.versioned_content/_versions.json';
 
@@ -69,13 +68,6 @@ export function versionFromPage(page: string | string[]) {
 
 export const useVersion = () => {
   const router = useRouter();
-  const [asPath, setAsPath] = useState('/');
 
-  useEffect(() => {
-    if (router.isReady) {
-      setAsPath(router.asPath);
-    }
-  }, [router]);
-
-  return normalizeVersionPath(asPath, ALL_VERSIONS);
+  return normalizeVersionPath(router?.isReady ? router?.asPath : '/', ALL_VERSIONS);
 };
