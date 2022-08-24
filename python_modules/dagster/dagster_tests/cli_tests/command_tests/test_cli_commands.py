@@ -288,14 +288,6 @@ def multiproc():
     branch_op(out_1)
     branch_op(out_2)
 
-@job
-def my_job():
-    my_op()
-
-@repository
-def my_other_repo():
-    return [my_job]
-
 
 # default executor_def is multiproc
 multiproc_job = multiproc.to_job()
@@ -953,7 +945,7 @@ def test_run_migrate_command():
     with instance_for_test() as instance:
         create_repo_run(instance)
         old_repo_label = "my_repo@repo_pipeline_and_job.py"
-        new_repo_label = "my_other_repo@test_cli_commands.py"
+        new_repo_label = "my_other_repo@repo_other_job.py"
 
         assert len(get_repo_runs(instance, old_repo_label)) == 1
         assert len(get_repo_runs(instance, new_repo_label)) == 0
@@ -963,13 +955,13 @@ def test_run_migrate_command():
             run_migrate_command,
             args=[
                 "--from",
-                 old_repo_label,
+                old_repo_label,
                 "-f",
-                __file__,
+                file_relative_path(__file__, "repo_other_job.py"),
                 "-r",
                 "my_other_repo",
                 "-j",
-                "my_job"
+                "my_job",
             ],
             input="MIGRATE",
         )
