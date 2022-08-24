@@ -4,6 +4,7 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {RunStatus} from '../types/globalTypes';
 import {TabLink} from '../ui/TabLink';
 
@@ -16,6 +17,7 @@ import {
 import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunTabsCountQuery';
 
 export const RunListTabs = React.memo(() => {
+  const {flagNewWorkspace} = useFeatureFlags();
   const [filterTokens] = useQueryPersistedRunFilters();
   const runsFilter = runsFilterForSearchTokens(filterTokens);
 
@@ -43,6 +45,9 @@ export const RunListTabs = React.memo(() => {
 
   return (
     <Tabs selectedTabId={selectedTab} id="run-tabs">
+      {flagNewWorkspace ? (
+        <TabLink title="Timeline" to="/instance/runs/timeline" id="timeline" />
+      ) : null}
       <TabLink title="All runs" to={urlForStatus([])} id="all" />
       <TabLink
         title="Queued"
