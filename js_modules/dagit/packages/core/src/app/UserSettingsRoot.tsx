@@ -117,6 +117,16 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
               ),
             },
             {
+              key: 'New Workspace page',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagNewWorkspace)}
+                  onChange={() => toggleFlag(FeatureFlag.flagNewWorkspace)}
+                />
+              ),
+            },
+            {
               key: 'Bucket run timeline and jobs page by repo',
               value: (
                 <Checkbox
