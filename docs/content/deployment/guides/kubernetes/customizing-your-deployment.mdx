@@ -126,7 +126,7 @@ Users will likely want to use [Secrets](https://kubernetes.io/docs/concepts/conf
 
 It may be desirable to manage two Helm releases for your Dagster deployment: one release for the Dagster infrastructure, which consists of Dagit and the Daemon, and another release for your User Code, which contains the definitions of your pipelines written in Dagster. This way, changes to User Code can be decoupled from upgrades to core Dagster infrastructure.
 
-To do this, we offer the `dagster` chart and the `dagster-user-deployments` chart.
+To do this, we offer the [`dagster` chart](https://artifacthub.io/packages/helm/dagster/dagster) and the [`dagster-user-deployments` chart](https://artifacthub.io/packages/helm/dagster/dagster-user-deployments).
 
     $ helm search repo dagster
     NAME                            	CHART VERSION	APP VERSION	DESCRIPTION
