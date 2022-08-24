@@ -2,6 +2,7 @@
 
 import os
 import sys
+from contextlib import ExitStack
 from typing import Generator, List, Optional
 
 import pendulum
@@ -287,45 +288,41 @@ def get_external_sensor_execution(
     definition = recon_repo.get_definition()
     sensor_def = definition.get_sensor_def(sensor_name)
 
-    if isinstance(sensor_def, MultiAssetSensorDefinition):
-        with MultiAssetSensorEvaluationContext(
-            instance_ref,
-            last_completion_time=last_completion_timestamp,
-            last_run_key=last_run_key,
-            cursor=cursor,
-            repository_name=recon_repo.get_definition().name,
-            asset_keys=sensor_def.asset_keys,
-        ) as sensor_context:
-            try:
-                with user_code_error_boundary(
-                    SensorExecutionError,
-                    lambda: "Error occurred during the execution of evaluation_fn for sensor "
-                    "{sensor_name}".format(sensor_name=sensor_def.name),
-                ):
-                    return sensor_def.evaluate_tick(sensor_context)
-            except Exception:
-                return ExternalSensorExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+    with ExitStack() as stack:
+
+        if isinstance(sensor_def, MultiAssetSensorDefinition):
+            sensor_context = stack.enter_context(
+                MultiAssetSensorEvaluationContext(
+                    instance_ref,
+                    last_completion_time=last_completion_timestamp,
+                    last_run_key=last_run_key,
+                    cursor=cursor,
+                    repository_name=recon_repo.get_definition().name,
+                    asset_keys=sensor_def.asset_keys,
                 )
-    else:
-        with SensorEvaluationContext(
-            instance_ref,
-            last_completion_time=last_completion_timestamp,
-            last_run_key=last_run_key,
-            cursor=cursor,
-            repository_name=recon_repo.get_definition().name,
-        ) as sensor_context:
-            try:
-                with user_code_error_boundary(
-                    SensorExecutionError,
-                    lambda: "Error occurred during the execution of evaluation_fn for sensor "
-                    "{sensor_name}".format(sensor_name=sensor_def.name),
-                ):
-                    return sensor_def.evaluate_tick(sensor_context)
-            except Exception:
-                return ExternalSensorExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+            )
+        else:
+            sensor_context = stack.enter_context(
+                SensorEvaluationContext(
+                    instance_ref,
+                    last_completion_time=last_completion_timestamp,
+                    last_run_key=last_run_key,
+                    cursor=cursor,
+                    repository_name=recon_repo.get_definition().name,
                 )
+            )
+
+        try:
+            with user_code_error_boundary(
+                SensorExecutionError,
+                lambda: "Error occurred during the execution of evaluation_fn for sensor "
+                "{sensor_name}".format(sensor_name=sensor_def.name),
+            ):
+                return sensor_def.evaluate_tick(sensor_context)
+        except Exception:
+            return ExternalSensorExecutionErrorData(
+                serializable_error_info_from_exc_info(sys.exc_info())
+            )
 
 
 def get_partition_config(recon_repo, partition_set_name, partition_name):
