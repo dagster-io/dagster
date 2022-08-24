@@ -15,7 +15,7 @@ from dagster_graphql.test.utils import (
 from dagster import AssetKey, DagsterEventType
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._legacy import PipelineRunStatus
-from dagster._utils import safe_tempfile_path
+from dagster._utils import Counter, safe_tempfile_path, traced_counter
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .graphql_context_test_suite import (
@@ -321,6 +321,17 @@ GET_ASSET_TYPE = """
         key
         name
         displayName
+    }
+"""
+
+BATCH_LOAD_ASSETS = """
+    query BatchLoadQuery($assetKeys: [AssetKeyInput!]) {
+        assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+            assetMaterializations(limit: 1) {
+                timestamp
+                runId
+            }
+        }
     }
 """
 
@@ -1047,6 +1058,20 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert sorted_asset_nodes[2]["type"]["displayName"] == "Int"
         assert sorted_asset_nodes[3]["assetKey"] == {"path": ["untyped_asset"]}
         assert sorted_asset_nodes[3]["type"]["displayName"] == "Any"
+
+    def test_batch_fetch_only_once(self, graphql_context):
+        traced_counter.set(Counter())
+        result = execute_dagster_graphql(
+            graphql_context,
+            BATCH_LOAD_ASSETS,
+            variables={
+                "assetKeys": [{"path": ["int_asset"]}, {"path": ["str_asset"]}],
+            },
+        )
+        assert result.data
+        counts = traced_counter.get().counts()
+        assert len(counts) == 1
+        assert counts.get("DagsterInstance.get_asset_records") == 1
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
