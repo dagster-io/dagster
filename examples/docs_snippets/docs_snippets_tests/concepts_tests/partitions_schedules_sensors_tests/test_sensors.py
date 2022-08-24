@@ -1,6 +1,16 @@
 from unittest import mock
 
-from dagster import build_sensor_context, job, op, repository
+from dagster import (
+    AssetKey,
+    DagsterInstance,
+    asset,
+    build_multi_asset_sensor_context,
+    build_sensor_context,
+    job,
+    materialize,
+    op,
+    repository,
+)
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
     email_on_run_failure,
     my_slack_on_run_failure,
@@ -8,6 +18,8 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert im
     slack_on_run_failure,
 )
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
+    asset_a_and_b_sensor,
+    every_fifth_asset_c_sensor,
     log_file_job,
     my_directory_sensor,
     my_s3_sensor,
@@ -83,3 +95,40 @@ def test_s3_sensor():
         run_requests = my_s3_sensor(context)
         assert len(list(run_requests)) == 5
         assert context.cursor == "e"
+
+
+def test_asset_sensors():
+    @asset
+    def asset_a():
+        return 1
+
+    @asset
+    def asset_b():
+        return 2
+
+    @asset
+    def asset_c():
+        return 3
+
+    instance = DagsterInstance.ephemeral()
+    materialize([asset_a, asset_b], instance=instance)
+    ctx = build_multi_asset_sensor_context(
+        asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], instance=instance
+    )
+    assert list(asset_a_and_b_sensor(ctx))[0].run_config == {
+        "ops": {
+            "logger_op": {
+                "config": {
+                    "logger_str": "Assets ['asset_a'] and ['asset_b'] materialized"
+                }
+            }
+        }
+    }
+
+    for _ in range(5):
+        materialize([asset_c], instance=instance)
+
+    ctx = build_multi_asset_sensor_context(
+        asset_keys=[AssetKey("asset_c")], instance=instance
+    )
+    assert list(every_fifth_asset_c_sensor(ctx))[0].run_config == {}

@@ -53,11 +53,20 @@ Sensors
 
 .. autoclass:: SensorEvaluationContext
 
+.. autoclass:: MultiAssetSensorEvaluationContext
+
 .. autofunction:: build_sensor_context
+
+.. autofunction:: build_multi_asset_sensor_context
 
 .. autoclass:: AssetSensorDefinition
 
 .. autodecorator:: asset_sensor
+
+.. autoclass:: MultiAssetSensorDefinition
+
+.. autodecorator:: multi_asset_sensor
+
 
 .. autoclass:: RunStatusSensorDefinition
 

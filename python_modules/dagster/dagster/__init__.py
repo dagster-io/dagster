@@ -148,6 +148,7 @@ from dagster._core.definitions.decorators.schedule_decorator import (
 from dagster._core.definitions.decorators.sensor_decorator import (
     asset_sensor as asset_sensor,
     sensor as sensor,
+    multi_asset_sensor as multi_asset_sensor,
 )
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
@@ -297,9 +298,12 @@ from dagster._core.definitions.schedule_definition import (
 from dagster._core.definitions.sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
     DefaultSensorStatus as DefaultSensorStatus,
+    MultiAssetSensorDefinition as MultiAssetSensorDefinition,
+    MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
     build_sensor_context as build_sensor_context,
+    build_multi_asset_sensor_context as build_multi_asset_sensor_context,
 )
 from dagster._core.definitions.source_asset import (
     SourceAsset as SourceAsset,
