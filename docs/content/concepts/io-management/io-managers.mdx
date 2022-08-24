@@ -637,9 +637,9 @@ def test_my_io_manager_load_input():
     assert manager.load_input(context) == 5
 ```
 
-## Yielding metadata from an IO Manager <Experimental />
+## Recording metadata from an IO Manager <Experimental />
 
-Sometimes, you may want to record some metadata while handling an output in an IO manager. To do this, you can optionally yield <PyObject object="MetadataEntry"/> objects from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
+Sometimes, you may want to record some metadata while handling an output in an IO manager. To do this, you can invoke <PyObject object="OutputContext" method="add_output_metadata"/> from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_metadata_marker endbefore=end_metadata_marker
 class DataframeTableIOManagerWithMetadata(IOManager):
@@ -647,9 +647,7 @@ class DataframeTableIOManagerWithMetadata(IOManager):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
-        # attach these to the Handled Output event
-        yield MetadataEntry.int(len(obj), label="number of rows")
-        yield MetadataEntry.text(table_name, label="table name")
+        context.add_output_metadata({"num_rows": len(obj), "table_name": table_name})
 
     def load_input(self, context):
         table_name = context.upstream_output.name
@@ -658,7 +656,7 @@ class DataframeTableIOManagerWithMetadata(IOManager):
 
 Any entries yielded this way will be attached to the `Handled Output` event for this output.
 
-Additionally, if you have specified that this `handle_output` function will be writing to an asset by defining a `get_output_asset_key` function, these metadata entries will also be attached to the materialization event created for that asset. You can learn more about this functionality in the [Asset Docs](/concepts/assets/asset-materializations).
+Additionally, if the handled output is part of a software-defined asset, these metadata entries will also be attached to the materialization event created for that asset and show up on the Asset Details page for the asset.
 
 ## See it in action
 
