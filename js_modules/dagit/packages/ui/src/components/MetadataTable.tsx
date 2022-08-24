@@ -8,12 +8,13 @@ import {Table, TableProps} from './Table';
 type Row = {key: string; value: React.ReactNode};
 
 interface Props {
+  dark?: boolean;
   rows: (Row | null | undefined)[];
   spacing: 0 | 2 | 4;
 }
 
 export const MetadataTable = (props: Props) => {
-  const {rows, spacing} = props;
+  const {rows, spacing, dark = false} = props;
 
   return (
     <StyledTable>
@@ -27,7 +28,7 @@ export const MetadataTable = (props: Props) => {
             <tr key={key}>
               <td>
                 <Box padding={{vertical: spacing, right: 32}}>
-                  <MetadataKey>{key}</MetadataKey>
+                  <MetadataKey $dark={dark}>{key}</MetadataKey>
                 </Box>
               </td>
               <td>
@@ -56,8 +57,8 @@ export const StyledTable = styled.table`
   }
 `;
 
-const MetadataKey = styled.div`
-  color: ${Colors.Gray600};
+const MetadataKey = styled.div<{$dark: boolean}>`
+  color: ${({$dark}) => ($dark ? Colors.Gray200 : Colors.Gray600)};
   font-weight: 400;
 `;
 

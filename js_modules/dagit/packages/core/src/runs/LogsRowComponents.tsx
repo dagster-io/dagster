@@ -1,9 +1,10 @@
-import {Colors, FontFamily} from '@dagster-io/ui';
+import {Colors, FontFamily, MetadataTable, Tooltip} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {formatElapsedTimeWithMsec} from '../app/Util';
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 
@@ -114,12 +115,18 @@ const OpColumnTooltipStyle = JSON.stringify({
 
 // Timestamp Column
 
-export const TimestampColumn: React.FC<{time: string | null}> = React.memo((props) => {
+export const TimestampColumn: React.FC<{
+  time: string | null;
+  runStartTime?: number;
+  stepStartTime?: number;
+}> = React.memo((props) => {
+  const {time, runStartTime, stepStartTime} = props;
   const location = useLocation();
   const widths = React.useContext(ColumnWidthsContext);
   const [timezone] = React.useContext(TimezoneContext);
+  const canShowTooltip = typeof time === 'string' && typeof runStartTime === 'number';
+
   const timeString = () => {
-    const {time} = props;
     if (time) {
       const timeNumber = Number(time);
       const locale = navigator.language;
@@ -142,10 +149,43 @@ export const TimestampColumn: React.FC<{time: string | null}> = React.memo((prop
   };
 
   const href = `${location.pathname}?${qs.stringify({focusedTime: props.time})}`;
+  const runElapsedTime = formatElapsedTimeWithMsec(Number(time) - (runStartTime || 0));
+  const stepElapsedTime = formatElapsedTimeWithMsec(Number(time) - (stepStartTime || 0));
 
   return (
     <TimestampColumnContainer style={{width: widths.timestamp}}>
-      <Link to={href}>{timeString()}</Link>
+      <Tooltip
+        canShow={canShowTooltip}
+        content={
+          <MetadataTable
+            spacing={0}
+            dark
+            rows={[
+              {
+                key: 'Since start of run',
+                value: (
+                  <span style={{fontFamily: FontFamily.monospace, fontSize: '13px'}}>
+                    {runElapsedTime}
+                  </span>
+                ),
+              },
+              stepStartTime
+                ? {
+                    key: 'Since start of step',
+                    value: (
+                      <span style={{fontFamily: FontFamily.monospace, fontSize: '13px'}}>
+                        {stepElapsedTime}
+                      </span>
+                    ),
+                  }
+                : null,
+            ]}
+          />
+        }
+        placement="left"
+      >
+        <Link to={href}>{timeString()}</Link>
+      </Tooltip>
     </TimestampColumnContainer>
   );
 });

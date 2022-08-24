@@ -1,6 +1,7 @@
 import LRU from 'lru-cache';
 
 import {featureEnabled, FeatureFlag} from './Flags';
+import {timeByParts} from './timeByParts';
 
 function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;
@@ -60,18 +61,42 @@ export const withMiddleTruncation = (text: string, options: {maxLength: number})
   return result;
 };
 
-export const formatElapsedTime = (msec: number) => {
-  if (msec < 10000) {
-    return `${(msec / 1000).toLocaleString(navigator.language, {
+/**
+ * Return an i18n-formatted millisecond in seconds as a decimal, with no leading zero.
+ */
+const formatMsecMantissa = (msec: number) =>
+  (msec / 1000)
+    .toLocaleString(navigator.language, {
       minimumFractionDigits: 3,
       maximumFractionDigits: 3,
-    })}s`;
+    })
+    .slice(-4);
+
+/**
+ * Opinionated elapsed time formatting:
+ *
+ * - Times between -10 and 10 seconds are shown as `X.XXXs`
+ * - Otherwise times are rendered in a `X:XX:XX` format, without milliseconds
+ */
+export const formatElapsedTime = (msec: number) => {
+  const {hours, minutes, seconds, milliseconds} = timeByParts(msec);
+  const negative = msec < 0;
+
+  if (msec < 10000 && msec > -10000) {
+    const formattedMsec = formatMsecMantissa(milliseconds);
+    return `${negative ? '-' : ''}${seconds}${formattedMsec}s`;
   }
 
-  const sec = Math.round(msec / 1000) % 60;
-  const min = Math.floor(msec / 1000 / 60) % 60;
-  const hours = Math.floor(msec / 1000 / 60 / 60);
-  return `${hours}:${twoDigit(min)}:${twoDigit(sec)}`;
+  return `${negative ? '-' : ''}${hours}:${twoDigit(minutes)}:${twoDigit(seconds)}`;
+};
+
+export const formatElapsedTimeWithMsec = (msec: number) => {
+  const {hours, minutes, seconds, milliseconds} = timeByParts(msec);
+  const negative = msec < 0;
+  const positiveValue = `${hours}:${twoDigit(minutes)}:${twoDigit(seconds)}${formatMsecMantissa(
+    milliseconds,
+  )}`;
+  return `${negative ? '-' : ''}${positiveValue}`;
 };
 
 export function breakOnUnderscores(str: string) {

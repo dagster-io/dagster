@@ -194,20 +194,30 @@ const StructuredMemoizedContent: React.FC<{
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
   highlighted: boolean;
-}> = React.memo(({node, metadata, highlighted}) => (
-  <Row
-    level={LogLevel.INFO}
-    onMouseEnter={() => setHighlightedGanttChartTime(node.timestamp)}
-    onMouseLeave={() => setHighlightedGanttChartTime(null)}
-    highlighted={highlighted}
-  >
-    <OpColumn stepKey={'stepKey' in node && node.stepKey} />
-    <StructuredContent>
-      <LogsRowStructuredContent node={node} metadata={metadata} />
-    </StructuredContent>
-    <TimestampColumn time={'timestamp' in node ? node.timestamp : null} />
-  </Row>
-));
+}> = React.memo(({node, metadata, highlighted}) => {
+  const stepKey = node.stepKey;
+  const step = stepKey ? metadata.steps[stepKey] : null;
+  const stepStartTime = step?.start;
+
+  return (
+    <Row
+      level={LogLevel.INFO}
+      onMouseEnter={() => setHighlightedGanttChartTime(node.timestamp)}
+      onMouseLeave={() => setHighlightedGanttChartTime(null)}
+      highlighted={highlighted}
+    >
+      <OpColumn stepKey={'stepKey' in node && node.stepKey} />
+      <StructuredContent>
+        <LogsRowStructuredContent node={node} metadata={metadata} />
+      </StructuredContent>
+      <TimestampColumn
+        time={'timestamp' in node ? node.timestamp : null}
+        runStartTime={metadata.startedPipelineAt}
+        stepStartTime={stepStartTime}
+      />
+    </Row>
+  );
+});
 
 StructuredMemoizedContent.displayName = 'StructuredMemoizedContent';
 
@@ -215,6 +225,7 @@ interface UnstructuredProps {
   node: LogsRowUnstructuredFragment;
   style: React.CSSProperties;
   highlighted: boolean;
+  metadata: IRunMetadataDict;
 }
 
 export class Unstructured extends React.Component<UnstructuredProps> {
@@ -228,7 +239,11 @@ export class Unstructured extends React.Component<UnstructuredProps> {
   render() {
     return (
       <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
-        <UnstructuredMemoizedContent node={this.props.node} highlighted={this.props.highlighted} />
+        <UnstructuredMemoizedContent
+          node={this.props.node}
+          highlighted={this.props.highlighted}
+          metadata={this.props.metadata}
+        />
       </CellTruncationProvider>
     );
   }
@@ -248,23 +263,34 @@ export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
 
 const UnstructuredMemoizedContent: React.FC<{
   node: LogsRowUnstructuredFragment;
+  metadata: IRunMetadataDict;
   highlighted: boolean;
-}> = React.memo(({node, highlighted}) => (
-  <Row
-    level={node.level}
-    onMouseEnter={() => setHighlightedGanttChartTime(node.timestamp)}
-    onMouseLeave={() => setHighlightedGanttChartTime(null)}
-    highlighted={highlighted}
-  >
-    <OpColumn stepKey={node.stepKey} />
-    <EventTypeColumn>
-      <span style={{marginLeft: 8}}>{node.level}</span>
-    </EventTypeColumn>
-    <Box padding={{horizontal: 12}} style={{flex: 1}}>
-      {node.message}
-    </Box>
-    <TimestampColumn time={node.timestamp} />
-  </Row>
-));
+}> = React.memo(({node, highlighted, metadata}) => {
+  const stepKey = node.stepKey;
+  const step = stepKey ? metadata.steps[stepKey] : null;
+  const stepStartTime = step?.start;
+
+  return (
+    <Row
+      level={node.level}
+      onMouseEnter={() => setHighlightedGanttChartTime(node.timestamp)}
+      onMouseLeave={() => setHighlightedGanttChartTime(null)}
+      highlighted={highlighted}
+    >
+      <OpColumn stepKey={node.stepKey} />
+      <EventTypeColumn>
+        <span style={{marginLeft: 8}}>{node.level}</span>
+      </EventTypeColumn>
+      <Box padding={{horizontal: 12}} style={{flex: 1}}>
+        {node.message}
+      </Box>
+      <TimestampColumn
+        time={node.timestamp}
+        runStartTime={metadata.startedPipelineAt}
+        stepStartTime={stepStartTime}
+      />
+    </Row>
+  );
+});
 
 UnstructuredMemoizedContent.displayName = 'UnstructuredMemoizedContent';
