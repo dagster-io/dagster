@@ -53,13 +53,7 @@ const PyObject: React.FunctionComponent<{
   }
 
   if (!moduleObjects || !objectData) {
-    // TODO: broken link
-    // https://github.com/dagster-io/dagster/issues/2939
-    return (
-      <a className="no-underline hover:underline" href="#">
-        <code className="bg-red-100 p-1">{textValue}</code>
-      </a>
-    );
+    throw `Could not resolve PyObject link for ${module}.${object}.`
   }
 
   const fileIndex = objectData[0];
