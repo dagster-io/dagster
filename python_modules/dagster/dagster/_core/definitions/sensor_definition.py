@@ -19,7 +19,7 @@ from typing import (
 from typing_extensions import TypeGuard
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -158,6 +158,7 @@ class SensorEvaluationContext:
         return self._repository_name
 
 
+@experimental
 class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     """The context object available as the argument to the evaluation function of a :py:class:`dagster.MultiAssetSensorDefinition`.
 
@@ -704,6 +705,7 @@ def build_sensor_context(
     )
 
 
+@experimental
 def build_multi_asset_sensor_context(
     asset_keys: Sequence[AssetKey],
     instance: Optional[DagsterInstance] = None,
@@ -859,6 +861,7 @@ class AssetSensorDefinition(SensorDefinition):
         return self._asset_key
 
 
+@experimental
 class MultiAssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a list of
     assets.

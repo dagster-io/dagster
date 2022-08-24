@@ -3,6 +3,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
+from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
@@ -160,6 +161,7 @@ def asset_sensor(
     return inner
 
 
+@experimental
 def multi_asset_sensor(
     asset_keys: Sequence[AssetKey],
     *,
