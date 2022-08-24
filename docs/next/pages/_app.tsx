@@ -38,8 +38,9 @@ const DEFAULT_SEO = {
 
 const MyApp = ({Component, pageProps}: AppProps) => {
   const router = useRouter();
+  const {asPath} = useVersion();
 
-  const canonicalUrl = `${BASE_URL}${router.route}`;
+  const canonicalUrl = `${BASE_URL}${asPath}`;
 
   React.useEffect(() => {
     const handleRouteChange = (url: string) => {
@@ -53,7 +54,7 @@ const MyApp = ({Component, pageProps}: AppProps) => {
 
   return (
     <>
-      <DefaultSeo canonical={canonicalUrl} {...DEFAULT_SEO} />
+      {router.isReady ? <DefaultSeo canonical={canonicalUrl} {...DEFAULT_SEO} /> : null}
       <Layout>
         <Component {...pageProps} />
       </Layout>
