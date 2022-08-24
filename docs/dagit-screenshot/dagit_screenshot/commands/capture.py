@@ -43,7 +43,7 @@ def capture(spec: ScreenshotSpec, output_path: str) -> None:
             spec.get("width", 1024 * WINDOW_SCALE_FACTOR),
             spec.get("height", 768 * WINDOW_SCALE_FACTOR),
         )
-        driver.get(spec["route"])
+        driver.get(spec["base_url"] + spec["route"])
         sleep(DAGIT_ROUTE_LOAD_TIME)  # wait for page to load
 
         if "steps" in spec:
