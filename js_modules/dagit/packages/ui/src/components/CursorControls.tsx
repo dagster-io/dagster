@@ -25,7 +25,7 @@ export const CursorPaginationControls: React.FC<CursorPaginationProps> = ({
       </Button>
       <Button
         disabled={!hasNextCursor}
-        icon={<Icon name="arrow_forward" />}
+        rightIcon={<Icon name="arrow_forward" />}
         onClick={advanceCursor}
       >
         Next
@@ -42,15 +42,15 @@ export const CursorHistoryControls: React.FC<CursorPaginationProps> = ({
 }) => {
   return (
     <CursorControlsContainer>
-      <Button icon={<Icon name="arrow_back" />} disabled={!hasNextCursor} onClick={advanceCursor}>
-        <span className="hideable-button-text">Older</span>
+      <Button icon={<Icon name="arrow_back" />} disabled={!hasPrevCursor} onClick={popCursor}>
+        <span className="hideable-button-text">Newer</span>
       </Button>
       <Button
         rightIcon={<Icon name="arrow_forward" />}
-        disabled={!hasPrevCursor}
-        onClick={popCursor}
+        disabled={!hasNextCursor}
+        onClick={advanceCursor}
       >
-        <span className="hideable-button-text">Newer</span>
+        <span className="hideable-button-text">Older</span>
       </Button>
     </CursorControlsContainer>
   );
