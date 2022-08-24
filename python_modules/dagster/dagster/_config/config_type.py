@@ -196,10 +196,10 @@ class Array(ConfigType):
             The type of the values that this configuration type can contain.
     """
 
-    def __init__(self, inner_type):
+    def __init__(self, inner_type: object):
         from .field import resolve_to_config_type
 
-        self.inner_type = resolve_to_config_type(inner_type)
+        self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
         super(Array, self).__init__(
             key="Array.{inner_type}".format(inner_type=self.inner_type.key),
             type_params=[self.inner_type],
