@@ -56,7 +56,7 @@ def log_asset_sensor_job():
     job=log_asset_sensor_job,
 )
 def asset_a_and_b_sensor(context):
-    asset_events = context.latest_materializations_by_key()
+    asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
         context.advance_all_cursors()
         return RunRequest(
@@ -76,7 +76,7 @@ def asset_a_and_b_sensor(context):
     job=log_asset_sensor_job,
 )
 def asset_c_or_d_sensor(context):
-    asset_events = context.latest_materializations_by_key()
+    asset_events = context.latest_materialization_records_by_key()
     if any(asset_events.values()):
         context.advance_all_cursors()
         return RunRequest(
@@ -96,7 +96,7 @@ def asset_c_or_d_sensor(context):
     job=log_asset_sensor_job,
 )
 def asset_string_and_int_sensor(context):
-    asset_events = context.latest_materializations_by_key()
+    asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
         context.advance_all_cursors()
         return RunRequest(
@@ -114,7 +114,9 @@ def asset_string_and_int_sensor(context):
     job=log_asset_sensor_job,
 )
 def every_fifth_materialization_sensor(context):
-    all_asset_a_events = context.materializations_for_key(asset_key=AssetKey("asset_a"), limit=5)
+    all_asset_a_events = context.materialization_records_for_key(
+        asset_key=AssetKey("asset_a"), limit=5
+    )
 
     if len(all_asset_a_events) == 5:
         context.advance_cursor({AssetKey("asset_a"): all_asset_a_events[-1]})

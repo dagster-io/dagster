@@ -39,9 +39,6 @@ from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
-# from dagster._core.storage.event_log.base import EventLogRecord
-
-
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.event_log.base import EventLogRecord
@@ -627,7 +624,7 @@ class SensorExecutionData(
     ):
         check.opt_list_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
-        # check.opt_str_param(cursor, "cursor")
+        check.opt_str_param(cursor, "cursor")
         check.opt_list_param(pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction)
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"

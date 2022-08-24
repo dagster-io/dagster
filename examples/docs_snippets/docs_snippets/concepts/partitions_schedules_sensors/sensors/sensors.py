@@ -216,11 +216,11 @@ def asset_a_and_b_sensor(context):
             f"Assets {asset_events[AssetKey('asset_a')].event_log_entry.dagster_event.asset_key.path} "
             f"and {asset_events[AssetKey('asset_b')].event_log_entry.dagster_event.asset_key.path} materialized"
         )
-        yield RunRequest(
+        context.advance_all_cursors()
+        return RunRequest(
             run_key=f"{context.cursor}",
             run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
         )
-        context.advance_all_cursors()
 
 
 # end_multi_asset_sensor_marker
@@ -238,8 +238,8 @@ def every_fifth_asset_c_sensor(context):
         asset_key=AssetKey("asset_c"), limit=5
     )
     if len(asset_events) == 5:
-        yield RunRequest(run_key=f"{context.cursor}")
         context.advance_cursor({AssetKey("asset_c"): asset_events[-1]})
+        return RunRequest(run_key=f"{context.cursor}")
     else:
         # you can optionally return a SkipReason
         # we don't update the cursor here since we want to keep fetching the same events until we
