@@ -1,6 +1,11 @@
 import click
 from tqdm import tqdm
 
+from dagster import __version__ as dagster_version
+from dagster._cli.workspace.cli_target import (
+    get_external_pipeline_or_job_from_kwargs,
+    job_target_argument,
+)
 from dagster._core.instance import DagsterInstance
 
 
@@ -73,7 +78,10 @@ def run_wipe_command(force):
         raise click.ClickException("Exiting without deleting all run history and event logs.")
 
 
-@run_cli.command(name="migrate", help="Migrate the run history from one repository to another.")
+@run_cli.command(
+    name="migrate-repository",
+    help="Migrate the run history for a job from a historic repository to its current repository.",
+)
 @click.option(
     "--from",
     "-f",
@@ -81,29 +89,35 @@ def run_wipe_command(force):
     help="The repository from which to migrate (format: <repository_name>@<location_name>)",
     prompt_required=True,
 )
-@click.option(
-    "--to",
-    "-t",
-    "to_label",
-    help="The repository name to migrate to (format: <repository_name>@<location_name>)",
-    prompt_required=True,
-)
-@click.argument("job_name")
-def run_migrate_command(job_name, from_label, to_label):
+@job_target_argument
+def run_migrate_command(from_label, **kwargs):
     from dagster._core.storage.pipeline_run import RunsFilter
-    from dagster._core.storage.runs.schema import RunTagsTable
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 
-    if not from_label or not to_label:
-        raise click.UsageError("Please specify both a --from and --to repository label")
+    if not from_label:
+        raise click.UsageError("Must specify a --from repository label")
 
-    if not is_valid_repo_label(from_label) or not is_valid_repo_label(to_label):
+    if not is_valid_repo_label(from_label):
         raise click.UsageError(
-            "`--from` and `--to` arguments must be of the format: <repository_name>@<location_name>"
+            "`--from` argument must be of the format: <repository_name>@<location_name>"
         )
 
     with DagsterInstance.get() as instance:
+        with get_external_pipeline_or_job_from_kwargs(
+            instance, version=dagster_version, kwargs=kwargs, using_job_op_graph_apis=True
+        ) as external_pipeline:
+            new_job_origin = external_pipeline.get_external_origin()
+            job_name = external_pipeline.name
+            to_label = new_job_origin.external_repository_origin.get_label()
+
+        if not to_label:
+            raise click.UsageError("Must specify valid job targets to migrate history to.")
+
+        if to_label == from_label:
+            click.echo(f"Migrating runs from {from_label} to {to_label} is a no-op.")
+            return
+
         records = instance.get_run_records(
             filters=RunsFilter(job_name=job_name, tags={REPOSITORY_LABEL_TAG: from_label})
         )
@@ -117,19 +131,13 @@ def run_migrate_command(job_name, from_label, to_label):
 
         count = len(records)
         confirmation = click.prompt(
-            f"Are you sure you want to migrate the run history for {job_name} ({count} runs)? Type MIGRATE"
+            f"Are you sure you want to migrate the run history for {job_name} from {from_label} to {to_label} ({count} runs)? Type MIGRATE"
         )
         should_migrate = confirmation == "MIGRATE"
 
         if should_migrate:
             for record in tqdm(records):
-                with instance.run_storage.connect() as conn:
-                    conn.execute(
-                        RunTagsTable.update()  # pylint: disable=no-value-for-parameter
-                        .where(RunTagsTable.c.run_id == record.pipeline_run.run_id)
-                        .where(RunTagsTable.c.key == REPOSITORY_LABEL_TAG)
-                        .values(value=to_label)
-                    )
+                instance.run_storage.replace_job_origin(record.pipeline_run, new_job_origin)
             click.echo(f"Migrated the run history for {job_name} from {from_label} to {to_label}.")
         else:
             raise click.ClickException("Exiting without migrating.")

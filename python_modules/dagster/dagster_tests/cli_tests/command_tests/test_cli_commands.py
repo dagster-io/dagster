@@ -288,6 +288,14 @@ def multiproc():
     branch_op(out_1)
     branch_op(out_2)
 
+@job
+def my_job():
+    my_op()
+
+@repository
+def my_other_repo():
+    return [my_job]
+
 
 # default executor_def is multiproc
 multiproc_job = multiproc.to_job()
@@ -860,19 +868,19 @@ def test_run_list_limit():
         result = runner.invoke(run_list_command, args="--limit 1")
         assert result.exit_code == 0
         assert result.output.count("Run: ") == 1
-        assert result.output.count("Pipeline: double_adder_job") == 1
+        assert result.output.count("Job: double_adder_job") == 1
 
         # Shows two runs because of the limit argument is now 2
         two_results = runner.invoke(run_list_command, args="--limit 2")
         assert two_results.exit_code == 0
         assert two_results.output.count("Run: ") == 2
-        assert two_results.output.count("Pipeline: double_adder_job") == 2
+        assert two_results.output.count("Job: double_adder_job") == 2
 
         # Should only shows two runs although the limit argument is 3 because there are only 2 runs
         shows_two_results = runner.invoke(run_list_command, args="--limit 3")
         assert shows_two_results.exit_code == 0
         assert shows_two_results.output.count("Run: ") == 2
-        assert shows_two_results.output.count("Pipeline: double_adder_job") == 2
+        assert shows_two_results.output.count("Job: double_adder_job") == 2
 
 
 def runner_job_execute(runner, cli_args):
@@ -909,7 +917,7 @@ def test_use_env_vars_for_cli_option():
 
 def create_repo_run(instance):
     from dagster._core.test_utils import create_run_for_test
-    from dagster._core.workspace import WorkspaceProcessContext
+    from dagster._core.workspace.context import WorkspaceProcessContext
     from dagster._core.workspace.load_target import PythonFileTarget
 
     with WorkspaceProcessContext(
@@ -945,7 +953,7 @@ def test_run_migrate_command():
     with instance_for_test() as instance:
         create_repo_run(instance)
         old_repo_label = "my_repo@repo_pipeline_and_job.py"
-        new_repo_label = "my_new_repo@lalalala"
+        new_repo_label = "my_other_repo@test_cli_commands.py"
 
         assert len(get_repo_runs(instance, old_repo_label)) == 1
         assert len(get_repo_runs(instance, new_repo_label)) == 0
@@ -953,7 +961,16 @@ def test_run_migrate_command():
         runner = CliRunner()
         runner.invoke(
             run_migrate_command,
-            args=["my_job", "--from", old_repo_label, "--to", new_repo_label],
+            args=[
+                "--from",
+                 old_repo_label,
+                "-f",
+                __file__,
+                "-r",
+                "my_other_repo",
+                "-j",
+                "my_job"
+            ],
             input="MIGRATE",
         )
 
