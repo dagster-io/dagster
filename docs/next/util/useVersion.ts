@@ -69,5 +69,5 @@ export function versionFromPage(page: string | string[]) {
 export const useVersion = () => {
   const router = useRouter();
 
-  return normalizeVersionPath(router.isReady ? router.asPath : '/', ALL_VERSIONS);
+  return normalizeVersionPath(router?.isReady ? router?.asPath : '/', ALL_VERSIONS);
 };

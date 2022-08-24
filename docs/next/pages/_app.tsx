@@ -42,6 +42,8 @@ const MyApp = ({Component, pageProps}: AppProps) => {
 
   const {asPath} = useVersion();
 
+  console.log({asPathFromPageProps});
+
   const canonicalUrl = `${BASE_URL}${asPathFromPageProps ?? asPath}`;
 
   React.useEffect(() => {
