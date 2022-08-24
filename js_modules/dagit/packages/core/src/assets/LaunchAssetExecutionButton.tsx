@@ -5,9 +5,10 @@ import uniq from 'lodash/uniq';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
-import {isSourceAsset} from '../asset-graph/Utils';
+import {displayNameForAssetKey, isSourceAsset} from '../asset-graph/Utils';
 import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
@@ -19,6 +20,10 @@ import {RepoAddress} from '../workspace/types';
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {AssetKey} from './types';
+import {
+  LaunchAssetCheckUpstreamQuery,
+  LaunchAssetCheckUpstreamQueryVariables,
+} from './types/LaunchAssetCheckUpstreamQuery';
 import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionAssetNodeFragment';
 import {
   LaunchAssetLoaderQuery,
@@ -62,6 +67,7 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
   const client = useApolloClient();
+  const confirm = useConfirmation();
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
   const label = `Materialize${
@@ -105,7 +111,36 @@ export const LaunchAssetExecutionButton: React.FC<{
         body: next.error,
       });
       setState({type: 'none'});
-    } else if (next.type === 'single-run') {
+      return;
+    }
+
+    const missing = await upstreamAssetsWithNoMaterializations(client, assets);
+    if (missing.length) {
+      setState({type: 'none'});
+      try {
+        await confirm({
+          title: 'Are you sure?',
+          description: (
+            <>
+              <div>
+                Materializing these assets may fail because the upstream assets listed below have
+                not been materialized yet.
+              </div>
+              <ul>
+                {missing.map((assetKey, idx) => (
+                  <li key={idx}>{displayNameForAssetKey(assetKey)}</li>
+                ))}
+              </ul>
+            </>
+          ),
+        });
+        setState({type: 'loading'});
+      } catch {
+        return;
+      }
+    }
+
+    if (next.type === 'single-run') {
       await launchWithTelemetry({executionParams: next.executionParams}, 'toast');
       setState({type: 'none'});
     } else {
@@ -192,9 +227,7 @@ async function stateForLaunchingAssets(
     };
   }
 
-  const everyAssetHasJob = (jobName: string) => assets.every((a) => a.jobNames.includes(jobName));
-  const jobsInCommon = assets[0] ? assets[0].jobNames.filter(everyAssetHasJob) : [];
-  const jobName = jobsInCommon.find((name) => name === preferredJobName) || jobsInCommon[0];
+  const jobName = getCommonJob(assets, preferredJobName);
   if (!jobName) {
     return {
       type: 'error',
@@ -229,24 +262,9 @@ async function stateForLaunchingAssets(
   const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
 
   const anyAssetsHaveRequiredConfig = assets.some((a) => a.configField?.isRequired);
-  if ((anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig) && partitionDefinition) {
-    return {
-      type: 'error',
-      error:
-        'Cannot materialize assets using both partitions and asset or required resource config.',
-    };
-  }
-
-  // Ok! Assertions met, how do we launch this run
 
   if (partitionDefinition) {
-    const assetKeys = new Set(assets.map((a) => JSON.stringify(a.assetKey)));
-    const upstreamAssetKeys = uniq(
-      assets.flatMap((a) => a.dependencyKeys.map(({path}) => JSON.stringify({path}))),
-    )
-      .filter((key) => !assetKeys.has(key))
-      .map((key) => JSON.parse(key));
-
+    const upstreamAssetKeys = getUpstreamAssetKeys(assets);
     return {
       type: 'partitions',
       assets,
@@ -272,6 +290,41 @@ async function stateForLaunchingAssets(
     type: 'single-run',
     executionParams: executionParamsForAssetJob(repoAddress, jobName, assets, []),
   };
+}
+
+function getCommonJob(assets: LaunchAssetExecutionAssetNodeFragment[], preferredJobName?: string) {
+  const everyAssetHasJob = (jobName: string) => assets.every((a) => a.jobNames.includes(jobName));
+  const jobsInCommon = assets[0] ? assets[0].jobNames.filter(everyAssetHasJob) : [];
+  return jobsInCommon.find((name) => name === preferredJobName) || jobsInCommon[0] || null;
+}
+
+function getUpstreamAssetKeys(assets: LaunchAssetExecutionAssetNodeFragment[]) {
+  const assetKeys = new Set(assets.map((a) => JSON.stringify({path: a.assetKey.path})));
+  return uniq(assets.flatMap((a) => a.dependencyKeys.map(({path}) => JSON.stringify({path}))))
+    .filter((key) => !assetKeys.has(key))
+    .map((key) => JSON.parse(key));
+}
+
+async function upstreamAssetsWithNoMaterializations(
+  client: ApolloClient<any>,
+  assets: LaunchAssetExecutionAssetNodeFragment[],
+) {
+  const upstreamAssetKeys = getUpstreamAssetKeys(assets);
+  if (upstreamAssetKeys.length === 0) {
+    return [];
+  }
+
+  const result = await client.query<
+    LaunchAssetCheckUpstreamQuery,
+    LaunchAssetCheckUpstreamQueryVariables
+  >({
+    query: LAUNCH_ASSET_CHECK_UPSTREAM_QUERY,
+    variables: {assetKeys: upstreamAssetKeys},
+  });
+
+  return result.data.assetNodes
+    .filter((a) => !isSourceAsset(a) && a.assetMaterializations.length === 0)
+    .map((a) => a.assetKey);
 }
 
 export function executionParamsForAssetJob(
@@ -368,4 +421,20 @@ const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
     }
   }
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
+`;
+
+const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
+  query LaunchAssetCheckUpstreamQuery($assetKeys: [AssetKeyInput!]!) {
+    assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+      id
+      assetKey {
+        path
+      }
+      opNames
+      graphName
+      assetMaterializations(limit: 1) {
+        runId
+      }
+    }
+  }
 `;

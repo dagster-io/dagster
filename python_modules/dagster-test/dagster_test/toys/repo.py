@@ -35,6 +35,8 @@ from dagster_test.toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.toys.partitioned_assets import partitioned_asset_group
 from dagster_test.toys.retries import retry_job
 from dagster_test.toys.run_status_sensors import (
+    cross_repo_job_sensor,
+    cross_repo_sensor,
     fails_job,
     fails_sensor,
     return_multi_run_request_success_sensor,
@@ -103,6 +105,8 @@ def toys_repository():
             yield_run_request_succeeds_sensor,
             fails_job,
             fails_sensor,
+            cross_repo_sensor,
+            cross_repo_job_sensor,
             status_job,
             df_stats_job,
             yield_multi_run_request_success_sensor,
@@ -112,6 +116,11 @@ def toys_repository():
         + get_toys_schedules()
         + get_toys_sensors()
     )
+
+
+@repository
+def more_toys_repository():
+    return [fails_job]
 
 
 @repository

@@ -9,6 +9,8 @@ import {InstanceOverviewPage} from './InstanceOverviewPage';
 import {InstanceSchedules} from './InstanceSchedules';
 import {InstanceSensors} from './InstanceSensors';
 
+const CodeLocationsPage = React.lazy(() => import('./CodeLocationsPage'));
+
 export const InstanceStatusRoot = () => (
   <Page>
     <Switch>
@@ -29,6 +31,11 @@ export const InstanceStatusRoot = () => (
       </Route>
       <Route path="/instance/config">
         <InstanceConfig />
+      </Route>
+      <Route path="/instance/code-locations">
+        <React.Suspense fallback={<div />}>
+          <CodeLocationsPage />
+        </React.Suspense>
       </Route>
       <Route path="*" render={() => <Redirect to="/instance" />} />
     </Switch>

@@ -81,7 +81,7 @@ export const AssetNode: React.FC<{
           {lastMaterialization ? (
             <StatsRow>
               <span>Materialized</span>
-              <CaptionMono>
+              <CaptionMono style={{textAlign: 'right'}}>
                 <AssetRunLink
                   runId={lastMaterialization.runId}
                   event={{stepKey, timestamp: lastMaterialization.timestamp}}
@@ -102,8 +102,8 @@ export const AssetNode: React.FC<{
             </>
           )}
           <StatsRow>
-            <span>Latest Run</span>
-            <CaptionMono>
+            <span>Latest&nbsp;Run</span>
+            <CaptionMono style={{textAlign: 'right'}}>
               <AssetLatestRunWithNotices liveData={liveData} />
             </CaptionMono>
           </StatsRow>

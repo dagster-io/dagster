@@ -513,6 +513,38 @@ email_on_run_failure = make_email_on_run_failure_sensor(
 
 Besides, if you would like to set up success or failure handling policies on ops, you can find more information on the [Op Hooks](/concepts/ops-jobs-graphs/op-hooks) page.
 
+### Cross repository run status sensors
+
+Sometimes, you may want to monitor jobs in a repository other than the one where the sensor is defined. You can use special identifiers <PyObject object="RepositorySelector" /> and <PyObject object="JobSelector" /> to tell a run status sensor to monitor jobs in another repository:
+
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cross_repo_run_status_sensor endbefore=end_cross_repo_run_status_sensor
+@run_status_sensor(
+    monitored_jobs=[
+        RepositorySelector(
+            location_name="repository.location", repository_name="team_a_repository"
+        )
+    ],
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def team_a_repo_sensor():
+    # when any job in team_a_repository succeeds, this sensor will trigger
+    send_slack_alert()
+
+
+@run_failure_sensor(
+    monitored_jobs=[
+        JobSelector(
+            location_name="repository.location",
+            repository_name="team_a_repository",
+            job_name="data_update",
+        )
+    ],
+)
+def team_a_data_update_failure_sensor():
+    # when the data_update job in team_a_repository fails, this sensor will trigger
+    send_slack_alert()
+```
+
 ## Testing run status sensors
 
 As with other sensors, you can directly invoke run status sensors. However, the `context` provided via <PyObject object="run_status_sensor" /> and <PyObject object="run_failure_sensor" /> contain objects that are typically only available during run time. Below you'll find code snippets that demonstrate how to build the context so that you can directly invoke your function in unit tests. Feel free to copy the following into your unit tests.
