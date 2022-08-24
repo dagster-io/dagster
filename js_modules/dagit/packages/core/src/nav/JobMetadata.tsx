@@ -7,6 +7,7 @@ import {DagsterTag} from '../runs/RunTag';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {LatestRunTag} from './LatestRunTag';
@@ -30,7 +31,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
         tags: [
           {
             key: DagsterTag.RepositoryLabelTag,
-            value: `${repoAddress.name}@${repoAddress.location}`,
+            value: repoAddressAsString(repoAddress),
           },
         ],
       },

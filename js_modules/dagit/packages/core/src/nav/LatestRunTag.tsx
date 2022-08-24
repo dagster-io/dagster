@@ -10,6 +10,7 @@ import {DagsterTag} from '../runs/RunTag';
 import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {LatestRunTagQuery, LatestRunTagQueryVariables} from './types/LatestRunTagQuery';
@@ -29,7 +30,7 @@ export const LatestRunTag: React.FC<{pipelineName: string; repoAddress: RepoAddr
           tags: [
             {
               key: DagsterTag.RepositoryLabelTag,
-              value: `${repoAddress.name}@${repoAddress.location}`,
+              value: repoAddressAsString(repoAddress),
             },
           ],
         },
