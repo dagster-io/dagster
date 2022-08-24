@@ -366,7 +366,11 @@ export const AssetGraphExplorerWithData: React.FC<
 
                           <GroupOutline
                             style={{
-                              top: repositoryDisambiguationRequired ? 24 + 18 : 24,
+                              marginTop: 6,
+                              height:
+                                bounds.height -
+                                (repositoryDisambiguationRequired ? 24 + 18 : 24) -
+                                3,
                               border: `${Math.max(2, 2 / _scale)}px dashed ${Colors.Gray300}`,
                               background: `rgba(223, 223, 223, ${
                                 0.4 - Math.max(0, _scale - MINIMAL_SCALE) * 0.3
@@ -502,8 +506,7 @@ const SVGContainer = styled.svg`
 `;
 
 const GroupOutline = styled.div`
-  inset: 0;
-  position: absolute;
+  width: 100%;
   border-radius: 10px;
   pointer-events: none;
 `;
@@ -511,6 +514,8 @@ const GroupOutline = styled.div`
 const GroupRepoName = styled.div`
   font-size: 0.8rem;
   line-height: 0.7rem;
+  white-space: nowrap;
+  margin-bottom: 4px;
 `;
 
 // Helpers
