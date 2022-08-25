@@ -1,3 +1,5 @@
+import logging
+
 import dagster._check as check
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -10,7 +12,7 @@ class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def __init__(self, inst_data=None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-
+        self._logger = logging.getLogger("dagster.run_coordinator.default_run_coordinator")
         super().__init__()
 
     @property
@@ -27,9 +29,15 @@ class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def submit_run(self, context: SubmitRunContext) -> PipelineRun:
         pipeline_run = context.pipeline_run
-        check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
-        self._instance.launch_run(pipeline_run.run_id, context.workspace)
+        if pipeline_run.status == PipelineRunStatus.NOT_STARTED:
+            self._instance.launch_run(pipeline_run.run_id, context.workspace)
+        else:
+            self._logger.warning(
+                f"submit_run called for run {pipeline_run.run_id} with status "
+                f"{pipeline_run.status.value}, which is a no-op."
+            )
+
         run = self._instance.get_run_by_id(pipeline_run.run_id)
         if run is None:
             check.failed(f"Failed to reload run {pipeline_run.run_id}")
