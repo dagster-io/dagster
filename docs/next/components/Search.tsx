@@ -1,5 +1,6 @@
 import {DocSearchModal, useDocSearchKeyboardEvents} from '@docsearch/react';
 import Head from 'next/head';
+import Link from 'next/link';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
@@ -156,6 +157,23 @@ export function Search() {
                   url,
                 };
               });
+            }}
+            resultsFooterComponent={({state}) => {
+              return (
+                <Link
+                  href={{
+                    pathname: '/searchpage',
+                    query: {query: encodeURIComponent(state.query)},
+                  }}
+                >
+                  <a
+                    onClick={() => setIsOpen(false)}
+                    className="justify-center flex mt-3 text-gray-500"
+                  >
+                    See all {state.context.nbHits} search results
+                  </a>
+                </Link>
+              );
             }}
           />,
           document.body,
