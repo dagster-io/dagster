@@ -5,13 +5,12 @@ import os
 import pytest
 import yaml
 from dagster_spark import create_spark_op, spark_resource
-from dagster_spark.ops import create_spark_solid
 
 from dagster import job
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 CONFIG = """
-solids:
+ops:
   first_pi:
     config:
       master_url: "local[2]"
@@ -51,8 +50,8 @@ solids:
 def test_multiple_spark_jobs():
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"spark": spark_resource})])
     def pipe():
-        for solid_name in ["first_pi", "second_pi", "third_pi"]:
-            create_spark_solid(solid_name, main_class="org.apache.spark.examples.SparkPi")()
+        for op_name in ["first_pi", "second_pi", "third_pi"]:
+            create_spark_op(op_name, main_class="org.apache.spark.examples.SparkPi")()
 
     # Find SPARK_HOME to get to spark examples jar
     base_path = os.path.expandvars("${SPARK_HOME}/examples/jars/")

@@ -60,7 +60,6 @@ def create_databricks_job_op(
                 }
             )
     """
-
     check.str_param(name, "name")
     check.opt_str_param(description, "description")
     check.int_param(num_inputs, "num_inputs")

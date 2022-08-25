@@ -16,20 +16,18 @@ def test_execute_hammer_through_dagit():
             version="",
             read_only=False,
             kwargs={
-                "python_file": file_relative_path(
-                    __file__, "../../../dagster-test/dagster_test/toys/hammer.py"
-                ),
-                "attribute": "hammer_pipeline",
+                "python_file": file_relative_path(__file__, "hammer_job.py"),
+                "attribute": "hammer_job",
             },
         ) as workspace_process_context:
             context = workspace_process_context.create_request_context()
-            selector = infer_pipeline_selector(context, "hammer_pipeline")
+            selector = infer_pipeline_selector(context, "hammer_job")
             executor = SyncExecutor()
 
             variables = {
                 "executionParams": {
                     "runConfigData": {
-                        "execution": {"dask": {"config": {"cluster": {"local": {}}}}},
+                        "execution": {"config": {"cluster": {"local": {}}}},
                     },
                     "selector": selector,
                     "mode": "default",

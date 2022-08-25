@@ -763,11 +763,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
 
             if assets_def is not None and upstream_asset_partitions_def is not None:
+                partition_key_range = (
+                    PartitionKeyRange(self.partition_key, self.partition_key)
+                    if assets_def.partitions_def
+                    else None
+                )
                 return get_upstream_partitions_for_partition_range(
                     assets_def,
                     upstream_asset_partitions_def,
                     upstream_asset_key,
-                    PartitionKeyRange(self.partition_key, self.partition_key),
+                    partition_key_range,
                 )
 
         check.failed("The input has no asset partitions")

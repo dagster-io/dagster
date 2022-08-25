@@ -2,6 +2,7 @@ import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {Route, Switch, useParams} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
@@ -9,6 +10,7 @@ import {SensorRoot} from '../sensors/SensorRoot';
 
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext';
+import {WorkspaceJobsRoot} from './WorkspaceJobsRoot';
 import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
 import {WorkspaceRepoRoot} from './WorkspaceRepoRoot';
@@ -110,21 +112,29 @@ const RepoRouteContainer = () => {
   );
 };
 
-export const WorkspaceRoot = () => (
-  <MainContent>
-    <Switch>
-      <Route path="/workspace" exact>
-        <WorkspaceOverviewRoot />
-      </Route>
-      <Route path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}>
-        <WorkspacePipelineRoot />
-      </Route>
-      <Route path="/workspace/:repoPath">
-        <RepoRouteContainer />
-      </Route>
-    </Switch>
-  </MainContent>
-);
+export const WorkspaceRoot = () => {
+  const {flagNewWorkspace} = useFeatureFlags();
+  return (
+    <MainContent>
+      <Switch>
+        <Route path="/workspace" exact>
+          <WorkspaceOverviewRoot />
+        </Route>
+        {flagNewWorkspace ? (
+          <Route path="/workspace/jobs" exact>
+            <WorkspaceJobsRoot />
+          </Route>
+        ) : null}
+        <Route path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}>
+          <WorkspacePipelineRoot />
+        </Route>
+        <Route path="/workspace/:repoPath">
+          <RepoRouteContainer />
+        </Route>
+      </Switch>
+    </MainContent>
+  );
+};
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export

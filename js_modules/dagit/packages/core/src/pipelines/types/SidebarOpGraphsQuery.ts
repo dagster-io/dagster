@@ -13,10 +13,6 @@ export interface SidebarOpGraphsQuery_pipelineOrError_PipelineNotFoundError {
   __typename: "PipelineNotFoundError" | "InvalidSubsetError" | "PythonError";
 }
 
-export interface SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepStats_SolidStepStatusUnavailableError {
-  __typename: "SolidStepStatusUnavailableError";
-}
-
 export interface SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepStats_SolidStepStatsConnection_nodes {
   __typename: "RunStepStats";
   runId: string;
@@ -30,7 +26,11 @@ export interface SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepS
   nodes: SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepStats_SolidStepStatsConnection_nodes[];
 }
 
-export type SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepStats = SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepStats_SolidStepStatusUnavailableError | SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepStats_SolidStepStatsConnection;
+export interface SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepStats_SolidStepStatusUnavailableError {
+  __typename: "SolidStepStatusUnavailableError";
+}
+
+export type SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepStats = SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepStats_SolidStepStatsConnection | SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle_stepStats_SolidStepStatusUnavailableError;
 
 export interface SidebarOpGraphsQuery_pipelineOrError_Pipeline_solidHandle {
   __typename: "SolidHandle";

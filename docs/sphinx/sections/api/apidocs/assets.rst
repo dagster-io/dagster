@@ -26,3 +26,5 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 .. autoclass:: AssetsDefinition
 
 .. autodecorator:: multi_asset
+
+.. autoclass:: AssetOut

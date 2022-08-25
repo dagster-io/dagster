@@ -1,0 +1,49 @@
+- id: op-definition.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_ops/complex_job.py
+  route: /workspace/__repository__diamond@complex_job.py/jobs/diamond/get_total_size
+
+- id: runs-tab.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_ops/complex_job.py
+  route: /workspace/__repository__diamond@complex_job.py/jobs/diamond/runs
+  steps:
+    - kick off a few runs
+
+- id: sensors.png
+  base_url: https://demo.elementl.show
+  route: /workspace/hacker_news_prod@hacker-news/sensors
+  vetted: false
+
+- id: single-run.png
+  base_url: https://demo.elementl.show
+  route: /instance/runs/606af723-9aed-4a12-aba3-f2bdb7d53616
+  vetted: false
+
+- id: all-runs.png
+  base_url: https://demo.elementl.show
+  route: /instance/runs
+  vetted: false
+
+- id: schedules.png
+  base_url: https://demo.elementl.show
+  route: /workspace/hacker_news_prod@hacker-news/schedules
+  vetted: false
+
+- id: all-assets.png
+  base_url: https://demo.elementl.show
+  route: /instance/assets
+  vetted: false
+
+- id: status-instance.png
+  base_url: https://demo.elementl.show
+  route: /instance/health
+  vetted: false
+
+- id: re-execution.png
+  base_url: https://demo.elementl.show
+  route: /instance/runs/57ea168a-3e2d-4137-8a4c-beb93122c684?logKey=build_comment_stories&logs=query%3Arecommender_model_perf&selection=recommender_model_perf
+  vetted: false
+
+- id: asset.png
+  base_url: https://demo.elementl.show
+  route: /instance/assets/snowflake/hackernews/comment_stories
+  vetted: false

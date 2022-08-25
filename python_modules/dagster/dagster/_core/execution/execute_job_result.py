@@ -6,7 +6,6 @@ from dagster._core.definitions import JobDefinition, NodeHandle
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.plan.step import StepKind
 from dagster._core.execution.plan.utils import build_resources_for_manager
 from dagster._core.storage.pipeline_run import DagsterRun
 
@@ -93,13 +92,6 @@ class ExecuteJobResult(ExecutionResult):
             Any: The value of the retrieved output.
         """
         return super(ExecuteJobResult, self).output_for_node(node_str, output_name=output_name)
-
-    def compute_events_for_handle(self, handle: NodeHandle) -> Sequence[DagsterEvent]:
-        return [
-            event
-            for event in self._filter_events_by_handle(handle)
-            if event.step_kind == StepKind.COMPUTE
-        ]
 
     def _get_output_for_handle(self, handle: NodeHandle, output_name: str) -> Any:
         if not self._context:

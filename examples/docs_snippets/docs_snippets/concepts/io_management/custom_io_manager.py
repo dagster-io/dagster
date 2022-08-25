@@ -1,6 +1,6 @@
 # isort: skip_file
 # pylint: disable=reimported
-from dagster import job, op, MetadataEntry
+from dagster import job, op
 
 
 @op
@@ -84,9 +84,7 @@ class DataframeTableIOManagerWithMetadata(IOManager):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
-        # attach these to the Handled Output event
-        yield MetadataEntry.int(len(obj), label="number of rows")
-        yield MetadataEntry.text(table_name, label="table name")
+        context.add_output_metadata({"num_rows": len(obj), "table_name": table_name})
 
     def load_input(self, context):
         table_name = context.upstream_output.name

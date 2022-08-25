@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Dict, Mapping
+from collections import defaultdict
+from typing import TYPE_CHECKING, Dict, List, Mapping
 
 from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 
@@ -60,6 +61,48 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
     )
 
 
+def asset_node_iter(graphene_info):
+    for location in graphene_info.context.repository_locations:
+        for repository in location.get_repositories().values():
+            for external_asset_node in repository.get_external_asset_nodes():
+                yield location, repository, external_asset_node
+
+
+def get_asset_node_definition_collisions(graphene_info, asset_keys):
+    from ..schema.asset_graph import GrapheneAssetNodeDefinitionCollision
+    from ..schema.external import GrapheneRepository
+
+    repos: Dict[AssetKey, GrapheneRepository] = defaultdict(list)
+
+    for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
+        if external_asset_node.asset_key in asset_keys:
+            is_defined = (
+                external_asset_node.node_definition_name
+                or external_asset_node.graph_name
+                or external_asset_node.op_name
+            )
+            if not is_defined:
+                continue
+            repos[external_asset_node.asset_key].append(
+                GrapheneRepository(
+                    instance=graphene_info.context.instance,
+                    repository=repo,
+                    repository_location=repo_loc,
+                )
+            )
+
+    results: List[GrapheneAssetNodeDefinitionCollision] = []
+    for asset_key in repos.keys():
+        if len(repos[asset_key]) > 1:
+            results.append(
+                GrapheneAssetNodeDefinitionCollision(
+                    assetKey=asset_key, repositories=repos[asset_key]
+                )
+            )
+
+    return results
+
+
 def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAssetNode"]:
     """
     If multiple repositories have asset nodes for the same asset key, chooses the asset node that
@@ -71,17 +114,15 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
     depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
     asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
-    for location in graphene_info.context.repository_locations:
-        for repository in location.get_repositories().values():
-            for external_asset_node in repository.get_external_asset_nodes():
-                preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
-                if preexisting_node is None or preexisting_node.external_asset_node.op_name is None:
-                    asset_nodes_by_asset_key[external_asset_node.asset_key] = GrapheneAssetNode(
-                        location,
-                        repository,
-                        external_asset_node,
-                        depended_by_loader=depended_by_loader,
-                    )
+    for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
+        preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
+        if preexisting_node is None or preexisting_node.external_asset_node.op_name is None:
+            asset_nodes_by_asset_key[external_asset_node.asset_key] = GrapheneAssetNode(
+                repo_loc,
+                repo,
+                external_asset_node,
+                depended_by_loader=depended_by_loader,
+            )
 
     return asset_nodes_by_asset_key
 

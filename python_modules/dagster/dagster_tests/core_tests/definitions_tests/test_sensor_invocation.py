@@ -3,14 +3,19 @@ from unittest import mock
 import pytest
 
 from dagster import (
+    AssetKey,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
     RunRequest,
     SensorEvaluationContext,
+    asset,
+    build_multi_asset_sensor_context,
     build_run_status_sensor_context,
     build_sensor_context,
     job,
+    materialize,
+    multi_asset_sensor,
     op,
     run_failure_sensor,
     run_status_sensor,
@@ -253,3 +258,35 @@ def test_run_failure_w_run_request():
         return RunRequest(run_key=None, run_config={}, tags={})
 
     assert basic_sensor_w_arg(context).run_config == {}
+
+
+def test_multi_asset_sensor():
+    @op
+    def an_op():
+        return 1
+
+    @job
+    def the_job():
+        an_op()
+
+    @asset
+    def asset_a():
+        return 1
+
+    @asset
+    def asset_b():
+        return 1
+
+    @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+    def a_and_b_sensor(context):
+        asset_events = context.latest_materialization_records_by_key()
+        if all(asset_events.values()):
+            context.advance_all_cursors()
+            return RunRequest(run_key=context.cursor, run_config={})
+
+    with instance_for_test() as instance:
+        materialize([asset_a, asset_b], instance=instance)
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], instance=instance
+        )
+        assert list(a_and_b_sensor(ctx))[0].run_config == {}

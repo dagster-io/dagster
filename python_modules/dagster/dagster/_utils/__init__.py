@@ -23,7 +23,6 @@ from typing import Optional, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
 import packaging.version
-import yaml
 from typing_extensions import Literal
 
 import dagster._check as check

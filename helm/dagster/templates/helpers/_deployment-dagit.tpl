@@ -138,5 +138,9 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+    {{- if .Values.dagit.schedulerName }}
+      schedulerName: {{ .Values.dagit.schedulerName }}
+    {{- end }}
+
 
 {{ end }}

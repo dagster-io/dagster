@@ -44,88 +44,90 @@ export const AssetNode: React.FC<{
   const {lastMaterialization, computeStatus} = liveData || MISSING_LIVE_DATA;
 
   return (
-    <AssetNodeContainer $selected={selected}>
-      <AssetNodeBox $selected={selected}>
-        <Name>
-          <span style={{marginTop: 1}}>
-            <Icon name="asset" />
-          </span>
-          <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
-            {withMiddleTruncation(displayName, {
-              maxLength: ASSET_NODE_NAME_MAX_LENGTH,
-            })}
-          </div>
-          <div style={{flex: 1}} />
-          <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
-            <ComputeStatusNotice computeStatus={computeStatus} />
-          </div>
-        </Name>
-        {definition.description && !inAssetCatalog && (
-          <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
-        )}
-        {computeName && displayName !== computeName && (
-          <Description>
-            <Box
-              flex={{gap: 4, alignItems: 'flex-end'}}
-              style={{marginLeft: -2, overflow: 'hidden'}}
-            >
-              <Icon name={definition.graphName ? 'job' : 'op'} size={16} />
-              <div style={{minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}>
-                {computeName}
-              </div>
-            </Box>
-          </Description>
-        )}
+    <AssetInsetForHoverEffect>
+      <AssetNodeContainer $selected={selected}>
+        <AssetNodeBox $selected={selected}>
+          <Name>
+            <span style={{marginTop: 1}}>
+              <Icon name="asset" />
+            </span>
+            <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
+              {withMiddleTruncation(displayName, {
+                maxLength: ASSET_NODE_NAME_MAX_LENGTH,
+              })}
+            </div>
+            <div style={{flex: 1}} />
+            <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
+              <ComputeStatusNotice computeStatus={computeStatus} />
+            </div>
+          </Name>
+          {definition.description && !inAssetCatalog && (
+            <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
+          )}
+          {computeName && displayName !== computeName && (
+            <Description>
+              <Box
+                flex={{gap: 4, alignItems: 'flex-end'}}
+                style={{marginLeft: -2, overflow: 'hidden'}}
+              >
+                <Icon name={definition.graphName ? 'job' : 'op'} size={16} />
+                <div style={{minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                  {computeName}
+                </div>
+              </Box>
+            </Description>
+          )}
 
-        <Stats>
-          {lastMaterialization ? (
-            <StatsRow>
-              <span>Materialized</span>
-              <CaptionMono>
-                <AssetRunLink
-                  runId={lastMaterialization.runId}
-                  event={{stepKey, timestamp: lastMaterialization.timestamp}}
-                >
-                  <TimestampDisplay
-                    timestamp={Number(lastMaterialization.timestamp) / 1000}
-                    timeFormat={{showSeconds: false, showTimezone: false}}
-                  />
-                </AssetRunLink>
-              </CaptionMono>
-            </StatsRow>
-          ) : (
-            <>
+          <Stats>
+            {lastMaterialization ? (
               <StatsRow>
                 <span>Materialized</span>
-                <span>–</span>
+                <CaptionMono style={{textAlign: 'right'}}>
+                  <AssetRunLink
+                    runId={lastMaterialization.runId}
+                    event={{stepKey, timestamp: lastMaterialization.timestamp}}
+                  >
+                    <TimestampDisplay
+                      timestamp={Number(lastMaterialization.timestamp) / 1000}
+                      timeFormat={{showSeconds: false, showTimezone: false}}
+                    />
+                  </AssetRunLink>
+                </CaptionMono>
               </StatsRow>
-            </>
-          )}
-          <StatsRow>
-            <span>Latest Run</span>
-            <CaptionMono>
-              <AssetLatestRunWithNotices liveData={liveData} />
-            </CaptionMono>
-          </StatsRow>
-        </Stats>
-        {definition.computeKind && (
-          <OpTags
-            minified={false}
-            style={{right: -2, paddingTop: 5}}
-            tags={[
-              {
-                label: definition.computeKind,
-                onClick: () => {
-                  window.requestAnimationFrame(() =>
-                    document.dispatchEvent(new Event('show-kind-info')),
-                  );
+            ) : (
+              <>
+                <StatsRow>
+                  <span>Materialized</span>
+                  <span>–</span>
+                </StatsRow>
+              </>
+            )}
+            <StatsRow>
+              <span>Latest&nbsp;Run</span>
+              <CaptionMono style={{textAlign: 'right'}}>
+                <AssetLatestRunWithNotices liveData={liveData} />
+              </CaptionMono>
+            </StatsRow>
+          </Stats>
+          {definition.computeKind && (
+            <OpTags
+              minified={false}
+              style={{right: -2, paddingTop: 5}}
+              tags={[
+                {
+                  label: definition.computeKind,
+                  onClick: () => {
+                    window.requestAnimationFrame(() =>
+                      document.dispatchEvent(new Event('show-kind-info')),
+                    );
+                  },
                 },
-              },
-            ]}
-          />
-        )}
-      </AssetNodeBox>
-    </AssetNodeContainer>
+              ]}
+            />
+          )}
+        </AssetNodeBox>
+      </AssetNodeContainer>
+    </AssetInsetForHoverEffect>
   );
 }, isEqual);
 
@@ -136,13 +138,15 @@ export const AssetNodeMinimal: React.FC<{
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1];
 
   return (
-    <MinimalAssetNodeContainer $selected={selected}>
-      <MinimalAssetNodeBox $selected={selected}>
-        <MinimalName style={{fontSize: 28}}>
-          {withMiddleTruncation(displayName, {maxLength: 17})}
-        </MinimalName>
-      </MinimalAssetNodeBox>
-    </MinimalAssetNodeContainer>
+    <AssetInsetForHoverEffect>
+      <MinimalAssetNodeContainer $selected={selected}>
+        <MinimalAssetNodeBox $selected={selected}>
+          <MinimalName style={{fontSize: 28}}>
+            {withMiddleTruncation(displayName, {maxLength: 17})}
+          </MinimalName>
+        </MinimalAssetNodeBox>
+      </MinimalAssetNodeContainer>
+    </AssetInsetForHoverEffect>
   );
 };
 
@@ -200,17 +204,17 @@ const BoxColors = {
   Stats: 'rgba(236, 236, 248, 1)',
 };
 
+const AssetInsetForHoverEffect = styled.div`
+  padding: 10px 4px 2px 4px;
+  height: 100%;
+`;
+
 const AssetNodeContainer = styled.div<{$selected: boolean}>`
   outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
   border-radius: 6px;
   outline-offset: -1px;
   background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'white')};
-  inset: 0;
   padding: 4px;
-  margin-top: 10px;
-  margin-right: 4px;
-  margin-left: 4px;
-  margin-bottom: 2px;
 `;
 
 const AssetNodeBox = styled.div<{$selected: boolean}>`
@@ -236,18 +240,19 @@ const Name = styled.div`
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
-  position: absolute;
   border-radius: 12px;
   outline-offset: 2px;
   outline-width: 4px;
+  height: 100%;
 `;
 
 const MinimalAssetNodeBox = styled(AssetNodeBox)`
   background: ${Colors.White};
   border: 4px solid ${Colors.Blue200};
   border-radius: 10px;
-  position: absolute;
-  inset: 4px;
+  position: relative;
+  padding: 4px;
+  height: 100%;
 `;
 
 const MinimalName = styled(Name)`

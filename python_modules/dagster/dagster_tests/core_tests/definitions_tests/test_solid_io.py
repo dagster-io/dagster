@@ -143,7 +143,7 @@ def test_not_type_input():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue or explicitly set the dagster_type on your InputDefinition.",
+        match=r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue or explicitly set the dagster_type",
     ):
 
         @solid
@@ -156,7 +156,7 @@ def test_not_type_input():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue or explicitly set the dagster_type on your InputDefinition.",
+        match=r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue or explicitly set the dagster_type",
     ):
 
         @solid(input_defs=[InputDefinition("arg_b")])
@@ -169,7 +169,7 @@ def test_not_type_input():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Problem using type '.*' from return type annotation, correct the issue or explicitly set the dagster_type on your OutputDefinition.",
+        match=r"Problem using type '.*' from return type annotation, correct the issue or explicitly set the dagster_type",
     ):
 
         @solid

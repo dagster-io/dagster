@@ -110,21 +110,11 @@ const WarningIcon = (
 );
 
 const ChevronRightIcon = (
-  <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M9 5l7 7-7 7"
-  />
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
 );
 
 const ChevronDownIcon = (
-  <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M19 9l-7 7-7-7"
-  />
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
 );
 
 const CloudIcon = (

@@ -32,6 +32,8 @@ from_example_command_help_text = (
     "This CLI enables you to quickly bootstrap your project with an officially maintained example."
 )
 
+list_examples_command_help_text = "List the examples that available to bootstrap with."
+
 
 @project_cli.command(
     name="scaffold-repository",
@@ -118,7 +120,8 @@ def from_example_command(name: str, example: str):
 
 @project_cli.command(
     name="list-examples",
-    help="List the examples that available to bootstrap with.",
+    short_help=list_examples_command_help_text,
+    help=list_examples_command_help_text,
 )
 def from_example_list_command():
     click.echo("Examples available in `dagster project from-example`:")

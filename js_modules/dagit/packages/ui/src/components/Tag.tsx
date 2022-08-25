@@ -5,6 +5,7 @@ import * as React from 'react';
 import {BaseTag} from './BaseTag';
 import {Colors} from './Colors';
 import {IconName, Icon} from './Icon';
+import {Spinner} from './Spinner';
 
 const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
   switch (intent) {
@@ -55,30 +56,34 @@ const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintTag>['in
 };
 
 interface Props extends Omit<React.ComponentProps<typeof BlueprintTag>, 'icon' | 'rightIcon'> {
-  icon?: IconName;
-  rightIcon?: IconName;
+  icon?: IconName | 'spinner';
+  rightIcon?: IconName | 'spinner';
 }
 
+const IconOrSpinner: React.FC<{icon: IconName | 'spinner' | null; color: string}> = React.memo(
+  ({icon, color}) => {
+    if (icon === 'spinner') {
+      return <Spinner fillColor={color} purpose="body-text" />;
+    }
+    return icon ? <Icon name={icon} color={color} /> : null;
+  },
+);
+
 export const Tag: React.FC<Props> = (props) => {
-  const {children, icon, rightIcon, intent, ...rest} = props;
+  const {children, icon = null, rightIcon = null, intent, ...rest} = props;
 
   const fillColor = intentToFillColor(intent);
   const textColor = intentToTextColor(intent);
   const iconColor = intentToIconColor(intent);
-
-  const iconWithColor = icon ? <Icon name={icon} color={iconColor} /> : null;
-  const rightIconWithColor = rightIcon ? <Icon name={rightIcon} color={iconColor} /> : null;
 
   return (
     <BaseTag
       {...rest}
       fillColor={fillColor}
       textColor={textColor}
-      icon={iconWithColor}
-      rightIcon={rightIconWithColor}
+      icon={<IconOrSpinner icon={icon} color={iconColor} />}
+      rightIcon={<IconOrSpinner icon={rightIcon} color={iconColor} />}
       label={children}
     />
   );
 };
-
-Tag.displayName = 'Tag';

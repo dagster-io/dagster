@@ -1,14 +1,23 @@
 import os
 import pickle
 import uuid
+from typing import Any, Mapping, Optional
 
-from dagster import AssetMaterialization, ExpectationResult, Failure, TypeCheck
+from dagster import (
+    AssetMaterialization,
+    ExpectationResult,
+    Failure,
+    LoggerDefinition,
+    ResourceDefinition,
+    TypeCheck,
+)
 from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import scoped_pipeline_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -25,6 +34,7 @@ from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition,
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
 from dagster._utils import EventGenerationManager, ensure_gen
+from dagster._utils.backcompat import deprecation_warning
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
@@ -178,16 +188,22 @@ class Manager:
 
         return self.context
 
-    def get_context(self, solid_config=None, mode_def=None, run_config=None):
+    def get_context(
+        self,
+        op_config: Any = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+        solid_config: Any = None,
+        mode_def: Optional[ModeDefinition] = None,
+        run_config: Optional[dict] = None,
+    ) -> DagstermillExecutionContext:
         """Get a dagstermill execution context for interactive exploration and development.
 
         Args:
-            solid_config (Optional[Any]): If specified, this value will be made available on the
-                context as its ``solid_config`` property.
-            mode_def (Optional[:class:`dagster.ModeDefinition`]): If specified, defines the mode to
-                use to construct the context. Specify this if you would like a context constructed
-                with specific ``resource_defs`` or ``logger_defs``. By default, an ephemeral mode
-                with a console logger will be constructed.
+            op_config (Optional[Any]): If specified, this value will be made available on the
+                context as its ``op_config`` property.
+            resource_defs (Optional[Mapping[str, ResourceDefinition]]): Specifies resources to provide to context.
+            logger_defs (Optional[Mapping[str, LoggerDefinition]]): Specifies loggers to provide to context.
             run_config(Optional[dict]): The config dict with which to construct
                 the context.
 
@@ -197,6 +213,35 @@ class Manager:
         check.opt_inst_param(mode_def, "mode_def", ModeDefinition)
         run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
 
+        if solid_config and op_config:
+            raise DagsterInvariantViolationError(
+                "Attempted to provide both solid_config and op_config arguments to `dagstermill.get_context`. Please provide one or the other."
+            )
+
+        if resource_defs and mode_def:
+            raise DagsterInvariantViolationError(
+                "Attempted to provide both resource_defs and mode_def arguments to `dagstermill.get_context`. Please provide one or the other."
+            )
+
+        if logger_defs and mode_def:
+            raise DagsterInvariantViolationError(
+                "Attempted to provide both logger_defs and mode_def arguments to `dagstermill.get_context`. Please provide one or the other."
+            )
+
+        if solid_config:
+            deprecation_warning(
+                "solid_config argument to dagstermill.get_context",
+                "0.17.0",
+                "Use the op_config argument instead.",
+            )
+
+        if mode_def:
+            deprecation_warning(
+                "mode_def argument to dagstermill.get_context",
+                "0.17.0",
+                "Use the resource_defs argument to provide resources, and the logger_defs argument to provide loggers.",
+            )
+
         # If we are running non-interactively, and there is already a context reconstituted, return
         # that context rather than overwriting it.
         if self.context is not None and isinstance(
@@ -205,8 +250,12 @@ class Manager:
             return self.context
 
         if not mode_def:
-            mode_def = ModeDefinition(logger_defs={"dagstermill": colored_console_logger})
-            run_config["loggers"] = {"dagstermill": {}}
+            if not logger_defs:
+                logger_defs = {"dagstermill": colored_console_logger}
+                run_config["loggers"] = {"dagstermill": {}}
+            logger_defs = check.opt_mapping_param(logger_defs, "logger_defs")
+            resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
+            mode_def = ModeDefinition(logger_defs=logger_defs, resource_defs=resource_defs)
 
         solid_def = SolidDefinition(
             name="this_solid",

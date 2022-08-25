@@ -33,11 +33,11 @@ class TimeWindowPartitionMapping(PartitionMapping):
 
     def get_upstream_partitions_for_partition_range(
         self,
-        downstream_partition_key_range: PartitionKeyRange,
+        downstream_partition_key_range: Optional[PartitionKeyRange],
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
-        if downstream_partitions_def is None:
+        if downstream_partitions_def is None or downstream_partition_key_range is None:
             check.failed("downstream asset is not partitioned")
 
         return self._map_partitions(

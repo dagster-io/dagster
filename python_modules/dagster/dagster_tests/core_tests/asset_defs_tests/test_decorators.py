@@ -23,6 +23,7 @@ from dagster._core.definitions import (
     multi_asset,
 )
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster._core.types.dagster_type import resolve_dagster_type
 
 
 @pytest.fixture(autouse=True)
@@ -364,6 +365,16 @@ def test_input_metadata():
         assert arg1
 
     assert my_asset.op.input_defs[0].metadata == {"abc": 123}
+
+
+def test_input_dagster_type():
+    my_dagster_type = resolve_dagster_type(str)
+
+    @asset(ins={"arg1": AssetIn(dagster_type=my_dagster_type)})
+    def my_asset(arg1):
+        assert arg1
+
+    assert my_asset.op.ins["arg1"].dagster_type == my_dagster_type
 
 
 def test_unknown_in():

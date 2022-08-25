@@ -464,9 +464,10 @@ def define_dagstermill_op(
     ins = check.opt_mapping_param(ins, "ins", key_type=str, value_type=In)
 
     if output_notebook_name is not None:
+        required_resource_keys.add("output_notebook_io_manager")
         outs = {
-            cast(str, output_notebook_name): Out(io_manager_key="output_notebook_io_manager"),
             **outs,
+            cast(str, output_notebook_name): Out(io_manager_key="output_notebook_io_manager"),
         }
 
     if isinstance(asset_key_prefix, str):

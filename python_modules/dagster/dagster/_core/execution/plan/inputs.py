@@ -187,7 +187,10 @@ class FromSourceAsset(
             resources=resources,
             artificial_output_context=OutputContext(
                 resources=resources,
-                asset_info=AssetOutputInfo(key=input_asset_key),
+                asset_info=AssetOutputInfo(
+                    key=input_asset_key,
+                    partitions_def=asset_layer.partitions_def_for_asset(input_asset_key),
+                ),
                 name=input_asset_key.path[-1],
                 step_key="none",
                 metadata=asset_layer.metadata_for_asset(input_asset_key),

@@ -1,5 +1,79 @@
 # Changelog
 
+# 1.0.5
+
+### New
+
+* [dagit] nbconvert is now installed as an extra in Dagit.
+* Multiple assets can be monitored for materialization using the `multi_asset_sensor` (experimental).
+* Run status sensors can now monitor jobs in external repositories.
+* The `config` argument of `define_asset_job` now works if the job contains partitioned assets.
+* When configuring sqlite-based storages in dagster.yaml, you can now point to environment variables.
+* When emitting `RunRequests` from sensors, you can now optionally supply an `asset_selection` argument, which accepts a list of `AssetKey`s to materialize from the larger job.
+* [dagster-dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now support the `exclude` parameter, allowing you to more precisely which resources to load from your dbt project (thanks @flvndh!)
+* [dagster-k8s] `schedulerName` is now available for all deployments in the Helm chart for users who use a custom Kubernetes scheduler
+
+### Bugfixes
+
+* Previously, types for multi-assets would display incorrectly in Dagit when specified. This has been fixed.
+* In some circumstances, viewing nested asset paths in Dagit could lead to unexpected empty states. This was due to incorrect slicing of the asset list, and has been fixed.
+* Fixed an issue in Dagit where the dialog used to wipe materializations displayed broken text for assets with long paths.
+* [dagit] Fixed the Job page to change the latest run tag and the related assets to bucket repository-specific jobs.  Previously, runs from jobs with the same name in different repositories would be intermingled.
+* Previously, if you launched a backfill for a subset of a multi-asset (e.g. dbt assets), all assets would be executed on each run, instead of just the selected ones. This has been fixed.
+* [dagster-dbt] Previously, if you configured a `select` parameter on your `dbt_cli_resource` , this would not get passed into the corresponding invocations of certain `context.resources.dbt.x()` commands. This has been fixed.
+
+# 1.0.4
+
+### New
+
+* Assets can now be materialized to storage conditionally by setting `output_required=False`. If this is set and no result is yielded from the asset, Dagster will not create an asset materialization event, the I/O manager will not be invoked, downstream assets will not be materialized, and asset sensors monitoring the asset will not trigger.
+* `JobDefinition.run_request_for_partition` can now be used inside sensors that target multiple jobs (Thanks Metin Senturk!)
+* The environment variable `DAGSTER_GRPC_TIMEOUT_SECONDS` now allows  for overriding the default timeout for communications between host processes like dagit and the daemon and user code servers.
+* Import time for the `dagster` module has been reduced, by approximately 50% in initial measurements.
+* `AssetIn` now accepts a `dagster_type` argument, for specifying runtime checks on asset input values.
+* [dagit] The column names on the Activity tab of the asset details page no longer reference the legacy term “Pipeline”.
+* [dagster-snowflake] The `execute_query` method of the snowflake resource now accepts a `use_pandas_result` argument, which fetches the result of the query as a Pandas dataframe. (Thanks @swotai!)
+* [dagster-shell] Made the execute and execute_script_file utilities in dagster_shell part of the public API (Thanks Fahad Khan!)
+* [dagster-dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now support the `exclude` parameter. (Thanks @flvndh!)
+
+### Bugfixes
+
+* [dagit] Removed the x-frame-options response header from Dagit, allowing the Dagit UI to be rendered in an iframe.
+* [fully-featured project example] Fixed the duckdb IO manager so the comment_stories step can load data successfully.
+* [dagster-dbt] Previously, if a `select` parameter was configured on the `dbt_cli_resource`, it would not be passed into invocations of `context.resources.dbt.run()` (and other similar commands). This has been fixed.
+* [dagster-ge] An incompatibility between `dagster_ge_validation_factory` and dagster 1.0 has been fixed.
+* [dagstermill] Previously, updated arguments and properties to `DagstermillExecutionContext` were not exposed. This has since been fixed.
+
+### Documentation
+
+* The integrations page on the docs site now has a section for links to community-hosted integrations. The first linked integration is @silentsokolov’s Vault integration.
+
+# 1.0.3
+
+### New
+
+* `Failure` now has an `allow_retries` argument, allowing a means to manually bypass retry policies.
+* `dagstermill.get_context` and `dagstermill.DagstermillExecutionContext` have been updated to reflect stable dagster-1.0 APIs. `pipeline`/`solid` referencing arguments / properties will be removed in the next major version bump of `dagstermill`.
+* `TimeWindowPartitionsDefinition` now exposes a `get_cron_schedule` method.
+
+### Bugfixes
+
+* In some situations where an asset was materialized and that asset that depended on a partitioned asset, and that upstream partitioned asset wasn’t part of the run, the partition-related methods of InputContext returned incorrect values or failed erroneously. This was fixed.
+* Schedules and sensors with the same names but in different repositories no longer affect each others idempotence checks.
+* In some circumstances, reloading a repository in Dagit could lead to an error that would crash the page. This has been fixed.
+
+### Community Contributions
+
+* @will-holley added an optional `key` argument to GCSFileManager methods to set the GCS blob key, thank you!
+* Fix for sensors in [fully featured example](https://docs.dagster.io/guides/dagster/example_project#fully-featured-project), thanks @pwachira!
+
+### Documentation
+
+* New documentation for getting started with Dagster Cloud, including:
+    * [Serverless deployment documentation](https://docs.dagster.io/dagster-cloud/getting-started/getting-started-with-serverless-deployment)
+    * [Hybrid deployment documentation](https://docs.dagster.io/dagster-cloud/getting-started/getting-started-with-hybrid-deployment)
+
+
 # 1.0.2
 
 ### New

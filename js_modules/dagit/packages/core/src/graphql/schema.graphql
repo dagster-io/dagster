@@ -186,6 +186,11 @@ type DagitQuery {
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
 
   """
+  Retrieve a list of asset keys where two or more repos provide an asset definition. Note: Assets should not be defined in more than one repository - this query is used to present warnings and errors in Dagit.
+  """
+  assetNodeDefinitionCollisions(assetKeys: [AssetKeyInput!]): [AssetNodeDefinitionCollision!]!
+
+  """
   Retrieve a backfill by backfill id.
   """
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
@@ -411,6 +416,7 @@ type AssetNode {
   partitionDefinition: String
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
+  type: DagsterType
 }
 
 type AssetKey {
@@ -2232,6 +2238,11 @@ input AssetGroupSelector {
 
 union AssetNodeOrError = AssetNode | AssetNotFoundError
 
+type AssetNodeDefinitionCollision {
+  assetKey: AssetKey!
+  repositories: [Repository!]!
+}
+
 union PartitionBackfillOrError = PartitionBackfill | PythonError
 
 union PartitionBackfillsOrError = PartitionBackfills | PythonError
@@ -2683,6 +2694,7 @@ input LaunchBackfillParams {
   selector: PartitionSetSelector!
   partitionNames: [String!]
   reexecutionSteps: [String!]
+  assetSelection: [AssetKeyInput!]
   fromFailure: Boolean
   allPartitions: Boolean
   tags: [ExecutionTag!]

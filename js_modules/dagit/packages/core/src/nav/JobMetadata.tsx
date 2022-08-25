@@ -3,9 +3,11 @@ import {Box, Button, ButtonLink, Colors, DialogFooter, Dialog, Table, Tag} from 
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {DagsterTag} from '../runs/RunTag';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {LatestRunTag} from './LatestRunTag';
@@ -26,6 +28,12 @@ export const JobMetadata: React.FC<Props> = (props) => {
     variables: {
       runsFilter: {
         pipelineName,
+        tags: [
+          {
+            key: DagsterTag.RepositoryLabelTag,
+            value: repoAddressAsString(repoAddress),
+          },
+        ],
       },
       params: {
         pipelineName,
@@ -52,7 +60,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
   return (
     <>
       {job ? <JobScheduleOrSensorTag job={job} repoAddress={repoAddress} /> : null}
-      <LatestRunTag pipelineName={pipelineName} />
+      <LatestRunTag pipelineName={pipelineName} repoAddress={repoAddress} />
       {runsForAssetScan ? <RelatedAssetsTag runs={runsForAssetScan} /> : null}
     </>
   );

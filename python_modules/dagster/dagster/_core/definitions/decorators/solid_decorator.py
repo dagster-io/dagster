@@ -395,21 +395,28 @@ def resolve_checked_solid_fn_inputs(
     for input_def in explicit_input_defs:
         if input_def.name in inferred_props:
             # combine any information missing on the explicit def that can be inferred
-            input_defs.append(
-                input_def.combine_with_inferred(
-                    inferred_props[input_def.name], decorator_name=decorator_name
-                )
-            )
+            input_defs.append(input_def.combine_with_inferred(inferred_props[input_def.name]))
         else:
             # pass through those that don't have any inference info, such as Nothing type inputs
             input_defs.append(input_def)
 
     # build defs from the inferred props for those without explicit entries
-    input_defs.extend(
-        InputDefinition.create_from_inferred(inferred, decorator_name=decorator_name)
+    inferred_input_defs = [
+        InputDefinition.create_from_inferred(inferred)
         for inferred in inferred_props.values()
         if inferred.name in inputs_to_infer
-    )
+    ]
+
+    if exclude_nothing:
+        for in_def in inferred_input_defs:
+            if in_def.dagster_type.is_nothing:
+                raise DagsterInvalidDefinitionError(
+                    f"Input parameter {in_def.name} is annotated with {in_def.dagster_type.display_name} "
+                    "which is a type that represents passing no data. This type must be used "
+                    f"via In() and no parameter should be included in the {decorator_name} decorated function."
+                )
+
+    input_defs.extend(inferred_input_defs)
 
     return input_defs
 

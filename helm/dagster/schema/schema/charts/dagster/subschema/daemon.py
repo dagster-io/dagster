@@ -88,6 +88,7 @@ class Daemon(BaseModel):
     runMonitoring: Dict[str, Any]
     runRetries: Dict[str, Any]
     sensors: Sensors
+    schedulerName: Optional[str]
 
     class Config:
         extra = Extra.forbid

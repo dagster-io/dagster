@@ -10,8 +10,11 @@ from dagster._core.events import (
     AssetObservationData,
     DagsterEvent,
     DagsterEventType,
+    ExpectationResult,
+    StepExpectationResultData,
     StepMaterializationData,
 )
+from dagster._core.execution.plan.step import StepKind
 from dagster._core.storage.pipeline_run import DagsterRun
 
 
@@ -45,7 +48,7 @@ class ExecutionResult(ABC):
         step_events: List[DagsterEvent] = []
 
         for node_name in self.job_def.graph.node_dict.keys():
-            handle = NodeHandle(node_name, None)
+            handle = NodeHandle.from_string(node_name)
             step_events += self._filter_events_by_handle(handle)
 
         return step_events
@@ -159,3 +162,24 @@ class ExecutionResult(ABC):
 
     def get_step_success_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_success]
+
+    def compute_events_for_handle(self, handle: NodeHandle) -> Sequence[DagsterEvent]:
+        return [
+            event
+            for event in self._filter_events_by_handle(handle)
+            if event.step_kind == StepKind.COMPUTE
+        ]
+
+    def expectation_results_for_node(self, node_str: str) -> Sequence[ExpectationResult]:
+        handle = NodeHandle.from_string(node_str)
+        compute_events = self.compute_events_for_handle(handle)
+        expectation_result_events = list(
+            filter(
+                lambda event: event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT,
+                compute_events,
+            )
+        )
+        return [
+            cast(StepExpectationResultData, event.event_specific_data).expectation_result
+            for event in expectation_result_events
+        ]

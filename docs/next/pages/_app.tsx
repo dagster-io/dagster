@@ -1,65 +1,67 @@
-import "../styles/globals.css";
-import "../styles/prism.css";
+import '../styles/globals.css';
+import '../styles/prism.css';
 
-import * as gtag from "../util/gtag";
+import {useVersion} from 'util/useVersion';
 
-import type { AppProps } from "next/app";
-import { DefaultSeo } from "next-seo";
-import Layout from "../layouts/MainLayout";
-import { useEffect } from "react";
-import { useRouter } from "next/router";
-import { useVersion } from "../util/useVersion";
+import {DefaultSeo} from 'next-seo';
+import {AppProps} from 'next/app';
+import {useRouter} from 'next/router';
+import * as React from 'react';
 
-const BASE_URL = "https://docs.dagster.io";
+import Layout from '../layouts/MainLayout';
+import * as gtag from '../util/gtag';
+
+const BASE_URL = 'https://docs.dagster.io';
 const DEFAULT_SEO = {
-  title: "Dagster Docs",
+  title: 'Dagster Docs',
   twitter: {
-    site: "@dagsterio",
-    cardType: "summary_large_image",
+    site: '@dagsterio',
+    cardType: 'summary_large_image',
     images: {
       url: `${BASE_URL}/assets/shared/dagster-og-share.png`,
-      alt: "Dagster Docs",
+      alt: 'Dagster Docs',
     },
   },
   openGraph: {
     url: BASE_URL,
-    title: "Dagster Docs",
-    type: "website",
-    description: "The data orchestration platform built for productivity.",
+    title: 'Dagster Docs',
+    type: 'website',
+    description: 'The data orchestration platform built for productivity.',
     images: [
       {
         url: `${BASE_URL}/assets/shared/dagster-og-share.png`,
-        alt: "Dagster Docs",
+        alt: 'Dagster Docs',
       },
     ],
   },
 };
 
-function MyApp({ Component, pageProps }: AppProps) {
+const MyApp = ({Component, pageProps}: AppProps) => {
   const router = useRouter();
-  const { asPath } = useVersion();
+  const asPathFromPageProps = pageProps?.data?.asPath;
 
-  const getLayout =
-    // @ts-ignore
-    Component.getLayout || ((page) => <Layout children={page} />);
-  const canonicalUrl = `${BASE_URL}${asPath}`;
+  const {asPath} = useVersion();
 
-  useEffect(() => {
-    const handleRouteChange = (url) => {
+  const canonicalUrl = `${BASE_URL}${asPathFromPageProps ?? asPath}`;
+
+  React.useEffect(() => {
+    const handleRouteChange = (url: string) => {
       gtag.pageview(url);
     };
-    router.events.on("routeChangeComplete", handleRouteChange);
+    router.events.on('routeChangeComplete', handleRouteChange);
     return () => {
-      router.events.off("routeChangeComplete", handleRouteChange);
+      router.events.off('routeChangeComplete', handleRouteChange);
     };
   }, [router.events]);
 
   return (
     <>
       <DefaultSeo canonical={canonicalUrl} {...DEFAULT_SEO} />
-      {getLayout(<Component {...pageProps} />)}
+      <Layout>
+        <Component {...pageProps} />
+      </Layout>
     </>
   );
-}
+};
 
 export default MyApp;

@@ -1,0 +1,11 @@
+- id: iris_pipeline.png
+  workspace: examples/docs_snippets/docs_snippets/legacy/data_science/iris_classify.py
+  vetted: false
+
+- id: tags.png
+  workspace: examples/docs_snippets/docs_snippets/legacy/data_science/iris_classify.py
+  vetted: false
+
+- id: parameters.png
+  workspace: examples/docs_snippets/docs_snippets/legacy/data_science/iris_classify.py
+  vetted: false

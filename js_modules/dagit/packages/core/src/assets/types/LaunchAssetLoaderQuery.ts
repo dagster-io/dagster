@@ -568,8 +568,33 @@ export interface LaunchAssetLoaderQuery_assetNodes {
   configField: LaunchAssetLoaderQuery_assetNodes_configField | null;
 }
 
+export interface LaunchAssetLoaderQuery_assetNodeDefinitionCollisions_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface LaunchAssetLoaderQuery_assetNodeDefinitionCollisions_repositories_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface LaunchAssetLoaderQuery_assetNodeDefinitionCollisions_repositories {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: LaunchAssetLoaderQuery_assetNodeDefinitionCollisions_repositories_location;
+}
+
+export interface LaunchAssetLoaderQuery_assetNodeDefinitionCollisions {
+  __typename: "AssetNodeDefinitionCollision";
+  assetKey: LaunchAssetLoaderQuery_assetNodeDefinitionCollisions_assetKey;
+  repositories: LaunchAssetLoaderQuery_assetNodeDefinitionCollisions_repositories[];
+}
+
 export interface LaunchAssetLoaderQuery {
   assetNodes: LaunchAssetLoaderQuery_assetNodes[];
+  assetNodeDefinitionCollisions: LaunchAssetLoaderQuery_assetNodeDefinitionCollisions[];
 }
 
 export interface LaunchAssetLoaderQueryVariables {
