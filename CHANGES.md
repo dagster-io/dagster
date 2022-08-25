@@ -1,5 +1,26 @@
 # Changelog
 
+# 1.0.5
+
+### New
+
+* [dagit] nbconvert is now installed as an extra in Dagit.
+* Multiple assets can be monitored for materialization using the `multi_asset_sensor` (experimental).
+* Run status sensors can now monitor jobs in external repositories.
+* The `config` argument of `define_asset_job` now works if the job contains partitioned assets.
+* When configuring sqlite-based storages in dagster.yaml, you can now point to environment variables.
+* When emitting `RunRequests` from sensors, you can now optionally supply an `asset_selection` argument, which accepts a list of `AssetKey`s to materialize from the larger job.
+* [dagster-dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now support the `exclude` parameter, allowing you to more precisely which resources to load from your dbt project (thanks @flvndh!)
+
+### Bugfixes
+
+* Previously, types for multi-assets would display incorrectly in Dagit when specified. This has been fixed.
+* In some circumstances, viewing nested asset paths in Dagit could lead to unexpected empty states. This was due to incorrect slicing of the asset list, and has been fixed.
+* Fixed an issue in Dagit where the dialog used to wipe materializations displayed broken text for assets with long paths.
+* [dagit] Fixed the Job page to change the latest run tag and the related assets to bucket repository-specific jobs.  Previously, runs from jobs with the same name in different repositories would be intermingled.
+* Previously, if you launched a backfill for a subset of a multi-asset (e.g. dbt assets), all assets would be executed on each run, instead of just the selected ones. This has been fixed.
+* [dagster-dbt] Previously, if you configured a `select` parameter on your `dbt_cli_resource` , this would not get passed into the corresponding invocations of certain `context.resources.dbt.x()` commands. This has been fixed.
+
 # 1.0.4
 
 ### New
