@@ -26,4 +26,6 @@
   steps:
     - Click asset, navigate to Lineage tab
 
-
+- id: non-argument-deps-asset-graph.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/non_argument_deps.py
+  route: /

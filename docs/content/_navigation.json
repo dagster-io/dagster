@@ -39,6 +39,10 @@
             "path": "/tutorial/assets/asset-graph"
           },
           {
+            "title": "Assets without Arguments and Return Values",
+            "path": "/tutorial/assets/non-argument-deps"
+          },
+          {
             "title": "Testing Assets",
             "path": "/tutorial/assets/testing-assets"
           }
