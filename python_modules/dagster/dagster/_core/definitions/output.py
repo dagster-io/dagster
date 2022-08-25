@@ -280,6 +280,8 @@ def _checked_inferred_type(inferred: Any) -> DagsterType:
         if inferred == inspect.Parameter.empty:
             return resolve_dagster_type(None)
         elif inferred is None:
+            # When inferred.annotation is None, it means someone explicitly put "None" as the
+            # annotation, so want to map it to a DagsterType that checks for the None type
             return resolve_dagster_type(type(None))
         else:
             return resolve_dagster_type(inferred)
@@ -287,7 +289,7 @@ def _checked_inferred_type(inferred: Any) -> DagsterType:
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred}' from return type annotation, correct the issue "
-            "or explicitly set the dagster_type on your OutputDefinition."
+            "or explicitly set the dagster_type via Out()."
         ) from e
 
 
