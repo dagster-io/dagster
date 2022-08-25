@@ -52,7 +52,7 @@ def test_ls(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable=u
 
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
-    assert len(dbt_result.raw_output.split("\n\n")) == 25
+    assert len(dbt_result.raw_output.split("\n\n")) == 27
 
 
 def test_ls_resource_type(
@@ -64,7 +64,7 @@ def test_ls_resource_type(
 
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
-    assert len(dbt_result.raw_output.split("\n\n")) == 6
+    assert len(dbt_result.raw_output.split("\n\n")) == 8
 
 
 def test_test(
