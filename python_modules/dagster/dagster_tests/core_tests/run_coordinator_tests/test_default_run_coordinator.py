@@ -1,7 +1,6 @@
 import pytest
 from dagster_tests.api_tests.utils import get_bar_workspace
 
-from dagster._check import CheckError
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.default_run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.pipeline_run import PipelineRunStatus
@@ -67,5 +66,7 @@ def test_submit_run_checks_status(instance, coodinator):  # pylint: disable=rede
         run = create_run(
             instance, external_pipeline, run_id="foo-1", status=PipelineRunStatus.STARTED
         )
-        with pytest.raises(CheckError):
-            coodinator.submit_run(SubmitRunContext(run, workspace))
+        coodinator.submit_run(SubmitRunContext(run, workspace))
+
+        # assert that runs not in a NOT_STARTED state are not launched
+        assert len(instance.run_launcher.queue()) == 0
