@@ -881,6 +881,10 @@
                 },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "type": "string"
                 }
             },
             "required": [
