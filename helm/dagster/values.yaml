@@ -608,6 +608,9 @@ runLauncher:
       #     memory: 128Mi
       resources: {}
 
+      # Override the default K8s scheduler
+      # schedulerName: ~
+
       # If `livenessProbe` does not contain `exec` field, then we will default to using:
       # exec:
       #   command:

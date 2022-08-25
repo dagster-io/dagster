@@ -46,6 +46,7 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     volumes: List[kubernetes.Volume]
     labels: Optional[Dict[str, str]]
     failPodOnRunFailure: Optional[bool]
+    schedulerName: Optional[str]
 
     class Config:
         extra = Extra.forbid

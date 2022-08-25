@@ -1773,6 +1773,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
