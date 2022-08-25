@@ -181,11 +181,11 @@ def my_directory_sensor_with_skip_reasons():
 # end_skip_sensors_marker
 
 # start_asset_sensor_marker
-from dagster import AssetKey, asset_sensor
+from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
 
 
 @asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
-def my_asset_sensor(context, asset_event):
+def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
     yield RunRequest(
         run_key=context.cursor,
         run_config={
