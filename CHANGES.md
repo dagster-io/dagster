@@ -11,7 +11,7 @@
 * When configuring sqlite-based storages in dagster.yaml, you can now point to environment variables.
 * When emitting `RunRequests` from sensors, you can now optionally supply an `asset_selection` argument, which accepts a list of `AssetKey`s to materialize from the larger job.
 * [dagster-dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now support the `exclude` parameter, allowing you to more precisely which resources to load from your dbt project (thanks @flvndh!)
-
+* [dagster-k8s] `schedulerName` is now available for all deployments in the Helm chart for users who use a custom Kubernetes scheduler
 ### Bugfixes
 
 * Previously, types for multi-assets would display incorrectly in Dagit when specified. This has been fixed.
