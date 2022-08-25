@@ -5,7 +5,7 @@ import * as Flags from '../app/Flags';
 import {TestProvider} from '../testing/TestProvider';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {JobMetadata} from './JobMetadata';
+import {JobMetadata, useJobNavMetadata} from './JobMetadata';
 
 jest.mock('../app/Flags');
 
@@ -69,10 +69,17 @@ describe('JobMetadata', () => {
     }),
   };
 
+  const JobMetadataContainer = () => {
+    const metadata = useJobNavMetadata(REPO_ADDRESS, PIPELINE_NAME);
+    return (
+      <JobMetadata metadata={metadata} pipelineName={PIPELINE_NAME} repoAddress={REPO_ADDRESS} />
+    );
+  };
+
   const renderWithMocks = (mocks?: any) => {
     render(
       <TestProvider apolloProps={{mocks: mocks ? [defaultMocks, mocks] : defaultMocks}}>
-        <JobMetadata pipelineName={PIPELINE_NAME} repoAddress={REPO_ADDRESS} />
+        <JobMetadataContainer />
       </TestProvider>,
     );
   };

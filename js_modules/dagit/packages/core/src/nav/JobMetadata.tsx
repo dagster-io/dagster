@@ -1,8 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Button, ButtonLink, Colors, DialogFooter, Dialog, Table, Tag} from '@dagster-io/ui';
+import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {DagsterTag} from '../runs/RunTag';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
@@ -13,17 +15,21 @@ import {RepoAddress} from '../workspace/types';
 import {LatestRunTag} from './LatestRunTag';
 import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
 import {JobMetadataFragment as Job} from './types/JobMetadataFragment';
-import {JobMetadataQuery, JobMetadataQueryVariables} from './types/JobMetadataQuery';
-import {RunMetadataFragment} from './types/RunMetadataFragment';
+import {
+  JobMetadataQuery,
+  JobMetadataQueryVariables,
+  JobMetadataQuery_assetNodes,
+  JobMetadataQuery_pipelineOrError_Pipeline,
+  JobMetadataQuery_pipelineRunsOrError_Runs_results,
+} from './types/JobMetadataQuery';
 
-interface Props {
-  pipelineName: string;
-  repoAddress: RepoAddress;
-}
+type JobMetadata = {
+  assetNodes: JobMetadataQuery_assetNodes[] | null;
+  job: JobMetadataQuery_pipelineOrError_Pipeline | null;
+  runsForAssetScan: JobMetadataQuery_pipelineRunsOrError_Runs_results[];
+};
 
-export const JobMetadata: React.FC<Props> = (props) => {
-  const {pipelineName, repoAddress} = props;
-
+export function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
   const {data} = useQuery<JobMetadataQuery, JobMetadataQueryVariables>(JOB_METADATA_QUERY, {
     variables: {
       runsFilter: {
@@ -43,25 +49,39 @@ export const JobMetadata: React.FC<Props> = (props) => {
     },
   });
 
-  const job = React.useMemo(() => {
-    if (data?.pipelineOrError && data.pipelineOrError.__typename === 'Pipeline') {
-      return data.pipelineOrError;
-    }
-    return null;
+  return React.useMemo<JobMetadata>(() => {
+    return {
+      assetNodes: data?.assetNodes || null,
+      job:
+        data?.pipelineOrError && data.pipelineOrError.__typename === 'Pipeline'
+          ? data.pipelineOrError
+          : null,
+      runsForAssetScan:
+        data?.pipelineRunsOrError && data.pipelineRunsOrError.__typename === 'Runs'
+          ? data.pipelineRunsOrError.results
+          : [],
+    };
   }, [data]);
+}
 
-  const runsForAssetScan = React.useMemo(() => {
-    if (data?.pipelineRunsOrError && data.pipelineRunsOrError.__typename === 'Runs') {
-      return data.pipelineRunsOrError.results;
-    }
-    return [];
-  }, [data]);
+interface Props {
+  pipelineName: string;
+  repoAddress: RepoAddress;
+  metadata: JobMetadata;
+}
+
+export const JobMetadata: React.FC<Props> = (props) => {
+  const {metadata, pipelineName, repoAddress} = props;
 
   return (
     <>
-      {job ? <JobScheduleOrSensorTag job={job} repoAddress={repoAddress} /> : null}
+      {metadata.job ? (
+        <JobScheduleOrSensorTag job={metadata.job} repoAddress={repoAddress} />
+      ) : null}
       <LatestRunTag pipelineName={pipelineName} repoAddress={repoAddress} />
-      {runsForAssetScan ? <RelatedAssetsTag runs={runsForAssetScan} /> : null}
+      {metadata.runsForAssetScan ? (
+        <RelatedAssetsTag relatedAssets={getRelatedAssets(metadata)} />
+      ) : null}
     </>
   );
 };
@@ -93,24 +113,25 @@ const JobScheduleOrSensorTag: React.FC<{
   );
 };
 
-const RelatedAssetsTag: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
+function getRelatedAssets(metadata: JobMetadata) {
+  if (metadata.assetNodes) {
+    return metadata.assetNodes.map((node) => tokenForAssetKey(node.assetKey));
+  }
+
+  return uniq(
+    metadata.runsForAssetScan.flatMap((r) => r.assets.map((a) => tokenForAssetKey(a.key))),
+  );
+}
+
+const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) => {
   const [open, setOpen] = React.useState(false);
 
-  const assetMap = {};
-  runs.forEach((run) => {
-    run.assets.forEach((asset) => {
-      const assetKeyStr = asset.key.path.join('/');
-      assetMap[assetKeyStr] = true;
-    });
-  });
-
-  const keys = Object.keys(assetMap);
-  if (keys.length === 0) {
+  if (relatedAssets.length === 0) {
     return null;
   }
 
-  if (keys.length === 1) {
-    const key = keys[0];
+  if (relatedAssets.length === 1) {
+    const key = relatedAssets[0];
     return (
       <Tag icon="asset">
         Asset: <Link to={`/instance/assets/${key}`}>{key}</Link>
@@ -124,7 +145,7 @@ const RelatedAssetsTag: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
         <ButtonLink
           color={Colors.Link}
           onClick={() => setOpen(true)}
-        >{`View ${keys.length} assets`}</ButtonLink>
+        >{`View ${relatedAssets.length} assets`}</ButtonLink>
       </Tag>
       <Dialog
         title="Related assets"
@@ -137,7 +158,7 @@ const RelatedAssetsTag: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
         <Box padding={{bottom: 12}}>
           <Table>
             <tbody>
-              {keys.map((key) => (
+              {relatedAssets.map((key) => (
                 <tr key={key}>
                   <td>
                     <Link
@@ -207,6 +228,12 @@ const JOB_METADATA_QUERY = gql`
       ... on Pipeline {
         id
         ...JobMetadataFragment
+      }
+    }
+    assetNodes(pipeline: $params) {
+      id
+      assetKey {
+        path
       }
     }
     pipelineRunsOrError(filter: $runsFilter, limit: 5) {
