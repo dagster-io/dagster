@@ -1,14 +1,6 @@
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Checkbox,
-  Colors,
-  Icon,
-  JoinedButtons,
-  TextInput,
-} from '@dagster-io/ui';
+import {Box, Button, ButtonGroup, Colors, Icon, JoinedButtons, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
 import {GraphData, LiveData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
@@ -46,8 +38,10 @@ export const AssetNodeLineage: React.FC<{
       ? maxDistances.downstream
       : Math.max(maxDistances.upstream, maxDistances.downstream);
 
+  const currentDepth = Math.max(1, Math.min(maxDepth, requestedDepth));
+
   return (
-    <>
+    <Box style={{width: '100%', height: '100%', position: 'relative'}} flex={{direction: 'column'}}>
       <Box
         flex={{justifyContent: 'space-between', alignItems: 'center', gap: 12}}
         padding={{left: 24, right: 12, vertical: 12}}
@@ -63,20 +57,9 @@ export const AssetNodeLineage: React.FC<{
           onClick={(lineageScope) => setParams({...params, lineageScope, lineageDepth: undefined})}
         />
         <LineageDepthControl
-          value={Math.max(1, Math.min(maxDepth, requestedDepth))}
+          value={currentDepth}
           onChange={(depth) => setParams({...params, lineageDepth: depth})}
           max={maxDepth}
-        />
-        <Checkbox
-          format="switch"
-          label="Include secondary edges"
-          checked={!!params.lineageShowSecondaryEdges}
-          onChange={() =>
-            setParams({
-              ...params,
-              lineageShowSecondaryEdges: params.lineageShowSecondaryEdges ? undefined : true,
-            })
-          }
         />
         <div style={{flex: 1}} />
         {Object.values(assetGraphData.nodes).length > 1 ? (
@@ -91,15 +74,34 @@ export const AssetNodeLineage: React.FC<{
           </Button>
         )}
       </Box>
+      {currentDepth < maxDepth && (
+        <DepthHidesAssetsNotice>
+          Not all upstream/downstream assets shown. Increase the depth to show more.
+        </DepthHidesAssetsNotice>
+      )}
       <AssetNodeLineageGraph
         assetNode={assetNode}
         liveDataByNode={liveDataByNode}
         assetGraphData={assetGraphData}
         params={params}
       />
-    </>
+    </Box>
   );
 };
+
+const DepthHidesAssetsNotice = styled.div`
+  background: ${Colors.Gray100};
+  border-radius: 8px;
+  color: ${Colors.Gray500};
+  align-items: center;
+  display: flex;
+  padding: 4px 8px;
+  gap: 4px;
+  position: absolute;
+  right: 12px;
+  top: 70px;
+  z-index: 2;
+`;
 
 const LineageDepthControl: React.FC<{
   value: number;
@@ -121,11 +123,12 @@ const LineageDepthControl: React.FC<{
 
   return (
     <Box flex={{gap: 8, alignItems: 'center'}}>
+      Graph depth
       <JoinedButtons>
         <Button
           disabled={value <= 1}
           onClick={() => onChange(value - 1)}
-          icon={<Icon name="arrow_back" />}
+          icon={<Icon name="subtract" />}
         />
         <TextInput
           min={1}
@@ -151,13 +154,12 @@ const LineageDepthControl: React.FC<{
         <Button
           disabled={value >= max}
           onClick={() => onChange(value + 1)}
-          icon={<Icon name="arrow_forward" />}
+          icon={<Icon name="add" />}
         />
         <Button disabled={value >= max} onClick={() => onChange(max)}>
           All
         </Button>
       </JoinedButtons>
-      Graph depth
     </Box>
   );
 };
