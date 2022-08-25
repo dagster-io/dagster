@@ -11,7 +11,7 @@ const indexName = process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME;
 
 function getPagePath(hit) {
   function parsedLevel(name) {
-    if (name == 'Title' || name == null) {
+    if (name === 'Title' || name === null) {
       return '';
     }
     return name;
@@ -26,12 +26,12 @@ function getPagePath(hit) {
 
 function HitComponent(hit) {
   // Attributes to highlight in the search hit
-  let highlightAttr = hit.content != null ? 'content' : null;
+  const highlightAttr = hit.content != null ? 'content' : null;
   let sectionAttr = null;
 
   // Get most specific page section title to display
   for (const [key, val] of Object.entries(hit.hierarchy)) {
-    if (val != 'Title' && val != null) {
+    if (val !== 'Title' && val !== null) {
       sectionAttr = `hierarchy.${key}`;
     }
   }
@@ -79,9 +79,9 @@ const SearchPage = ({query, resultsState, widgetsCollector}) => {
 
 SearchPage.getInitialProps = async ({query}) => {
   const resultsState = await findResultsState(SearchPage, {
-    searchClient: searchClient,
+    searchClient,
     searchState: query,
-    indexName: indexName,
+    indexName,
   });
 
   return {query, resultsState};
