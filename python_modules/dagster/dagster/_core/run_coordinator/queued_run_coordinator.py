@@ -130,7 +130,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             # the run was already submitted, this is a no-op
             self._logger.warning(
                 f"submit_run called for run {pipeline_run.run_id} with status "
-                f"{pipeline_run.status.value}, which is a no-op."
+                f"{pipeline_run.status.value}, skipping enqueue."
             )
 
         run = self._instance.get_run_by_id(pipeline_run.run_id)
