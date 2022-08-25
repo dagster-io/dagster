@@ -109,7 +109,7 @@ deployments:
     labels: {}
     
     # Override the default K8s scheduler
-    schedulerName: ~
+    # schedulerName: ~
 
     # Readiness probe detects when the pod is ready to serve requests.
     # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes

@@ -134,7 +134,7 @@ dagit:
   resources: {}
 
   # Override the default K8s scheduler
-  schedulerName: ~
+  # schedulerName: ~
 
   # If you want to specify resources, uncomment the following lines, adjust them as necessary,
   # and remove the curly braces after 'resources:'.
@@ -341,7 +341,7 @@ dagster-user-deployments:
       resources: {}
 
       # Override the default K8s scheduler
-      schedulerName: ~
+      # schedulerName: ~
 
       # Readiness probe detects when the pod is ready to serve requests.
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
@@ -1070,6 +1070,9 @@ dagsterDaemon:
   podSecurityContext: {}
   securityContext: {}
   resources: {}
+
+  # Override the default K8s scheduler
+  # schedulerName: ~
 
   # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
   # enable startup probes.

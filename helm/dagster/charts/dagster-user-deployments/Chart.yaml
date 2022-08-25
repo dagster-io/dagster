@@ -1,21 +1,20 @@
----
 apiVersion: v2
-name: dagster-user-deployments
-version: 0.0.1-dev
-kubeVersion: ">= 1.18.0-0"
-description: A chart to deploy code servers for your Dagster deployment.
-type: application
-keywords:
-  - analytics
-  - data-orchestrator
-  - data-pipelines
-  - etl
-  - workflow
-sources:
-  - https://github.com/dagster-io/dagster/tree/master/helm/dagster/charts/dagster-user-deployments
-maintainers:
-  - name: Elementl
-    email: support@elementl.com
-    url: https://elementl.com
-icon: https://elementl.com/icons/social/dagster.jpg
 appVersion: dev
+description: A chart to deploy code servers for your Dagster deployment.
+icon: https://elementl.com/icons/social/dagster.jpg
+keywords:
+- analytics
+- data-orchestrator
+- data-pipelines
+- etl
+- workflow
+kubeVersion: '>= 1.18.0-0'
+maintainers:
+- email: support@elementl.com
+  name: Elementl
+  url: https://elementl.com
+name: dagster-user-deployments
+sources:
+- https://github.com/dagster-io/dagster/tree/master/helm/dagster/charts/dagster-user-deployments
+type: application
+version: 0.11.0
