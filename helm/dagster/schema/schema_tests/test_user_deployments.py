@@ -6,6 +6,7 @@ import pytest
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
+from schema.charts import dagster
 from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import (
@@ -954,3 +955,23 @@ def test_subchart_tag_can_be_numeric(subchart_template: HelmTemplate, tag: Union
     _, image_tag = image.split(":")
 
     assert image_tag == str(tag)
+
+
+def test_scheduler_name(template: HelmTemplate):
+    deployment = UserDeployment(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=None,
+        schedulerName="myscheduler",
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert dagster_user_deployment.spec.template.spec.scheduler_name == "myscheduler"

@@ -577,6 +577,10 @@
                     "items": {
                         "$ref": "#/definitions/Volume"
                     }
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "type": "string"
                 }
             },
             "required": [
