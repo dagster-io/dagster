@@ -132,6 +132,10 @@ dagit:
   podSecurityContext: {}
   securityContext: {}
   resources: {}
+
+  # Override the default K8s scheduler
+  schedulerName: ~
+
   # If you want to specify resources, uncomment the following lines, adjust them as necessary,
   # and remove the curly braces after 'resources:'.
   # limits:
