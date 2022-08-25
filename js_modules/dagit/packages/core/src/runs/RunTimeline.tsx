@@ -1,14 +1,4 @@
-import {
-  Box,
-  Colors,
-  Popover,
-  Mono,
-  FontFamily,
-  Icon,
-  Tag,
-  Tooltip,
-  IconWrapper,
-} from '@dagster-io/ui';
+import {Box, Colors, Popover, Mono, FontFamily, Tooltip, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -23,6 +13,7 @@ import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
+import {RepoSectionHeader, SECTION_HEADER_HEIGHT} from './RepoSectionHeader';
 import {RunStatusDot} from './RunStatusDots';
 import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
@@ -30,7 +21,6 @@ import {batchRunsForTimeline, RunBatch} from './batchRunsForTimeline';
 
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 36;
-const SECTION_HEADER_HEIGHT = 32;
 const EMPTY_STATE_HEIGHT = 48;
 const LABEL_WIDTH = 320;
 
@@ -169,43 +159,36 @@ interface TimelineSectionProps {
 const TimelineSection = (props: TimelineSectionProps) => {
   const {expanded, onToggle, repoKey, isDuplicateRepoName, jobs, range, top, width} = props;
   const repoAddress = repoAddressFromPath(repoKey);
-  const name = repoAddress?.name || 'Unknown repo';
-  const location = repoAddress?.location || 'Unknown location';
+  const repoName = repoAddress?.name || 'Unknown repo';
+  const repoLocation = repoAddress?.location || 'Unknown location';
   const onClick = React.useCallback(() => {
     repoAddress && onToggle(repoAddress);
   }, [onToggle, repoAddress]);
+  const jobCount = jobs.length;
 
   return (
     <div>
-      <SectionHeader $top={top} $open={expanded} onClick={onClick}>
-        <Box
-          flex={{alignItems: 'center', justifyContent: 'space-between'}}
-          padding={{left: 20, right: 20}}
-        >
-          <Box flex={{alignItems: 'center', gap: 8}}>
-            <Icon name="folder" color={Colors.Dark} />
-            <div>
-              <RepoName>{name}</RepoName>
-              {isDuplicateRepoName ? <RepoLocation>{`@${location}`}</RepoLocation> : null}
-            </div>
-          </Box>
-          <Box flex={{alignItems: 'center', gap: 8}}>
+      <SectionHeaderContainer $top={top}>
+        <RepoSectionHeader
+          expanded={expanded}
+          repoName={repoName}
+          repoLocation={repoLocation}
+          onClick={onClick}
+          showLocation={isDuplicateRepoName}
+          rightElement={
             <Tooltip
               content={
                 <span style={{whiteSpace: 'nowrap'}}>
-                  {jobs.length === 1 ? '1 job with runs' : `${jobs.length} jobs with runs`}
+                  {jobCount === 1 ? '1 job with runs' : `${jobCount} jobs with runs`}
                 </span>
               }
               placement="top"
             >
-              <Tag intent="primary">{jobs.length}</Tag>
+              <Tag intent="primary">{jobCount}</Tag>
             </Tooltip>
-            <Box margin={{top: 2}}>
-              <Icon name="arrow_drop_down" />
-            </Box>
-          </Box>
-        </Box>
-      </SectionHeader>
+          }
+        />
+      </SectionHeaderContainer>
       {expanded
         ? jobs.map((job, ii) => (
             <RunTimelineRow
@@ -221,43 +204,13 @@ const TimelineSection = (props: TimelineSectionProps) => {
   );
 };
 
-const SectionHeader = styled.button<{$top: number; $open: boolean}>`
-  background-color: ${Colors.Gray50};
-  border: 0;
-  box-shadow: inset 0px -1px 0 ${Colors.KeylineGray}, inset 0px 1px 0 ${Colors.KeylineGray};
-  cursor: pointer;
-  margin: 0;
+const SectionHeaderContainer = styled.div<{$top: number}>`
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: ${SECTION_HEADER_HEIGHT}px;
-  text-align: left;
 
   ${({$top}) => `transform: translateY(${$top}px);`}
-
-  :focus,
-  :active {
-    outline: none;
-  }
-
-  :hover {
-    background-color: ${Colors.Gray100};
-  }
-
-  ${IconWrapper}[aria-label="arrow_drop_down"] {
-    transition: transform 100ms linear;
-    ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
-  }
-`;
-
-const RepoName = styled.span`
-  font-weight: 600;
-`;
-
-const RepoLocation = styled.span`
-  font-weight: 400;
-  color: ${Colors.Gray700};
 `;
 
 type TimeMarker = {
