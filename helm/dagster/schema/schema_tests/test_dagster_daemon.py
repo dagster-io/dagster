@@ -269,3 +269,13 @@ def test_sensor_threading(instance_template: HelmTemplate):
     assert sensors_config.keys() == sensors_daemon_config().config_type.fields.keys()
     assert instance["sensors"]["use_threads"] == True
     assert instance["sensors"]["num_workers"] == 4
+
+
+def test_scheduler_name(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(schedulerName="custom")
+    )
+
+    [daemon_deployment] = template.render(helm_values)
+
+    assert daemon_deployment.spec.template.spec.scheduler_name == "custom"

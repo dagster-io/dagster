@@ -284,3 +284,29 @@ def test_celery_queue_volumes(deployment_template: HelmTemplate):
             "persistent_volume_claim": {"claim_name": "my_claim", "read_only": False},
         },
     ]
+
+
+def test_scheduler_name(deployment_template: HelmTemplate):
+    repository = "repository"
+    tag = "tag"
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
+                    image=kubernetes.Image.construct(
+                        repository=repository,
+                        tag=tag,
+                    ),
+                    schedulerName="custom",
+                )
+            ),
+        )
+    )
+
+    celery_queue_deployments = deployment_template.render(helm_values)
+
+    assert len(celery_queue_deployments) == 1
+
+    deployment = celery_queue_deployments[0]
+    assert deployment.spec.template.spec.scheduler_name == "custom"

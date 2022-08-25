@@ -412,6 +412,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -566,6 +577,10 @@
                     "items": {
                         "$ref": "#/definitions/Volume"
                     }
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "type": "string"
                 }
             },
             "required": [
@@ -866,6 +881,10 @@
                 },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "type": "string"
                 }
             },
             "required": [
@@ -1758,6 +1777,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -2372,6 +2402,17 @@
                 },
                 "sensors": {
                     "$ref": "#/definitions/Sensors"
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

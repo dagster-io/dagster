@@ -250,3 +250,19 @@ def test_dagit_workspace_external_configmap(deployment_template: HelmTemplate):
     assert (
         dagit_deployment.spec.template.spec.volumes[1].config_map.name == "test-external-workspace"
     )
+
+
+def test_dagit_scheduler_name_override(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            workspace=Workspace(
+                enabled=True,
+                servers=[],
+                externalConfigmap="test-external-workspace",
+            ),
+            schedulerName="myscheduler",
+        ),
+    )
+
+    [dagit_deployment] = deployment_template.render(helm_values)
+    assert dagit_deployment.spec.template.spec.scheduler_name == "myscheduler"
