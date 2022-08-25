@@ -278,19 +278,15 @@ class InputDefinition:
         return InputMapping(self, maps_to)
 
     @staticmethod
-    def create_from_inferred(
-        inferred: InferredInputProps, decorator_name: str
-    ) -> "InputDefinition":
+    def create_from_inferred(inferred: InferredInputProps) -> "InputDefinition":
         return InputDefinition(
             name=inferred.name,
-            dagster_type=_checked_inferred_type(inferred, decorator_name),
+            dagster_type=_checked_inferred_type(inferred),
             description=inferred.description,
             default_value=inferred.default_value,
         )
 
-    def combine_with_inferred(
-        self, inferred: InferredInputProps, decorator_name: str
-    ) -> "InputDefinition":
+    def combine_with_inferred(self, inferred: InferredInputProps) -> "InputDefinition":
         """
         Return a new InputDefinition that merges this ones properties with those inferred from type signature.
         This can update: dagster_type, description, and default_value if they are not set.
@@ -303,7 +299,7 @@ class InputDefinition:
 
         dagster_type = self._dagster_type
         if self._type_not_set:
-            dagster_type = _checked_inferred_type(inferred, decorator_name=decorator_name)
+            dagster_type = _checked_inferred_type(inferred)
 
         description = self._description
         if description is None and inferred.description is not None:
@@ -326,7 +322,7 @@ class InputDefinition:
         )
 
 
-def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) -> DagsterType:
+def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
     try:
         if inferred.annotation == inspect.Parameter.empty:
             resolved_type = resolve_dagster_type(None)
@@ -340,16 +336,10 @@ def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) ->
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred.annotation}' from type annotation for argument "
-            f"'{inferred.name}', correct the issue or explicitly set the dagster_type on "
-            "your InputDefinition."
+            f"'{inferred.name}', correct the issue or explicitly set the dagster_type "
+            "via In()."
         ) from e
 
-    if resolved_type.is_nothing:
-        raise DagsterInvalidDefinitionError(
-            f"Input parameter {inferred.name} is annotated with {resolved_type.display_name} "
-            "which is a type that represents passing no data. This type must be used "
-            f"via InputDefinition and no parameter should be included in the {decorator_name} decorated function."
-        )
     return resolved_type
 
 
