@@ -1,36 +1,37 @@
+---
 apiVersion: v2
-appVersion: dev
-dependencies:
-- condition: dagster-user-deployments.enableSubchart
-  name: dagster-user-deployments
-  version: 0.0.1-dev
-- condition: postgresql.enabled
-  name: postgresql
-  repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
-  version: 8.1.0
-- condition: rabbitmq.enabled
-  name: rabbitmq
-  repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
-  version: 6.16.3
-- condition: redis.internal
-  name: redis
-  repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
-  version: 12.7.4
-description: The data orchestration platform built for productivity.
-icon: https://elementl.com/icons/social/dagster.jpg
-keywords:
-- analytics
-- data-orchestrator
-- data-pipelines
-- etl
-- workflow
-kubeVersion: '>= 1.18.0-0'
-maintainers:
-- email: support@elementl.com
-  name: Elementl
-  url: https://elementl.com
 name: dagster
-sources:
-- https://github.com/dagster-io/dagster/tree/master/helm/dagster
+version: 0.0.1-dev
+kubeVersion: ">= 1.18.0-0"
+description: The data orchestration platform built for productivity.
 type: application
-version: 0.11.0
+keywords:
+  - analytics
+  - data-orchestrator
+  - data-pipelines
+  - etl
+  - workflow
+sources:
+  - https://github.com/dagster-io/dagster/tree/master/helm/dagster
+dependencies:
+  - name: dagster-user-deployments
+    version: 0.0.1-dev
+    condition: dagster-user-deployments.enableSubchart
+  - name: postgresql
+    version: 8.1.0
+    repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
+    condition: postgresql.enabled
+  - name: rabbitmq
+    version: 6.16.3
+    repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
+    condition: rabbitmq.enabled
+  - name: redis
+    version: 12.7.4
+    repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
+    condition: redis.internal
+maintainers:
+  - name: Elementl
+    email: support@elementl.com
+    url: https://elementl.com
+icon: https://elementl.com/icons/social/dagster.jpg
+appVersion: dev

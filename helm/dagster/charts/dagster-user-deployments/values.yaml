@@ -107,7 +107,7 @@ deployments:
     securityContext: {}
     resources: {}
     labels: {}
-    
+
     # Override the default K8s scheduler
     # schedulerName: ~
 
