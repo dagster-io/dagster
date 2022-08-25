@@ -320,7 +320,7 @@ class BatchMaterializationLoader:
                 f"Asset key {asset_key} not recognized for this loader.  Expected one of: {self._asset_keys}"
             )
 
-        if self._materializations.get(asset_key) is None:
+        if not self._fetched:
             self._fetch()
         return self._materializations.get(asset_key)
 
