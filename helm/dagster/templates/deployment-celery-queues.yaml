@@ -142,6 +142,9 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+    {{- if $celeryK8sRunLauncherConfig.schedulerName }}
+      schedulerName: {{ $celeryK8sRunLauncherConfig.schedulerName }}
+    {{- end }}
 ---
 {{ end }}
 {{ end }}

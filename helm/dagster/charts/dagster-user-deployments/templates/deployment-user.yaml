@@ -161,5 +161,8 @@ spec:
         - {{- $volume | toYaml | nindent 10 }}
         {{- end }}
       {{- end }}
+      {{- if $deployment.schedulerName }}
+      schedulerName: {{ $deployment.schedulerName }}
+      {{- end }}
 ---
 {{ end }}

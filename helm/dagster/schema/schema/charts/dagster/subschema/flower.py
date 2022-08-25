@@ -17,3 +17,4 @@ class Flower(BaseModel):
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: Optional[kubernetes.Annotations]
+    schedulerName: Optional[str]

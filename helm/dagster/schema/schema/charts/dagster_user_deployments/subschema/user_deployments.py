@@ -31,6 +31,7 @@ class UserDeployment(BaseModel):
     labels: Optional[Dict[str, str]]
     volumeMounts: Optional[List[kubernetes.VolumeMount]]
     volumes: Optional[List[kubernetes.Volume]]
+    schedulerName: Optional[str]
 
 
 class UserDeployments(BaseModel):
