@@ -1,6 +1,6 @@
 # Changelog
 
-# 1.0.0
+# 1.0.0 (core) / 0.16.0 (libraries)
 
 ## Major Changes
 
