@@ -32,7 +32,7 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_airbyte_tests*"]),
         install_requires=[
-            "dagster==1.0.5",
+            f"dagster{pin}",
             "requests",
         ],
         zip_safe=False,

@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_snowflake_tests*"]),
-        install_requires=["dagster==1.0.5", "snowflake-connector-python>=2.1.0"],
+        install_requires=[f"dagster{pin}", "snowflake-connector-python>=2.1.0"],
         extras_require={
             "snowflake.sqlalchemy": ["sqlalchemy", "snowflake-sqlalchemy"],
             "pandas": ["pandas"],

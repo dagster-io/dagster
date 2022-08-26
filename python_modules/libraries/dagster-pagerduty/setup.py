@@ -32,6 +32,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_pagerduty_tests*"]),
-        install_requires=["dagster==1.0.5", "pypd"],
+        install_requires=[f"dagster{pin}", "pypd"],
         zip_safe=False,
     )

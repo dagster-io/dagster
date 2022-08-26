@@ -33,7 +33,7 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_graphql_tests*"]),
         install_requires=[
-            "dagster==1.0.5",
+            f"dagster{pin}",
             "graphene>=2.1.3,<3",  # compatability with graphql-ws in dagit
             "graphql-core>=2.1,<3",  # compatability with graphql-ws in dagit
             "requests",

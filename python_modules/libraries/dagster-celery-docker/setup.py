@@ -32,9 +32,9 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_celery_docker_tests*"]),
         install_requires=[
-            "dagster==1.0.5",
-            "dagster-celery==1.0.5",
-            "dagster-graphql==1.0.5",
+            f"dagster{pin}",
+            f"dagster-celery{pin}",
+            f"dagster-graphql{pin}",
             "docker",
         ],
         zip_safe=False,
