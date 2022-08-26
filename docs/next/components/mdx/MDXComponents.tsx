@@ -39,7 +39,10 @@ const PyObject: React.FunctionComponent<{
   const objects = value.objects as any;
   const moduleObjects = objects[module];
   // fifth field is the name of the object
-  const objectData = moduleObjects && moduleObjects.find(([, , , , name]) => name === object);
+  const objectData =
+    moduleObjects &&
+    Array.isArray(moduleObjects) &&
+    moduleObjects.find(([, , , , name]) => name === object);
 
   let textValue = displayText || object;
   if (pluralize) {
