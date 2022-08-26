@@ -789,5 +789,7 @@ def _create_sensor_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
-        asset_selection=set(run_request.asset_selection),
+        asset_selection=frozenset(run_request.asset_selection)
+        if run_request.asset_selection
+        else None,
     )
