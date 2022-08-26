@@ -1,6 +1,6 @@
 # Changelog
 
-# 1.0.5
+# 1.0.6 (core) / 0.16.6 (libraries)
 
 ### New
 
@@ -22,7 +22,7 @@
 * Previously, if you launched a backfill for a subset of a multi-asset (e.g. dbt assets), all assets would be executed on each run, instead of just the selected ones. This has been fixed.
 * [dagster-dbt] Previously, if you configured a `select` parameter on your `dbt_cli_resource` , this would not get passed into the corresponding invocations of certain `context.resources.dbt.x()` commands. This has been fixed.
 
-# 1.0.4
+# 1.0.4 (core) / 0.16.4 (libraries)
 
 ### New
 
@@ -48,7 +48,7 @@
 
 * The integrations page on the docs site now has a section for links to community-hosted integrations. The first linked integration is @silentsokolov’s Vault integration.
 
-# 1.0.3
+# 1.0.3 (core) / 0.16.3 (libraries)
 
 ### New
 
@@ -74,7 +74,7 @@
     * [Hybrid deployment documentation](https://docs.dagster.io/dagster-cloud/getting-started/getting-started-with-hybrid-deployment)
 
 
-# 1.0.2
+# 1.0.2 (core) / 0.16.2 (libraries)
 
 ### New
 
@@ -96,7 +96,7 @@
 * New documentation for [Dagster Cloud environment variables](https://docs.dagster.io/dagster-cloud/developing-testing/environment-variables).
 * The full list of APIs removed in 1.0 has been added to the [migration guide](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md).
 
-# 1.0.1
+# 1.0.1 (core) / 0.16.1 (libraries)
 
 ### Bugfixes
 
@@ -106,7 +106,7 @@
 
 * The [Dagster Cloud docs](https://docs.dagster.io/dagster-cloud) now live alongside all the other Dagster docs! Check them out by nagivating to Deployment > Cloud.
 
-# 1.0.0
+# 1.0.0 (core) / 0.16.0 (libraries)
 
 ## Major Changes
 
