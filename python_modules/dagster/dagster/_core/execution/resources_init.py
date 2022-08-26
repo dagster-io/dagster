@@ -2,6 +2,7 @@ import inspect
 from collections import deque
 from contextlib import ContextDecorator
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -45,7 +46,8 @@ from dagster._utils import EventGenerationManager, ensure_gen
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration, time_execution_scope
 
-from .context.init import InitResourceContext
+if TYPE_CHECKING:
+    from .context.init import InitResourceContext
 
 
 def resource_initialization_manager(
@@ -134,6 +136,7 @@ def _core_resource_initialization_event_generator(
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
 ):
+    from .context.init import InitResourceContext
 
     pipeline_name = ""  # Must be initialized to a string to satisfy typechecker
     contains_generator = False
@@ -163,7 +166,7 @@ def _core_resource_initialization_event_generator(
                 if not resource_name in resource_keys_to_init:
                     continue
 
-                resource_fn = cast(Callable[[InitResourceContext], Any], resource_def.resource_fn)
+                resource_fn = cast(Callable[["InitResourceContext"], Any], resource_def.resource_fn)
                 resources = ScopedResourcesBuilder(resource_instances).build(
                     resource_def.required_resource_keys
                 )
@@ -302,7 +305,7 @@ class InitializedResource:
 
 
 def single_resource_generation_manager(
-    context: InitResourceContext, resource_name: str, resource_def: ResourceDefinition
+    context: "InitResourceContext", resource_name: str, resource_def: ResourceDefinition
 ) -> EventGenerationManager:
     generator = single_resource_event_generator(context, resource_name, resource_def)
     # EventGenerationManager needs to be renamed/generalized so that it doesn't only take event generators
@@ -310,7 +313,7 @@ def single_resource_generation_manager(
 
 
 def single_resource_event_generator(
-    context: InitResourceContext, resource_name: str, resource_def: ResourceDefinition
+    context: "InitResourceContext", resource_name: str, resource_def: ResourceDefinition
 ) -> Generator[InitializedResource, None, None]:
     try:
         msg_fn = lambda: "Error executing resource_fn on ResourceDefinition {name}".format(

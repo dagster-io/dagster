@@ -18,7 +18,6 @@ from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import (
-    IContainsGenerator,
     ResourceDefinition,
     Resources,
     ScopedResourcesBuilder,
@@ -32,7 +31,6 @@ from dagster._core.errors import (
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
-from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRun
@@ -41,6 +39,7 @@ from dagster._utils import merge_dicts
 from dagster._utils.forked_pdb import ForkedPdb
 
 from .compute import OpExecutionContext
+from .resource_invocation import UsesResourcesContext
 from .system import StepExecutionContext, TypeCheckContext
 
 
@@ -50,7 +49,7 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     )
 
 
-class UnboundSolidExecutionContext(OpExecutionContext):
+class UnboundSolidExecutionContext(OpExecutionContext, UsesResourcesContext):
     """The ``context`` object available as the first argument to a solid's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -58,39 +57,16 @@ class UnboundSolidExecutionContext(OpExecutionContext):
     def __init__(
         self,
         solid_config: Any,
-        resources_dict: Dict[str, Any],
-        resources_config: Dict[str, Any],
+        resources: Mapping[str, Any],
+        resources_config: Mapping[str, Any],
         instance: Optional[DagsterInstance],
         partition_key: Optional[str],
         mapping_key: Optional[str],
     ):  # pylint: disable=super-init-not-called
-        from dagster._core.execution.api import ephemeral_instance_if_missing
         from dagster._core.execution.context_creation_pipeline import initialize_console_manager
 
         self._solid_config = solid_config
         self._mapping_key = mapping_key
-
-        self._instance_provided = (
-            check.opt_inst_param(instance, "instance", DagsterInstance) is not None
-        )
-        # Construct ephemeral instance if missing
-        self._instance_cm = ephemeral_instance_if_missing(instance)
-        # Pylint can't infer that the ephemeral_instance context manager has an __enter__ method,
-        # so ignore lint error
-        self._instance = self._instance_cm.__enter__()  # pylint: disable=no-member
-
-        self._resources_config = resources_config
-        # Open resource context manager
-        self._resources_contain_cm = False
-        self._resource_defs = wrap_resources_for_execution(resources_dict)
-        self._resources_cm = build_resources(
-            resources=self._resource_defs,
-            instance=instance,
-            resource_config=resources_config,
-        )
-        self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
-        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
-
         self._log = initialize_console_manager(None)
         self._pdb: Optional[ForkedPdb] = None
         self._cm_scope_entered = False
@@ -98,53 +74,40 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         self._user_events: List[UserEvent] = []
         self._output_metadata: Dict[str, Any] = {}
 
-    def __enter__(self):
-        self._cm_scope_entered = True
-        return self
-
-    def __exit__(self, *exc):
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
-        if self._instance_provided:
-            self._instance_cm.__exit__(*exc)  # pylint: disable=no-member
-
-    def __del__(self):
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
-        if self._instance_provided and not self._cm_scope_entered:
-            self._instance_cm.__exit__(None, None, None)  # pylint: disable=no-member
+        UsesResourcesContext.__init__(
+            self,
+            resources=resources,
+            resources_config=resources_config,
+            instance=instance,
+            context_str="op",
+        )
 
     @property
     def solid_config(self) -> Any:
         return self._solid_config
 
     @property
-    def resources(self) -> Resources:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_solid_context(...) as context:`"
-            )
-        return self._resources
-
-    @property
     def pipeline_run(self) -> PipelineRun:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
 
     @property
+    def resources(self) -> Resources:
+        return UsesResourcesContext.get_resources(self)
+
+    @property
     def instance(self) -> DagsterInstance:
-        return self._instance
+        return UsesResourcesContext.get_instance(self)
 
     @property
     def pdb(self) -> ForkedPdb:
-        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
+        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the op.
 
         Example:
 
         .. code-block:: python
 
-            @solid
-            def debug_solid(context):
+            @op
+            def debug_op(context):
                 context.pdb.set_trace()
 
         """
@@ -216,7 +179,8 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "methods"))
 
     def bind(
-        self, solid_def_or_invocation: Union[SolidDefinition, PendingNodeInvocation]
+        self,
+        solid_def_or_invocation: Union[SolidDefinition, PendingNodeInvocation],
     ) -> "BoundSolidExecutionContext":
 
         solid_def = (
@@ -225,7 +189,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
             else solid_def_or_invocation.node_def.ensure_solid_def()
         )
 
-        _validate_resource_requirements(self._resource_defs, solid_def)
+        _validate_resource_requirements(self.get_resource_defs(), solid_def)
 
         solid_config = _resolve_bound_config(self.solid_config, solid_def)
 
@@ -233,7 +197,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
             solid_def=solid_def,
             solid_config=solid_config,
             resources=self.resources,
-            resources_config=self._resources_config,
+            resources_config=self.get_resources_config(),
             instance=self.instance,
             log_manager=self.log,
             pdb=self.pdb,
@@ -697,7 +661,7 @@ def build_solid_context(
     solid_config = solid_config if solid_config else config
 
     return UnboundSolidExecutionContext(
-        resources_dict=check.opt_dict_param(resources, "resources", key_type=str),
+        resources=check.opt_dict_param(resources, "resources", key_type=str),
         resources_config=check.opt_dict_param(resources_config, "resources_config", key_type=str),
         solid_config=solid_config,
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),

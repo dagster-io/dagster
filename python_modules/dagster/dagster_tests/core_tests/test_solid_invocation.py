@@ -193,13 +193,16 @@ def test_solid_invocation_with_cm_resource():
     def solid_requires_cm_resource(context):
         return context.resources.cm_resource
 
-    # Attempt to use solid context as fxn with cm resource should fail
+    # Attempt to use solid context as fxn with cm resource should succeed -
+    # but access to attributes outside of invocation should fail.
     context = build_solid_context(resources={"cm_resource": cm_resource})
-    with pytest.raises(DagsterInvariantViolationError):
-        solid_requires_cm_resource(context)
-
-    del context
+    assert solid_requires_cm_resource(context) == "foo"
     assert teardown_log == ["collected"]
+
+    with pytest.raises(DagsterInvariantViolationError):
+        context.resources  # pylint: disable=pointless-statement
+
+    teardown_log.clear()
 
     # Attempt to use solid context as cm with cm resource should succeed
     with build_solid_context(resources={"cm_resource": cm_resource}) as context:
@@ -955,7 +958,7 @@ def test_build_context_with_resources_config(context_builder):
         context_builder(
             resources={"my_resource": my_resource},
             resources_config={"bad_resource": {"config": "foo"}},
-        )
+        ).__enter__()
 
 
 def test_logged_user_events():

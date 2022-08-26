@@ -1,16 +1,14 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Mapping, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.resource_definition import (
-    IContainsGenerator,
-    ResourceDefinition,
-    Resources,
-)
+from dagster._core.definitions.resource_definition import ResourceDefinition, Resources
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRun
+
+from .resource_invocation import UsesResourcesContext
 
 
 class InitResourceContext:
@@ -113,7 +111,7 @@ class InitResourceContext:
         )
 
 
-class UnboundInitResourceContext(InitResourceContext):
+class UnboundInitResourceContext(InitResourceContext, UsesResourcesContext):
     """Resource initialization context outputted by ``build_init_resource_context``.
 
     Represents a context whose config has not yet been validated against a resource definition,
@@ -129,34 +127,10 @@ class UnboundInitResourceContext(InitResourceContext):
         resources: Optional[Union[Resources, Dict[str, Any]]],
         instance: Optional[DagsterInstance],
     ):
-        from dagster._core.execution.api import ephemeral_instance_if_missing
-        from dagster._core.execution.build_resources import (
-            build_resources,
-            wrap_resources_for_execution,
-        )
         from dagster._core.execution.context_creation_pipeline import initialize_console_manager
 
-        self._instance_provided = (
-            check.opt_inst_param(instance, "instance", DagsterInstance) is not None
-        )
-        # Construct ephemeral instance if missing
-        self._instance_cm = ephemeral_instance_if_missing(instance)
-        # Pylint can't infer that the ephemeral_instance context manager has an __enter__ method,
-        # so ignore lint error
-        instance = self._instance_cm.__enter__()  # pylint: disable=no-member
-
-        # Shouldn't actually ever have a resources object directly from this initialization
-
-        self._resource_defs = wrap_resources_for_execution(
-            check.opt_dict_param(resources, "resources")
-        )
-
-        self._resources_cm = build_resources(self._resource_defs, instance=instance)
-        resources = self._resources_cm.__enter__()  # pylint: disable=no-member
-        self._resources_contain_cm = isinstance(resources, IContainsGenerator)
-
-        self._cm_scope_entered = False
-        super(UnboundInitResourceContext, self).__init__(
+        InitResourceContext.__init__(
+            self,
             resource_config=resource_config,
             resources=resources,
             resource_def=None,
@@ -164,21 +138,12 @@ class UnboundInitResourceContext(InitResourceContext):
             dagster_run=None,
             log_manager=initialize_console_manager(None),
         )
-
-    def __enter__(self):
-        self._cm_scope_entered = True
-        return self
-
-    def __exit__(self, *exc):
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
-        if self._instance_provided:
-            self._instance_cm.__exit__(*exc)  # pylint: disable=no-member
-
-    def __del__(self):
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
-        if self._instance_provided and not self._cm_scope_entered:
-            self._instance_cm.__exit__(None, None, None)  # pylint: disable=no-member
+        UsesResourcesContext.__init__(
+            self,
+            resources=resources,
+            instance=instance,
+            context_str="init_resource",
+        )
 
     @property
     def resource_config(self) -> Any:
@@ -190,18 +155,18 @@ class UnboundInitResourceContext(InitResourceContext):
             "UnboundInitLoggerContext has not been validated against a logger definition."
         )
 
+    @public  # type: ignore
     @property
-    def resources(self) -> Resources:
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_init_resource_context(...) as context:`"
-            )
-        return self._resources
+    def resources(self) -> Any:
+        return UsesResourcesContext.get_resources(self)
 
     @property
-    def instance(self) -> Optional[DagsterInstance]:
+    def instance(self) -> DagsterInstance:
+        if not self._instance:
+            raise DagsterInvariantViolationError(
+                "No instance was provided, and context object is outside of context manager scope. You can use the following syntax to "
+                "open a context manager: `with build_op_context(...) as context:"
+            )
         return self._instance
 
     @property
@@ -223,8 +188,8 @@ class UnboundInitResourceContext(InitResourceContext):
 
 
 def build_init_resource_context(
-    config: Optional[Dict[str, Any]] = None,
-    resources: Optional[Dict[str, Any]] = None,
+    config: Optional[Mapping[str, Any]] = None,
+    resources: Optional[Mapping[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> InitResourceContext:
     """Builds resource initialization context from provided parameters.

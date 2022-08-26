@@ -9,10 +9,11 @@ from ...definitions.decorators.graph_decorator import graph
 from ...definitions.dependency import Node
 from ...definitions.hook_definition import HookDefinition
 from ...definitions.op_definition import OpDefinition
-from ...definitions.resource_definition import IContainsGenerator, Resources
-from ...errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
+from ...definitions.resource_definition import Resources
+from ...errors import DagsterInvalidPropertyError
 from ...log_manager import DagsterLogManager
 from ..plan.step import ExecutionStep
+from .resource_invocation import UsesResourcesContext
 from .system import StepExecutionContext
 
 
@@ -184,7 +185,7 @@ class HookContext:
         return self.solid_output_values
 
 
-class UnboundHookContext(HookContext):
+class UnboundHookContext(HookContext, UsesResourcesContext):
     def __init__(
         self,
         resources: Mapping[str, Any],
@@ -193,7 +194,6 @@ class UnboundHookContext(HookContext):
         job_name: Optional[str],
         op_exception: Optional[Exception],
     ):  # pylint: disable=super-init-not-called
-        from ..build_resources import build_resources, wrap_resources_for_execution
         from ..context_creation_pipeline import initialize_console_manager
 
         self._op = None
@@ -205,11 +205,11 @@ class UnboundHookContext(HookContext):
 
             self._op = temp_graph.solids[0]
 
-        # Open resource context manager
-        self._resource_defs = wrap_resources_for_execution(resources)
-        self._resources_cm = build_resources(self._resource_defs)
-        self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
-        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+        UsesResourcesContext.__init__(
+            self,
+            resources=resources,
+            context_str="hook",
+        )
 
         self._run_id = run_id
         self._job_name = job_name
@@ -218,17 +218,6 @@ class UnboundHookContext(HookContext):
         self._log = initialize_console_manager(None)
 
         self._cm_scope_entered = False
-
-    def __enter__(self):
-        self._cm_scope_entered = True
-        return self
-
-    def __exit__(self, *exc):
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
-
-    def __del__(self):
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
     @property
     def job_name(self) -> str:
@@ -263,14 +252,8 @@ class UnboundHookContext(HookContext):
         raise DagsterInvalidPropertyError(_property_msg("hook_def", "property"))
 
     @property
-    def resources(self) -> "Resources":
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_hook_context(...) as context:`"
-            )
-        return self._resources
+    def resources(self) -> Resources:
+        return UsesResourcesContext.get_resources(self)
 
     @property
     def solid_config(self) -> Any:

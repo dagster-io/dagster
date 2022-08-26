@@ -40,7 +40,7 @@ def get_mapped_resource_config(
 
 @contextmanager
 def build_resources(
-    resources: Mapping[str, Any],
+    resources: Optional[Mapping[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
     resource_config: Optional[Mapping[str, Any]] = None,
     pipeline_run: Optional[PipelineRun] = None,
@@ -84,7 +84,7 @@ def build_resources(
 
     """
 
-    resources = check.dict_param(resources, "resource_defs", key_type=str)
+    resources = check.opt_mapping_param(resources, "resources", key_type=str)
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
     log_manager = check.opt_inst_param(log_manager, "log_manager", DagsterLogManager)

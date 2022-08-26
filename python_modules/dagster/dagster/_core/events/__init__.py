@@ -33,7 +33,6 @@ from dagster._core.definitions import (
 from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterError, HookExecutionError
-from dagster._core.execution.context.hook import HookContext
 from dagster._core.execution.context.system import (
     IPlanContext,
     IStepContext,

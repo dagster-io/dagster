@@ -1,4 +1,15 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._annotations import public
@@ -10,6 +21,8 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+
+from .resource_invocation import UsesResourcesContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition, SolidDefinition
@@ -23,7 +36,7 @@ if TYPE_CHECKING:
     from .output import OutputContext
 
 
-class InputContext:
+class InputContext(UsesResourcesContext):
     """
     The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
 
@@ -70,14 +83,12 @@ class InputContext:
         dagster_type: Optional["DagsterType"] = None,
         log_manager: Optional["DagsterLogManager"] = None,
         resource_config: Optional[Dict[str, Any]] = None,
-        resources: Optional[Union["Resources", Dict[str, Any]]] = None,
+        resources: Optional[Union["Resources", Mapping[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
         asset_key: Optional[AssetKey] = None,
         partition_key: Optional[str] = None,
     ):
-        from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
-        from dagster._core.execution.build_resources import build_resources
 
         self._name = name
         self._pipeline_name = pipeline_name
@@ -98,33 +109,15 @@ class InputContext:
         else:
             self._partition_key = partition_key
 
-        if isinstance(resources, Resources):
-            self._resources_cm = None
-            self._resources = resources
-        else:
-            self._resources_cm = build_resources(
-                check.opt_dict_param(resources, "resources", key_type=str)
-            )
-            self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
-            self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
-            self._cm_scope_entered = False
-
         self._events: List["DagsterEvent"] = []
         self._observations: List[AssetObservation] = []
         self._metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]] = []
 
-    def __enter__(self):
-        if self._resources_cm:
-            self._cm_scope_entered = True
-        return self
-
-    def __exit__(self, *exc):
-        if self._resources_cm:
-            self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
-
-    def __del__(self):
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+        UsesResourcesContext.__init__(
+            self,
+            resources=resources,
+            context_str="input",
+        )
 
     @public  # type: ignore
     @property
@@ -222,19 +215,7 @@ class InputContext:
     @public  # type: ignore
     @property
     def resources(self) -> Any:
-        if self._resources is None:
-            raise DagsterInvariantViolationError(
-                "Attempting to access resources, "
-                "but it was not provided when constructing the InputContext"
-            )
-
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_input_context(...) as context:`"
-            )
-        return self._resources
+        return UsesResourcesContext.get_resources(self)
 
     @public  # type: ignore
     @property

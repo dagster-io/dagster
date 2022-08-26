@@ -1,16 +1,5 @@
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ContextManager,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -29,6 +18,8 @@ from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
 
+from .resource_invocation import UsesResourcesContext
+
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition, PipelineDefinition
     from dagster._core.definitions.op_definition import OpDefinition
@@ -44,7 +35,7 @@ if TYPE_CHECKING:
 RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
-class OutputContext:
+class OutputContext(UsesResourcesContext):
     """
     The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
 
@@ -99,8 +90,6 @@ class OutputContext:
     _asset_info: Optional[AssetOutputInfo]
     _warn_on_step_context_use: bool
     _resources: Optional["Resources"]
-    _resources_cm: Optional[ContextManager["Resources"]]
-    _resources_contain_cm: Optional[bool]
     _cm_scope_entered: Optional[bool]
     _events: List["DagsterEvent"]
     _user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]]
@@ -126,8 +115,6 @@ class OutputContext:
         warn_on_step_context_use: bool = False,
         partition_key: Optional[str] = None,
     ):
-        from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
-        from dagster._core.execution.build_resources import build_resources
 
         self._step_key = step_key
         self._name = name
@@ -149,38 +136,15 @@ class OutputContext:
         else:
             self._partition_key = partition_key
 
-        if isinstance(resources, Resources):
-            self._resources_cm = None
-            self._resources = resources
-        else:
-            self._resources_cm = build_resources(
-                check.opt_dict_param(resources, "resources", key_type=str)
-            )
-            self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
-            self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
-            self._cm_scope_entered = False
-
         self._events = []
         self._user_events = []
         self._metadata_entries = None
 
-    def __enter__(self):
-        if self._resources_cm:
-            self._cm_scope_entered = True
-        return self
-
-    def __exit__(self, *exc):
-        if self._resources_cm:
-            self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
-
-    def __del__(self):
-        if (
-            hasattr(self, "_resources_cm")
-            and self._resources_cm
-            and self._resources_contain_cm
-            and not self._cm_scope_entered
-        ):
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+        UsesResourcesContext.__init__(
+            self,
+            resources=resources,
+            context_str="output",
+        )
 
     @public  # type: ignore
     @property
@@ -288,19 +252,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def resources(self) -> Any:
-        if self._resources is None:
-            raise DagsterInvariantViolationError(
-                "Attempting to access resources, "
-                "but it was not provided when constructing the OutputContext"
-            )
-
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_output_context(...) as context:`"
-            )
-        return self._resources
+        return UsesResourcesContext.get_resources(self)
 
     @property
     def asset_info(self) -> Optional[AssetOutputInfo]:
