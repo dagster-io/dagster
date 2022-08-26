@@ -33,8 +33,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_dbt_tests*"]),
         install_requires=[
-            f"dagster{pin}",
-            f"dagster-pandas{pin}",
+            "dagster==0.15.9",
+            "dagster-pandas==0.15.9",
             "dbt-core",
             "pandas",
             "requests",
