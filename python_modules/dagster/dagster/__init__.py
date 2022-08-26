@@ -149,6 +149,7 @@ from dagster._core.definitions.decorators.sensor_decorator import (
     asset_sensor as asset_sensor,
     sensor as sensor,
     multi_asset_sensor as multi_asset_sensor,
+    partitioned_asset_sensor as partitioned_asset_sensor,
 )
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,

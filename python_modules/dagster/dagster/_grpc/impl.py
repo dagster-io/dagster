@@ -13,7 +13,9 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.definitions.sensor_definition import (
     MultiAssetSensorDefinition,
+    PartitionedAssetSensorDefinition,
     MultiAssetSensorEvaluationContext,
+    PartitionedAssetSensorEvaluationContext,
     SensorEvaluationContext,
 )
 from dagster._core.errors import (
@@ -107,6 +109,7 @@ def core_execute_run(
         yield from execute_run_iterator(
             recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
         )
+        # Run the next run after this
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
         yield instance.report_engine_event(
@@ -293,6 +296,17 @@ def get_external_sensor_execution(
         if isinstance(sensor_def, MultiAssetSensorDefinition):
             sensor_context = stack.enter_context(
                 MultiAssetSensorEvaluationContext(
+                    instance_ref,
+                    last_completion_time=last_completion_timestamp,
+                    last_run_key=last_run_key,
+                    cursor=cursor,
+                    repository_name=recon_repo.get_definition().name,
+                    assets=sensor_def.assets,
+                )
+            )
+        elif isinstance(sensor_def, PartitionedAssetSensorDefinition):
+            sensor_context = stack.enter_context(
+                PartitionedAssetSensorEvaluationContext(
                     instance_ref,
                     last_completion_time=last_completion_timestamp,
                     last_run_key=last_run_key,

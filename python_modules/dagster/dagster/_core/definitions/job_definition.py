@@ -573,7 +573,7 @@ class JobDefinition(PipelineDefinition):
         partition_set = self.get_partition_set_def()
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
-
+        # run request for partition
         partition = partition_set.get_partition(partition_key)
         run_config = partition_set.run_config_for_partition(partition)
         run_request_tags = (

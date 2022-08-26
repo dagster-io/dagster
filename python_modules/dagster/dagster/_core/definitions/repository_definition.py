@@ -781,7 +781,7 @@ class CachingRepositoryData(RepositoryData):
                 source_assets.append(definition)
             else:
                 check.failed(f"Unexpected repository entry {definition}")
-
+        # here is where we build jobs from a repository definition
         if assets_defs or source_assets:
             if combined_asset_group is not None:
                 raise DagsterInvalidDefinitionError(

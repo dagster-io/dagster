@@ -409,6 +409,7 @@ class AssetGroup:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
+            # Here is where we build jobs from partitioned assets upon repository load.
             assets_by_partitions_def: Dict[
                 Optional[PartitionsDefinition], List[AssetsDefinition]
             ] = defaultdict(list)
@@ -418,6 +419,7 @@ class AssetGroup:
             if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {
                 None
             }:
+                # if no partitions or no assets
                 return [self.build_job(ASSET_BASE_JOB_PREFIX)]
             else:
                 unpartitioned_assets = assets_by_partitions_def.get(None, [])
