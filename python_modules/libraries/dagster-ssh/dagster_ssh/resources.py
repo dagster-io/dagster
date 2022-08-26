@@ -6,7 +6,7 @@ import paramiko
 from paramiko.config import SSH_PORT
 from sshtunnel import SSHTunnelForwarder
 
-from dagster import Field, StringSource
+from dagster import Field, StringSource, IntSource, BoolSource
 from dagster import _check as check
 from dagster import resource
 from dagster._utils import merge_dicts, mkdir_p
@@ -208,12 +208,12 @@ class SSHResource:
 
 
 @resource(
-    {
+    config_schema={
         "remote_host": Field(
             StringSource, description="remote host to connect to", is_required=True
         ),
         "remote_port": Field(
-            int,
+            IntSource,
             description="port of remote host to connect (Default is paramiko SSH_PORT)",
             is_required=False,
             default_value=SSH_PORT,
@@ -237,20 +237,20 @@ class SSHResource:
             is_required=False,
         ),
         "timeout": Field(
-            int,
+            IntSource,
             description="timeout for the attempt to connect to the remote_host.",
             is_required=False,
             default_value=10,
         ),
         "keepalive_interval": Field(
-            int,
+            IntSource,
             description="send a keepalive packet to remote host every keepalive_interval seconds",
             is_required=False,
             default_value=30,
         ),
-        "compress": Field(bool, is_required=False, default_value=True),
-        "no_host_key_check": Field(bool, is_required=False, default_value=True),
-        "allow_host_key_change": Field(bool, is_required=False, default_value=False),
+        "compress": Field(BoolSource, is_required=False, default_value=True),
+        "no_host_key_check": Field(BoolSource, is_required=False, default_value=True),
+        "allow_host_key_change": Field(BoolSource, is_required=False, default_value=False),
     }
 )
 def ssh_resource(init_context):
