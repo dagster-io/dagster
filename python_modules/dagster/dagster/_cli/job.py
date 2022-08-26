@@ -875,6 +875,8 @@ def _execute_backfill_command_at_location(
 
         assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
 
+        # for each type of partition data create a backfill run
+        # we'll need to use the same partition data object (ExternalPartitionSetExecutionParamData) for each run
         for partition_data in partition_execution_data.partition_data:
             pipeline_run = create_backfill_run(
                 instance,

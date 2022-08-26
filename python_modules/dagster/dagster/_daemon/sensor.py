@@ -429,7 +429,7 @@ def _process_tick_generator(
             return
         else:
             _mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now)
-
+        # interval evaluation thing
     try:
         tick = instance.create_tick(
             TickData(

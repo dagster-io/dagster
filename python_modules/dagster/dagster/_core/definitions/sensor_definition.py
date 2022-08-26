@@ -14,12 +14,20 @@ from typing import (
     Sequence,
     Union,
     cast,
+    Sequence,
+    Tuple,
 )
+from collections import defaultdict
 
 from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -289,6 +297,251 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         cursor_dict = json.loads(self.cursor) if self.cursor else {}
         update_dict = {
             str(k): v.storage_id if v else cursor_dict.get(str(k))
+            for k, v in materialization_records_by_key.items()
+        }
+        cursor_str = json.dumps(update_dict)
+        self._cursor = check.opt_str_param(cursor_str, "cursor")
+        self.cursor_has_been_updated = True
+
+    @public
+    def advance_all_cursors(self):
+        """Updates the cursor to the most recent materialization event for all assets monitored by the multi_asset_sensor"""
+        materializations_by_key = self.latest_materialization_records_by_key()
+        self.advance_cursor(materializations_by_key)
+
+
+@experimental
+class PartitionedAssetSensorEvaluationContext(SensorEvaluationContext):
+    """The context object available as the argument to the evaluation function of a :py:class:`dagster.MultiAssetSensorDefinition`.
+
+    # TODO update docstring
+
+    Users should not instantiate this object directly. To construct a
+    `MultiAssetSensorEvaluationContext` for testing purposes, use :py:func:`dagster.
+    build_multi_asset_sensor_context`.
+
+    Attributes:
+        instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
+        cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
+            the cursor attribute of SkipReason and RunRequest. Must be a dictionary of asset key strings to ints
+            that has been converted to a json string
+        last_completion_time (float): DEPRECATED The last time that the sensor was evaluated (UTC).
+        last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
+            sensor. Use the preferred `cursor` attribute instead.
+        repository_name (Optional[str]): The name of the repository that the sensor belongs to.
+        instance (Optional[DagsterInstance]): The deserialized instance can also be passed in
+            directly (primarily useful in testing contexts).
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import multi_asset_sensor, MultiAssetSensorEvaluationContext
+
+        @multi_asset_sensor(asset_keys=[AssetKey("asset_1), AssetKey("asset_2)])
+        def the_sensor(context: MultiAssetSensorEvaluationContext):
+            ...
+
+    """
+
+    def __init__(
+        self,
+        instance_ref: Optional[InstanceRef],
+        last_completion_time: Optional[float],
+        last_run_key: Optional[str],
+        cursor: Optional[str],
+        repository_name: Optional[str],
+        assets: Sequence[AssetsDefinition],
+        instance: Optional[DagsterInstance] = None,
+    ):
+        self._assets = assets
+        self.cursor_has_been_updated = False
+
+        super(PartitionedAssetSensorEvaluationContext, self).__init__(
+            instance_ref=instance_ref,
+            last_completion_time=last_completion_time,
+            last_run_key=last_run_key,
+            cursor=cursor,
+            repository_name=repository_name,
+            instance=instance,
+        )
+
+    @public
+    def map_partition(
+        self,
+        partition_key: str,
+        to_partitions: PartitionsDefinition,
+        from_partitions: Optional[PartitionsDefinition] = None,
+    ) -> Sequence[str]:
+        """Given an existing asset from_asset, map one of its partition keys partition_key to
+        the corresponding partition in to_asset.
+        """
+        print(to_partitions.get_partition_keys())
+
+        if from_partitions == None:
+            partitions_by_key = {asset.partitions_def for asset in self._assets}
+            if len(partitions_by_key) != 1:
+                raise DagsterInvalidInvocationError(
+                    "from_partitions must be provided if assets have different partitions or are not provided"
+                )
+            else:
+                from_partitions = self._assets[0].partitions_def
+
+        # TODO add check that to_asset must be provided
+
+        # TODO add checks for non-time window partition mappings which are invalid
+        # handle PartitionMapping case
+
+        if isinstance(to_partitions, TimeWindowPartitionsDefinition) and isinstance(
+            from_partitions, TimeWindowPartitionsDefinition
+        ):
+            downstream_partition_key_range = (
+                TimeWindowPartitionMapping().get_downstream_partitions_for_partition_range(
+                    PartitionKeyRange(partition_key, partition_key),
+                    downstream_partitions_def=to_partitions,
+                    upstream_partitions_def=from_partitions,
+                )
+            )
+            partition_keys = to_partitions.get_partition_keys()
+            if (
+                downstream_partition_key_range.start not in partition_keys
+                or downstream_partition_key_range.end not in partition_keys
+            ):
+                raise DagsterInvalidInvocationError(
+                    f"Mapped partition key {partition_key} to downstream partition key range [{downstream_partition_key_range.start}...{downstream_partition_key_range.end}] which is not a valid range in the downstream partitions definition."
+                )
+
+            downstream_partitions = partition_keys[
+                partition_keys.index(downstream_partition_key_range.start) : partition_keys.index(
+                    downstream_partition_key_range.end
+                )
+                + 1
+            ]
+            return downstream_partitions
+        else:
+            return []
+
+    @public
+    def get_partition_from_event_log_record(
+        self, event_log_record: "EventLogRecord"
+    ) -> Optional[str]:
+        from dagster._core.storage.event_log.base import EventLogRecord
+
+        check.inst_param(event_log_record, "event_log_record", EventLogRecord)
+
+        dagster_event = event_log_record.event_log_entry.dagster_event
+        if dagster_event:
+            return dagster_event.partition
+        return None
+
+    @public
+    def latest_materialization_records_by_key(
+        self, assets: Optional[Sequence[AssetsDefinition]] = None
+    ) -> Mapping[AssetKey, Optional["EventLogRecord"]]:
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import EventRecordsFilter
+
+        if assets is None:
+            assets = self._assets
+
+        cursor_dict = json.loads(self.cursor) if self.cursor else {}
+        asset_event_records = {}
+        for asset in assets:
+            if asset.partitions_def == None:
+                raise DagsterInvariantViolationError(
+                    "Cannot get latest materialization by partition for assets with no partitions"
+                )
+
+            partitions_to_fetch = asset.partitions_def.get_partition_keys()
+            partition_key, cursor = cursor_dict.get(str(asset.key), (None, None))
+            if partition_key is not None:
+                partitions_to_fetch = partitions_to_fetch[
+                    partitions_to_fetch.index(partition_key) :
+                ]
+            event_records = self.instance.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=asset.key,
+                    after_cursor=cursor,
+                    asset_partitions=partitions_to_fetch,
+                ),
+                ascending=False,
+                limit=1,
+            )
+
+            if event_records:
+                asset_event_records[asset.key] = event_records[0]
+            else:
+                asset_event_records[asset.key] = None
+
+        return asset_event_records
+
+    @public
+    def latest_materialization_by_partition(
+        self, assets: Optional[Sequence[AssetsDefinition]]
+    ) -> Mapping[AssetKey, Mapping[str, int]]:
+        """
+        Returns a dict of materializations by partition
+        if no materialization, None
+        """
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import EventRecordsFilter
+
+        if assets is None:
+            assets = self._assets
+
+        cursor_dict = json.loads(self.cursor) if self.cursor else {}
+
+        latest_materialization_by_partition = {}
+        for asset in assets:
+            if asset.partitions_def == None:
+                raise DagsterInvariantViolationError(
+                    "Cannot get latest materialization by partition for assets with no partitions"
+                )
+            partition_key, cursor = cursor_dict.get(str(asset.key), (None, None))
+
+            # check that either neither are defined or both are defined
+
+            partitions_to_fetch = asset.partitions_def.get_partition_keys()
+            if partition_key is not None:
+                partitions_to_fetch = partitions_to_fetch[
+                    partitions_to_fetch.index(partition_key) :
+                ]
+
+            partition_materializations = self.instance.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=asset.key,
+                    asset_partitions=partitions_to_fetch,
+                    after_cursor=cursor,
+                ),
+            )
+            for partition in partitions_to_fetch:
+                latest_materialization_by_partition[asset.key][partition] = None
+            for materialization in partition_materializations:
+                latest_materialization_by_partition[asset.key][
+                    self.get_partition_from_event_log_record(materialization)
+                ] = materialization
+
+        return latest_materialization_by_partition
+
+    @public
+    def advance_cursor(
+        self,
+        materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]],
+    ):
+        """Advances the cursor for a group of AssetKeys based on the EventLogRecord provided for each AssetKey.
+
+        Args:
+            materialization_records_by_key (Mapping[AssetKey, Optional[EventLogRecord]]): Mapping of AssetKeys to EventLogRecord or None. If
+                an EventLogRecord is provided, the cursor for the AssetKey will be updated and future calls to fetch asset materialization events
+                will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
+        """
+        cursor_dict = json.loads(self.cursor) if self.cursor else {}
+        update_dict = {
+            str(k): (self.get_partition_from_event_log_record(v), v.storage_id)
+            if v
+            else cursor_dict.get(str(k))
             for k, v in materialization_records_by_key.items()
         }
         cursor_str = json.dumps(update_dict)
@@ -750,6 +1003,51 @@ def build_multi_asset_sensor_context(
     )
 
 
+@experimental
+def build_partitioned_asset_sensor_context(
+    assets: Sequence[AssetsDefinition],
+    instance: Optional[DagsterInstance] = None,
+    cursor: Optional[str] = None,
+    repository_name: Optional[str] = None,
+) -> PartitionedAssetSensorEvaluationContext:
+    """Builds multi asset sensor execution context using the provided parameters.
+
+    This function can be used to provide a context to the invocation of a multi asset sensor definition. If
+    provided, the dagster instance must be persistent; DagsterInstance.ephemeral() will result in an
+    error.
+
+    Args:
+        asset_keys (Sequence[AssetKey]): The list of asset keys monitored by the sensor
+        instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
+        cursor (Optional[str]): A string cursor to provide to the evaluation of the sensor. Must be
+            a dictionary of asset key strings to ints that has been converted to a json string
+        repository_name (Optional[str]): The name of the repository that the sensor belongs to.
+
+    Examples:
+
+        .. code-block:: python
+
+            with instance_for_test() as instance:
+                context = build_multi_asset_sensor_context(asset_keys=[AssetKey("asset_1"), AssetKey("asset_2")], instance=instance)
+                my_asset_sensor(context)
+
+    """
+    print("omf im going crazy")
+    check.opt_inst_param(instance, "instance", DagsterInstance)
+    check.opt_str_param(cursor, "cursor")
+    check.opt_str_param(repository_name, "repository_name")
+    check.list_param(assets, "assets", of_type=AssetsDefinition)
+    return PartitionedAssetSensorEvaluationContext(
+        instance_ref=None,
+        last_completion_time=None,
+        last_run_key=None,
+        cursor=cursor,
+        repository_name=repository_name,
+        instance=instance,
+        assets=assets,
+    )
+
+
 AssetMaterializationFunctionReturn = Union[
     Iterator[Union[RunRequest, SkipReason]], Sequence[RunRequest], RunRequest, SkipReason, None
 ]
@@ -761,6 +1059,10 @@ AssetMaterializationFunction = Callable[
 MultiAssetMaterializationFunction = Callable[
     ["MultiAssetSensorEvaluationContext"],
     AssetMaterializationFunctionReturn,
+]
+
+PartitionedAssetMaterializationFunction = Callable[
+    ["PartitionedAssetSensorEvaluationContext"], AssetMaterializationFunctionReturn
 ]
 
 
@@ -859,6 +1161,39 @@ class AssetSensorDefinition(SensorDefinition):
     @property
     def asset_key(self):
         return self._asset_key
+
+
+def _wrap_asset_fn(materialization_fn):
+    def _fn(context):
+        context.cursor_has_been_updated = False
+        result = materialization_fn(context)
+        if result is None:
+            return
+
+        # because the materialization_fn can yield results (see _wrapped_fn in multi_asset_sensor decorator),
+        # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) == True.
+        # So keep track to see if we actually return any values and should update the cursor
+        runs_yielded = False
+        if inspect.isgenerator(result) or isinstance(result, list):
+            for item in result:
+                runs_yielded = True
+                yield item
+        elif isinstance(result, RunRequest):
+            runs_yielded = True
+            yield result
+        elif isinstance(result, SkipReason):
+            # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
+            yield result
+
+        if runs_yielded and not context.cursor_has_been_updated:
+            raise DagsterInvalidDefinitionError(
+                "Asset materializations have been handled in this sensor, "
+                "but the cursor was not updated. This means the same materialization events "
+                "will be handled in the next sensor tick. Use context.advance_cursor or "
+                "context.advance_all_cursors to update the cursor."
+            )
+
+    return _fn
 
 
 @experimental
@@ -977,7 +1312,11 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     kwargs[context_param_name], context_param_name, SensorEvaluationContext
                 )
 
-            context = context if context else build_multi_asset_sensor_context()
+            context = (
+                context
+                if context
+                else build_multi_asset_sensor_context(asset_keys=self._asset_keys)
+            )
 
             return self._raw_fn(context)
 
@@ -994,3 +1333,110 @@ class MultiAssetSensorDefinition(SensorDefinition):
     @property
     def asset_keys(self):
         return self._asset_keys
+
+
+@experimental
+class PartitionedAssetSensorDefinition(SensorDefinition):
+    """Define an asset sensor that initiates a set of runs based on the materialization of a list of
+    assets.
+
+    TODO: Update docstring
+
+    Args:
+        name (str): The name of the sensor to create.
+        asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
+        asset_materialization_fn (Callable[[MultiAssetSensorEvaluationContext], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
+            evaluation function for the sensor, which is run at an interval to determine whether a
+            run should be launched or not. Takes a :py:class:`~dagster.MultiAssetSensorEvaluationContext`.
+
+            This function must return a generator, which must yield either a single SkipReason
+            or one or more RunRequest objects.
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+        job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
+            object to target with this sensor.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
+            (experimental) A list of jobs to be executed when the sensor fires.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        assets: Sequence[AssetsDefinition],
+        job_name: Optional[str],
+        asset_materialization_fn: Callable[
+            ["PartitionedAssetSensorEvaluationContext"],
+            RawSensorEvaluationFunctionReturn,
+        ],
+        minimum_interval_seconds: Optional[int] = None,
+        description: Optional[str] = None,
+        job: Optional[ExecutableDefinition] = None,
+        jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    ):
+        self._assets = check.list_param(assets, "assets", AssetsDefinition)
+
+        super(PartitionedAssetSensorDefinition, self).__init__(
+            name=check_valid_name(name),
+            job_name=job_name,
+            evaluation_fn=_wrap_asset_fn(
+                check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
+            ),
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+            default_status=default_status,
+        )
+
+    def __call__(self, *args, **kwargs):
+        print("hello?!")
+        if is_context_provided(self._raw_fn):
+            if len(args) + len(kwargs) == 0:
+                raise DagsterInvalidInvocationError(
+                    "Sensor evaluation function expected context argument, but no context argument "
+                    "was provided when invoking."
+                )
+            if len(args) + len(kwargs) > 1:
+                raise DagsterInvalidInvocationError(
+                    "Sensor invocation received multiple arguments. Only a first "
+                    "positional context parameter should be provided when invoking."
+                )
+
+            context_param_name = get_function_params(self._raw_fn)[0].name
+
+            if args:
+                context = check.opt_inst_param(
+                    args[0], context_param_name, PartitionedAssetSensorEvaluationContext
+                )
+            else:
+                if context_param_name not in kwargs:
+                    raise DagsterInvalidInvocationError(
+                        f"Sensor invocation expected argument '{context_param_name}'."
+                    )
+                context = check.opt_inst_param(
+                    kwargs[context_param_name], context_param_name, SensorEvaluationContext
+                )
+
+            context = (
+                context if context else build_partitioned_asset_sensor_context(assets=self.assets)
+            )
+
+            return self._raw_fn(context)
+
+        else:
+            if len(args) + len(kwargs) > 0:
+                raise DagsterInvalidInvocationError(
+                    "Sensor decorated function has no arguments, but arguments were provided to "
+                    "invocation."
+                )
+
+            return self._raw_fn()  # type: ignore [TypeGuard limitation]
+
+    @public  # type: ignore
+    @property
+    def assets(self):
+        return self._assets
