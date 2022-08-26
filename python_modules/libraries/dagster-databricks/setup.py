@@ -34,8 +34,8 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["dagster_databricks_tests*"]),
         include_package_data=True,
         install_requires=[
-            f"dagster{pin}",
-            f"dagster-pyspark{pin}",
+            "dagster==1.0.5",
+            "dagster-pyspark==1.0.5",
             "databricks_api",
         ],
         zip_safe=False,
