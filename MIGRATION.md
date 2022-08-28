@@ -91,7 +91,7 @@ From the main Dagster module:
 - `identity_partition_selector`
 - `custom_path_fs_io_manager`
 
-From libaries (APIs removed in 0.16.0 onwards):
+From libraries (APIs removed in 0.16.0 onwards):
 - `dagster_airflow.make_dagster_pipeline_from_airflow_dag`
 - `dagster_databricks.create_databricks_job_solid`
 - `dagster_dbt.dbt_cli_compile`
@@ -1116,7 +1116,7 @@ The functionality of `@dagster_type` is preserved, but under a different name:
 a bare Python type to be usable in contexts that expect dagster types, such as
 an `InputDefinition` or `OutputDefinition`.
 
-Any user that had been programatically creating dagster types and was forced
+Any user that had been programmatically creating dagster types and was forced
 to decorate classes in local scope using `@dagster_type` and return that class
 should instead just create a `DagsterType` directly.
 
