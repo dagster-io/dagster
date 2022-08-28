@@ -19,18 +19,21 @@ from dagster import (
     Nothing,
     Out,
     ReexecutionOptions,
+    asset,
     build_input_context,
     build_output_context,
     execute_job,
     graph,
     in_process_executor,
     job,
+    materialize,
     op,
     reconstructable,
     resource,
 )
 from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.errors import DagsterInvalidMetadata
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.context.output import get_output_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -896,6 +899,37 @@ def test_context_logging_metadata():
         match="When handling output 'result' of op 'the_op', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function.",
     ):
         build_for_materialization(AssetMaterialization("has_metadata", metadata={"bar": "baz"}))
+
+
+def test_context_logging_metadata_add_output_metadata_called_twice():
+    class DummyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            del obj
+            context.add_output_metadata({"foo": 1})
+            context.add_output_metadata({"bar": 2})
+            with pytest.raises(DagsterInvalidMetadata):
+                context.add_output_metadata({"bar": 3})
+
+        def load_input(self, context):
+            del context
+
+    @asset
+    def asset1():
+        return 5
+
+    result = materialize([asset1], resources={"io_manager": DummyIOManager()})
+
+    assert result.success
+    materialization = result.asset_materializations_for_node("asset1")[0]
+    assert [entry.label for entry in materialization.metadata_entries] == ["foo", "bar"]
+
+    handled_output_event = [
+        event for event in result.all_node_events if event.event_type_value == "HANDLED_OUTPUT"
+    ][0]
+    assert [entry.label for entry in handled_output_event.event_specific_data.metadata_entries] == [
+        "foo",
+        "bar",
+    ]
 
 
 def test_metadata_dynamic_outputs():
