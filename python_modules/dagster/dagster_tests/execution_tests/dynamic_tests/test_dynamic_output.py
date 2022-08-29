@@ -281,3 +281,38 @@ def test_collect_and_map():
 
     result = both_w_echo.execute_in_process()
     assert result.output_for_node("final") == [[0, 1, 2], [1, 2, 3], [2, 3, 4]]
+
+
+def test_graph_with_mapped_out():
+    @op(out=DynamicOut())
+    def dyn_vals():
+        for i in range(3):
+            yield DynamicOutput(i, mapping_key=f"num_{i}")
+
+    @op
+    def echo(x):
+        return x
+
+    @op
+    def double(x):
+        return x * 2
+
+    @op
+    def total(nums):
+        return sum(nums)
+
+    @graph(
+        # out=DynamicGraphOut()
+        # adding ^ is one option
+        # other option is rewrite composition / mapping stuff
+    )
+    def mapped_out():
+        return dyn_vals().map(echo)
+
+    @job
+    def example():
+        total(mapped_out().map(double).collect())
+
+    result = example.execute_in_process()
+    assert result.success
+    assert result.output_for_node("total") == 12

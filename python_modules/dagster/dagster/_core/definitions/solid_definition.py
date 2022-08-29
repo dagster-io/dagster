@@ -162,7 +162,7 @@ class SolidDefinition(NodeDefinition):
 
             if not isinstance(self.compute_fn, DecoratedSolidFunction):
                 raise DagsterInvalidInvocationError(
-                    f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
+                    f"Attempted to invoke {node_label} that was not constructed using the `@{node_label}` "
                     f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
                     "directly invoked."
                 )

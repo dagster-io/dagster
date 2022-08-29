@@ -349,7 +349,7 @@ class PendingNodeInvocation:
             )  # will be the string "solid" for solids, and the string "ops" for ops
             if not isinstance(self.node_def.compute_fn, DecoratedSolidFunction):
                 raise DagsterInvalidInvocationError(
-                    f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
+                    f"Attempted to invoke {node_label} that was not constructed using the `@{node_label}` "
                     f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
                     "directly invoked."
                 )
@@ -613,7 +613,7 @@ class PendingNodeInvocation:
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
-                "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
+                "Attempted to call `execute_in_process` on a composite solid.  Only graphs "
                 "constructed using the `@graph` decorator support this method."
             )
 
@@ -651,7 +651,7 @@ class PendingNodeInvocation:
     ) -> "ExecuteInProcessResult":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
-                "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
+                "Attempted to call `execute_in_process` on a composite solid.  Only graphs "
                 "constructed using the `@graph` decorator support this method."
             )
 
