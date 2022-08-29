@@ -269,8 +269,7 @@ def partitioned_asset_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[[PartitionedAssetMaterializationFunction,], PartitionedAssetSensorDefinition,]:
     """
-    TODO update docstring
-    Creates an asset sensor that can monitor multiple assets
+    Creates an asset sensor that can monitor multiple assets and their partitions.
 
     The decorated function is used as the asset sensor's evaluation
     function.  The decorated function may:
@@ -281,10 +280,10 @@ def partitioned_asset_sensor(
     4. Return nothing (skipping without providing a reason)
     5. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
 
-    Takes a :py:class:`~dagster.MultiAssetSensorEvaluationContext`.
+    Takes a :py:class:`~dagster.PartitionedAssetSensorEvaluationContext`.
 
     Args:
-        asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
+        assets (Sequence[AssetsDefinition]): The assets this sensor monitors.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
@@ -310,32 +309,11 @@ def partitioned_asset_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        def _wrapped_fn(context):
-            result = fn(context)
-
-            if inspect.isgenerator(result) or isinstance(result, list):
-                for item in result:
-                    yield item
-            elif isinstance(result, (RunRequest, SkipReason)):
-                yield result
-
-            elif result is not None:
-                raise DagsterInvariantViolationError(
-                    (
-                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                        "{result} of type {type_}.  Should only return SkipReason or "
-                        "RunRequest objects."
-                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
-                )
-
-            return _wrapped_fn
-
-        print("whereEE")
         return PartitionedAssetSensorDefinition(
             name=sensor_name,
             assets=assets,
             job_name=job_name,
-            asset_materialization_fn=_wrapped_fn,
+            asset_materialization_fn=_get_wrapped_sensor_fn(fn, sensor_name),
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
