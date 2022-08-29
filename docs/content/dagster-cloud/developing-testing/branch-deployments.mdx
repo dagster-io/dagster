@@ -12,6 +12,7 @@ Branch Deployments automatically create staging environments of your Dagster cod
 ## Understanding Branch Deployments
 
 - [Overview](#overview)
+- [Benefits](#benefits)
 - [Requirements](#requirements)
 - [Supported platforms](#supported-platforms)
 - [Limitations](#limitations)
@@ -21,19 +22,23 @@ Branch Deployments automatically create staging environments of your Dagster cod
 
 Think of a branch deployment as a branch of your data platform, one where you can preview changes without impacting production or overwriting a testing environment.
 
-<center>
-  <Image
-    src="/images/dagster-cloud/developing-testing/branch-deployments/branch-deployments.png"
-    width={532}
-    height={573}
-  />
-</center>
+<Image
+src="/images/dagster-cloud/developing-testing/branch-deployments/branch-deployments.png"
+width={700}
+height={744}
+/>
 
 Let's take a closer look:
 
-1. In your git repository, a new branch is created off of `master`. In the example above, this branch is named `feature-branch`.
-2. Dagster Cloud is notified of the push and begins creating a branch deployment, or staging environment.
-3. For every push to `feature-branch`, the branch deployment is rebuilt and redeployed.
+1. In your git repository, a new branch is created off of `main`. In the example above, this branch is named `feature-1`.
+
+2. Dagster Cloud is notified of the push and creates a branch deployment named `feature-1`. The branch deployment functions just like your `production` deployment of Dagster Cloud, but contains the Dagster code changes from the `feature-1` branch.
+
+   In this example, the `feature-1` branch deployment 'talks' to a `cloned schema` in a database. This is completely separate from the `prod schema` associated with the `production` deployment.
+
+3. For every push to the `feature-1` branch, the `feature-1` branch deployment in Dagster Cloud is re-built and re-deployed.
+
+### Benefits
 
 Now that you know how Branch Deployments work, **why should you use them**?
 
@@ -53,7 +58,7 @@ Branch Deployments can be used with any git or CI provider. However, setup is ea
 The following aren't currently supported for Branch Deployments:
 
 - Use in Dagster Open Source
-- [Schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), and [backfills](/concepts/partitions-schedules-sensors/backfills)
+- Testing [schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), and [backfills](/concepts/partitions-schedules-sensors/backfills)
 
 ### Output handling
 
