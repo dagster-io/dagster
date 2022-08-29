@@ -501,11 +501,15 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
 
     def resolve_required_resources(self, _graphene_info) -> Sequence[GrapheneResourceRequirement]:
+        if self.is_source_asset():
+            return []
         node_def_snap = self.get_node_definition_snap()
         all_unique_keys = self.get_required_resource_keys(node_def_snap)
         return [GrapheneResourceRequirement(key) for key in all_unique_keys]
 
     def resolve_type(self, _graphene_info) -> Optional[str]:
+        if self.is_source_asset():
+            return None
         external_pipeline = self.get_external_pipeline()
         output_name = self.external_asset_node.output_name
         if output_name:
