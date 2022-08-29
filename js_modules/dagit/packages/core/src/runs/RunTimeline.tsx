@@ -414,7 +414,7 @@ const RunTimelineRow = ({
               }}
             >
               <Popover
-                content={<RunHoverContent jobKey={job.key} batch={batch} />}
+                content={<RunHoverContent job={job} batch={batch} />}
                 position="top"
                 interactionKind="hover"
                 className="chunk-popover-target"
@@ -519,19 +519,22 @@ const BatchCount = styled.div`
 `;
 
 interface RunHoverContentProps {
-  jobKey: string;
+  job: TimelineJob;
   batch: RunBatch<TimelineRun>;
 }
 
 const RunHoverContent = (props: RunHoverContentProps) => {
-  const {jobKey, batch} = props;
+  const {job, batch} = props;
+  const sliced = batch.runs.slice(0, 50);
+  const remaining = batch.runs.length - sliced.length;
+
   return (
     <Box style={{width: '260px'}}>
       <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
-        <HoverContentJobName>{jobKey}</HoverContentJobName>
+        <HoverContentJobName>{job.jobName}</HoverContentJobName>
       </Box>
       <div style={{maxHeight: '240px', overflowY: 'auto'}}>
-        {batch.runs.map((run, ii) => (
+        {sliced.map((run, ii) => (
           <Box
             key={run.id}
             border={ii > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
@@ -558,6 +561,11 @@ const RunHoverContent = (props: RunHoverContentProps) => {
           </Box>
         ))}
       </div>
+      {remaining > 0 ? (
+        <Box padding={12} border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
+          <Link to={`${job.path}runs`}>+ {remaining} more</Link>
+        </Box>
+      ) : null}
     </Box>
   );
 };

@@ -231,4 +231,65 @@ describe('batchRunsForTimeline', () => {
       expect(batch.runs).toContain(tinyRunB);
     });
   });
+
+  describe('Overlap with "now"', () => {
+    let realDate: any;
+    beforeEach(() => {
+      realDate = Date.now();
+    });
+
+    afterAll(() => {
+      Date.now = realDate;
+    });
+
+    /**
+     *                   | <- NOW
+     * [      ]
+     *         [      ]
+     */
+    it('does batch adjacent runs if they do not overlap with "now"', () => {
+      Date.now = jest.fn(() => 80);
+      const runA = {startTime: 10, endTime: 40};
+      const runB = {startTime: 40, endTime: 70};
+      const runs = [runA, runB];
+
+      const batched = getBatch(runs);
+      expect(batched.length).toBe(1);
+      const batch = batched[0];
+      expect(batch.startTime).toBe(10);
+      expect(batch.endTime).toBe(70);
+      expect(batch.left).toBe(10);
+      expect(batch.width).toBe(60);
+      expect(batch.runs).toContain(runA);
+      expect(batch.runs).toContain(runB);
+    });
+
+    /**
+     *         | <- NOW
+     * [      ]
+     *         [      ]
+     */
+    it('does not batch adjacent runs if they also would overlap with "now"', () => {
+      Date.now = jest.fn(() => 40);
+      const runA = {startTime: 10, endTime: 40};
+      const runB = {startTime: 40, endTime: 70};
+      const runs = [runA, runB];
+
+      const batched = getBatch(runs);
+      expect(batched.length).toBe(2);
+      const [batchB, batchA] = batched;
+
+      expect(batchA.startTime).toBe(10);
+      expect(batchA.endTime).toBe(40);
+      expect(batchA.left).toBe(10);
+      expect(batchA.width).toBe(30);
+      expect(batchA.runs).toContain(runA);
+
+      expect(batchB.startTime).toBe(40);
+      expect(batchB.endTime).toBe(70);
+      expect(batchB.left).toBe(40);
+      expect(batchB.width).toBe(30);
+      expect(batchB.runs).toContain(runB);
+    });
+  });
 });
