@@ -109,7 +109,6 @@ def core_execute_run(
         yield from execute_run_iterator(
             recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
         )
-        # Run the next run after this
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
         yield instance.report_engine_event(

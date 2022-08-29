@@ -354,3 +354,37 @@ def test_partitioned_asset_sensor_context():
         )
         assert list(two_asset_sensor(ctx))[0].tags['dagster/partition'] == '2022-08-01'
         assert ctx.get_cursor_partition(AssetKey("daily_partitions_asset")) == "2022-08-01"
+
+
+def test_invalid_partition_mapping():
+    partitions_july = DailyPartitionsDefinition("2022-07-01")
+
+    @asset(partitions_def=partitions_july)
+    def july_daily_partitions():
+        return 1
+
+    @asset(partitions_def=DailyPartitionsDefinition("2022-08-01"))
+    def august_daily_partitions():
+        return 1
+
+    @partitioned_asset_sensor(assets=[july_daily_partitions])
+    def asset_sensor(context):
+        asset_events = context.latest_materialization_records_by_key()
+
+        july_materialization = asset_events.get(AssetKey("july_daily_partitions"))
+        if july_materialization:
+            # Line errors because we're trying to map to a partition that doesn't exist
+            mapped_partition = context.map_partition(
+                context.get_partition_from_event_log_record(july_materialization),
+                august_daily_partitions.partitions_def,
+            )
+
+    with instance_for_test() as instance:
+        materialize(
+            [july_daily_partitions],
+            partition_key="2022-07-01",
+            instance=instance,
+        )
+        ctx = build_partitioned_asset_sensor_context([july_daily_partitions], instance=instance)
+        with pytest.raises(DagsterInvalidInvocationError):
+            list(asset_sensor(ctx))
