@@ -35,10 +35,10 @@ When memoization is enabled, the outputs of ops will be cached. Ops will only be
 The following diagram shows how an op output version is computed.
 
 <Image
-alt="op-versioning-diagram"
+alt="Diagram describing how an op output version is computed"
 src="/images/guides/versioning_memoization/op-version-computation.png"
-width={3808}
-height={2414}
+width={861}
+height={402}
 />
 
 Notice how the version of an output depends on all upstream output versions. Because of this, output versions are computed in topological order.
@@ -46,10 +46,10 @@ Notice how the version of an output depends on all upstream output versions. Bec
 This diagram describes the computation of the version of a resource.
 
 <Image
-alt="resource-versioning-diagram"
+alt="Diagram describing how a resource version is computed"
 src="/images/guides/versioning_memoization/resource-version-computation.png"
-width={3808}
-height={2414}
+width={711}
+height={531}
 />
 
 Resource versions are also computed in topological order, as resources can depend on other resources.
