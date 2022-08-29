@@ -354,9 +354,12 @@ def request_list_sensor(_ctx):
         )
     ],
     run_status=DagsterRunStatus.SUCCESS,
+    request_job=the_job,
 )
-def cross_repo_job_sensor(context):
-    assert isinstance(context.instance, DagsterInstance)
+def cross_repo_job_sensor():
+    from time import time
+
+    return RunRequest(run_key=str(time()))
 
 
 @run_status_sensor(
@@ -2521,7 +2524,11 @@ def test_cross_repo_job_run_status_sensor(executor):
             cross_repo_sensor = the_repo.get_external_sensor("cross_repo_job_sensor")
             instance.start_sensor(cross_repo_sensor)
 
+            assert instance.get_runs_count() == 0
+
             evaluate_sensors(instance, workspace, executor)
+            wait_for_all_runs_to_finish(instance)
+            assert instance.get_runs_count() == 0
 
             ticks = instance.get_ticks(
                 cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
@@ -2546,13 +2553,17 @@ def test_cross_repo_job_run_status_sensor(executor):
             )
             instance.submit_run(run.run_id, workspace)
             wait_for_all_runs_to_finish(instance)
+            assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
             assert run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             evaluate_sensors(instance, workspace, executor)
+            wait_for_all_runs_to_finish(instance)
+            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "the_graph"]
+            assert len(run_request_runs) == 1
+            assert run_request_runs[0].status == DagsterRunStatus.SUCCESS
 
             ticks = instance.get_ticks(
                 cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
@@ -2563,6 +2574,24 @@ def test_cross_repo_job_run_status_sensor(executor):
                 cross_repo_sensor,
                 freeze_datetime,
                 TickStatus.SUCCESS,
+            )
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+            # ensure that the success of the run launched by the sensor doesn't trigger the sensor
+            evaluate_sensors(instance, workspace, executor)
+            wait_for_all_runs_to_finish(instance)
+            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "the_graph"]
+            assert len(run_request_runs) == 1
+
+            ticks = instance.get_ticks(
+                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+            )
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                cross_repo_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
             )
 
 

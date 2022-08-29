@@ -37,6 +37,7 @@ from dagster_test.toys.retries import retry_job
 from dagster_test.toys.run_status_sensors import (
     cross_repo_job_sensor,
     cross_repo_sensor,
+    cross_repo_success_job_sensor,
     fails_job,
     fails_sensor,
     return_multi_run_request_success_sensor,
@@ -107,6 +108,7 @@ def toys_repository():
             fails_sensor,
             cross_repo_sensor,
             cross_repo_job_sensor,
+            cross_repo_success_job_sensor,
             status_job,
             df_stats_job,
             yield_multi_run_request_success_sensor,
@@ -120,7 +122,7 @@ def toys_repository():
 
 @repository
 def more_toys_repository():
-    return [fails_job]
+    return [fails_job, succeeds_job]
 
 
 @repository
