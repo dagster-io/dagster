@@ -343,10 +343,10 @@ class PartitionedAssetSensorEvaluationContext(SensorEvaluationContext):
 
     .. code-block:: python
 
-        from dagster import multi_asset_sensor, MultiAssetSensorEvaluationContext
+        from dagster import partitioned_asset_sensor, PartitionedAssetSensorEvaluationContext
 
-        @multi_asset_sensor(asset_keys=[AssetKey("asset_1), AssetKey("asset_2)])
-        def the_sensor(context: MultiAssetSensorEvaluationContext):
+        @partitioned_asset_sensor(assets=[daily_partitioned_asset])
+        def the_sensor(context: PartitionedAssetSensorEvaluationContext):
             ...
 
     """
@@ -1083,14 +1083,14 @@ def build_partitioned_asset_sensor_context(
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
 ) -> PartitionedAssetSensorEvaluationContext:
-    """Builds multi asset sensor execution context using the provided parameters.
+    """Builds partitioned asset sensor execution context using the provided parameters.
 
-    This function can be used to provide a context to the invocation of a multi asset sensor definition. If
-    provided, the dagster instance must be persistent; DagsterInstance.ephemeral() will result in an
-    error.
+    This function can be used to provide a context to the invocation of a partitioned
+    asset sensor definition. If provided, the dagster instance must be persistent;
+    DagsterInstance.ephemeral() will result in an error.
 
     Args:
-        asset_keys (Sequence[AssetKey]): The list of asset keys monitored by the sensor
+        assets (Sequence[AssetsDefinition]): The list of assets monitored by the sensor
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
         cursor (Optional[str]): A string cursor to provide to the evaluation of the sensor. Must be
             a dictionary of asset key strings to ints that has been converted to a json string
@@ -1101,7 +1101,7 @@ def build_partitioned_asset_sensor_context(
         .. code-block:: python
 
             with instance_for_test() as instance:
-                context = build_multi_asset_sensor_context(asset_keys=[AssetKey("asset_1"), AssetKey("asset_2")], instance=instance)
+                context = build_partitioned_asset_sensor_context(assets=[daily_partitioned_asset], instance=instance)
                 my_asset_sensor(context)
 
     """
@@ -1416,14 +1416,12 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
 @experimental
 class PartitionedAssetSensorDefinition(SensorDefinition):
-    """Define an asset sensor that initiates a set of runs based on the materialization of a list of
-    assets.
-
-    TODO: Update docstring
+    """Define an asset sensor that initiates a set of runs based on the partitioned materializations
+    of a list of assets.
 
     Args:
         name (str): The name of the sensor to create.
-        asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
+        assets (Sequence[AssetsDefinition]): The partitioned assets this sensor monitors.
         asset_materialization_fn (Callable[[MultiAssetSensorEvaluationContext], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
             evaluation function for the sensor, which is run at an interval to determine whether a
             run should be launched or not. Takes a :py:class:`~dagster.MultiAssetSensorEvaluationContext`.
@@ -1470,7 +1468,6 @@ class PartitionedAssetSensorDefinition(SensorDefinition):
             jobs=jobs,
             default_status=default_status,
         )
-        # is job/ job name even used?
 
     def __call__(self, *args, **kwargs):
         if is_context_provided(self._raw_fn):
