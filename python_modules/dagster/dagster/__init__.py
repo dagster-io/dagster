@@ -305,6 +305,7 @@ from dagster._core.definitions.sensor_definition import (
     SensorEvaluationContext as SensorEvaluationContext,
     build_sensor_context as build_sensor_context,
     build_multi_asset_sensor_context as build_multi_asset_sensor_context,
+    build_partitioned_asset_sensor_context as build_partitioned_asset_sensor_context,
 )
 from dagster._core.definitions.source_asset import (
     SourceAsset as SourceAsset,

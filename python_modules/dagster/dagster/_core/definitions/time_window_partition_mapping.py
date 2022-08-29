@@ -101,7 +101,9 @@ def round_datetime_to_period(dt: datetime, period: ScheduleType) -> datetime:
     if period == ScheduleType.MONTHLY:
         return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     elif period == ScheduleType.WEEKLY:
-        return (dt - timedelta(days=dt.weekday())).replace(
+        # isoweekday returns 1 for Monday, 7 for Sunday. Our weekly partitions start from every
+        # Sunday so we mod isoweekday by 7.
+        return (dt - timedelta(days=(dt.isoweekday() % 7))).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
     elif period == ScheduleType.DAILY:
