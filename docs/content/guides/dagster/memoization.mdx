@@ -1,8 +1,8 @@
 ---
-title: Versioning and Memoization | Dagster
+title: Versioning and memoization | Dagster
 ---
 
-# Versioning and Memoization <Experimental />
+# Versioning and memoization <Experimental />
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/guides/dagster/versioning_memoization" />
 
@@ -10,7 +10,9 @@ This example describes how to use Dagster's versioning and memoization features.
 
 Dagster can use versions to determine whether or not it is necessary to re-execute a particular step. Given versions of the code from each op in a job, the system can infer whether an upcoming execution of a step will differ from previous executions by tagging op outputs with a version. This allows for the outputs of previous runs to be re-used. We call this process **memoized execution**.
 
-## Quick Start
+---
+
+## Quick start
 
 You can enable memoization functionality by providing a <PyObject object="VersionStrategy"/> to your job. Dagster provides the <PyObject object="SourceHashVersionStrategy"/> as a top-level export.
 
@@ -30,7 +32,9 @@ When memoization is enabled, the outputs of ops will be cached. Ops will only be
 - The version of a required resource changes
 - The value returned by your VersionStrategy for that particular op changes. In the case of <PyObject object="SourceHashVersionStrategy"/>, this only occurs when the code within your ops and resources changes.
 
-## How Versioning Works
+---
+
+## How versioning works
 
 The following diagram shows how an op output version is computed.
 
@@ -54,7 +58,9 @@ height={531}
 
 Resource versions are also computed in topological order, as resources can depend on other resources.
 
-## How Memoization Works
+---
+
+## How memoization works
 
 Memoization is enabled by using a _version strategy_ on your job, in tandem with <PyObject object="MemoizableIOManager"/>. In addition to the `handle_output` and `load_input` methods from the traditional <PyObject object="IOManager"/>, `MemoizableIOManager`s also implement a `has_output` method. This is intended to check whether an output already exists that matches specifications.
 
@@ -62,15 +68,21 @@ Before execution occurs, the Dagster system will determine a set of which steps 
 
 Several of the persistent IO managers provided by Dagster are memoizable. This includes Dagster's default io manager, the <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> and the <PyObject object="fs_io_manager"/>.
 
+---
+
 ## Writing a custom VersionStrategy
 
 There will likely be cases where the default <PyObject object="SourceHashVersionStrategy"/> will not suffice. In these cases, it is advantageous to implement your own `VersionStrategy` to match your requirements.
 
 Check out the implementation of <PyObject object="SourceHashVersionStrategy"/> as an example.
 
+---
+
 ## Writing a custom MemoizableIOManager
 
 If you are using a custom IO manager and want to make use of memoization functionality, then your custom IO manager must be memoizable. This means they must implement the `has_output` function. The <PyObject object="OutputContext" method="get_output_identifier" /> will provide a path which includes version information that you can both store and check outputs to. Check out our implementations of io managers for inspiration.
+
+---
 
 ## Disabling memoization
 
