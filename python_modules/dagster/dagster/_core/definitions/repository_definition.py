@@ -33,6 +33,7 @@ from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 from .source_asset import SourceAsset
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from .unresolved_asset_sensor_definition import UnresolvedAssetSensorDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -647,6 +648,7 @@ class CachingRepositoryData(RepositoryData):
                 "AssetGroup",
                 GraphDefinition,
                 UnresolvedAssetJobDefinition,
+                UnresolvedAssetSensorDefinition,
             ]
         ],
         default_executor_def: Optional[ExecutorDefinition] = None,
@@ -667,10 +669,12 @@ class CachingRepositoryData(RepositoryData):
         partition_sets: Dict[str, PartitionSetDefinition] = {}
         schedules: Dict[str, ScheduleDefinition] = {}
         sensors: Dict[str, SensorDefinition] = {}
+        unresolved_asset_sensors: Dict[str, UnresolvedAssetSensorDefinition] = {}
         assets_defs: List[AssetsDefinition] = []
         asset_keys: Set[AssetKey] = set()
         source_assets: List[SourceAsset] = []
         combined_asset_group = None
+
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if (
@@ -693,13 +697,32 @@ class CachingRepositoryData(RepositoryData):
                     )
                 partition_sets[definition.name] = definition
             elif isinstance(definition, SensorDefinition):
-                if definition.name in sensors or definition.name in schedules:
+                if (
+                    definition.name in sensors
+                    or definition.name in schedules
+                    or definition.name in unresolved_asset_sensors
+                ):
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for {definition.name}"
                     )
                 sensors[definition.name] = definition
+            elif isinstance(definition, UnresolvedAssetSensorDefinition):
+                if (
+                    definition.name in sensors
+                    or definition.name in schedules
+                    or definition.name in unresolved_asset_sensors
+                ):
+                    raise DagsterInvalidDefinitionError(
+                        f"Duplicate definition found for {definition.name}"
+                    )
+                # we can only resolve these once we have all assets
+                unresolved_asset_sensors[definition.name] = definition
             elif isinstance(definition, ScheduleDefinition):
-                if definition.name in sensors or definition.name in schedules:
+                if (
+                    definition.name in sensors
+                    or definition.name in schedules
+                    or definition.name in unresolved_asset_sensors
+                ):
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for {definition.name}"
                     )
@@ -768,6 +791,19 @@ class CachingRepositoryData(RepositoryData):
             }
         else:
             source_assets_by_key = {}
+
+        # resolve all the UnresolvedAssetSensorDefinitions using the full set of assets
+        for name, unresolved_asset_sensor_def in unresolved_asset_sensors.items():
+            if not combined_asset_group:
+                raise DagsterInvalidDefinitionError(
+                    f"UnresolvedAssetSensor {name} specified, but no AssetsDefinitions exist "
+                    "on the repository."
+                )
+            resolved_asset_sensor = unresolved_asset_sensor_def.resolve(
+                assets=combined_asset_group.assets, source_assets=combined_asset_group.source_assets
+            )
+
+            sensors[name] = resolved_asset_sensor
 
         for name, sensor_def in sensors.items():
             if sensor_def.has_loadable_targets():

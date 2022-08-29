@@ -329,6 +329,11 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.definitions.unresolved_asset_job_definition import (
     define_asset_job as define_asset_job,
 )
+
+from dagster._core.definitions.unresolved_asset_sensor_definition import (
+    # UnresolvedAssetSensorDefinition as UnresolvedAssetSensorDefinition,
+    build_asset_sensor as build_asset_sensor,
+)
 from dagster._core.definitions.utils import (
     config_from_files as config_from_files,
     config_from_pkg_resources as config_from_pkg_resources,

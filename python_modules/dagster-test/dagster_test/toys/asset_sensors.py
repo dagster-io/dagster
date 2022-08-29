@@ -1,9 +1,11 @@
 from dagster import (
     AssetKey,
     AssetOut,
+    AssetSelection,
     RunRequest,
     SkipReason,
     asset,
+    build_asset_sensor,
     job,
     multi_asset,
     multi_asset_sensor,
@@ -132,6 +134,16 @@ def every_fifth_materialization_sensor(context):
         )
 
 
+@asset
+def upstream():
+    return 1
+
+
+@asset
+def downstream(upstream):
+    return upstream + 1
+
+
 def get_asset_sensors_repo():
     return [
         asset_a,
@@ -143,4 +155,7 @@ def get_asset_sensors_repo():
         multi_asset_a,
         asset_string_and_int_sensor,
         every_fifth_materialization_sensor,
+        upstream,
+        downstream,
+        build_asset_sensor(selection=AssetSelection.assets(downstream), name="generated_sensor"),
     ]

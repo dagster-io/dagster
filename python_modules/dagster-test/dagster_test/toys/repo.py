@@ -46,6 +46,7 @@ from dagster_test.toys.run_status_sensors import (
     success_sensor_with_pipeline_run_reaction,
     yield_multi_run_request_success_sensor,
     yield_run_request_succeeds_sensor,
+    cross_repo_success_job_sensor,
 )
 from dagster_test.toys.sleepy import sleepy_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
@@ -103,6 +104,7 @@ def toys_repository():
             succeeds_job,
             return_run_request_succeeds_sensor,
             yield_run_request_succeeds_sensor,
+            cross_repo_success_job_sensor,
             fails_job,
             fails_sensor,
             cross_repo_sensor,
@@ -120,7 +122,7 @@ def toys_repository():
 
 @repository
 def more_toys_repository():
-    return [fails_job]
+    return [fails_job, succeeds_job]
 
 
 @repository
