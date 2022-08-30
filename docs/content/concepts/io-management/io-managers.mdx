@@ -7,12 +7,14 @@ description: IO Managers determine how to store asset/op outputs and load asset/
 
 IO Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
 
+<center>
 <Image
-alt="IO Manager Diagram"
+alt="Diagram of assets and ops with an I/O manager"
 src="/images/io-managers.png"
-width={3200}
-height={1040}
+width={683}
+height={410}
 />
+</center>
 
 ## Relevant APIs
 
@@ -40,16 +42,11 @@ from files on a filesystem.
 
 For ops, each op output can have its own IO manager, or multiple op outputs can share an IO manager. The IO manager that's used for handling a particular op output is automatically used for loading it in downstream ops.
 
-<Image
-alt="two-io-managers"
-src="/images/concepts/two-io-managers.png"
-width={3200}
-height={1040}
-/>
+Consider the following diagram. In this example, a job has two IO managers, each of which is shared across a few inputs and outputs:
 
-<!-- https://excalidraw.com/#json=4546514944786432,52cpcHHoWfzOMro2eFC6MQ -->
-
-This diagram shows a job with two IO managers, each of which is shared across a few inputs and outputs.
+<center>
+<Image src="/images/concepts/two-io-managers.png" width={643} height={382} />
+</center>
 
 For assets, each asset can have its own IO manager. In the [multi-asset](/concepts/assets/multi-assets) case where multiple assets are outputted, each outputted asset can be handled with a different IO manager.
 
