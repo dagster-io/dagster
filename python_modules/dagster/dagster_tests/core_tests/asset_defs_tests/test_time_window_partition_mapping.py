@@ -104,9 +104,9 @@ def test_get_upstream_partitions_for_partition_range_monthly_downstream_daily_up
         ("2020-01-01", ScheduleType.MONTHLY, "2020-01-01"),
         ("2020-01-02", ScheduleType.MONTHLY, "2020-01-01"),
         ("2020-01-02 01:00:00", ScheduleType.MONTHLY, "2020-01-01"),
-        ("2021-12-03", ScheduleType.WEEKLY, "2021-11-29"),
-        ("2021-12-03 01:00:00", ScheduleType.WEEKLY, "2021-11-29"),
-        ("2021-11-29", ScheduleType.WEEKLY, "2021-11-29"),
+        ("2021-12-03", ScheduleType.WEEKLY, "2021-11-28"),
+        ("2021-12-03 01:00:00", ScheduleType.WEEKLY, "2021-11-28"),
+        ("2021-11-28", ScheduleType.WEEKLY, "2021-11-28"),
     ],
 )
 def test_round_datetime_to_period(dt_str, period, expected_str):

@@ -5,7 +5,6 @@ import sys
 import tempfile
 import time
 from contextlib import ExitStack, contextmanager
-from dagster._core.definitions.assets import AssetsDefinition
 
 import pendulum
 import pytest
@@ -73,7 +72,7 @@ def c(a):
     return a + 2
 
 
-asset_job = define_asset_job("abc", selection=AssetSelection.keys("c").upstream())
+asset_job = define_asset_job("abc", selection=AssetSelection.keys("c", "b").upstream())
 
 
 @solid
@@ -342,7 +341,7 @@ def partitioned_asset_sensor_hourly_to_hourly(context):
 
 
 @partitioned_asset_sensor(assets=[hourly_asset, hourly_asset_2], job=hourly_asset_job)
-def doesnt_update_cursor_partitioned_asset_sensor(context):
+def doesnt_update_cursor_partitioned_asset_sensor(context):  # pylint: disable=unused-argument
     yield hourly_asset_job.run_request_for_partition(partition_key="2022-08-05-00:00", run_key=None)
 
 
