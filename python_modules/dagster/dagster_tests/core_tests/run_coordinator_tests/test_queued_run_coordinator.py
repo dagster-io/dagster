@@ -1,8 +1,8 @@
 import pytest
 from dagster_tests.api_tests.utils import get_bar_workspace
 
-from dagster._check import CheckError
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.events import DagsterEventType
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.pipeline_run import PipelineRunStatus
@@ -153,8 +153,17 @@ class TestQueuedRunCoordinator:
         run = self.create_run(
             instance, external_pipeline, run_id="foo-1", status=PipelineRunStatus.QUEUED
         )
-        with pytest.raises(CheckError):
-            coordinator.submit_run(SubmitRunContext(run, workspace))
+        coordinator.submit_run(SubmitRunContext(run, workspace))
+
+        # check that no enqueue event is reported (the submit run call is a no-op)
+        assert (
+            len(
+                instance.get_records_for_run(
+                    "foo-1", of_type=DagsterEventType.PIPELINE_ENQUEUED
+                ).records
+            )
+            == 0
+        )
 
     def test_cancel_run(
         self, instance, coordinator, workspace, external_pipeline

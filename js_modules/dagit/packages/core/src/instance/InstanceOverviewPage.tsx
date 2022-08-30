@@ -16,6 +16,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {HourWindow, makeJobKey, QueryfulRunTimeline} from '../runs/QueryfulRunTimeline';
 import {
   failedStatuses,
@@ -326,9 +327,23 @@ export const InstanceOverviewPage = () => {
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
 
+const HOUR_WINDOW_KEY = 'dagit.run-timeline-hour-window';
+
+const validateHourWindow = (value: string): HourWindow => {
+  switch (value) {
+    case '1':
+    case '6':
+    case '12':
+    case '24':
+      return value;
+    default:
+      return '12';
+  }
+};
+
 const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}) => {
   const [shown, setShown] = React.useState(true);
-  const [hourWindow, setHourWindow] = React.useState<HourWindow>('6');
+  const [hourWindow, setHourWindow] = useStateWithStorage(HOUR_WINDOW_KEY, validateHourWindow);
   const nowRef = React.useRef(Date.now());
 
   React.useEffect(() => {

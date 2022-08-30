@@ -29,9 +29,6 @@ from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import SolidExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
 
-# dbt resource types that may be considered assets
-ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
-
 
 def _load_manifest_for_project(
     project_dir: str,
@@ -94,6 +91,9 @@ def _select_unique_ids_from_manifest_json(
         nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
         sources={
             unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
+        },
+        metrics={
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()
         },
     )
 
@@ -170,26 +170,55 @@ def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types):
+    def _replaceable_node(node_info):
+        # some nodes exist inside the dbt graph but are not assets
+        resource_type = node_info["resource_type"]
+        if resource_type == "metric":
+            return True
+        if (
+            resource_type == "model"
+            and node_info.get("config", {}).get("materialized") == "ephemeral"
+        ):
+            return True
+        return False
+
+    def _valid_parent_node(node_info):
+        # sources are valid parents, but not assets
+        return node_info["resource_type"] in asset_resource_types + ["source"]
 
     asset_deps: Dict[str, Set[str]] = {}
     for unique_id in selected_unique_ids:
         node_info = dbt_nodes[unique_id]
         node_resource_type = node_info["resource_type"]
 
-        # skip non-asset resources, such as tests and sources
-        if node_resource_type not in asset_resource_types:
+        # skip non-assets, such as metrics, tests, and ephemeral models
+        if _replaceable_node(node_info) or node_resource_type not in asset_resource_types:
             continue
 
         asset_deps[unique_id] = set()
         for parent_unique_id in node_info["depends_on"]["nodes"]:
             parent_node_info = dbt_nodes[parent_unique_id]
-            parent_resource_type = parent_node_info["resource_type"]
+            # for metrics or ephemeral dbt models, BFS to find valid parents
+            if _replaceable_node(parent_node_info):
+                visited = set()
+                replaced_parent_ids = set()
+                queue = parent_node_info["depends_on"]["nodes"]
+                while queue:
+                    candidate_parent_id = queue.pop()
+                    if candidate_parent_id in visited:
+                        continue
+                    visited.add(candidate_parent_id)
 
-            # only sources or other assets may be parents
-            if parent_resource_type not in ["source"] + asset_resource_types:
-                continue
+                    candidate_parent_info = dbt_nodes[candidate_parent_id]
+                    if _replaceable_node(candidate_parent_info):
+                        queue.extend(candidate_parent_info["depends_on"]["nodes"])
+                    elif _valid_parent_node(candidate_parent_info):
+                        replaced_parent_ids.add(candidate_parent_id)
 
-            asset_deps[unique_id].add(parent_unique_id)
+                asset_deps[unique_id] |= replaced_parent_ids
+            # ignore nodes which are not assets / sources
+            elif _valid_parent_node(parent_node_info):
+                asset_deps[unique_id].add(parent_unique_id)
 
     return asset_deps
 
@@ -529,7 +558,7 @@ def load_assets_from_dbt_manifest(
             "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",
         )
 
-    dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
+    dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"], **manifest_json["metrics"]}
 
     if selected_unique_ids:
         select = (

@@ -15,7 +15,13 @@ from dagster._core.host_representation import (
 from dagster._core.scheduler.instigation import InstigatorType
 
 from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
-from ...implementation.fetch_assets import get_asset, get_asset_node, get_asset_nodes, get_assets
+from ...implementation.fetch_assets import (
+    get_asset,
+    get_asset_node,
+    get_asset_node_definition_collisions,
+    get_asset_nodes,
+    get_assets,
+)
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
     get_instigator_state_or_error,
@@ -46,7 +52,12 @@ from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
-from ..asset_graph import GrapheneAssetLatestInfo, GrapheneAssetNode, GrapheneAssetNodeOrError
+from ..asset_graph import (
+    GrapheneAssetLatestInfo,
+    GrapheneAssetNode,
+    GrapheneAssetNodeDefinitionCollision,
+    GrapheneAssetNodeOrError,
+)
 from ..backfill import (
     GrapheneBulkActionStatus,
     GraphenePartitionBackfillOrError,
@@ -302,6 +313,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneAssetNodeOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
         description="Retrieve an asset node by asset key.",
+    )
+
+    assetNodeDefinitionCollisions = graphene.Field(
+        non_null_list(GrapheneAssetNodeDefinitionCollision),
+        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+        description="Retrieve a list of asset keys where two or more repos provide an asset definition. Note: Assets should "
+        + "not be defined in more than one repository - this query is used to present warnings and errors in Dagit.",
     )
 
     partitionBackfillOrError = graphene.Field(
@@ -582,6 +600,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_assetOrError(self, graphene_info, **kwargs):
         return get_asset(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
+
+    def resolve_assetNodeDefinitionCollisions(self, graphene_info, **kwargs):
+        asset_keys = set(
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+        )
+        return get_asset_node_definition_collisions(graphene_info, asset_keys)
 
     def resolve_partitionBackfillOrError(self, graphene_info, backfillId):
         return get_backfill(graphene_info, backfillId)

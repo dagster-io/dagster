@@ -84,7 +84,7 @@ class RunRequest(
             run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
             job_name=check.opt_str_param(job_name, "job_name"),
-            asset_selection=check.opt_sequence_param(
+            asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
         )

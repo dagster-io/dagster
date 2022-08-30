@@ -3,8 +3,6 @@ import warnings
 from contextlib import closing, contextmanager
 from typing import Mapping
 
-import pandas as pd
-
 import dagster._check as check
 from dagster import resource
 
@@ -121,6 +119,8 @@ class SnowflakeConnection:
         check.bool_param(fetch_results, "fetch_results")
 
         if use_pandas_result:
+            import pandas as pd
+
             results = pd.DataFrame()
         else:
             results = []

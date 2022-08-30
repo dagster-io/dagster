@@ -15,9 +15,11 @@ import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
+import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {AssetKey} from './types';
 import {
@@ -100,6 +102,13 @@ export const LaunchAssetExecutionButton: React.FC<{
       query: LAUNCH_ASSET_LOADER_QUERY,
       variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
     });
+
+    if (result.data.assetNodeDefinitionCollisions.length) {
+      showCustomAlert(buildAssetCollisionsAlert(result.data));
+      setState({type: 'none'});
+      return;
+    }
+
     const assets = result.data.assetNodes;
     const forceLaunchpad = e.shiftKey;
 
@@ -356,6 +365,32 @@ export function executionParamsForAssetJob(
   };
 }
 
+function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
+  return {
+    title: MULTIPLE_DEFINITIONS_WARNING,
+    body: (
+      <div style={{overflow: 'auto'}}>
+        One or more of the selected assets are defined in multiple repositories in your workspace.
+        Rename these assets to avoid collisions and then try again.
+        <ul>
+          {data.assetNodeDefinitionCollisions.map((collision, idx) => (
+            <li key={idx}>
+              <strong>{displayNameForAssetKey(collision.assetKey)}</strong>
+              <ul>
+                {collision.repositories.map((r, ridx) => (
+                  <li key={ridx}>
+                    {repoAddressAsString({name: r.name, location: r.location.name})}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ),
+  };
+}
+
 export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
     id
@@ -390,6 +425,19 @@ const LAUNCH_ASSET_LOADER_QUERY = gql`
     assetNodes(assetKeys: $assetKeys) {
       id
       ...LaunchAssetExecutionAssetNodeFragment
+    }
+    assetNodeDefinitionCollisions(assetKeys: $assetKeys) {
+      assetKey {
+        path
+      }
+      repositories {
+        id
+        name
+        location {
+          id
+          name
+        }
+      }
     }
   }
   ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}

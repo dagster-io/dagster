@@ -48,7 +48,6 @@ interface Props {
 export interface AssetViewParams {
   view?: 'activity' | 'definition' | 'lineage';
   lineageScope?: AssetLineageScope;
-  lineageShowSecondaryEdges?: boolean;
   lineageDepth?: number;
   partition?: string;
   time?: string;
@@ -65,7 +64,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   const {assetOrError} = queryResult.data || queryResult.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
-  const lastMaterializedAt = asset?.assetMaterializations[0]?.timestamp;
+  const materializations = asset?.assetMaterializations;
+  const lastMaterializedAt = materializations?.length ? materializations[0].timestamp : undefined;
   const viewingMostRecent = !params.asOf || Number(lastMaterializedAt) <= Number(params.asOf);
 
   const definition = asset?.definition;
@@ -85,7 +85,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       : params.view === 'lineage' && params.lineageScope === 'downstream'
       ? `"${token}"${depthStr}`
       : `${depthStr}"${token}"${depthStr}`,
-    {hideEdgesToNodesOutsideQuery: !params.lineageShowSecondaryEdges},
+    {hideEdgesToNodesOutsideQuery: true},
   );
 
   const {upstream, downstream} = useNeighborsFromGraph(assetGraphData, assetKey);

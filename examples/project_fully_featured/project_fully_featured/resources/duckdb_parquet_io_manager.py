@@ -16,7 +16,7 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
 
     def handle_output(self, context, obj):
         if obj is not None:  # if this is a dbt output, then the value will be None
-            yield from super().handle_output(context, obj)
+            super().handle_output(context, obj)
             con = self._connect_duckdb(context)
 
             path = self._get_path(context)

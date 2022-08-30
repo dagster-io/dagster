@@ -13,7 +13,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {JobMetadata} from './JobMetadata';
+import {JobMetadata, useJobNavMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';
 
 interface TabConfig {
@@ -78,6 +78,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const permissions = usePermissions();
   const repo = useRepository(repoAddress);
+
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
     '/workspace/:repoPath/jobs/:selector/:tab?',
@@ -88,16 +89,21 @@ export const PipelineNav: React.FC<Props> = (props) => {
   const explorerPath = explorerPathFromString(match!.params.selector);
   const {pipelineName, snapshotId} = explorerPath;
   const isJob = isThisThingAJob(repo, pipelineName);
-  const partitionSets = repo?.repository.partitionSets || [];
 
   // If using pipeline:mode tuple (crag flag), check for partition sets that are for this specific
   // pipeline:mode tuple. Otherwise, just check for a pipeline name match.
+  const partitionSets = repo?.repository.partitionSets || [];
   const hasPartitionSet = partitionSets.some(
     (partitionSet) => partitionSet.pipelineName === pipelineName,
   );
 
+  const navMetadata = useJobNavMetadata(repoAddress, pipelineName);
+  const hasLaunchpad = !navMetadata.assetNodes || navMetadata.assetNodes.length === 0;
+
   const tabs = currentOrder
-    .filter((key) => hasPartitionSet || key !== 'partitions')
+    .filter(
+      (key) => (hasLaunchpad || key !== 'playground') && (hasPartitionSet || key !== 'partitions'),
+    )
     .map(tabForKey(repoAddress, isJob, explorerPath));
 
   return (
@@ -111,7 +117,11 @@ export const PipelineNav: React.FC<Props> = (props) => {
               <RepositoryLink repoAddress={repoAddress} />
             </Tag>
             {snapshotId ? null : (
-              <JobMetadata pipelineName={pipelineName} repoAddress={repoAddress} />
+              <JobMetadata
+                pipelineName={pipelineName}
+                repoAddress={repoAddress}
+                metadata={navMetadata}
+              />
             )}
           </Box>
         }

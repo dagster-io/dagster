@@ -31,6 +31,9 @@ export const batchRunsForTimeline = <R extends RunWithTime>(config: Config<R>) =
   const {runs, start, end, width, minChunkWidth, minMultipleWidth} = config;
   const rangeLength = end - start;
 
+  const now = Date.now();
+  const nowLeft = ((now - start) / (end - start)) * width;
+
   const batches: RunBatch<R>[] = runs
     .map((run) => {
       const startTime = run.startTime;
@@ -55,20 +58,12 @@ export const batchRunsForTimeline = <R extends RunWithTime>(config: Config<R>) =
     .sort((a, b) => b.left - a.left);
 
   const consolidated = [];
+
   while (batches.length) {
     const current = batches.shift();
     const next = batches[0];
     if (current) {
-      if (
-        next &&
-        overlap(
-          {
-            start: current.left,
-            end: current.left + Math.max(current.width, minMultipleWidth),
-          },
-          {start: next.left, end: next.left + Math.max(next.width, minMultipleWidth)},
-        )
-      ) {
+      if (next && canBatch(current, next, minMultipleWidth, nowLeft)) {
         // Remove `next`, consolidate it with `current`, and unshift it back on.
         // This way, we keep looking for batches to consolidate with.
         batches.shift();
@@ -99,4 +94,30 @@ export const batchRunsForTimeline = <R extends RunWithTime>(config: Config<R>) =
   }
 
   return consolidated;
+};
+
+const canBatch = (
+  current: RunBatch<RunWithTime>,
+  next: RunBatch<RunWithTime>,
+  minMultipleWidth: number,
+  nowLeft: number,
+) => {
+  const currentStart = current.left;
+  const currentEnd = current.left + Math.max(current.width, minMultipleWidth);
+  const nextStart = next.left;
+  const nextEnd = next.left + Math.max(next.width, minMultipleWidth);
+
+  const minStart = Math.min(current.left, next.left);
+  const maxEnd = Math.max(
+    current.left + Math.max(current.width, minMultipleWidth),
+    next.left + Math.max(next.width, minMultipleWidth),
+  );
+
+  // If the batches overlap with each other but do NOT visually overlap with the "now"
+  // time marker, they can be batched.
+  return (
+    overlap({start: currentStart, end: currentEnd}, {start: nextStart, end: nextEnd}) &&
+    // ...and they do not combine to cross over the "now" marker
+    (minStart > nowLeft || maxEnd < nowLeft)
+  );
 };

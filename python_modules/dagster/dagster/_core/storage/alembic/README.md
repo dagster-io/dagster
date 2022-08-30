@@ -11,7 +11,7 @@ To add a sql schema migration, follow the following steps:
 1. Change the schema definition
    1. add a column foo to RunsTable in dagster.core.storage.runs.schema
 1. Add an alembic migration script. You'll typically use a specific engine (e.g. sqlite) to create the script, but the migration will apply to all storage implementations
-   1. `cd python_modules/dagster/dagster/core/storage/runs/sqlite/alembic; alembic revision -m 'add column foo'`
+   1. `cd python_modules/dagster/dagster/_core/storage/runs/sqlite/alembic; alembic revision -m 'add column foo'`
    1. Fill in the upgrade/downgrade parts of the migration using alembic operations: `op.add_column('runs', db.Column('foo', db.String))`
    1. Make sure that any storage-specific changes are guarded (e.g. if this should only apply to run storage, then do a `runs` table existence check)
    1. Make sure that any dialect-specific changes are guarded (e.g. if this should only apply to MySQL, then wrap in a conditional).

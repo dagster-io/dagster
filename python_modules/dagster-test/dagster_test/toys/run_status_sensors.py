@@ -199,6 +199,7 @@ def cross_repo_sensor(context):
         },
     )
 
+
 @run_status_sensor(
     monitored_jobs=[
         JobSelector(

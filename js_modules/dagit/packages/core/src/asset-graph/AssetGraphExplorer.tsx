@@ -1,17 +1,8 @@
-import {
-  Box,
-  Checkbox,
-  Colors,
-  Icon,
-  Mono,
-  NonIdealState,
-  SplitPanelContainer,
-} from '@dagster-io/ui';
+import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import React from 'react';
-import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
@@ -21,7 +12,6 @@ import {
   QueryRefreshState,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
-import {withMiddleTruncation} from '../app/Util';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
@@ -44,11 +34,10 @@ import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
-import {buildRepoPath} from '../workspace/buildRepoAddress';
-import {workspacePath} from '../workspace/workspacePath';
 
 import {AssetConnectedEdges} from './AssetEdges';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
+import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
@@ -316,70 +305,11 @@ export const AssetGraphExplorerWithData: React.FC<
 
                   {Object.values(layout.groups)
                     .sort((a, b) => a.id.length - b.id.length)
-                    .map(
-                      ({
-                        id,
-                        bounds,
-                        groupName,
-                        repositoryName,
-                        repositoryLocationName,
-                        repositoryDisambiguationRequired,
-                      }) => (
-                        <foreignObject
-                          x={bounds.x}
-                          y={bounds.y}
-                          width={bounds.width}
-                          height={bounds.height}
-                          key={id}
-                        >
-                          <Mono
-                            style={{
-                              opacity: _scale > MINIMAL_SCALE ? (_scale - MINIMAL_SCALE) / 0.2 : 0,
-                              fontWeight: 600,
-                              display: 'flex',
-                              gap: 6,
-                            }}
-                          >
-                            <Icon name="asset_group" size={20} />
-                            <Box flex={{direction: 'column'}}>
-                              <Link
-                                style={{color: Colors.Gray900}}
-                                onClick={(e) => e.stopPropagation()}
-                                to={workspacePath(
-                                  repositoryName,
-                                  repositoryLocationName,
-                                  `/asset-groups/${groupName}`,
-                                )}
-                              >
-                                {groupName}
-                              </Link>
-                              {repositoryDisambiguationRequired && (
-                                <GroupRepoName>
-                                  {withMiddleTruncation(
-                                    buildRepoPath(repositoryName, repositoryLocationName),
-                                    {maxLength: 45},
-                                  )}
-                                </GroupRepoName>
-                              )}
-                            </Box>
-                          </Mono>
-
-                          <GroupOutline
-                            style={{
-                              marginTop: 6,
-                              height:
-                                bounds.height -
-                                (repositoryDisambiguationRequired ? 24 + 18 : 24) -
-                                3,
-                              border: `${Math.max(2, 2 / _scale)}px dashed ${Colors.Gray300}`,
-                              background: `rgba(223, 223, 223, ${
-                                0.4 - Math.max(0, _scale - MINIMAL_SCALE) * 0.3
-                              })`,
-                            }}
-                          />
-                        </foreignObject>
-                      ),
-                    )}
+                    .map((group) => (
+                      <foreignObject key={group.id} {...group.bounds}>
+                        <AssetGroupNode group={group} scale={_scale} />
+                      </foreignObject>
+                    ))}
 
                   {Object.values(layout.nodes).map(({id, bounds}) => {
                     const graphNode = assetGraphData.nodes[id];
@@ -503,19 +433,6 @@ export const AssetGraphExplorerWithData: React.FC<
 const SVGContainer = styled.svg`
   overflow: visible;
   border-radius: 0;
-`;
-
-const GroupOutline = styled.div`
-  width: 100%;
-  border-radius: 10px;
-  pointer-events: none;
-`;
-
-const GroupRepoName = styled.div`
-  font-size: 0.8rem;
-  line-height: 0.7rem;
-  white-space: nowrap;
-  margin-bottom: 4px;
 `;
 
 // Helpers
