@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 
 
 def get_description() -> str:
-    readme_path = Path(__file__).parent.parent.parent / "README.md"
+    readme_path = Path(__file__).parent / "README.md"
 
     if not readme_path.exists():
         return """
@@ -45,15 +45,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_tests*"]),
-        package_data={
-            "dagster": [
-                "dagster/core/storage/event_log/sqlite/alembic/*",
-                "dagster/core/storage/runs/sqlite/alembic/*",
-                "dagster/core/storage/schedules/sqlite/alembic/*",
-                "dagster/_generate/templates/*",
-                "dagster/grpc/protos/*",
-            ]
-        },
         include_package_data=True,
         install_requires=[
             # cli
