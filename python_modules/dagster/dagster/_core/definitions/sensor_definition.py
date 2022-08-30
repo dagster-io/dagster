@@ -376,6 +376,10 @@ class PartitionedAssetSensorEvaluationContext(SensorEvaluationContext):
     def get_cursor_partition(self, asset_key):
         """A utility method to get the current partition the cursor is on."""
         asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
+        if asset_key not in [asset.key for asset in self._assets]:
+            raise DagsterInvalidInvocationError(
+                "Provided asset key must correspond to a provided asset"
+            )
         if asset_key:
             partition_key, _ = self._get_cursor(asset_key)
         elif self._assets is not None and len(self._assets) == 1:
@@ -502,7 +506,7 @@ class PartitionedAssetSensorEvaluationContext(SensorEvaluationContext):
                     "Cannot get latest materialization by partition for assets with no partitions"
                 )
             else:
-                partitions_to_fetch = asset.partitions_def.get_partition_keys()
+                partitions_to_fetch = list(asset.partitions_def.get_partition_keys())
                 partition_key, cursor = self._get_cursor(asset.key)
                 if partition_key is not None:
                     partitions_to_fetch = partitions_to_fetch[
