@@ -1,29 +1,26 @@
 import os
-import textwrap
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Optional, Sequence, Tuple, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
 from pyspark.sql import DataFrame as SparkDataFrame
-from pyspark.sql.types import StructField, StructType
 from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
 
-from dagster import IOManager, InputContext, MetadataEntry, OutputContext, io_manager
+from dagster import (
+    IOManager,
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+    io_manager,
+)
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-
-
-def spark_field_to_snowflake_type(spark_field: StructField):
-    # Snowflake does not have a long type (all integer types have the same precision)
-    spark_type = spark_field.dataType.typeName()
-    if spark_type == "long":
-        return "integer"
-    else:
-        return spark_type
 
 
 SHARED_SNOWFLAKE_CONF = {
@@ -79,9 +76,9 @@ class SnowflakeIOManager(IOManager):
             con.execute(self._get_cleanup_statement(table, schema, time_window))
 
         if isinstance(obj, SparkDataFrame):
-            yield from self._handle_spark_output(obj, schema, table)
+            metadata = self._handle_spark_output(obj, schema, table)
         elif isinstance(obj, PandasDataFrame):
-            yield from self._handle_pandas_output(obj, schema, table)
+            metadata = self._handle_pandas_output(obj, schema, table)
         elif obj is None:  # dbt
             config = dict(SHARED_SNOWFLAKE_CONF)
             config["schema"] = schema
@@ -89,28 +86,28 @@ class SnowflakeIOManager(IOManager):
                 df = read_sql(f"SELECT * FROM {context.name} LIMIT 5", con=con)
                 num_rows = con.execute(f"SELECT COUNT(*) FROM {context.name}").fetchone()
 
-            yield MetadataEntry.md(df.to_markdown(), "Data sample")
-            yield MetadataEntry.int(num_rows, "Rows")
+            metadata = {"data_sample": MetadataValue.md(df.to_markdown()), "rows": num_rows}
         else:
             raise Exception(
                 "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"
             )
 
-        yield MetadataEntry.text(
-            self._get_select_statement(
-                table,
-                schema,
-                None,
-                time_window,
-            ),
-            "Query",
+        context.add_output_metadata(
+            dict(
+                query=self._get_select_statement(
+                    table,
+                    schema,
+                    None,
+                    time_window,
+                ),
+                **metadata,
+            )
         )
 
-    def _handle_pandas_output(self, obj: PandasDataFrame, schema: str, table: str):
+    def _handle_pandas_output(
+        self, obj: PandasDataFrame, schema: str, table: str
+    ) -> Mapping[str, Any]:
         from snowflake import connector  # pylint: disable=no-name-in-module
-
-        yield MetadataEntry.int(obj.shape[0], "Rows")
-        yield MetadataEntry.md(pandas_columns_to_markdown(obj), "DataFrame columns")
 
         connector.paramstyle = "pyformat"
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -123,7 +120,21 @@ class SnowflakeIOManager(IOManager):
                 method=pd_writer,
             )
 
-    def _handle_spark_output(self, df: SparkDataFrame, schema: str, table: str):
+        return {
+            "rows": obj.shape[0],
+            "dataframe_columns": MetadataValue.table_schema(
+                TableSchema(
+                    columns=[
+                        TableColumn(name=name, type=str(dtype))
+                        for name, dtype in obj.dtypes.iteritems()
+                    ]
+                )
+            ),
+        }
+
+    def _handle_spark_output(
+        self, df: SparkDataFrame, schema: str, table: str
+    ) -> Mapping[str, Any]:
         options = {
             "sfURL": f"{self._config['account']}.snowflakecomputing.com",
             "sfUser": self._config["user"],
@@ -133,9 +144,19 @@ class SnowflakeIOManager(IOManager):
             "sfWarehouse": self._config["warehouse"],
             "dbtable": table,
         }
-        yield MetadataEntry.md(spark_columns_to_markdown(df.schema), "DataFrame columns")
 
         df.write.format("net.snowflake.spark.snowflake").options(**options).mode("append").save()
+
+        return {
+            "dataframe_columns": MetadataValue.table_schema(
+                TableSchema(
+                    columns=[
+                        TableColumn(name=field.name, type=field.dataType.typeName())
+                        for field in df.schema.fields
+                    ]
+                )
+            )
+        }
 
     def _get_cleanup_statement(
         self, table: str, schema: str, time_window: Optional[Tuple[datetime, datetime]]
@@ -184,27 +205,3 @@ class SnowflakeIOManager(IOManager):
     def _time_window_where_clause(self, time_window: Tuple[datetime, datetime]) -> str:
         start_dt, end_dt = time_window
         return f"""WHERE TO_TIMESTAMP(time::INT) BETWEEN '{start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)}' AND '{end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)}'"""
-
-
-def pandas_columns_to_markdown(dataframe: PandasDataFrame) -> str:
-    return (
-        textwrap.dedent(
-            """
-        | Name | Type |
-        | ---- | ---- |
-    """
-        )
-        + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.iteritems()])
-    )
-
-
-def spark_columns_to_markdown(schema: StructType) -> str:
-    return (
-        textwrap.dedent(
-            """
-        | Name | Type |
-        | ---- | ---- |
-    """
-        )
-        + "\n".join([f"| {field.name} | {field.dataType.typeName()} |" for field in schema.fields])
-    )
