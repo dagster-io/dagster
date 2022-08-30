@@ -64,7 +64,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   const {assetOrError} = queryResult.data || queryResult.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
-  const lastMaterializedAt = asset?.assetMaterializations[0]?.timestamp;
+  const materializations = asset?.assetMaterializations;
+  const lastMaterializedAt = materializations?.length ? materializations[0].timestamp : undefined;
   const viewingMostRecent = !params.asOf || Number(lastMaterializedAt) <= Number(params.asOf);
 
   const definition = asset?.definition;
