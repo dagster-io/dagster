@@ -7,14 +7,11 @@ import {
   NonIdealState,
   Page,
   PageHeader,
-  Tab,
-  Tabs,
   Tag,
   Heading,
-  TokenizingFieldValue,
   tokenToString,
 } from '@dagster-io/ui';
-import isEqual from 'lodash/isEqual';
+import partition from 'lodash/partition';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -28,12 +25,10 @@ import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
-import {RunStatus} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
-import {AllScheduledTicks} from './AllScheduledTicks';
-import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
+import {RunListTabs, useSelectedRunsTab} from './RunListTabs';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTable';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {
@@ -49,29 +44,12 @@ import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 
 const PAGE_SIZE = 25;
 
-const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
-  const statusTokens = new Set(
-    filterTokens.filter((token) => token.token === 'status').map((token) => token.value),
-  );
-  if (isEqual(queuedStatuses, statusTokens)) {
-    return 'queued';
-  }
-  if (isEqual(inProgressStatuses, statusTokens)) {
-    return 'in-progress';
-  }
-  if (isEqual(doneStatuses, statusTokens)) {
-    return 'done';
-  }
-  return 'all';
-};
-
 export const RunsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Runs');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
-  const [showScheduled, setShowScheduled] = React.useState(false);
   const canSeeConfig = useCanSeeConfig();
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
@@ -92,44 +70,38 @@ export const RunsRoot = () => {
     },
     variables: {
       filter,
-      queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
-      inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
     },
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
   });
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
-  const staticStatusTags = selectedTab !== 'all';
-
-  const setStatusFilter = (statuses: RunStatus[]) => {
-    const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
-    const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
-    setFilterTokens([...statusTokens, ...tokensMinusStatus]);
-    setShowScheduled(false);
-  };
+  const currentTab = useSelectedRunsTab(filterTokens);
+  const staticStatusTags = currentTab !== 'all';
+  const [statusTokens, nonStatusTokens] = partition(
+    filterTokens,
+    (token) => token.token === 'status',
+  );
 
   const setFilterTokensWithStatus = React.useCallback(
-    (tokens) => {
+    (tokens: RunFilterToken[]) => {
       if (staticStatusTags) {
-        const statusTokens = filterTokens.filter((token) => token.token === 'status');
         setFilterTokens([...statusTokens, ...tokens]);
       } else {
         setFilterTokens(tokens);
       }
     },
-    [filterTokens, setFilterTokens, staticStatusTags],
+    [setFilterTokens, staticStatusTags, statusTokens],
   );
 
   const onAddTag = React.useCallback(
     (token: RunFilterToken) => {
       const tokenAsString = tokenToString(token);
-      if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
-        setFilterTokensWithStatus([...filterTokens, token]);
+      if (!nonStatusTokens.some((token) => tokenToString(token) === tokenAsString)) {
+        setFilterTokensWithStatus([...nonStatusTokens, token]);
       }
     },
-    [filterTokens, setFilterTokensWithStatus],
+    [nonStatusTokens, setFilterTokensWithStatus],
   );
 
   const enabledFilters = React.useMemo(() => {
@@ -155,42 +127,14 @@ export const RunsRoot = () => {
         title={<Heading>Runs</Heading>}
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
-            <Tabs selectedTabId={selectedTab} id="run-tabs">
-              <Tab title="All runs" onClick={() => setStatusFilter([])} id="all" />
-              <Tab
-                title="Queued"
-                count={
-                  queryResult.data?.queuedCount?.__typename === 'Runs'
-                    ? queryResult.data?.queuedCount.count
-                    : 'indeterminate'
-                }
-                onClick={() => setStatusFilter(Array.from(queuedStatuses))}
-                id="queued"
-              />
-              <Tab
-                title="In progress"
-                count={
-                  queryResult.data?.inProgressCount?.__typename === 'Runs'
-                    ? queryResult.data?.inProgressCount.count
-                    : 'indeterminate'
-                }
-                onClick={() => setStatusFilter(Array.from(inProgressStatuses))}
-                id="in-progress"
-              />
-              <Tab
-                title="Done"
-                onClick={() => setStatusFilter(Array.from(doneStatuses))}
-                id="done"
-              />
-              <Tab title="Scheduled" onClick={() => setShowScheduled(true)} id="scheduled" />
-            </Tabs>
+            <RunListTabs />
             <Box padding={{bottom: 8}}>
               <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
           </Box>
         }
       />
-      {selectedTab === 'queued' && canSeeConfig ? (
+      {currentTab === 'queued' && canSeeConfig ? (
         <Box
           flex={{direction: 'column', gap: 8}}
           padding={{horizontal: 24, vertical: 16}}
@@ -252,10 +196,6 @@ export const RunsRoot = () => {
               );
             }
 
-            if (showScheduled) {
-              return <AllScheduledTicks />;
-            }
-
             return (
               <>
                 <StickyTableContainer $top={0}>
@@ -264,25 +204,23 @@ export const RunsRoot = () => {
                     onAddTag={onAddTag}
                     filter={filter}
                     actionBarComponents={
-                      showScheduled ? null : (
-                        <Box flex={{direction: 'column', gap: 8}}>
-                          {selectedTab !== 'all' ? (
-                            <Box flex={{direction: 'row', gap: 8}}>
-                              {filterTokens
-                                .filter((token) => token.token === 'status')
-                                .map(({token, value}) => (
-                                  <Tag key={token}>{`${token}:${value}`}</Tag>
-                                ))}
-                            </Box>
-                          ) : null}
-                          <RunsFilterInput
-                            tokens={mutableTokens}
-                            onChange={setFilterTokensWithStatus}
-                            loading={queryResult.loading}
-                            enabledFilters={enabledFilters}
-                          />
-                        </Box>
-                      )
+                      <Box flex={{direction: 'column', gap: 8}}>
+                        {currentTab !== 'all' ? (
+                          <Box flex={{direction: 'row', gap: 8}}>
+                            {filterTokens
+                              .filter((token) => token.token === 'status')
+                              .map(({token, value}) => (
+                                <Tag key={token}>{`${token}:${value}`}</Tag>
+                              ))}
+                          </Box>
+                        ) : null}
+                        <RunsFilterInput
+                          tokens={mutableTokens}
+                          onChange={setFilterTokensWithStatus}
+                          loading={queryResult.loading}
+                          enabledFilters={enabledFilters}
+                        />
+                      </Box>
                     }
                   />
                 </StickyTableContainer>
@@ -300,20 +238,8 @@ export const RunsRoot = () => {
   );
 };
 
-const COUNT_FRAGMENT = gql`
-  fragment CountFragment on Runs {
-    count
-  }
-`;
-
 const RUNS_ROOT_QUERY = gql`
-  query RunsRootQuery(
-    $limit: Int
-    $cursor: String
-    $filter: RunsFilter!
-    $queuedFilter: RunsFilter!
-    $inProgressFilter: RunsFilter!
-  ) {
+  query RunsRootQuery($limit: Int, $cursor: String, $filter: RunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on Runs {
         results {
@@ -326,16 +252,9 @@ const RUNS_ROOT_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
-      ...CountFragment
-    }
-    inProgressCount: pipelineRunsOrError(filter: $inProgressFilter) {
-      ...CountFragment
-    }
   }
 
   ${RUN_TABLE_RUN_FRAGMENT}
-  ${COUNT_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
 

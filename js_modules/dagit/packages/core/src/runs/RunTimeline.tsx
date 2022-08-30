@@ -1,4 +1,4 @@
-import {Box, Colors, Popover, Mono, FontFamily, Tooltip, Tag} from '@dagster-io/ui';
+import {Box, Colors, Popover, Mono, FontFamily, Tooltip, Tag, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -20,8 +20,8 @@ import {TimeElapsed} from './TimeElapsed';
 import {batchRunsForTimeline, RunBatch} from './batchRunsForTimeline';
 
 const ROW_HEIGHT = 32;
-const TIME_HEADER_HEIGHT = 36;
-const EMPTY_STATE_HEIGHT = 48;
+const TIME_HEADER_HEIGHT = 42;
+const EMPTY_STATE_HEIGHT = 140;
 const LABEL_WIDTH = 320;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
@@ -164,7 +164,6 @@ const TimelineSection = (props: TimelineSectionProps) => {
   const onClick = React.useCallback(() => {
     repoAddress && onToggle(repoAddress);
   }, [onToggle, repoAddress]);
-  const jobCount = jobs.length;
 
   return (
     <div>
@@ -175,18 +174,7 @@ const TimelineSection = (props: TimelineSectionProps) => {
           repoLocation={repoLocation}
           onClick={onClick}
           showLocation={isDuplicateRepoName}
-          rightElement={
-            <Tooltip
-              content={
-                <span style={{whiteSpace: 'nowrap'}}>
-                  {jobCount === 1 ? '1 job with runs' : `${jobCount} jobs with runs`}
-                </span>
-              }
-              placement="top"
-            >
-              <Tag intent="primary">{jobCount}</Tag>
-            </Tooltip>
-          }
+          rightElement={<RunStatusTags jobs={jobs} />}
         />
       </SectionHeaderContainer>
       {expanded
@@ -203,6 +191,60 @@ const TimelineSection = (props: TimelineSectionProps) => {
     </div>
   );
 };
+
+const RunStatusTags = React.memo(({jobs}: {jobs: TimelineJob[]}) => {
+  const {inProgressCount, failedCount, succeededCount} = React.useMemo(() => {
+    let inProgressCount = 0;
+    let failedCount = 0;
+    let succeededCount = 0;
+    jobs.forEach(({runs}) => {
+      runs.forEach(({status}) => {
+        // Refine `SCHEDULED` out so that our Set checks below pass TypeScript.
+        if (status === 'SCHEDULED') {
+          return;
+        }
+        if (inProgressStatuses.has(status)) {
+          inProgressCount++;
+        } else if (failedStatuses.has(status)) {
+          failedCount++;
+        } else if (successStatuses.has(status)) {
+          succeededCount++;
+        }
+      });
+    });
+    return {inProgressCount, failedCount, succeededCount};
+  }, [jobs]);
+
+  const inProgressText =
+    inProgressCount === 1 ? '1 run in progress' : `${inProgressCount} runs in progress`;
+  const succeededText =
+    succeededCount === 1 ? '1 run succeeded' : `${succeededCount} runs succeeded`;
+  const failedText = failedCount === 1 ? '1 run failed' : `${failedCount} runs failed`;
+
+  return (
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      {inProgressCount > 0 ? (
+        <Tooltip content={<StatusSpan>{inProgressText}</StatusSpan>} placement="top">
+          <Tag intent="primary">{inProgressCount}</Tag>
+        </Tooltip>
+      ) : null}
+      {succeededCount > 0 ? (
+        <Tooltip content={<StatusSpan>{succeededText}</StatusSpan>} placement="top">
+          <Tag intent="success">{succeededCount}</Tag>
+        </Tooltip>
+      ) : null}
+      {failedCount > 0 ? (
+        <Tooltip content={<StatusSpan>{failedText}</StatusSpan>} placement="top">
+          <Tag intent="danger">{failedCount}</Tag>
+        </Tooltip>
+      ) : null}
+    </Box>
+  );
+});
+
+const StatusSpan = styled.span`
+  white-space: nowrap;
+`;
 
 const SectionHeaderContainer = styled.div<{$top: number}>`
   position: absolute;
@@ -271,7 +313,10 @@ const TimeDividers = (props: TimeDividersProps) => {
           <DividerLine key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}} />
         ))}
         {now >= start && now <= end ? (
-          <DividerLine style={{left: nowLeft, backgroundColor: Colors.Blue500, zIndex: 1}} />
+          <>
+            <NowMarker style={{left: nowLeft}}>Now</NowMarker>
+            <DividerLine style={{left: nowLeft, backgroundColor: Colors.Blue500, zIndex: 1}} />
+          </>
         ) : null}
       </DividerLines>
     </DividerContainer>
@@ -315,6 +360,20 @@ const DividerLine = styled.div`
   position: absolute;
   top: 0;
   width: 1px;
+`;
+
+const NowMarker = styled.div`
+  background-color: ${Colors.Blue500};
+  border-radius: 1px;
+  color: ${Colors.White};
+  cursor: default;
+  font-size: 12px;
+  line-height: 12px;
+  margin-left: -12px;
+  padding: 1px 4px;
+  position: absolute;
+  top: -14px;
+  user-select: none;
 `;
 
 const mergeStatusToColor = (runs: TimelineRun[]) => {
@@ -414,7 +473,7 @@ const RunTimelineRow = ({
               }}
             >
               <Popover
-                content={<RunHoverContent jobKey={job.key} batch={batch} />}
+                content={<RunHoverContent job={job} batch={batch} />}
                 position="top"
                 interactionKind="hover"
                 className="chunk-popover-target"
@@ -435,8 +494,12 @@ const RunTimelineRow = ({
 };
 
 const NoRunsTimeline = () => (
-  <Box flex={{justifyContent: 'center', alignItems: 'center'}} padding={24}>
-    No runs or upcoming runs found for this time window.
+  <Box padding={48}>
+    <NonIdealState
+      icon="schedule"
+      title="No runs found"
+      description="No runs or upcoming runs found for this time window"
+    />
   </Box>
 );
 
@@ -519,19 +582,22 @@ const BatchCount = styled.div`
 `;
 
 interface RunHoverContentProps {
-  jobKey: string;
+  job: TimelineJob;
   batch: RunBatch<TimelineRun>;
 }
 
 const RunHoverContent = (props: RunHoverContentProps) => {
-  const {jobKey, batch} = props;
+  const {job, batch} = props;
+  const sliced = batch.runs.slice(0, 50);
+  const remaining = batch.runs.length - sliced.length;
+
   return (
     <Box style={{width: '260px'}}>
       <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
-        <HoverContentJobName>{jobKey}</HoverContentJobName>
+        <HoverContentJobName>{job.jobName}</HoverContentJobName>
       </Box>
       <div style={{maxHeight: '240px', overflowY: 'auto'}}>
-        {batch.runs.map((run, ii) => (
+        {sliced.map((run, ii) => (
           <Box
             key={run.id}
             border={ii > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
@@ -558,6 +624,11 @@ const RunHoverContent = (props: RunHoverContentProps) => {
           </Box>
         ))}
       </div>
+      {remaining > 0 ? (
+        <Box padding={12} border={{side: 'top', width: 1, color: Colors.KeylineGray}}>
+          <Link to={`${job.path}runs`}>+ {remaining} more</Link>
+        </Box>
+      ) : null}
     </Box>
   );
 };

@@ -120,6 +120,29 @@ def asset_sensor(
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+
+
+    Example:
+
+        .. code-block:: python
+
+            from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
+
+
+            @asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
+            def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
+                return RunRequest(
+                    run_key=context.cursor,
+                    run_config={
+                        "ops": {
+                            "read_materialization": {
+                                "config": {
+                                    "asset_key": asset_event.dagster_event.asset_key.path,
+                                }
+                            }
+                        }
+                    },
+                )
     """
 
     check.opt_str_param(name, "name")

@@ -6,6 +6,7 @@ import {AssetsCatalogRoot} from '../assets/AssetsCatalogRoot';
 import {AssetsGroupsGlobalGraphRoot} from '../assets/AssetsGroupsGlobalGraphRoot';
 import {RunRoot} from '../runs/RunRoot';
 import {RunsRoot} from '../runs/RunsRoot';
+import {ScheduledRunListRoot} from '../runs/ScheduledRunListRoot';
 import {SnapshotRoot} from '../snapshots/SnapshotRoot';
 
 import {InstanceStatusRoot} from './InstanceStatusRoot';
@@ -29,6 +30,9 @@ export const InstanceRoot = () => {
         </Route>
         <Route path="/instance/runs" exact>
           <RunsRoot />
+        </Route>
+        <Route path="/instance/runs/scheduled" exact>
+          <ScheduledRunListRoot />
         </Route>
         <Route path="/instance/runs/:runId" exact>
           <RunRoot />

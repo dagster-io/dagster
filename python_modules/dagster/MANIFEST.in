@@ -1,4 +1,4 @@
-include README.rst
+include README.md
 include LICENSE
 include COPYING
 include dagster/py.typed

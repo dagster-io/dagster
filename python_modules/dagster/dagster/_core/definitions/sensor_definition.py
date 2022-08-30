@@ -754,7 +754,7 @@ AssetMaterializationFunctionReturn = Union[
     Iterator[Union[RunRequest, SkipReason]], Sequence[RunRequest], RunRequest, SkipReason, None
 ]
 AssetMaterializationFunction = Callable[
-    ["SensorExecutionContext", "EventLogEntry"],
+    ["SensorEvaluationContext", "EventLogEntry"],
     AssetMaterializationFunctionReturn,
 ]
 

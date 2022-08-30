@@ -1,5 +1,4 @@
 import os
-import textwrap
 import uuid
 from contextlib import contextmanager
 from typing import Iterator
@@ -10,7 +9,6 @@ from project_fully_featured.resources.snowflake_io_manager import (
     SHARED_SNOWFLAKE_CONF,
     connect_snowflake,
     snowflake_io_manager,
-    spark_columns_to_markdown,
 )
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
@@ -94,16 +92,3 @@ def test_handle_output_spark_then_load_input_pandas():
         input_value = snowflake_manager.load_input(input_context)
         contents_pandas = contents.toPandas()
         assert str(input_value) == str(contents_pandas), f"{input_value}\n\n{contents_pandas}"
-
-
-def test_spark_columns_to_markdown():
-    schema = StructType([StructField("col1", StringType()), StructField("col2", IntegerType())])
-    result = spark_columns_to_markdown(schema)
-    expected = textwrap.dedent(
-        """
-        | Name | Type |
-        | ---- | ---- |
-        | col1 | string |
-        | col2 | integer |"""
-    )
-    assert result == expected

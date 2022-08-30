@@ -63,6 +63,17 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline {
 
 export type JobMetadataQuery_pipelineOrError = JobMetadataQuery_pipelineOrError_PipelineNotFoundError | JobMetadataQuery_pipelineOrError_Pipeline;
 
+export interface JobMetadataQuery_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface JobMetadataQuery_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: JobMetadataQuery_assetNodes_assetKey;
+}
+
 export interface JobMetadataQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError {
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
@@ -98,6 +109,7 @@ export type JobMetadataQuery_pipelineRunsOrError = JobMetadataQuery_pipelineRuns
 
 export interface JobMetadataQuery {
   pipelineOrError: JobMetadataQuery_pipelineOrError;
+  assetNodes: JobMetadataQuery_assetNodes[];
   pipelineRunsOrError: JobMetadataQuery_pipelineRunsOrError;
 }
 

@@ -48,6 +48,9 @@ describe('PipelineRoot', () => {
       pipelines: () => [...new Array(1)],
       assetGroups: () => [...new Array(0)],
     }),
+    DagitQuery: () => ({
+      assetNodes: () => [], // standard job, not an asset job
+    }),
   };
 
   const apolloProps = {mocks};
