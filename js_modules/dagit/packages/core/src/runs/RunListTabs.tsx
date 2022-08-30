@@ -63,6 +63,9 @@ export const RunListTabs = React.memo(() => {
       />
       <TabLink title="Done" to={urlForStatus(Array.from(doneStatuses))} id="done" />
       <TabLink title="Scheduled" to="/instance/runs/scheduled" id="scheduled" />
+      {flagNewWorkspace ? (
+        <TabLink title="Backfills" to="/instance/backfills" id="backfills" />
+      ) : null}
     </Tabs>
   );
 });
@@ -74,6 +77,9 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   }
   if (pathname === '/instance/runs/scheduled') {
     return 'scheduled';
+  }
+  if (pathname === '/instance/backfills') {
+    return 'backfills';
   }
 
   const statusTokens = new Set(
