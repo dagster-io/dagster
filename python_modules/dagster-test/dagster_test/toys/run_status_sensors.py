@@ -209,7 +209,7 @@ def cross_repo_sensor(context):
         ),
     ],
     request_job=status_job,
-    run_status=DagsterRunStatus.SUCCESS
+    run_status=DagsterRunStatus.SUCCESS,
 )
 def cross_repo_success_job_sensor(context):
     return RunRequest(
