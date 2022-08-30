@@ -14,12 +14,14 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetSelection,
     DagsterRunStatus,
     Field,
     JobSelector,
     Output,
     RepositorySelector,
     asset,
+    build_asset_sensor,
     define_asset_job,
     graph,
     load_assets_from_current_module,
@@ -447,6 +449,59 @@ def the_status_in_code_repo():
         the_pipeline,
         always_running_sensor,
         never_running_sensor,
+    ]
+
+
+@asset
+def x():
+    return 1
+
+
+@asset
+def y(x):
+    return x + 1
+
+
+@asset
+def z():
+    return 2
+
+
+@asset
+def d(x, z):
+    return x + z
+
+
+@asset
+def e():
+    return 3
+
+
+@asset
+def f(z, e):
+    return z + e
+
+
+@asset
+def g(d, f):
+    return d + f
+
+
+@repository
+def asset_sensor_repo():
+    return [
+        x,
+        y,
+        z,
+        d,
+        e,
+        f,
+        g,
+        build_asset_sensor(selection=AssetSelection.assets(y), name="just_y"),
+        build_asset_sensor(selection=AssetSelection.assets(d), name="just_d"),
+        build_asset_sensor(selection=AssetSelection.assets(d, f), name="d_and_f"),
+        build_asset_sensor(selection=AssetSelection.assets(d, f, g), name="d_and_f_and_g"),
+        build_asset_sensor(selection=AssetSelection.assets(y, d), name="y_and_d"),
     ]
 
 
