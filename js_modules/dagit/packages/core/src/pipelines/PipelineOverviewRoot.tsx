@@ -53,7 +53,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
 
   const onNavigateToForeignNode = React.useCallback(
     (node: AssetLocation) => {
-      if (!node.jobName || !node.opNames.length) {
+      if (!node.jobName || !node.opNames.length || !node.repoAddress) {
         // This op has no definition in any loaded repository (source asset).
         // The best we can do is show the asset page. This will still be mostly empty,
         // but there can be a description.
@@ -61,13 +61,22 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
         return;
       }
 
-      const token = tokenForAssetKey(node.assetKey);
-      onChangeExplorerPath(
-        {...explorerPath, opNames: [token], opsQuery: '', pipelineName: node.jobName!},
-        'replace',
-      );
+      // Note: asset location can be in another job AND in another repo! Need
+      // to build a full job URL using the `node` info here.
+      history.replace({
+        search: location.search,
+        pathname: workspacePathFromAddress(
+          node.repoAddress,
+          `/jobs/${explorerPathToString({
+            ...explorerPath,
+            opNames: [tokenForAssetKey(node.assetKey)],
+            opsQuery: '',
+            pipelineName: node.jobName!,
+          })}`,
+        ),
+      });
     },
-    [explorerPath, history, onChangeExplorerPath],
+    [explorerPath, history, location.search],
   );
 
   return (
