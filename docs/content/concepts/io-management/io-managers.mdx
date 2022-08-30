@@ -40,14 +40,6 @@ that are responsible for storing the output of an asset or op and loading it as 
 to downstream assets or ops. For example, an IO Manager might store and load objects
 from files on a filesystem.
 
-For ops, each op output can have its own IO manager, or multiple op outputs can share an IO manager. The IO manager that's used for handling a particular op output is automatically used for loading it in downstream ops.
-
-Consider the following diagram. In this example, a job has two IO managers, each of which is shared across a few inputs and outputs:
-
-<center>
-  <Image src="/images/concepts/two-io-managers.png" width={643} height={382} />
-</center>
-
 For assets, each asset can have its own IO manager. In the [multi-asset](/concepts/assets/multi-assets) case where multiple assets are outputted, each outputted asset can be handled with a different IO manager:
 
 <center>
@@ -58,6 +50,14 @@ For assets, each asset can have its own IO manager. In the [multi-asset](/concep
     width={623}
     height={410}
   />
+</center>
+
+For ops, each op output can have its own IO manager, or multiple op outputs can share an IO manager. The IO manager that's used for handling a particular op output is automatically used for loading it in downstream ops.
+
+Consider the following diagram. In this example, a job has two IO managers, each of which is shared across a few inputs and outputs:
+
+<center>
+  <Image src="/images/concepts/two-io-managers.png" width={643} height={382} />
 </center>
 
 The default IO manager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values in the filesystem while pickling. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default IO manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
