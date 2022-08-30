@@ -121,11 +121,11 @@ One benefit of this pattern is that it enables cross-job and even cross-reposito
 Dagster provides a special asset sensor definition format for sensors that fire a single <PyObject object="RunRequest"/> based on a single asset materialization. Here is an example of a sensor that generates a <PyObject object="RunRequest"/> for every materialization for the asset key `my_table`:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_sensor_marker endbefore=end_asset_sensor_marker
-from dagster import AssetKey, asset_sensor
+from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
 
 
 @asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
-def my_asset_sensor(context, asset_event):
+def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
     yield RunRequest(
         run_key=context.cursor,
         run_config={
