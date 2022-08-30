@@ -2,581 +2,580 @@
   {
     "source": "/install",
     "destination": "/getting-started",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/setup",
     "destination": "/tutorial/setup",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/overview",
     "destination": "/tutorial",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/execute",
     "destination": "/tutorial/intro-tutorial/single-solid-pipeline",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/basics_solids",
     "destination": "/tutorial/intro-tutorial/configuring-solids",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/basics_pipelines",
     "destination": "/tutorial/intro-tutorial/connecting-solids",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/testable",
     "destination": "/tutorial/intro-tutorial/testable",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/types",
     "destination": "/tutorial/advanced-tutorial/types",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced_solids",
     "destination": "/tutorial/advanced-tutorial/solids",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced_pipelines",
     "destination": "/tutorial/advanced-tutorial/pipelines",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced_materializations",
     "destination": "/tutorial/advanced-tutorial/materializations",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced_repositories",
     "destination": "/tutorial/advanced-tutorial/repositories",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced_scheduling",
     "destination": "/tutorial/advanced-tutorial/scheduling",
-    "permanent": true
+    "statusCode": 302
   },
-  { "source": "/overview", "destination": "/concepts", "permanent": true },
+  { "source": "/overview", "destination": "/concepts", "statusCode": 302 },
   {
     "source": "/overview/solids-pipelines/solids",
     "destination": "/concepts/solids-pipelines/solids",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/solids-pipelines/solid-factories",
     "destination": "/concepts/solids-pipelines/solids",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/overview/solids-pipelines/pipelines",
     "destination": "/concepts/solids-pipelines/pipelines",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/overview/solids-pipelines/solid-events",
     "destination": "/concepts/solids-pipelines/solid-events",
-    "permanent": true
+    "statusCode": 302
   },
-
   {
     "source": "/overview/expectations",
     "destination": "/concepts/solids-pipelines/solid-events",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/hooks",
     "destination": "/concepts/solids-pipelines/solid-hooks",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/execution",
     "destination": "/concepts/solids-pipelines/executing",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/pipeline_unittesting",
     "destination": "/concepts/solids-pipelines/testing",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/configuration/run-config",
     "destination": "/concepts/configuration/config-schema",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/overview/configuration/configured",
     "destination": "/concepts/configuration/configured",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/modes-resources-presets/modes-resources",
     "destination": "/concepts/modes-resources",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/overview/io-managers/io-managers",
     "destination": "/concepts/io-management/io-managers",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/types",
     "destination": "/concepts/types",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/asset-materializations",
     "destination": "/concepts/assets/asset-materializations",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/repositories-workspaces/repositories",
     "destination": "/concepts/repositories-workspaces/repositories",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/overview/repositories-workspaces/workspaces",
     "destination": "/concepts/repositories-workspaces/workspaces",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/overview/logging/logging",
     "destination": "/concepts/logging/loggers",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/logging/customize-logging",
     "destination": "/concepts/logging/loggers",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/partitions-backfill/partitions",
     "destination": "/concepts/partitions-schedules-sensors/partitions",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/overview/partitions-backfill/backfill",
     "destination": "/concepts/partitions-schedules-sensors/backfills",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/overview/schedules-sensors/schedules",
     "destination": "/concepts/partitions-schedules-sensors/schedules",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/overview/schedules-sensors/sensors",
     "destination": "/concepts/partitions-schedules-sensors/sensors",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/overview/instances/dagster-instance",
     "destination": "/deployment/dagster-instance",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/pipeline-runs/run-launcher",
     "destination": "/deployment/run-launcher",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/pipeline-runs/executor",
     "destination": "/concepts/executors",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/pipeline-runs/run-coordinator",
     "destination": "/deployment/run-coordinator",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/pipeline-runs/limiting-run-concurrency",
     "destination": "/deployment/run-coordinator",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/guides/dagster/asset-tutorial",
     "destination": "/tutorial/assets/defining-an-asset",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/guides/dagster/asset-tutorial/asset-graph",
     "destination": "/tutorial/assets/asset-graph",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/guides/dagster/asset-tutorial/defining-an-asset",
     "destination": "/tutorial/assets/defining-an-asset",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/guides/dagster/asset-tutorial/testing-assets",
     "destination": "/tutorial/assets/testing-assets",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/dagit",
     "destination": "/concepts/dagit/dagit",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/daemon",
     "destination": "/deployment/dagster-daemon",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/graphql-api",
     "destination": "/concepts/dagit/graphql",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/packages/core-packages",
     "destination": "/_apidocs",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/packages/libraries",
     "destination": "/integrations",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/packages/dagster_pandas",
     "destination": "/integrations/pandas",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/overview/packages/dagstermill",
     "destination": "/integrations/dagstermill",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deploying/local",
     "destination": "/deployment/guides/service",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deploying/docker",
     "destination": "/deployment/guides/docker",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deploying/kubernetes",
     "destination": "/deployment/guides/kubernetes/deploying-with-helm",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deploying/aws",
     "destination": "/deployment/guides/aws",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deploying/guides/ecs",
     "destination": "/deployment/guides/aws",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deploying/gcp",
     "destination": "/deployment/guides/gcp",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deploying/celery",
     "destination": "/deployment/custom-infra/celery",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deploying/dask",
     "destination": "/deployment/custom-infra/dask",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deploying/airflow",
     "destination": "/deployment/custom-infra/airflow",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/troubleshooting/schedules",
     "destination": "/concepts/partitions-schedules-sensors/schedules",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/troubleshooting/run-queue",
     "destination": "/deployment/run-coordinator",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/airflow_ingest",
     "destination": "/integrations/airflow",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/materializations",
     "destination": "/concepts/assets/asset-materializations",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/conditional_execution",
     "destination": "/concepts/solids-pipelines/pipelines#conditional-branching",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/examples/config_mapping",
     "destination": "/concepts/configuration/config-schema#config-mapping",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/examples/dbt_example",
     "destination": "/integrations/dbt",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/dep_dsl",
     "destination": "/concepts/solids-pipelines/pipelines#pipeline-dsl",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/deploy_docker",
     "destination": "/deployment/guides/docker#example",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/emr_pyspark",
     "destination": "/integrations/pyspark",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/fan_in_pipeline",
     "destination": "/concepts/solids-pipelines/pipelines#fixed-fan-in-pipeline",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/examples/ge_example",
     "destination": "/integrations/great-expectations",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/hooks",
     "destination": "/concepts/solids-pipelines/solid-hooks",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/multi_location",
     "destination": "/concepts/repositories-workspaces/workspaces#loading-multiple-repositories",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/examples/nothing",
     "destination": "/concepts/solids-pipelines/pipelines#order-based-dependencies-nothing-dependencies",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/examples/pipeline_tags",
     "destination": "/concepts/solids-pipelines/pipelines#pipeline-tags",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/examples/pipeline_unittesting",
     "destination": "/concepts/solids-pipelines/testing",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/basic_pyspark",
     "destination": "/integrations/pyspark",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/dynamic_graph",
     "destination": "/concepts/solids-pipelines/pipelines#dynamic-fan-out",
-    "permanent": true
+    "statusCode": 302
   },
 
   {
     "source": "/examples/simple_lakehouse",
     "destination": "/guides/dagster/lakehouse",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/multi_type_lakehouse",
     "destination": "/guides/dagster/multi-type-lakehouse",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/examples/memoized_development",
     "destination": "/guides/dagster/memoization",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deployment/custom-infra/celery",
     "destination": "/deployment/guides/celery",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deployment/custom-infra/dask",
     "destination": "/deployment/guides/dask",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deployment/custom-infra/airflow",
     "destination": "/deployment/guides/airflow",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/concepts/executors",
     "destination": "/deployment/executors",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/integrations/pyspark",
     "destination": "/integrations/spark",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deployment/guides/airflow",
     "destination": "/integrations/airflow",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/single-op-job",
     "destination": "/tutorial/ops-jobs/single-op-job",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/single-solid-pipeline",
     "destination": "/tutorial/ops-jobs/single-op-job",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/connecting-ops",
     "destination": "/tutorial/ops-jobs/connecting-ops",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/connecting-solids",
     "destination": "/tutorial/ops-jobs/connecting-ops",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/testable",
     "destination": "/tutorial/ops-jobs/testable",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/configuring-solids",
     "destination": "/concepts/configuration/config-schema",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced-tutorial/configuring-solids",
     "destination": "/tutorial/advanced-tutorial/configuring-ops",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced-tutorial/configuring-ops",
     "destination": "/concepts/configuration/config-schema",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced-tutorial/pipelines",
     "destination": "/tutorial/advanced-tutorial/resources",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced-tutorial/types",
     "destination": "/concepts/types",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced-tutorial/resources",
     "destination": "/concepts/resources",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced-tutorial/repositories",
     "destination": "/concepts/repositories-workspaces/repositories",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced-tutorial/scheduling",
     "destination": "/concepts/partitions-schedules-sensors/schedules",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/tutorial/advanced-tutorial/materializations",
     "destination": "/concepts/assets/asset-materializations",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/concepts/solids-pipelines/solids",
     "destination": "/concepts/ops-jobs-graphs/ops",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/concepts/solids-pipelines/pipelines",
     "destination": "/concepts/ops-jobs-graphs/jobs",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/concepts/ops-jobs-graphs/jobs-graphs",
     "destination": "/concepts/ops-jobs-graphs/jobs",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/concepts/solids-pipelines/pipeline-execution",
     "destination": "/concepts/ops-jobs-graphs/job-execution",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/concepts/solids-pipelines/composite-solids",
     "destination": "/concepts/ops-jobs-graphs/nesting-graphs",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/concepts/solids-pipelines/solid-events",
     "destination": "/concepts/ops-jobs-graphs/op-events",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/concepts/solids-pipelines/solid-hooks",
     "destination": "/concepts/ops-jobs-graphs/op-hooks",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/concepts/modes-resources",
     "destination": "/concepts/resources",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/deployment/guides/ecs",
     "destination": "/deployment/guides/aws#deploying-in-ecs",
-    "permanent": true
+    "statusCode": 302
   },
   {
     "source": "/concepts/partitions-schedules-sensors/sensors#job-failure-sensor",
     "destination": "/concepts/partitions-schedules-sensors/sensors#run-failure-sensor",
-    "permanent": true
+    "statusCode": 302
   }
 ]
