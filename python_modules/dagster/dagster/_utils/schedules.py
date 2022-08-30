@@ -1,5 +1,5 @@
 import datetime
-from typing import Iterator, Optional
+from typing import Iterator, List, Optional, Union
 
 import pendulum
 import pytz
@@ -17,29 +17,27 @@ def is_valid_cron_string(cron_string: str) -> bool:
     return len(expanded) == 5
 
 
-def schedule_execution_time_iterator(
-    start_timestamp: float, cron_schedule: str, execution_timezone: Optional[str]
+def cron_string_iterator(
+    start_timestamp: float, cron_string: str, execution_timezone: Optional[str]
 ) -> Iterator[datetime.datetime]:
+    """Generator of datetimes >= start_timestamp for the given cron string."""
     timezone_str = execution_timezone if execution_timezone else "UTC"
 
     utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp))
     start_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
 
-    date_iter = croniter(cron_schedule, start_datetime)
+    date_iter = croniter(cron_string, start_datetime)
 
     # Go back one iteration so that the next iteration is the first time that is >= start_datetime
     # and matches the cron schedule
     next_date = date_iter.get_prev(datetime.datetime)
 
-    check.invariant(is_valid_cron_string(cron_schedule))
+    check.invariant(is_valid_cron_string(cron_string))
 
-    cron_parts, _ = croniter.expand(cron_schedule)
+    cron_parts, _ = croniter.expand(cron_string)
 
     is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
-
-    delta_fn = None
-    should_hour_change = False
 
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
     # much slower than adding a fixed interval
@@ -59,7 +57,7 @@ def schedule_execution_time_iterator(
         delta_fn = None
         should_hour_change = False
 
-    if delta_fn:
+    if delta_fn is not None:
         # Use pendulums for intervals when possible
         next_date = to_timezone(pendulum.instance(next_date), timezone_str)
         while True:
@@ -92,3 +90,33 @@ def schedule_execution_time_iterator(
             )
 
             yield next_date
+
+
+def schedule_execution_time_iterator(
+    start_timestamp: float, cron_schedule: Union[str, List[str]], execution_timezone: Optional[str]
+) -> Iterator[datetime.datetime]:
+    """Generator of execution datetimes >= start_timestamp for the given schedule.
+
+    Here cron_schedule is either a cron string or a list of cron strings. In the latter case,
+    the next execution datetime is obtained by computing the next cron datetime
+    after the current execution datetime for each cron string in the list, and then choosing
+    the earliest among them.
+    """
+    check.inst_param(cron_schedule, "cron_schedule", (str, List))
+    if isinstance(cron_schedule, str):
+        yield from cron_string_iterator(start_timestamp, cron_schedule, execution_timezone)
+    else:
+        check.list_param(cron_schedule, "cron_schedule", of_type=str)
+        iterators = [
+            cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+            for cron_string in cron_schedule
+        ]
+        next_dates = [next(it) for it in iterators]
+        while True:
+            # Choose earliest out of all subsequent datetimes.
+            earliest_next_date = min(next_dates)
+            yield earliest_next_date
+            # Increment all iterators that generated the earliest subsequent datetime.
+            for i, next_date in enumerate(next_dates):
+                if next_date == earliest_next_date:
+                    next_dates[i] = next(iterators[i])
