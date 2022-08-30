@@ -255,20 +255,6 @@ class CompositeSolidDefSnap(
             ),
         )
 
-    def get_input_mapping_snap(self, name: str) -> InputMappingSnap:
-        check.str_param(name, "name")
-        for input_mapping_snap in self.input_mapping_snaps:
-            if input_mapping_snap.external_input_name == name:
-                return input_mapping_snap
-        check.failed("Could not find input mapping snap named " + name)
-
-    def get_output_mapping_snap(self, name: str) -> OutputMappingSnap:
-        check.str_param(name, "name")
-        for output_mapping_snap in self.output_mapping_snaps:
-            if output_mapping_snap.external_output_name == name:
-                return output_mapping_snap
-        check.failed("Could not find output mapping snap named " + name)
-
     def get_input_snap(self, name: str) -> InputDefSnap:
         return _get_input_snap(self, name)
 
