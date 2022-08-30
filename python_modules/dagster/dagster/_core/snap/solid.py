@@ -128,7 +128,7 @@ def build_output_mapping_snap(output_mapping: OutputMapping) -> OutputMappingSna
     return OutputMappingSnap(
         mapped_solid_name=output_mapping.maps_from.solid_name,
         mapped_output_name=output_mapping.maps_from.output_name,
-        external_output_name=output_mapping.definition.name,
+        external_output_name=output_mapping.graph_output_name,
     )
 
 
