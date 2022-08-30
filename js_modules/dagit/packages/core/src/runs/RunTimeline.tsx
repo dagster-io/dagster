@@ -1,4 +1,4 @@
-import {Box, Colors, Popover, Mono, FontFamily, Tooltip, Tag} from '@dagster-io/ui';
+import {Box, Colors, Popover, Mono, FontFamily, Tooltip, Tag, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -20,8 +20,8 @@ import {TimeElapsed} from './TimeElapsed';
 import {batchRunsForTimeline, RunBatch} from './batchRunsForTimeline';
 
 const ROW_HEIGHT = 32;
-const TIME_HEADER_HEIGHT = 36;
-const EMPTY_STATE_HEIGHT = 48;
+const TIME_HEADER_HEIGHT = 42;
+const EMPTY_STATE_HEIGHT = 140;
 const LABEL_WIDTH = 320;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
@@ -271,7 +271,10 @@ const TimeDividers = (props: TimeDividersProps) => {
           <DividerLine key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}} />
         ))}
         {now >= start && now <= end ? (
-          <DividerLine style={{left: nowLeft, backgroundColor: Colors.Blue500, zIndex: 1}} />
+          <>
+            <NowMarker style={{left: nowLeft}}>Now</NowMarker>
+            <DividerLine style={{left: nowLeft, backgroundColor: Colors.Blue500, zIndex: 1}} />
+          </>
         ) : null}
       </DividerLines>
     </DividerContainer>
@@ -315,6 +318,20 @@ const DividerLine = styled.div`
   position: absolute;
   top: 0;
   width: 1px;
+`;
+
+const NowMarker = styled.div`
+  background-color: ${Colors.Blue500};
+  border-radius: 1px;
+  color: ${Colors.White};
+  cursor: default;
+  font-size: 12px;
+  line-height: 12px;
+  margin-left: -12px;
+  padding: 1px 4px;
+  position: absolute;
+  top: -14px;
+  user-select: none;
 `;
 
 const mergeStatusToColor = (runs: TimelineRun[]) => {
@@ -435,8 +452,12 @@ const RunTimelineRow = ({
 };
 
 const NoRunsTimeline = () => (
-  <Box flex={{justifyContent: 'center', alignItems: 'center'}} padding={24}>
-    No runs or upcoming runs found for this time window.
+  <Box padding={48}>
+    <NonIdealState
+      icon="schedule"
+      title="No runs found"
+      description="No runs or upcoming runs found for this time window"
+    />
   </Box>
 );
 
