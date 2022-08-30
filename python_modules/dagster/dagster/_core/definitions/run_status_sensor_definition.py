@@ -454,7 +454,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
                     == context.repository_name
                 ):
-                    if current_repo_jobs:
+                    if monitored_jobs:
                         if pipeline_run.pipeline_name in map(lambda x: x.name, current_repo_jobs):
                             job_match = True
                     else:
