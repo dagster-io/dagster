@@ -13,6 +13,7 @@ def build_airbyte_assets(
     connection_id: str,
     destination_tables: List[str],
     asset_key_prefix: Optional[List[str]] = None,
+    transformation_tables: Optional[List[str]] = None,
 ) -> List[AssetsDefinition]:
     """
     Builds a set of assets representing the tables created by an Airbyte sync operation.
@@ -28,12 +29,13 @@ def build_airbyte_assets(
     """
 
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+    transformation_tables = check.opt_list_param(transformation_tables, "transformation_tables", of_type=str)
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
         outs={
-            table: AssetOut(key=AssetKey(asset_key_prefix + [table]), is_required=False)
-            for table in destination_tables
+            table: AssetOut(key=AssetKey(asset_key_prefix + [table]))
+            for table in destination_tables + transformation_tables
         },
         required_resource_keys={"airbyte"},
         compute_kind="airbyte",
@@ -52,5 +54,11 @@ def build_airbyte_assets(
                 )
             else:
                 yield materialization
+
+        for table_name in transformation_tables:
+            yield Output(
+                value=None,
+                output_name=table_name,
+           )
 
     return [_assets]
