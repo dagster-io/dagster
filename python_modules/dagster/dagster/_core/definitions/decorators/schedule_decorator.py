@@ -2,7 +2,7 @@ import copy
 import datetime
 import warnings
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast, Union, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.partition import (
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 
 
 def schedule(
-    cron_schedule: str,
+    cron_schedule: Union[str, Sequence[str]],
     *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
@@ -76,8 +76,12 @@ def schedule(
     Returns a :py:class:`~dagster.ScheduleDefinition`.
 
     Args:
-        cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
-            ``'45 23 * * 6'`` for a schedule that runs at 11:45 PM every Saturday.
+        cron_schedule (Union[str, Sequence[str]]): A valid cron string or sequence of cron strings
+            specifying when the schedule will run, e.g., ``'45 23 * * 6'`` for a schedule that runs
+            at 11:45 PM every Saturday. If a sequence is provided, then the schedule will run for
+            the union of all execution times for the provided cron strings, e.g.,
+            ``['45 23 * * 6', '30 9 * * 0]`` for a schedule that runs at 11:45 PM every Saturday and
+            9:30 AM every Sunday.
         name (Optional[str]): The name of the schedule to create.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.

@@ -1,5 +1,5 @@
 import datetime
-from typing import Iterator, List, Optional, Union
+from typing import Iterator, List, Optional, Union, Sequence
 
 import pendulum
 import pytz
@@ -17,6 +17,14 @@ def is_valid_cron_string(cron_string: str) -> bool:
     return len(expanded) == 5
 
 
+def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:
+    return (
+        is_valid_cron_string(cron_schedule)
+        if isinstance(cron_schedule, str)
+        else all(is_valid_cron_string(cron_string) for cron_string in cron_schedule)
+    )
+
+
 def cron_string_iterator(
     start_timestamp: float, cron_string: str, execution_timezone: Optional[str]
 ) -> Iterator[datetime.datetime]:
@@ -31,8 +39,6 @@ def cron_string_iterator(
     # Go back one iteration so that the next iteration is the first time that is >= start_datetime
     # and matches the cron schedule
     next_date = date_iter.get_prev(datetime.datetime)
-
-    check.invariant(is_valid_cron_string(cron_string))
 
     cron_parts, _ = croniter.expand(cron_string)
 
@@ -93,20 +99,22 @@ def cron_string_iterator(
 
 
 def schedule_execution_time_iterator(
-    start_timestamp: float, cron_schedule: Union[str, List[str]], execution_timezone: Optional[str]
+    start_timestamp: float,
+    cron_schedule: Union[str, Sequence[str]],
+    execution_timezone: Optional[str],
 ) -> Iterator[datetime.datetime]:
     """Generator of execution datetimes >= start_timestamp for the given schedule.
 
-    Here cron_schedule is either a cron string or a list of cron strings. In the latter case,
+    Here cron_schedule is either a cron string or a sequence of cron strings. In the latter case,
     the next execution datetime is obtained by computing the next cron datetime
-    after the current execution datetime for each cron string in the list, and then choosing
+    after the current execution datetime for each cron string in the sequence, and then choosing
     the earliest among them.
     """
-    check.inst_param(cron_schedule, "cron_schedule", (str, List))
+    check.invariant(is_valid_cron_schedule(cron_schedule))
+
     if isinstance(cron_schedule, str):
         yield from cron_string_iterator(start_timestamp, cron_schedule, execution_timezone)
     else:
-        check.list_param(cron_schedule, "cron_schedule", of_type=str)
         iterators = [
             cron_string_iterator(start_timestamp, cron_string, execution_timezone)
             for cron_string in cron_schedule
