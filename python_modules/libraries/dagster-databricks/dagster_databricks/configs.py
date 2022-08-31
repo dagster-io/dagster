@@ -504,7 +504,9 @@ def _define_submit_run_fields():
     )
     install_default_libraries = Field(
         Bool,
-        description="To install default libraries or not.",
+        description="By default, Dagster installs a version of dagster, dagster-databricks, and "
+        "dagster-pyspark matching the locally-installed versions of those libraries. If you would "
+        "like to disable this behavior, this value can be set to False.",
         is_required=False,
     )
     return {
