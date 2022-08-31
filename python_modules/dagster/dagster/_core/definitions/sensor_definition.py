@@ -25,6 +25,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
+from dagster._core.definitions import AssetsDefinition
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
@@ -197,10 +198,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         last_run_key: Optional[str],
         cursor: Optional[str],
         repository_name: Optional[str],
-        asset_keys: Sequence[AssetKey],
+        assets: Sequence[AssetsDefinition],
         instance: Optional[DagsterInstance] = None,
     ):
-        self._asset_keys = asset_keys
+        self._assets = assets
+        self._asset_keys = [asset.key for asset in assets]
         self.cursor_has_been_updated = False
 
         super(MultiAssetSensorEvaluationContext, self).__init__(
@@ -707,7 +709,7 @@ def build_sensor_context(
 
 @experimental
 def build_multi_asset_sensor_context(
-    asset_keys: Sequence[AssetKey],
+    assets: Sequence[AssetsDefinition],
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
@@ -738,7 +740,7 @@ def build_multi_asset_sensor_context(
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
-    check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+    check.list_param(assets, "assets", of_type=AssetsDefinition)
     return MultiAssetSensorEvaluationContext(
         instance_ref=None,
         last_completion_time=None,
@@ -746,7 +748,7 @@ def build_multi_asset_sensor_context(
         cursor=cursor,
         repository_name=repository_name,
         instance=instance,
-        asset_keys=asset_keys,
+        assets=assets,
     )
 
 
@@ -889,7 +891,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
     def __init__(
         self,
         name: str,
-        asset_keys: Sequence[AssetKey],
+        assets: Sequence[AssetsDefinition],
         job_name: Optional[str],
         asset_materialization_fn: Callable[
             ["MultiAssetSensorEvaluationContext"],
@@ -901,7 +903,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
-        self._asset_keys = check.list_param(asset_keys, "asset_keys", AssetKey)
+        self._assets = check.list_param(assets, "assets", AssetsDefinition)
+        self._asset_keys = [asset.key for asset in self._assets]
 
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
@@ -977,7 +980,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     kwargs[context_param_name], context_param_name, SensorEvaluationContext
                 )
 
-            context = context if context else build_multi_asset_sensor_context()
+            context = context if context else build_multi_asset_sensor_context(assets=self._assets)
 
             return self._raw_fn(context)
 
@@ -989,6 +992,11 @@ class MultiAssetSensorDefinition(SensorDefinition):
                 )
 
             return self._raw_fn()  # type: ignore [TypeGuard limitation]
+
+    @public  # type: ignore
+    @property
+    def assets(self):
+        return self._assets
 
     @public  # type: ignore
     @property

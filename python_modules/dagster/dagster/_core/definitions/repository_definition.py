@@ -634,6 +634,18 @@ class CachingRepositoryData(RepositoryData):
                     f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
                 )
 
+        for (
+            key,
+            sensor,
+        ) in repository_definitions["sensors"].items():
+            if isinstance(sensor, UnresolvedAssetSensorDefinition):
+                # TODO: Allow assets to exist on repository created via dict
+                # https://github.com/dagster-io/dagster/issues/8263
+                raise DagsterInvalidDefinitionError(
+                    "Adding an UnresolvedAssetSensorDefinition to a repository created "
+                    "from a dict is not supported."
+                )
+
         return CachingRepositoryData(**repository_definitions, source_assets_by_key={})
 
     @classmethod

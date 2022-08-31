@@ -3,7 +3,15 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
+from dagster._core.definitions import AssetSelection
 from dagster._annotations import experimental
+<<<<<<< Updated upstream
+=======
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.unresolved_asset_sensor_definition import (
+    UnresolvedMultiAssetSensorDefinition,
+)
+>>>>>>> Stashed changes
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
@@ -195,7 +203,7 @@ def multi_asset_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
+) -> Callable[[MultiAssetMaterializationFunction,], UnresolvedMultiAssetSensorDefinition,]:
     """
     Creates an asset sensor that can monitor multiple assets
 
@@ -227,9 +235,10 @@ def multi_asset_sensor(
 
     check.opt_str_param(name, "name")
 
-    def inner(fn: MultiAssetMaterializationFunction) -> MultiAssetSensorDefinition:
+    def inner(fn: MultiAssetMaterializationFunction) -> UnresolvedMultiAssetSensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
+
 
         def _wrapped_fn(context):
             result = fn(context)
@@ -249,9 +258,9 @@ def multi_asset_sensor(
                     ).format(sensor_name=sensor_name, result=result, type_=type(result))
                 )
 
-        return MultiAssetSensorDefinition(
+        return UnresolvedMultiAssetSensorDefinition(
             name=sensor_name,
-            asset_keys=asset_keys,
+            asset_selection=AssetSelection.keys(*asset_keys),
             job_name=job_name,
             asset_materialization_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,
