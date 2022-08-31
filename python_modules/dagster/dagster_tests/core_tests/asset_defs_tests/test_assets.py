@@ -865,7 +865,7 @@ def test_graph_backed_asset_reused():
         return 1
 
     @op
-    def foo(upstream):
+    def foo(upstream):  # pylint: disable=unused-argument
         return 1
 
     @graph
