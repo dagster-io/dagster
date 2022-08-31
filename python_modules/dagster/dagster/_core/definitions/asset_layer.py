@@ -139,15 +139,6 @@ def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[N
     return node_input_handles
 
 
-# def _build_asset_node_dependencies(
-#     graph_def: GraphDefinition,
-#     parent_handle: Union[NodeHandle, None],
-#     outputs_by_graph_handle: Dict[NodeHandle, Mapping[str, NodeOutputHandle]],
-#     non_asset_inputs_by_node_handle: Dict[NodeHandle, Sequence[NodeOutputHandle]],
-#     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
-# ):
-
-
 def _build_graph_dependencies(
     graph_def: GraphDefinition,
     parent_handle: Union[NodeHandle, None],
@@ -256,14 +247,41 @@ def _get_dependency_node_handles(
     return dependency_node_handles
 
 
+def get_dep_node_handles_of_graph_backed_asset(
+    graph_def: GraphDefinition, assets_def: "AssetsDefinition"
+):
+    """
+    Given a graph-backed asset with graph_def, return a mapping of asset keys outputted by the graph
+    to a list of node handles within graph_def that are the dependencies of the asset.
+
+    Arguments:
+    graph_def: The graph definition of the graph-backed asset.
+    assets_def: The assets definition of the graph-backed asset.
+
+    """
+    # asset_key_to_dep_node_handles takes in a graph_def that represents the entire job, where each
+    # node is a top-level asset node. Create a dummy graph that wraps around graph_def and pass
+    # the dummy graph to asset_key_to_dep_node_handles
+    dummy_parent_graph = GraphDefinition("dummy_parent_graph", node_defs=[graph_def])
+    dep_node_handles_by_asset_key = asset_key_to_dep_node_handles(
+        dummy_parent_graph,
+        {NodeHandle(name=graph_def.name, parent=None): assets_def},
+    )
+    return dep_node_handles_by_asset_key
+
+
 def asset_key_to_dep_node_handles(
-    graph_def: GraphDefinition, assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"]
+    graph_def: GraphDefinition,
+    assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
 ) -> Mapping[AssetKey, Set[NodeHandle]]:
-    print(graph_def.name)
-    print(assets_defs_by_node_handle)
     """
     For each asset in assets_defs_by_node_handle, returns all the op handles within the asset's node
     that are upstream dependencies of the asset.
+
+    Arguments:
+
+    graph_def: The graph definition of the job, where each top level node is an asset.
+    assets_defs_by_node_handle: A mapping of each node handle to the asset definition for that node.
     """
     # A mapping of all node handles to all upstream node handles
     # that are not assets. Each key is a node handle with node output handle value
@@ -327,7 +345,6 @@ def asset_key_to_dep_node_handles(
     dep_node_set_by_asset_key: Dict[AssetKey, Set[NodeHandle]] = {}
     for asset_key, dep_node_handles in dep_nodes_by_asset_key.items():
         dep_node_set_by_asset_key[asset_key] = set(dep_node_handles)
-    print(dep_node_set_by_asset_key)
     return dep_node_set_by_asset_key
 
 
@@ -691,7 +708,7 @@ def build_asset_selection_job(
 
     if asset_selection:
         included_assets, excluded_assets = _subset_assets_defs(
-            assets, source_assets, asset_selection, asset_selection_data
+            assets, source_assets, asset_selection
         )
     else:
         included_assets = cast(Iterable["AssetsDefinition"], assets)
@@ -728,7 +745,6 @@ def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     source_assets: Iterable["SourceAsset"],
     selected_asset_keys: AbstractSet[AssetKey],
-    asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> Tuple[Iterable["AssetsDefinition"], Sequence[Union["AssetsDefinition", "SourceAsset"]]]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
@@ -752,12 +768,10 @@ def _subset_assets_defs(
             excluded_assets.add(asset)
         elif asset.can_subset:
             # subset of the asset that we want
-            subset_asset = asset.subset_for(selected_asset_keys, asset_selection_data)
+            subset_asset = asset.subset_for(selected_asset_keys)
             included_assets.add(subset_asset)
             # subset of the asset that we don't want
-            excluded_assets.add(
-                asset.subset_for(asset.keys - subset_asset.keys, asset_selection_data)
-            )
+            excluded_assets.add(asset.subset_for(asset.keys - subset_asset.keys))
         else:
             raise DagsterInvalidSubsetError(
                 f"When building job, the AssetsDefinition '{asset.node_def.name}' "

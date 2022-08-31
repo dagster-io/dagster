@@ -16,6 +16,7 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -601,10 +602,44 @@ class AssetsDefinition(ResourceAddable):
             },
         )
 
+    def _subset_graph_backed_asset(
+        self,
+        selected_asset_keys: AbstractSet[AssetKey],
+    ):
+        from dagster._core.definitions.graph_definition import GraphDefinition
+        from dagster._core.selector.subset_selector import convert_dot_seperated_string_to_dict
+
+        from .job_definition import get_subselected_graph_definition
+
+        if not isinstance(self.node_def, GraphDefinition):
+            raise DagsterInvalidInvocationError(
+                "Method _subset_graph_backed_asset cannot subset an asset that is not a graph"
+            )
+
+        # All asset keys in selected_asset_keys are outputted from the same top-level graph backed asset
+        dep_node_handles_by_asset_key = get_dep_node_handles_of_graph_backed_asset(
+            self.node_def, self
+        )
+        op_selection = []
+        for asset_key in selected_asset_keys:
+            dep_node_handles = dep_node_handles_by_asset_key[asset_key]
+            for dep_node_handle in dep_node_handles:
+                str_op_path = ".".join(dep_node_handle.path[1:])
+                op_selection.append(str_op_path)
+
+        # Pass an op selection into the original job containing only the ops necessary to
+        # generate the selected assets. The ops should all be nested within a top-level graph
+        # node in the original job.
+
+        resolved_op_selection_dict: Dict = {}
+        for item in op_selection:
+            convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
+
+        return get_subselected_graph_definition(self.node_def, resolved_op_selection_dict)
+
     def subset_for(
         self,
         selected_asset_keys: AbstractSet[AssetKey],
-        asset_selection_data: Optional[AssetSelectionData] = None,
     ) -> "AssetsDefinition":
         """
         Create a subset of this AssetsDefinition that will only materialize the assets in the
@@ -626,13 +661,8 @@ class AssetsDefinition(ResourceAddable):
         if asset_subselection == self.keys:
             return self
         elif isinstance(self.node_def, GraphDefinition):  # Node is graph-backed asset
-            if asset_selection_data is None:
-                raise DagsterInvalidInvocationError(
-                    "asset selection data must be provided to subset a graph-backed asset"
-                )
-
-            subsetted_node = _subset_graph_backed_asset(
-                self.node_def, asset_subselection, asset_selection_data, self
+            subsetted_node = self._subset_graph_backed_asset(
+                asset_subselection,
             )
 
             # The subsetted node should only include asset inputs that are dependencies of the
@@ -775,47 +805,6 @@ class AssetsDefinition(ResourceAddable):
             resource_defs=relevant_resource_defs,
             group_names_by_key=self.group_names_by_key,
         )
-
-
-def _subset_graph_backed_asset(
-    node_def: "GraphDefinition",
-    selected_asset_keys: AbstractSet[AssetKey],
-    asset_selection_data: AssetSelectionData,
-    assets_def: AssetsDefinition,
-):
-    from .job_definition import (
-        get_subselected_graph_definition,
-    )
-    from dagster._core.definitions.asset_layer import asset_key_to_dep_node_handles
-    from dagster._core.selector.subset_selector import convert_dot_seperated_string_to_dict
-
-    # All asset keys in selected_asset_keys are outputted from the same top-level graph backed asset
-    parent_job = asset_selection_data.parent_job_def
-    dep_node_handles_by_asset_key = parent_job.asset_layer.dependency_node_handles_by_asset_key
-    print("one")
-    print(dep_node_handles_by_asset_key)
-    dep_node_handles_by_asset_key = asset_key_to_dep_node_handles(
-        node_def, {NodeHandle(name=node_def.name, parent=None): assets_def}
-    )
-    print("two")
-    print(dep_node_handles_by_asset_key)
-    op_selection = []
-    for asset_key in selected_asset_keys:
-        dep_node_handles = dep_node_handles_by_asset_key[asset_key]
-        for dep_node_handle in dep_node_handles:
-            str_op_path = ".".join(dep_node_handle.path[1:])
-            op_selection.append(str_op_path)
-
-    # Pass an op selection into the original job containing only the ops necessary to
-    # generate the selected assets. The ops should all be nested within a top-level graph
-    # node in the original job.
-
-    resolved_op_selection_dict: Dict = {}
-    for item in op_selection:
-        convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
-
-    subsetted_job = get_subselected_graph_definition(node_def, resolved_op_selection_dict)
-    return subsetted_job
 
 
 def _infer_keys_by_input_names(
