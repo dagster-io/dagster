@@ -1084,7 +1084,7 @@ def do_composition(
     input_mappings = []
     for defn in actual_input_defs:
         mappings = [
-            mapping for mapping in context.input_mappings if mapping.definition.name == defn.name
+            mapping for mapping in context.input_mappings if mapping.graph_input_name == defn.name
         ]
 
         if len(mappings) == 0:

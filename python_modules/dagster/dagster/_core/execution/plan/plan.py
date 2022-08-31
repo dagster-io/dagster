@@ -535,7 +535,7 @@ def get_step_input_source(
                 if parent_step_inputs is None:
                     check.failed("unexpected error in composition descent during plan building")
 
-                parent_name = solid.container_mapped_fan_in_input(input_name, idx).definition.name
+                parent_name = solid.container_mapped_fan_in_input(input_name, idx).graph_input_name
                 parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
                 parent_input = parent_inputs[parent_name]
                 source = parent_input.source
@@ -568,7 +568,7 @@ def get_step_input_source(
         if parent_step_inputs is None:
             check.failed("unexpected error in composition descent during plan building")
 
-        parent_name = solid.container_mapped_input(input_name).definition.name
+        parent_name = solid.container_mapped_input(input_name).graph_input_name
         parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
         if parent_name in parent_inputs:
             parent_input = parent_inputs[parent_name]
