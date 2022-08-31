@@ -26,8 +26,10 @@ class StepRunRef(
     )
 ):
     """
-    A serializable object that specifies what's needed to hydrate a step so that it can
-    be executed in a process outside the plan process.
+    A serializable object that specifies what's needed to hydrate a step so
+    that it can be executed in a process outside the plan process.
+
+    Users should not instantiate this class directly.
     """
 
     def __new__(

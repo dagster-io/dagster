@@ -367,10 +367,9 @@ class PlanExecutionContext(IPlanContext):
 
 
 class StepExecutionContext(PlanExecutionContext, IStepContext):
-    """Context for the execution of a step.
+    """Context for the execution of a step. Users should not instantiate this class directly.
 
-    This context assumes that user code can be run directly, and thus includes resource and
-    information.
+    This context assumes that user code can be run directly, and thus includes resource and information.
     """
 
     def __init__(
