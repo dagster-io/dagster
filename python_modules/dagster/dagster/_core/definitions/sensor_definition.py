@@ -974,7 +974,9 @@ class MultiAssetSensorDefinition(SensorDefinition):
                         f"Sensor invocation expected argument '{context_param_name}'."
                     )
                 context = check.opt_inst_param(
-                    kwargs[context_param_name], context_param_name, SensorEvaluationContext
+                    kwargs[context_param_name],
+                    context_param_name,
+                    MultiAssetSensorEvaluationContext,
                 )
 
             context = context if context else build_multi_asset_sensor_context()
