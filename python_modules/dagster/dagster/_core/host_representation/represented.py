@@ -21,24 +21,23 @@ class RepresentedPipeline(ABC):
     another process *or* could be referring to a historical view of the pipeline.
     """
 
-    _pipeline_index: PipelineIndex
+    # _pipeline_index: PipelineIndex
 
-    def __init__(self, pipeline_index):
-        self._pipeline_index = check.inst_param(pipeline_index, "pipeline_index", PipelineIndex)
+    # def __init__(self, pipeline_index):
+    #     self.pipeline_index = check.inst_param(pipeline_index, "pipeline_index", PipelineIndex)
 
-    # Temporary method to allow for incrementally
-    # replacing pipeline index with the representation hierarchy
-    # Chosen for grepability
-    def get_pipeline_index_for_compat(self) -> PipelineIndex:
-        return self._pipeline_index
+    @property
+    @abstractmethod
+    def pipeline_index(self) -> PipelineIndex:
+        ...
 
     @property
     def name(self) -> str:
-        return self._pipeline_index.name
+        return self.pipeline_index.name
 
     @property
     def description(self) -> Optional[str]:
-        return self._pipeline_index.description
+        return self.pipeline_index.description
 
     # Snapshot things
 
@@ -54,25 +53,25 @@ class RepresentedPipeline(ABC):
 
     @property
     def pipeline_snapshot(self) -> PipelineSnapshot:
-        return self._pipeline_index.pipeline_snapshot
+        return self.pipeline_index.pipeline_snapshot
 
     @property
     def parent_pipeline_snapshot(self) -> Optional[PipelineSnapshot]:
-        return self._pipeline_index.parent_pipeline_snapshot
+        return self.pipeline_index.parent_pipeline_snapshot
 
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
-            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            self.pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
+            if self.pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
 
     @property
     def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
-            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            self.pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
+            if self.pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
 
@@ -80,45 +79,45 @@ class RepresentedPipeline(ABC):
 
     @property
     def config_schema_snapshot(self) -> ConfigSchemaSnapshot:
-        return self._pipeline_index.config_schema_snapshot
+        return self.pipeline_index.config_schema_snapshot
 
     # DagsterTypes
 
     @property
     def dagster_type_snaps(self) -> Sequence[DagsterTypeSnap]:
-        return self._pipeline_index.get_dagster_type_snaps()
+        return self.pipeline_index.get_dagster_type_snaps()
 
     def has_dagster_type_named(self, type_name: str) -> bool:
-        return self._pipeline_index.has_dagster_type_name(type_name)
+        return self.pipeline_index.has_dagster_type_name(type_name)
 
     def get_dagster_type_by_name(self, type_name: str) -> DagsterTypeSnap:
-        return self._pipeline_index.get_dagster_type_from_name(type_name)
+        return self.pipeline_index.get_dagster_type_from_name(type_name)
 
     # Modes
 
     @property
     def mode_def_snaps(self) -> Sequence[ModeDefSnap]:
-        return self._pipeline_index.pipeline_snapshot.mode_def_snaps
+        return self.pipeline_index.pipeline_snapshot.mode_def_snaps
 
     def get_mode_def_snap(self, mode_name: str) -> ModeDefSnap:
-        return self._pipeline_index.get_mode_def_snap(mode_name)
+        return self.pipeline_index.get_mode_def_snap(mode_name)
 
     # Deps
 
     @property
     def dep_structure_index(self) -> DependencyStructureIndex:
-        return self._pipeline_index.dep_structure_index
+        return self.pipeline_index.dep_structure_index
 
     # Solids
     def get_node_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
         check.str_param(solid_def_name, "solid_def_name")
-        return self._pipeline_index.get_node_def_snap(solid_def_name)
+        return self.pipeline_index.get_node_def_snap(solid_def_name)
 
     def get_dep_structure_index(self, solid_def_name: str) -> DependencyStructureIndex:
         check.str_param(solid_def_name, "solid_def_name")
-        return self._pipeline_index.get_dep_structure_index(solid_def_name)
+        return self.pipeline_index.get_dep_structure_index(solid_def_name)
 
     # Graph
 
     def get_graph_name(self) -> str:
-        return self._pipeline_index.pipeline_snapshot.graph_def_name
+        return self.pipeline_index.pipeline_snapshot.graph_def_name

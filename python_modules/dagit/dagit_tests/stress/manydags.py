@@ -6,6 +6,6 @@ from dagster import repository
 @repository
 def dagit_stress_many_jobs():
     jobs = []
-    for i in range(1500):
+    for i in range(700):
         jobs.append(generate_job(f"job_{i}", 50))
     return jobs

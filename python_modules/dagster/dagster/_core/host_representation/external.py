@@ -1,6 +1,6 @@
 import warnings
 from collections import OrderedDict
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -13,12 +13,14 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
+from dagster._core.snap.pipeline_snapshot import PipelineSnapshot
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
     ExternalAssetNode,
+    ExternalJobRef,
     ExternalPartitionSetData,
     ExternalPipelineData,
     ExternalRepositoryData,
@@ -42,22 +44,44 @@ class ExternalRepository:
     """
 
     def __init__(
-        self, external_repository_data: ExternalRepositoryData, repository_handle: RepositoryHandle
+        self,
+        external_repository_data: ExternalRepositoryData,
+        repository_handle: RepositoryHandle,
+        data_fetch: Optional[Callable[[ExternalJobRef], ExternalPipelineData]] = None,
     ):
         self.external_repository_data = check.inst_param(
             external_repository_data, "external_repository_data", ExternalRepositoryData
         )
-        self._pipeline_index_map = OrderedDict()
-        self._job_index_map = OrderedDict()
-        for external_pipeline_data in external_repository_data.external_pipeline_datas:
-            key = external_pipeline_data.pipeline_snapshot.name
-            index = PipelineIndex(
-                external_pipeline_data.pipeline_snapshot,
-                external_pipeline_data.parent_pipeline_snapshot,
+        self.pipeline_index_map: Dict[str, PipelineIndex] = {}
+        self._job_index_map: Dict[str, PipelineIndex] = {}
+
+        self._job_ref_map: Dict[str, ExternalJobRef] = {}
+        self._data_fetch = data_fetch
+
+        # if the full snapshot is loaded, populate data structures
+        if external_repository_data.has_pipeline_data():
+            for external_pipeline_data in external_repository_data.get_external_pipeline_datas():
+                key = external_pipeline_data.pipeline_snapshot.name
+                index = PipelineIndex(
+                    external_pipeline_data.pipeline_snapshot,
+                    external_pipeline_data.parent_pipeline_snapshot,
+                )
+                self.pipeline_index_map[key] = index
+                if external_pipeline_data.is_job:
+                    self._job_index_map[key] = index
+
+            self._all_job_names = set(self.pipeline_index_map.keys())
+            self._non_legacy_job_names = set(self._job_index_map.keys())
+        else:
+            self._job_ref_map = {
+                ref.name: ref for ref in external_repository_data.external_job_refs
+            }
+            self._all_job_names = set(self._job_ref_map.keys())
+            self._non_legacy_job_names = set(self._job_index_map.keys())
+            check.invariant(
+                self._data_fetch is not None,
+                "Full job data have been deferred, fetch function required",
             )
-            self._pipeline_index_map[key] = index
-            if external_pipeline_data.is_job:
-                self._job_index_map[key] = index
 
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
@@ -89,17 +113,15 @@ class ExternalRepository:
     def name(self):
         return self.external_repository_data.name
 
-    def get_pipeline_index(self, pipeline_name):
-        return self._pipeline_index_map[pipeline_name]
-
     def has_pipeline(self, pipeline_name):
-        return pipeline_name in self._pipeline_index_map
+        return pipeline_name in self._all_job_names
 
-    def get_pipeline_indices(self):
-        return self._pipeline_index_map.values()
+    # no call sites
+    # def get_pipeline_indices(self):
+    #     return self.pipeline_index_map.values()
 
     def has_external_pipeline(self, pipeline_name):
-        return pipeline_name in self._pipeline_index_map
+        return pipeline_name in self._all_job_names
 
     def get_external_schedule(self, schedule_name):
         return ExternalSchedule(
@@ -146,14 +168,23 @@ class ExternalRepository:
 
     def get_full_external_pipeline(self, pipeline_name: str) -> "ExternalPipeline":
         check.str_param(pipeline_name, "pipeline_name")
-        return ExternalPipeline(
-            self.external_repository_data.get_external_pipeline_data(pipeline_name),
-            repository_handle=self.handle,
-            pipeline_index=self.get_pipeline_index(pipeline_name),
-        )
+
+        if self.external_repository_data.has_pipeline_data():
+            return ExternalPipeline(
+                self.external_repository_data.get_external_pipeline_data(pipeline_name),
+                repository_handle=self.handle,
+                pipeline_index=self.pipeline_index_map[pipeline_name],
+            )
+        else:
+            return ExternalPipeline(
+                external_pipeline_data=None,
+                repository_handle=self.handle,
+                external_job_ref=self._job_ref_map[pipeline_name],
+                data_fetch=self._data_fetch,
+            )
 
     def get_all_external_pipelines(self):
-        return [self.get_full_external_pipeline(pn) for pn in self._pipeline_index_map]
+        return [self.get_full_external_pipeline(pn) for pn in self._all_job_names]
 
     def has_external_job(self, job_name):
         return job_name in self._job_index_map
@@ -164,14 +195,10 @@ class ExternalRepository:
         if not self.has_external_job(job_name):
             check.failed(f"Could not find job data for {job_name}")
 
-        return ExternalPipeline(
-            self.external_repository_data.get_external_pipeline_data(job_name),
-            repository_handle=self.handle,
-            pipeline_index=self.get_pipeline_index(job_name),
-        )
+        return self.get_full_external_pipeline(job_name)
 
     def get_external_jobs(self) -> List["ExternalPipeline"]:
-        return [self.get_external_job(pn) for pn in self._job_index_map]
+        return [self.get_external_job(pn) for pn in self._non_legacy_job_names]
 
     @property
     def handle(self):
@@ -222,37 +249,84 @@ class ExternalPipeline(RepresentedPipeline):
     objects such as these to interact with user-defined artifacts.
     """
 
-    def __init__(self, external_pipeline_data, repository_handle, pipeline_index=None):
+    def __init__(
+        self,
+        external_pipeline_data: Optional[ExternalPipelineData],
+        repository_handle: RepositoryHandle,
+        external_job_ref: Optional[ExternalJobRef] = None,
+        data_fetch: Optional[Callable[[ExternalJobRef], ExternalPipelineData]] = None,
+        pipeline_index: Optional[PipelineIndex] = None,
+    ):
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.inst_param(external_pipeline_data, "external_pipeline_data", ExternalPipelineData)
+        check.opt_inst_param(external_pipeline_data, "external_pipeline_data", ExternalPipelineData)
         check.opt_inst_param(pipeline_index, "pipeline_index", PipelineIndex)
 
-        if pipeline_index is None:
-            pipeline_index = PipelineIndex(
-                external_pipeline_data.pipeline_snapshot,
-                external_pipeline_data.parent_pipeline_snapshot,
+        # RESUME HERE
+
+        # if pipeline_index is None:
+        #     pipeline_index = PipelineIndex(
+        #         external_pipeline_data.pipeline_snapshot,
+        #         external_pipeline_data.parent_pipeline_snapshot,
+        #     )
+
+        # super(ExternalPipeline, self).__init__(pipeline_index=pipeline_index)
+        self._pipeline_index = pipeline_index
+        self._external_pipeline_data = external_pipeline_data
+        self._external_job_ref = external_job_ref
+        self._repository_handle = repository_handle
+
+        if self._external_job_ref:
+            self._name = self._external_job_ref.name
+            self._data_fetch = check.callable_param(
+                data_fetch,
+                "fetch_snapshot",
+                "must pass fetch_snapshot with external_job_ref",
+            )
+            self._snapshot_id = self._external_job_ref.snapshot_id
+            self._is_legacy = False  # could read from ref
+            self._active_preset_dict = {ap.name: ap for ap in self._external_job_ref.active_presets}
+        elif self._external_pipeline_data:
+            self._name = self._external_pipeline_data.name
+            self._snapshot_id = self.pipeline_index.pipeline_snapshot_id
+            self._is_legacy = not self._external_pipeline_data.is_job
+            self._active_preset_dict = {
+                ap.name: ap for ap in self._external_pipeline_data.active_presets
+            }
+        else:
+            check.failed(
+                "Invalid state - must pass either external_job_ref or external_pipeline_data"
             )
 
-        super(ExternalPipeline, self).__init__(pipeline_index=pipeline_index)
-        self._external_pipeline_data = external_pipeline_data
-        self._repository_handle = repository_handle
-        self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
-        self._handle = PipelineHandle(self._pipeline_index.name, repository_handle)
+        self._handle = PipelineHandle(self._name, repository_handle)
+
+    @property
+    def pipeline_index(self) -> PipelineIndex:
+        if self._pipeline_index is None:
+            self._pipeline_index = PipelineIndex(
+                self.external_pipeline_data.pipeline_snapshot,
+                self.external_pipeline_data.parent_pipeline_snapshot,
+            )
+        return self._pipeline_index
 
     @property
     def name(self):
-        return self._pipeline_index.pipeline_snapshot.name
+        return self._name
 
     @property
     def description(self):
-        return self._pipeline_index.pipeline_snapshot.description
+        return self.pipeline_index.pipeline_snapshot.description
 
     @property
     def solid_names_in_topological_order(self):
-        return self._pipeline_index.pipeline_snapshot.solid_names_in_topological_order
+        return self.pipeline_index.pipeline_snapshot.solid_names_in_topological_order
 
     @property
-    def external_pipeline_data(self):
+    def external_pipeline_data(self) -> ExternalPipelineData:
+        if self._external_pipeline_data is None:
+            if self._data_fetch is None or self._external_job_ref is None:
+                check.failed("invalid state - expected job ref and data fetch")
+            self._external_pipeline_data = self._data_fetch(self._external_job_ref)
+
         return self._external_pipeline_data
 
     @property
@@ -262,24 +336,24 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def solid_selection(self):
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
-            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            self.pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
+            if self.pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
 
     @property
     def solids_to_execute(self):
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
-            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            self.pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
+            if self.pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
 
     @property
     def asset_selection(self):
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.asset_selection
-            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            self.pipeline_index.pipeline_snapshot.lineage_snapshot.asset_selection
+            if self.pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
 
@@ -289,11 +363,11 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def solid_names(self):
-        return self._pipeline_index.pipeline_snapshot.solid_names
+        return self.pipeline_index.pipeline_snapshot.solid_names
 
     def has_solid_invocation(self, solid_name):
         check.str_param(solid_name, "solid_name")
-        return self._pipeline_index.has_solid_invocation(solid_name)
+        return self.pipeline_index.has_solid_invocation(solid_name)
 
     def has_preset(self, preset_name):
         check.str_param(preset_name, "preset_name")
@@ -305,11 +379,11 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def available_modes(self):
-        return self._pipeline_index.available_modes
+        return self.pipeline_index.available_modes
 
     def has_mode(self, mode_name):
         check.str_param(mode_name, "mode_name")
-        return self._pipeline_index.has_mode_def(mode_name)
+        return self.pipeline_index.has_mode_def(mode_name)
 
     def root_config_key_for_mode(self, mode_name):
         check.opt_str_param(mode_name, "mode_name")
@@ -318,23 +392,23 @@ class ExternalPipeline(RepresentedPipeline):
         ).root_config_key
 
     def get_default_mode_name(self) -> str:
-        return self._pipeline_index.get_default_mode_name()
+        return self.pipeline_index.get_default_mode_name()
 
     @property
     def tags(self):
-        return self._pipeline_index.pipeline_snapshot.tags
+        return self.pipeline_index.pipeline_snapshot.tags
 
     @property
     def metadata(self):
-        return self._pipeline_index.pipeline_snapshot.metadata
+        return self.pipeline_index.pipeline_snapshot.metadata
 
     @property
     def computed_pipeline_snapshot_id(self):
-        return self._pipeline_index.pipeline_snapshot_id
+        return self._snapshot_id
 
     @property
     def identifying_pipeline_snapshot_id(self):
-        return self._pipeline_index.pipeline_snapshot_id
+        return self._snapshot_id
 
     @property
     def handle(self):
@@ -362,11 +436,11 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def pipeline_snapshot(self):
-        return self._pipeline_index.pipeline_snapshot
+        return self.pipeline_index.pipeline_snapshot
 
     @property
     def is_job(self):
-        return self._external_pipeline_data.is_job
+        return not self._is_legacy
 
 
 class ExternalExecutionPlan:

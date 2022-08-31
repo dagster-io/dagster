@@ -238,7 +238,7 @@ class DagsterGrpcClient:
 
         return res.serialized_external_pipeline_subset_result
 
-    def external_repository(self, external_repository_origin):
+    def external_repository(self, external_repository_origin, defer_snapshots: bool = False):
         check.inst_param(
             external_repository_origin,
             "external_repository_origin",
@@ -252,9 +252,26 @@ class DagsterGrpcClient:
             serialized_repository_python_origin=serialize_dagster_namedtuple(
                 external_repository_origin
             ),
+            defer_snapshots=defer_snapshots,
         )
 
         return res.serialized_external_repository_data
+
+    def external_job(self, external_repository_origin, job_name):
+        check.inst_param(
+            external_repository_origin,
+            "external_repository_origin",
+            ExternalRepositoryOrigin,
+        )
+
+        res = self._query(
+            "ExternalJob",
+            api_pb2.ExternalJobRequest,
+            serialized_repository_origin=serialize_dagster_namedtuple(external_repository_origin),
+            job_name=job_name,
+        )
+
+        return res.serialized_external_job_data
 
     def streaming_external_repository(self, external_repository_origin):
         for res in self._streaming_query(

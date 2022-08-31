@@ -23,9 +23,14 @@ class HistoricalPipeline(RepresentedPipeline):
         self._identifying_pipeline_snapshot_id = check.str_param(
             identifying_pipeline_snapshot_id, "identifying_pipeline_snapshot_id"
         )
-        super(HistoricalPipeline, self).__init__(
-            pipeline_index=PipelineIndex(pipeline_snapshot, parent_pipeline_snapshot),
-        )
+        self._snapshot = pipeline_snapshot
+        self._parent_snapshot = parent_pipeline_snapshot
+
+    @property
+    def pipeline_index(self) -> PipelineIndex:
+        if self._pipeline_index is None:
+            self._pipeline_index = PipelineIndex(self._snapshot, self._parent_snapshot)
+        return self._pipeline_index
 
     @property
     def identifying_pipeline_snapshot_id(self):

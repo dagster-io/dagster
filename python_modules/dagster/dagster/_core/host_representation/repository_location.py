@@ -17,7 +17,7 @@ from dagster._api.snapshot_partition import (
     sync_get_external_partition_tags_grpc,
 )
 from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
-from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
+from dagster._api.snapshot_repository import sync_get_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
@@ -578,7 +578,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
             self._container_context = list_repositories_response.container_context
 
-            self._external_repositories_data = sync_get_streaming_external_repositories_data_grpc(
+            self._external_repositories_data = sync_get_external_repositories_data_grpc(
                 self.client,
                 self,
             )

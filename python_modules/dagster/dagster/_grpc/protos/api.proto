@@ -18,6 +18,7 @@ service DagsterApi {
   rpc ExternalPartitionSetExecutionParams (ExternalPartitionSetExecutionParamsRequest) returns (stream StreamingChunkEvent) {}
   rpc ExternalPipelineSubsetSnapshot (ExternalPipelineSubsetSnapshotRequest) returns (ExternalPipelineSubsetSnapshotReply) {}
   rpc ExternalRepository (ExternalRepositoryRequest) returns (ExternalRepositoryReply) {}
+  rpc ExternalJob (ExternalJobRequest) returns (ExternalJobReply) {}
   rpc StreamingExternalRepository (ExternalRepositoryRequest) returns (stream StreamingExternalRepositoryEvent) {}
   rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (stream StreamingChunkEvent) {}
   rpc ExternalSensorExecution (ExternalSensorExecutionRequest) returns (stream StreamingChunkEvent) {}
@@ -113,6 +114,7 @@ message ExternalPipelineSubsetSnapshotReply {
 
 message ExternalRepositoryRequest {
   string serialized_repository_python_origin = 1;
+  bool defer_snapshots = 2;
 }
 
 message ExternalRepositoryReply {
@@ -167,4 +169,13 @@ message StartRunReply {
 
 message GetCurrentImageReply {
   string serialized_current_image = 1;
+}
+
+message ExternalJobRequest {
+  string serialized_repository_origin = 1;
+  string job_name = 2;
+}
+
+message ExternalJobReply {
+  string serialized_external_job_data = 1;
 }

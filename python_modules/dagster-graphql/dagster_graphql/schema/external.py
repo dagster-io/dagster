@@ -166,7 +166,12 @@ class GrapheneRepository(graphene.ObjectType):
         name = "Repository"
 
     def __init__(self, instance, repository, repository_location):
-        self._repository = check.inst_param(repository, "repository", ExternalRepository)
+        #
+        # reason to have interface or something
+        #
+        # self._repository = check.inst_param(repository, "repository", ExternalRepository)
+        self._repository = repository
+
         self._repository_location = check.inst_param(
             repository_location, "repository_location", RepositoryLocation
         )
