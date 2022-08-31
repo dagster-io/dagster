@@ -19,6 +19,7 @@ from ..repository_definition import (
 from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
 from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from ..unresolved_asset_sensor_definition import UnresolvedAssetSensorDefinition
 
 
 def _flatten(items):
@@ -72,6 +73,7 @@ class _Repository:
                     or isinstance(definition, AssetsDefinition)
                     or isinstance(definition, SourceAsset)
                     or isinstance(definition, UnresolvedAssetJobDefinition)
+                    or isinstance(definition, UnresolvedAssetSensorDefinition)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
