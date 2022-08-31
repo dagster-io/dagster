@@ -310,6 +310,7 @@ from dagster._core.definitions.source_asset import (
 )
 from dagster._core.definitions.step_launcher import (
     StepLauncher as StepLauncher,
+    StepRunRef as StepRunRef,
 )
 from dagster._core.definitions.time_window_partition_mapping import (
     TimeWindowPartitionMapping as TimeWindowPartitionMapping,
@@ -518,6 +519,7 @@ from dagster._loggers import (
 )
 from dagster._core.execution.context.system import (
     DagsterTypeLoaderContext as DagsterTypeLoaderContext,
+    StepExecutionContext as StepExecutionContext,
 )
 from dagster._serdes.serdes import (
     deserialize_value as deserialize_value,
