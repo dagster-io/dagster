@@ -843,6 +843,7 @@ ingress:
   enabled: false
 
   annotations: {}
+  labels: {}
 
   # Specify the IngressClass used to implement this ingress.
   #
