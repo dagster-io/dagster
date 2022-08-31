@@ -35,7 +35,9 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
         <TabLink id="health" title={healthTitle} to="/instance/health" />
         <TabLink id="schedules" title="Schedules" to="/instance/schedules" />
         <TabLink id="sensors" title="Sensors" to="/instance/sensors" />
-        <TabLink id="backfills" title="Backfills" to="/instance/backfills" />
+        {flagNewWorkspace ? null : (
+          <TabLink id="backfills" title="Backfills" to="/instance/backfills" />
+        )}
         {canSeeConfig ? <TabLink id="config" title="Configuration" to="/instance/config" /> : null}
       </Tabs>
       {refreshState ? (
