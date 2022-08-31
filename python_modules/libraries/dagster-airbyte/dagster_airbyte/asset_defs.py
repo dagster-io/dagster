@@ -32,7 +32,7 @@ def build_airbyte_assets(
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
         outs={
-            table: AssetOut(key=AssetKey(asset_key_prefix + [table]))
+            table: AssetOut(key=AssetKey(asset_key_prefix + [table]), is_required=False)
             for table in destination_tables
         },
         required_resource_keys={"airbyte"},
