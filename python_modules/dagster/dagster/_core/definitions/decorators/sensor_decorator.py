@@ -3,15 +3,12 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions import AssetSelection
 from dagster._annotations import experimental
-<<<<<<< Updated upstream
-=======
+from dagster._core.definitions import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.unresolved_asset_sensor_definition import (
     UnresolvedMultiAssetSensorDefinition,
 )
->>>>>>> Stashed changes
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
@@ -238,7 +235,6 @@ def multi_asset_sensor(
     def inner(fn: MultiAssetMaterializationFunction) -> UnresolvedMultiAssetSensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
-
 
         def _wrapped_fn(context):
             result = fn(context)

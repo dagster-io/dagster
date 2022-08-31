@@ -20,12 +20,12 @@ from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions import AssetsDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.definitions import AssetsDefinition
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes

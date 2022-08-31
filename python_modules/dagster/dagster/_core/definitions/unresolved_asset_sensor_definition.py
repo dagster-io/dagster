@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Sequence, Callable
+from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 from .asset_selection import AssetSelection
 from .sensor_definition import (

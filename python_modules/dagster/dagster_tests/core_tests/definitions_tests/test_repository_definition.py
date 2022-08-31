@@ -1,7 +1,6 @@
 import datetime
 from collections import defaultdict
 from typing import Sequence
-from dagster._core.definitions.decorators.sensor_decorator import multi_asset_sensor
 
 import pytest
 
@@ -13,6 +12,7 @@ from dagster import (
     DailyPartitionsDefinition,
     IOManager,
     JobDefinition,
+    MultiAssetSensorDefinition,
     ResourceDefinition,
     SensorDefinition,
     SourceAsset,
@@ -31,9 +31,9 @@ from dagster import (
     resource,
     schedule,
     sensor,
-    MultiAssetSensorDefinition,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.decorators.sensor_decorator import multi_asset_sensor
 from dagster._core.definitions.executor_definition import (
     default_executors,
     multi_or_in_process_executor,
