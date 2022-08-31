@@ -625,24 +625,27 @@ class AssetsDefinition(ResourceAddable):
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
         result = []
-        for output_name, asset_key in self.keys_by_output_name.items():
-            # This could maybe be sped up by batching
-            output_def = self.node_def.resolve_output_to_origin(
-                output_name, NodeHandle(self.node_def.name, parent=None)
-            )[0]
-            result.append(
-                SourceAsset(
-                    key=asset_key,
-                    metadata=output_def.metadata,
-                    io_manager_key=output_def.io_manager_key,
-                    description=output_def.description,
-                    resource_defs=self.resource_defs,
-                    partitions_def=self.partitions_def,
-                    group_name=self.group_names_by_key[asset_key],
-                )
-            )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-        return result
+            for output_name, asset_key in self.keys_by_output_name.items():
+                # This could maybe be sped up by batching
+                output_def = self.node_def.resolve_output_to_origin(
+                    output_name, NodeHandle(self.node_def.name, parent=None)
+                )[0]
+                result.append(
+                    SourceAsset(
+                        key=asset_key,
+                        metadata=output_def.metadata,
+                        io_manager_key=output_def.io_manager_key,
+                        description=output_def.description,
+                        resource_defs=self.resource_defs,
+                        partitions_def=self.partitions_def,
+                        group_name=self.group_names_by_key[asset_key],
+                    )
+                )
+
+            return result
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
         yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
