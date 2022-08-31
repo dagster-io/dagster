@@ -631,7 +631,9 @@ class AssetsDefinition(ResourceAddable):
                     "asset selection data must be provided to subset a graph-backed asset"
                 )
 
-            subsetted_node = _subset_graph_backed_asset(asset_subselection, asset_selection_data)
+            subsetted_node = _subset_graph_backed_asset(
+                self.node_def, asset_subselection, asset_selection_data, self
+            )
 
             # The subsetted node should only include asset inputs that are dependencies of the
             # selected set of assets.
@@ -776,29 +778,44 @@ class AssetsDefinition(ResourceAddable):
 
 
 def _subset_graph_backed_asset(
+    node_def: "GraphDefinition",
     selected_asset_keys: AbstractSet[AssetKey],
     asset_selection_data: AssetSelectionData,
+    assets_def: AssetsDefinition,
 ):
-    from .job_definition import get_subselected_graph_definition, parse_op_selection
+    from .job_definition import (
+        get_subselected_graph_definition,
+    )
+    from dagster._core.definitions.asset_layer import asset_key_to_dep_node_handles
+    from dagster._core.selector.subset_selector import convert_dot_seperated_string_to_dict
 
     # All asset keys in selected_asset_keys are outputted from the same top-level graph backed asset
     parent_job = asset_selection_data.parent_job_def
     dep_node_handles_by_asset_key = parent_job.asset_layer.dependency_node_handles_by_asset_key
+    print("one")
+    print(dep_node_handles_by_asset_key)
+    dep_node_handles_by_asset_key = asset_key_to_dep_node_handles(
+        node_def, {NodeHandle(name=node_def.name, parent=None): assets_def}
+    )
+    print("two")
+    print(dep_node_handles_by_asset_key)
     op_selection = []
     for asset_key in selected_asset_keys:
         dep_node_handles = dep_node_handles_by_asset_key[asset_key]
         for dep_node_handle in dep_node_handles:
-            str_op_path = ".".join(dep_node_handle.path)
+            str_op_path = ".".join(dep_node_handle.path[1:])
             op_selection.append(str_op_path)
 
     # Pass an op selection into the original job containing only the ops necessary to
     # generate the selected assets. The ops should all be nested within a top-level graph
     # node in the original job.
-    subsetted_job = get_subselected_graph_definition(
-        parent_job.graph, parse_op_selection(parent_job, op_selection)
-    )
-    check.invariant(len(subsetted_job.node_defs) == 1, "Expected 1 node in subsetted job")
-    return subsetted_job.node_defs[0]
+
+    resolved_op_selection_dict: Dict = {}
+    for item in op_selection:
+        convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
+
+    subsetted_job = get_subselected_graph_definition(node_def, resolved_op_selection_dict)
+    return subsetted_job
 
 
 def _infer_keys_by_input_names(
