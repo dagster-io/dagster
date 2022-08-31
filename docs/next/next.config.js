@@ -8,12 +8,12 @@ module.exports = {
       {
         source: '/docs',
         destination: '/docs/latest',
-        permanent: true,
+        statusCode: 302,
       },
       {
         source: '/',
         destination: '/getting-started',
-        permanent: true,
+        statusCode: 302,
       },
       ...redirectUrls,
     ];
