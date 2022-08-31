@@ -91,7 +91,7 @@ def _resolve_input_to_destinations(
         return [NodeInputHandle(node_handle=handle, input_name=name)]
     all_destinations: List[NodeInputHandle] = []
     for mapping in node_def.input_mappings:
-        if mapping.definition.name != name:
+        if mapping.graph_input_name != name:
             continue
         # recurse into graph structure
         all_destinations += _resolve_input_to_destinations(

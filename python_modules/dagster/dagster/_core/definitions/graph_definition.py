@@ -271,7 +271,7 @@ class GraphDefinition(NodeDefinition):
                     )
                 else:
                     mapped_input = node.container_mapped_input(input_def.name)
-                    unresolveable_input_defs.append(mapped_input.definition)
+                    unresolveable_input_defs.append(mapped_input.get_definition())
         return unresolveable_input_defs
 
     @property
@@ -382,7 +382,7 @@ class GraphDefinition(NodeDefinition):
 
         check.str_param(input_name, "input_name")
         for mapping in self._input_mappings:
-            if mapping.definition.name == input_name:
+            if mapping.graph_input_name == input_name:
                 return mapping
         check.failed(f"Could not find input mapping {input_name}")
 
@@ -820,21 +820,12 @@ def _validate_in_mappings(
             else:
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' received unexpected type '{type}' in input_mappings. "
-                    "Provide an OutputMapping using InputDefinition(...).mapping_to(...)".format(
+                    "Provide an InputMapping using InputMapping(...)".format(
                         type=type(mapping), name=name, class_name=class_name
                     )
                 )
 
-        if input_def_dict.get(mapping.definition.name):
-            if input_def_dict[mapping.definition.name] != mapping.definition:
-                raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' multiple input mappings with same "
-                    "definition name but different definitions".format(
-                        name=name, class_name=class_name
-                    ),
-                )
-        else:
-            input_def_dict[mapping.definition.name] = mapping.definition
+        input_def_dict[mapping.graph_input_name] = mapping.get_definition()
 
         target_solid = solid_dict.get(mapping.maps_to.solid_name)
         if target_solid is None:
@@ -873,8 +864,6 @@ def _validate_in_mappings(
                     f"the MultiDependencyDefinition is not a MappedInputPlaceholder"
                 )
             mapping_keys.add(f"{maps_to.solid_name}.{maps_to.input_name}.{maps_to.fan_in_index}")
-            target_type = target_input.dagster_type.get_inner_type_for_fan_in()
-            fan_in_msg = " (index {} of fan-in)".format(maps_to.fan_in_index)
         else:
             if dependency_structure.has_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
@@ -887,27 +876,6 @@ def _validate_in_mappings(
 
             mapping_keys.add(
                 "{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}".format(mapping=mapping)
-            )
-            target_type = target_input.dagster_type
-            fan_in_msg = ""
-
-        if (
-            # no need to check mapping type for graphs because users can't specify ins/out type on graphs
-            class_name not in (GraphDefinition.__name__, SubselectedGraphDefinition.__name__)
-            and target_type != mapping.definition.dagster_type
-        ):
-            raise DagsterInvalidDefinitionError(
-                "In {class_name} '{name}' input "
-                "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} maps to "
-                "{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}{fan_in_msg} of different type "
-                "{target_type.display_name}. InputMapping source and "
-                "destination must have the same type.".format(
-                    mapping=mapping,
-                    name=name,
-                    target_type=target_type,
-                    class_name=class_name,
-                    fan_in_msg=fan_in_msg,
-                )
             )
 
     for input_handle in dependency_structure.input_handles():

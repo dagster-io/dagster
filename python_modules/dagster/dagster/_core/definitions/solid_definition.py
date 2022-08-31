@@ -433,7 +433,7 @@ class CompositeSolidDefinition(GraphDefinition):
         tags: Optional[Mapping[str, str]] = None,
         positional_inputs: Optional[Sequence[str]] = None,
     ):
-        _check_io_managers_on_composite_solid(name, input_mappings, output_mappings)
+        _check_io_managers_on_composite_solid(name, output_mappings)
 
         super(CompositeSolidDefinition, self).__init__(
             name=name,
@@ -495,19 +495,8 @@ class CompositeSolidDefinition(GraphDefinition):
 
 def _check_io_managers_on_composite_solid(
     name: str,
-    input_mappings: Optional[Sequence[InputMapping]],
     output_mappings: Optional[Sequence[OutputMapping]],
 ) -> None:
-    # Ban root_manager_key on composite solids
-    if input_mappings:
-        for input_mapping in input_mappings:
-            input_def = input_mapping.definition
-            if input_def.root_manager_key:
-                raise DagsterInvalidDefinitionError(
-                    "Root input manager cannot be set on a composite solid: "
-                    f'root_manager_key "{input_def.root_manager_key}" '
-                    f'is set on InputDefinition "{input_def.name}" of composite solid "{name}". '
-                )
     # Ban io_manager_key on composite solids
     if output_mappings:
         for output_mapping in output_mappings:

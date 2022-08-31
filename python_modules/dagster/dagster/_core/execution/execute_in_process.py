@@ -86,7 +86,7 @@ def core_execute_in_process(
 def _check_top_level_inputs(job_def: JobDefinition) -> None:
     for input_mapping in job_def.graph.input_mappings:
         node = job_def.graph.solid_named(input_mapping.maps_to.solid_name)
-        top_level_input_name = input_mapping.definition.name
+        top_level_input_name = input_mapping.graph_input_name
         input_name = input_mapping.maps_to.input_name
         _check_top_level_inputs_for_node(
             node,

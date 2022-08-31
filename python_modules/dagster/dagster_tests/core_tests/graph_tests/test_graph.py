@@ -14,6 +14,7 @@ from dagster import (
     Field,
     GraphIn,
     In,
+    InputMapping,
     Nothing,
     Out,
     Permissive,
@@ -1208,3 +1209,33 @@ def test_all_dagster_types():
     assert "Foo" in names
     assert "Bar" in names
     assert "Bar?" in names
+
+
+def test_graph_definition_input_mappings():
+    @op
+    def inner_op(int_input: int) -> int:
+        return int_input + 7
+
+    the_graph = GraphDefinition(
+        name="the_graph",
+        input_mappings=[
+            InputMapping(
+                graph_input_name="x",
+                mapped_node_name="inner_op",
+                mapped_node_input_name="int_input",
+                graph_input_description="hello",
+            )
+        ],
+        node_defs=[inner_op],
+    )
+    assert the_graph.execute_in_process(input_values={"x": 5}).output_for_node("inner_op") == 12
+
+    @op
+    def outer_op() -> int:
+        return 5
+
+    @graph
+    def link():
+        the_graph(outer_op())
+
+    assert link.execute_in_process().output_for_node("the_graph.inner_op") == 12
