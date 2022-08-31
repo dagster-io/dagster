@@ -900,6 +900,12 @@
                 "startupProbe"
             ]
         },
+        "Labels": {
+            "title": "Labels",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
+        },
         "IngressPathType": {
             "title": "IngressPathType",
             "description": "An enumeration.",
@@ -1058,6 +1064,9 @@
                     "title": "Apiversion",
                     "type": "string"
                 },
+                "labels": {
+                    "$ref": "#/definitions/Labels"
+                },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
                 },
@@ -1073,6 +1082,7 @@
             },
             "required": [
                 "enabled",
+                "labels",
                 "annotations",
                 "dagit",
                 "readOnlyDagit",
@@ -1587,12 +1597,6 @@
                 "CustomRunLauncher"
             ],
             "type": "string"
-        },
-        "Labels": {
-            "title": "Labels",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
         },
         "CeleryWorkerQueue": {
             "title": "CeleryWorkerQueue",
