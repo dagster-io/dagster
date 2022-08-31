@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 from dagster import (
@@ -531,4 +533,23 @@ def test_overlapping_resources_source_asset():
     ):
         with_resources(
             [the_asset], resource_defs={"foo": ResourceDefinition.hardcoded_resource("diff_ref")}
+        )
+
+
+def test_with_resources_no_exp_warnings():
+    @asset(required_resource_keys={"foo"})
+    def blah():
+        pass
+
+    @io_manager
+    def the_manager():
+        pass
+
+    my_source_asset = SourceAsset(key=AssetKey("my_source_asset"), io_manager_key="the_manager")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with_resources(
+            [blah, my_source_asset],
+            {"foo": ResourceDefinition.hardcoded_resource("something"), "the_manager": the_manager},
         )

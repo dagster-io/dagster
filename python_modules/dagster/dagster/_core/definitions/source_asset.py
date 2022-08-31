@@ -1,3 +1,4 @@
+import warnings
 from typing import Dict, Iterator, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
@@ -26,7 +27,7 @@ from dagster._core.definitions.utils import (
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils import merge_dicts
-from dagster._utils.backcompat import experimental_arg_warning
+from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
 
 
 class SourceAsset(
@@ -161,15 +162,18 @@ class SourceAsset(
             if self.get_io_manager_key() != DEFAULT_IO_MANAGER_KEY
             else None
         )
-        return SourceAsset(
-            key=self.key,
-            io_manager_key=io_manager_key,
-            description=self.description,
-            partitions_def=self.partitions_def,
-            _metadata_entries=self.metadata_entries,
-            resource_defs=relevant_resource_defs,
-            group_name=self.group_name,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            return SourceAsset(
+                key=self.key,
+                io_manager_key=io_manager_key,
+                description=self.description,
+                partitions_def=self.partitions_def,
+                _metadata_entries=self.metadata_entries,
+                resource_defs=relevant_resource_defs,
+                group_name=self.group_name,
+            )
 
     def with_group_name(self, group_name: str) -> "SourceAsset":
         if self.group_name != DEFAULT_GROUP_NAME:
@@ -177,16 +181,19 @@ class SourceAsset(
                 f"A group name has already been provided to source asset {self.key.to_user_string()}"
             )
 
-        return SourceAsset(
-            key=self.key,
-            _metadata_entries=self.metadata_entries,
-            io_manager_key=self.io_manager_key,
-            io_manager_def=self.io_manager_def,
-            description=self.description,
-            partitions_def=self.partitions_def,
-            group_name=group_name,
-            resource_defs=self.resource_defs,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            return SourceAsset(
+                key=self.key,
+                _metadata_entries=self.metadata_entries,
+                io_manager_key=self.io_manager_key,
+                io_manager_def=self.io_manager_def,
+                description=self.description,
+                partitions_def=self.partitions_def,
+                group_name=group_name,
+                resource_defs=self.resource_defs,
+            )
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
         yield SourceAssetIOManagerRequirement(
