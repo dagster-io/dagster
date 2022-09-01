@@ -1,13 +1,7 @@
 import pytest
 
 from dagster import DagsterInvalidDefinitionError, DynamicOutput
-from dagster._legacy import (
-    DynamicOutputDefinition,
-    OutputDefinition,
-    composite_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import DynamicOutputDefinition, composite_solid, pipeline, solid
 
 
 @solid(output_defs=[DynamicOutputDefinition()])
@@ -29,26 +23,6 @@ def echo(x):
 @solid
 def add(x, y):
     return x + y
-
-
-def test_composite():
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Definition types must align",
-    ):
-
-        @composite_solid(output_defs=[OutputDefinition()])
-        def _should_fail():
-            return dynamic_solid()
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="must be a DynamicOutputDefinition since it is downstream of dynamic output",
-    ):
-
-        @composite_solid(output_defs=[OutputDefinition()])
-        def _should_fail():
-            return dynamic_solid().map(echo)
 
 
 def test_fan_in():

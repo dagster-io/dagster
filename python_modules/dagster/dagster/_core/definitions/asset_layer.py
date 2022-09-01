@@ -110,7 +110,7 @@ def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[N
         return node_input_handles
 
     for mapping in node_def.output_mappings:
-        if mapping.definition.name != output_name:
+        if mapping.graph_output_name != output_name:
             continue
         output_pointer = mapping.maps_from
         output_node = node_def.solid_named(output_pointer.solid_name)
@@ -169,7 +169,7 @@ def _build_graph_dependencies(
                 assets_defs_by_node_handle,
             )
             outputs_by_graph_handle[curr_node_handle] = {
-                mapping.definition.name: NodeOutputHandle(
+                mapping.graph_output_name: NodeOutputHandle(
                     NodeHandle(mapping.maps_from.solid_name, parent=curr_node_handle),
                     mapping.maps_from.output_name,
                 )
