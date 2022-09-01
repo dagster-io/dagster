@@ -84,7 +84,7 @@ show_error_codes = true
 # [Docs root]
 #   https://pylint.pycqa.org/en/latest/
 # [Rule/options reference]
-#   https://pylint.pycqa.org/en/latest/technical_reference/features.html 
+#   https://pylint.pycqa.org/en/latest/technical_reference/features.html
 #   This is a comprehensive reference of all Pylint checkers/rules and seems to be one of the only
 #   docs pages that's actually maintained.
 # [Changelog]
@@ -128,10 +128,10 @@ disable=[
   'C',
 
   # [category] refactoring-related checks-- too much noise
-  'R', 
+  'R',
 
   # [checker] redundant with mypy
-  'typecheck',  
+  'typecheck',
 
   # There are many places where we want to catch a maximally generic exception.
   'bare-except',
@@ -154,4 +154,13 @@ disable=[
   # This rule is incompatible with SDAs, which have parameters named the same as upstream assets.
   'redefined-outer-name',
 
+]
+
+[tool.pytest.ini_options]
+
+filterwarnings = [
+  "ignore::dagster.ExperimentalWarning",
+  "ignore::DeprecationWarning",
+  "ignore::UserWarning",
+  "ignore::pytest.PytestCollectionWarning",
 ]
