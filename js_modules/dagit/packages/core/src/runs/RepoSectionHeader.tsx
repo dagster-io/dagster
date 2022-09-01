@@ -19,7 +19,7 @@ export const RepoSectionHeader = (props: Props) => {
     <SectionHeaderButton $open={expanded} onClick={onClick}>
       <Box
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
-        padding={{left: 20, right: 20}}
+        padding={{horizontal: 24}}
       >
         <Box flex={{alignItems: 'center', gap: 8}}>
           <Icon name="folder" color={Colors.Dark} />
@@ -45,6 +45,7 @@ const SectionHeaderButton = styled.button<{$open: boolean}>`
   box-shadow: inset 0px -1px 0 ${Colors.KeylineGray}, inset 0px 1px 0 ${Colors.KeylineGray};
   cursor: pointer;
   display: block;
+  padding: 0;
   width: 100%;
   margin: 0;
   height: ${SECTION_HEADER_HEIGHT}px;

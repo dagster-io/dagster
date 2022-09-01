@@ -1,44 +1,32 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Colors,
-  Icon,
-  PageHeader,
-  Spinner,
-  Heading,
-  TextInput,
-} from '@dagster-io/ui';
+import {Box, Colors, Icon, PageHeader, Spinner, Heading, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {HourWindow, makeJobKey, QueryfulRunTimeline} from '../runs/QueryfulRunTimeline';
 import {
   failedStatuses,
   inProgressStatuses,
   queuedStatuses,
   successStatuses,
 } from '../runs/RunStatuses';
-import {TimelineJob} from '../runs/RunTimeline';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
+import {makeJobKey} from '../runs/useRunsForTimeline';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {JobItem, JobItemWithRuns, JobTable} from './JobTable';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
 import {RepoFilterButton} from './RepoFilterButton';
+import {RunTimelineSection} from './RunTimelineSection';
 import {
   InstanceOverviewInitialQuery,
   InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules as Schedule,
@@ -221,10 +209,11 @@ export const InstanceOverviewPage = () => {
     return flattened;
   }, [lastTenRunsData]);
 
-  const filteredJobsFlattened: JobItem[] = React.useMemo(() => {
-    return Object.values(filteredJobs).reduce((accum, jobList) => {
-      return [...accum, ...jobList];
-    }, []);
+  const visibleJobKeys: Set<string> = React.useMemo(() => {
+    const jobKeys = Object.values(filteredJobs)
+      .flat()
+      .map((jobItem) => makeJobKey(jobItem.repoAddress, jobItem.name));
+    return new Set(jobKeys);
   }, [filteredJobs]);
 
   const filteredJobsWithRuns = React.useMemo(() => {
@@ -280,7 +269,7 @@ export const InstanceOverviewPage = () => {
           style={{width: '340px'}}
         />
       </Box>
-      <RunTimelineSection jobs={filteredJobsFlattened} loading={loading} />
+      <RunTimelineSection loading={loading} visibleJobKeys={visibleJobKeys} />
       {inProgress.length ? (
         <JobSection
           icon={<Icon name="hourglass_bottom" color={Colors.Blue500} size={24} />}
@@ -319,102 +308,6 @@ export const InstanceOverviewPage = () => {
           heading={neverRan.length === 1 ? '1 job never ran' : `${neverRan.length} jobs never ran`}
           jobs={neverRan}
         />
-      ) : null}
-    </>
-  );
-};
-
-const LOOKAHEAD_HOURS = 1;
-const ONE_HOUR = 60 * 60 * 1000;
-
-const HOUR_WINDOW_KEY = 'dagit.run-timeline-hour-window';
-
-const validateHourWindow = (value: string): HourWindow => {
-  switch (value) {
-    case '1':
-    case '6':
-    case '12':
-    case '24':
-      return value;
-    default:
-      return '12';
-  }
-};
-
-const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}) => {
-  const [shown, setShown] = React.useState(true);
-  const [hourWindow, setHourWindow] = useStateWithStorage(HOUR_WINDOW_KEY, validateHourWindow);
-  const nowRef = React.useRef(Date.now());
-
-  React.useEffect(() => {
-    if (!loading) {
-      nowRef.current = Date.now();
-    }
-  }, [loading]);
-
-  const nowSecs = Math.floor(nowRef.current / 1000);
-  const range: [number, number] = React.useMemo(() => {
-    return [
-      nowSecs * 1000 - Number(hourWindow) * ONE_HOUR,
-      nowSecs * 1000 + LOOKAHEAD_HOURS * ONE_HOUR,
-    ];
-  }, [hourWindow, nowSecs]);
-
-  const [start, end] = React.useMemo(() => {
-    const [unvalidatedStart, unvalidatedEnd] = range;
-    return unvalidatedEnd < unvalidatedStart
-      ? [unvalidatedEnd, unvalidatedStart]
-      : [unvalidatedStart, unvalidatedEnd];
-  }, [range]);
-
-  const timelineJobs: TimelineJob[] = jobs.map((job) => ({
-    key: makeJobKey(job.repoAddress, job.name),
-    jobName: job.name,
-    repoAddress: job.repoAddress,
-    path: workspacePipelinePath({
-      repoName: job.repoAddress.name,
-      repoLocation: job.repoAddress.location,
-      pipelineName: job.name,
-      isJob: job.isJob,
-    }),
-    runs: [],
-  }));
-
-  return (
-    <>
-      <Box
-        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-        margin={{top: 16}}
-        padding={{bottom: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        <Box flex={{alignItems: 'center', gap: 8}}>
-          <Icon name="waterfall_chart" color={Colors.Gray900} size={20} />
-          <Heading>Timeline</Heading>
-        </Box>
-        <Box flex={{alignItems: 'center', gap: 8}}>
-          {shown ? (
-            <ButtonGroup<HourWindow>
-              activeItems={new Set([hourWindow])}
-              buttons={[
-                {id: '1', label: '1hr'},
-                {id: '6', label: '6hr'},
-                {id: '12', label: '12hr'},
-                {id: '24', label: '24hr'},
-              ]}
-              onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
-            />
-          ) : null}
-          <Button
-            icon={<Icon name={shown ? 'unfold_less' : 'unfold_more'} />}
-            onClick={() => setShown((current) => !current)}
-          >
-            {shown ? 'Hide' : 'Show'}
-          </Button>
-        </Box>
-      </Box>
-      {shown ? (
-        <QueryfulRunTimeline range={[start, end]} jobs={timelineJobs} hourWindow={hourWindow} />
       ) : null}
     </>
   );
