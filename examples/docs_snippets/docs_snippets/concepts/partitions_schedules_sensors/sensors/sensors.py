@@ -47,9 +47,7 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
 
 
@@ -169,9 +167,7 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
             has_files = True
     if not has_files:
@@ -234,9 +230,7 @@ def asset_a_and_b_sensor(context):
 )
 def every_fifth_asset_c_sensor(context):
     # this sensor will return a run request every fifth materialization of asset_c
-    asset_events = context.materialization_records_for_key(
-        asset_key=AssetKey("asset_c"), limit=5
-    )
+    asset_events = context.materialization_records_for_key(asset_key=AssetKey("asset_c"), limit=5)
     if len(asset_events) == 5:
         context.advance_cursor({AssetKey("asset_c"): asset_events[-1]})
         return RunRequest(run_key=f"{context.cursor}")
@@ -319,9 +313,7 @@ def send_slack_alert():
 
 @run_status_sensor(
     monitored_jobs=[
-        RepositorySelector(
-            location_name="repository.location", repository_name="team_a_repository"
-        )
+        RepositorySelector(location_name="repository.location", repository_name="team_a_repository")
     ],
     run_status=DagsterRunStatus.SUCCESS,
 )

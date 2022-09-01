@@ -1236,24 +1236,6 @@ def test_partially_invalid_asset_selection_unresolved_multi_asset_sensor():
             return [the_sensor, foo]
 
 
-def test_partially_invalid_asset_selection_unresolved_multi_asset_sensor():
-    @asset
-    def foo():
-        return None
-
-    @multi_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")])
-    def the_sensor(context):  # pylint: disable=unused-argument
-        pass
-
-    with pytest.raises(
-        DagsterInvalidSubsetError, match="no AssetsDefinition objects supply these keys"
-    ):
-
-        @repository
-        def test():
-            return [the_sensor, foo]
-
-
 def test_error_unresolved_multi_asset_sensor_in_dict_repository():
     @multi_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")])
     def the_sensor(context):  # pylint: disable=unused-argument

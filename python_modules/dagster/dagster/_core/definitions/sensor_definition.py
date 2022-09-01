@@ -203,7 +203,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     ):
         self._assets = assets
 
-        self._asset_keys = []
+        self._asset_keys: List[AssetKey] = []
         for asset in assets:
             self._asset_keys.extend(asset.keys)
 
