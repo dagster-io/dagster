@@ -479,6 +479,7 @@ from dagster._core.storage.memoizable_io_manager import (
 from dagster._core.storage.pipeline_run import (
     DagsterRun as DagsterRun,
     DagsterRunStatus as DagsterRunStatus,
+    RunsFilter as RunsFilter,
 )
 from dagster._core.storage.root_input_manager import (
     RootInputManager as RootInputManager,

@@ -99,6 +99,9 @@ Run storage
    :undoc-members:
    :inherited-members:
 
+.. autoclass:: RunsFilter
+
+
 .. currentmodule:: dagster._core.storage.runs
 
 .. autoclass:: RunStorage
