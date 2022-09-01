@@ -1453,6 +1453,29 @@ def test_job_preserved_with_asset_subset():
     assert result.dagster_run.tags == {"yay": "1"}
 
 
+def test_job_default_config_preserved_with_asset_subset():
+    # Assert that default config is used for asset subset
+
+    @op(config_schema={"foo": Field(int, default_value=1)})
+    def one(context):
+        assert context.op_config["foo"] == 1
+
+    asset_one = AssetsDefinition.from_op(one)
+
+    @asset(config_schema={"bar": Field(int, default_value=2)})
+    def two(context, one):  # pylint: disable=unused-argument
+        assert context.op_config["bar"] == 2
+
+    @asset(config_schema={"baz": Field(int, default_value=3)})
+    def three(context, two):  # pylint: disable=unused-argument
+        assert context.op_config["baz"] == 3
+
+    foo_job = define_asset_job("foo_job").resolve([asset_one, two, three], [])
+
+    result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
+    assert result.success
+
+
 def test_raise_error_on_incomplete_graph_asset_subset():
     @op
     def do_something(x):
