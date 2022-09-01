@@ -20,7 +20,6 @@ from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._core.definitions import AssetsDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -43,6 +42,7 @@ from .utils import check_valid_name
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.event_log.base import EventLogRecord
+    from dagster._core.definitions import AssetsDefinition
 
 
 @whitelist_for_serdes
@@ -198,7 +198,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         last_run_key: Optional[str],
         cursor: Optional[str],
         repository_name: Optional[str],
-        assets: Sequence[AssetsDefinition],
+        assets: Sequence["AssetsDefinition"],
         instance: Optional[DagsterInstance] = None,
     ):
         self._assets = assets
@@ -709,7 +709,7 @@ def build_sensor_context(
 
 @experimental
 def build_multi_asset_sensor_context(
-    assets: Sequence[AssetsDefinition],
+    assets: Sequence["AssetsDefinition"],
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
@@ -736,6 +736,7 @@ def build_multi_asset_sensor_context(
                 my_asset_sensor(context)
 
     """
+    from dagster._core.definitions import AssetsDefinition
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
@@ -891,7 +892,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
     def __init__(
         self,
         name: str,
-        assets: Sequence[AssetsDefinition],
+        assets: Sequence["AssetsDefinition"],
         job_name: Optional[str],
         asset_materialization_fn: Callable[
             ["MultiAssetSensorEvaluationContext"],
@@ -903,6 +904,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
+        from dagster._core.definitions import AssetsDefinition
+
         self._assets = check.list_param(assets, "assets", AssetsDefinition)
         self._asset_keys = [asset.key for asset in self._assets]
 
