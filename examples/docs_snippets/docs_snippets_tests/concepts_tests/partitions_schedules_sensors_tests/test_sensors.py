@@ -113,7 +113,7 @@ def test_asset_sensors():
     instance = DagsterInstance.ephemeral()
     materialize([asset_a, asset_b], instance=instance)
     ctx = build_multi_asset_sensor_context(
-        asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], instance=instance
+        assets=[asset_a, asset_b] instance=instance
     )
     assert list(asset_a_and_b_sensor(ctx))[0].run_config == {
         "ops": {
@@ -129,6 +129,6 @@ def test_asset_sensors():
         materialize([asset_c], instance=instance)
 
     ctx = build_multi_asset_sensor_context(
-        asset_keys=[AssetKey("asset_c")], instance=instance
+        assets=[asset_c], instance=instance
     )
     assert list(every_fifth_asset_c_sensor(ctx))[0].run_config == {}

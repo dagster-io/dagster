@@ -40,9 +40,9 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
+    from dagster._core.definitions import AssetsDefinition
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.event_log.base import EventLogRecord
-    from dagster._core.definitions import AssetsDefinition
 
 
 @whitelist_for_serdes
@@ -202,7 +202,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         instance: Optional[DagsterInstance] = None,
     ):
         self._assets = assets
-        self._asset_keys = [asset.key for asset in assets]
+
+        self._asset_keys = []
+        for asset in assets:
+            self._asset_keys.extend(asset.keys)
+
         self.cursor_has_been_updated = False
 
         super(MultiAssetSensorEvaluationContext, self).__init__(
@@ -907,7 +911,10 @@ class MultiAssetSensorDefinition(SensorDefinition):
         from dagster._core.definitions import AssetsDefinition
 
         self._assets = check.list_param(assets, "assets", AssetsDefinition)
-        self._asset_keys = [asset.key for asset in self._assets]
+
+        self._asset_keys = []
+        for asset in self._assets:
+            self._asset_keys.extend(asset.keys)
 
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):

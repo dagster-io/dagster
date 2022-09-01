@@ -28,6 +28,7 @@ from dagster import (
     repository,
     run_failure_sensor,
 )
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor

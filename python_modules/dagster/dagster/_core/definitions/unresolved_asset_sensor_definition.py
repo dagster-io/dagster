@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
+from dagster._core.definitions.events import AssetObservation
+
 from .asset_selection import AssetSelection
 from .sensor_definition import (
+    DagsterInvalidDefinitionError,
     DefaultSensorStatus,
     MultiAssetSensorDefinition,
     MultiAssetSensorEvaluationContext,
@@ -79,9 +82,19 @@ class UnresolvedMultiAssetSensorDefinition(UnresolvedAssetSensorDefinition):
     ):
         selected_asset_keys = self._selection.resolve([*assets])
 
+        selected_assets = []
+        for asset in assets:
+            if any([key in selected_asset_keys for key in asset.keys]):
+                if not all([key in selected_asset_keys for key in asset.keys]):
+                    raise DagsterInvalidDefinitionError(
+                        "For each asset key selected, must select all "
+                        "other asset keys in the AssetsDefinition."
+                    )
+                selected_assets.append(asset)
+
         return MultiAssetSensorDefinition(
             name=self._name,
-            assets=[asset for asset in assets if asset.key in selected_asset_keys],
+            assets=selected_assets,
             asset_materialization_fn=self._asset_materialization_fn,
             minimum_interval_seconds=self._minimum_interval_seconds,
             description=self._description,

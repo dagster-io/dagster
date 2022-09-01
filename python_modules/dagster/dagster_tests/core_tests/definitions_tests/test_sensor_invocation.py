@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
@@ -15,13 +16,16 @@ from dagster import (
     build_sensor_context,
     job,
     materialize,
+    multi_asset,
     multi_asset_sensor,
     op,
+    repository,
     run_failure_sensor,
     run_status_sensor,
     sensor,
 )
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import SensorExecutionContext
 
@@ -284,9 +288,53 @@ def test_multi_asset_sensor():
             context.advance_all_cursors()
             return RunRequest(run_key=context.cursor, run_config={})
 
+    @repository
+    def my_repo():
+        return [asset_a, asset_b, a_and_b_sensor]
+
     with instance_for_test() as instance:
         materialize([asset_a, asset_b], instance=instance)
-        ctx = build_multi_asset_sensor_context(
-            asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], instance=instance
-        )
-        assert list(a_and_b_sensor(ctx))[0].run_config == {}
+        ctx = build_multi_asset_sensor_context(assets=[asset_a, asset_b], instance=instance)
+        assert list(my_repo.get_sensor_def("a_and_b_sensor")(ctx))[0].run_config == {}
+
+
+def test_multi_asset_sensor_partial_selection():
+    @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
+    def two_assets():
+        return 1, 2
+
+    @multi_asset_sensor(asset_keys=[AssetKey("asset_a")])
+    def failing_sensor(context):
+        pass
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="must select all other asset keys"):
+
+        @repository
+        def my_repo():
+            return [two_assets, failing_sensor]
+
+    @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")])
+    def passing_sensor(context):
+        pass
+
+    @repository
+    def my_repo():
+        return [two_assets, passing_sensor]
+
+
+def test_multi_asset_sensor_has_assets():
+    @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
+    def two_assets():
+        return 1, 2
+
+    @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")])
+    def passing_sensor(context):
+        assert isinstance(context.assets[0], AssetsDefinition)
+        assert False
+
+    @repository
+    def my_repo():
+        return [two_assets, passing_sensor]
+
+    assert len(my_repo.get_sensor_def("passing_sensor").assets) == 1
+    assert my_repo.get_sensor_def("passing_sensor").assets[0] == two_assets
