@@ -1,5 +1,5 @@
 import datetime
-from typing import Iterator, List, Optional, Union, Sequence
+from typing import Iterator, Optional, Sequence, Union
 
 import pendulum
 import pytz
@@ -21,7 +21,8 @@ def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:
     return (
         is_valid_cron_string(cron_schedule)
         if isinstance(cron_schedule, str)
-        else all(is_valid_cron_string(cron_string) for cron_string in cron_schedule)
+        else len(cron_schedule) > 0
+        and all(is_valid_cron_string(cron_string) for cron_string in cron_schedule)
     )
 
 

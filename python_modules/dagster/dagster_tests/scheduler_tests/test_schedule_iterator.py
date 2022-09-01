@@ -118,3 +118,12 @@ def test_invalid_cron_string():
 
     with pytest.raises(CheckError):
         next(schedule_execution_time_iterator(start_time.timestamp(), "* * * * * *", "US/Pacific"))
+
+
+def test_empty_cron_string_union():
+    start_time = create_pendulum_time(
+        year=2022, month=2, day=21, hour=1, minute=30, second=1, tz="US/Pacific"
+    )
+
+    with pytest.raises(CheckError):
+        next(schedule_execution_time_iterator(start_time.timestamp(), [], "US/Pacific"))

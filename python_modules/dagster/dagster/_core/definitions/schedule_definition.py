@@ -261,11 +261,12 @@ class ScheduleDefinition:
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
-        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
-        if not isinstance(cron_schedule, str):
-            cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
-        self._cron_schedule = cron_schedule
-        if not is_valid_cron_schedule(self._cron_schedule):
+
+        self._cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
+        if not isinstance(self._cron_schedule, str):
+            check.sequence_param(self._cron_schedule, "cron_schedule", of_type=str)  # type: ignore
+
+        if not is_valid_cron_schedule(self._cron_schedule):  # type: ignore
             raise DagsterInvalidDefinitionError(
                 f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''. "
                 "Dagster recognizes standard cron expressions consisting of 5 fields."
@@ -462,8 +463,8 @@ class ScheduleDefinition:
 
     @public  # type: ignore
     @property
-    def cron_schedule(self) -> str:
-        return self._cron_schedule
+    def cron_schedule(self) -> Union[str, Sequence[str]]:
+        return self._cron_schedule  # type: ignore
 
     @public  # type: ignore
     @property
