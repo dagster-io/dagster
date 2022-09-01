@@ -10,6 +10,8 @@ from dagster import (
     ConfigMapping,
     DagsterInstance,
     DagsterTypeCheckDidNotPass,
+    DynamicOut,
+    DynamicOutput,
     Enum,
     Field,
     GraphIn,
@@ -1239,3 +1241,30 @@ def test_graph_definition_input_mappings():
         the_graph(outer_op())
 
     assert link.execute_in_process().output_for_node("the_graph.inner_op") == 12
+
+
+def test_graph_with_mapped_out():
+    @op(out=DynamicOut())
+    def dyn_vals():
+        for i in range(3):
+            yield DynamicOutput(i, mapping_key=f"num_{i}")
+
+    @op
+    def echo(x):
+        return x
+
+    @op
+    def double(x):
+        return x * 2
+
+    @op
+    def total(nums):
+        return sum(nums)
+
+    @graph
+    def mapped_out():
+        return dyn_vals().map(echo)
+
+    result = mapped_out.execute_in_process()
+    assert result.success
+    assert result.output_value() == {"num_0": 0, "num_1": 1, "num_2": 2}
