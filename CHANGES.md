@@ -7,7 +7,7 @@
 * Several updates to the Dagit run timeline view: your time window preference will now be preserved locally, there is a clearer “Now” label to delineate the current time, and upcoming scheduled ticks will no longer be batched with existing runs.
 * [dagster-k8s] `ingress.labels` is now available in the Helm chart. Any provided labels are appended to the default labels on each object (`helm.sh/chart`, `app.kubernetes.io/version`, and `app.kubernetes.io/managed-by`).
 * [dagster-dbt] Added support for two types of dbt nodes: metrics, and ephemeral models.
-* When constructing a `GraphDefinition` manually, InputMapping and OutputMapping objects should be directly constructed.
+* When constructing a `GraphDefinition` manually, InputMapping and OutputMapping objects should be directly constructed (previously, they were constructed using `InputDefinition.mapping_to` and `OutputDefinition.mapping_from` respectively).
 
 ### Bugfixes
 
@@ -24,8 +24,6 @@
 ### Breaking Changes
 
 * [dagit] The launchpad tab is no longer shown for Asset jobs. Asset jobs can be launched via the “Materialize All” button shown on the Overview tab. To provide optional configuration, hold shift when clicking “Materialize”.
-* The arguments to `InputMapping` and `OutputMapping` APIs have changed.
-
 ### Community Contributions
 
 * The `ssh_resource` can now accept configuration from environment variables. Thanks @[cbini](https://github.com/cbini)!
