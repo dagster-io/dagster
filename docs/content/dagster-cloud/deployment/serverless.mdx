@@ -92,6 +92,25 @@ Often you'll need to securely access secrets from your jobs. With Dagster Cloud 
 - If you're using our GitHub integration, you can pass in secrets as a JSON string input to the serverless deploy step in your repository's Github action script.
 - If you're using the CLI directly, you can pass `KEY=VALUE` pairs using the `--env` flag. Run `dagster-cloud serverless deploy --help` to learn more.
 
+### Adding dependencies
+
+Any dependencies specified in either `requirements.txt` or `setup.py` will be installed for you automatically by the Dagster Cloud Serverless infrastructure.
+
+---
+
+## Customizing the image
+
+Many apps will work fine with the default Dagster Cloud Serverless setup. However, apps of a certain complexity may need to make changes to the base image, either to use a different OS, different Python version, or install some native dependencies. You can customize your image through our Serverless lifecycle hooks, and/or changing the base image.
+
+### Lifecycle hooks
+
+In the root of your repo, you can provide two optional shell scripts: `dagster_cloud_pre_install.sh` and `dagster_cloud_post_install.sh`. These will run before and after Python dependencies are installed. They are useful for installing any non-Python dependencies or otherwise configuring your environment.
+
+### Changing the base image
+
+- **With GitHub**: you can provide a `base_image` input parameter to the "build and deploy" step in your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`)
+- **With the CLI**: add the `--base-image` CLI argument to the `dagster-cloud serverless deploy` command to specify the registry path to the desired base image. 
+
 ---
 
 ## Transitioning to Hybrid
