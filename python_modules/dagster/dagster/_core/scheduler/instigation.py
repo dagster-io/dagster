@@ -1,6 +1,6 @@
 from enum import Enum
 from inspect import Parameter
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
@@ -78,14 +78,21 @@ SensorJobData = SensorInstigatorData
 @whitelist_for_serdes
 class ScheduleInstigatorData(
     NamedTuple(
-        "_ScheduleInstigatorData", [("cron_schedule", str), ("start_timestamp", Optional[float])]
+        "_ScheduleInstigatorData",
+        [("cron_schedule", Union[str, Sequence[str]]), ("start_timestamp", Optional[float])],
     )
 ):
     # removed scheduler, 1/5/2022 (0.13.13)
-    def __new__(cls, cron_schedule: str, start_timestamp: Optional[float] = None):
+    def __new__(
+        cls, cron_schedule: Union[str, Sequence[str]], start_timestamp: Optional[float] = None
+    ):
+        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
+        if not isinstance(cron_schedule, str):
+            cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
+
         return super(ScheduleInstigatorData, cls).__new__(
             cls,
-            check.str_param(cron_schedule, "cron_schedule"),
+            cron_schedule,
             # Time in UTC at which the user started running the schedule (distinct from
             # `start_date` on partition-based schedules, which is used to define
             # the range of partitions)
