@@ -212,9 +212,14 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     ):
         self._assets = assets
 
+        # TODO: allow providing optional set of asset keys
         self._asset_keys: List[AssetKey] = []
         for asset in assets:
             self._asset_keys.extend(asset.keys)
+
+        self._partitions_def_by_asset_key = {
+            asset.key: asset.partitions_def for asset in assets if asset.key in self._asset_keys
+        }
 
         self.cursor_has_been_updated = False
 
@@ -246,14 +251,26 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         if asset_keys is None:
             asset_keys = self._asset_keys
 
-        cursor_dict = json.loads(self.cursor) if self.cursor else {}
         asset_event_records = {}
         for a in asset_keys:
+            cursor_partition_key, cursor = self._get_cursor(a)
+
+            partitions_to_fetch = None
+            partitions_def = self._partitions_def_by_asset_key[a]
+            if partitions_def:
+                partitions_to_fetch = list(partitions_def.get_partition_keys())
+
+                if cursor_partition_key is not None:
+                    partitions_to_fetch = partitions_to_fetch[
+                        partitions_to_fetch.index(cursor_partition_key) :
+                    ]
+
             event_records = self.instance.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
                     asset_key=a,
-                    after_cursor=cursor_dict.get(str(a)),
+                    after_cursor=cursor,
+                    asset_partitions=partitions_to_fetch,
                 ),
                 ascending=False,
                 limit=1,
@@ -290,6 +307,178 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             limit=limit,
         )
 
+    def _get_cursor(self, asset_key: AssetKey):
+        unpacked_cursor = json.loads(self.cursor) if self.cursor else {}
+        partition_key, cursor = unpacked_cursor.get(str(asset_key), (None, None))
+        return partition_key, cursor
+
+    @public
+    def latest_materialization_by_partition(
+        self, assets: Optional[Sequence[AssetsDefinition]] = None
+    ) -> Mapping[AssetKey, Mapping[str, Optional["EventLogRecord"]]]:
+        """
+        Fetches the most recent materialization event record for each partition of each asset.
+
+        Args:
+            assets (Optional[Sequence[AssetsDefinition]]): list of assets to fetch events for.
+                If not specified, the latest partition materialization will be fetched for all
+                assets the partitioned_asset_sensor monitors.
+
+        Returns:
+            Mapping[AssetKey, Mapping[str, Optional[EventLogRecord]]]:
+                Mapping of AssetKey to a mapping of partitions to EventLogRecords where the
+                EventLogRecord is the most recent materialization event for the partition. If there
+                is no materialization event for the partition, the value in the mapping will be None.
+                Fetches only events after the cursor.
+
+        """
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import EventRecordsFilter, EventLogRecord
+
+        assets = check.opt_list_param(assets, "assets", of_type=AssetsDefinition) or self._assets
+
+        latest_materialization_by_partition: Dict[
+            AssetKey, Dict[str, Optional[EventLogRecord]]
+        ] = defaultdict(dict)
+        for asset in assets:
+            if asset.partitions_def == None:
+                raise DagsterInvariantViolationError(
+                    "Cannot get latest materialization by partition for assets with no partitions"
+                )
+            else:
+                partition_key, cursor = self._get_cursor(asset.key)
+
+                partitions_to_fetch = list(asset.partitions_def.get_partition_keys())
+                if partition_key is not None:
+                    partitions_to_fetch = partitions_to_fetch[
+                        partitions_to_fetch.index(partition_key) :
+                    ]
+
+                partition_materializations = self.instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                        asset_key=asset.key,
+                        asset_partitions=partitions_to_fetch,
+                        after_cursor=cursor,
+                    ),
+                )
+                for partition in partitions_to_fetch:
+                    latest_materialization_by_partition[asset.key][partition] = None
+                for materialization in partition_materializations:
+                    # Only update if no previous materialization for this partition exists,
+                    # to ensure we return the most recent materialization for each partition.
+                    partition = self.get_partition_from_event_log_record(materialization)
+                    if latest_materialization_by_partition[asset.key][partition] is None:
+                        latest_materialization_by_partition[asset.key][partition] = materialization
+
+        return latest_materialization_by_partition
+
+    @public
+    def get_cursor_partition(self, asset_key):
+        """A utility method to get the current partition the cursor is on."""
+        asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
+        if asset_key not in [asset.key for asset in self._assets]:
+            raise DagsterInvalidInvocationError(
+                "Provided asset key must correspond to a provided asset"
+            )
+        if asset_key:
+            partition_key, _ = self._get_cursor(asset_key)
+        elif self._assets is not None and len(self._assets) == 1:
+            partition_key, _ = self._get_cursor(self._assets[0].asset_key)
+        else:
+            raise DagsterInvalidInvocationError(
+                "Asset key must be provided when multiple assets are defined"
+            )
+
+        return partition_key
+
+    def _can_map(self, to_partitions: PartitionsDefinition, from_partitions: PartitionsDefinition):
+        if isinstance(to_partitions, TimeWindowPartitionsDefinition) and isinstance(
+            from_partitions, TimeWindowPartitionsDefinition
+        ):
+            return True
+        return False
+
+    @public
+    def map_partition(
+        self,
+        partition_key: str,
+        to_partitions: PartitionsDefinition,
+        from_partitions: Optional[PartitionsDefinition] = None,
+    ) -> Sequence[str]:
+        """
+        Given two partitions definitions, converts a partition key in from_partitions to the
+        corresponding partition in to_partitions. Matches based on the time window the partition
+        belongs in.
+        """
+
+        partition_key = check.str_param(partition_key, "partition_key")
+        to_partitions = check.inst_param(to_partitions, "to_partitions", PartitionsDefinition)
+        from_partitions = check.opt_inst_param(
+            from_partitions, "from_partitions", PartitionsDefinition
+        )
+
+        if from_partitions == None and len(self._assets) == 1:
+            from_partitions = self._assets[0].partitions_def
+        elif not self._assets or len(self._assets) != 1:
+            raise DagsterInvalidInvocationError(
+                "from_partitions is a required parameter unless if there is only one asset provided"
+                "to the sensor context"
+            )
+
+        if not isinstance(from_partitions, PartitionsDefinition):
+            raise DagsterInvalidInvocationError(
+                "from_partitions must be provided if assets are not provided or are unpartitioned"
+            )
+        else:
+            if not self._can_map(to_partitions, from_partitions):
+                raise DagsterInvalidInvocationError(
+                    "Currently only time window partitions are supported"
+                )
+
+            # Currently, only time window partitions are supported
+            # TODO: support providing partition mappings for other partition types
+            downstream_partition_key_range = (
+                TimeWindowPartitionMapping().get_downstream_partitions_for_partition_range(
+                    PartitionKeyRange(partition_key, partition_key),
+                    downstream_partitions_def=to_partitions,
+                    upstream_partitions_def=from_partitions,
+                )
+            )
+            partition_keys = to_partitions.get_partition_keys()
+            if (
+                downstream_partition_key_range.start not in partition_keys
+                or downstream_partition_key_range.end not in partition_keys
+            ):
+                raise DagsterInvalidInvocationError(
+                    f"Mapped partition key {partition_key} to downstream partition key range "
+                    f"[{downstream_partition_key_range.start}...{downstream_partition_key_range.end}] "
+                    "which is not a valid range in the downstream partitions definition."
+                )
+
+            downstream_partitions = partition_keys[
+                partition_keys.index(downstream_partition_key_range.start) : partition_keys.index(
+                    downstream_partition_key_range.end
+                )
+                + 1
+            ]
+            return downstream_partitions
+
+    @public
+    def get_partition_from_event_log_record(
+        self, event_log_record: "EventLogRecord"
+    ) -> Optional[str]:
+        """
+        Given an event log record, returns the partition key for the event log record if it exists."""
+        from dagster._core.storage.event_log.base import EventLogRecord
+
+        check.inst_param(event_log_record, "event_log_record", EventLogRecord)
+
+        dagster_event = event_log_record.event_log_entry.dagster_event
+        if dagster_event:
+            return dagster_event.partition
+        return None
+
     @public
     def advance_cursor(
         self, materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]]
@@ -303,7 +492,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         """
         cursor_dict = json.loads(self.cursor) if self.cursor else {}
         update_dict = {
-            str(k): v.storage_id if v else cursor_dict.get(str(k))
+            str(k): (self.get_partition_from_event_log_record(v), v.storage_id)
+            if v
+            else cursor_dict.get(str(k))
             for k, v in materialization_records_by_key.items()
         }
         cursor_str = json.dumps(update_dict)
