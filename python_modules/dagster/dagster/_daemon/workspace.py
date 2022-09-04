@@ -35,7 +35,7 @@ class BaseDaemonWorkspace(IWorkspace):
         return self
 
     def get_workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
-        if self._location_entries == None:
+        if self._location_entries is None:
             self._location_entries = self._load_workspace()
         return self._location_entries.copy()
 
@@ -47,7 +47,7 @@ class BaseDaemonWorkspace(IWorkspace):
         return DaemonIterationWorkspace(self.get_workspace_snapshot())
 
     def get_repository_location(self, location_name: str) -> RepositoryLocation:
-        if self._location_entries == None:
+        if self._location_entries is None:
             self._location_entries = self._load_workspace()
 
         if location_name not in self._location_entries:

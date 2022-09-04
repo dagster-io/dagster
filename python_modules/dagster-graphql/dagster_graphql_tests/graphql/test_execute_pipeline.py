@@ -858,7 +858,7 @@ def get_step_output_event(logs, step_key, output_name="result"):
 
 class TestExecutePipelineReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
     def test_start_pipeline_execution_readonly_failure(self, graphql_context):
-        assert graphql_context.read_only == True
+        assert graphql_context.read_only is True
 
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(

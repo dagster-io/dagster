@@ -975,7 +975,7 @@ def test_single_step_reexecution():
     )
 
     assert reexecution_result.success
-    assert reexecution_result.result_for_solid("return_one").output_value() == None
+    assert reexecution_result.result_for_solid("return_one").output_value() is None
     assert reexecution_result.result_for_solid("add_one").output_value() == 2
 
 
@@ -1005,7 +1005,7 @@ def test_two_step_reexecution():
         step_selection=["add_one", "add_one_2"],
     )
     assert reexecution_result.success
-    assert reexecution_result.result_for_solid("return_one").output_value() == None
+    assert reexecution_result.result_for_solid("return_one").output_value() is None
     assert reexecution_result.result_for_solid("add_one_2").output_value() == 3
 
 
