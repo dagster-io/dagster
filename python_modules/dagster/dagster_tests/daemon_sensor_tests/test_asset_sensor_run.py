@@ -274,7 +274,6 @@ def test_layered_sensor(executor):
                 g
     Sensor for d, f, and g
     Tests that materializing x, z, and e causes a materialization of d and f, which causes a materialization of g
-        on the next sensor tick
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -321,29 +320,10 @@ def test_layered_sensor(executor):
             wait_for_all_runs_to_finish(instance)
             run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
             assert len(run_request_runs) == 1
-            assert run_request_runs[0].asset_selection == {AssetKey("d"), AssetKey("f")}
+            assert run_request_runs[0].asset_selection == {AssetKey("d"), AssetKey("f"), AssetKey("g")}
 
             freeze_datetime = freeze_datetime.add(seconds=60)
 
-        with pendulum.test(freeze_datetime):
-            evaluate_sensors(instance, workspace, executor)
-
-            # sensor should materialize
-            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
-            assert len(ticks) == 3
-            validate_tick(
-                ticks[0],
-                the_sensor,
-                freeze_datetime,
-                TickStatus.SUCCESS,
-            )
-
-            wait_for_all_runs_to_finish(instance)
-            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
-            assert len(run_request_runs) == 2
-            assert run_request_runs[0].asset_selection == {AssetKey("g")}
-
-            freeze_datetime = freeze_datetime.add(seconds=60)
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
