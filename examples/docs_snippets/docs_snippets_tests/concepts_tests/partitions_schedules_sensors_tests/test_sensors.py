@@ -110,10 +110,16 @@ def test_asset_sensors():
     def asset_c():
         return 3
 
+    @repository
+    def my_repo():
+        return [asset_a, asset_b, asset_c]
+
     instance = DagsterInstance.ephemeral()
     materialize([asset_a, asset_b], instance=instance)
     ctx = build_multi_asset_sensor_context(
-        asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], instance=instance
+        asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+        instance=instance,
+        repository_def=my_repo,
     )
     assert list(asset_a_and_b_sensor(ctx))[0].run_config == {
         "ops": {
@@ -129,6 +135,8 @@ def test_asset_sensors():
         materialize([asset_c], instance=instance)
 
     ctx = build_multi_asset_sensor_context(
-        asset_keys=[AssetKey("asset_c")], instance=instance
+        asset_keys=[AssetKey("asset_c")],
+        instance=instance,
+        repository_def=my_repo,
     )
     assert list(every_fifth_asset_c_sensor(ctx))[0].run_config == {}
