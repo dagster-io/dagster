@@ -234,13 +234,18 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public
     def latest_materialization_records_by_key(
-        self, asset_keys: Optional[Sequence[AssetKey]] = None
+        self,
+        asset_keys: Optional[Sequence[AssetKey]] = None,
+        after_cursor_partition: Optional[bool] = True,
     ) -> Mapping[AssetKey, Optional["EventLogRecord"]]:
         """Fetches the most recent materialization event record for each asset in asset_keys.
 
         Args:
             asset_keys (Optional[Sequence[AssetKey]]): list of asset keys to fetch events for. If not specified, the
                 latest materialization will be fetched for all assets the multi_asset_sensor monitors.
+            after_cursor_partition (Optional[bool]): If True, only materializations with partitions
+                after the cursor's current partition will be returned. By default, set to True. For
+                unpartitioned assets, this parameter is ignored.
 
         Returns: Mapping of AssetKey to EventLogRecord where the EventLogRecord is the latest materialization event for the asset. If there
             is no materialization event for the asset, the value in the mapping will be None.
@@ -257,7 +262,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
             partitions_to_fetch = None
             partitions_def = self._partitions_def_by_asset_key[a]
-            if partitions_def:
+            if partitions_def and after_cursor_partition:
                 partitions_to_fetch = list(partitions_def.get_partition_keys())
 
                 if cursor_partition_key is not None:
@@ -285,23 +290,37 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public
     def materialization_records_for_key(
-        self, asset_key: AssetKey, limit: int
+        self, asset_key: AssetKey, limit: int, after_cursor_partition: Optional[bool] = True
     ) -> Iterable["EventLogRecord"]:
         """Fetches asset materialization event records for asset_key, with the earliest event first.
 
         Args:
             asset_key (AssetKey): The asset to fetch materialization events for
             limit (int): The number of events to fetch
+            after_cursor_partition (Optional[bool]): If True, only materializations with partitions
+                after the cursor's current partition will be returned. By default, set to True. For
+                unpartitioned assets, this parameter is ignored.
         """
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        cursor_dict = json.loads(self.cursor) if self.cursor else {}
+        cursor_partition_key, cursor = self._get_cursor(asset_key)
+        partitions_to_fetch = None
+        partitions_def = self._partitions_def_by_asset_key[asset_key]
+        if partitions_def and after_cursor_partition:
+            partitions_to_fetch = list(partitions_def.get_partition_keys())
+
+            if cursor_partition_key is not None:
+                partitions_to_fetch = partitions_to_fetch[
+                    partitions_to_fetch.index(cursor_partition_key) :
+                ]
+
         return self.instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
-                after_cursor=cursor_dict.get(str(asset_key)),
+                after_cursor=cursor,
+                asset_partitions=partitions_to_fetch,
             ),
             ascending=True,
             limit=limit,
@@ -314,7 +333,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public
     def latest_materialization_by_partition(
-        self, assets: Optional[Sequence[AssetsDefinition]] = None
+        self,
+        assets: Optional[Sequence[AssetsDefinition]] = None,
+        after_cursor_partition: Optional[bool] = True,
     ) -> Mapping[AssetKey, Mapping[str, Optional["EventLogRecord"]]]:
         """
         Fetches the most recent materialization event record for each partition of each asset.
@@ -323,13 +344,16 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             assets (Optional[Sequence[AssetsDefinition]]): list of assets to fetch events for.
                 If not specified, the latest partition materialization will be fetched for all
                 assets the partitioned_asset_sensor monitors.
+            after_cursor_partition (Optional[bool]): If True, only materializations with partitions
+                after the cursor's current partition will be returned. By default, set to True. For
+                unpartitioned assets, this parameter is ignored.
 
         Returns:
             Mapping[AssetKey, Mapping[str, Optional[EventLogRecord]]]:
                 Mapping of AssetKey to a mapping of partitions to EventLogRecords where the
                 EventLogRecord is the most recent materialization event for the partition. If there
                 is no materialization event for the partition, the value in the mapping will be None.
-                Fetches only events after the cursor.
+                Filters for materializations in partitions after the cursor.
 
         """
         from dagster._core.events import DagsterEventType
@@ -349,7 +373,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 partition_key, cursor = self._get_cursor(asset.key)
 
                 partitions_to_fetch = list(asset.partitions_def.get_partition_keys())
-                if partition_key is not None:
+                if after_cursor_partition and partition_key is not None:
                     partitions_to_fetch = partitions_to_fetch[
                         partitions_to_fetch.index(partition_key) :
                     ]
