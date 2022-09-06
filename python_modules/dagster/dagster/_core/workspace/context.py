@@ -175,7 +175,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
-    def has_external_pipeline(self, selector: PipelineSelector) -> bool:
+    def has_external_job(self, selector: PipelineSelector) -> bool:
         check.inst_param(selector, "selector", PipelineSelector)
         if not self.has_repository_location(selector.location_name):
             return False
@@ -183,13 +183,13 @@ class BaseWorkspaceRequestContext(IWorkspace):
         loc = self.get_repository_location(selector.location_name)
         return loc.has_repository(selector.repository_name) and loc.get_repository(
             selector.repository_name
-        ).has_external_pipeline(selector.pipeline_name)
+        ).has_external_job(selector.pipeline_name)
 
-    def get_full_external_pipeline(self, selector: PipelineSelector) -> ExternalPipeline:
+    def get_full_external_job(self, selector: PipelineSelector) -> ExternalPipeline:
         return (
             self.get_repository_location(selector.location_name)
             .get_repository(selector.repository_name)
-            .get_full_external_pipeline(selector.pipeline_name)
+            .get_full_external_job(selector.pipeline_name)
         )
 
     def get_external_execution_plan(

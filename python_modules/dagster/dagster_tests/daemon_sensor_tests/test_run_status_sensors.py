@@ -93,7 +93,7 @@ def test_run_status_sensor(caplog, executor, instance, workspace, external_repo)
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_pipeline("failure_pipeline")
+        external_pipeline = external_repo.get_full_external_job("failure_pipeline")
         run = instance.create_run_for_pipeline(
             failure_pipeline,
             external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -133,7 +133,7 @@ def test_run_status_sensor(caplog, executor, instance, workspace, external_repo)
         )
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_pipeline("foo_pipeline")
+        external_pipeline = external_repo.get_full_external_job("foo_pipeline")
         run = instance.create_run_for_pipeline(
             foo_pipeline,
             external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -206,7 +206,7 @@ def test_run_failure_sensor(executor, instance, workspace, external_repo):
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_pipeline("failure_pipeline")
+        external_pipeline = external_repo.get_full_external_job("failure_pipeline")
         run = instance.create_run_for_pipeline(
             failure_pipeline,
             external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -261,7 +261,7 @@ def test_run_failure_sensor_that_fails(executor, instance, workspace, external_r
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_pipeline("failure_pipeline")
+        external_pipeline = external_repo.get_full_external_job("failure_pipeline")
         run = instance.create_run_for_pipeline(
             failure_pipeline,
             external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -332,7 +332,7 @@ def test_run_failure_sensor_filtered(executor, instance, workspace, external_rep
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_pipeline("failure_pipeline")
+        external_pipeline = external_repo.get_full_external_job("failure_pipeline")
         run = instance.create_run_for_pipeline(
             failure_pipeline,
             external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -364,7 +364,7 @@ def test_run_failure_sensor_filtered(executor, instance, workspace, external_rep
         time.sleep(1)
 
     with pendulum.test(freeze_datetime):
-        external_pipeline = external_repo.get_full_external_pipeline("failure_graph")
+        external_pipeline = external_repo.get_full_external_job("failure_graph")
         run = instance.create_run_for_pipeline(
             failure_job,
             external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -461,7 +461,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
                 time.sleep(1)
 
             with pendulum.test(freeze_datetime):
-                external_pipeline = external_repo.get_full_external_pipeline("hanging_pipeline")
+                external_pipeline = external_repo.get_full_external_job("hanging_pipeline")
                 # start run 1
                 run1 = instance.create_run_for_pipeline(
                     hanging_pipeline,
@@ -632,7 +632,7 @@ def test_cross_repo_run_status_sensor(executor):
             time.sleep(1)
 
         with pendulum.test(freeze_datetime):
-            external_pipeline = the_other_repo.get_full_external_pipeline("the_pipeline")
+            external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
             run = instance.create_run_for_pipeline(
                 the_pipeline,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -696,7 +696,7 @@ def test_cross_repo_job_run_status_sensor(executor):
             time.sleep(1)
 
         with pendulum.test(freeze_datetime):
-            external_pipeline = the_other_repo.get_full_external_pipeline("the_pipeline")
+            external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
             run = instance.create_run_for_pipeline(
                 the_pipeline,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -783,7 +783,7 @@ def test_different_instance_run_status_sensor(executor):
                 time.sleep(1)
 
             with pendulum.test(freeze_datetime):
-                external_pipeline = the_other_repo.get_full_external_pipeline("the_pipeline")
+                external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
                 run = the_other_instance.create_run_for_pipeline(
                     the_pipeline,
                     external_pipeline_origin=external_pipeline.get_external_origin(),

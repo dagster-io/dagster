@@ -205,7 +205,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 len(self._external_asset_node.job_names) >= 1,
                 "Asset must be part of at least one job",
             )
-            self._external_pipeline = self._external_repository.get_full_external_pipeline(
+            self._external_pipeline = self._external_repository.get_full_external_job(
                 self._external_asset_node.job_names[0]
             )
         return self._external_pipeline
@@ -414,9 +414,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_jobs(self, _graphene_info) -> Sequence[GraphenePipeline]:
         job_names = self._external_asset_node.job_names or []
         return [
-            GraphenePipeline(self._external_repository.get_full_external_pipeline(job_name))
+            GraphenePipeline(self._external_repository.get_full_external_job(job_name))
             for job_name in job_names
-            if self._external_repository.has_external_pipeline(job_name)
+            if self._external_repository.has_external_job(job_name)
         ]
 
     def resolve_latestMaterializationByPartition(

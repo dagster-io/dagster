@@ -45,7 +45,7 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
                 external_pipeline = (
                     workspace.get_repository_location("test")
                     .get_repository("nope")
-                    .get_full_external_pipeline("slow_pipeline")
+                    .get_full_external_job("slow_pipeline")
                 )
 
                 pipeline_run = instance.create_run_for_pipeline(
@@ -94,7 +94,7 @@ def test_terminate_after_shutdown():
             external_pipeline = (
                 workspace.get_repository_location("test")
                 .get_repository("nope")
-                .get_full_external_pipeline("sleepy_pipeline")
+                .get_full_external_job("sleepy_pipeline")
             )
 
             pipeline_run = instance.create_run_for_pipeline(
@@ -117,7 +117,7 @@ def test_terminate_after_shutdown():
             external_pipeline = (
                 workspace.get_repository_location("test")
                 .get_repository("nope")
-                .get_full_external_pipeline("math_diamond")
+                .get_full_external_job("math_diamond")
             )
 
             doomed_to_fail_pipeline_run = instance.create_run_for_pipeline(
@@ -163,7 +163,7 @@ def test_server_down():
                 external_pipeline = (
                     workspace.get_repository_location("test")
                     .get_repository("nope")
-                    .get_full_external_pipeline("sleepy_pipeline")
+                    .get_full_external_job("sleepy_pipeline")
                 )
 
                 pipeline_run = instance.create_run_for_pipeline(

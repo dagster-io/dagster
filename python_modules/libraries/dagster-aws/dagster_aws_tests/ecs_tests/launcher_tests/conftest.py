@@ -172,7 +172,7 @@ def pipeline():
 @pytest.fixture
 def external_pipeline(workspace):
     location = workspace.get_repository_location(workspace.repository_location_names[0])
-    return location.get_repository(repo.repository.__name__).get_full_external_pipeline(
+    return location.get_repository(repo.repository.__name__).get_full_external_job(
         repo.pipeline.__name__
     )
 
@@ -180,7 +180,7 @@ def external_pipeline(workspace):
 @pytest.fixture
 def other_external_pipeline(other_workspace):
     location = other_workspace.get_repository_location(other_workspace.repository_location_names[0])
-    return location.get_repository(repo.repository.__name__).get_full_external_pipeline(
+    return location.get_repository(repo.repository.__name__).get_full_external_job(
         repo.pipeline.__name__
     )
 
