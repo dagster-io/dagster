@@ -114,20 +114,6 @@ def test_nothing():
             pass
 
 
-def test_composite_outer_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int])])
-    def int_x(x):
-        return x
-
-    @composite_solid(input_defs=[InputDefinition("y", Optional[int], default_value=42)])
-    def wrap(y):
-        return int_x(y)
-
-    result = execute_solid(wrap)
-    assert result.success
-    assert result.output_value() == 42
-
-
 def test_composite_inner_default():
     @lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
     def int_x(x):
@@ -140,38 +126,6 @@ def test_composite_inner_default():
     result = execute_solid(wrap)
     assert result.success
     assert result.output_value() == 1337
-
-
-def test_composite_precedence_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
-    def int_x(x):
-        return x
-
-    @composite_solid(input_defs=[InputDefinition("y", Optional[int], default_value=42)])
-    def wrap(y):
-        return int_x(y)
-
-    result = execute_solid(wrap)
-    assert result.success
-    assert result.output_value() == 42
-
-
-def test_composite_mid_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int])])
-    def int_x(x):
-        return x
-
-    @composite_solid(input_defs=[InputDefinition("y", Optional[int], default_value=42)])
-    def wrap(y):
-        return int_x(y)
-
-    @composite_solid(input_defs=[InputDefinition("z", Optional[int])])
-    def outter_wrap(z):
-        return wrap(z)
-
-    result = execute_solid(outter_wrap)
-    assert result.success
-    assert result.output_value() == 42
 
 
 def test_custom_type_default():

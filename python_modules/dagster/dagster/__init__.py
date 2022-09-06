@@ -149,7 +149,6 @@ from dagster._core.definitions.decorators.sensor_decorator import (
     asset_sensor as asset_sensor,
     sensor as sensor,
     multi_asset_sensor as multi_asset_sensor,
-    partitioned_asset_sensor as partitioned_asset_sensor,
 )
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
@@ -305,13 +304,13 @@ from dagster._core.definitions.sensor_definition import (
     SensorEvaluationContext as SensorEvaluationContext,
     build_sensor_context as build_sensor_context,
     build_multi_asset_sensor_context as build_multi_asset_sensor_context,
-    build_partitioned_asset_sensor_context as build_partitioned_asset_sensor_context,
 )
 from dagster._core.definitions.source_asset import (
     SourceAsset as SourceAsset,
 )
 from dagster._core.definitions.step_launcher import (
     StepLauncher as StepLauncher,
+    StepRunRef as StepRunRef,
 )
 from dagster._core.definitions.time_window_partition_mapping import (
     TimeWindowPartitionMapping as TimeWindowPartitionMapping,
@@ -480,6 +479,7 @@ from dagster._core.storage.memoizable_io_manager import (
 from dagster._core.storage.pipeline_run import (
     DagsterRun as DagsterRun,
     DagsterRunStatus as DagsterRunStatus,
+    RunsFilter as RunsFilter,
 )
 from dagster._core.storage.root_input_manager import (
     RootInputManager as RootInputManager,
@@ -520,6 +520,7 @@ from dagster._loggers import (
 )
 from dagster._core.execution.context.system import (
     DagsterTypeLoaderContext as DagsterTypeLoaderContext,
+    StepExecutionContext as StepExecutionContext,
 )
 from dagster._serdes.serdes import (
     deserialize_value as deserialize_value,

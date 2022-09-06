@@ -900,6 +900,27 @@ def composite_mapping_from_output(
                 )
             )
 
+    elif isinstance(output, InvokedSolidDynamicOutputWrapper):
+        if len(output_defs) == 1:
+            defn = output_defs[0]
+            return {
+                defn.name: defn.mapping_from(
+                    output.solid_name, output.output_name, from_dynamic_mapping=True
+                )
+            }
+        else:
+            raise DagsterInvalidDefinitionError(
+                "Returned a single output ({solid_name}.{output_name}) in "
+                "{decorator_name} '{name}' but {num} outputs are defined. "
+                "Return a dict to map defined outputs.".format(
+                    solid_name=output.solid_name,
+                    output_name=output.output_name,
+                    decorator_name=decorator_name,
+                    name=solid_name,
+                    num=len(output_defs),
+                )
+            )
+
     output_mapping_dict = {}
     output_def_dict = {output_def.name: output_def for output_def in output_defs}
 
@@ -952,9 +973,8 @@ def composite_mapping_from_output(
                     handle.solid_name, handle.output_name
                 )
             elif isinstance(handle, InvokedSolidDynamicOutputWrapper):
-                unwrapped = handle.unwrap_for_composite_mapping()
                 output_mapping_dict[name] = output_def_dict[name].mapping_from(
-                    unwrapped.solid_name, unwrapped.output_name
+                    handle.solid_name, handle.output_name, from_dynamic_mapping=True
                 )
             else:
                 raise DagsterInvalidDefinitionError(
@@ -966,11 +986,6 @@ def composite_mapping_from_output(
                 )
 
         return output_mapping_dict
-
-    elif isinstance(output, InvokedSolidDynamicOutputWrapper):
-        return composite_mapping_from_output(
-            output.unwrap_for_composite_mapping(), output_defs, solid_name, decorator_name
-        )
 
     # error
     if output is not None:
@@ -1084,7 +1099,7 @@ def do_composition(
     input_mappings = []
     for defn in actual_input_defs:
         mappings = [
-            mapping for mapping in context.input_mappings if mapping.definition.name == defn.name
+            mapping for mapping in context.input_mappings if mapping.graph_input_name == defn.name
         ]
 
         if len(mappings) == 0:

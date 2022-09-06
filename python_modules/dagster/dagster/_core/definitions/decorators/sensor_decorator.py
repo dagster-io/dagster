@@ -4,11 +4,6 @@ from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union, TypeVar, 
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.unresolved_asset_sensor_definition import (
-    UnresolvedMultiAssetSensorDefinition,
-)
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
@@ -18,8 +13,6 @@ from ..sensor_definition import (
     AssetSensorDefinition,
     DefaultSensorStatus,
     MultiAssetMaterializationFunction,
-    PartitionedAssetMaterializationFunction,
-    PartitionedAssetSensorDefinition,
     MultiAssetSensorDefinition,
     AssetMaterializationFunctionReturn,
     RawSensorEvaluationFunction,
@@ -207,7 +200,7 @@ def multi_asset_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[MultiAssetMaterializationFunction,], UnresolvedMultiAssetSensorDefinition,]:
+) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
     """
     Creates an asset sensor that can monitor multiple assets
 
@@ -239,7 +232,7 @@ def multi_asset_sensor(
 
     check.opt_str_param(name, "name")
 
-    def inner(fn: MultiAssetMaterializationFunction) -> UnresolvedMultiAssetSensorDefinition:
+    def inner(fn: MultiAssetMaterializationFunction) -> MultiAssetSensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
@@ -261,78 +254,9 @@ def multi_asset_sensor(
                     ).format(sensor_name=sensor_name, result=result, type_=type(result))
                 )
 
-        return UnresolvedMultiAssetSensorDefinition(
+        return MultiAssetSensorDefinition(
             name=sensor_name,
-            asset_selection=AssetSelection.keys(*asset_keys),
-            job_name=job_name,
-            asset_materialization_fn=_wrapped_fn,
-            minimum_interval_seconds=minimum_interval_seconds,
-            description=description,
-            job=job,
-            jobs=jobs,
-            default_status=default_status,
-        )
-
-    return inner
-
-
-@experimental
-def partitioned_asset_sensor(
-    assets: Sequence[AssetsDefinition],
-    *,
-    job_name: Optional[str] = None,
-    name: Optional[str] = None,
-    minimum_interval_seconds: Optional[int] = None,
-    description: Optional[str] = None,
-    job: Optional[ExecutableDefinition] = None,
-    jobs: Optional[Sequence[ExecutableDefinition]] = None,
-    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[PartitionedAssetMaterializationFunction,], PartitionedAssetSensorDefinition,]:
-    """
-    TODO update docstring
-    Creates an asset sensor that can monitor multiple assets
-
-    The decorated function is used as the asset sensor's evaluation
-    function.  The decorated function may:
-
-    1. Return a `RunRequest` object.
-    2. Return a list of `RunRequest` objects.
-    3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
-    4. Return nothing (skipping without providing a reason)
-    5. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
-
-    Takes a :py:class:`~dagster.MultiAssetSensorEvaluationContext`.
-
-    Args:
-        asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
-        name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
-            function.
-        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
-            between sensor evaluations.
-        description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The
-            job to be executed when the sensor fires.
-        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
-            (experimental) A list of jobs to be executed when the sensor fires.
-        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
-    """
-    check.opt_list_param(
-        assets,
-        "assets",
-        of_type=AssetsDefinition,
-        additional_message="Must pass a list of assets definitions to partitioned_asset_sensor",
-    )
-
-    check.opt_str_param(name, "name")
-
-    def inner(fn: PartitionedAssetMaterializationFunction) -> PartitionedAssetSensorDefinition:
-        check.callable_param(fn, "fn")
-        sensor_name = name or fn.__name__
-
-        return PartitionedAssetSensorDefinition(
-            name=sensor_name,
-            assets=assets,
+            asset_keys=asset_keys,
             job_name=job_name,
             asset_materialization_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,

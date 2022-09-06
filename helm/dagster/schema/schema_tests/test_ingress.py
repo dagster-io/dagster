@@ -195,3 +195,48 @@ def test_ingress_tls(template_function, output, model, api_version):
     assert len(flower_tls.hosts) == 1
     assert flower_tls.hosts[0] == flower_host
     assert flower_tls.secret_name == flower_tls_secret_name
+
+
+@pytest.mark.parametrize(
+    argnames=["output", "model", "api_version"],
+    argvalues=[
+        (
+            "templates/ingress-v1beta1.yaml",
+            models.ExtensionsV1beta1Ingress,
+            "extensions/v1beta1/Ingress",
+        ),
+        (
+            "templates/ingress.yaml",
+            models.V1Ingress,
+            "networking.k8s.io/v1/Ingress",
+        ),
+    ],
+)
+def test_ingress_labels(template_function, output, model, api_version):
+    template = template_function(output, model)
+    helm_values = DagsterHelmValues.construct(
+        ingress=Ingress.construct(
+            enabled=True,
+            apiVersion=api_version,
+            dagit=DagitIngressConfiguration.construct(
+                host="foobar.com",
+                path="bing",
+                pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
+                precedingPaths=[
+                    IngressPath(
+                        path="/*",
+                        pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
+                        serviceName="ssl-redirect",
+                        servicePort="use-annotion",
+                    )
+                ],
+            ),
+            labels={"foo": "bar"},
+        )
+    )
+
+    ingress_template = template.render(helm_values)
+    assert len(ingress_template) == 1
+    ingress = ingress_template[0]
+
+    assert ingress.metadata.labels["foo"] == "bar"

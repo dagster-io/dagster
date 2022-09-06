@@ -25,7 +25,6 @@ from dagster import (
     load_assets_from_current_module,
     materialize,
     multi_asset_sensor,
-    partitioned_asset_sensor,
     HourlyPartitionsDefinition,
     WeeklyPartitionsDefinition,
     repository,
@@ -315,7 +314,7 @@ def multi_asset_sensor_hourly_to_hourly(context):
     partition_keys = hourly_asset.partitions_def.get_partition_keys()
     if cursor_partition:  # Test that only events after cursor are returned
 
-        partitions_after_cursor = partition_keys[partition_keys.index(cursor_partition) :]
+        partitions_after_cursor = partition_keys[partition_keys.index(cursor_partition) + 1 :]
         assert set(partitions_after_cursor) == set(materialization_by_partition.keys())
 
     assert set(

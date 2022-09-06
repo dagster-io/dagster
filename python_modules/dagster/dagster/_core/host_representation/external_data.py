@@ -245,7 +245,7 @@ class ExternalScheduleData(
         "_ExternalScheduleData",
         [
             ("name", str),
-            ("cron_schedule", str),
+            ("cron_schedule", Union[str, Sequence[str]]),
             ("pipeline_name", str),
             ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
@@ -270,10 +270,14 @@ class ExternalScheduleData(
         description=None,
         default_status=None,
     ):
+        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
+        if not isinstance(cron_schedule, str):
+            cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
+
         return super(ExternalScheduleData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            cron_schedule=check.str_param(cron_schedule, "cron_schedule"),
+            cron_schedule=cron_schedule,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
             mode=check.opt_str_param(mode, "mode"),

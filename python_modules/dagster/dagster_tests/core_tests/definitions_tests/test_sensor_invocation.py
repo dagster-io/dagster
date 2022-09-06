@@ -1,4 +1,5 @@
 from unittest import mock
+from dagster._core.definitions.partition import static_partitioned_config
 
 import pytest
 
@@ -12,7 +13,6 @@ from dagster import (
     SensorEvaluationContext,
     asset,
     build_multi_asset_sensor_context,
-    build_partitioned_asset_sensor_context,
     build_run_status_sensor_context,
     build_sensor_context,
     job,
@@ -26,10 +26,8 @@ from dagster import (
     sensor,
     StaticPartitionsDefinition,
     DailyPartitionsDefinition,
-    partitioned_asset_sensor,
     define_asset_job,
 )
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import SensorExecutionContext
@@ -299,27 +297,39 @@ def test_multi_asset_sensor():
 
     with instance_for_test() as instance:
         materialize([asset_a, asset_b], instance=instance)
-        ctx = build_multi_asset_sensor_context(assets=[asset_a, asset_b], instance=instance)
-        assert list(my_repo.get_sensor_def("a_and_b_sensor")(ctx))[0].run_config == {}
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+            instance=instance,
+            repository_def=my_repo,
+        )
+        assert list(a_and_b_sensor(ctx))[0].run_config == {}
 
 
-def test_multi_asset_sensor_partial_selection():
+def test_multi_asset_nonexistent_key():
+    @multi_asset_sensor(asset_keys=[AssetKey("nonexistent_key")])
+    def failing_sensor(context):  # pylint: disable=unused-argument
+        pass
+
+    @repository
+    def my_repo():
+        return [failing_sensor]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="No asset with AssetKey",
+    ):
+        list(
+            failing_sensor(build_multi_asset_sensor_context([AssetKey("nonexistent_key")], my_repo))
+        )
+
+
+def test_multi_asset_sensor_selection():
     @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
     def two_assets():
         return 1, 2
 
     @multi_asset_sensor(asset_keys=[AssetKey("asset_a")])
-    def failing_sensor(context):
-        pass
-
-    with pytest.raises(DagsterInvalidDefinitionError, match="must select all other asset keys"):
-
-        @repository
-        def my_repo():
-            return [two_assets, failing_sensor]
-
-    @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")])
-    def passing_sensor(context):
+    def passing_sensor(context):  # pylint: disable=unused-argument
         pass
 
     @repository
@@ -334,15 +344,32 @@ def test_multi_asset_sensor_has_assets():
 
     @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
-        assert isinstance(context.assets[0], AssetsDefinition)
-        assert False
+        assert (
+            context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
+                AssetKey("asset_a")
+            ]
+            == two_assets
+        )
+        assert (
+            context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
+                AssetKey("asset_b")
+            ]
+            == two_assets
+        )
+        assert len(context.assets_defs_by_key) == 2
 
     @repository
     def my_repo():
         return [two_assets, passing_sensor]
 
-    assert len(my_repo.get_sensor_def("passing_sensor").assets) == 1
-    assert my_repo.get_sensor_def("passing_sensor").assets[0] == two_assets
+    assert len(passing_sensor.asset_keys) == 2
+    with instance_for_test() as instance:
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+            instance=instance,
+            repository_def=my_repo,
+        )
+        list(passing_sensor(ctx))
 
 
 def test_multi_asset_sensor_invalid_partitions():
@@ -352,9 +379,13 @@ def test_multi_asset_sensor_invalid_partitions():
     def static_partitions_asset():
         return 1
 
+    @repository
+    def my_repo():
+        return [static_partitions_asset]
+
     with instance_for_test() as instance:
-        with build_partitioned_asset_sensor_context(
-            assets=[static_partitions_asset], instance=instance
+        with build_multi_asset_sensor_context(
+            [static_partitions_asset.key], instance=instance, repository_def=my_repo
         ) as context:
             with pytest.raises(DagsterInvalidInvocationError):
                 context.map_partition(
@@ -372,6 +403,10 @@ def test_partitions_multi_asset_sensor_context():
     @asset(partitions_def=daily_partitions_def)
     def daily_partitions_asset_2():
         return 1
+
+    @repository
+    def my_repo():
+        return [daily_partitions_asset, daily_partitions_asset_2]
 
     asset_job = define_asset_job(
         "yay", selection="daily_partitions_asset", partitions_def=daily_partitions_def
@@ -398,7 +433,9 @@ def test_partitions_multi_asset_sensor_context():
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
-            [daily_partitions_asset, daily_partitions_asset_2], instance=instance
+            [daily_partitions_asset.key, daily_partitions_asset_2.key],
+            instance=instance,
+            repository_def=my_repo,
         )
         assert list(two_asset_sensor(ctx))[0].tags['dagster/partition'] == '2022-08-01'
         assert ctx.get_cursor_partition(AssetKey("daily_partitions_asset")) == "2022-08-01"
@@ -414,6 +451,10 @@ def test_invalid_partition_mapping():
     @asset(partitions_def=DailyPartitionsDefinition("2022-08-01"))
     def august_daily_partitions():
         return 1
+
+    @repository
+    def my_repo():
+        return [july_daily_partitions, august_daily_partitions]
 
     @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
     def asset_sensor(context):
@@ -433,7 +474,9 @@ def test_invalid_partition_mapping():
             partition_key="2022-07-01",
             instance=instance,
         )
-        ctx = build_multi_asset_sensor_context([july_daily_partitions], instance=instance)
+        ctx = build_multi_asset_sensor_context(
+            [july_daily_partitions.key], instance=instance, repository_def=my_repo
+        )
         with pytest.raises(DagsterInvalidInvocationError):
             list(asset_sensor(ctx))
 
@@ -445,27 +488,49 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
     def july_daily_partitions():
         return 1
 
-    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
-    def default_asset_sensor(context):
-        asset_events = context.latest_materialization_records_by_key()
+    @repository
+    def my_repo():
+        return [july_daily_partitions]
 
-        july_materialization = asset_events.get(AssetKey("july_daily_partitions"))
+    july_partitions_keys = partitions_july.get_partition_keys()
 
     @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
     def after_cursor_partitions_asset_sensor(context):
-        events = context.latest_materialization_records_by_key(july_daily_partitions.key)
+        events = context.latest_materialization_records_by_key([july_daily_partitions.key])
+
         if (
-            context.get_partition_from_event_log_record(events[july_daily_partitions.key])
+            events[july_daily_partitions.key]
+            and context.get_partition_from_event_log_record(events[july_daily_partitions.key])
             == '2022-07-10'
         ):  # first sensor invocation
-            context.advance_all_cursors(events)
+            context.advance_all_cursors()
         else:  # second sensor invocation
+            assert context.get_cursor_partition(july_daily_partitions.key) == '2022-07-10'
             materializations_by_key = context.latest_materialization_records_by_key(
                 after_cursor_partition=False
             )
             later_materialization = materializations_by_key.get(july_daily_partitions.key)
             assert later_materialization
-            assert later_materialization.partition == '2022-07-05'
+            assert (
+                context.get_partition_from_event_log_record(later_materialization) == '2022-07-05'
+            )
+
+            materializations_by_partition = context.latest_materialization_by_partition(
+                july_daily_partitions.key, after_cursor_partition=False
+            )
+            assert set(materializations_by_partition.keys()) == set(
+                july_daily_partitions.partitions_def.get_partition_keys()
+            )
+
+            materializations_by_partition = context.latest_materialization_by_partition(
+                july_daily_partitions.key,  # searching only after cursor partition
+            )
+            # The cursor is set to the 2022-07-10 partition. Future searches with the default
+            # after_cursor_partition=True will only return materializations with partitions after
+            # 2022-07-10.
+            assert set(materializations_by_partition.keys()) == set(
+                july_partitions_keys[july_partitions_keys.index('2022-07-10') + 1 :]
+            )
 
     with instance_for_test() as instance:
         materialize(
@@ -473,6 +538,9 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
             partition_key="2022-07-10",
             instance=instance,
         )
-        ctx = build_multi_asset_sensor_context([july_daily_partitions], instance=instance)
-        with pytest.raises(DagsterInvalidInvocationError):
-            list(asset_sensor(ctx))
+        ctx = build_multi_asset_sensor_context(
+            [july_daily_partitions.key], instance=instance, repository_def=my_repo
+        )
+        list(after_cursor_partitions_asset_sensor(ctx))
+        materialize([july_daily_partitions], partition_key="2022-07-05", instance=instance)
+        list(after_cursor_partitions_asset_sensor(ctx))

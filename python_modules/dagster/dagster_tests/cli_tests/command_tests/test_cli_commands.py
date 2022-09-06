@@ -132,6 +132,12 @@ def define_bar_schedules():
             job_name="foo",
             run_config={},
         ),
+        "union_schedule": ScheduleDefinition(
+            "union_schedule",
+            cron_schedule=["* * * * *", "* * * * *"],
+            job_name="foo",
+            run_config={},
+        ),
         "partitioned_schedule": partition_set.create_schedule_definition(
             schedule_name="partitioned_schedule",
             cron_schedule="* * * * *",

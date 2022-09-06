@@ -41,6 +41,9 @@ def test_schedules_list(gen_schedule_args):
                 "****************************************\n"
                 "Schedule: partitioned_schedule [STOPPED]\n"
                 "Cron Schedule: * * * * *\n"
+                "**********************************\n"
+                "Schedule: union_schedule [STOPPED]\n"
+                "Cron Schedule: ['* * * * *', '* * * * *']\n"
             )
 
 

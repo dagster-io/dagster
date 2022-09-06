@@ -815,9 +815,10 @@ def _create_run_config_schema(
             while parent_job.asset_selection_data:
                 parent_job = parent_job.asset_selection_data.parent_job_def
 
-            selected_solids = pipeline_def.graph.solids
             ignored_solids = [
-                solid for solid in parent_job.graph.solids if solid not in selected_solids
+                solid
+                for solid in parent_job.graph.solids
+                if not pipeline_def.has_solid_named(solid.name)
             ]
     elif pipeline_def.is_subset_pipeline:
         if pipeline_def.parent_pipeline_def is None:

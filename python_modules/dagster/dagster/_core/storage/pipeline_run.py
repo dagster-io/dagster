@@ -568,7 +568,7 @@ class RunsFilter(
         [
             ("run_ids", List[str]),
             ("job_name", Optional[str]),
-            ("statuses", List[PipelineRunStatus]),
+            ("statuses", List[DagsterRunStatus]),
             ("tags", Dict[str, Union[str, List[str]]]),
             ("snapshot_id", Optional[str]),
             ("updated_after", Optional[datetime]),
@@ -577,11 +577,34 @@ class RunsFilter(
         ],
     )
 ):
+    """Defines a filter across job runs, for use when querying storage directly.
+
+    Each field of the RunsFilter represents a logical AND with each other. For
+    example, if you specify job_name and tags, then you will receive only runs
+    with the specified job_name AND the specified tags. If left blank, then
+    all values will be permitted for that field.
+
+    Args:
+        run_ids (Optional[List[str]]): A list of job run_id values.
+        job_name (Optional[str]):
+            Name of the job to query for. If blank, all job_names will be accepted.
+        statuses (Optional[List[DagsterRunStatus]]):
+            A list of run statuses to filter by. If blank, all run statuses will be allowed.
+        tags (Optional[Dict[str, Union[str, List[str]]]]):
+            A dictionary of run tags to query by. All tags specified here must be present for a given run to pass the filter.
+        snapshot_id (Optional[str]): The ID of the job snapshot to query for. Intended for internal use.
+        updated_after (Optional[DateTime]): Filter by runs that were last updated before this datetime.
+        created_before (Optional[DateTime]): Filter by runs that were created before this datetime.
+        mode (Optional[str]): (deprecated)
+        pipeline_name (Optional[str]): (deprecated)
+
+    """
+
     def __new__(
         cls,
         run_ids: Optional[List[str]] = None,
         job_name: Optional[str] = None,
-        statuses: Optional[List[PipelineRunStatus]] = None,
+        statuses: Optional[List[DagsterRunStatus]] = None,
         tags: Optional[Dict[str, Union[str, List[str]]]] = None,
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
