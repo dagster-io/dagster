@@ -5,6 +5,7 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -14,7 +15,6 @@ from typing import (
     Sequence,
     Union,
     cast,
-    Dict,
 )
 
 from typing_extensions import TypeGuard
@@ -42,9 +42,9 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.event_log.base import EventLogRecord
-    from dagster._core.definitions.repository_definition import RepositoryDefinition
 
 
 @whitelist_for_serdes

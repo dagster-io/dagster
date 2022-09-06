@@ -4,12 +4,6 @@ from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
-
-# from dagster._core.definitions.unresolved_asset_sensor_definition import (
-#     UnresolvedMultiAssetSensorDefinition,
-# )
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError

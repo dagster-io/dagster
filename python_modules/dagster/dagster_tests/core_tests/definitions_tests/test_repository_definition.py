@@ -12,7 +12,6 @@ from dagster import (
     DailyPartitionsDefinition,
     IOManager,
     JobDefinition,
-    MultiAssetSensorDefinition,
     ResourceDefinition,
     SensorDefinition,
     SourceAsset,
@@ -33,7 +32,6 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.decorators.sensor_decorator import multi_asset_sensor
 from dagster._core.definitions.executor_definition import (
     default_executors,
     multi_or_in_process_executor,
@@ -1160,92 +1158,6 @@ def test_duplicate_unresolved_job_target_invalid():
         @repository
         def the_repo_dupe_graph_invalid_schedule():
             return [foo_group, the_job, _create_schedule_from_target(other_job)]
-
-
-def test_unresolved_multi_asset_sensor():
-    @asset
-    def foo():
-        return None
-
-    @asset
-    def bar():
-        return None
-
-    @multi_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")])
-    def the_sensor(context):  # pylint: disable=unused-argument
-        pass
-
-    @repository
-    def test():
-        return [foo, bar, the_sensor]
-
-    assert isinstance(test.get_sensor_def("the_sensor"), MultiAssetSensorDefinition)
-
-
-def test_duplicate_unresolved_multi_asset_sensor():
-    @asset
-    def foo():
-        return None
-
-    @asset
-    def bar():
-        return None
-
-    @multi_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")])
-    def the_sensor(context):  # pylint: disable=unused-argument
-        pass
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="Duplicate definition found for the_sensor"
-    ):
-
-        @repository
-        def test():
-            return [foo, bar, the_sensor, the_sensor]
-
-
-def test_invalid_asset_selection_unresolved_multi_asset_sensor():
-    @multi_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")])
-    def the_sensor(context):  # pylint: disable=unused-argument
-        pass
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="no AssetsDefinitions exist on the repository"
-    ):
-
-        @repository
-        def test():
-            return [the_sensor]
-
-
-def test_partially_invalid_asset_selection_unresolved_multi_asset_sensor():
-    @asset
-    def foo():
-        return None
-
-    @multi_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")])
-    def the_sensor(context):  # pylint: disable=unused-argument
-        pass
-
-    with pytest.raises(
-        DagsterInvalidSubsetError, match="no AssetsDefinition objects supply these keys"
-    ):
-
-        @repository
-        def test():
-            return [the_sensor, foo]
-
-
-def test_error_unresolved_multi_asset_sensor_in_dict_repository():
-    @multi_asset_sensor(asset_keys=[AssetKey("foo"), AssetKey("bar")])
-    def the_sensor(context):  # pylint: disable=unused-argument
-        pass
-
-    with pytest.raises(DagsterInvalidDefinitionError, match="dict is not supported"):
-
-        @repository
-        def test():
-            return {"sensors": {"the_sensor": the_sensor}}
 
 
 def test_duplicate_job_target_valid():
