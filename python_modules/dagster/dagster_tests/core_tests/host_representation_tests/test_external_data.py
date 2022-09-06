@@ -1,8 +1,12 @@
+from datetime import datetime
+
 import pytest
 
 from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
+from dagster._core.definitions.partition import ScheduleType
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.host_representation.external_data import (
@@ -11,9 +15,12 @@ from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalSensorData,
     ExternalTargetData,
+    ExternalTimeWindowPartitionsDefinitionData,
     external_asset_graph_from_defs,
+    external_time_window_partitions_definition_from_def,
 )
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
 def test_single_asset_job():
@@ -957,3 +964,42 @@ def test_back_compat_external_sensor():
     target = external_sensor_data.target_dict["my_pipeline"]
     assert isinstance(target, ExternalTargetData)
     assert target.pipeline_name == "my_pipeline"
+
+
+def test_back_compat_external_time_window_partitions_def():
+    start = datetime(year=2022, month=5, day=5)
+
+    external = ExternalTimeWindowPartitionsDefinitionData(
+        schedule_type=ScheduleType.WEEKLY,
+        start=start.timestamp(),
+        timezone="US/Central",
+        fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+        end_offset=1,
+        minute_offset=5,
+        hour_offset=13,
+    )
+
+    assert external.get_partitions_definition() == TimeWindowPartitionsDefinition(
+        schedule_type=ScheduleType.WEEKLY,
+        start=start,
+        timezone="US/Central",
+        fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+        end_offset=1,
+        minute_offset=5,
+        hour_offset=13,
+    )
+
+
+def test_external_time_window_partitions_def_cron_schedule():
+    start = datetime(year=2022, month=5, day=5)
+
+    partitions_def = TimeWindowPartitionsDefinition(
+        start=start,
+        timezone="US/Central",
+        fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+        end_offset=1,
+        cron_schedule="0 10,13 * * *",
+    )
+
+    external = external_time_window_partitions_definition_from_def(partitions_def)
+    assert external.get_partitions_definition() == partitions_def
