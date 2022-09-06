@@ -232,6 +232,20 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             instance=instance,
         )
 
+    def _get_partitions_after_cursor(self, asset_key: AssetKey) -> Optional[List[str]]:
+        cursor_partition_key, _ = self._get_cursor(asset_key)
+
+        partitions_to_fetch = None
+        partitions_def = self._partitions_def_by_asset_key.get(asset_key)
+        if partitions_def:
+            partitions_to_fetch = list(partitions_def.get_partition_keys())
+
+            if cursor_partition_key is not None:
+                partitions_to_fetch = partitions_to_fetch[
+                    partitions_to_fetch.index(cursor_partition_key) :
+                ]
+        return partitions_to_fetch
+
     @public
     def latest_materialization_records_by_key(
         self,
@@ -258,17 +272,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         asset_event_records = {}
         for a in asset_keys:
-            cursor_partition_key, cursor = self._get_cursor(a)
+            _, cursor = self._get_cursor(a)
 
-            partitions_to_fetch = None
-            partitions_def = self._partitions_def_by_asset_key[a]
-            if partitions_def and after_cursor_partition:
-                partitions_to_fetch = list(partitions_def.get_partition_keys())
-
-                if cursor_partition_key is not None:
-                    partitions_to_fetch = partitions_to_fetch[
-                        partitions_to_fetch.index(cursor_partition_key) :
-                    ]
+            partitions_to_fetch = (
+                self._get_partitions_after_cursor(a) if after_cursor_partition else None
+            )
 
             event_records = self.instance.get_event_records(
                 EventRecordsFilter(
@@ -304,16 +312,13 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        cursor_partition_key, cursor = self._get_cursor(asset_key)
-        partitions_to_fetch = None
-        partitions_def = self._partitions_def_by_asset_key[asset_key]
-        if partitions_def and after_cursor_partition:
-            partitions_to_fetch = list(partitions_def.get_partition_keys())
+        _, cursor = self._get_cursor(asset_key)
 
-            if cursor_partition_key is not None:
-                partitions_to_fetch = partitions_to_fetch[
-                    partitions_to_fetch.index(cursor_partition_key) :
-                ]
+        # check that asset key is in the sensor
+
+        partitions_to_fetch = (
+            self._get_partitions_after_cursor(asset_key) if after_cursor_partition else None
+        )
 
         return self.instance.get_event_records(
             EventRecordsFilter(
@@ -334,9 +339,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     @public
     def latest_materialization_by_partition(
         self,
-        assets: Optional[Sequence[AssetsDefinition]] = None,
+        asset_key: AssetKey,
         after_cursor_partition: Optional[bool] = True,
-    ) -> Mapping[AssetKey, Mapping[str, Optional["EventLogRecord"]]]:
+    ) -> Mapping[str, Optional["EventLogRecord"]]:
         """
         Fetches the most recent materialization event record for each partition of each asset.
 
@@ -359,43 +364,42 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter, EventLogRecord
 
-        assets = check.opt_list_param(assets, "assets", of_type=AssetsDefinition) or self._assets
+        asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
+        # TODO check that asset key is in self._assets
+        asset = next(iter([asset for asset in self._assets if asset_key in asset.keys]))
 
-        latest_materialization_by_partition: Dict[
-            AssetKey, Dict[str, Optional[EventLogRecord]]
-        ] = defaultdict(dict)
-        for asset in assets:
-            if asset.partitions_def == None:
-                raise DagsterInvariantViolationError(
-                    "Cannot get latest materialization by partition for assets with no partitions"
-                )
-            else:
-                partition_key, cursor = self._get_cursor(asset.key)
+        materialization_by_partition: Dict[str, Optional[EventLogRecord]] = {}
+        if asset.partitions_def == None:
+            raise DagsterInvariantViolationError(
+                "Cannot get latest materialization by partition for assets with no partitions"
+            )
+        else:
+            _, cursor = self._get_cursor(asset.key)
 
-                partitions_to_fetch = list(asset.partitions_def.get_partition_keys())
-                if after_cursor_partition and partition_key is not None:
-                    partitions_to_fetch = partitions_to_fetch[
-                        partitions_to_fetch.index(partition_key) :
-                    ]
+            partitions_to_fetch = (
+                self._get_partitions_after_cursor(asset_key)
+                if after_cursor_partition
+                else list(asset.partitions_def.get_partition_keys())
+            )
 
-                partition_materializations = self.instance.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        asset_key=asset.key,
-                        asset_partitions=partitions_to_fetch,
-                        after_cursor=cursor,
-                    ),
-                )
-                for partition in partitions_to_fetch:
-                    latest_materialization_by_partition[asset.key][partition] = None
-                for materialization in partition_materializations:
-                    # Only update if no previous materialization for this partition exists,
-                    # to ensure we return the most recent materialization for each partition.
-                    partition = self.get_partition_from_event_log_record(materialization)
-                    if latest_materialization_by_partition[asset.key][partition] is None:
-                        latest_materialization_by_partition[asset.key][partition] = materialization
+            partition_materializations = self.instance.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=asset.key,
+                    asset_partitions=partitions_to_fetch,
+                    after_cursor=cursor,
+                ),
+            )
+            for partition in partitions_to_fetch:
+                materialization_by_partition[partition] = None
+            for materialization in partition_materializations:
+                # Only update if no previous materialization for this partition exists,
+                # to ensure we return the most recent materialization for each partition.
+                partition = self.get_partition_from_event_log_record(materialization)
+                if materialization_by_partition[partition] is None:
+                    materialization_by_partition[partition] = materialization
 
-        return latest_materialization_by_partition
+        return materialization_by_partition
 
     @public
     def get_cursor_partition(self, asset_key):

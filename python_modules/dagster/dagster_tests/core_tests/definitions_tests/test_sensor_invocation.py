@@ -345,7 +345,7 @@ def test_multi_asset_sensor_has_assets():
     assert my_repo.get_sensor_def("passing_sensor").assets[0] == two_assets
 
 
-def test_partitioned_asset_sensor_invalid_partitions():
+def test_multi_asset_sensor_invalid_partitions():
     static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
     @asset(partitions_def=static_partitions_def)
@@ -362,7 +362,7 @@ def test_partitioned_asset_sensor_invalid_partitions():
                 )
 
 
-def test_partitioned_asset_sensor_context():
+def test_partitions_multi_asset_sensor_context():
     daily_partitions_def = DailyPartitionsDefinition("2020-01-01")
 
     @asset(partitions_def=daily_partitions_def)
@@ -377,7 +377,7 @@ def test_partitioned_asset_sensor_context():
         "yay", selection="daily_partitions_asset", partitions_def=daily_partitions_def
     )
 
-    @partitioned_asset_sensor(assets=[daily_partitions_asset, daily_partitions_asset_2])
+    @multi_asset_sensor(asset_keys=[daily_partitions_asset.key, daily_partitions_asset_2.key])
     def two_asset_sensor(context):
         asset_events = context.latest_materialization_records_by_key()
 
@@ -397,7 +397,7 @@ def test_partitioned_asset_sensor_context():
             partition_key="2022-08-01",
             instance=instance,
         )
-        ctx = build_partitioned_asset_sensor_context(
+        ctx = build_multi_asset_sensor_context(
             [daily_partitions_asset, daily_partitions_asset_2], instance=instance
         )
         assert list(two_asset_sensor(ctx))[0].tags['dagster/partition'] == '2022-08-01'
@@ -415,7 +415,7 @@ def test_invalid_partition_mapping():
     def august_daily_partitions():
         return 1
 
-    @partitioned_asset_sensor(assets=[july_daily_partitions])
+    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
     def asset_sensor(context):
         asset_events = context.latest_materialization_records_by_key()
 
@@ -433,6 +433,46 @@ def test_invalid_partition_mapping():
             partition_key="2022-07-01",
             instance=instance,
         )
-        ctx = build_partitioned_asset_sensor_context([july_daily_partitions], instance=instance)
+        ctx = build_multi_asset_sensor_context([july_daily_partitions], instance=instance)
+        with pytest.raises(DagsterInvalidInvocationError):
+            list(asset_sensor(ctx))
+
+
+def test_multi_asset_sensor_after_cursor_partition_flag():
+    partitions_july = DailyPartitionsDefinition("2022-07-01")
+
+    @asset(partitions_def=partitions_july)
+    def july_daily_partitions():
+        return 1
+
+    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
+    def default_asset_sensor(context):
+        asset_events = context.latest_materialization_records_by_key()
+
+        july_materialization = asset_events.get(AssetKey("july_daily_partitions"))
+
+    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
+    def after_cursor_partitions_asset_sensor(context):
+        events = context.latest_materialization_records_by_key(july_daily_partitions.key)
+        if (
+            context.get_partition_from_event_log_record(events[july_daily_partitions.key])
+            == '2022-07-10'
+        ):  # first sensor invocation
+            context.advance_all_cursors(events)
+        else:  # second sensor invocation
+            materializations_by_key = context.latest_materialization_records_by_key(
+                after_cursor_partition=False
+            )
+            later_materialization = materializations_by_key.get(july_daily_partitions.key)
+            assert later_materialization
+            assert later_materialization.partition == '2022-07-05'
+
+    with instance_for_test() as instance:
+        materialize(
+            [july_daily_partitions],
+            partition_key="2022-07-10",
+            instance=instance,
+        )
+        ctx = build_multi_asset_sensor_context([july_daily_partitions], instance=instance)
         with pytest.raises(DagsterInvalidInvocationError):
             list(asset_sensor(ctx))
