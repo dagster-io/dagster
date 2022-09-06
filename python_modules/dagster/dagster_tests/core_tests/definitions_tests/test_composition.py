@@ -303,13 +303,13 @@ def test_mapping_args_kwargs():
     def maps(m_c, m_b, m_a):
         take(m_a, b=m_b, c=m_c)
 
-    assert maps.input_mappings[2].definition.name == "m_a"
+    assert maps.input_mappings[2].graph_input_name == "m_a"
     assert maps.input_mappings[2].maps_to.input_name == "a"
 
-    assert maps.input_mappings[1].definition.name == "m_b"
+    assert maps.input_mappings[1].graph_input_name == "m_b"
     assert maps.input_mappings[1].maps_to.input_name == "b"
 
-    assert maps.input_mappings[0].definition.name == "m_c"
+    assert maps.input_mappings[0].graph_input_name == "m_c"
     assert maps.input_mappings[0].maps_to.input_name == "c"
 
 
@@ -487,10 +487,10 @@ def test_mapping_args_ordering():
         swizzle_2()
 
     for mapping in swizzle.input_mappings:
-        assert mapping.definition.name == mapping.maps_to.input_name
+        assert mapping.graph_input_name == mapping.maps_to.input_name
 
     for mapping in swizzle_2.input_mappings:
-        assert mapping.definition.name == mapping.maps_to.input_name
+        assert mapping.graph_input_name == mapping.maps_to.input_name
 
     execute_pipeline(
         ordered,

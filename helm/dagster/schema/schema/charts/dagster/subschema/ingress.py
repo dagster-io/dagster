@@ -46,6 +46,7 @@ class FlowerIngressConfiguration(BaseModel):
 class Ingress(BaseModel):
     enabled: bool
     apiVersion: Optional[str]
+    labels: kubernetes.Labels
     annotations: kubernetes.Annotations
     dagit: DagitIngressConfiguration
     readOnlyDagit: DagitIngressConfiguration

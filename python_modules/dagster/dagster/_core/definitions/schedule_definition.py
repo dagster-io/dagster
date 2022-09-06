@@ -23,7 +23,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen, merge_dicts
-from dagster._utils.schedules import is_valid_cron_string
+from dagster._utils.schedules import is_valid_cron_schedule
 
 from ..decorator_utils import get_function_params
 from ..errors import (
@@ -203,8 +203,12 @@ class ScheduleDefinition:
     Args:
         name (Optional[str]): The name of the schedule to create. Defaults to the job name plus
             "_schedule".
-        cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
-            '45 23 * * 6' for a schedule that runs at 11:45 PM every Saturday.
+        cron_schedule (Union[str, Sequence[str]]): A valid cron string or sequence of cron strings
+            specifying when the schedule will run, e.g., ``'45 23 * * 6'`` for a schedule that runs
+            at 11:45 PM every Saturday. If a sequence is provided, then the schedule will run for
+            the union of all execution times for the provided cron strings, e.g.,
+            ``['45 23 * * 6', '30 9 * * 0]`` for a schedule that runs at 11:45 PM every Saturday and
+            9:30 AM every Sunday.
         execution_fn (Callable[ScheduleEvaluationContext]): The core evaluation function for the
             schedule, which is run at an interval to determine whether a run should be launched or
             not. Takes a :py:class:`~dagster.ScheduleEvaluationContext`.
@@ -243,7 +247,7 @@ class ScheduleDefinition:
         self,
         name: Optional[str] = None,
         *,
-        cron_schedule: Optional[str] = None,
+        cron_schedule: Optional[Union[str, Sequence[str]]] = None,
         job_name: Optional[str] = None,
         run_config: Optional[Any] = None,
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
@@ -258,9 +262,11 @@ class ScheduleDefinition:
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
 
-        self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
+        self._cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
+        if not isinstance(self._cron_schedule, str):
+            check.sequence_param(self._cron_schedule, "cron_schedule", of_type=str)  # type: ignore
 
-        if not is_valid_cron_string(self._cron_schedule):
+        if not is_valid_cron_schedule(self._cron_schedule):  # type: ignore
             raise DagsterInvalidDefinitionError(
                 f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''. "
                 "Dagster recognizes standard cron expressions consisting of 5 fields."
@@ -457,8 +463,8 @@ class ScheduleDefinition:
 
     @public  # type: ignore
     @property
-    def cron_schedule(self) -> str:
-        return self._cron_schedule
+    def cron_schedule(self) -> Union[str, Sequence[str]]:
+        return self._cron_schedule  # type: ignore
 
     @public  # type: ignore
     @property

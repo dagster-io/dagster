@@ -1,5 +1,37 @@
 # Changelog
 
+# 1.0.7 (core) / 0.16.7 (libraries)
+
+### New
+
+* Several updates to the Dagit run timeline view: your time window preference will now be preserved locally, there is a clearer “Now” label to delineate the current time, and upcoming scheduled ticks will no longer be batched with existing runs.
+* [dagster-k8s] `ingress.labels` is now available in the Helm chart. Any provided labels are appended to the default labels on each object (`helm.sh/chart`, `app.kubernetes.io/version`, and `app.kubernetes.io/managed-by`).
+* [dagster-dbt] Added support for two types of dbt nodes: metrics, and ephemeral models.
+* When constructing a `GraphDefinition` manually, InputMapping and OutputMapping objects should be directly constructed.
+
+### Bugfixes
+
+* [dagster-snowflake] Pandas is no longer imported when `dagster_snowflake` is imported. Instead, it’s only imported when using functionality inside `dagster-snowflake` that depends on pandas.
+* Recent changes to `run_status_sensors` caused sensors that only monitored jobs in external repositories to also monitor all jobs in the current repository. This has been fixed.
+* Fixed an issue where "unhashable type" errors could be spawned from sensor executions.
+* [dagit] Clicking between assets in different repositories from asset groups and asset jobs now works as expected.
+* [dagit] The DAG rendering of composite ops with more than one input/output mapping has been fixed.
+* [dagit] Selecting a source asset in Dagit no longer produces a GraphQL error
+* [dagit] Viewing “Related Assets” for an asset run now shows the full set of assets included in the run, regardless of whether they were materialized successfully.
+* [dagit] The Asset Lineage view has been simplified and lets you know if the view is being clipped and more distant upstream/downstream assets exist.
+* Fixed erroneous experimental warnings being thrown when using `with_resources` alongside source assets.
+
+### Breaking Changes
+
+* [dagit] The launchpad tab is no longer shown for Asset jobs. Asset jobs can be launched via the “Materialize All” button shown on the Overview tab. To provide optional configuration, hold shift when clicking “Materialize”.
+* The arguments to `InputMapping` and `OutputMapping` APIs have changed.
+
+### Community Contributions
+
+* The `ssh_resource` can now accept configuration from environment variables. Thanks @[cbini](https://github.com/cbini)!
+* Spelling corrections in `migrations.md`. Thanks @[gogi2811](https://github.com/gogi2811)!
+
+
 # 1.0.6 (core) / 0.16.6 (libraries)
 
 ### New
