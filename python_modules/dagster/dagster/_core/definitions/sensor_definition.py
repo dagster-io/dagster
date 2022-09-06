@@ -14,6 +14,7 @@ from typing import (
     Sequence,
     Union,
     cast,
+    Dict,
 )
 
 from typing_extensions import TypeGuard
@@ -43,6 +44,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.event_log.base import EventLogRecord
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
 
 
 @whitelist_for_serdes
@@ -198,14 +200,21 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         last_run_key: Optional[str],
         cursor: Optional[str],
         repository_name: Optional[str],
-        assets: Sequence["AssetsDefinition"],
+        repository_def: "RepositoryDefinition",
+        asset_keys: Sequence[AssetKey],
         instance: Optional[DagsterInstance] = None,
     ):
-        self._assets = assets
+        self.repository_def = repository_def
+        self._asset_keys = asset_keys
 
-        self._asset_keys: List[AssetKey] = []
-        for asset in assets:
-            self._asset_keys.extend(asset.keys)
+        self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
+        for asset_key in asset_keys:
+            assets_def = self.repository_def.assets_by_key.get(asset_key)
+            if assets_def is None:
+                raise DagsterInvalidDefinitionError(
+                    f"No asset with {asset_key} found in repository"
+                )
+            self._assets_by_key[asset_key] = assets_def
 
         self.cursor_has_been_updated = False
 
@@ -306,6 +315,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         """Updates the cursor to the most recent materialization event for all assets monitored by the multi_asset_sensor"""
         materializations_by_key = self.latest_materialization_records_by_key()
         self.advance_cursor(materializations_by_key)
+
+    @property
+    @public
+    def assets_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        return self._assets_by_key
 
 
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
@@ -713,7 +727,8 @@ def build_sensor_context(
 
 @experimental
 def build_multi_asset_sensor_context(
-    assets: Sequence["AssetsDefinition"],
+    asset_keys: Sequence[AssetKey],
+    repository_def: "RepositoryDefinition",
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
@@ -740,12 +755,13 @@ def build_multi_asset_sensor_context(
                 my_asset_sensor(context)
 
     """
-    from dagster._core.definitions import AssetsDefinition
+    from dagster._core.definitions import RepositoryDefinition
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
-    check.list_param(assets, "assets", of_type=AssetsDefinition)
+    check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+    check.inst_param(repository_def, "repository_def", RepositoryDefinition)
     return MultiAssetSensorEvaluationContext(
         instance_ref=None,
         last_completion_time=None,
@@ -753,7 +769,8 @@ def build_multi_asset_sensor_context(
         cursor=cursor,
         repository_name=repository_name,
         instance=instance,
-        assets=assets,
+        asset_keys=asset_keys,
+        repository_def=repository_def,
     )
 
 
@@ -896,7 +913,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
     def __init__(
         self,
         name: str,
-        assets: Sequence["AssetsDefinition"],
+        asset_keys: Sequence[AssetKey],
         job_name: Optional[str],
         asset_materialization_fn: Callable[
             ["MultiAssetSensorEvaluationContext"],
@@ -910,11 +927,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
     ):
         from dagster._core.definitions import AssetsDefinition
 
-        self._assets = check.list_param(assets, "assets", AssetsDefinition)
-
-        self._asset_keys = []
-        for asset in self._assets:
-            self._asset_keys.extend(asset.keys)
+        self._asset_keys = check.list_param(asset_keys, "asset_keys", AssetKey)
 
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
@@ -978,7 +991,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
             context_param_name = get_function_params(self._raw_fn)[0].name
 
             if args:
-                context = check.opt_inst_param(
+                context = check.inst_param(
                     args[0], context_param_name, MultiAssetSensorEvaluationContext
                 )
             else:
@@ -986,11 +999,11 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     raise DagsterInvalidInvocationError(
                         f"Sensor invocation expected argument '{context_param_name}'."
                     )
-                context = check.opt_inst_param(
-                    kwargs[context_param_name], context_param_name, SensorEvaluationContext
+                context = check.inst_param(
+                    kwargs[context_param_name],
+                    context_param_name,
+                    MultiAssetSensorEvaluationContext,
                 )
-
-            context = context if context else build_multi_asset_sensor_context(assets=self._assets)
 
             return self._raw_fn(context)
 
@@ -1002,11 +1015,6 @@ class MultiAssetSensorDefinition(SensorDefinition):
                 )
 
             return self._raw_fn()  # type: ignore [TypeGuard limitation]
-
-    @public  # type: ignore
-    @property
-    def assets(self):
-        return self._assets
 
     @public  # type: ignore
     @property

@@ -294,26 +294,38 @@ def test_multi_asset_sensor():
 
     with instance_for_test() as instance:
         materialize([asset_a, asset_b], instance=instance)
-        ctx = build_multi_asset_sensor_context(assets=[asset_a, asset_b], instance=instance)
-        assert list(my_repo.get_sensor_def("a_and_b_sensor")(ctx))[0].run_config == {}
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+            instance=instance,
+            repository_def=my_repo,
+        )
+        assert list(a_and_b_sensor(ctx))[0].run_config == {}
 
 
-def test_multi_asset_sensor_partial_selection():
+def test_multi_asset_nonexistent_key():
+    @multi_asset_sensor(asset_keys=[AssetKey("nonexistent_key")])
+    def failing_sensor(context):
+        pass
+
+    @repository
+    def my_repo():
+        return [failing_sensor]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="No asset with AssetKey",
+    ):
+        list(
+            failing_sensor(build_multi_asset_sensor_context([AssetKey("nonexistent_key")], my_repo))
+        )
+
+
+def test_multi_asset_sensor_selection():
     @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
     def two_assets():
         return 1, 2
 
     @multi_asset_sensor(asset_keys=[AssetKey("asset_a")])
-    def failing_sensor(context):
-        pass
-
-    with pytest.raises(DagsterInvalidDefinitionError, match="must select all other asset keys"):
-
-        @repository
-        def my_repo():
-            return [two_assets, failing_sensor]
-
-    @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
         pass
 
@@ -329,12 +341,19 @@ def test_multi_asset_sensor_has_assets():
 
     @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
-        assert isinstance(context.assets[0], AssetsDefinition)
-        assert False
+        assert context.assets_by_key[AssetKey("asset_a")] == two_assets
+        assert context.assets_by_key[AssetKey("asset_b")] == two_assets
+        assert len(context.assets_by_key) == 2
 
     @repository
     def my_repo():
         return [two_assets, passing_sensor]
 
-    assert len(my_repo.get_sensor_def("passing_sensor").assets) == 1
-    assert my_repo.get_sensor_def("passing_sensor").assets[0] == two_assets
+    assert len(my_repo.get_sensor_def("passing_sensor").asset_keys) == 2
+    with instance_for_test() as instance:
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+            instance=instance,
+            repository_def=my_repo,
+        )
+        list(passing_sensor(ctx))
