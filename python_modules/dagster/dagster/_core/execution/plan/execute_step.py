@@ -1,7 +1,19 @@
 import inspect
 import warnings
 from collections import defaultdict
-from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -291,6 +303,39 @@ def _type_check_output(
         )
 
 
+def _run_asset_expectations(
+    step_context: StepExecutionContext,
+    step_output_handle: StepOutputHandle,
+    output: Any,
+) -> Sequence[ExpectationResult]:
+    asset_layer = step_context.pipeline_def.asset_layer
+
+    asset_key = asset_layer.asset_info_for_output(
+        node_handle=step_context.solid_handle, output_name=step_output_handle.output_name
+    ).key
+    assets_def = asset_layer.assets_def_for_node(step_context.solid_handle)
+    asset_expectations = assets_def.in_step_expectations_by_key.get(asset_key, [])
+
+    results: List[ExpectationResult] = []
+    for asset_expectation in asset_expectations:
+        asset_expectation_context = step_context.for_asset_expectation(output.value)
+        with user_code_error_boundary(
+            DagsterTypeCheckError,
+            lambda: (
+                f'Error occurred while running expectation "{asset_expectation.name}" for '
+                f"asset {asset_key.to_user_string()}"
+            ),
+            log_manager=asset_expectation_context.log,
+        ):
+            success = asset_expectation.expectation_fn(asset_expectation_context)
+            results.append(ExpectationResult(success=success, label=asset_expectation.name))
+
+    if results:
+        yield DagsterEvent.asset_observation(
+            step_context, AssetObservation(asset_key=asset_key, expectation_results=results)
+        )
+
+
 def core_dagster_event_sequence_for_step(
     step_context: StepExecutionContext,
 ) -> Iterator[DagsterEvent]:
@@ -421,6 +466,9 @@ def _type_check_and_store_output(
         yield evt
 
     for evt in _create_type_materializations(step_context, output.output_name, output.value):
+        yield evt
+
+    for evt in _run_asset_expectations(step_context, step_output_handle, output):
         yield evt
 
 

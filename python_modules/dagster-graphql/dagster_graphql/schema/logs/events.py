@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import graphene
 
 import dagster._check as check
@@ -331,6 +333,9 @@ class AssetEventMixin:
         from ...implementation.events import _to_metadata_entries
 
         return _to_metadata_entries(self._metadata.metadata_entries)
+
+    def resolve_expectationResults(self, _graphene_info) -> Sequence[GrapheneExpectationResult]:
+        return "what goes here???"
 
     def resolve_partition(self, _graphene_info):
         return self._metadata.partition

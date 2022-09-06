@@ -29,6 +29,7 @@ from dagster._utils.backcompat import (
     experimental_arg_warning,
 )
 
+from .asset_expectation import AssetExpectationDefinition
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
@@ -76,6 +77,7 @@ class AssetsDefinition(ResourceAddable):
     _selected_asset_keys: AbstractSet[AssetKey]
     _can_subset: bool
     _metadata_by_key: Mapping[AssetKey, MetadataUserInput]
+    _in_step_expectations_by_key: Mapping[AssetKey, AssetExpectationDefinition]
 
     def __init__(
         self,
@@ -91,6 +93,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
+        in_step_expectations_by_key: Optional[Mapping[AssetKey, AssetExpectationDefinition]] = None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
     ):
@@ -156,6 +159,8 @@ class AssetsDefinition(ResourceAddable):
                 self._metadata_by_key.get(asset_key, {}),
             )
 
+        self._in_step_expectations_by_key = in_step_expectations_by_key or {}
+
     def __call__(self, *args, **kwargs):
         from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
         from dagster._core.execution.context.compute import OpExecutionContext
@@ -200,6 +205,7 @@ class AssetsDefinition(ResourceAddable):
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
         can_subset: bool = False,
+        in_step_expectations_by_key: Optional[Mapping[AssetKey, AssetExpectationDefinition]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -254,6 +260,7 @@ class AssetsDefinition(ResourceAddable):
             metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
             can_subset=can_subset,
+            in_step_expectations_by_key=in_step_expectations_by_key,
         )
 
     @public
@@ -269,6 +276,7 @@ class AssetsDefinition(ResourceAddable):
         group_name: Optional[str] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        in_step_expectations_by_key: Optional[Mapping[AssetKey, AssetExpectationDefinition]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from an OpDefinition.
@@ -315,6 +323,7 @@ class AssetsDefinition(ResourceAddable):
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
+            in_step_expectations_by_key=in_step_expectations_by_key,
         )
 
     @staticmethod
@@ -331,6 +340,7 @@ class AssetsDefinition(ResourceAddable):
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         can_subset: bool = False,
+        in_step_expectations_by_key: Optional[Mapping[AssetKey, AssetExpectationDefinition]] = None,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
@@ -405,6 +415,7 @@ class AssetsDefinition(ResourceAddable):
             if metadata_by_output_name
             else None,
             can_subset=can_subset,
+            in_step_expectations_by_key=in_step_expectations_by_key,
         )
 
     @public  # type: ignore
@@ -514,6 +525,10 @@ class AssetsDefinition(ResourceAddable):
     @property
     def metadata_by_key(self):
         return self._metadata_by_key
+
+    @property
+    def in_step_expectations_by_key(self) -> Mapping[AssetKey, AssetExpectationDefinition]:
+        return self._in_step_expectations_by_key
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:

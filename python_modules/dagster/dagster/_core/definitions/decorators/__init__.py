@@ -1,4 +1,5 @@
 from .asset_decorator import asset, multi_asset
+from .asset_expectation_decorator import asset_expectation
 from .composite_solid_decorator import composite_solid
 from .config_mapping_decorator import config_mapping
 from .graph_decorator import graph

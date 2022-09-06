@@ -102,6 +102,7 @@ from .assets import AssetsDefinition
 from .assets_job import build_assets_job
 from .decorators import (
     asset,
+    asset_expectation,
     asset_sensor,
     composite_solid,
     config_mapping,

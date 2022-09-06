@@ -119,6 +119,9 @@ from dagster._core.definitions.composition import (
 from dagster._core.definitions.configurable import (
     configured as configured,
 )
+from dagster._core.definitions.decorators.asset_expectation_decorator import (
+    asset_expectation as asset_expectation,
+)
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
     multi_asset as multi_asset,

@@ -6,6 +6,7 @@ from typing import (
     Dict,
     Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -27,6 +28,7 @@ from dagster._utils.backcompat import (
     experimental_arg_warning,
 )
 
+from ..asset_expectation import AssetExpectationDefinition
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
 from ..assets import AssetsDefinition
@@ -90,6 +92,7 @@ def asset(
     op_tags: Optional[Dict[str, Any]] = None,
     group_name: Optional[str] = None,
     output_required: bool = True,
+    in_step_expectations: Optional[Sequence[AssetExpectationDefinition]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -184,6 +187,7 @@ def asset(
             op_tags=op_tags,
             group_name=group_name,
             output_required=output_required,
+            in_step_expectations=in_step_expectations,
         )(fn)
 
     return inner
@@ -208,6 +212,7 @@ class _Asset:
         op_tags: Optional[Dict[str, Any]] = None,
         group_name: Optional[str] = None,
         output_required: bool = True,
+        in_step_expectations: Optional[Sequence[AssetExpectationDefinition]] = None,
     ):
         self.name = name
 
@@ -230,6 +235,7 @@ class _Asset:
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         self.group_name = group_name
         self.output_required = output_required
+        self.in_step_expectations = in_step_expectations
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -294,6 +300,9 @@ class _Asset:
             partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=self.resource_defs,
             group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
+            in_step_expectations_by_key={out_asset_key: self.in_step_expectations}
+            if self.in_step_expectations
+            else None,
         )
 
 

@@ -332,6 +332,7 @@ class AssetObservation(
             ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", List[MetadataEntry]),
             ("partition", PublicAttr[Optional[str]]),
+            ("expectation_results", PublicAttr[Optional[Sequence["ExpectationResult"]]]),
         ],
     )
 ):
@@ -346,6 +347,8 @@ class AssetObservation(
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
+        expectation_results (Optional[Sequence[ExpectationResult]]): Results of expectations checked
+            on the
     """
 
     def __new__(
@@ -354,6 +357,7 @@ class AssetObservation(
         description: Optional[str] = None,
         metadata_entries: Optional[List[MetadataEntry]] = None,
         partition: Optional[str] = None,
+        expectation_results: Optional[Sequence["ExpectationResult"]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
@@ -380,6 +384,9 @@ class AssetObservation(
                 List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
             ),
             partition=check.opt_str_param(partition, "partition"),
+            expectation_results=check.opt_list_param(
+                expectation_results, "expectation_results", of_type=ExpectationResult
+            ),
         )
 
     @property

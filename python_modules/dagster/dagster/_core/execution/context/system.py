@@ -53,6 +53,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import DagsterType
 
+from .asset_expectation import AssetExpectationContext
 from .input import InputContext
 from .output import OutputContext, get_output_context
 
@@ -364,6 +365,9 @@ class PlanExecutionContext(IPlanContext):
         return TypeCheckContext(
             self.run_id, self.log, self._execution_data.scoped_resources_builder, dagster_type
         )
+
+    def for_asset_expectation(self, value) -> "AssetExpectationContext":
+        return AssetExpectationContext(log=self.log, value=value)
 
 
 class StepExecutionContext(PlanExecutionContext, IStepContext):

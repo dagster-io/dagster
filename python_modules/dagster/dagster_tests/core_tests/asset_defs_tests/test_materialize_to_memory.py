@@ -270,3 +270,29 @@ def test_materialize_to_memory_provided_io_manager_instance():
         "io management behavior for all keys.",
     ):
         materialize_to_memory([the_asset], resources={"blah": MyIOManager()})
+
+
+def test_auto_in_step_expectations():
+    from dagster import asset_expectation
+
+    @asset_expectation
+    def greater_than_five(context):
+        return context.load_value() > 5
+
+    @asset(in_step_expectations=[greater_than_five])
+    def asset1():
+        return 4
+
+    result = materialize_to_memory([asset1])
+    assert not result.expectation_results_for_asset["greater_than_five"].success
+
+
+def test_runtime_in_step_expectations():
+    from dagster import ExpectationResult
+
+    @asset(expectation_names={"greater_than_five"})
+    def asset1():
+        return Output(expectation_results=[ExpectationResult("greater_than_five", True)])
+
+    result = materialize_to_memory(asset1)
+    assert not result.expectation_results_for_asset["greater_than_five"].success
