@@ -564,6 +564,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_by_key
 
+<<<<<<< HEAD
 
 # @experimental
 # class PartitionedAssetSensorEvaluationContext(SensorEvaluationContext):
@@ -878,6 +879,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 #         materializations_by_key = self.latest_materialization_records_by_key()
 #         self.advance_cursor(materializations_by_key)
 
+=======
+>>>>>>> 20f622eeec7062a98abe650dc8fd568b42745039
 
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
 SensorExecutionContext = SensorEvaluationContext
