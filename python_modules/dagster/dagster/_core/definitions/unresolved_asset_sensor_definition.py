@@ -98,6 +98,24 @@ class UnresolvedAssetSensorDefinitionV1(UnresolvedAssetSensorDefinition):
 
         return parent_asset_event_records, cursor_update_dict
 
+    # def _any_current_materializations(self, context, asset_storage_ids):
+    #     """
+    #     asset_storage_id is a mapping of the asset to the latest materialization that had been handled
+    #     if there is a materialization_planned event more recent, then one of the parents will be
+    #     updated soon
+    #     """
+    #     for p in asset_storage_ids.keys():
+    #         event_records = context.instance.get_event_records(
+    #             EventRecordsFilter(
+    #                 event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+    #                 asset_key=p,
+    #                 after_cursor=asset_storage_ids.get(str(p)),
+    #             ),
+    #             ascending=False,
+    #             limit=1,
+    #         )
+
+
     def _make_sensor(self, upstream):
         """
         cursor - dict for each asset in selection. each parent in the dict has a cursor
@@ -112,6 +130,9 @@ class UnresolvedAssetSensorDefinitionV1(UnresolvedAssetSensorDefinition):
             print(f"CURSOR {cursor_dict}")
             should_materialize = []
             cursor_update_dict = {}
+
+            # determine which assets should materialize because all of their parents have
+            # materialized
             for a in upstream.keys():
                 a_cursor = cursor_dict.get(str(a)) if cursor_dict.get(str(a)) else {}
                 (
@@ -126,6 +147,13 @@ class UnresolvedAssetSensorDefinitionV1(UnresolvedAssetSensorDefinition):
                     cursor_update_dict[str(a)] = a_cursor_update_dict
 
             print(f"SHOULD MATERIALIZE {should_materialize}")
+
+            # for all assets in should_materialize, if any of their parents are currently being materialized,
+            # then remove the asset from should_materialize because we can make a more up to date
+            # materialization in the next tick
+
+            # for a in should_materialize:
+            #     if self._any_current_materializations(context, cursor_update_dict[str(a)])
 
             if len(should_materialize) > 0:
                 context.update_cursor(json.dumps(cursor_update_dict))
