@@ -24,7 +24,6 @@ from dagster import (
     run_status_sensor,
     sensor,
 )
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import SensorExecutionContext
@@ -304,7 +303,7 @@ def test_multi_asset_sensor():
 
 def test_multi_asset_nonexistent_key():
     @multi_asset_sensor(asset_keys=[AssetKey("nonexistent_key")])
-    def failing_sensor(context):
+    def failing_sensor(context):  # pylint: disable=unused-argument
         pass
 
     @repository
@@ -326,7 +325,7 @@ def test_multi_asset_sensor_selection():
         return 1, 2
 
     @multi_asset_sensor(asset_keys=[AssetKey("asset_a")])
-    def passing_sensor(context):
+    def passing_sensor(context):  # pylint: disable=unused-argument
         pass
 
     @repository
@@ -341,8 +340,14 @@ def test_multi_asset_sensor_has_assets():
 
     @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
-        assert context.assets_by_key[AssetKey("asset_a")] == two_assets
-        assert context.assets_by_key[AssetKey("asset_b")] == two_assets
+        assert (
+            context.assets_by_key[AssetKey("asset_a")]  # pylint: disable=comparison-with-callable
+            == two_assets
+        )
+        assert (
+            context.assets_by_key[AssetKey("asset_b")]  # pylint: disable=comparison-with-callable
+            == two_assets
+        )
         assert len(context.assets_by_key) == 2
 
     @repository

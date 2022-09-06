@@ -170,6 +170,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     build_multi_asset_sensor_context`.
 
     Attributes:
+        repository_def (RepositoryDefinition): The repository that the sensor belongs to.
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
         cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
             the cursor attribute of SkipReason and RunRequest. Must be a dictionary of asset key strings to ints
@@ -204,12 +205,12 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         asset_keys: Sequence[AssetKey],
         instance: Optional[DagsterInstance] = None,
     ):
-        self.repository_def = repository_def
+        self._repository_def = repository_def
         self._asset_keys = asset_keys
 
         self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
         for asset_key in asset_keys:
-            assets_def = self.repository_def.assets_by_key.get(asset_key)
+            assets_def = self._repository_def._assets_defs_by_key.get(asset_key)
             if assets_def is None:
                 raise DagsterInvalidDefinitionError(
                     f"No asset with {asset_key} found in repository"
@@ -316,8 +317,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         materializations_by_key = self.latest_materialization_records_by_key()
         self.advance_cursor(materializations_by_key)
 
+    @public  # type: ignore
     @property
-    @public
     def assets_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_by_key
 
@@ -741,6 +742,7 @@ def build_multi_asset_sensor_context(
 
     Args:
         asset_keys (Sequence[AssetKey]): The list of asset keys monitored by the sensor
+        repository_def (RepositoryDefinition): The repository definition that the sensor belongs to.
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
         cursor (Optional[str]): A string cursor to provide to the evaluation of the sensor. Must be
             a dictionary of asset key strings to ints that has been converted to a json string
