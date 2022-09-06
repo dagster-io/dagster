@@ -1,6 +1,4 @@
-import pytest
-
-from dagster import DagsterInvalidDefinitionError, DagsterType, root_input_manager
+from dagster import DagsterType, root_input_manager
 from dagster._core.storage.io_manager import IOManager, io_manager
 from dagster._legacy import (
     InputDefinition,
@@ -45,16 +43,6 @@ def test_composite_solid_output():
     )
     def my_solid_takes_input(_, x):
         return x
-
-    # Error on io_manager_key on composite
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="IO manager cannot be set on a composite solid",
-    ):
-
-        @composite_solid(output_defs=[OutputDefinition(io_manager_key="outer_manager")])
-        def _():
-            return my_solid_takes_input(my_solid())
 
     # Values ingested by inner_manager and outer_manager are stored in storage_dict
     storage_dict = {}

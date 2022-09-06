@@ -79,6 +79,38 @@ def test_vixie_cronstring_schedule():
     )
 
 
+def test_union_of_cron_strings_schedule():
+    # Saturday
+    start_time = create_pendulum_time(year=2022, month=1, day=1, hour=2, tz="UTC")
+
+    time_iter = schedule_execution_time_iterator(
+        start_time.timestamp(),
+        [
+            "0 2 * * FRI-SAT",  # 02:00 Friday through Saturday
+            "0 2,8 * * MON,FRI",  # 02:00, 08:00 on Monday and Friday
+            "*/30 9 * * SUN",  # 09:00, 09:30 on Sunday
+        ],
+        "UTC",
+    )
+    # Test an entire week's cycle
+    next_timestamps = [next(time_iter).timestamp() for _ in range(8)]
+
+    expected_next_timestamps = [
+        dt.timestamp()
+        for dt in [
+            create_pendulum_time(year=2022, month=1, day=1, hour=2, tz="UTC"),
+            create_pendulum_time(year=2022, month=1, day=2, hour=9, tz="UTC"),
+            create_pendulum_time(year=2022, month=1, day=2, hour=9, minute=30, tz="UTC"),
+            create_pendulum_time(year=2022, month=1, day=3, hour=2, tz="UTC"),
+            create_pendulum_time(year=2022, month=1, day=3, hour=8, tz="UTC"),
+            create_pendulum_time(year=2022, month=1, day=7, hour=2, tz="UTC"),
+            create_pendulum_time(year=2022, month=1, day=7, hour=8, tz="UTC"),
+            create_pendulum_time(year=2022, month=1, day=8, hour=2, tz="UTC"),
+        ]
+    ]
+    assert next_timestamps == expected_next_timestamps
+
+
 def test_invalid_cron_string():
     start_time = create_pendulum_time(
         year=2022, month=2, day=21, hour=1, minute=30, second=1, tz="US/Pacific"
@@ -86,3 +118,12 @@ def test_invalid_cron_string():
 
     with pytest.raises(CheckError):
         next(schedule_execution_time_iterator(start_time.timestamp(), "* * * * * *", "US/Pacific"))
+
+
+def test_empty_cron_string_union():
+    start_time = create_pendulum_time(
+        year=2022, month=2, day=21, hour=1, minute=30, second=1, tz="US/Pacific"
+    )
+
+    with pytest.raises(CheckError):
+        next(schedule_execution_time_iterator(start_time.timestamp(), [], "US/Pacific"))

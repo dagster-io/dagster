@@ -115,6 +115,15 @@ def partitionless_schedule(context):
     return _solid_config(context.scheduled_execution_time)
 
 
+@schedule(
+    job_name="the_pipeline",
+    cron_schedule=["0 0 * * 4", "0 0 * * 5", "0 0,12 * * 5"],
+    execution_timezone="UTC",
+)
+def union_schedule(context):
+    return _solid_config(context.scheduled_execution_time)
+
+
 # Schedule that runs on a different day in Central Time vs UTC
 @daily_schedule(
     pipeline_name="the_pipeline",
@@ -412,6 +421,7 @@ def the_repo():
         multi_run_list_schedule,
         define_multi_run_schedule_with_missing_run_key(),
         partitionless_schedule,
+        union_schedule,
         large_schedule,
         two_step_pipeline,
         default_config_schedule,
@@ -1578,6 +1588,107 @@ def test_partitionless_schedule(instance, workspace, external_repo):
             execution_time=create_pendulum_time(year=2019, month=3, day=4, tz="US/Central"),
             partition_time=None,
         )
+
+
+def test_union_schedule(instance, workspace, external_repo):
+    # This is a Wednesday.
+    initial_datetime = create_pendulum_time(year=2019, month=2, day=27, tz="UTC")
+    with pendulum.test(initial_datetime):
+        external_schedule = external_repo.get_external_schedule("union_schedule")
+        schedule_origin = external_schedule.get_external_origin()
+        instance.start_schedule(external_schedule)
+
+    # No new runs should be launched
+    with pendulum.test(initial_datetime):
+        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        assert instance.get_runs_count() == 0
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 0
+
+    initial_datetime = initial_datetime.add(days=1)
+    with pendulum.test(initial_datetime):
+        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        assert instance.get_runs_count() == 1
+
+        wait_for_all_runs_to_start(instance)
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            create_pendulum_time(year=2019, month=2, day=28, tz="UTC"),
+            TickStatus.SUCCESS,
+            [instance.get_runs()[0].run_id],
+        )
+
+        validate_run_started(
+            instance,
+            instance.get_runs()[0],
+            execution_time=create_pendulum_time(year=2019, month=2, day=28, tz="UTC"),
+            partition_time=None,
+        )
+
+    initial_datetime = initial_datetime.add(days=1)
+    with pendulum.test(initial_datetime):
+        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        assert instance.get_runs_count() == 2
+
+        wait_for_all_runs_to_start(instance)
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 2
+
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            create_pendulum_time(year=2019, month=3, day=1, tz="UTC"),
+            TickStatus.SUCCESS,
+            [instance.get_runs()[0].run_id],
+        )
+
+        validate_run_started(
+            instance,
+            instance.get_runs()[0],
+            execution_time=create_pendulum_time(year=2019, month=3, day=1, tz="UTC"),
+            partition_time=None,
+        )
+
+    initial_datetime = initial_datetime.add(days=1)
+    with pendulum.test(initial_datetime):
+        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        assert instance.get_runs_count() == 3
+
+        wait_for_all_runs_to_start(instance)
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 3
+
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            create_pendulum_time(year=2019, month=3, day=1, hour=12, tz="UTC"),
+            TickStatus.SUCCESS,
+            [instance.get_runs()[0].run_id],
+        )
+
+        validate_run_started(
+            instance,
+            instance.get_runs()[0],
+            execution_time=create_pendulum_time(year=2019, month=3, day=1, hour=12, tz="UTC"),
+            partition_time=None,
+        )
+
+    # No new runs should be launched
+    initial_datetime = initial_datetime.add(days=1)
+    with pendulum.test(initial_datetime):
+        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        assert instance.get_runs_count() == 3
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 3
 
 
 def test_max_catchup_runs(instance, workspace, external_repo):

@@ -4,6 +4,7 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {RunStatus} from '../types/globalTypes';
 import {TabLink} from '../ui/TabLink';
 
@@ -16,6 +17,7 @@ import {
 import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunTabsCountQuery';
 
 export const RunListTabs = React.memo(() => {
+  const {flagNewWorkspace} = useFeatureFlags();
   const [filterTokens] = useQueryPersistedRunFilters();
   const runsFilter = runsFilterForSearchTokens(filterTokens);
 
@@ -43,6 +45,9 @@ export const RunListTabs = React.memo(() => {
 
   return (
     <Tabs selectedTabId={selectedTab} id="run-tabs">
+      {flagNewWorkspace ? (
+        <TabLink title="Timeline" to="/instance/runs/timeline" id="timeline" />
+      ) : null}
       <TabLink title="All runs" to={urlForStatus([])} id="all" />
       <TabLink
         title="Queued"
@@ -58,6 +63,9 @@ export const RunListTabs = React.memo(() => {
       />
       <TabLink title="Done" to={urlForStatus(Array.from(doneStatuses))} id="done" />
       <TabLink title="Scheduled" to="/instance/runs/scheduled" id="scheduled" />
+      {flagNewWorkspace ? (
+        <TabLink title="Backfills" to="/instance/backfills" id="backfills" />
+      ) : null}
     </Tabs>
   );
 });
@@ -69,6 +77,9 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   }
   if (pathname === '/instance/runs/scheduled') {
     return 'scheduled';
+  }
+  if (pathname === '/instance/backfills') {
+    return 'backfills';
   }
 
   const statusTokens = new Set(

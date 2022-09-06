@@ -10,10 +10,13 @@ from dagster import (
     ConfigMapping,
     DagsterInstance,
     DagsterTypeCheckDidNotPass,
+    DynamicOut,
+    DynamicOutput,
     Enum,
     Field,
     GraphIn,
     In,
+    InputMapping,
     Nothing,
     Out,
     Permissive,
@@ -1208,3 +1211,60 @@ def test_all_dagster_types():
     assert "Foo" in names
     assert "Bar" in names
     assert "Bar?" in names
+
+
+def test_graph_definition_input_mappings():
+    @op
+    def inner_op(int_input: int) -> int:
+        return int_input + 7
+
+    the_graph = GraphDefinition(
+        name="the_graph",
+        input_mappings=[
+            InputMapping(
+                graph_input_name="x",
+                mapped_node_name="inner_op",
+                mapped_node_input_name="int_input",
+                graph_input_description="hello",
+            )
+        ],
+        node_defs=[inner_op],
+    )
+    assert the_graph.execute_in_process(input_values={"x": 5}).output_for_node("inner_op") == 12
+
+    @op
+    def outer_op() -> int:
+        return 5
+
+    @graph
+    def link():
+        the_graph(outer_op())
+
+    assert link.execute_in_process().output_for_node("the_graph.inner_op") == 12
+
+
+def test_graph_with_mapped_out():
+    @op(out=DynamicOut())
+    def dyn_vals():
+        for i in range(3):
+            yield DynamicOutput(i, mapping_key=f"num_{i}")
+
+    @op
+    def echo(x):
+        return x
+
+    @op
+    def double(x):
+        return x * 2
+
+    @op
+    def total(nums):
+        return sum(nums)
+
+    @graph
+    def mapped_out():
+        return dyn_vals().map(echo)
+
+    result = mapped_out.execute_in_process()
+    assert result.success
+    assert result.output_value() == {"num_0": 0, "num_1": 1, "num_2": 2}

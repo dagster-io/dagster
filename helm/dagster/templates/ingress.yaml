@@ -8,6 +8,9 @@ metadata:
   name: {{ include "dagster.fullname" . }}-ingress
   labels:
     {{- include "dagster.labels" . | nindent 4 }}
+    {{- range $key, $value := .Values.ingress.labels }}
+    {{ $key }}: {{ $value | squote }}
+    {{- end }}
   annotations:
     {{- range $key, $value := .Values.ingress.annotations }}
     {{ $key }}: {{ $value | squote }}

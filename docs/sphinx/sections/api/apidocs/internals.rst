@@ -99,6 +99,9 @@ Run storage
    :undoc-members:
    :inherited-members:
 
+.. autoclass:: RunsFilter
+
+
 .. currentmodule:: dagster._core.storage.runs
 
 .. autoclass:: RunStorage
@@ -207,3 +210,16 @@ Exception handling
 .. currentmodule:: dagster._core.errors
 
 .. autofunction:: user_code_error_boundary
+
+----
+
+Step Launchers (Experimental)
+-----------------------------
+
+.. currentmodule:: dagster
+
+.. autoclass:: StepLauncher
+
+.. autoclass:: StepRunRef
+
+.. autoclass:: StepExecutionContext

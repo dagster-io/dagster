@@ -164,7 +164,6 @@ const TimelineSection = (props: TimelineSectionProps) => {
   const onClick = React.useCallback(() => {
     repoAddress && onToggle(repoAddress);
   }, [onToggle, repoAddress]);
-  const jobCount = jobs.length;
 
   return (
     <div>
@@ -175,18 +174,7 @@ const TimelineSection = (props: TimelineSectionProps) => {
           repoLocation={repoLocation}
           onClick={onClick}
           showLocation={isDuplicateRepoName}
-          rightElement={
-            <Tooltip
-              content={
-                <span style={{whiteSpace: 'nowrap'}}>
-                  {jobCount === 1 ? '1 job with runs' : `${jobCount} jobs with runs`}
-                </span>
-              }
-              placement="top"
-            >
-              <Tag intent="primary">{jobCount}</Tag>
-            </Tooltip>
-          }
+          rightElement={<RunStatusTags jobs={jobs} />}
         />
       </SectionHeaderContainer>
       {expanded
@@ -203,6 +191,60 @@ const TimelineSection = (props: TimelineSectionProps) => {
     </div>
   );
 };
+
+const RunStatusTags = React.memo(({jobs}: {jobs: TimelineJob[]}) => {
+  const {inProgressCount, failedCount, succeededCount} = React.useMemo(() => {
+    let inProgressCount = 0;
+    let failedCount = 0;
+    let succeededCount = 0;
+    jobs.forEach(({runs}) => {
+      runs.forEach(({status}) => {
+        // Refine `SCHEDULED` out so that our Set checks below pass TypeScript.
+        if (status === 'SCHEDULED') {
+          return;
+        }
+        if (inProgressStatuses.has(status)) {
+          inProgressCount++;
+        } else if (failedStatuses.has(status)) {
+          failedCount++;
+        } else if (successStatuses.has(status)) {
+          succeededCount++;
+        }
+      });
+    });
+    return {inProgressCount, failedCount, succeededCount};
+  }, [jobs]);
+
+  const inProgressText =
+    inProgressCount === 1 ? '1 run in progress' : `${inProgressCount} runs in progress`;
+  const succeededText =
+    succeededCount === 1 ? '1 run succeeded' : `${succeededCount} runs succeeded`;
+  const failedText = failedCount === 1 ? '1 run failed' : `${failedCount} runs failed`;
+
+  return (
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      {inProgressCount > 0 ? (
+        <Tooltip content={<StatusSpan>{inProgressText}</StatusSpan>} placement="top">
+          <Tag intent="primary">{inProgressCount}</Tag>
+        </Tooltip>
+      ) : null}
+      {succeededCount > 0 ? (
+        <Tooltip content={<StatusSpan>{succeededText}</StatusSpan>} placement="top">
+          <Tag intent="success">{succeededCount}</Tag>
+        </Tooltip>
+      ) : null}
+      {failedCount > 0 ? (
+        <Tooltip content={<StatusSpan>{failedText}</StatusSpan>} placement="top">
+          <Tag intent="danger">{failedCount}</Tag>
+        </Tooltip>
+      ) : null}
+    </Box>
+  );
+});
+
+const StatusSpan = styled.span`
+  white-space: nowrap;
+`;
 
 const SectionHeaderContainer = styled.div<{$top: number}>`
   position: absolute;

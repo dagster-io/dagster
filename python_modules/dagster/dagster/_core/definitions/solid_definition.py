@@ -40,7 +40,6 @@ from .resource_requirement import (
     SolidDefinitionResourceRequirement,
 )
 from .solid_invocation import solid_invocation_result
-from .utils import DEFAULT_IO_MANAGER_KEY
 
 if TYPE_CHECKING:
     from .asset_layer import AssetLayer
@@ -433,7 +432,6 @@ class CompositeSolidDefinition(GraphDefinition):
         tags: Optional[Mapping[str, str]] = None,
         positional_inputs: Optional[Sequence[str]] = None,
     ):
-        _check_io_managers_on_composite_solid(name, input_mappings, output_mappings)
 
         super(CompositeSolidDefinition, self).__init__(
             name=name,
@@ -491,30 +489,3 @@ class CompositeSolidDefinition(GraphDefinition):
     @property
     def is_graph_job_op_node(self) -> bool:
         return False
-
-
-def _check_io_managers_on_composite_solid(
-    name: str,
-    input_mappings: Optional[Sequence[InputMapping]],
-    output_mappings: Optional[Sequence[OutputMapping]],
-) -> None:
-    # Ban root_manager_key on composite solids
-    if input_mappings:
-        for input_mapping in input_mappings:
-            input_def = input_mapping.definition
-            if input_def.root_manager_key:
-                raise DagsterInvalidDefinitionError(
-                    "Root input manager cannot be set on a composite solid: "
-                    f'root_manager_key "{input_def.root_manager_key}" '
-                    f'is set on InputDefinition "{input_def.name}" of composite solid "{name}". '
-                )
-    # Ban io_manager_key on composite solids
-    if output_mappings:
-        for output_mapping in output_mappings:
-            output_def = output_mapping.definition
-            if output_def.io_manager_key != DEFAULT_IO_MANAGER_KEY:
-                raise DagsterInvalidDefinitionError(
-                    "IO manager cannot be set on a composite solid: "
-                    f'io_manager_key "{output_def.io_manager_key}" '
-                    f'is set  on OutputtDefinition "{output_def.name}" of composite solid "{name}". '
-                )
