@@ -341,14 +341,18 @@ def test_multi_asset_sensor_has_assets():
     @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
         assert (
-            context.assets_by_key[AssetKey("asset_a")]  # pylint: disable=comparison-with-callable
+            context.assets_defs_by_key[
+                AssetKey("asset_a")
+            ]  # pylint: disable=comparison-with-callable
             == two_assets
         )
         assert (
-            context.assets_by_key[AssetKey("asset_b")]  # pylint: disable=comparison-with-callable
+            context.assets_defs_by_key[
+                AssetKey("asset_b")
+            ]  # pylint: disable=comparison-with-callable
             == two_assets
         )
-        assert len(context.assets_by_key) == 2
+        assert len(context.assets_defs_by_key) == 2
 
     @repository
     def my_repo():

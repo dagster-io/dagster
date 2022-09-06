@@ -205,6 +205,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         asset_keys: Sequence[AssetKey],
         instance: Optional[DagsterInstance] = None,
     ):
+        from dagster._core.definitions import AssetsDefinition
+
         self._repository_def = repository_def
         self._asset_keys = asset_keys
 
@@ -319,7 +321,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public  # type: ignore
     @property
-    def assets_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+    def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_by_key
 
 
@@ -927,7 +929,6 @@ class MultiAssetSensorDefinition(SensorDefinition):
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
-        from dagster._core.definitions import AssetsDefinition
 
         self._asset_keys = check.list_param(asset_keys, "asset_keys", AssetKey)
 
