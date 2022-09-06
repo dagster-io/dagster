@@ -1,4 +1,6 @@
+from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import datetime
+from unittest import mock
 
 import pendulum
 
@@ -10,6 +12,9 @@ from dagster._core.host_representation import (
 from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
+from dagster._core.snap.pipeline_snapshot import create_pipeline_snapshot_id
+from dagster._core.test_utils import in_process_test_workspace, instance_for_test
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._legacy import ModeDefinition, PresetDefinition, daily_schedule, pipeline, solid
 from dagster._serdes import serialize_pp
 
@@ -55,6 +60,11 @@ def a_job():
     a_solid()
 
 
+@repository
+def a_repo():
+    return [a_job]
+
+
 def test_external_repository_data(snapshot):
     @repository
     def repo():
@@ -89,3 +99,45 @@ def test_external_repository_data(snapshot):
 
 def test_external_pipeline_data(snapshot):
     snapshot.assert_match(serialize_pp(external_pipeline_data_from_def(a_pipeline)))
+
+
+@mock.patch("dagster._core.host_representation.pipeline_index.create_pipeline_snapshot_id")
+def test_external_repo_shared_index(snapshot_mock):
+    snapshot_mock.side_effect = create_pipeline_snapshot_id
+    with instance_for_test() as instance:
+        with in_process_test_workspace(
+            instance, LoadableTargetOrigin(python_file=__file__)
+        ) as workspace:
+
+            def _fetch_snap_id():
+                # ensure we don't rebuild indexes / snapshot ids repeatedly
+                location = workspace.repository_locations[0]
+                ex_repo = list(location.get_repositories().values())[0]
+
+                return ex_repo.get_all_external_jobs()[0].identifying_pipeline_snapshot_id
+
+            _fetch_snap_id()
+            assert snapshot_mock.call_count == 1
+
+            _fetch_snap_id()
+            assert snapshot_mock.call_count == 1
+
+
+@mock.patch("dagster._core.host_representation.pipeline_index.create_pipeline_snapshot_id")
+def test_external_repo_shared_index_threaded(snapshot_mock):
+    snapshot_mock.side_effect = create_pipeline_snapshot_id
+    with instance_for_test() as instance:
+        with in_process_test_workspace(
+            instance, LoadableTargetOrigin(python_file=__file__)
+        ) as workspace:
+
+            def _fetch_snap_id():
+                # ensure we don't rebuild indexes / snapshot ids repeatedly
+                location = workspace.repository_locations[0]
+                ex_repo = list(location.get_repositories().values())[0]
+                return ex_repo.get_all_external_jobs()[0].identifying_pipeline_snapshot_id
+
+            with ThreadPoolExecutor() as executor:
+                wait([executor.submit(_fetch_snap_id) for _ in range(100)])
+
+            assert snapshot_mock.call_count == 1

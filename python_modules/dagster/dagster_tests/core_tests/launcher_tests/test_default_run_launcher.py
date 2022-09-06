@@ -156,7 +156,7 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("noop_pipeline")
+        .get_full_external_job("noop_pipeline")
     )
 
     pipeline_run = instance.create_run_for_pipeline(
@@ -212,7 +212,7 @@ def test_invalid_instance_run():
                         external_pipeline = (
                             workspace.get_repository_location("test")
                             .get_repository("nope")
-                            .get_full_external_pipeline("noop_pipeline")
+                            .get_full_external_job("noop_pipeline")
                         )
 
                         pipeline_run = instance.create_run_for_pipeline(
@@ -246,7 +246,7 @@ def test_crashy_run(instance, workspace, run_config):  # pylint: disable=redefin
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("crashy_pipeline")
+        .get_full_external_job("crashy_pipeline")
     )
 
     pipeline_run = instance.create_run_for_pipeline(
@@ -289,7 +289,7 @@ def test_exity_run(run_config, instance, workspace):  # pylint: disable=redefine
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("exity_pipeline")
+        .get_full_external_job("exity_pipeline")
     )
 
     pipeline_run = instance.create_run_for_pipeline(
@@ -330,7 +330,7 @@ def test_terminated_run(instance, workspace, run_config):  # pylint: disable=red
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("sleepy_pipeline")
+        .get_full_external_job("sleepy_pipeline")
     )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=sleepy_pipeline,
@@ -404,7 +404,7 @@ def test_cleanup_after_force_terminate(run_config, instance, workspace):
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("sleepy_pipeline")
+        .get_full_external_job("sleepy_pipeline")
     )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=sleepy_pipeline,
@@ -503,7 +503,7 @@ def test_single_solid_selection_execution(
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("math_diamond")
+        .get_full_external_job("math_diamond")
     )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=math_diamond,
@@ -540,7 +540,7 @@ def test_multi_solid_selection_execution(
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("math_diamond")
+        .get_full_external_job("math_diamond")
     )
 
     pipeline_run = instance.create_run_for_pipeline(
@@ -577,7 +577,7 @@ def test_engine_events(instance, workspace, run_config):  # pylint: disable=rede
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("math_diamond")
+        .get_full_external_job("math_diamond")
     )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=math_diamond,

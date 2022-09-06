@@ -50,9 +50,7 @@ def get_test_project_external_pipeline(pipeline_name):
             attribute="define_demo_execution_repo",
         )
     ).create_location() as location:
-        yield location.get_repository("demo_execution_repo").get_full_external_pipeline(
-            pipeline_name
-        )
+        yield location.get_repository("demo_execution_repo").get_full_external_job(pipeline_name)
 
 
 def get_default_docker_image_tag():
