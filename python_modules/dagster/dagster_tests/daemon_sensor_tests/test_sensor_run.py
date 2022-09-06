@@ -14,22 +14,22 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetSelection,
     DagsterRunStatus,
     Field,
+    HourlyPartitionsDefinition,
     JobSelector,
     Output,
     RepositorySelector,
+    WeeklyPartitionsDefinition,
     asset,
     define_asset_job,
     graph,
     load_assets_from_current_module,
     materialize,
     multi_asset_sensor,
-    HourlyPartitionsDefinition,
-    WeeklyPartitionsDefinition,
     repository,
     run_failure_sensor,
-    AssetSelection,
 )
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.run_request import InstigatorType
@@ -2024,7 +2024,7 @@ def test_multi_asset_sensor_hourly_to_weekly(executor):
                 run.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
             )
             assert len(records.records) == 1
-            assert records.records[0].event_log_entry.dagster_event.partition == '2022-07-31'
+            assert records.records[0].event_log_entry.dagster_event.partition == "2022-07-31"
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
@@ -2062,7 +2062,7 @@ def test_multi_asset_sensor_hourly_to_hourly(executor):
                 run.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
             )
             assert len(records.records) == 1
-            assert records.records[0].event_log_entry.dagster_event.partition == '2022-08-02-00:00'
+            assert records.records[0].event_log_entry.dagster_event.partition == "2022-08-02-00:00"
 
             freeze_datetime = freeze_datetime.add(seconds=30)
 

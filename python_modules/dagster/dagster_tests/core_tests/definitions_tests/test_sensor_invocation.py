@@ -1,5 +1,4 @@
 from unittest import mock
-from dagster._core.definitions.partition import static_partitioned_config
 
 import pytest
 
@@ -9,12 +8,15 @@ from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
+    DailyPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
+    StaticPartitionsDefinition,
     asset,
     build_multi_asset_sensor_context,
     build_run_status_sensor_context,
     build_sensor_context,
+    define_asset_job,
     job,
     materialize,
     multi_asset,
@@ -24,9 +26,6 @@ from dagster import (
     run_failure_sensor,
     run_status_sensor,
     sensor,
-    StaticPartitionsDefinition,
-    DailyPartitionsDefinition,
-    define_asset_job,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
@@ -437,7 +436,7 @@ def test_partitions_multi_asset_sensor_context():
             instance=instance,
             repository_def=my_repo,
         )
-        assert list(two_asset_sensor(ctx))[0].tags['dagster/partition'] == '2022-08-01'
+        assert list(two_asset_sensor(ctx))[0].tags["dagster/partition"] == "2022-08-01"
         assert ctx.get_cursor_partition(AssetKey("daily_partitions_asset")) == "2022-08-01"
 
 
@@ -501,18 +500,18 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
         if (
             events[july_daily_partitions.key]
             and context.get_partition_from_event_log_record(events[july_daily_partitions.key])
-            == '2022-07-10'
+            == "2022-07-10"
         ):  # first sensor invocation
             context.advance_all_cursors()
         else:  # second sensor invocation
-            assert context.get_cursor_partition(july_daily_partitions.key) == '2022-07-10'
+            assert context.get_cursor_partition(july_daily_partitions.key) == "2022-07-10"
             materializations_by_key = context.latest_materialization_records_by_key(
                 after_cursor_partition=False
             )
             later_materialization = materializations_by_key.get(july_daily_partitions.key)
             assert later_materialization
             assert (
-                context.get_partition_from_event_log_record(later_materialization) == '2022-07-05'
+                context.get_partition_from_event_log_record(later_materialization) == "2022-07-05"
             )
 
             materializations_by_partition = context.latest_materialization_by_partition(
@@ -529,7 +528,7 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
             # after_cursor_partition=True will only return materializations with partitions after
             # 2022-07-10.
             assert set(materializations_by_partition.keys()) == set(
-                july_partitions_keys[july_partitions_keys.index('2022-07-10') + 1 :]
+                july_partitions_keys[july_partitions_keys.index("2022-07-10") + 1 :]
             )
 
     with instance_for_test() as instance:

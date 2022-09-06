@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union, TypeVar, List
+from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -14,9 +14,7 @@ from ..sensor_definition import (
     DefaultSensorStatus,
     MultiAssetMaterializationFunction,
     MultiAssetSensorDefinition,
-    AssetMaterializationFunctionReturn,
     RawSensorEvaluationFunction,
-    RawSensorEvaluationFunctionReturn,
     RunRequest,
     SensorDefinition,
     SkipReason,
@@ -184,9 +182,6 @@ def asset_sensor(
         )
 
     return inner
-
-
-T = TypeVar("T")
 
 
 @experimental
