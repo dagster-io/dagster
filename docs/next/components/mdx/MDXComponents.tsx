@@ -481,48 +481,53 @@ const ExampleItem = ({title, hrefDoc = null, hrefCode, children, tags = []}) => 
   );
 };
 
-interface Entry {
+interface TabItem {
   name: string;
-  content: any;
+  children: any;
 }
+const TabItem = (_: TabItem) => {}; // container to pass through name and children
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-function TabGroup({entries}: {entries: Entry[]}) {
+const TabGroup = ({children}) => {
   return (
     <div className="w-full px-2 py-2 sm:px-0">
       <Tab.Group>
         <Tab.List className="flex space-x-2 m-2">
-          {entries.map((entry, idx) => (
-            <Tab
-              key={idx}
-              className={({selected}) =>
-                classNames(
-                  'w-full py-3 text-sm font-bold leading-5',
-                  'focus:outline-none border-gray-200',
-                  selected
-                    ? 'border-b-2 border-primary-500 text-primary-500'
-                    : 'border-b hover:border-gray-500 hover:text-gray-700',
-                )
-              }
-            >
-              {entry?.name}
-            </Tab>
-          ))}
+          {React.Children.map(children, (child, idx) => {
+            return (
+              <Tab
+                key={idx}
+                className={({selected}) =>
+                  classNames(
+                    'w-full py-3 text-sm font-bold leading-5',
+                    'focus:outline-none border-gray-200',
+                    selected
+                      ? 'border-b-2 border-primary-500 text-primary-500'
+                      : 'border-b hover:border-gray-500 hover:text-gray-700',
+                  )
+                }
+              >
+                {child?.props?.name}
+              </Tab>
+            );
+          })}
         </Tab.List>
         <Tab.Panels>
-          {entries.map((entry, idx) => (
-            <Tab.Panel key={idx} className={classNames('p-3')}>
-              {entry?.content}
-            </Tab.Panel>
-          ))}
+          {React.Children.map(children, (child, idx) => {
+            return (
+              <Tab.Panel key={idx} className={classNames('p-3')}>
+                {child.props.children}
+              </Tab.Panel>
+            );
+          })}
         </Tab.Panels>
       </Tab.Group>
     </div>
   );
-}
+};
 
 const Image = ({children, ...props}) => {
   /* Only version images when all conditions meet:
@@ -600,4 +605,5 @@ export default {
   ExampleItemSmall,
   ExampleItem,
   TabGroup,
+  TabItem,
 };
