@@ -534,7 +534,7 @@ def construct_dagster_k8s_job(
     Args:
         job_config (DagsterK8sJobConfig): Job configuration to use for constructing the Kubernetes
             Job object.
-        args (List[str]): CLI arguments to use with dagster-graphql in this Job.
+        args (Optional[List[str]]): CLI arguments to use with in this Job.
         job_name (str): The name of the Job. Note that this name must be <= 63 characters in length.
         user_defined_k8s_config(Optional[UserDefinedDagsterK8sConfig]): Additional k8s config in tags or Dagster config
             to apply to the job.
@@ -549,7 +549,7 @@ def construct_dagster_k8s_job(
         kubernetes.client.V1Job: A Kubernetes Job object.
     """
     check.inst_param(job_config, "job_config", DagsterK8sJobConfig)
-    check.list_param(args, "args", of_type=str)
+    check.opt_list_param(args, "args", of_type=str)
     check.str_param(job_name, "job_name")
     user_defined_k8s_config = check.opt_inst_param(
         user_defined_k8s_config,
@@ -608,6 +608,9 @@ def construct_dagster_k8s_job(
 
     container_config = copy.deepcopy(user_defined_k8s_config.container_config)
 
+    if args != None:
+        container_config["args"] = args
+
     user_defined_env_vars = container_config.pop("env", [])
 
     user_defined_env_from = container_config.pop("env_from", [])
@@ -627,7 +630,6 @@ def construct_dagster_k8s_job(
         {
             "name": "dagster",
             "image": job_image,
-            "args": args,
             "image_pull_policy": job_config.image_pull_policy,
             "env": env + job_config.env + user_defined_env_vars,
             "env_from": job_config.env_from_sources + user_defined_env_from,
