@@ -1,21 +1,30 @@
+import ast
+import tempfile
+
 import pytest
 
 from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    DagsterEventType,
+    EventRecordsFilter,
+    GraphOut,
     IOManager,
     IOManagerDefinition,
     Out,
     Output,
     ResourceDefinition,
     build_op_context,
+    define_asset_job,
+    fs_io_manager,
     graph,
     io_manager,
     materialize,
     materialize_to_memory,
     op,
     resource,
+    with_resources,
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
@@ -673,3 +682,264 @@ def test_from_op_w_configured():
 
     the_asset = AssetsDefinition.from_op(op_def=foo.configured({"bar": "abc"}, name="foo2"))
     assert the_asset.keys_by_output_name["result"].path == ["foo2"]
+
+
+def get_step_keys_from_run(instance):
+    engine_events = list(
+        instance.get_event_records(EventRecordsFilter(DagsterEventType.ENGINE_EVENT))
+    )
+    metadata_entries = engine_events[
+        0
+    ].event_log_entry.dagster_event.engine_event_data.metadata_entries
+    step_metadata = next(
+        iter([metadata for metadata in metadata_entries if metadata.label == "step_keys"])
+    )
+    return ast.literal_eval(step_metadata.value.value)
+
+
+def get_num_events(instance, run_id, event_type):
+    events = instance.get_records_for_run(run_id=run_id, of_type=event_type).records
+    return len(events)
+
+
+def test_graph_backed_asset_subset():
+    @op()
+    def foo():
+        return 1
+
+    @op
+    def bar(foo):
+        return foo
+
+    @graph(out={"one": GraphOut(), "two": GraphOut()})
+    def my_graph():
+        one = foo()
+        return bar.alias("bar_1")(one), bar.alias("bar_2")(one)
+
+    asset_job = define_asset_job("yay").resolve(
+        [
+            AssetsDefinition.from_graph(my_graph, can_subset=True),
+        ],
+        [],
+    )
+
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("one")])
+        assert (
+            get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            == 1
+        )
+        assert get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 1
+        step_keys = get_step_keys_from_run(instance)
+        assert set(step_keys) == set(["my_graph.foo", "my_graph.bar_1"])
+
+
+def test_graph_backed_asset_partial_output_selection():
+    @op(out={"a": Out(), "b": Out()})
+    def foo():
+        return 1, 2
+
+    @graph(out={"one": GraphOut(), "two": GraphOut()})
+    def graph_asset():
+        one, two = foo()
+        return one, two
+
+    asset_job = define_asset_job("yay").resolve(
+        [
+            AssetsDefinition.from_graph(graph_asset, can_subset=True),
+        ],
+        [],
+    )
+
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("one")])
+        assert (
+            get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            == 1
+        )
+        # This test will yield two materialization events, for assets "one" and "two". This is
+        # because the "foo" op will still be executed, even though we only selected "one".
+        assert get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
+        step_keys = get_step_keys_from_run(instance)
+        assert set(step_keys) == set(["graph_asset.foo"])
+
+
+def test_input_subsetting_graph_backed_asset():
+    @asset
+    def upstream_1():
+        return 1
+
+    @asset
+    def upstream_2():
+        return 1
+
+    @op
+    def bar(foo):
+        return foo
+
+    @op
+    def baz(up_1, up_2):
+        return up_1 + up_2
+
+    @graph(out={"one": GraphOut(), "two": GraphOut(), "three": GraphOut()})
+    def my_graph(upstream_1, upstream_2):
+        return (
+            bar.alias("bar_1")(upstream_1),
+            bar.alias("bar_2")(upstream_2),
+            baz(upstream_1, upstream_2),
+        )
+
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        asset_job = define_asset_job("yay").resolve(
+            with_resources(
+                [
+                    upstream_1,
+                    upstream_2,
+                    AssetsDefinition.from_graph(my_graph, can_subset=True),
+                ],
+                resource_defs={"io_manager": fs_io_manager.configured({"base_dir": tmpdir_path})},
+            ),
+            [],
+        )
+        with instance_for_test() as instance:
+            # test first bar alias
+            result = asset_job.execute_in_process(
+                instance=instance,
+                asset_selection=[AssetKey("one"), AssetKey("upstream_1")],
+            )
+            assert result.success
+            assert (
+                get_num_events(
+                    instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+                )
+                == 2
+            )
+            assert (
+                get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
+            )
+            step_keys = get_step_keys_from_run(instance)
+            assert set(step_keys) == set(["my_graph.bar_1", "upstream_1"])
+
+        # test second "bar" alias
+        with instance_for_test() as instance:
+            result = asset_job.execute_in_process(
+                instance=instance,
+                asset_selection=[AssetKey("two"), AssetKey("upstream_2")],
+            )
+            assert result.success
+            assert (
+                get_num_events(
+                    instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+                )
+                == 2
+            )
+            assert (
+                get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
+            )
+            step_keys = get_step_keys_from_run(instance)
+            assert set(step_keys) == set(["my_graph.bar_2", "upstream_2"])
+
+        # test "baz" which uses both inputs
+        with instance_for_test() as instance:
+            result = asset_job.execute_in_process(
+                instance=instance,
+                asset_selection=[AssetKey("three"), AssetKey("upstream_1"), AssetKey("upstream_2")],
+            )
+            assert result.success
+            assert (
+                get_num_events(
+                    instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+                )
+                == 3
+            )
+            assert (
+                get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 3
+            )
+            step_keys = get_step_keys_from_run(instance)
+            assert set(step_keys) == set(["my_graph.baz", "upstream_1", "upstream_2"])
+
+
+def test_graph_backed_asset_reused():
+    @asset
+    def upstream():
+        return 1
+
+    @op
+    def foo(upstream):  # pylint: disable=unused-argument
+        return 1
+
+    @graph
+    def graph_asset(upstream):
+        return foo(upstream)
+
+    @asset
+    def one_downstream(asset_one):
+        return asset_one
+
+    @asset
+    def duplicate_one_downstream(duplicate_one):
+        return duplicate_one
+
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        asset_job = define_asset_job("yay").resolve(
+            with_resources(
+                [
+                    upstream,
+                    AssetsDefinition.from_graph(
+                        graph_asset,
+                        keys_by_output_name={
+                            "result": AssetKey("asset_one"),
+                        },
+                        can_subset=True,
+                    ),
+                    AssetsDefinition.from_graph(
+                        graph_asset,
+                        keys_by_output_name={
+                            "result": AssetKey("duplicate_one"),
+                        },
+                        can_subset=True,
+                    ),
+                    one_downstream,
+                    duplicate_one_downstream,
+                ],
+                resource_defs={"io_manager": fs_io_manager.configured({"base_dir": tmpdir_path})},
+            ),
+            [],
+        )
+
+        with instance_for_test() as instance:
+            asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("upstream")])
+            result = asset_job.execute_in_process(
+                instance=instance,
+                asset_selection=[AssetKey("asset_one"), AssetKey("one_downstream")],
+            )
+            assert result.success
+            assert (
+                get_num_events(
+                    instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+                )
+                == 2
+            )
+            assert (
+                get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
+            )
+            step_keys = get_step_keys_from_run(instance)
+            assert set(step_keys) == set(["graph_asset.foo", "one_downstream"])
+
+            # Other graph-backed asset
+            result = asset_job.execute_in_process(
+                instance=instance,
+                asset_selection=[AssetKey("duplicate_one"), AssetKey("duplicate_one_downstream")],
+            )
+            assert result.success
+            assert (
+                get_num_events(
+                    instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+                )
+                == 2
+            )
+            assert (
+                get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
+            )
+            step_keys = get_step_keys_from_run(instance)
+            assert set(step_keys) == set(["graph_asset.foo", "duplicate_one_downstream"])
