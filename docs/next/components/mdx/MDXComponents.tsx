@@ -496,7 +496,7 @@ const TabGroup = ({children}) => {
     <div className="w-full px-2 py-2 sm:px-0">
       <Tab.Group>
         <Tab.List className="flex space-x-2 m-2">
-          {children.map((child, idx) => {
+          {React.Children.map(children, (child, idx) => {
             return (
               <Tab
                 key={idx}
@@ -516,11 +516,13 @@ const TabGroup = ({children}) => {
           })}
         </Tab.List>
         <Tab.Panels>
-          {children.map((child, idx) => (
-            <Tab.Panel key={idx} className={classNames('p-3')}>
-              {child.props.children}
-            </Tab.Panel>
-          ))}
+          {React.Children.map(children, (child, idx) => {
+            return (
+              <Tab.Panel key={idx} className={classNames('p-3')}>
+                {child.props.children}
+              </Tab.Panel>
+            );
+          })}
         </Tab.Panels>
       </Tab.Group>
     </div>
