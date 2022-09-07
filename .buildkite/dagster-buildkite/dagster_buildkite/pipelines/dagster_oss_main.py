@@ -71,7 +71,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
         )
 
     # Always include repo wide steps
-    steps += build_repo_wide_steps()
+    #    steps += build_repo_wide_steps()
 
     # Skip non-dagit-ui steps if we are on a feature branch with only dagit-ui (web app) changes.
     logging.info(f"dagit_ui_only: {dagit_ui_only_diff}, docs_only: {docs_only_diff}")
@@ -84,10 +84,10 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
 
     # Full pipeline.
     else:
-        steps += build_docs_steps()
-        steps += build_dagit_ui_steps()
+        #        steps += build_docs_steps()
+        #        steps += build_dagit_ui_steps()
         steps += build_dagster_steps()
-        steps += build_integration_steps()
+        #        steps += build_integration_steps()
 
         if do_coverage:
             steps.append(build_wait_step())
