@@ -8,6 +8,7 @@
 import path from 'path';
 
 import {Tab, Transition} from '@headlessui/react';
+import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
 import React, {useContext, useRef, useState} from 'react';
@@ -17,7 +18,6 @@ import {useVersion} from '../../util/useVersion';
 import Icons from '../Icons';
 import Link from '../Link';
 
-import {PersistentTabContext} from 'components/PersistentTabContext';
 import 'react-medium-image-zoom/dist/styles.css';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';

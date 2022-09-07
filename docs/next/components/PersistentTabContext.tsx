@@ -1,18 +1,18 @@
-import React from "react";
+import React from 'react';
 
 export const PersistentTabContext = React.createContext<{
   getTabState: (string) => number;
   setTabState: (string, number) => void;
-}>({ getTabState: () => 0, setTabState: () => {} });
+}>({getTabState: () => 0, setTabState: () => {}});
 
-export const PersistentTabProvider: React.FC = ({ children }) => {
-  const [tabState, setTabState] = React.useState<{ [key: string]: number }>({});
+export const PersistentTabProvider: React.FC = ({children}) => {
+  const [tabState, setTabState] = React.useState<{[key: string]: number}>({});
 
-  const windowExists = typeof window !== "undefined";
+  const windowExists = typeof window !== 'undefined';
   React.useEffect(() => {
     console.log(windowExists);
     if (windowExists) {
-      const ts = localStorage.getItem("persistentTabStates");
+      const ts = localStorage.getItem('persistentTabStates');
       if (ts) {
         setTabState(JSON.parse(ts));
       }
@@ -20,10 +20,10 @@ export const PersistentTabProvider: React.FC = ({ children }) => {
   }, [setTabState, windowExists]);
 
   const setTabStateAndPersist = (key: string, value: number) => {
-    const newTabState = { ...tabState, [key]: value };
+    const newTabState = {...tabState, [key]: value};
     setTabState(newTabState);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("persistentTabStates", JSON.stringify(newTabState));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('persistentTabStates', JSON.stringify(newTabState));
     }
   };
 

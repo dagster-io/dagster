@@ -3,12 +3,11 @@ import '../styles/prism.css';
 
 import {useVersion} from 'util/useVersion';
 
+import {PersistentTabProvider} from 'components/PersistentTabContext';
 import {DefaultSeo} from 'next-seo';
 import {AppProps} from 'next/app';
 import {useRouter} from 'next/router';
 import * as React from 'react';
-import {useEffect} from 'react';
-import {PersistentTabProvider} from 'components/PersistentTabContext';
 
 import Layout from '../layouts/MainLayout';
 import * as gtag from '../util/gtag';
