@@ -1,42 +1,24 @@
-import inspect
 import json
+import toposort
 from collections import defaultdict
-from itertools import chain
-from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from dagster._annotations import experimental
-from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .asset_selection import AssetSelection
-from .events import AssetKey
-from .run_request import PipelineRunReaction, RunRequest, SkipReason
+from .run_request import RunRequest
 from .sensor_definition import (
     DefaultSensorStatus,
-    MultiAssetSensorDefinition,
-    MultiAssetSensorEvaluationContext,
     SensorDefinition,
 )
-from .target import ExecutableDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition, SourceAsset
 
 
-class UnresolvedAssetSensorDefinition:
-    def __init__(self):
-        pass
-
-    def resolve(
-        self,
-        assets: Sequence["AssetsDefinition"],
-        source_assets: Sequence["SourceAsset"],
-    ):
-        pass
-
-
 @experimental
-class UnresolvedAssetSensorDefinitionV1(UnresolvedAssetSensorDefinition):
+class UnresolvedAssetSensorDefinition:
     def __init__(
         self,
         asset_selection: AssetSelection,
@@ -45,13 +27,13 @@ class UnresolvedAssetSensorDefinitionV1(UnresolvedAssetSensorDefinition):
         description: Optional[str] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
+        # TODO - type checks
         self._selection = asset_selection
-        self._name = name
+        self._name = check_valid_name(name)
         self._minimum_interval_seconds = minimum_interval_seconds
         self._description = description
         self._default_status = default_status
 
-        super(UnresolvedAssetSensorDefinitionV1, self).__init__()
 
     @property
     def name(self):
@@ -71,15 +53,40 @@ class UnresolvedAssetSensorDefinitionV1(UnresolvedAssetSensorDefinition):
             upstream[a] = {p for p in a_parents if p != a}
         return upstream
 
-    def _get_parent_materializations(self, context, asset_key, parent_assets, cursor, will_materialize_list):
+    def _get_parent_materializations(self, context, parent_assets, cursor, will_materialize_list):
+        """The bulk of the logic in the sensor is in this function. Here's what's happening:
+
+        We want to get the materialization information for all of the parents of an asset to determine
+        if we want to materialize the asset in this sensor tick. We also need to construct the cursor
+        dictionary for the asset so that we don't process the same materialization events for the parent
+        assets again.
+
+        We iterate through each parent of the asset and determine its materialization info. The parent
+        asset's materialization status can be one of three options:
+        1. The parent has materialized since the last time the child was materialized (determined by the
+            cursor).
+        2. The parent will be materialized as part of the materialization that will be kicked off by the
+            sensor.
+        3. The parent has not been materialized and will not be materialized by the sensor.
+
+        In cases 1 and 2 we indicate that the parent has been updated by setting its value in
+        parent_asset_event_records to True. For case 3 we set it's value to False.
+
+        There is a final condition we want to check for. If any of the parents is currently being materialized
+        we want to wait to materialize the asset until the parent materialization is complete so that the
+        asset can have the most up to date data. So, for each parent asset we check if it has a planned asset
+        materialization event that is newer than the latest complete materialization. If this is the case, we
+        don't want the asset to materialize. So we set parent_asset_event_records to False for all
+        parents (so that if the sensor is set to materialize if any of the parents are updated, the sensor will
+        still choose to not materialize the asset) and immediately return.
+        """
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        print(f"CURSOR for {asset_key} {cursor}")
         parent_asset_event_records = {}
         cursor_update_dict = {}
+
         for p in parent_assets:
-            print(f"AFTER CURSOR for {p} {cursor.get(str(p))}")
             if p in will_materialize_list:
                 # if the parent will be materialized by this sensor, then we can also
                 # materialize the child
@@ -87,6 +94,7 @@ class UnresolvedAssetSensorDefinitionV1(UnresolvedAssetSensorDefinition):
                 # TODO - figure out what to do with the cursor in this case
                 cursor_update_dict[str(p)] = cursor.get(str(p))
             else:
+                # get the most recent completed materialization
                 event_records = context.instance.get_event_records(
                     EventRecordsFilter(
                         event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -96,53 +104,56 @@ class UnresolvedAssetSensorDefinitionV1(UnresolvedAssetSensorDefinition):
                     ascending=False,
                     limit=1,
                 )
+                # get the most recent planned materialization
+                materialization_planned_event_records = context.instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                        asset_key=p,
+                        after_cursor=cursor.get(str(p)),
+                    ),
+                    ascending=False,
+                    limit=1,
+                )
+
+                if event_records and materialization_planned_event_records:
+                    # planned materialization is more recent that the completed materialization
+                    if event_records[0].storage_id < materialization_planned_event_records[0].storage_id:
+                        # we don't want to materialize the child asset because one of its parents is
+                        # being materialized. We'll materialize the asset on the next tick when the
+                        # parent is up to date
+                        parent_asset_event_records = {pp: False for pp in parent_assets}
+                        cursor_update_dict = {str(pp): cursor.get(str(pp)) for pp in parent_assets}
+
+                        return parent_asset_event_records, cursor_update_dict
+
+                # there is no materialization in progress, so we can update the event dict and cursor
+                # dict accordingly
                 if event_records:
-                    parent_asset_event_records[p] = event_records[0]
+                    # TODO - i could store the event record data, but this is really only useful if
+                    # we want to allow users to write complex functions to determine if the asset should
+                    # materialize. If we keep the True False, then rename the dict to indicate what it actually stores
+                    # parent_asset_event_records[p] = event_records[0]
+                    parent_asset_event_records[p] = True
                     cursor_update_dict[str(p)] = event_records[0].storage_id
                 else:
-                    parent_asset_event_records[p] = None
+                    parent_asset_event_records[p] = False
                     cursor_update_dict[str(p)] = cursor.get(str(p))
 
         return parent_asset_event_records, cursor_update_dict
 
-    def _any_current_materializations(self, context, assets, asset_storage_ids):
-        """
-        asset_storage_id is a mapping of the asset to the latest materialization that had been handled
-        if there is a materialization_planned event more recent, then one of the parents will be
-        updated soon
-        """
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
-        for p in assets:
-            event_records = context.instance.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                    asset_key=p,
-                    after_cursor=asset_storage_ids.get(str(p)),
-                ),
-                ascending=False,
-                limit=1,
-            )
-            if event_records:
-                return True
-
-        return False
-
-
     def _make_sensor(self, upstream):
-        """
-        cursor - dict for each asset in selection. each parent in the dict has a cursor
+        """Creates the sensor that will monitor the parents of all provided assets and determine
+        which assets should be materialized (ie their parents have been updated).
 
-        for each asset in selection, get the cursor for the parents and fetch latest events
-        if all assets have materialized, then add asset to should_materialize
-        update the cursor
+        The cursor for this sensor is a dictionary mapping stringified AssetKeys to dictionaries. The
+        dictionary for an asset is a mapping of the stringified AssetKeys of its parents to the storage id
+        of the latest materialization that has been resulted in the child asset materializing
         """
 
         def sensor_fn(context):
-            import toposort
+
 
             cursor_dict = json.loads(context.cursor) if context.cursor else {}
-            print(f"CURSOR {cursor_dict}")
             should_materialize = []
             cursor_update_dict = {}
 
@@ -163,25 +174,13 @@ class UnresolvedAssetSensorDefinitionV1(UnresolvedAssetSensorDefinition):
                 (
                     parent_asset_event_records,
                     a_cursor_update_dict,
-                ) = self._get_parent_materializations(context, asset_key=a, parent_assets=upstream[a], cursor=a_cursor, will_materialize_list=should_materialize)
+                ) = self._get_parent_materializations(context, parent_assets=upstream[a], cursor=a_cursor, will_materialize_list=should_materialize)
 
                 if all(
                     parent_asset_event_records.values()
-                ):  # should we allow the user to specify all() vs any() here?
+                ):  # TODO should we allow the user to specify all() vs any() here?
                     should_materialize.append(a)
                     cursor_update_dict[str(a)] = a_cursor_update_dict
-
-            print(f"SHOULD MATERIALIZE {should_materialize}")
-
-            # for all assets in should_materialize, if any of their parents are currently being materialized,
-            # then remove the asset from should_materialize because we can make a more up to date
-            # materialization in the next tick
-
-            # for a in should_materialize:
-            #     if self._any_current_materializations(context, assets=upstream[a], asset_storage_ids=cursor_update_dict[str(a)]):
-            #         should_materialize.remove(a)
-            #         # since we aren't materializing a, we don't update the cursor
-            #         cursor_update_dict[str(a)] = cursor_dict.get(str(a)) if cursor_dict.get(str(a)) else {}
 
             if len(should_materialize) > 0:
                 context.update_cursor(json.dumps(cursor_update_dict))
@@ -202,109 +201,6 @@ class UnresolvedAssetSensorDefinitionV1(UnresolvedAssetSensorDefinition):
         return self._make_sensor(self._get_upstream_mapping(assets, source_assets))
 
 
-# class UnresolvedAssetSensorDefinitionV2(UnresolvedAssetSensorDefinition):
-#     def __init__(self, asset_selection, name):
-#         self._selection = asset_selection
-#         self._name = name
-
-#         super(UnresolvedAssetSensorDefinitionV2, self).__init__()
-
-#     @property
-#     def name(self):
-#         return self._name
-
-#     def get_dependency_mapping(
-#         self,
-#         assets: Sequence["AssetsDefinition"],
-#         source_assets: Sequence["SourceAsset"],
-#     ):
-#         """Computes a mapping of assets in self._selection to their parents in the asset graph"""
-#         upstream = defaultdict(set)
-#         downstream = defaultdict(set)
-#         selection_resolved = list(self._selection.resolve([*assets, *source_assets]))
-#         for a in selection_resolved:
-#             a_parents = list(AssetSelection.keys(a).upstream().resolve([*assets, *source_assets]))
-#             # filter out a because upstream() includes the assets in the original AssetSelection
-#             upstream[a] = {p for p in a_parents if p != a}
-#             for p in upstream[a]:
-#                 downstream[p].add(a)
-#         return {"upstream": upstream, "downstream": downstream}
-
-#     def make_sensor(self, dependency_mapping: Mapping[AssetKey, Sequence[AssetKey]]):
-
-#         upstream = dependency_mapping["upstream"]
-#         downstream = dependency_mapping["downstream"]
-
-#         def sensor_fn(context: MultiAssetSensorEvaluationContext):
-#             latest_events = context.latest_materialization_records_by_key()
-
-#             should_materialize: List[AssetKey] = []
-
-#             # we want to materialize an asset if all of its parents have been materialized more recently
-#             # than the asset was materialized
-#             for a in upstream.keys():
-#                 a_materialization = latest_events.get(a)
-#                 parents_materialization = {k: v for k, v in latest_events.items() if k in upstream[a]}
-
-#                 if all(parents_materialization.values()):  # all parents have been materialized
-#                     parent_timestamps = [
-#                         parent_event.event_log_entry.timestamp
-#                         for parent_event in parents_materialization.values()
-#                     ]
-
-#                     if a_materialization is not None:
-#                         a_timestamp = a_materialization.event_log_entry.timestamp
-#                         if all(
-#                             [a_timestamp < p_time for p_time in parent_timestamps]
-#                         ):  # all parents have been materialized more recently than a
-#                             should_materialize.append(a)
-#                     else:
-#                         should_materialize.append(a)
-
-#             print(f"SHOULD MATERIALIZE {should_materialize}")
-#             if len(should_materialize) > 0:
-#                 # we need to update the cursor for all of the parent assets. We update the cursor for an asset if
-#                 # all of the downstream assets have been materialized more recently than the asset
-
-#                 # TODO - this won't account for failures in the materialization of assets in should_materialize
-#                 # ie we update the cursor before knowing if the materializations succeeded. Should we handle this?
-#                 cursor_update_dict = {}
-#                 for p in downstream.keys():
-#                     should_update = True
-#                     for c in downstream[p]:
-#                         if (
-#                             latest_events[c].event_log_entry.timestamp
-#                             <= latest_events[p].event_log_entry.timestamp
-#                             and c not in should_materialize
-#                         ):
-#                             # one of the downstream hasn't been materialized yet
-#                             should_update = False
-
-#                     if should_update:
-#                         cursor_update_dict[p] = latest_events[p]
-#                     else:
-#                         cursor_update_dict[p] = None
-
-#                 context.advance_cursor(cursor_update_dict)
-
-#                 # now need to actually launch the run of all should_materialize
-#                 return RunRequest(run_key=f"{context.cursor}", asset_selection=should_materialize)
-
-#         return MultiAssetSensorDefinition(
-#             asset_keys=list(set(chain.from_iterable(upstream.values()))) + list(upstream.keys()),
-#             asset_materialization_fn=sensor_fn,
-#             name=self.name,
-#             job_name="__ASSET_JOB",
-#         )
-
-#     def resolve(
-#         self,
-#         assets: Sequence["AssetsDefinition"],
-#         source_assets: Sequence["SourceAsset"],
-#     ):
-#         return self.make_sensor(self.get_dependency_mapping(assets, source_assets))
-
-
 @experimental
 def build_asset_sensor(
     selection: AssetSelection,
@@ -313,7 +209,7 @@ def build_asset_sensor(
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> UnresolvedAssetSensorDefinition:
-    return UnresolvedAssetSensorDefinitionV1(
+    return UnresolvedAssetSensorDefinition(
         asset_selection=selection,
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
