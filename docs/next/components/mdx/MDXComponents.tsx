@@ -8,6 +8,7 @@
 import path from 'path';
 
 import {Tab, Transition} from '@headlessui/react';
+import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
 import React, {useContext, useRef, useState} from 'react';
@@ -17,9 +18,9 @@ import {useVersion} from '../../util/useVersion';
 import Icons from '../Icons';
 import Link from '../Link';
 
+import 'react-medium-image-zoom/dist/styles.css';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
-import 'react-medium-image-zoom/dist/styles.css';
 
 export const SearchIndexContext = React.createContext(null);
 
@@ -491,40 +492,57 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-const TabGroup = ({children}) => {
+const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, persistentKey}) => {
+  const contents = (
+    <>
+      <Tab.List className="flex space-x-2 m-2">
+        {React.Children.map(children, (child, idx) => {
+          return (
+            <Tab
+              key={idx}
+              className={({selected}) =>
+                classNames(
+                  'w-full py-3 text-sm font-bold leading-5',
+                  'focus:outline-none border-gray-200',
+                  selected
+                    ? 'border-b-2 border-primary-500 text-primary-500'
+                    : 'border-b hover:border-gray-500 hover:text-gray-700',
+                )
+              }
+            >
+              {child?.props?.name}
+            </Tab>
+          );
+        })}
+      </Tab.List>
+      <Tab.Panels>
+        {React.Children.map(children, (child, idx) => {
+          return (
+            <Tab.Panel key={idx} className={classNames('p-3')}>
+              {child.props.children}
+            </Tab.Panel>
+          );
+        })}
+      </Tab.Panels>
+    </>
+  );
+
   return (
     <div className="w-full px-2 py-2 sm:px-0">
-      <Tab.Group>
-        <Tab.List className="flex space-x-2 m-2">
-          {React.Children.map(children, (child, idx) => {
-            return (
-              <Tab
-                key={idx}
-                className={({selected}) =>
-                  classNames(
-                    'w-full py-3 text-sm font-bold leading-5',
-                    'focus:outline-none border-gray-200',
-                    selected
-                      ? 'border-b-2 border-primary-500 text-primary-500'
-                      : 'border-b hover:border-gray-500 hover:text-gray-700',
-                  )
-                }
-              >
-                {child?.props?.name}
-              </Tab>
-            );
-          })}
-        </Tab.List>
-        <Tab.Panels>
-          {React.Children.map(children, (child, idx) => {
-            return (
-              <Tab.Panel key={idx} className={classNames('p-3')}>
-                {child.props.children}
-              </Tab.Panel>
-            );
-          })}
-        </Tab.Panels>
-      </Tab.Group>
+      {persistentKey ? (
+        <PersistentTabContext.Consumer>
+          {(context) => (
+            <Tab.Group
+              selectedIndex={context.getTabState(persistentKey)}
+              onChange={(idx) => context.setTabState(persistentKey, idx)}
+            >
+              {contents}
+            </Tab.Group>
+          )}
+        </PersistentTabContext.Consumer>
+      ) : (
+        <Tab.Group>{contents}</Tab.Group>
+      )}
     </div>
   );
 };
