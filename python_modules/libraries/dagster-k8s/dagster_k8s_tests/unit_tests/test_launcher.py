@@ -54,6 +54,7 @@ def test_launcher_from_config(kubeconfig_file):
         assert isinstance(run_launcher, K8sRunLauncher)
         assert run_launcher.fail_pod_on_run_failure == None
         assert run_launcher.resources == resources
+        assert run_launcher.scheduler_name == None
 
     with instance_for_test(
         overrides={
@@ -86,6 +87,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             "requests": {"memory": "64Mi", "cpu": "250m"},
             "limits": {"memory": "128Mi", "cpu": "500m"},
         },
+        scheduler_name="test-scheduler",
     )
 
     container_context_config = {
@@ -95,6 +97,7 @@ def test_launcher_with_container_context(kubeconfig_file):
                 "limits": {"memory": "64Mi", "cpu": "250m"},
                 "requests": {"memory": "32Mi", "cpu": "125m"},
             },
+            "scheduler_name": "test-scheduler-2",
         }
     }
 
@@ -152,6 +155,8 @@ def test_launcher_with_container_context(kubeconfig_file):
             "requests": {"memory": "32Mi", "cpu": "125m"},
         }
 
+        assert kwargs["body"].spec.template.spec.scheduler_name == "test-scheduler-2"
+
         env_names = [env.name for env in container.env]
 
         assert "BAR_TEST" in env_names
@@ -189,6 +194,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             "requests": {"memory": "64Mi", "cpu": "250m"},
             "limits": {"memory": "128Mi", "cpu": "500m"},
         },
+        scheduler_name="test-scheduler",
     )
 
     # Construct Dagster run tags with user defined k8s config.
@@ -198,6 +204,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     }
     user_defined_k8s_config = UserDefinedDagsterK8sConfig(
         container_config={"resources": expected_resources},
+        pod_spec_config={"scheduler_name": "test-scheduler-2"},
     )
     user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
     tags = {"dagster-k8s/config": user_defined_k8s_config_json}
@@ -247,6 +254,8 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         job_resources = container.resources
         assert job_resources.to_dict() == expected_resources
         assert DAGSTER_PG_PASSWORD_ENV_VAR in [env.name for env in container.env]
+
+        assert kwargs["body"].spec.template.spec.scheduler_name == "test-scheduler-2"
 
         labels = kwargs["body"].spec.template.metadata.labels
         assert labels["foo_label_key"] == "bar_label_value"

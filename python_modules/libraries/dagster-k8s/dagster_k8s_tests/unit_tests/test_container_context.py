@@ -36,6 +36,7 @@ def container_context_config():
                 "requests": {"memory": "64Mi", "cpu": "250m"},
                 "limits": {"memory": "128Mi", "cpu": "500m"},
             },
+            "scheduler_name": "my_scheduler",
         },
     }
 
@@ -68,6 +69,7 @@ def other_container_context_config():
             "resources": {
                 "limits": {"memory": "64Mi", "cpu": "250m"},
             },
+            "scheduler_name": "my_other_scheduler",
         },
     }
 
@@ -134,6 +136,7 @@ def test_empty_container_context(empty_container_context):
     assert empty_container_context.labels == {}
     assert empty_container_context.namespace == None
     assert empty_container_context.resources == {}
+    assert empty_container_context.scheduler_name == None
 
 
 def test_invalid_config():
@@ -185,6 +188,7 @@ def test_merge(empty_container_context, container_context, other_container_conte
         "requests": {"memory": "64Mi", "cpu": "250m"},
         "limits": {"memory": "128Mi", "cpu": "500m"},
     }
+    assert container_context.scheduler_name == "my_scheduler"
 
     merged = container_context.merge(other_container_context)
 
@@ -251,6 +255,7 @@ def test_merge(empty_container_context, container_context, other_container_conte
     assert merged.resources == {
         "limits": {"memory": "64Mi", "cpu": "250m"},
     }
+    assert merged.scheduler_name == "my_other_scheduler"
 
     assert container_context.merge(empty_container_context) == container_context
     assert empty_container_context.merge(container_context) == container_context
