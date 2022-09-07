@@ -164,6 +164,9 @@ class DagsterClassDocumenter(ClassDocumenter):
 
     def get_object_members(self, want_all: bool) -> Tuple[bool, ObjectMembers]:
         _, unfiltered_members = super().get_object_members(want_all)
+        # Use form `is_public(self.object, attr_name) if possible, because to access a descriptor
+        # object (returned by e.g. `@staticmethod`) you need to go in through
+        # `self.object.__dict__`-- the value provided in the member list is _not_ the descriptor!
         return False, [
             m
             for m in unfiltered_members
