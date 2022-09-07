@@ -97,7 +97,7 @@ export const JobTable = (props: Props) => {
               </td>
               <td>
                 {runs.length ? (
-                  <LastRunSummary run={runs[0]} />
+                  <LastRunSummary run={runs[runs.length - 1]} />
                 ) : (
                   <div style={{color: Colors.Gray500}}>None</div>
                 )}
