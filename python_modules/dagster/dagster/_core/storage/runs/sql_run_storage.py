@@ -983,6 +983,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             conn.execute(RunTagsTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(SnapshotsTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(BulkActionsTable.delete())  # pylint: disable=no-value-for-parameter
 
     def wipe_daemon_heartbeats(self):
         with self.connect() as conn:
