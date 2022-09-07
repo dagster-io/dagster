@@ -94,7 +94,7 @@ python_logs:
 
 ## Configuring Python Log Handlers <Experimental />
 
-In your dagster.yaml file, you can configure handlers and formatters that will apply to the Dagster instance, so all pipeline runs will share the same logging configuration.
+In your dagster.yaml file, you can configure handlers and formatters that will apply to the Dagster instance, so all runs will share the same logging configuration.
 
 ```yaml file=/concepts/logging/python_logging_handler_config.yaml
 python_logs:
@@ -135,17 +135,17 @@ python_logs:
         format: "%(asctime)s :: %(message)s"
 ```
 
-Then, we execute the following pipeline:
+Then, we execute the following job:
 
 ```python file=/concepts/logging/file_output_pipeline.py startafter=start_custom_file_output_log endbefore=end_custom_file_output_log
-@solid
-def file_log_solid(context):
+@op
+def file_log_op(context):
     context.log.info("Hello world!")
 
 
-@pipeline
-def file_log_pipeline():
-    file_log_solid()
+@job
+def file_log_job():
+    file_log_op()
 ```
 
 After execution, we can read the output log file `my_dagster_logs.log`. As expected, the log file contains the formatted log!
@@ -153,6 +153,6 @@ After execution, we can read the output log file `my_dagster_logs.log`. As expec
 <Image
 alt="log-file-output"
 src="/images/concepts/logging/log-file-output.png"
-width={4032}
-height={945}
+width={2048}
+height={484}
 />
