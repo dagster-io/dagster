@@ -51,7 +51,7 @@ Additionally, note that:
 
 ---
 
-## Managing code locations in Dagster Cloud
+## Managing code locations in Dagster Cloud (Hybrid)
 
 <Note>
   <strong>Editor</strong>, <strong>Admin</strong>, or{" "}
@@ -253,3 +253,28 @@ Reconcile the above file with Dagster Cloud's remote workspace by running:
 ```shell
 dagster-cloud workspace sync -w dagster_cloud.yaml
 ```
+
+## Managing code locations in Dagster Cloud (Serverless)
+
+### Adding code locations
+
+In Serverless, code locations can be added either through the `dagster-cloud` CLI, or through a Github Actions integration.
+
+#### Adding a code location using the CLI
+
+You can add a code location to your workspace from a local directory by using the CLI, which will build a Docker image and deploy it to Dagster Cloud.
+
+For example, you can run:
+
+```shell
+# Set up for example location
+dagster-cloud serverless deploy --location-name <location_name> <target_directory>
+```
+
+#### Adding a code location using Github Actions
+
+To set up deployment of code locations from a Github repository, you can clone the [Serverless quickstart](https://github.com/dagster-io/dagster-cloud-serverless-quickstart) repository on Github and follow its setup instructions to connect it to your workspace. This will set up a Github Action that deploys code locations to your workspace.
+
+### Deleting a code location
+
+From Dagster Cloud, on the **Workspace** tab, you can delete a code location by clicking the **dropdown menu** to the right of the location, and then clicking **Remove**.
