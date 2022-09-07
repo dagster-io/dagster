@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import pytest
 
 from dagster import repository
-from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
+from dagster._api.snapshot_repository import sync_get_external_repositories_data_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation import (
     ExternalRepositoryData,
@@ -19,7 +19,7 @@ from .utils import get_bar_repo_repository_location
 
 def test_streaming_external_repositories_api_grpc(instance):
     with get_bar_repo_repository_location(instance) as repository_location:
-        external_repo_datas = sync_get_streaming_external_repositories_data_grpc(
+        external_repo_datas = sync_get_external_repositories_data_grpc(
             repository_location.client, repository_location
         )
 
@@ -40,7 +40,7 @@ def test_streaming_external_repositories_error(instance):
             DagsterUserCodeProcessError,
             match='Could not find a repository called "does_not_exist"',
         ):
-            sync_get_streaming_external_repositories_data_grpc(
+            sync_get_external_repositories_data_grpc(
                 repository_location.client, repository_location
             )
 
@@ -81,11 +81,12 @@ def get_giant_repo_grpc_repository_location(instance):
 
 
 @pytest.mark.skip("https://github.com/dagster-io/dagster/issues/6940")
-def test_giant_external_repository_streaming_grpc():
+def test_giant_external_repository_grpc():
     with instance_for_test() as instance:
         with get_giant_repo_grpc_repository_location(instance) as repository_location:
-            # Using streaming allows the giant repo to load
-            external_repos_data = sync_get_streaming_external_repositories_data_grpc(
+            # we used to have to stream this - but with grpc settings and compression it
+            # works with a regular request
+            external_repos_data = sync_get_external_repositories_data_grpc(
                 repository_location.client, repository_location
             )
 

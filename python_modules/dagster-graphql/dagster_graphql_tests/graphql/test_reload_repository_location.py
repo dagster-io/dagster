@@ -267,7 +267,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster._core.host_representation.repository_location.sync_get_streaming_external_repositories_data_grpc"
+                "dagster._core.host_representation.repository_location.sync_get_external_repositories_data_grpc"
             ) as external_repository_mock:
 
                 @repository

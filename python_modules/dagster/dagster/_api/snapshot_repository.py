@@ -13,8 +13,9 @@ if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient
 
 
-def sync_get_streaming_external_repositories_data_grpc(
-    api_client: "DagsterGrpcClient", repository_location: "RepositoryLocation"
+def sync_get_external_repositories_data_grpc(
+    api_client: "DagsterGrpcClient",
+    repository_location: "RepositoryLocation",
 ) -> Mapping[str, ExternalRepositoryData]:
     from dagster._core.host_representation import ExternalRepositoryOrigin, RepositoryLocation
 
@@ -22,22 +23,15 @@ def sync_get_streaming_external_repositories_data_grpc(
 
     repo_datas = {}
     for repository_name in repository_location.repository_names:  # type: ignore
-        external_repository_chunks = list(
-            api_client.streaming_external_repository(
-                external_repository_origin=ExternalRepositoryOrigin(
-                    repository_location.origin,
-                    repository_name,
-                )
-            )
+        response = api_client.external_repository(
+            external_repository_origin=ExternalRepositoryOrigin(
+                repository_location.origin,
+                repository_name,
+            ),
         )
 
         result = deserialize_as(
-            "".join(
-                [
-                    chunk["serialized_external_repository_chunk"]
-                    for chunk in external_repository_chunks
-                ]
-            ),
+            response,
             (ExternalRepositoryData, ExternalRepositoryErrorData),
         )
 
