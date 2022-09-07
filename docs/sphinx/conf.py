@@ -110,6 +110,11 @@ extensions = [
 # Full list of options here:
 #   https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 
+
+autodoc_default_options = {
+    "members": True
+}
+
 # List of all packages that should be mocked when autodoc is running. Autodoc is going to import
 # dagster packages, which in turn import various third-party packages. The vast majority of those
 # packages are not actually needed to build the docs, but autodoc will nonetheless choke if it can't
