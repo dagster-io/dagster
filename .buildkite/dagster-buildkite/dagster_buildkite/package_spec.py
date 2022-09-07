@@ -184,54 +184,57 @@ class PackageSpec(
 
             for py_version in pytest_python_versions:
                 for other_factor in tox_factors:
+                    for i in range(3):
 
-                    version_factor = AvailablePythonVersion.to_tox_factor(py_version)
-                    if other_factor is None:
-                        tox_env = version_factor
-                    else:
-                        tox_env = f"{version_factor}-{other_factor}"
+                        version_factor = AvailablePythonVersion.to_tox_factor(py_version)
+                        if other_factor is None:
+                            tox_env = version_factor
+                        else:
+                            tox_env = f"{version_factor}-{other_factor}"
 
-                    if isinstance(self.pytest_extra_cmds, list):
-                        extra_commands_pre = self.pytest_extra_cmds
-                    elif callable(self.pytest_extra_cmds):
-                        extra_commands_pre = self.pytest_extra_cmds(py_version, other_factor)
-                    else:
-                        extra_commands_pre = []
+                        if isinstance(self.pytest_extra_cmds, list):
+                            extra_commands_pre = self.pytest_extra_cmds
+                        elif callable(self.pytest_extra_cmds):
+                            extra_commands_pre = self.pytest_extra_cmds(py_version, other_factor)
+                        else:
+                            extra_commands_pre = []
 
-                    if self.upload_coverage:
-                        coverage_id = f"{base_name}-{other_factor}" if other_factor else base_name
-                        coverage = f".coverage.{coverage_id}.{py_version}.$BUILDKITE_BUILD_ID"
-                        extra_commands_post = [
-                            f"mv .coverage {coverage}",
-                            f"buildkite-agent artifact upload {coverage}",
-                        ]
-                    else:
-                        extra_commands_post = []
+                        if self.upload_coverage:
+                            coverage_id = (
+                                f"{base_name}-{other_factor}" if other_factor else base_name
+                            )
+                            coverage = f".coverage.{coverage_id}.{py_version}.$BUILDKITE_BUILD_ID"
+                            extra_commands_post = [
+                                f"mv .coverage {coverage}",
+                                f"buildkite-agent artifact upload {coverage}",
+                            ]
+                        else:
+                            extra_commands_post = []
 
-                    if isinstance(self.pytest_step_dependencies, list):
-                        dependencies = self.pytest_step_dependencies
-                    elif callable(self.pytest_step_dependencies):
-                        dependencies = self.pytest_step_dependencies(py_version, other_factor)
-                    else:
-                        dependencies = []
+                        if isinstance(self.pytest_step_dependencies, list):
+                            dependencies = self.pytest_step_dependencies
+                        elif callable(self.pytest_step_dependencies):
+                            dependencies = self.pytest_step_dependencies(py_version, other_factor)
+                        else:
+                            dependencies = []
 
-                    steps.append(
-                        build_tox_step(
-                            self.directory,
-                            tox_env,
-                            base_label=base_name,
-                            command_type="pytest",
-                            python_version=py_version,
-                            env_vars=self.env_vars,
-                            extra_commands_pre=extra_commands_pre,
-                            extra_commands_post=extra_commands_post,
-                            dependencies=dependencies,
-                            tox_file=self.tox_file,
-                            timeout_in_minutes=self.timeout_in_minutes,
-                            queue=self.queue,
-                            retries=self.retries,
+                        steps.append(
+                            build_tox_step(
+                                self.directory,
+                                tox_env,
+                                base_label=base_name + "_" + str(i),
+                                command_type="pytest",
+                                python_version=py_version,
+                                env_vars=self.env_vars,
+                                extra_commands_pre=extra_commands_pre,
+                                extra_commands_post=extra_commands_post,
+                                dependencies=dependencies,
+                                tox_file=self.tox_file,
+                                timeout_in_minutes=self.timeout_in_minutes,
+                                queue=self.queue,
+                                retries=self.retries,
+                            )
                         )
-                    )
 
         if self.run_mypy:
             steps.append(

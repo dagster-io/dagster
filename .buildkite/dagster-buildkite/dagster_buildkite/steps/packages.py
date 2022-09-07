@@ -32,23 +32,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
 
 
 def build_library_packages_steps() -> List[BuildkiteStep]:
-    custom_library_pkg_roots = [pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG]
-    library_packages_with_standard_config = [
-        *[
-            PackageSpec(pkg, upload_coverage=False)
-            for pkg in _get_uncustomized_pkg_roots("python_modules", custom_library_pkg_roots)
-        ],
-        *[
-            PackageSpec(pkg)
-            for pkg in _get_uncustomized_pkg_roots(
-                "python_modules/libraries", custom_library_pkg_roots
-            )
-        ],
-    ]
-
-    return _build_steps_from_package_specs(
-        LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG + library_packages_with_standard_config
-    )
+    return _build_steps_from_package_specs(LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG)
 
 
 def build_dagit_screenshot_steps() -> List[BuildkiteStep]:
@@ -338,7 +322,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
 ]
 
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
-    PackageSpec("python_modules/automation"),
+    #    PackageSpec("python_modules/automation"),
     PackageSpec("python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
@@ -359,129 +343,4 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "execution_tests",
         ],
     ),
-    PackageSpec(
-        "python_modules/dagster-graphql",
-        pytest_extra_cmds=dagster_graphql_extra_cmds,
-        pytest_tox_factors=[
-            "not_graphql_context_test_suite",
-            "in_memory_instance_multi_location",
-            "in_memory_instance_managed_grpc_env",
-            "sqlite_instance_multi_location",
-            "sqlite_instance_managed_grpc_env",
-            "sqlite_instance_deployed_grpc_env",
-            "graphql_python_client",
-            "postgres-graphql_context_variants",
-            "postgres-instance_multi_location",
-            "postgres-instance_managed_grpc_env",
-            "postgres-instance_deployed_grpc_env",
-        ],
-    ),
-    PackageSpec(
-        "python_modules/dagster-test",
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-dbt",
-        pytest_extra_cmds=dbt_extra_cmds,
-        # dbt-core no longer supports does not yet support python 3.10
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_10,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-airflow",
-        # omit python 3.9 until we add support
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_9,
-            AvailablePythonVersion.V3_10,
-        ],
-        env_vars=[
-            "AIRFLOW_HOME",
-            "AWS_ACCOUNT_ID",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GOOGLE_APPLICATION_CREDENTIALS",
-        ],
-        pytest_extra_cmds=airflow_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
-        pytest_tox_factors=["default", "requiresairflowdb"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-aws",
-        env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-azure",
-        env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-celery",
-        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=celery_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-celery-docker",
-        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=celery_docker_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-dask",
-        env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-databricks",
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-docker",
-        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=docker_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-gcp",
-        env_vars=[
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GCP_PROJECT_ID",
-        ],
-        pytest_extra_cmds=gcp_extra_cmds,
-        # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
-        retries=2,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-k8s",
-        env_vars=[
-            "AWS_ACCOUNT_ID",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-        ],
-        pytest_extra_cmds=k8s_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
-    ),
-    PackageSpec("python_modules/libraries/dagster-mlflow", upload_coverage=False),
-    PackageSpec("python_modules/libraries/dagster-mysql", pytest_extra_cmds=mysql_extra_cmds),
-    PackageSpec(
-        "python_modules/libraries/dagster-snowflake-pandas",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
-    ),
-    PackageSpec("python_modules/libraries/dagster-postgres", pytest_extra_cmds=postgres_extra_cmds),
-    PackageSpec(
-        "python_modules/libraries/dagster-twilio",
-        env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
-        # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
-        retries=2,
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagstermill",
-        pytest_tox_factors=["papermill1", "papermill2"],
-    ),
-    PackageSpec(
-        ".buildkite/dagster-buildkite",
-        run_pytest=False,
-    ),
-    PackageSpec("scripts", run_pytest=False),
 ]

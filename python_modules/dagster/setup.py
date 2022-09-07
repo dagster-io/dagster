@@ -72,7 +72,7 @@ if __name__ == "__main__":
             "tqdm",
             "typing_compat",
             "typing_extensions>=4.0.1",
-            "sqlalchemy>=1.0",
+            "sqlalchemy>=1.0,<1.4.41",  # deadlocks/timeouts in 1.4.41
             "toposort>=1.0",
             "watchdog>=0.8.3",
             'psutil >= 1.0; platform_system=="Windows"',
