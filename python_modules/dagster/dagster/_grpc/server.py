@@ -21,6 +21,7 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.external_data import (
     ExternalRepositoryErrorData,
+    external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.origin import (
@@ -485,7 +486,10 @@ class DagsterApiServer(DagsterApiServicer):
             check.inst_param(repository_origin, "repository_origin", ExternalRepositoryOrigin)
             recon_repo = self._recon_repository_from_origin(repository_origin)
             return serialize_dagster_namedtuple(
-                external_repository_data_from_def(recon_repo.get_definition())
+                external_repository_data_from_def(
+                    recon_repo.get_definition(),
+                    defer_snapshots=request.defer_snapshots,
+                )
             )
         except Exception:
             return serialize_dagster_namedtuple(
@@ -497,6 +501,24 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.ExternalRepositoryReply(
             serialized_external_repository_data=serialized_external_repository_data,
         )
+
+    def ExternalJob(self, request, _context):
+        try:
+            repository_origin = deserialize_json_to_dagster_namedtuple(
+                request.serialized_repository_origin
+            )
+
+            check.inst_param(repository_origin, "repository_origin", ExternalRepositoryOrigin)
+            recon_repo = self._recon_repository_from_origin(repository_origin)
+            job_def = recon_repo.get_definition().get_pipeline(request.job_name)
+            ser_job_data = serialize_dagster_namedtuple(external_pipeline_data_from_def(job_def))
+            return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
+        except Exception:
+            return api_pb2.ExternalJobReply(
+                serialized_error=serialize_dagster_namedtuple(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
 
     def StreamingExternalRepository(self, request, _context):
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
