@@ -5,6 +5,9 @@ import Sidebar from '../components/Sidebar';
 
 const Layout: React.FC = ({children}) => {
   const [isMobileDocsMenuOpen, setMobileDocsMenuOpen] = React.useState<boolean>(false);
+  const openMobileDocsMenu = () => {
+    setMobileDocsMenuOpen(true);
+  };
   const closeMobileDocsMenu = () => {
     setMobileDocsMenuOpen(false);
   };
@@ -14,14 +17,14 @@ const Layout: React.FC = ({children}) => {
       <div
         style={{
           minHeight: '100vh',
-          backgroundImage: 'url("/assets/head-texture.jpg")',
+          backgroundImage: 'url("_next/image?url=/assets/head-texture.jpg&w=3840&q=100")',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'top middle',
           backgroundSize: 'fit',
           backgroundColor: '#FAF9F7',
         }}
       >
-        <Header />
+        <Header openMobileDocsMenu={openMobileDocsMenu} />
         <div className="w-screen mx-auto px-4 sm:px-6 lg:px-8" style={{paddingTop: '64px'}}>
           <div className="mt-10 flex justify-center">
             <Sidebar

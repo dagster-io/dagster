@@ -9,13 +9,14 @@ from dagster import (
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
     PartitionKeyRange,
+    TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
     daily_partitioned_config,
     hourly_partitioned_config,
     monthly_partitioned_config,
     weekly_partitioned_config,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.time_window_partitions import ScheduleType, TimeWindow
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -32,6 +33,7 @@ def test_daily_partitions():
 
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == DailyPartitionsDefinition(start_date="2021-05-05")
+    assert partitions_def.schedule_type == ScheduleType.DAILY
 
     assert [
         partition.value
@@ -152,6 +154,9 @@ def test_monthly_partitions_with_time_offset():
         return {}
 
     partitions_def = my_partitioned_config.partitions_def
+    assert partitions_def.minute_offset == 15
+    assert partitions_def.hour_offset == 3
+    assert partitions_def.day_offset == 12
     assert partitions_def == MonthlyPartitionsDefinition(
         start_date="2021-05-01", minute_offset=15, hour_offset=3, day_offset=12
     )
@@ -301,3 +306,44 @@ def test_get_partition_keys_in_range(partitions_def, range_start, range_end, par
         partitions_def.get_partition_keys_in_range(PartitionKeyRange(range_start, range_end))
         == partition_keys
     )
+
+
+def test_twice_daily_partitions():
+    partitions_def = TimeWindowPartitionsDefinition(
+        start=pendulum.parse("2021-05-05"),
+        cron_schedule="0 0,11 * * *",
+        fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+    )
+
+    assert [
+        partition.value
+        for partition in partitions_def.get_partitions(datetime.strptime("2021-05-07", DATE_FORMAT))
+    ] == [
+        time_window("2021-05-05T00:00:00", "2021-05-05T11:00:00"),
+        time_window("2021-05-05T11:00:00", "2021-05-06T00:00:00"),
+        time_window("2021-05-06T00:00:00", "2021-05-06T11:00:00"),
+        time_window("2021-05-06T11:00:00", "2021-05-07T00:00:00"),
+    ]
+
+    assert partitions_def.time_window_for_partition_key("2021-05-08-00:00") == time_window(
+        "2021-05-08T00:00:00", "2021-05-08T11:00:00"
+    )
+    assert partitions_def.time_window_for_partition_key("2021-05-08-11:00") == time_window(
+        "2021-05-08T11:00:00", "2021-05-09T00:00:00"
+    )
+
+
+def test_start_not_aligned():
+    partitions_def = TimeWindowPartitionsDefinition(
+        start=pendulum.parse("2021-05-05"),
+        cron_schedule="0 7 * * *",
+        fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+    )
+
+    assert [
+        partition.value
+        for partition in partitions_def.get_partitions(datetime.strptime("2021-05-08", DATE_FORMAT))
+    ] == [
+        time_window("2021-05-05T07:00:00", "2021-05-06T07:00:00"),
+        time_window("2021-05-06T07:00:00", "2021-05-07T07:00:00"),
+    ]
