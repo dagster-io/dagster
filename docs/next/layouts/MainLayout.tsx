@@ -14,7 +14,7 @@ const Layout: React.FC = ({children}) => {
       <div
         style={{
           minHeight: '100vh',
-          backgroundImage: 'url("_next/image?url=/assets/head-texture.jpg&w=3840&q=75")',
+          backgroundImage: 'url("_next/image?url=/assets/head-texture.jpg&w=3840&q=100")',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'top middle',
           backgroundSize: 'fit',
