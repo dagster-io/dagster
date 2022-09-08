@@ -43,7 +43,7 @@ export const AssetEventsTable: React.FC<{
         <tr>
           {hasPartitions && <th style={{minWidth: 100}}>Partition</th>}
           <th style={{minWidth: 150}}>Timestamp</th>
-          <th style={{minWidth: 150}}>Job / Pipeline</th>
+          <th style={{minWidth: 150}}>Job</th>
           <th style={{width: 100}}>Run</th>
         </tr>
       </thead>

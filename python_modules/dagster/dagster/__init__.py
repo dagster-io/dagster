@@ -148,6 +148,7 @@ from dagster._core.definitions.decorators.schedule_decorator import (
 from dagster._core.definitions.decorators.sensor_decorator import (
     asset_sensor as asset_sensor,
     sensor as sensor,
+    multi_asset_sensor as multi_asset_sensor,
 )
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
@@ -297,15 +298,19 @@ from dagster._core.definitions.schedule_definition import (
 from dagster._core.definitions.sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
     DefaultSensorStatus as DefaultSensorStatus,
+    MultiAssetSensorDefinition as MultiAssetSensorDefinition,
+    MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
     build_sensor_context as build_sensor_context,
+    build_multi_asset_sensor_context as build_multi_asset_sensor_context,
 )
 from dagster._core.definitions.source_asset import (
     SourceAsset as SourceAsset,
 )
 from dagster._core.definitions.step_launcher import (
     StepLauncher as StepLauncher,
+    StepRunRef as StepRunRef,
 )
 from dagster._core.definitions.time_window_partition_mapping import (
     TimeWindowPartitionMapping as TimeWindowPartitionMapping,
@@ -427,6 +432,11 @@ from dagster._core.executor.base import (
 from dagster._core.executor.init import (
     InitExecutorContext as InitExecutorContext,
 )
+
+from dagster._core.host_representation.selector import (
+    RepositorySelector as RepositorySelector,
+    JobSelector as JobSelector,
+)
 from dagster._core.instance import (
     DagsterInstance as DagsterInstance,
 )
@@ -436,7 +446,8 @@ from dagster._core.launcher.default_run_launcher import (
 from dagster._core.log_manager import (
     DagsterLogManager as DagsterLogManager,
 )
-from dagster._core.storage.event_log.base import (
+
+from dagster._core.event_api import (
     EventLogRecord as EventLogRecord,
     EventRecordsFilter as EventRecordsFilter,
     RunShardedEventsCursor as RunShardedEventsCursor,
@@ -468,6 +479,7 @@ from dagster._core.storage.memoizable_io_manager import (
 from dagster._core.storage.pipeline_run import (
     DagsterRun as DagsterRun,
     DagsterRunStatus as DagsterRunStatus,
+    RunsFilter as RunsFilter,
 )
 from dagster._core.storage.root_input_manager import (
     RootInputManager as RootInputManager,
@@ -508,6 +520,7 @@ from dagster._loggers import (
 )
 from dagster._core.execution.context.system import (
     DagsterTypeLoaderContext as DagsterTypeLoaderContext,
+    StepExecutionContext as StepExecutionContext,
 )
 from dagster._serdes.serdes import (
     deserialize_value as deserialize_value,
@@ -525,7 +538,8 @@ from dagster._utils.backcompat import (
 from dagster._utils.log import (
     get_dagster_logger as get_dagster_logger,
 )
-from dagster._utils.test import (
+
+from dagster._utils.dagster_type import (
     check_dagster_type as check_dagster_type,
 )
 

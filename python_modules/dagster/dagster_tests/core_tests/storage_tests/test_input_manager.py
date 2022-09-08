@@ -722,23 +722,6 @@ def test_mode_missing_input_manager_execute_solid():
     assert result.success
 
 
-def test_no_root_manager_composite():
-    @solid(input_defs=[InputDefinition("data", dagster_type=str)])
-    def inner_solid(_, data):
-        return data
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Root input manager cannot be set on a composite solid",
-    ):
-
-        @composite_solid(
-            input_defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")]
-        )
-        def _(data):
-            _ = inner_solid(data=data)
-
-
 def test_root_manager_inside_composite():
     @root_input_manager(input_config_schema={"test": str})
     def my_root(context):

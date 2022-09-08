@@ -412,6 +412,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -566,6 +577,10 @@
                     "items": {
                         "$ref": "#/definitions/Volume"
                     }
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "type": "string"
                 }
             },
             "required": [
@@ -866,6 +881,10 @@
                 },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "type": "string"
                 }
             },
             "required": [
@@ -880,6 +899,12 @@
                 "livenessProbe",
                 "startupProbe"
             ]
+        },
+        "Labels": {
+            "title": "Labels",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
         },
         "IngressPathType": {
             "title": "IngressPathType",
@@ -1039,6 +1064,9 @@
                     "title": "Apiversion",
                     "type": "string"
                 },
+                "labels": {
+                    "$ref": "#/definitions/Labels"
+                },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
                 },
@@ -1054,6 +1082,7 @@
             },
             "required": [
                 "enabled",
+                "labels",
                 "annotations",
                 "dagit",
                 "readOnlyDagit",
@@ -1569,12 +1598,6 @@
             ],
             "type": "string"
         },
-        "Labels": {
-            "title": "Labels",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
-        },
         "CeleryWorkerQueue": {
             "title": "CeleryWorkerQueue",
             "type": "object",
@@ -1753,6 +1776,17 @@
                     "anyOf": [
                         {
                             "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "anyOf": [
+                        {
+                            "type": "string"
                         },
                         {
                             "type": "null"
@@ -2372,6 +2406,17 @@
                 },
                 "sensors": {
                     "$ref": "#/definitions/Sensors"
+                },
+                "schedulerName": {
+                    "title": "Schedulername",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

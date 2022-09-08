@@ -2,7 +2,7 @@ import copy
 import datetime
 import warnings
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.partition import (
@@ -25,9 +25,7 @@ from dagster._utils.partitions import (
     create_offset_partition_selector,
 )
 
-from ..graph_definition import GraphDefinition
 from ..mode import DEFAULT_MODE_NAME
-from ..pipeline_definition import PipelineDefinition
 from ..run_request import RunRequest, SkipReason
 from ..schedule_definition import (
     DecoratedScheduleFunction,
@@ -38,6 +36,7 @@ from ..schedule_definition import (
     ScheduleEvaluationContext,
     is_context_provided,
 )
+from ..target import ExecutableDefinition
 from ..utils import validate_tags
 
 if TYPE_CHECKING:
@@ -48,7 +47,7 @@ if TYPE_CHECKING:
 
 
 def schedule(
-    cron_schedule: str,
+    cron_schedule: Union[str, Sequence[str]],
     *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
@@ -58,7 +57,7 @@ def schedule(
     environment_vars: Optional[Dict[str, str]] = None,
     execution_timezone: Optional[str] = None,
     description: Optional[str] = None,
-    job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
+    job: Optional[ExecutableDefinition] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
 ) -> Callable[[RawScheduleEvaluationFunction], ScheduleDefinition]:
     """
@@ -77,8 +76,12 @@ def schedule(
     Returns a :py:class:`~dagster.ScheduleDefinition`.
 
     Args:
-        cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
-            ``'45 23 * * 6'`` for a schedule that runs at 11:45 PM every Saturday.
+        cron_schedule (Union[str, Sequence[str]]): A valid cron string or sequence of cron strings
+            specifying when the schedule will run, e.g., ``'45 23 * * 6'`` for a schedule that runs
+            at 11:45 PM every Saturday. If a sequence is provided, then the schedule will run for
+            the union of all execution times for the provided cron strings, e.g.,
+            ``['45 23 * * 6', '30 9 * * 0]`` for a schedule that runs at 11:45 PM every Saturday and
+            9:30 AM every Sunday.
         name (Optional[str]): The name of the schedule to create.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
@@ -96,8 +99,8 @@ def schedule(
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         description (Optional[str]): A human-readable description of the schedule.
-        job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
-            schedule runs.
+        job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
+            that should execute when this schedule runs.
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
     """

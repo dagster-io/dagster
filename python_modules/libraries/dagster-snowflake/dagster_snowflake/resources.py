@@ -94,7 +94,7 @@ class SnowflakeConnection:
                 conn.commit()
             conn.close()
 
-    def execute_query(self, sql, parameters=None, fetch_results=False):
+    def execute_query(self, sql, parameters=None, fetch_results=False, use_pandas_result=False):
         check.str_param(sql, "sql")
         check.opt_dict_param(parameters, "parameters")
         check.bool_param(fetch_results, "fetch_results")
@@ -108,13 +108,22 @@ class SnowflakeConnection:
                 cursor.execute(sql, parameters)  # pylint: disable=E1101
                 if fetch_results:
                     return cursor.fetchall()  # pylint: disable=E1101
+                if use_pandas_result:
+                    return cursor.fetch_pandas_all()
 
-    def execute_queries(self, sql_queries, parameters=None, fetch_results=False):
+    def execute_queries(
+        self, sql_queries, parameters=None, fetch_results=False, use_pandas_result=False
+    ):
         check.list_param(sql_queries, "sql_queries", of_type=str)
         check.opt_dict_param(parameters, "parameters")
         check.bool_param(fetch_results, "fetch_results")
 
-        results = []
+        if use_pandas_result:
+            import pandas as pd
+
+            results = pd.DataFrame()
+        else:
+            results = []
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
                 for sql in sql_queries:
@@ -123,7 +132,10 @@ class SnowflakeConnection:
                     self.log.info("Executing query: " + sql)
                     cursor.execute(sql, parameters)  # pylint: disable=E1101
                     if fetch_results:
-                        results.append(cursor.fetchall())  # pylint: disable=E1101
+                        if use_pandas_result:
+                            results = results.append(cursor.fetch_pandas_all())
+                        else:
+                            results.append(cursor.fetchall())  # pylint: disable=E1101
 
         return results if fetch_results else None
 

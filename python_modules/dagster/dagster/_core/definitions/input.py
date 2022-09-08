@@ -270,27 +270,25 @@ class InputDefinition:
         check.str_param(input_name, "input_name")
         check.opt_int_param(fan_in_index, "fan_in_index")
 
-        maps_to: Union[FanInInputPointer, InputPointer]
-        if fan_in_index is not None:
-            maps_to = FanInInputPointer(solid_name, input_name, fan_in_index)
-        else:
-            maps_to = InputPointer(solid_name, input_name)
-        return InputMapping(self, maps_to)
+        return InputMapping(
+            graph_input_name=self.name,
+            mapped_node_name=solid_name,
+            mapped_node_input_name=input_name,
+            fan_in_index=fan_in_index,
+            graph_input_description=self.description,
+            dagster_type=self.dagster_type,
+        )
 
     @staticmethod
-    def create_from_inferred(
-        inferred: InferredInputProps, decorator_name: str
-    ) -> "InputDefinition":
+    def create_from_inferred(inferred: InferredInputProps) -> "InputDefinition":
         return InputDefinition(
             name=inferred.name,
-            dagster_type=_checked_inferred_type(inferred, decorator_name),
+            dagster_type=_checked_inferred_type(inferred),
             description=inferred.description,
             default_value=inferred.default_value,
         )
 
-    def combine_with_inferred(
-        self, inferred: InferredInputProps, decorator_name: str
-    ) -> "InputDefinition":
+    def combine_with_inferred(self, inferred: InferredInputProps) -> "InputDefinition":
         """
         Return a new InputDefinition that merges this ones properties with those inferred from type signature.
         This can update: dagster_type, description, and default_value if they are not set.
@@ -303,7 +301,7 @@ class InputDefinition:
 
         dagster_type = self._dagster_type
         if self._type_not_set:
-            dagster_type = _checked_inferred_type(inferred, decorator_name=decorator_name)
+            dagster_type = _checked_inferred_type(inferred)
 
         description = self._description
         if description is None and inferred.description is not None:
@@ -326,7 +324,7 @@ class InputDefinition:
         )
 
 
-def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) -> DagsterType:
+def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
     try:
         if inferred.annotation == inspect.Parameter.empty:
             resolved_type = resolve_dagster_type(None)
@@ -340,16 +338,10 @@ def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) ->
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred.annotation}' from type annotation for argument "
-            f"'{inferred.name}', correct the issue or explicitly set the dagster_type on "
-            "your InputDefinition."
+            f"'{inferred.name}', correct the issue or explicitly set the dagster_type "
+            "via In()."
         ) from e
 
-    if resolved_type.is_nothing:
-        raise DagsterInvalidDefinitionError(
-            f"Input parameter {inferred.name} is annotated with {resolved_type.display_name} "
-            "which is a type that represents passing no data. This type must be used "
-            f"via InputDefinition and no parameter should be included in the {decorator_name} decorated function."
-        )
     return resolved_type
 
 
@@ -376,20 +368,58 @@ class FanInInputPointer(
         )
 
 
-class InputMapping(
-    NamedTuple(
-        "_InputMapping",
-        [("definition", InputDefinition), ("maps_to", Union[InputPointer, FanInInputPointer])],
-    )
-):
-    """Defines an input mapping for a graph."""
+class InputMapping(NamedTuple):
+    """Defines an input mapping for a graph.
 
-    def __new__(cls, definition: InputDefinition, maps_to: Union[InputPointer, FanInInputPointer]):
-        return super(InputMapping, cls).__new__(
-            cls,
-            check.inst_param(definition, "definition", InputDefinition),
-            check.inst_param(maps_to, "maps_to", (InputPointer, FanInInputPointer)),
-        )
+    Args:
+        graph_input_name (str): Name of the input in the graph being mapped from.
+        mapped_node_name (str): Named of the node (op/graph) that the input is being mapped to.
+        mapped_node_input_name (str): Name of the input in the node (op/graph) that is being mapped to.
+        fan_in_index (Optional[int]): The index in to a fanned input, otherwise None.
+        graph_input_description (Optional[str]): A description of the input in the graph being mapped from.
+        dagster_type (Optional[DagsterType]): (Deprecated) The dagster type of the graph's input being mapped from. Users should not use this argument when instantiating the class.
+
+    Examples:
+
+        .. code-block:: python
+
+            from dagster import InputMapping, GraphDefinition, op, graph
+
+            @op
+            def needs_input(x):
+                return x + 1
+
+            # The following two graph definitions are equivalent
+            GraphDefinition(
+                name="the_graph",
+                node_defs=[needs_input],
+                input_mappings=[
+                    InputMapping(
+                        graph_input_name="maps_x", mapped_node_name="needs_input",
+                        mapped_node_input_name="x"
+                    )
+                ]
+            )
+
+            @graph
+            def the_graph(maps_x):
+                needs_input(maps_x)
+    """
+
+    graph_input_name: str
+    mapped_node_name: str
+    mapped_node_input_name: str
+    fan_in_index: Optional[int] = None
+    graph_input_description: Optional[str] = None
+    dagster_type: Optional[DagsterType] = None
+
+    @property
+    def maps_to(self) -> Union[InputPointer, FanInInputPointer]:
+        if self.fan_in_index is not None:
+            return FanInInputPointer(
+                self.mapped_node_name, self.mapped_node_input_name, self.fan_in_index
+            )
+        return InputPointer(self.mapped_node_name, self.mapped_node_input_name)
 
     @property
     def maps_to_fan_in(self) -> bool:
@@ -397,7 +427,16 @@ class InputMapping(
 
     def describe(self) -> str:
         idx = self.maps_to.fan_in_index if isinstance(self.maps_to, FanInInputPointer) else ""
-        return f"{self.definition.name} -> {self.maps_to.solid_name}:{self.maps_to.input_name}{idx}"
+        return (
+            f"{self.graph_input_name} -> {self.maps_to.solid_name}:{self.maps_to.input_name}{idx}"
+        )
+
+    def get_definition(self) -> "InputDefinition":
+        return InputDefinition(
+            name=self.graph_input_name,
+            description=self.graph_input_description,
+            dagster_type=self.dagster_type,
+        )
 
 
 class In(

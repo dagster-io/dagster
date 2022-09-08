@@ -11,8 +11,9 @@ from dagster._core.host_representation.repository_location import (
     GrpcServerRepositoryLocation,
     RepositoryLocation,
 )
-from dagster._core.workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
+from dagster._core.workspace.context import IWorkspace
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
+from dagster._core.workspace.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 

@@ -5,6 +5,7 @@ import styled from 'styled-components/macro';
 
 import {AssetConnectedEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
+import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
 import {ForeignNode} from '../asset-graph/ForeignNode';
 import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
@@ -72,6 +73,14 @@ export const AssetNodeLineageGraph: React.FC<{
         <SVGContainer width={layout.width} height={layout.height}>
           {viewportEl.current && <SVGSaveZoomLevel scale={scale} />}
           <AssetConnectedEdges highlighted={highlighted} edges={layout.edges} />
+
+          {Object.values(layout.groups)
+            .sort((a, b) => a.id.length - b.id.length)
+            .map((group) => (
+              <foreignObject {...group.bounds} key={group.id}>
+                <AssetGroupNode group={group} scale={scale} />
+              </foreignObject>
+            ))}
 
           {Object.values(layout.nodes).map(({id, bounds}) => {
             const graphNode = assetGraphData.nodes[id];

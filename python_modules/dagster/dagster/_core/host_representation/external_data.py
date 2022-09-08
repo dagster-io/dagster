@@ -245,7 +245,7 @@ class ExternalScheduleData(
         "_ExternalScheduleData",
         [
             ("name", str),
-            ("cron_schedule", str),
+            ("cron_schedule", Union[str, Sequence[str]]),
             ("pipeline_name", str),
             ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
@@ -270,10 +270,14 @@ class ExternalScheduleData(
         description=None,
         default_status=None,
     ):
+        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
+        if not isinstance(cron_schedule, str):
+            cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
+
         return super(ExternalScheduleData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            cron_schedule=check.str_param(cron_schedule, "cron_schedule"),
+            cron_schedule=cron_schedule,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
             mode=check.opt_str_param(mode, "mode"),
@@ -464,51 +468,68 @@ class ExternalTimeWindowPartitionsDefinitionData(
     NamedTuple(
         "_ExternalTimeWindowPartitionsDefinitionData",
         [
-            ("schedule_type", ScheduleType),
             ("start", float),
             ("timezone", Optional[str]),
             ("fmt", str),
             ("end_offset", int),
-            ("minute_offset", int),
-            ("hour_offset", int),
+            ("cron_schedule", Optional[str]),
+            # superseded by cron_schedule, but kept around for backcompat
+            ("schedule_type", Optional[ScheduleType]),
+            # superseded by cron_schedule, but kept around for backcompat
+            ("minute_offset", Optional[int]),
+            # superseded by cron_schedule, but kept around for backcompat
+            ("hour_offset", Optional[int]),
+            # superseded by cron_schedule, but kept around for backcompat
             ("day_offset", Optional[int]),
         ],
     ),
 ):
     def __new__(
         cls,
-        schedule_type: ScheduleType,
         start: float,
         timezone: Optional[str],
         fmt: str,
         end_offset: int,
-        minute_offset: int = 0,
-        hour_offset: int = 0,
+        cron_schedule: Optional[str] = None,
+        schedule_type: Optional[ScheduleType] = None,
+        minute_offset: Optional[int] = None,
+        hour_offset: Optional[int] = None,
         day_offset: Optional[int] = None,
     ):
         return super(ExternalTimeWindowPartitionsDefinitionData, cls).__new__(
             cls,
-            schedule_type=check.inst_param(schedule_type, "schedule_type", ScheduleType),
+            schedule_type=check.opt_inst_param(schedule_type, "schedule_type", ScheduleType),
             start=check.float_param(start, "start"),
             timezone=check.opt_str_param(timezone, "timezone"),
             fmt=check.str_param(fmt, "fmt"),
             end_offset=check.int_param(end_offset, "end_offset"),
-            minute_offset=check.int_param(minute_offset, "minute_offset"),
-            hour_offset=check.int_param(hour_offset, "hour_offset"),
+            minute_offset=check.opt_int_param(minute_offset, "minute_offset"),
+            hour_offset=check.opt_int_param(hour_offset, "hour_offset"),
             day_offset=check.opt_int_param(day_offset, "day_offset"),
+            cron_schedule=check.opt_str_param(cron_schedule, "cron_schedule"),
         )
 
     def get_partitions_definition(self):
-        return TimeWindowPartitionsDefinition(
-            self.schedule_type,
-            datetime.fromtimestamp(self.start),
-            self.timezone,
-            self.fmt,
-            self.end_offset,
-            self.minute_offset,
-            self.hour_offset,
-            self.day_offset,
-        )
+        if self.cron_schedule is not None:
+            return TimeWindowPartitionsDefinition(
+                cron_schedule=self.cron_schedule,
+                start=datetime.fromtimestamp(self.start),
+                timezone=self.timezone,
+                fmt=self.fmt,
+                end_offset=self.end_offset,
+            )
+        else:
+            # backcompat case
+            return TimeWindowPartitionsDefinition(
+                schedule_type=self.schedule_type,
+                start=datetime.fromtimestamp(self.start),
+                timezone=self.timezone,
+                fmt=self.fmt,
+                end_offset=self.end_offset,
+                minute_offset=self.minute_offset,
+                hour_offset=self.hour_offset,
+                day_offset=self.day_offset,
+            )
 
 
 @whitelist_for_serdes
@@ -1002,14 +1023,11 @@ def external_time_window_partitions_definition_from_def(
 ) -> ExternalTimeWindowPartitionsDefinitionData:
     check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
     return ExternalTimeWindowPartitionsDefinitionData(
-        schedule_type=partitions_def.schedule_type,
+        cron_schedule=partitions_def.cron_schedule,
         start=partitions_def.start.timestamp(),
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,
-        minute_offset=partitions_def.minute_offset,
-        hour_offset=partitions_def.hour_offset,
-        day_offset=partitions_def.day_offset,
     )
 
 

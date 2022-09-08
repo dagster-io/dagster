@@ -3,7 +3,7 @@ import threading
 import uuid
 from abc import abstractmethod
 from contextlib import AbstractContextManager
-from typing import Generic, NamedTuple, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Generic, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
 
@@ -14,9 +14,11 @@ from dagster._core.host_representation.origin import (
     RepositoryLocationOrigin,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+
+if TYPE_CHECKING:
+    from dagster._grpc.client import DagsterGrpcClient
 
 
 class GrpcServerEndpoint(
@@ -39,7 +41,9 @@ class GrpcServerEndpoint(
             check.opt_str_param(socket, "socket"),
         )
 
-    def create_client(self) -> DagsterGrpcClient:
+    def create_client(self) -> "DagsterGrpcClient":
+        from dagster._grpc.client import DagsterGrpcClient
+
         return DagsterGrpcClient(port=self.port, socket=self.socket, host=self.host)
 
 

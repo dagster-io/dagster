@@ -36,7 +36,7 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import AssetGroup
+    from dagster._core.definitions import AssetGroup, AssetsDefinition
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
     "pipelines",
@@ -451,6 +451,7 @@ class CachingRepositoryData(RepositoryData):
         schedules: Mapping[str, Union[ScheduleDefinition, Resolvable[ScheduleDefinition]]],
         sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
         source_assets_by_key: Mapping[AssetKey, SourceAsset],
+        assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -475,7 +476,11 @@ class CachingRepositoryData(RepositoryData):
             sensors (Mapping[str, Union[SensorDefinition, Callable[[], SensorDefinition]]]):
                 The sensors belonging to a repository.
             source_assets_by_key (Mapping[AssetKey, SourceAsset]): The source assets belonging to a repository.
+            assets_defs_by_key (Mapping[AssetKey, AssetsDefinition]): The assets definitions
+                belonging to a repository.
         """
+        from dagster._core.definitions import AssetsDefinition
+
         check.mapping_param(
             pipelines, "pipelines", key_type=str, value_type=(PipelineDefinition, FunctionType)
         )
@@ -494,6 +499,9 @@ class CachingRepositoryData(RepositoryData):
         )
         check.mapping_param(
             source_assets_by_key, "source_assets_by_key", key_type=AssetKey, value_type=SourceAsset
+        )
+        check.mapping_param(
+            assets_defs_by_key, "assets_defs_by_key", key_type=AssetKey, value_type=AssetsDefinition
         )
 
         self._pipelines = _CacheingDefinitionIndex(
@@ -527,6 +535,7 @@ class CachingRepositoryData(RepositoryData):
             ],
         )
         self._source_assets_by_key = source_assets_by_key
+        self._assets_defs_by_key = assets_defs_by_key
 
         def load_partition_sets_from_pipelines() -> List[PartitionSetDefinition]:
             job_partition_sets = []
@@ -633,7 +642,9 @@ class CachingRepositoryData(RepositoryData):
                     f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
                 )
 
-        return CachingRepositoryData(**repository_definitions, source_assets_by_key={})
+        return CachingRepositoryData(
+            **repository_definitions, source_assets_by_key={}, assets_defs_by_key={}
+        )
 
     @classmethod
     def from_list(
@@ -766,8 +777,12 @@ class CachingRepositoryData(RepositoryData):
                 source_asset.key: source_asset
                 for source_asset in combined_asset_group.source_assets
             }
+            assets_defs_by_key = {
+                key: asset for asset in combined_asset_group.assets for key in asset.keys
+            }
         else:
             source_assets_by_key = {}
+            assets_defs_by_key = {}
 
         for name, sensor_def in sensors.items():
             if sensor_def.has_loadable_targets():
@@ -823,6 +838,7 @@ class CachingRepositoryData(RepositoryData):
             schedules=schedules,
             sensors=sensors,
             source_assets_by_key=source_assets_by_key,
+            assets_defs_by_key=assets_defs_by_key,
         )
 
     def get_pipeline_names(self) -> List[str]:
@@ -1044,6 +1060,9 @@ class CachingRepositoryData(RepositoryData):
 
     def get_source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
         return self._source_assets_by_key
+
+    def get_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        return self._assets_defs_by_key
 
     def _check_solid_defs(self, pipelines: List[PipelineDefinition]) -> None:
         solid_defs = {}
@@ -1271,6 +1290,10 @@ class RepositoryDefinition:
     @property
     def source_assets_by_key(self) -> Dict[AssetKey, SourceAsset]:
         return self._repository_data.get_source_assets_by_key()
+
+    @property
+    def _assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        return self._repository_data.get_assets_defs_by_key()
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.

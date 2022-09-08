@@ -1,10 +1,6 @@
 module.exports = {
-  overrides: [
-    {
-      files: "*.mdx",
-      options: {
-        proseWrap: "never",
-      },
-    },
-  ],
-}
+  bracketSpacing: false,
+  printWidth: 100,
+  singleQuote: true,
+  trailingComma: 'all',
+};

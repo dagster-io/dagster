@@ -4,7 +4,7 @@ from typing import Union
 import pandas
 import pyspark
 
-from dagster import Field, IOManager, MetadataEntry, OutputContext
+from dagster import Field, IOManager, InputContext, OutputContext
 from dagster import _check as check
 from dagster import io_manager
 from dagster._seven.temp_dir import get_system_temp_directory
@@ -40,11 +40,11 @@ class PartitionedParquetIOManager(IOManager):
             obj.write.parquet(path=path, mode="overwrite")
         else:
             raise Exception(f"Outputs of type {type(obj)} not supported.")
-        yield MetadataEntry.int(value=row_count, label="row_count")
-        yield MetadataEntry.path(path=path, label="path")
+
+        context.add_output_metadata({"row_count": row_count, "path": path})
 
     def load_input(self, context) -> Union[pyspark.sql.DataFrame, str]:
-        path = self._get_path(context.upstream_output)
+        path = self._get_path(context)
         if context.dagster_type.typing_type == pyspark.sql.DataFrame:
             # return pyspark dataframe
             return context.resources.pyspark.spark_session.read.parquet(path)
@@ -54,7 +54,7 @@ class PartitionedParquetIOManager(IOManager):
             "for this input either on the argument of the @asset-decorated function."
         )
 
-    def _get_path(self, context: OutputContext):
+    def _get_path(self, context: Union[InputContext, OutputContext]):
         key = context.asset_key.path[-1]  # type: ignore
 
         if context.has_asset_partitions:

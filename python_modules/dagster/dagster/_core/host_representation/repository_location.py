@@ -54,7 +54,6 @@ from dagster._grpc.types import GetCurrentImageResult
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils import merge_dicts
-from dagster._utils.hosted_user_process import external_repo_from_def
 
 from .selector import PipelineSelector
 
@@ -268,6 +267,7 @@ class RepositoryLocation(AbstractContextManager):
 class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, origin: InProcessRepositoryLocationOrigin):
         from dagster._grpc.server import LoadedRepositories
+        from dagster._utils.hosted_user_process import external_repo_from_def
 
         self._origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
 
@@ -322,8 +322,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
         return self._repository_code_pointer_dict
 
-    def get_reconstructable_pipeline(self, name: str) -> ReconstructablePipeline:
-        return self._recon_repos[name].get_reconstructable_pipeline(name)
+    def get_reconstructable_pipeline(
+        self, repository_name: str, name: str
+    ) -> ReconstructablePipeline:
+        return self._recon_repos[repository_name].get_reconstructable_pipeline(name)
 
     def get_repository(self, name: str) -> ExternalRepository:
         return self._repositories[name]
@@ -348,7 +350,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         from dagster._grpc.impl import get_external_pipeline_subset_result
 
         return get_external_pipeline_subset_result(
-            self.get_reconstructable_pipeline(selector.pipeline_name),
+            self.get_reconstructable_pipeline(selector.repository_name, selector.pipeline_name),
             selector.solid_selection,
             selector.asset_selection,
         )
@@ -371,7 +373,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
         execution_plan = create_execution_plan(
             pipeline=self.get_reconstructable_pipeline(
-                external_pipeline.name
+                external_pipeline.repository_handle.repository_name, external_pipeline.name
             ).subset_for_execution_from_existing_pipeline(
                 external_pipeline.solids_to_execute, external_pipeline.asset_selection
             ),

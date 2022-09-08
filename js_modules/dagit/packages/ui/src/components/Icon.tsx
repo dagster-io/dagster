@@ -3,6 +3,7 @@ import styled from 'styled-components/macro';
 
 import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
+import add from '../icon-svgs/add.svg';
 import add_circle from '../icon-svgs/add_circle.svg';
 import alternate_email from '../icon-svgs/alternate_email.svg';
 import arrow_back from '../icon-svgs/arrow_back.svg';
@@ -44,6 +45,7 @@ import expand_more from '../icon-svgs/expand_more.svg';
 import filter_alt from '../icon-svgs/filter_alt.svg';
 import folder from '../icon-svgs/folder.svg';
 import folder_open from '../icon-svgs/folder_open.svg';
+import forum from '../icon-svgs/forum.svg';
 import gantt_flat from '../icon-svgs/gantt_flat.svg';
 import gantt_waterfall from '../icon-svgs/gantt_waterfall.svg';
 import github from '../icon-svgs/github.svg';
@@ -94,6 +96,7 @@ import source from '../icon-svgs/source.svg';
 import speed from '../icon-svgs/speed.svg';
 import splitscreen from '../icon-svgs/splitscreen.svg';
 import star from '../icon-svgs/star.svg';
+import subtract from '../icon-svgs/subtract.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
 import table_view from '../icon-svgs/table_view.svg';
 import tag from '../icon-svgs/tag.svg';
@@ -172,6 +175,7 @@ export const Icons = {
   graph_neighbors,
 
   // Material icons
+  add,
   add_circle,
   account_circle,
   account_tree,
@@ -206,6 +210,7 @@ export const Icons = {
   expand_more,
   filter_alt,
   folder_open,
+  forum,
   info,
   history,
   history_toggle_off,
@@ -231,6 +236,7 @@ export const Icons = {
   settings_backup_restore,
   sort_by_alpha,
   source,
+  subtract,
   speed,
   splitscreen,
   star,

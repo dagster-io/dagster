@@ -1,8 +1,9 @@
 from enum import Enum
-from typing import Any, Mapping, NamedTuple, Optional
+from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
+from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster._serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -46,6 +47,7 @@ class RunRequest(
             ("run_config", PublicAttr[Mapping[str, Any]]),
             ("tags", PublicAttr[Mapping[str, str]]),
             ("job_name", PublicAttr[Optional[str]]),
+            ("asset_selection", PublicAttr[Optional[Sequence[AssetKey]]]),
         ],
     )
 ):
@@ -54,7 +56,7 @@ class RunRequest(
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
     Attributes:
-        run_key (str | None): A string key to identify this launched run. For sensors, ensures that
+        run_key (Optional[str]): A string key to identify this launched run. For sensors, ensures that
             only one run is created per run key across all sensor evaluations.  For schedules,
             ensures that one run is created per tick, across failure recoveries. Passing in a `None`
             value means that a run will always be launched per evaluation.
@@ -64,6 +66,8 @@ class RunRequest(
             to the launched run.
         job_name (Optional[str]): (Experimental) The name of the job this run request will launch.
             Required for sensors that target multiple jobs.
+        asset_selection (Optional[Sequence[AssetKey]]): A sequence of AssetKeys that should be
+            launched with this run.
     """
 
     def __new__(
@@ -72,6 +76,7 @@ class RunRequest(
         run_config: Optional[Mapping[str, Any]] = None,
         tags: Optional[Mapping[str, str]] = None,
         job_name: Optional[str] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
         return super(RunRequest, cls).__new__(
             cls,
@@ -79,6 +84,9 @@ class RunRequest(
             run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
             job_name=check.opt_str_param(job_name, "job_name"),
+            asset_selection=check.opt_nullable_sequence_param(
+                asset_selection, "asset_selection", of_type=AssetKey
+            ),
         )
 
 

@@ -8,7 +8,7 @@ import time
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import List
+from typing import List, Tuple
 
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
@@ -22,6 +22,8 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetOut,
+    AssetSelection,
     AssetsDefinition,
     Bool,
     DagsterInstance,
@@ -60,9 +62,11 @@ from dagster import (
     asset,
     dagster_type_loader,
     dagster_type_materializer,
+    define_asset_job,
     graph,
     job,
     logger,
+    multi_asset,
     op,
     repository,
     resource,
@@ -1690,6 +1694,21 @@ def ungrouped_asset_5():
     return 1
 
 
+@multi_asset(outs={"int_asset": AssetOut(), "str_asset": AssetOut()})
+def typed_multi_asset() -> Tuple[int, str]:
+    return (1, "yay")
+
+
+@asset
+def typed_asset(int_asset) -> int:
+    return int_asset
+
+
+@asset
+def untyped_asset(typed_asset):
+    return typed_asset
+
+
 # For now the only way to add assets to repositories is via AssetGroup
 # When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
 named_groups_job = AssetGroup(
@@ -1770,9 +1789,27 @@ def define_pipelines():
     ]
 
 
+def define_asset_jobs():
+    return [
+        untyped_asset,
+        typed_asset,
+        typed_multi_asset,
+        define_asset_job(
+            "typed_assets",
+            AssetSelection.assets(typed_multi_asset, typed_asset, untyped_asset),
+        ),
+    ]
+
+
 @repository
 def test_repo():
-    return define_pipelines() + define_schedules() + define_sensors() + define_partitions()
+    return (
+        define_pipelines()
+        + define_schedules()
+        + define_sensors()
+        + define_partitions()
+        + define_asset_jobs()
+    )
 
 
 @repository

@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 
 
 def get_description() -> str:
-    readme_path = Path(__file__).parent.parent.parent / "README.md"
+    readme_path = Path(__file__).parent / "README.md"
 
     if not readme_path.exists():
         return """
@@ -45,15 +45,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_tests*"]),
-        package_data={
-            "dagster": [
-                "dagster/core/storage/event_log/sqlite/alembic/*",
-                "dagster/core/storage/runs/sqlite/alembic/*",
-                "dagster/core/storage/schedules/sqlite/alembic/*",
-                "dagster/_generate/templates/*",
-                "dagster/grpc/protos/*",
-            ]
-        },
         include_package_data=True,
         install_requires=[
             # cli
@@ -67,7 +58,9 @@ if __name__ == "__main__":
             # alembic 1.7.0 is a breaking change
             "alembic>=1.2.1,!=1.6.3,<1.7.0",
             "croniter>=0.3.34",
-            "grpcio>=1.32.0",  # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
+            # grpcio 1.48.1 has hanging/crashing issues: https://github.com/grpc/grpc/issues/30843
+            # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
+            "grpcio>=1.32.0,<1.48.1",
             "grpcio-health-checking>=1.32.0,<1.44.0",
             "packaging>=20.9",
             "pendulum",

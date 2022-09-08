@@ -212,10 +212,9 @@ class GraphDefinition(NodeDefinition):
             class_name=type(self).__name__,
         )
         # Sequence[OutputMapping]
-        self._output_mappings = _validate_out_mappings(
+        self._output_mappings, output_defs = _validate_out_mappings(
             check.opt_list_param(output_mappings, "output_mappings"),
             self._node_dict,
-            self._dependency_structure,
             name,
             class_name=type(self).__name__,
         )
@@ -226,7 +225,7 @@ class GraphDefinition(NodeDefinition):
             name=name,
             description=description,
             input_defs=input_defs,
-            output_defs=[output_mapping.definition for output_mapping in self._output_mappings],
+            output_defs=output_defs,
             tags=tags,
             **kwargs,
         )
@@ -271,7 +270,7 @@ class GraphDefinition(NodeDefinition):
                     )
                 else:
                     mapped_input = node.container_mapped_input(input_def.name)
-                    unresolveable_input_defs.append(mapped_input.definition)
+                    unresolveable_input_defs.append(mapped_input.get_definition())
         return unresolveable_input_defs
 
     @property
@@ -382,7 +381,7 @@ class GraphDefinition(NodeDefinition):
 
         check.str_param(input_name, "input_name")
         for mapping in self._input_mappings:
-            if mapping.definition.name == input_name:
+            if mapping.graph_input_name == input_name:
                 return mapping
         check.failed(f"Could not find input mapping {input_name}")
 
@@ -399,7 +398,7 @@ class GraphDefinition(NodeDefinition):
     def get_output_mapping(self, output_name: str) -> OutputMapping:
         check.str_param(output_name, "output_name")
         for mapping in self._output_mappings:
-            if mapping.definition.name == output_name:
+            if mapping.graph_output_name == output_name:
                 return mapping
         check.failed(f"Could not find output mapping {output_name}")
 
@@ -820,21 +819,12 @@ def _validate_in_mappings(
             else:
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' received unexpected type '{type}' in input_mappings. "
-                    "Provide an OutputMapping using InputDefinition(...).mapping_to(...)".format(
+                    "Provide an InputMapping using InputMapping(...)".format(
                         type=type(mapping), name=name, class_name=class_name
                     )
                 )
 
-        if input_def_dict.get(mapping.definition.name):
-            if input_def_dict[mapping.definition.name] != mapping.definition:
-                raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' multiple input mappings with same "
-                    "definition name but different definitions".format(
-                        name=name, class_name=class_name
-                    ),
-                )
-        else:
-            input_def_dict[mapping.definition.name] = mapping.definition
+        input_def_dict[mapping.graph_input_name] = mapping.get_definition()
 
         target_solid = solid_dict.get(mapping.maps_to.solid_name)
         if target_solid is None:
@@ -873,8 +863,6 @@ def _validate_in_mappings(
                     f"the MultiDependencyDefinition is not a MappedInputPlaceholder"
                 )
             mapping_keys.add(f"{maps_to.solid_name}.{maps_to.input_name}.{maps_to.fan_in_index}")
-            target_type = target_input.dagster_type.get_inner_type_for_fan_in()
-            fan_in_msg = " (index {} of fan-in)".format(maps_to.fan_in_index)
         else:
             if dependency_structure.has_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
@@ -887,27 +875,6 @@ def _validate_in_mappings(
 
             mapping_keys.add(
                 "{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}".format(mapping=mapping)
-            )
-            target_type = target_input.dagster_type
-            fan_in_msg = ""
-
-        if (
-            # no need to check mapping type for graphs because users can't specify ins/out type on graphs
-            class_name not in (GraphDefinition.__name__, SubselectedGraphDefinition.__name__)
-            and target_type != mapping.definition.dagster_type
-        ):
-            raise DagsterInvalidDefinitionError(
-                "In {class_name} '{name}' input "
-                "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} maps to "
-                "{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}{fan_in_msg} of different type "
-                "{target_type.display_name}. InputMapping source and "
-                "destination must have the same type.".format(
-                    mapping=mapping,
-                    name=name,
-                    target_type=target_type,
-                    class_name=class_name,
-                    fan_in_msg=fan_in_msg,
-                )
             )
 
     for input_handle in dependency_structure.input_handles():
@@ -933,10 +900,10 @@ def _validate_in_mappings(
 def _validate_out_mappings(
     output_mappings: Sequence[OutputMapping],
     solid_dict: Mapping[str, Node],
-    dependency_structure: DependencyStructure,
     name: str,
     class_name: str,
-) -> Sequence[OutputMapping]:
+) -> Tuple[Sequence[OutputMapping], Sequence[OutputDefinition]]:
+    output_defs = []
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):
 
@@ -960,15 +927,18 @@ def _validate_out_mappings(
                 )
 
             target_output = target_solid.output_def_named(mapping.maps_from.output_name)
+            output_def = mapping.get_definition(is_dynamic=target_output.is_dynamic)
+            output_defs.append(output_def)
 
             if (
-                mapping.definition.dagster_type.kind != DagsterTypeKind.ANY
-                and (target_output.dagster_type != mapping.definition.dagster_type)
+                mapping.dagster_type
+                and mapping.dagster_type.kind != DagsterTypeKind.ANY
+                and (target_output.dagster_type != mapping.dagster_type)
                 and class_name != "GraphDefinition"
             ):
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' output "
-                    "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} "
+                    "'{mapping.graph_output_name}' of type {mapping.dagster_type.display_name} "
                     "maps from {mapping.maps_from.solid_name}.{mapping.maps_from.output_name} of different type "
                     "{target_output.dagster_type.display_name}. OutputMapping source "
                     "and destination must have the same type.".format(
@@ -977,23 +947,6 @@ def _validate_out_mappings(
                         name=name,
                         target_output=target_output,
                     )
-                )
-
-            if target_output.is_dynamic and not mapping.definition.is_dynamic:
-                raise DagsterInvalidDefinitionError(
-                    f'In {class_name} "{name}" can not map from {target_output.__class__.__name__} '
-                    f'"{target_output.name}" to {mapping.definition.__class__.__name__} '
-                    f'"{mapping.definition.name}". Definition types must align.'
-                )
-
-            dynamic_handle = dependency_structure.get_upstream_dynamic_handle_for_solid(
-                target_solid.name
-            )
-            if dynamic_handle and not mapping.definition.is_dynamic:
-                raise DagsterInvalidDefinitionError(
-                    f'In {class_name} "{name}" output "{mapping.definition.name}" mapping from '
-                    f"{target_solid.describe_node()} must be a DynamicOutputDefinition since it is "
-                    f'downstream of dynamic output "{dynamic_handle.describe()}".'
                 )
 
         elif isinstance(mapping, OutputDefinition):
@@ -1009,4 +962,4 @@ def _validate_out_mappings(
                     type=type(mapping)
                 )
             )
-    return output_mappings
+    return output_mappings, output_defs

@@ -13,7 +13,7 @@ import pendulum
 from dagster import DagsterInstance
 from dagster import _check as check
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
-from dagster._core.workspace import IWorkspace
+from dagster._core.workspace.context import IWorkspace
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._daemon.monitoring import execute_monitoring_iteration
 from dagster._daemon.sensor import execute_sensor_iteration_loop

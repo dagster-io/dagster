@@ -1,4 +1,5 @@
 import os
+import pickle
 import warnings
 from tempfile import TemporaryDirectory
 
@@ -285,3 +286,51 @@ def test_materialize_provided_resources():
     )
     assert result.success
     assert result.asset_materializations_for_node("the_asset")[0].metadata_entries == []
+
+
+def test_conditional_materialize():
+    should_materialize = True
+
+    @asset(output_required=False)
+    def the_asset():
+        if should_materialize:
+            yield Output(5)
+
+    @asset
+    def downstream(the_asset):
+        if the_asset:
+            return the_asset + 1
+        else:
+            # if we get here then the_asset is None and downstream execution was not halted
+            assert False
+
+    # Verify that result of materialize was persisted
+    with TemporaryDirectory() as temp_dir:
+        with instance_for_test(temp_dir=temp_dir) as instance:
+            result = materialize([the_asset, downstream], instance=instance)
+            assert result.success
+
+            assert result.asset_materializations_for_node("the_asset")[0].metadata_entries[
+                0
+            ].value == MetadataValue.path(os.path.join(temp_dir, "storage", "the_asset"))
+            with open(os.path.join(temp_dir, "storage", "the_asset"), "rb") as f:
+                assert pickle.load(f) == 5
+
+            assert result.asset_materializations_for_node("downstream")[0].metadata_entries[
+                0
+            ].value == MetadataValue.path(os.path.join(temp_dir, "storage", "downstream"))
+            with open(os.path.join(temp_dir, "storage", "downstream"), "rb") as f:
+                assert pickle.load(f) == 6
+
+            should_materialize = False
+
+            result = materialize([the_asset, downstream], instance=instance)
+            assert result.success
+
+            assert len(result.asset_materializations_for_node("the_asset")) == 0
+            with open(os.path.join(temp_dir, "storage", "the_asset"), "rb") as f:
+                assert pickle.load(f) == 5
+
+            assert len(result.asset_materializations_for_node("downstream")) == 0
+            with open(os.path.join(temp_dir, "storage", "downstream"), "rb") as f:
+                assert pickle.load(f) == 6

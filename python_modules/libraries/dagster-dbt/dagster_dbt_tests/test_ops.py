@@ -53,6 +53,21 @@ def test_run_op(
     assert len(dbt_results[-1].value.result["results"]) == 4
 
 
+def test_run_op_with_select(
+    dbt_build, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+
+    dbt_resource = dbt_cli_resource.configured(
+        {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir, "select": "least_caloric"}
+    )
+    dbt_results = list(dbt_run_op(build_op_context(resources={"dbt": dbt_resource})))
+
+    # includes asset materializations
+    assert len(dbt_results) == 2
+
+    assert len(dbt_results[-1].value.result["results"]) == 1
+
+
 def test_run_test_job(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument

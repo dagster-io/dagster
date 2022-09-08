@@ -342,7 +342,12 @@ class ScheduleTimeBasedPartitionsDefinition(
         )
 
     def get_cron_schedule(self) -> str:
-        return get_cron_schedule(self.schedule_type, self.execution_time, self.execution_day)
+        return cron_schedule_from_schedule_type_and_offsets(
+            schedule_type=self.schedule_type,
+            minute_offset=self.execution_time.minute,
+            hour_offset=self.execution_time.hour,
+            day_offset=self.execution_day,
+        )
 
     def get_execution_time_to_partition_fn(self) -> Callable[[datetime], datetime]:
         if self.schedule_type is ScheduleType.HOURLY:
@@ -937,21 +942,19 @@ def dynamic_partitioned_config(
     return inner
 
 
-def get_cron_schedule(
+def cron_schedule_from_schedule_type_and_offsets(
     schedule_type: ScheduleType,
-    time_of_day: time = time(0, 0),
-    execution_day: Optional[int] = None,
-) -> str:
-    minute = time_of_day.minute
-    hour = time_of_day.hour
-
+    minute_offset: int,
+    hour_offset: int,
+    day_offset: Optional[int],
+):
     if schedule_type is ScheduleType.HOURLY:
-        return f"{minute} * * * *"
+        return f"{minute_offset} * * * *"
     elif schedule_type is ScheduleType.DAILY:
-        return f"{minute} {hour} * * *"
+        return f"{minute_offset} {hour_offset} * * *"
     elif schedule_type is ScheduleType.WEEKLY:
-        return f"{minute} {hour} * * {execution_day if execution_day != None else 0}"
+        return f"{minute_offset} {hour_offset} * * {day_offset if day_offset != None else 0}"
     elif schedule_type is ScheduleType.MONTHLY:
-        return f"{minute} {hour} {execution_day if execution_day != None else 1} * *"
+        return f"{minute_offset} {hour_offset} {day_offset if day_offset != None else 1} * *"
     else:
         check.assert_never(schedule_type)

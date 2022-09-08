@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import groupBy from 'lodash/groupBy';
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
 import React from 'react';
@@ -8,7 +9,7 @@ import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../types/globalTypes';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
-import {buildGraphData, GraphData, tokenForAssetKey} from './Utils';
+import {buildGraphData, GraphData, toGraphId, tokenForAssetKey} from './Utils';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
@@ -78,7 +79,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // Assemble the response into the data structure used for layout, traversal, etc.
     const assetGraphData = buildGraphData(all.map((n) => n.node));
     if (options.hideEdgesToNodesOutsideQuery) {
-      removeEdgesToHiddenAssets(assetGraphData);
+      removeEdgesToHiddenAssets(assetGraphData, nodes);
     }
 
     return {
@@ -121,10 +122,13 @@ const buildGraphQueryItems = (nodes: AssetNode[]) => {
   return Object.values(items);
 };
 
-const removeEdgesToHiddenAssets = (graphData: GraphData) => {
+const removeEdgesToHiddenAssets = (graphData: GraphData, allNodes: AssetNode[]) => {
+  const allNodesById = groupBy(allNodes, (n) => toGraphId(n.assetKey));
+  const notSourceAsset = (id: string) => !!allNodesById[id];
+
   for (const node of Object.keys(graphData.upstream)) {
     for (const edge of Object.keys(graphData.upstream[node])) {
-      if (!graphData.nodes[edge]) {
+      if (!graphData.nodes[edge] && notSourceAsset(node)) {
         delete graphData.upstream[node][edge];
         delete graphData.downstream[edge][node];
       }
@@ -133,7 +137,7 @@ const removeEdgesToHiddenAssets = (graphData: GraphData) => {
 
   for (const node of Object.keys(graphData.downstream)) {
     for (const edge of Object.keys(graphData.downstream[node])) {
-      if (!graphData.nodes[edge]) {
+      if (!graphData.nodes[edge] && notSourceAsset(node)) {
         delete graphData.upstream[edge][node];
         delete graphData.downstream[node][edge];
       }

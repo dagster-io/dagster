@@ -30,9 +30,9 @@ PIPELINES_OR_ERROR_QUERY = """
 cli_args = [
     # dirname, filename, fn_name, env_yaml, mode, preset, return_code, exception
     (
-        "basics/single_solid_pipeline/",
-        "hello_cereal.py",
-        "hello_cereal_job",
+        "basics/single_op_job/",
+        "hello.py",
+        "file_sizes_job",
         None,
         None,
         None,
@@ -40,8 +40,8 @@ cli_args = [
         None,
     ),
     (
-        "basics/connecting_solids/",
-        "serial_pipeline.py",
+        "basics/connecting_ops/",
+        "serial_job.py",
         "serial",
         None,
         None,
@@ -50,8 +50,8 @@ cli_args = [
         None,
     ),
     (
-        "basics/connecting_solids/",
-        "complex_pipeline.py",
+        "basics/connecting_ops/",
+        "complex_job.py",
         "diamond",
         None,
         None,
@@ -60,7 +60,7 @@ cli_args = [
         None,
     ),
     (
-        "basics/e04_quality/",
+        "basics/testing/",
         "inputs_typed.py",
         "inputs_job",
         None,
@@ -70,7 +70,7 @@ cli_args = [
         None,
     ),
     (
-        "basics/e04_quality/",
+        "basics/testing/",
         "custom_types.py",
         "custom_type_job",
         None,
@@ -80,7 +80,7 @@ cli_args = [
         None,
     ),
     (
-        "basics/e04_quality/",
+        "basics/testing/",
         "custom_types_2.py",
         "custom_type_job",
         None,

@@ -51,6 +51,10 @@ def build_library_packages_steps() -> List[BuildkiteStep]:
     )
 
 
+def build_dagit_screenshot_steps() -> List[BuildkiteStep]:
+    return _build_steps_from_package_specs([PackageSpec("docs/dagit-screenshot", run_pytest=False)])
+
+
 def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
     all_packages = sorted(
@@ -346,6 +350,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "cli_tests",
             "core_tests",
             "core_tests_old_sqlalchemy",
+            "daemon_sensor_tests",
             "daemon_tests",
             "definitions_tests_old_pendulum",
             "general_tests",

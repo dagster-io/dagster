@@ -5,7 +5,7 @@ description: A Dagster job is a set of ops which have data dependencies on each 
 
 # Connecting Ops in Jobs
 
-<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/" />
+<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_ops/" />
 
 Our jobs wouldn't be very interesting if they were limited to single ops. Jobs connect ops into arbitrary [DAGs](https://en.wikipedia.org/wiki/Directed_acyclic_graph) of computation.
 
@@ -23,45 +23,43 @@ Dagster jobs model a _dataflow_ graph. In data pipelines, the reason that a late
 
 We'll expand the job we worked with in the first section of the tutorial into two ops that:
 
-- Download the cereal data and return it as an output.
-- Consume the cereal data produced by the first op and find the cereal with the most sugar.
+- Get the sizes of all the files in our directory.
+- Report the sum of the file sizes. In a more realistic setting, we'd send an email or Slack message. For simplicity, we just emit a log message.
 
-This will allow us to re-run the code that finds the sugariest cereal without re-running the code that downloads the cereal data. If we spot a bug in our sugariness code, or if we decide we want to compute some other statistics about the cereal data, we won't need to re-download the data.
+This will allow us to re-run the code that reports the summed size without re-running the code that crawls the filesystem. If we spot a bug in our reporting code, or if we decide we want to change how we report it, we won't need to re-crawl the filesystem.
 
-```python file=/intro_tutorial/basics/connecting_solids/serial_pipeline.py
-import csv
-
-import requests
+```python file=/intro_tutorial/basics/connecting_ops/serial_job.py
+import os
 
 from dagster import get_dagster_logger, job, op
 
 
 @op
-def download_cereals():
-    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
-    lines = response.text.split("\n")
-    return [row for row in csv.DictReader(lines)]
+def get_file_sizes():
+    files = [f for f in os.listdir(".") if os.path.isfile(f)]
+    return {f: os.path.getsize(f) for f in files}
 
 
 @op
-def find_sugariest(cereals):
-    sorted_by_sugar = sorted(cereals, key=lambda cereal: cereal["sugars"])
-    get_dagster_logger().info(f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal')
+def report_total_size(file_sizes):
+    total_size = sum(file_sizes.values())
+    # In real life, we'd send an email or Slack message instead of just logging:
+    get_dagster_logger().info(f"Total size: {total_size}")
 
 
 @job
 def serial():
-    find_sugariest(download_cereals())
+    report_total_size(get_file_sizes())
 ```
 
-You'll see that we've modified our existing `download_cereals` op to return an output, in this case the data frame representing the cereals dataset.
+You'll see that we've modified our existing `get_file_sizes` op to return an output, in this case a dictionary that maps file names to their sizes.
 
-We've defined our new op, `find_sugariest`, to take a user-defined input, `cereals`.
+We've defined our new op, `report_total_size`, to take an input, `file_sizes`.
 
 We can use inputs and outputs to connect ops to each other. Here we tell Dagster that:
 
-- `download_cereals` doesn't depend on the output of any other op.
-- `find_sugariest` depends on the output of `download_cereals`.
+- `get_file_sizes` doesn't depend on the output of any other op.
+- `report_total_size` depends on the output of `get_file_sizes`.
 
 Let's visualize this job in Dagit:
 
@@ -71,11 +69,13 @@ dagit -f serial_job.py
 
 Navigate to <http://127.0.0.1:3000>:
 
+<!-- ![serial job](/images/tutorial/serial-job.png) -->
+
 <Image
-alt="serial_pipeline_figure_one.png"
-src="/images/tutorial/serial_pipeline_figure_one.png"
-width={1680}
-height={946}
+alt="serial job"
+src="/images/tutorial/serial-job.png"
+width={2662}
+height={1618}
 />
 
 <br />
@@ -86,50 +86,44 @@ height={946}
 
 Ops don't need to be wired together serially. The output of one op can be consumed by any number of other ops, and the outputs of several different ops can be consumed by a single op.
 
-```python file=/intro_tutorial/basics/connecting_solids/complex_pipeline.py
-import csv
-
-import requests
+```python file=/intro_tutorial/basics/connecting_ops/complex_job.py
+import os
 
 from dagster import get_dagster_logger, job, op
 
 
 @op
-def download_cereals():
-    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
-    lines = response.text.split("\n")
-    return [row for row in csv.DictReader(lines)]
+def get_file_sizes():
+    files = [f for f in os.listdir(".") if os.path.isfile(f)]
+    return {f: os.path.getsize(f) for f in files}
 
 
 @op
-def find_highest_calorie_cereal(cereals):
-    sorted_cereals = list(sorted(cereals, key=lambda cereal: cereal["calories"]))
-    return sorted_cereals[-1]["name"]
+def get_total_size(file_sizes):
+    return sum(file_sizes.values())
 
 
 @op
-def find_highest_protein_cereal(cereals):
-    sorted_cereals = list(sorted(cereals, key=lambda cereal: cereal["protein"]))
-    return sorted_cereals[-1]["name"]
+def get_largest_size(file_sizes):
+    return max(file_sizes.values())
 
 
 @op
-def display_results(most_calories, most_protein):
-    logger = get_dagster_logger()
-    logger.info(f"Most caloric cereal: {most_calories}")
-    logger.info(f"Most protein-rich cereal: {most_protein}")
+def report_file_stats(total_size, largest_size):
+    # In real life, we'd send an email or Slack message instead of just logging:
+    get_dagster_logger().info(f"Total size: {total_size}, largest size: {largest_size}")
 
 
 @job
 def diamond():
-    cereals = download_cereals()
-    display_results(
-        most_calories=find_highest_calorie_cereal(cereals),
-        most_protein=find_highest_protein_cereal(cereals),
+    file_sizes = get_file_sizes()
+    report_file_stats(
+        total_size=get_total_size(file_sizes),
+        largest_size=get_largest_size(file_sizes),
     )
 ```
 
-First, we introduce the intermediate variable `cereals` into our job definition to represent the output of the `download_cereals` op. Then we make both `find_highest_calorie_cereal` and `find_highest_protein_cereal` consume this output. Their outputs are in turn both consumed by `display_results`.
+First, we introduce the intermediate variable `file_sizes` into our job definition to represent the output of the `get_file_sizes` op. Then we make both `get_total_size` and `get_largest_size` consume this output. Their outputs are in turn both consumed by `report_file_stats`.
 
 Let's visualize this job in Dagit:
 
@@ -137,11 +131,13 @@ Let's visualize this job in Dagit:
 dagit -f complex_job.py
 ```
 
+<!-- ![complex job](/images/tutorial/complex-job.png) -->
+
 <Image
-alt="complex_pipeline_figure_one.png"
-src="/images/tutorial/complex_pipeline_figure_one.png"
-width={1331}
-height={874}
+alt="complex job"
+src="/images/tutorial/complex-job.png"
+width={2662}
+height={1618}
 />
 
-When you execute this example from Dagit, you'll see that `download_cereals` executes first, followed by `find_highest_calorie_cereal` and `find_highest_protein_cereal` executing in parallel, since they don't depend on each other's outputs. Finally, `display_results` executes last, only after `find_highest_calorie_cereal` and `find_highest_protein_cereal` have both executed (because `display_results` depends on both of their outputs).
+When you execute this example from Dagit, you'll see that `get_file_sizes` executes first, followed by `get_total_size` and `get_largest_size` executing in parallel, since they don't depend on each other's outputs. Finally, `report_file_stats` executes last, only after `get_total_size` and `get_largest_size` have both executed (because `report_file_stats` depends on both of their outputs).

@@ -483,7 +483,7 @@ def create_log_manager(
     )
 
     # The following logic is tightly coupled to the processing of logger config in
-    # python_modules/dagster/dagster/core/system_config/objects.py#config_map_loggers
+    # python_modules/dagster/dagster/_core/system_config/objects.py#config_map_loggers
     # Changes here should be accompanied checked against that function, which applies config mapping
     # via ConfigurableDefinition (@configured) to incoming logger configs. See docstring for more details.
 

@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, NamedTuple, Optional
 
 from dagster import DagsterEvent, DagsterEventType, IntSource, String
@@ -47,7 +48,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         self._dequeue_interval_seconds = check.opt_int_param(
             dequeue_interval_seconds, "dequeue_interval_seconds", 5
         )
-
+        self._logger = logging.getLogger("dagster.run_coordinator.queued_run_coordinator")
         super().__init__()
 
     @property
@@ -118,13 +119,19 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def submit_run(self, context: SubmitRunContext) -> PipelineRun:
         pipeline_run = context.pipeline_run
-        check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
-        enqueued_event = DagsterEvent(
-            event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-            pipeline_name=pipeline_run.pipeline_name,
-        )
-        self._instance.report_dagster_event(enqueued_event, run_id=pipeline_run.run_id)
+        if pipeline_run.status == PipelineRunStatus.NOT_STARTED:
+            enqueued_event = DagsterEvent(
+                event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
+                pipeline_name=pipeline_run.pipeline_name,
+            )
+            self._instance.report_dagster_event(enqueued_event, run_id=pipeline_run.run_id)
+        else:
+            # the run was already submitted, this is a no-op
+            self._logger.warning(
+                f"submit_run called for run {pipeline_run.run_id} with status "
+                f"{pipeline_run.status.value}, skipping enqueue."
+            )
 
         run = self._instance.get_run_by_id(pipeline_run.run_id)
         if run is None:

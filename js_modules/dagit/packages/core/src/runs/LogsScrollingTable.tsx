@@ -293,6 +293,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
         {node.__typename === 'LogMessageEvent' ? (
           <Unstructured
             node={node}
+            metadata={metadata}
             style={{...style, width: this.props.width, ...lastRowStyles}}
             highlighted={textMatch || focusedTimeMatch}
           />

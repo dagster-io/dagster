@@ -218,7 +218,9 @@ class OutputDefinition:
 
         return self._asset_partitions_fn(context)
 
-    def mapping_from(self, solid_name: str, output_name: Optional[str] = None) -> "OutputMapping":
+    def mapping_from(
+        self, solid_name: str, output_name: Optional[str] = None, from_dynamic_mapping: bool = False
+    ) -> "OutputMapping":
         """Create an output mapping from an output of a child solid.
 
         In a CompositeSolidDefinition, you can use this helper function to construct
@@ -234,7 +236,14 @@ class OutputDefinition:
 
                 output_mapping = OutputDefinition(Int).mapping_from('child_solid')
         """
-        return OutputMapping(self, OutputPointer(solid_name, output_name))
+        return OutputMapping(
+            graph_output_name=self.name,
+            mapped_node_name=solid_name,
+            mapped_node_output_name=output_name or DEFAULT_OUTPUT,
+            graph_output_description=self.description,
+            dagster_type=self.dagster_type,
+            from_dynamic_mapping=from_dynamic_mapping or self.is_dynamic,
+        )
 
     @staticmethod
     def create_from_inferred(inferred: Optional[InferredOutputProps]) -> "OutputDefinition":
@@ -280,6 +289,8 @@ def _checked_inferred_type(inferred: Any) -> DagsterType:
         if inferred == inspect.Parameter.empty:
             return resolve_dagster_type(None)
         elif inferred is None:
+            # When inferred.annotation is None, it means someone explicitly put "None" as the
+            # annotation, so want to map it to a DagsterType that checks for the None type
             return resolve_dagster_type(type(None))
         else:
             return resolve_dagster_type(inferred)
@@ -287,7 +298,7 @@ def _checked_inferred_type(inferred: Any) -> DagsterType:
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred}' from return type annotation, correct the issue "
-            "or explicitly set the dagster_type on your OutputDefinition."
+            "or explicitly set the dagster_type via Out()."
         ) from e
 
 
@@ -347,16 +358,64 @@ class OutputPointer(NamedTuple("_OutputPointer", [("solid_name", str), ("output_
         return self.solid_name
 
 
-class OutputMapping(
-    NamedTuple("_OutputMapping", [("definition", OutputDefinition), ("maps_from", OutputPointer)])
-):
-    """Defines an output mapping for a graph."""
+class OutputMapping(NamedTuple):
+    """Defines an output mapping for a graph.
 
-    def __new__(cls, definition: Union[OutputDefinition], maps_from: OutputPointer):
-        return super(OutputMapping, cls).__new__(
-            cls,
-            check.inst_param(definition, "definition", OutputDefinition),
-            check.inst_param(maps_from, "maps_from", OutputPointer),
+    Args:
+        graph_output_name (str): Name of the output in the graph being mapped to.
+        mapped_node_name (str): Named of the node (op/graph) that the output is being mapped from.
+        mapped_node_output_name (str): Name of the output in the node (op/graph) that is being mapped from.
+        graph_output_description (Optional[str]): A description of the output in the graph being mapped from.
+        from_dynamic_mapping (bool): Set to true if the node being mapped to is a mapped dynamic node.
+        dagster_type (Optional[DagsterType]): (Deprecated) The dagster type of the graph's output being mapped to. Users should not use this argument when instantiating the class.
+
+    Examples:
+
+        .. code-block:: python
+
+            from dagster import OutputMapping, GraphDefinition, op, graph, GraphOut
+
+            @op
+            def emit_five(x):
+                return 5
+
+            # The following two graph definitions are equivalent
+            GraphDefinition(
+                name="the_graph",
+                node_defs=[emit_five],
+                output_mappings=[
+                    OutputMapping(
+                        graph_output_name="result", # Default output name
+                        mapped_node_name="emit_five",
+                        mapped_node_output_name="result"
+                    )
+                ]
+            )
+
+            @graph(out=GraphOut())
+            def the_graph:
+                return emit_five()
+    """
+
+    graph_output_name: str
+    mapped_node_name: str
+    mapped_node_output_name: str
+    graph_output_description: Optional[str] = None
+    dagster_type: Optional[DagsterType] = None
+    from_dynamic_mapping: bool = False
+
+    @property
+    def maps_from(self) -> OutputPointer:
+        return OutputPointer(self.mapped_node_name, self.mapped_node_output_name)
+
+    def get_definition(self, is_dynamic: bool) -> "OutputDefinition":
+        check.invariant(not is_dynamic or self.from_dynamic_mapping)
+        is_dynamic = is_dynamic or self.from_dynamic_mapping
+        klass = DynamicOutputDefinition if is_dynamic else OutputDefinition
+        return klass(
+            name=self.graph_output_name,
+            description=self.graph_output_description,
+            dagster_type=self.dagster_type,
         )
 
 

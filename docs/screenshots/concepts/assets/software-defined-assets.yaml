@@ -1,0 +1,11 @@
+- id: catalog.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
+  route: /instance/assets
+
+- id: details.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
+  route: /instance/assets/upstream_asset?view=definition
+
+- id: graph.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
+  route: /instance/asset-graph

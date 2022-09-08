@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
+import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {AssetEvents} from '../assets/AssetEvents';
 import {
   AssetMetadataTable,
@@ -58,6 +59,12 @@ export const SidebarAssetInfo: React.FC<{
   return (
     <>
       <Header assetKey={assetKey} opName={asset.op?.name} />
+
+      <AssetDefinedInMultipleReposNotice
+        assetKey={assetKey}
+        loadedFromRepo={repoAddress}
+        padded={false}
+      />
 
       <AssetEvents
         assetKey={assetKey}

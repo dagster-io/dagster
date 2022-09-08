@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 from slack_sdk.web.client import WebClient
 
@@ -11,6 +11,9 @@ from dagster._core.definitions.run_status_sensor_definition import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.backcompat import deprecation_warning
+
+if TYPE_CHECKING:
+    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
 
 T = TypeVar("T", bound=RunStatusSensorContext)
 
@@ -70,10 +73,26 @@ def make_slack_on_run_failure_sensor(
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     monitored_jobs: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+            ]
+        ]
     ] = None,
     job_selection: Optional[
-        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        List[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+            ]
+        ]
     ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
@@ -90,7 +109,7 @@ def make_slack_on_run_failure_sensor(
             The usage of the `text_fn` changes depending on whether you're using `blocks_fn`. If you
             are using `blocks_fn`, this is used as a fallback string to display in notifications. If
             you aren't, this is the main body text of the message. It can be formatted as plain text,
-            or with mrkdwn.
+            or with markdown.
             See more details in https://api.slack.com/methods/chat.postMessage#text_usage
         blocks_fn (Callable[[RunFailureSensorContext], List[Dict]]): Function which takes in
             the ``RunFailureSensorContext`` and outputs the message blocks you want to send.
@@ -98,11 +117,11 @@ def make_slack_on_run_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "slack_on_run_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed job run.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): The jobs that
-            will be monitored by this failure sensor. Defaults to None, which means the alert will
-            be sent when any job in the repository fails.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
-            The jobs that will be monitored by this failure sensor. Defaults to None, which means the alert will
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): The jobs in the
+            current repository that will be monitored by this failure sensor. Defaults to None, which
+            means the alert will be sent when any job in the repository fails. To monitor jobs in external repositories, use RepositorySelector and JobSelector
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): (deprecated in favor of monitored_jobs)
+            The jobs in the current repository that will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.

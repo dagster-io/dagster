@@ -1,70 +1,38 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Colors,
-  Icon,
-  PageHeader,
-  Spinner,
-  Table,
-  Body,
-  Heading,
-  TextInput,
-  FontFamily,
-} from '@dagster-io/ui';
+import {Box, Colors, Icon, PageHeader, Spinner, Heading, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
-import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {RunStatusPezList} from '../runs/RunStatusPez';
 import {
   failedStatuses,
   inProgressStatuses,
   queuedStatuses,
   successStatuses,
 } from '../runs/RunStatuses';
-import {RunTimelineContainer, TimelineJob, makeJobKey, HourWindow} from '../runs/RunTimeline';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
+import {makeJobKey} from '../runs/useRunsForTimeline';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
-import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {JobMenu} from './JobMenu';
-import {LastRunSummary} from './LastRunSummary';
-import {NextTick, SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
+import {JobItem, JobItemWithRuns, JobTable} from './JobTable';
+import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
 import {RepoFilterButton} from './RepoFilterButton';
+import {RunTimelineSection} from './RunTimelineSection';
 import {
   InstanceOverviewInitialQuery,
   InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules as Schedule,
   InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors as Sensor,
 } from './types/InstanceOverviewInitialQuery';
 import {LastTenRunsPerJobQuery} from './types/LastTenRunsPerJobQuery';
-import {OverviewJobFragment} from './types/OverviewJobFragment';
-
-type JobItem = {
-  job: OverviewJobFragment;
-  repoAddress: RepoAddress;
-  schedules: Schedule[];
-  sensors: Sensor[];
-};
-
-type JobItemWithRuns = JobItem & {
-  runs: RunTimeFragment[];
-};
 
 type State = {
   searchValue: string;
@@ -122,9 +90,9 @@ export const InstanceOverviewPage = () => {
     const queued = [];
     const neverRan = [];
 
-    const sortFn = (a: JobItem, b: JobItem) => {
-      const aRun = a.job.runs[0] || null;
-      const bRun = b.job.runs[0] || null;
+    const sortFn = (a: JobItemWithRuns, b: JobItemWithRuns) => {
+      const aRun = a.runs[0] || null;
+      const bRun = b.runs[0] || null;
 
       if (aRun.startTime) {
         return bRun.startTime ? bRun.startTime - aRun.startTime : -1;
@@ -132,7 +100,7 @@ export const InstanceOverviewPage = () => {
         return -1;
       }
 
-      return a.job.name.toLocaleLowerCase().localeCompare(b.job.name.toLocaleLowerCase());
+      return a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase());
     };
 
     if (data && Object.keys(data).length && data?.workspaceOrError.__typename === 'Workspace') {
@@ -157,11 +125,13 @@ export const InstanceOverviewPage = () => {
 
               if (runs.length) {
                 const {status} = runs[0];
-                const item: JobItem = {
-                  job: pipeline,
+                const item: JobItemWithRuns = {
+                  isJob: pipeline.isJob,
+                  name: pipeline.name,
                   schedules,
                   sensors,
                   repoAddress,
+                  runs,
                 };
                 if (failedStatuses.has(status)) {
                   failed.push(item);
@@ -192,14 +162,14 @@ export const InstanceOverviewPage = () => {
 
   const filteredJobs = React.useMemo(() => {
     const searchToLower = searchValue.toLocaleLowerCase();
-    const filterJobs = ({job, repoAddress}: JobItem) =>
+    const filterJobs = ({name, repoAddress}: JobItem) =>
       visibleRepos.some(
         (r) =>
           r.repository.name === repoAddress.name &&
           r.repositoryLocation.name === repoAddress.location,
       ) &&
-      job.name.toLocaleLowerCase().includes(searchToLower) &&
-      !isHiddenAssetGroupJob(job.name);
+      name.toLocaleLowerCase().includes(searchToLower) &&
+      !isHiddenAssetGroupJob(name);
 
     const {failed, inProgress, queued, succeeded, neverRan} = bucketed;
     return {
@@ -239,16 +209,17 @@ export const InstanceOverviewPage = () => {
     return flattened;
   }, [lastTenRunsData]);
 
-  const filteredJobsFlattened: JobItem[] = React.useMemo(() => {
-    return Object.values(filteredJobs).reduce((accum, jobList) => {
-      return [...accum, ...jobList];
-    }, []);
+  const visibleJobKeys: Set<string> = React.useMemo(() => {
+    const jobKeys = Object.values(filteredJobs)
+      .flat()
+      .map((jobItem) => makeJobKey(jobItem.repoAddress, jobItem.name));
+    return new Set(jobKeys);
   }, [filteredJobs]);
 
   const filteredJobsWithRuns = React.useMemo(() => {
     const appendRuns = (jobItem: JobItem) => {
-      const {job, repoAddress} = jobItem;
-      const jobKey = makeJobKey(repoAddress, job.name);
+      const {name, repoAddress} = jobItem;
+      const jobKey = makeJobKey(repoAddress, name);
       const matchingRuns = lastTenRunsFlattened ? lastTenRunsFlattened[jobKey] || [] : [];
       return {...jobItem, runs: [...matchingRuns].reverse()};
     };
@@ -298,7 +269,7 @@ export const InstanceOverviewPage = () => {
           style={{width: '340px'}}
         />
       </Box>
-      <RunTimelineSection jobs={filteredJobsFlattened} loading={loading} />
+      <RunTimelineSection loading={loading} visibleJobKeys={visibleJobKeys} />
       {inProgress.length ? (
         <JobSection
           icon={<Icon name="hourglass_bottom" color={Colors.Blue500} size={24} />}
@@ -342,87 +313,6 @@ export const InstanceOverviewPage = () => {
   );
 };
 
-const LOOKAHEAD_HOURS = 1;
-const ONE_HOUR = 60 * 60 * 1000;
-
-const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}) => {
-  const [shown, setShown] = React.useState(true);
-  const [hourWindow, setHourWindow] = React.useState<HourWindow>('6');
-  const nowRef = React.useRef(Date.now());
-
-  React.useEffect(() => {
-    if (!loading) {
-      nowRef.current = Date.now();
-    }
-  }, [loading]);
-
-  const nowSecs = Math.floor(nowRef.current / 1000);
-  const range: [number, number] = React.useMemo(() => {
-    return [
-      nowSecs * 1000 - Number(hourWindow) * ONE_HOUR,
-      nowSecs * 1000 + LOOKAHEAD_HOURS * ONE_HOUR,
-    ];
-  }, [hourWindow, nowSecs]);
-
-  const [start, end] = React.useMemo(() => {
-    const [unvalidatedStart, unvalidatedEnd] = range;
-    return unvalidatedEnd < unvalidatedStart
-      ? [unvalidatedEnd, unvalidatedStart]
-      : [unvalidatedStart, unvalidatedEnd];
-  }, [range]);
-
-  const timelineJobs: TimelineJob[] = jobs.map((job) => ({
-    key: makeJobKey(job.repoAddress, job.job.name),
-    jobName: job.job.name,
-    path: workspacePipelinePath({
-      repoName: job.repoAddress.name,
-      repoLocation: job.repoAddress.location,
-      pipelineName: job.job.name,
-      isJob: job.job.isJob,
-    }),
-    runs: [],
-  }));
-
-  return (
-    <>
-      <Box
-        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-        margin={{top: 16}}
-        padding={{bottom: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        <Box flex={{alignItems: 'center', gap: 8}}>
-          <Icon name="waterfall_chart" color={Colors.Gray900} size={20} />
-          <Heading>Timeline</Heading>
-        </Box>
-        <Box flex={{alignItems: 'center', gap: 8}}>
-          {shown ? (
-            <ButtonGroup<HourWindow>
-              activeItems={new Set([hourWindow])}
-              buttons={[
-                {id: '1', label: '1hr'},
-                {id: '6', label: '6hr'},
-                {id: '12', label: '12hr'},
-                {id: '24', label: '24hr'},
-              ]}
-              onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
-            />
-          ) : null}
-          <Button
-            icon={<Icon name={shown ? 'unfold_less' : 'unfold_more'} />}
-            onClick={() => setShown((current) => !current)}
-          >
-            {shown ? 'Hide' : 'Show'}
-          </Button>
-        </Box>
-      </Box>
-      {shown ? (
-        <RunTimelineContainer range={[start, end]} jobs={timelineJobs} hourWindow={hourWindow} />
-      ) : null}
-    </>
-  );
-};
-
 interface JobSectionProps {
   icon: React.ReactNode;
   heading: React.ReactNode;
@@ -441,74 +331,7 @@ const JobSection = (props: JobSectionProps) => {
         {icon}
         <Heading>{heading}</Heading>
       </Box>
-      <Table>
-        <thead>
-          <tr>
-            <th style={{width: '40%'}}>Job</th>
-            <th style={{width: '25%'}}>Trigger</th>
-            <th style={{width: '35%'}}>Latest run</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {jobs.map(({job, repoAddress, runs, schedules, sensors}) => {
-            const jobKey = makeJobKey(repoAddress, job.name);
-            const repoAddressString = repoAddressAsString(repoAddress);
-            return (
-              <tr key={jobKey}>
-                <td>
-                  <Box
-                    flex={{
-                      direction: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <Box flex={{direction: 'column', gap: 4}}>
-                      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                        <PipelineReference
-                          pipelineName={job.name}
-                          isJob={job.isJob}
-                          pipelineHrefContext={repoAddress}
-                        />
-                        {!job.isJob ? <LegacyPipelineTag /> : null}
-                      </Box>
-                      <Body color={Colors.Gray400} style={{fontFamily: FontFamily.monospace}}>
-                        {repoAddressString}
-                      </Body>
-                    </Box>
-                    {runs ? (
-                      <Box margin={{top: 4}}>
-                        <RunStatusPezList fade runs={runs} repoAddress={repoAddressString} />
-                      </Box>
-                    ) : null}
-                  </Box>
-                </td>
-                <td>
-                  {schedules.length || sensors.length ? (
-                    <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
-                      <ScheduleOrSensorTag
-                        schedules={schedules}
-                        sensors={sensors}
-                        repoAddress={repoAddress}
-                      />
-                      {schedules.length ? <NextTick schedules={schedules} /> : null}
-                    </Box>
-                  ) : (
-                    <div style={{color: Colors.Gray500}}>None</div>
-                  )}
-                </td>
-                <td>
-                  <LastRunSummary run={job.runs[0]} />
-                </td>
-                <td>
-                  <JobMenu job={job} repoAddress={repoAddress} />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
+      <JobTable jobs={jobs} />
     </>
   );
 };
@@ -534,7 +357,7 @@ const OVERVIEW_JOB_FRAGMENT = gql`
   ${RUN_TIME_FRAGMENT}
 `;
 
-const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
+export const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
   query InstanceOverviewInitialQuery {
     workspaceOrError {
       ... on Workspace {
@@ -599,7 +422,7 @@ const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const LAST_TEN_RUNS_PER_JOB_QUERY = gql`
+export const LAST_TEN_RUNS_PER_JOB_QUERY = gql`
   query LastTenRunsPerJobQuery {
     workspaceOrError {
       ... on Workspace {

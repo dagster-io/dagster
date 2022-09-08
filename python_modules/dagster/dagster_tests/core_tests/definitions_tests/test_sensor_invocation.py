@@ -3,20 +3,28 @@ from unittest import mock
 import pytest
 
 from dagster import (
+    AssetKey,
+    AssetOut,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
     RunRequest,
     SensorEvaluationContext,
+    asset,
+    build_multi_asset_sensor_context,
     build_run_status_sensor_context,
     build_sensor_context,
     job,
+    materialize,
+    multi_asset,
+    multi_asset_sensor,
     op,
+    repository,
     run_failure_sensor,
     run_status_sensor,
     sensor,
 )
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import SensorExecutionContext
 
@@ -253,3 +261,108 @@ def test_run_failure_w_run_request():
         return RunRequest(run_key=None, run_config={}, tags={})
 
     assert basic_sensor_w_arg(context).run_config == {}
+
+
+def test_multi_asset_sensor():
+    @op
+    def an_op():
+        return 1
+
+    @job
+    def the_job():
+        an_op()
+
+    @asset
+    def asset_a():
+        return 1
+
+    @asset
+    def asset_b():
+        return 1
+
+    @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+    def a_and_b_sensor(context):
+        asset_events = context.latest_materialization_records_by_key()
+        if all(asset_events.values()):
+            context.advance_all_cursors()
+            return RunRequest(run_key=context.cursor, run_config={})
+
+    @repository
+    def my_repo():
+        return [asset_a, asset_b, a_and_b_sensor]
+
+    with instance_for_test() as instance:
+        materialize([asset_a, asset_b], instance=instance)
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+            instance=instance,
+            repository_def=my_repo,
+        )
+        assert list(a_and_b_sensor(ctx))[0].run_config == {}
+
+
+def test_multi_asset_nonexistent_key():
+    @multi_asset_sensor(asset_keys=[AssetKey("nonexistent_key")])
+    def failing_sensor(context):  # pylint: disable=unused-argument
+        pass
+
+    @repository
+    def my_repo():
+        return [failing_sensor]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="No asset with AssetKey",
+    ):
+        list(
+            failing_sensor(build_multi_asset_sensor_context([AssetKey("nonexistent_key")], my_repo))
+        )
+
+
+def test_multi_asset_sensor_selection():
+    @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
+    def two_assets():
+        return 1, 2
+
+    @multi_asset_sensor(asset_keys=[AssetKey("asset_a")])
+    def passing_sensor(context):  # pylint: disable=unused-argument
+        pass
+
+    @repository
+    def my_repo():
+        return [two_assets, passing_sensor]
+
+
+def test_multi_asset_sensor_has_assets():
+    @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
+    def two_assets():
+        return 1, 2
+
+    @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")])
+    def passing_sensor(context):
+        assert (
+            context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
+                AssetKey("asset_a")
+            ]
+            == two_assets
+        )
+        assert (
+            context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
+                AssetKey("asset_b")
+            ]
+            == two_assets
+        )
+        assert len(context.assets_defs_by_key) == 2
+
+    @repository
+    def my_repo():
+        return [two_assets, passing_sensor]
+
+    assert len(my_repo.get_sensor_def("passing_sensor").asset_keys) == 2
+    with instance_for_test() as instance:
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+            instance=instance,
+            repository_def=my_repo,
+        )
+        list(passing_sensor(ctx))

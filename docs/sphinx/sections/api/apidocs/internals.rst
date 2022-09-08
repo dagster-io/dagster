@@ -99,6 +99,9 @@ Run storage
    :undoc-members:
    :inherited-members:
 
+.. autoclass:: RunsFilter
+
+
 .. currentmodule:: dagster._core.storage.runs
 
 .. autoclass:: RunStorage
@@ -119,7 +122,7 @@ See also: :py:class:`dagster_postgres.PostgresRunStorage` and :py:class:`dagster
 Event log storage
 -----------------
 
-.. currentmodule:: dagster._core.storage.event_log
+.. currentmodule:: dagster
 
 .. autoclass:: EventLogEntry
 
@@ -128,6 +131,8 @@ Event log storage
 .. autoclass:: EventRecordsFilter
 
 .. autoclass:: RunShardedEventsCursor
+
+.. currentmodule:: dagster._core.storage.event_log
 
 .. autoclass:: EventLogStorage
 
@@ -205,3 +210,16 @@ Exception handling
 .. currentmodule:: dagster._core.errors
 
 .. autofunction:: user_code_error_boundary
+
+----
+
+Step Launchers (Experimental)
+-----------------------------
+
+.. currentmodule:: dagster
+
+.. autoclass:: StepLauncher
+
+.. autoclass:: StepRunRef
+
+.. autoclass:: StepExecutionContext

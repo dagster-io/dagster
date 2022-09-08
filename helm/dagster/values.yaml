@@ -132,6 +132,10 @@ dagit:
   podSecurityContext: {}
   securityContext: {}
   resources: {}
+
+  # Override the default K8s scheduler
+  # schedulerName: ~
+
   # If you want to specify resources, uncomment the following lines, adjust them as necessary,
   # and remove the curly braces after 'resources:'.
   # limits:
@@ -335,6 +339,10 @@ dagster-user-deployments:
       podSecurityContext: {}
       securityContext: {}
       resources: {}
+
+      # Override the default K8s scheduler
+      # schedulerName: ~
+
       # Readiness probe detects when the pod is ready to serve requests.
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
       readinessProbe:
@@ -600,6 +608,9 @@ runLauncher:
       #     memory: 128Mi
       resources: {}
 
+      # Override the default K8s scheduler
+      # schedulerName: ~
+
       # If `livenessProbe` does not contain `exec` field, then we will default to using:
       # exec:
       #   command:
@@ -793,6 +804,9 @@ flower:
   podSecurityContext: {}
   securityContext: {}
 
+  # Override the default K8s scheduler
+  # schedulerName: ~
+
   resources: {}
   # If you want to specify resources, uncomment the following lines, adjust them as necessary,
   # and remove the curly braces after 'resources:'.
@@ -829,6 +843,7 @@ ingress:
   enabled: false
 
   annotations: {}
+  labels: {}
 
   # Specify the IngressClass used to implement this ingress.
   #
@@ -1062,6 +1077,9 @@ dagsterDaemon:
   podSecurityContext: {}
   securityContext: {}
   resources: {}
+
+  # Override the default K8s scheduler
+  # schedulerName: ~
 
   # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
   # enable startup probes.

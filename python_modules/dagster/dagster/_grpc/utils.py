@@ -56,7 +56,7 @@ def get_loadable_targets(
         check.failed("invalid")
 
 
-def max_rx_bytes():
+def max_rx_bytes() -> int:
     env_set = os.getenv("DAGSTER_GRPC_MAX_RX_BYTES")
     if env_set:
         return int(env_set)
@@ -65,10 +65,19 @@ def max_rx_bytes():
     return 50 * (10**6)
 
 
-def max_send_bytes():
+def max_send_bytes() -> int:
     env_set = os.getenv("DAGSTER_GRPC_MAX_SEND_BYTES")
     if env_set:
         return int(env_set)
 
     # default 50 MB
     return 50 * (10**6)
+
+
+def default_grpc_timeout() -> int:
+    env_set = os.getenv("DAGSTER_GRPC_TIMEOUT_SECONDS")
+    if env_set:
+        return int(env_set)
+
+    # default 60 seconds
+    return 60

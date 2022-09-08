@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Callable, Mapping, NamedTuple, Optional, Sequence, cast
 
-from graphql.execution.base import ResolveInfo
+from graphene import ResolveInfo
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey

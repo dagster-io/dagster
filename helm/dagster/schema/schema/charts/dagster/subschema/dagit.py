@@ -42,6 +42,7 @@ class Dagit(BaseModel):
     enableReadOnly: bool
     dbStatementTimeout: Optional[int]
     logLevel: Optional[str]
+    schedulerName: Optional[str]
 
     class Config:
         extra = Extra.forbid

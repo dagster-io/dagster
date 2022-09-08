@@ -20,7 +20,7 @@ if __name__ == "__main__":
         version=ver,
         author="Elementl",
         license="Apache-2.0",
-        description="Package for GE-specific Dagster framework solid and resource components.",
+        description="Package for GE-specific Dagster framework op and resource components.",
         # pylint: disable=line-too-long
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ge",
         classifiers=[

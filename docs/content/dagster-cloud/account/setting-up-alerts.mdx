@@ -16,6 +16,8 @@ Alert policies define which jobs will trigger an alert, the conditions under whi
 
 An alert policy includes a set of configured tags. If an alert policy has no configured tags, all jobs will be eligible for that alert. Otherwise, only jobs that contain all the tags for a given alert policy are eligible for that alert.
 
+Alert policies are configured on a per deployment basis. For example, alerts configured in a `prod` deployment are only applicable to jobs in that deployment.
+
 Currently, Slack and email notifications are supported.
 
 ---
@@ -85,14 +87,7 @@ height={153}
 
 ### Enabling and disabling alert policies
 
-To enable or disable an alert, use the toggle on the left side of the alert policy:
-
-<Image
-alt="Enabling and disabling an alert policy in Dagster Cloud"
-src="/images/dagster-cloud/alerts/enable-disable-alert-policy.gif"
-width={822}
-height={158}
-/>
+To enable or disable an alert, use the toggle on the left side of the alert policy.
 
 ### Deleting alert policies
 
@@ -111,22 +106,22 @@ height={153}
 
 With the [`dagster-cloud` CLI](/dagster-cloud/developing-testing/dagster-cloud-cli), you can:
 
-- [Set an instance deployment's policies](#setting-an-instance-deployments-policies)
-- [View an instance deployment's policies](#viewing-an-instance-deployments-policies)
+- [Set a full deployment's policies](#setting-a-full-deployments-policies)
+- [View a full deployment's policies](#viewing-a-full-deployments-policies)
 - [Configure a Slack alert policy](#configuring-a-slack-alert-policy)
 - [Configure an email alert policy](#configuring-an-email-alert-policy)
 
-### Setting an instance deployment's policies
+### Setting a full deployment's policies
 
-A list of alert policies can be defined in a single YAML file. After declaring your policies, set them for your instance deployment using the following command:
+A list of alert policies can be defined in a single YAML file. After declaring your policies, set them for the deployment using the following command:
 
 ```bash
 dagster-cloud deployment alert-policies sync -a <ALERT_POLICIES_PATH>
 ```
 
-### Viewing an instance deployment's policies
+### Viewing a full deployment's policies
 
-List the policies currently configured on your instance deployment by running:
+List the policies currently configured on the deployment by running:
 
 ```bash
 dagster-cloud deployment alert-policies list

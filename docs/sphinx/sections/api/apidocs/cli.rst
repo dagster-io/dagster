@@ -31,6 +31,10 @@ Dagster CLI
    :prog: dagster sensor
    :nested:
 
+.. click:: dagster._cli.project:project_cli
+   :prog: dagster project
+   :nested:
+
 .. currentmodule:: dagster_graphql
 
 .. click:: dagster_graphql.cli:cli
@@ -52,4 +56,3 @@ Dagster CLI
 
 .. click:: dagster._daemon.cli:debug_heartbeat_dump_command
    :prog: dagster-daemon debug heartbeat-dump
-

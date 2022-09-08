@@ -2,6 +2,8 @@ import json
 import textwrap
 from typing import Any, List, Tuple, Type, Union, cast
 
+from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
+
 import dagster._check as check
 from dagster import BoolSource, Field, IntSource, StringSource
 from dagster._annotations import is_public
@@ -16,7 +18,6 @@ from dagster._config.config_type import (
 )
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._serdes import ConfigurableClass
-from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
 
 
 def type_repr(config_type: ConfigType) -> str:
@@ -116,10 +117,16 @@ class ConfigurableDocumenter(DataDocumenter):
     directivetype = "data"
 
     @classmethod
-    def can_document_member(cls, member: Any, _membername: str, _isattr: bool, _parent: Any) -> bool:
-        return isinstance(member, ConfigurableDefinition) or isinstance(member, type) and issubclass(member, ConfigurableClass)
+    def can_document_member(
+        cls, member: Any, _membername: str, _isattr: bool, _parent: Any
+    ) -> bool:
+        return (
+            isinstance(member, ConfigurableDefinition)
+            or isinstance(member, type)
+            and issubclass(member, ConfigurableClass)
+        )
 
-    def add_content(self, more_content, no_docstring: bool = False) -> None:
+    def add_content(self, more_content) -> None:
         source_name = self.get_sourcename()
         self.add_line("", source_name)
         # explicit visual linebreak
@@ -138,11 +145,12 @@ class ConfigurableDocumenter(DataDocumenter):
 
         self.add_line("", source_name)
         # do this call at the bottom so that config schema is first thing in documentation
-        super().add_content(more_content, no_docstring)
+        super().add_content(more_content)
 
 
 class DagsterClassDocumenter(ClassDocumenter):
     """Overrides the default autodoc ClassDocumenter to adds some extra options."""
+
     objtype = "class"
 
     option_spec = ClassDocumenter.option_spec.copy()
@@ -151,12 +159,20 @@ class DagsterClassDocumenter(ClassDocumenter):
     def add_content(self, *args, **kwargs):
         super().add_content(*args, **kwargs)
         source_name = self.get_sourcename()
-        for alias in self.options.get('deprecated_aliases', []):
+        for alias in self.options.get("deprecated_aliases", []):
             self.add_line(f"ALIAS: {alias}", source_name)
 
     def get_object_members(self, want_all: bool) -> Tuple[bool, ObjectMembers]:
         _, unfiltered_members = super().get_object_members(want_all)
-        return False, [m for m in unfiltered_members if is_public(m[1])]
+        # Use form `is_public(self.object, attr_name) if possible, because to access a descriptor
+        # object (returned by e.g. `@staticmethod`) you need to go in through
+        # `self.object.__dict__`-- the value provided in the member list is _not_ the descriptor!
+        return False, [
+            m
+            for m in unfiltered_members
+            if (m[0] in self.object.__dict__ and is_public(self.object, m[0]) or is_public(m[1]))
+        ]
+
 
 def setup(app):
     app.setup_extension("sphinx.ext.autodoc")  # Require autodoc extension

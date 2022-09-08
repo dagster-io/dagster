@@ -163,7 +163,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       }
     }
     for (const group of Object.values(groups)) {
-      group.bounds = padBounds(group.bounds, {x: 15, y: 30});
+      group.bounds = padBounds(group.bounds, {x: 15, top: 30, bottom: 15});
     }
   }
 
@@ -203,12 +203,12 @@ export const getForeignNodeDimensions = (id: string) => {
   return {width: displayNameForAssetKey({path}).length * 8 + 30, height: 30};
 };
 
-export const padBounds = (a: IBounds, padding: {x: number; y: number}) => {
+export const padBounds = (a: IBounds, padding: {x: number; top: number; bottom: number}) => {
   return {
     x: a.x - padding.x,
-    y: a.y - padding.y,
+    y: a.y - padding.top,
     width: a.width + padding.x * 2,
-    height: a.height + padding.y * 2,
+    height: a.height + padding.top + padding.bottom,
   };
 };
 
@@ -237,7 +237,7 @@ export const getAssetNodeDimensions = (def: {
   graphName: string | null;
   description?: string | null;
 }) => {
-  let height = 82;
+  let height = 100;
   if (def.description) {
     height += 25;
   }

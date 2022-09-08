@@ -34,3 +34,14 @@ def test_valid_handler_instance_yaml():
     )
     instance = DagsterInstance.from_ref(ref)
     assert len(instance.get_handlers()) == 2
+
+
+def test_valid_file_instance_yaml():
+    ref = InstanceRef.from_dir(
+        base_dir=file_relative_path(
+            __file__, "../../../docs_snippets/concepts/logging"
+        ),
+        config_filename="python_logging_file_output_config.yaml",
+    )
+    instance = DagsterInstance.from_ref(ref)
+    assert len(instance.get_handlers()) == 2

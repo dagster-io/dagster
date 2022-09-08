@@ -128,7 +128,7 @@ def build_output_mapping_snap(output_mapping: OutputMapping) -> OutputMappingSna
     return OutputMappingSnap(
         mapped_solid_name=output_mapping.maps_from.solid_name,
         mapped_output_name=output_mapping.maps_from.output_name,
-        external_output_name=output_mapping.definition.name,
+        external_output_name=output_mapping.graph_output_name,
     )
 
 
@@ -156,7 +156,7 @@ def build_input_mapping_snap(input_mapping: InputMapping) -> InputMappingSnap:
     return InputMappingSnap(
         mapped_solid_name=input_mapping.maps_to.solid_name,
         mapped_input_name=input_mapping.maps_to.input_name,
-        external_input_name=input_mapping.definition.name,
+        external_input_name=input_mapping.graph_input_name,
     )
 
 
@@ -254,20 +254,6 @@ class CompositeSolidDefSnap(
                 config_field_snap,
             ),
         )
-
-    def get_input_mapping_snap(self, name: str) -> InputMappingSnap:
-        check.str_param(name, "name")
-        for input_mapping_snap in self.input_mapping_snaps:
-            if input_mapping_snap.external_input_name == name:
-                return input_mapping_snap
-        check.failed("Could not find input mapping snap named " + name)
-
-    def get_output_mapping_snap(self, name: str) -> OutputMappingSnap:
-        check.str_param(name, "name")
-        for output_mapping_snap in self.output_mapping_snaps:
-            if output_mapping_snap.external_output_name == name:
-                return output_mapping_snap
-        check.failed("Could not find output mapping snap named " + name)
 
     def get_input_snap(self, name: str) -> InputDefSnap:
         return _get_input_snap(self, name)

@@ -17,6 +17,7 @@ _INFRASTRUCTURE_PACKAGES = [
     ".buildkite/dagster-buildkite",
     "python_modules/automation",
     "python_modules/dagster-test",
+    "python_modules/docs/dagit-screenshot",
     "scripts",
 ]
 

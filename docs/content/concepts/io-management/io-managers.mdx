@@ -7,12 +7,14 @@ description: IO Managers determine how to store asset/op outputs and load asset/
 
 IO Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
 
-<Image
-alt="IO Manager Diagram"
-src="/images/io-managers.png"
-width={3200}
-height={1040}
-/>
+<center>
+  <Image
+    alt="Diagram of assets and ops with an I/O manager"
+    src="/images/concepts/io-managers.png"
+    width={683}
+    height={410}
+  />
+</center>
 
 ## Relevant APIs
 
@@ -38,20 +40,25 @@ that are responsible for storing the output of an asset or op and loading it as 
 to downstream assets or ops. For example, an IO Manager might store and load objects
 from files on a filesystem.
 
+For assets, each asset can have its own IO manager. In the [multi-asset](/concepts/assets/multi-assets) case where multiple assets are outputted, each outputted asset can be handled with a different IO manager:
+
+<center>
+  <Image
+    alt="Multi-asset with each outputted asset being handled by a different I/O
+  manager"
+    src="/images/concepts/multi-asset-io-manager.png"
+    width={623}
+    height={410}
+  />
+</center>
+
 For ops, each op output can have its own IO manager, or multiple op outputs can share an IO manager. The IO manager that's used for handling a particular op output is automatically used for loading it in downstream ops.
 
-<Image
-alt="two-io-managers"
-src="/images/concepts/two-io-managers.png"
-width={3200}
-height={1040}
-/>
+Consider the following diagram. In this example, a job has two IO managers, each of which is shared across a few inputs and outputs:
 
-<!-- https://excalidraw.com/#json=4546514944786432,52cpcHHoWfzOMro2eFC6MQ -->
-
-This diagram shows a job with two IO managers, each of which is shared across a few inputs and outputs.
-
-For assets, each asset can have its own IO manager. In the [multi-asset](/concepts/assets/multi-assets) case where multiple assets are outputted, each outputted asset can be handled with a different IO manager.
+<center>
+  <Image src="/images/concepts/two-io-managers.png" width={643} height={382} />
+</center>
 
 The default IO manager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values in the filesystem while pickling. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default IO manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
 
@@ -544,14 +551,14 @@ class PandasAssetIOManager(IOManager):
         file_path = self._get_path(context)
         store_pandas_dataframe(name=file_path, table=obj)
 
-    def _get_path(self, output_context):
+    def _get_path(self, context):
         return os.path.join(
             "storage",
-            f"{output_context.name}.csv",
+            f"{context.asset_key.path[-1]}.csv",
         )
 
     def load_input(self, context):
-        file_path = self._get_path(context.upstream_output)
+        file_path = self._get_path(context)
         return load_pandas_dataframe(name=file_path)
 
 
@@ -562,7 +569,7 @@ def pandas_asset_io_manager():
 
 class NumpyAssetIOManager(PandasAssetIOManager):
     def load_input(self, context):
-        file_path = self._get_path(context.upstream_output)
+        file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
 
 
@@ -637,9 +644,9 @@ def test_my_io_manager_load_input():
     assert manager.load_input(context) == 5
 ```
 
-## Yielding metadata from an IO Manager <Experimental />
+## Recording metadata from an IO Manager <Experimental />
 
-Sometimes, you may want to record some metadata while handling an output in an IO manager. To do this, you can optionally yield <PyObject object="MetadataEntry"/> objects from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
+Sometimes, you may want to record some metadata while handling an output in an IO manager. To do this, you can invoke <PyObject object="OutputContext" method="add_output_metadata"/> from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_metadata_marker endbefore=end_metadata_marker
 class DataframeTableIOManagerWithMetadata(IOManager):
@@ -647,9 +654,7 @@ class DataframeTableIOManagerWithMetadata(IOManager):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
-        # attach these to the Handled Output event
-        yield MetadataEntry.int(len(obj), label="number of rows")
-        yield MetadataEntry.text(table_name, label="table name")
+        context.add_output_metadata({"num_rows": len(obj), "table_name": table_name})
 
     def load_input(self, context):
         table_name = context.upstream_output.name
@@ -658,7 +663,7 @@ class DataframeTableIOManagerWithMetadata(IOManager):
 
 Any entries yielded this way will be attached to the `Handled Output` event for this output.
 
-Additionally, if you have specified that this `handle_output` function will be writing to an asset by defining a `get_output_asset_key` function, these metadata entries will also be attached to the materialization event created for that asset. You can learn more about this functionality in the [Asset Docs](/concepts/assets/asset-materializations).
+Additionally, if the handled output is part of a software-defined asset, these metadata entries will also be attached to the materialization event created for that asset and show up on the Asset Details page for the asset.
 
 ## See it in action
 

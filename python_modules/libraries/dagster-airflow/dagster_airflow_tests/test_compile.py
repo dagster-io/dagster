@@ -8,11 +8,11 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 
 def test_compile():
     resolved_run_config = ResolvedRunConfig.build(
-        composition,
+        composition.to_job(),
         {"solids": {"add_four": {"inputs": {"num": {"value": 1}}}}},
     )
 
-    plan = ExecutionPlan.build(InMemoryPipeline(composition), resolved_run_config)
+    plan = ExecutionPlan.build(InMemoryPipeline(composition.to_job()), resolved_run_config)
 
     res = coalesce_execution_steps(plan)
     assert set(res.keys()) == {

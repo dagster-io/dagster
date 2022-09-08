@@ -33,11 +33,11 @@ from .types import (
     PipelineSubsetSnapshotArgs,
     SensorExecutionArgs,
 )
-from .utils import max_rx_bytes, max_send_bytes
+from .utils import default_grpc_timeout, max_rx_bytes, max_send_bytes
 
 CLIENT_HEARTBEAT_INTERVAL = 1
 
-DEFAULT_GRPC_TIMEOUT = 60
+DEFAULT_GRPC_TIMEOUT = default_grpc_timeout()
 
 
 def client_heartbeat_thread(client, shutdown_event):

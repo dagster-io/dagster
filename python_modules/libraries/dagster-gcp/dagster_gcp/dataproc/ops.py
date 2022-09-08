@@ -1,5 +1,4 @@
 from dagster import Bool, Field, Int, op
-from dagster._legacy import solid
 from dagster._seven import json
 
 from .configs import define_dataproc_submit_job_config
@@ -53,7 +52,7 @@ def _dataproc_compute(context):
         context.resources.dataproc.wait_for_job(job_id, wait_timeout=job_timeout)
 
 
-@solid(required_resource_keys={"dataproc"}, config_schema=DATAPROC_CONFIG_SCHEMA)
+@op(required_resource_keys={"dataproc"}, config_schema=DATAPROC_CONFIG_SCHEMA)
 def dataproc_solid(context):
     return _dataproc_compute(context)
 

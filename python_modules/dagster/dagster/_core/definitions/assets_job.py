@@ -231,12 +231,18 @@ def build_node_deps(
 def _has_cycles(deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]) -> bool:
     """Detect if there are cycles in a dependency dictionary."""
     try:
-        node_deps: Dict[Union[str, NodeInvocation], Set[str]] = {}
+        node_deps: Dict[str, Set[str]] = {}
         for upstream_node, downstream_deps in deps.items():
-            node_deps[upstream_node] = set()
+            # handle either NodeInvocation or str
+            node_name = (
+                upstream_node.alias or upstream_node.name
+                if isinstance(upstream_node, NodeInvocation)
+                else upstream_node
+            )
+            node_deps[node_name] = set()
             for dep in downstream_deps.values():
                 if isinstance(dep, DependencyDefinition):
-                    node_deps[upstream_node].add(dep.node)
+                    node_deps[node_name].add(dep.node)
                 else:
                     check.failed(f"Unexpected dependency type {type(dep)}.")
         # make sure that there is a valid topological sorting of these node dependencies
@@ -248,7 +254,8 @@ def _has_cycles(deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefi
 
 
 def _attempt_resolve_cycles(
-    assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
+    assets_defs: Iterable["AssetsDefinition"],
+    source_assets: Iterable["SourceAsset"],
 ) -> Sequence["AssetsDefinition"]:
     """
     DFS starting at root nodes to color the asset dependency graph. Each time you leave your

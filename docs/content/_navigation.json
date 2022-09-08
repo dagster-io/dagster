@@ -39,6 +39,10 @@
             "path": "/tutorial/assets/asset-graph"
           },
           {
+            "title": "Assets without Arguments and Return Values",
+            "path": "/tutorial/assets/non-argument-deps"
+          },
+          {
             "title": "Testing Assets",
             "path": "/tutorial/assets/testing-assets"
           }
@@ -323,7 +327,17 @@
         "children": [
           {
             "title": "Getting started",
-            "path": "/dagster-cloud/getting-started"
+            "path": "/dagster-cloud/getting-started",
+            "children": [
+              {
+                "title": "Serverless Deployment",
+                "path": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment"
+              },
+              {
+                "title": "Hybrid Deployment",
+                "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment"
+              }
+            ]
           },
           {
             "title": "Deployment types",

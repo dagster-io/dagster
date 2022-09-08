@@ -2,6 +2,7 @@
 
 import os
 import sys
+from contextlib import ExitStack
 from typing import Generator, List, Optional
 
 import pendulum
@@ -10,7 +11,11 @@ import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
-from dagster._core.definitions.sensor_definition import SensorEvaluationContext
+from dagster._core.definitions.sensor_definition import (
+    MultiAssetSensorDefinition,
+    MultiAssetSensorEvaluationContext,
+    SensorEvaluationContext,
+)
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
     DagsterRunNotFoundError,
@@ -283,13 +288,31 @@ def get_external_sensor_execution(
     definition = recon_repo.get_definition()
     sensor_def = definition.get_sensor_def(sensor_name)
 
-    with SensorEvaluationContext(
-        instance_ref,
-        last_completion_time=last_completion_timestamp,
-        last_run_key=last_run_key,
-        cursor=cursor,
-        repository_name=recon_repo.get_definition().name,
-    ) as sensor_context:
+    with ExitStack() as stack:
+
+        if isinstance(sensor_def, MultiAssetSensorDefinition):
+            sensor_context = stack.enter_context(
+                MultiAssetSensorEvaluationContext(
+                    instance_ref,
+                    last_completion_time=last_completion_timestamp,
+                    last_run_key=last_run_key,
+                    cursor=cursor,
+                    repository_name=recon_repo.get_definition().name,
+                    repository_def=definition,
+                    asset_keys=sensor_def.asset_keys,
+                )
+            )
+        else:
+            sensor_context = stack.enter_context(
+                SensorEvaluationContext(
+                    instance_ref,
+                    last_completion_time=last_completion_timestamp,
+                    last_run_key=last_run_key,
+                    cursor=cursor,
+                    repository_name=recon_repo.get_definition().name,
+                )
+            )
+
         try:
             with user_code_error_boundary(
                 SensorExecutionError,

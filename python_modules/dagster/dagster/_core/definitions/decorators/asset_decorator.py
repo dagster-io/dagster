@@ -65,6 +65,7 @@ def asset(
     partitions_def: Optional[PartitionsDefinition] = ...,
     op_tags: Optional[Dict[str, Any]] = ...,
     group_name: Optional[str] = ...,
+    output_required: bool = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -88,6 +89,7 @@ def asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     op_tags: Optional[Dict[str, Any]] = None,
     group_name: Optional[str] = None,
+    output_required: bool = True,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -139,6 +141,9 @@ def asset(
             (Experimental) A mapping of resource keys to resource definitions. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
+        output_required (bool): Whether the decorated function will always materialize an asset.
+            Defaults to True. If False, the function can return None, which will not be materialized to
+            storage and will halt execution of downstream assets.
 
     Examples:
 
@@ -178,6 +183,7 @@ def asset(
             partitions_def=partitions_def,
             op_tags=op_tags,
             group_name=group_name,
+            output_required=output_required,
         )(fn)
 
     return inner
@@ -201,6 +207,7 @@ class _Asset:
         partitions_def: Optional[PartitionsDefinition] = None,
         op_tags: Optional[Dict[str, Any]] = None,
         group_name: Optional[str] = None,
+        output_required: bool = True,
     ):
         self.name = name
 
@@ -222,6 +229,7 @@ class _Asset:
         self.op_tags = op_tags
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         self.group_name = group_name
+        self.output_required = output_required
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -253,6 +261,7 @@ class _Asset:
                 io_manager_key=io_manager_key,
                 dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
                 description=self.description,
+                is_required=self.output_required,
             )
 
             op = _Op(
@@ -322,9 +331,6 @@ def multi_asset(
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the underlying op.
-        io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
-            output of the op as an asset, and for loading it in downstream ops
-            (default: "io_manager").
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
         internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
@@ -498,16 +504,18 @@ def build_asset_ins(
             metadata = asset_ins[input_name].metadata or {}
             key_prefix = asset_ins[input_name].key_prefix
             input_manager_key = asset_ins[input_name].input_manager_key
+            dagster_type = asset_ins[input_name].dagster_type
         else:
             metadata = {}
             key_prefix = None
             input_manager_key = None
+            dagster_type = NoValueSentinel
 
         asset_key = asset_key or AssetKey(list(filter(None, [*(key_prefix or []), input_name])))
 
         ins_by_asset_key[asset_key] = (
             input_name.replace("-", "_"),
-            In(metadata=metadata, input_manager_key=input_manager_key),
+            In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
 
     for asset_key in non_argument_deps:
