@@ -59,7 +59,7 @@ export const Tooltip: React.FC<Props> = (props) => {
 
   if (useDisabledButtonTooltipFix) {
     return (
-      <div onMouseOut={() => setIsOpen(false)} onMouseEnter={() => setIsOpen(true)}>
+      <div onMouseLeave={() => setIsOpen(false)} onMouseEnter={() => setIsOpen(true)}>
         {styledTooltip}
       </div>
     );
