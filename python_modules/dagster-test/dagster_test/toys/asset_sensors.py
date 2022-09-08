@@ -1,4 +1,5 @@
 import time
+
 from dagster import (
     AssetKey,
     AssetOut,
@@ -150,6 +151,7 @@ def runs_long():
     time.sleep(60)
     return 1
 
+
 @asset
 def waits(runs_long):
     return runs_long + 1
@@ -170,5 +172,7 @@ def get_asset_sensors_repo():
         downstream,
         runs_long,
         waits,
-        build_asset_sensor(selection=AssetSelection.assets(downstream, waits), name="generated_sensor"),
+        build_asset_sensor(
+            selection=AssetSelection.assets(downstream, waits), name="generated_sensor"
+        ),
     ]
