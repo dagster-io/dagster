@@ -1,4 +1,3 @@
-from platform import node
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -535,6 +534,8 @@ class AssetLayer:
             value_type=str,
         )
 
+        # Used to store the asset key dependencies of op node handles within graph backed assets
+        # See AssetLayer.downstream_dep_assets for more information
         self._node_output_handle_to_dep_asset_keys = check.opt_dict_param(
             node_output_handles_to_dep_asset_keys,
             "node_output_handles_to_dep_asset_keys",
@@ -745,6 +746,36 @@ class AssetLayer:
         return None
 
     def downstream_dep_assets(self, node_handle: NodeHandle, output_name: str) -> Set[AssetKey]:
+        """
+        Given the node handle of an op within a graph-backed asset and an output name,
+        returns the asset keys dependent on that output.
+
+        For example, for the following asset:
+
+        @op(out={"out_1": Out(is_required=False), "out_2": Out(is_required=False)})
+        def two_outputs_op(context):
+            return 1, 1
+
+
+        @op
+        def add_one(x):
+            return x + 1
+
+
+        @graph(out={"asset_one": GraphOut(), "asset_two": GraphOut()})
+        def my_graph():
+            out_1, out_2 = two_outputs_op()
+            return {"asset_one": out_1, "asset_two": add_one(out_2)}
+
+        two_assets = AssetsDefinition.from_graph(my_graph)
+
+        Calling downstream_dep_assets with the node handle of two_outputs_op will return:
+        - {AssetKey("asset_one")} if output_name="out_1"
+        - {AssetKey("asset_two")} if output_name="out_2"
+
+        Calling downstream_dep_assets with node handle add_one will return:
+        - {AssetKey("asset_two")} if output_name="result"
+        """
         return self._node_output_handle_to_dep_asset_keys.get(
             NodeOutputHandle(node_handle, output_name), set()
         )
