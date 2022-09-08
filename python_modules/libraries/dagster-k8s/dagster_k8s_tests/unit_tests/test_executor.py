@@ -77,6 +77,7 @@ def python_origin_with_container_context():
                 "requests": {"cpu": "256m", "memory": "128Mi"},
                 "limits": {"cpu": "1000m", "memory": "2000Mi"},
             },
+            "scheduler_name": "my-other-scheduler",
         }
     }
 
@@ -152,6 +153,7 @@ def test_executor_init(k8s_run_launcher_instance):
             "env_vars": ["FOO_TEST"],
             "retries": {},
             "resources": resources,
+            "scheduler_name": "my-scheduler",
         },
     )
 
@@ -182,6 +184,11 @@ def test_executor_init(k8s_run_launcher_instance):
     assert sorted(
         executor._step_handler._get_container_context(step_handler_context).resources
     ) == sorted(resources)
+
+    assert (
+        executor._step_handler._get_container_context(step_handler_context).scheduler_name
+        == "my-scheduler"
+    )
 
 
 def test_executor_init_container_context(
@@ -223,6 +230,11 @@ def test_executor_init_container_context(
         executor._step_handler._get_container_context(step_handler_context).resources
     ) == sorted(
         python_origin_with_container_context.repository_origin.container_context["k8s"]["resources"]
+    )
+
+    assert (
+        executor._step_handler._get_container_context(step_handler_context).scheduler_name
+        == "my-other-scheduler"
     )
 
 
