@@ -1,5 +1,30 @@
 # Changelog
 
+# 1.0.8 (core) / 0.16.8 (libraries)
+
+### New
+
+* With the new `cron_schedule` argument to `TimeWindowPartitionsDefinition`, you can now supply arbitrary cron expressions to define time window-based partition sets.
+* Graph-backed assets can now be subsetted for execution via `AssetsDefinition.from_graph(my_graph, can_subset=True)`.
+* `RunsFilter` is now exported in the public API.
+
+### Bugfixes
+
+* In some situations, default asset config was ignored when a subset of assets were selected for execution. This has been fixed.
+* Added a pin to `grpcio` in dagster to address an issue with the recent 0.48.1 grpcio release that was sometimes causing Dagster code servers to hang.
+* Fixed an issue where the “Latest run” column on the Instance Status page sometimes displayed an older run instead of the most recent run.
+
+
+### Community Contributions
+
+* In addition to a single cron string, `cron_schedule` now also accepts a sequence of cron strings. If a sequence is provided, the schedule will run for the union of all execution times for the provided cron strings, e.g., `['45 23 * * 6', '30 9 * * 0]` for a schedule that runs at 11:45 PM every Saturday and 9:30 AM every Sunday. Thanks @erinov1!
+* Added an optional boolean config `install_default_libraries` to `databricks_pyspark_step_launcher` . It allows to run Databricks jobs without installing the default Dagster libraries .Thanks @nvinhphuc!
+
+### Experimental
+
+* [dagster-k8s] Added additional configuration fields (`container_config`, `pod_template_spec_metadata`, `pod_spec_config`, `job_metadata`, and `job_spec_config`) to the experimental `k8s_job_op` that can be used to add additional configuration to the Kubernetes pod that is launched within the op.
+
+
 # 1.0.7 (core) / 0.16.7 (libraries)
 
 ### New
