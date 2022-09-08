@@ -69,6 +69,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         labels=None,
         fail_pod_on_run_failure=None,
         resources=None,
+        scheduler_name=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -113,6 +114,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             fail_pod_on_run_failure, "fail_pod_on_run_failure"
         )
         self._resources = check.opt_dict_param(resources, "resources")
+        self._scheduler_name = check.opt_str_param(scheduler_name, "scheduler_name")
 
         super().__init__()
 
@@ -151,6 +153,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def resources(self) -> Dict:
         return self._resources
+
+    @property
+    def scheduler_name(self) -> str:
+        return self._scheduler_name
 
     @property
     def env_vars(self) -> List[str]:

@@ -36,6 +36,7 @@ class K8sContainerContext(
             ("labels", Dict[str, str]),
             ("namespace", Optional[str]),
             ("resources", Dict[str, Any]),
+            ("scheduler_name", Optional[str]),
         ],
     )
 ):
@@ -57,6 +58,7 @@ class K8sContainerContext(
         labels: Optional[Dict[str, str]] = None,
         namespace: Optional[str] = None,
         resources: Optional[Dict[str, Any]] = None,
+        scheduler_name: Optional[str] = None,
     ):
         return super(K8sContainerContext, cls).__new__(
             cls,
@@ -77,6 +79,7 @@ class K8sContainerContext(
             labels=check.opt_dict_param(labels, "labels"),
             namespace=check.opt_str_param(namespace, "namespace"),
             resources=check.opt_dict_param(resources, "resources"),
+            scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
         )
 
     def merge(self, other: "K8sContainerContext") -> "K8sContainerContext":
@@ -100,6 +103,7 @@ class K8sContainerContext(
             labels=merge_dicts(other.labels, self.labels),
             namespace=other.namespace if other.namespace else self.namespace,
             resources=other.resources if other.resources else self.resources,
+            scheduler_name=other.scheduler_name if other.scheduler_name else self.scheduler_name,
         )
 
     def get_environment_dict(self) -> Dict[str, str]:
@@ -126,6 +130,7 @@ class K8sContainerContext(
                     labels=run_launcher.labels,
                     namespace=run_launcher.job_namespace,
                     resources=run_launcher.resources,
+                    scheduler_name=run_launcher.scheduler_name,
                 )
             )
 
@@ -182,6 +187,7 @@ class K8sContainerContext(
                 labels=processed_context_value.get("labels"),
                 namespace=processed_context_value.get("namespace"),
                 resources=processed_context_value.get("resources"),
+                scheduler_name=processed_context_value.get("scheduler_name"),
             )
         )
 
@@ -201,4 +207,5 @@ class K8sContainerContext(
             volumes=self.volumes,
             labels=self.labels,
             resources=self.resources,
+            scheduler_name=self.scheduler_name,
         )

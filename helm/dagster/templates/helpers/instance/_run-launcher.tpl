@@ -123,6 +123,9 @@ config:
   fail_pod_on_run_failure: true
   {{- end }}
 
+  {{- if $k8sRunLauncherConfig.schedulerName }}
+  schedulerName: {{ $k8sRunLauncherConfig.schedulerName | quote }}
+  {{- end }}
 
 {{- end }}
 

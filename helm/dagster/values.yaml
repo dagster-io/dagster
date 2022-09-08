@@ -510,6 +510,9 @@ runLauncher:
       #     memory: 128Mi
       resources: {}
 
+      # Override the default K8s scheduler for launched Pods
+      # schedulerName: ~
+
       # Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails.
       failPodOnRunFailure: false
 
