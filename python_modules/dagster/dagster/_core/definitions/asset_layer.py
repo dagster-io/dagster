@@ -1,3 +1,4 @@
+from platform import node
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -351,10 +352,6 @@ def asset_key_to_dep_node_handles(
                 dep_nodes_by_asset_key[asset_key].extend(dep_node_handles)
                 dep_node_outputs_by_asset_key[asset_key].extend(dep_node_output_handles)
 
-    for node_handle, outputs in outputs_by_graph_handle.items():
-        for output_name, node_output_handle in outputs.items():
-            node_output_handle.node_handle
-
     # handle internal_asset_deps
     for node_handle, assets_def in assets_defs_by_node_handle.items():
         for asset_key, dep_asset_keys in assets_def.asset_deps.items():
@@ -371,6 +368,12 @@ def asset_key_to_dep_node_handles(
                     node
                     for node in dep_nodes_by_asset_key[asset_key]
                     if node not in dep_asset_key_node_handles
+                ]
+                # TODO test internal asset deps
+                dep_node_outputs_by_asset_key[asset_key] = [
+                    node_output
+                    for node_output in dep_node_outputs_by_asset_key[asset_key]
+                    if node_output.node_handle not in dep_asset_key_node_handles
                 ]
 
     dep_node_set_by_asset_key: Dict[AssetKey, Set[NodeHandle]] = {}
