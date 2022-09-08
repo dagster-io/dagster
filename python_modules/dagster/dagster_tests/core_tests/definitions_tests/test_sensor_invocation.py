@@ -419,8 +419,8 @@ def test_partitions_multi_asset_sensor_context():
         second_asset_event = asset_events.get(AssetKey("daily_partitions_asset_2"))
 
         if first_asset_event and second_asset_event:
-            partition_1 = context.get_partition_from_event_log_record(first_asset_event)
-            partition_2 = context.get_partition_from_event_log_record(second_asset_event)
+            partition_1 = context.get_partition_key_from_event_log_record(first_asset_event)
+            partition_2 = context.get_partition_key_from_event_log_record(second_asset_event)
             if partition_1 == partition_2:
                 context.advance_all_cursors()
                 return asset_job.run_request_for_partition(partition_1, run_key=None)
@@ -463,7 +463,7 @@ def test_invalid_partition_mapping():
         if july_materialization:
             # Line errors because we're trying to map to a partition that doesn't exist
             mapped_partition = context.map_partition(
-                context.get_partition_from_event_log_record(july_materialization),
+                context.get_partition_key_from_event_log_record(july_materialization),
                 august_daily_partitions.partitions_def,
             )
 
@@ -495,41 +495,38 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
 
     @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
     def after_cursor_partitions_asset_sensor(context):
-        events = context.latest_materialization_records_by_key([july_daily_partitions.key])
+        events = context.latest_materialization_records_by_key(
+            [july_daily_partitions.key], after_cursor_partition=True
+        )
 
         if (
             events[july_daily_partitions.key]
-            and context.get_partition_from_event_log_record(events[july_daily_partitions.key])
+            and context.get_partition_key_from_event_log_record(events[july_daily_partitions.key])
             == "2022-07-10"
         ):  # first sensor invocation
             context.advance_all_cursors()
         else:  # second sensor invocation
             assert context.get_cursor_partition(july_daily_partitions.key) == "2022-07-10"
-            materializations_by_key = context.latest_materialization_records_by_key(
-                after_cursor_partition=False
-            )
+            materializations_by_key = context.latest_materialization_records_by_key()
             later_materialization = materializations_by_key.get(july_daily_partitions.key)
             assert later_materialization
             assert (
-                context.get_partition_from_event_log_record(later_materialization) == "2022-07-05"
+                context.get_partition_key_from_event_log_record(later_materialization)
+                == "2022-07-05"
             )
 
-            materializations_by_partition = context.latest_materialization_by_partition(
-                july_daily_partitions.key, after_cursor_partition=False
+            materializations_by_partition = context.latest_materialization_records_by_partition(
+                july_daily_partitions.key
             )
-            assert set(materializations_by_partition.keys()) == set(
-                july_daily_partitions.partitions_def.get_partition_keys()
-            )
+            assert list(materializations_by_partition.keys()) == ["2022-07-05"]
 
-            materializations_by_partition = context.latest_materialization_by_partition(
-                july_daily_partitions.key,  # searching only after cursor partition
+            materializations_by_partition = context.latest_materialization_records_by_partition(
+                july_daily_partitions.key, after_cursor_partition=True
             )
             # The cursor is set to the 2022-07-10 partition. Future searches with the default
             # after_cursor_partition=True will only return materializations with partitions after
             # 2022-07-10.
-            assert set(materializations_by_partition.keys()) == set(
-                july_partitions_keys[july_partitions_keys.index("2022-07-10") + 1 :]
-            )
+            assert set(materializations_by_partition.keys()) == set()
 
     with instance_for_test() as instance:
         materialize(
@@ -543,3 +540,41 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
         list(after_cursor_partitions_asset_sensor(ctx))
         materialize([july_daily_partitions], partition_key="2022-07-05", instance=instance)
         list(after_cursor_partitions_asset_sensor(ctx))
+
+
+def test_multi_asset_sensor_all_partitions_materialized():
+    partitions_july = DailyPartitionsDefinition("2022-07-01")
+
+    @asset(partitions_def=partitions_july)
+    def july_daily_partitions():
+        return 1
+
+    @repository
+    def my_repo():
+        return [july_daily_partitions]
+
+    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
+    def asset_sensor(context):
+        assert context.all_partitions_materialized(july_daily_partitions.key) == False
+        assert (
+            context.all_partitions_materialized(
+                july_daily_partitions.key, ["2022-07-10", "2022-07-11"]
+            )
+            == True
+        )
+
+    with instance_for_test() as instance:
+        materialize(
+            [july_daily_partitions],
+            partition_key="2022-07-10",
+            instance=instance,
+        )
+        materialize(
+            [july_daily_partitions],
+            partition_key="2022-07-11",
+            instance=instance,
+        )
+        ctx = build_multi_asset_sensor_context(
+            [july_daily_partitions.key], instance=instance, repository_def=my_repo
+        )
+        list(asset_sensor(ctx))

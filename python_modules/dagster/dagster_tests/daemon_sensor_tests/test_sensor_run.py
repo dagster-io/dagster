@@ -293,7 +293,7 @@ weekly_asset_job = define_asset_job(
 def multi_asset_sensor_hourly_to_weekly(context):
     materialization_by_key = context.latest_materialization_records_by_key()
 
-    from_partition = context.get_partition_from_event_log_record(
+    from_partition = context.get_partition_key_from_event_log_record(
         materialization_by_key.get(hourly_asset.key)
     )
 
@@ -308,22 +308,9 @@ def multi_asset_sensor_hourly_to_weekly(context):
 
 @multi_asset_sensor(asset_keys=[hourly_asset.key], job=hourly_asset_job)
 def multi_asset_sensor_hourly_to_hourly(context):
-    materialization_by_partition = context.latest_materialization_by_partition(hourly_asset.key)
-
-    cursor_partition = context.get_cursor_partition(hourly_asset.key)
-    partition_keys = hourly_asset.partitions_def.get_partition_keys()
-    if cursor_partition:  # Test that only events after cursor are returned
-
-        partitions_after_cursor = partition_keys[partition_keys.index(cursor_partition) + 1 :]
-        assert set(partitions_after_cursor) == set(materialization_by_partition.keys())
-
-    assert set(
-        context.latest_materialization_by_partition(
-            hourly_asset.key, after_cursor_partition=False
-        ).keys()
-    ) == set(
-        partition_keys
-    )  # Test that all partitions are returned when after_cursor_partition=False
+    materialization_by_partition = context.latest_materialization_records_by_partition(
+        hourly_asset.key
+    )
 
     latest_partition = None
     for partition, materialization in materialization_by_partition.items():
