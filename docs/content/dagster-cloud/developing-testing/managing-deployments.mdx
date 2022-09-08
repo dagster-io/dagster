@@ -1,0 +1,193 @@
+---
+title: Managing deployments in Dagster Cloud | Dagster Docs
+description: Learn to manage and configure your Dagster Cloud deployments.
+---
+
+# Managing deployments in Dagster Cloud
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In Dagster Cloud, there are two types of deployments:
+
+- [**Branch deployments**](/dagster-cloud/developing-testing/branch-deployments), which are temporary deployments built for testing purposes that spin down when a branch is merged
+- **Full deployments**, which are persistent, fully-featured deployments intended to perform actions on a recurring basis
+
+This guide will focus on **full deployments**, hereafter referred to simply as deployments.
+
+---
+
+## Understanding deployments
+
+Deployments are standalone environments, allowing you to operate independent instances of Dagster with separately managed permissions.
+
+When a Dagster Cloud organization is created, a single deployment named `prod` will also be created. To use additional deployments, an [Enterprise plan](https://dagster.io/pricing) is required.
+
+Each deployment can have one or multiple [code locations](/dagster-cloud/developing-testing/code-locations).
+
+**Concerned about testing environments?** We recommend using Branch Deployments to test your changes, even if you're able to create additional deployments. Refer to the [Branch Deployment docs](/dagster-cloud/developing-testing/branch-deployments) for more info, or the [Testing against production using Branch Deployments guide](/guides/dagster/branch_deployments) for a real-world example.
+
+---
+
+## Viewing and switching deployments
+
+In Dagster Cloud, you can view and switch between deployments using the **deployment switcher**:
+
+<Image
+alt="The deployment switcher in Dagster Cloud"
+src="/images/dagster-cloud/developing-testing/deployments/deployment-switcher.png"
+width={660}
+height={207}
+/>
+
+To manage deployments, click **View all deployments**. **Note**: Only users with [**Organization Admin** permissions](/dagster-cloud/account/managing-users#understanding-user-permissions) will see this option in the drop-down.
+
+---
+
+## Creating deployments
+
+<Note>
+  <a href="/dagster-cloud/account/managing-users#understanding-user-permissions">
+    Organization Admin permissions
+  </a>{" "}
+  are required to create deployments. Additionally, note that creating multiple
+  deployments requires an{" "}
+  <a href="https://dagster.io/pricing" target="new">
+    Enterprise plan
+  </a>
+  .
+</Note>
+
+To create a deployment:
+
+1. Sign in to your Dagster Cloud account.
+2. Access the **Deployments** page using on eof the following options:
+   - Click the **deployment switcher > View all deployments**.
+   - Click **your user icon > Cloud Settings**.
+3. Click the **+ New deployment** button.
+4. In the modal that displays, fill in the following:
+   - **Name** - Enter a name for the deployment.
+   - **Initial deployment permissions** - Select the permissions you want to use to create the deployment:
+     - **Empty permissions** - Creates the deployment with an empty set of permissions. **Note**: Only Organization Admins will be able to manage the deployment until other uses are granted Admin or Editor permissions.
+     - **Copy from** - Creates the deployment using permissions duplicated from an existing deployment.
+5. When finished, click **Create deployment**.
+
+---
+
+## Deleting deployments
+
+<Note>
+  <a href="/dagster-cloud/account/managing-users#understanding-user-permissions">
+    Organization Admin permissions
+  </a>{" "}
+  are required to delete deployments. Additionally, note that deleting a
+  deployment also deletes all its associated data, including code locations,
+  jobs, schedules, and sensors.
+</Note>
+
+To delete a deployment:
+
+1. Sign in to your Dagster Cloud account.
+2. Access the **Deployments** page using on eof the following options:
+   - Click the **deployment switcher > View all deployments**.
+   - Click **your user icon > Cloud Settings**.
+3. Click the **Delete** button next to the deployment you want to delete.
+4. When prompted, confirm the deletion.
+
+---
+
+## Configuring deployment settings
+
+<Note>
+  <a href="/dagster-cloud/account/managing-users#understanding-user-permissions">
+    Organization Admin permissions
+  </a>{" "}
+  are required to modify deployment settings.
+</Note>
+
+Deployment settings can be configured in the Dagster Cloud interface or using the dagster-cloud CLI. Refer to the [deployment settings reference](/dagster-cloud/developing-testing/deployment-settings-reference) for more info about individual settings.
+
+<TabGroup>
+  <TabItem name="Dagster Cloud">
+   To configure deployment settings in the Dagster Cloud UI:
+
+   <ol>
+    <li>Sign in to your Dagster Cloud account.</li>
+    <li>Access the <strong>Deployments</strong> page using one of the following:
+     <ul>
+      <li>Click the <strong>deployment switcher > View all deployments</strong>.</li>
+      <li>Click <strong>your user icon > Cloud Settings</strong>.</li>
+     </ul>
+    </li>
+    <li>Click the <strong>Settings</strong> button next to the deployment you want to configure.</li>
+    <li>In the window that displays, configure settings for the deployment.</li>
+    <li>When finished, click <strong>Save deployment settings</strong>.</li>
+   </ol>
+  </TabItem>
+  <TabItem name="dagster-cloud CLI">
+<Note>
+<strong>Note:</strong> <code>dagster-cloud</code> 0.13.14 or later must be installed to run the CLI. Agent and/or job code doesn't need to be upgraded.
+</Note>
+
+Create a file with the settings you'd like to configure. For example:
+
+```yaml
+# my-settings.yaml
+
+run_queue:
+  max_concurrent_runs: 10
+  tag_concurrency_limits:
+    - key: "special-runs"
+      limit: 5
+
+run_monitoring:
+  start_timeout_seconds: 1200
+
+run_retries:
+  max_retries: 0
+```
+
+Use the CLI to upload the settings file:
+
+```shell
+dagster-cloud deployment settings set-from-file my-settings.yaml
+```
+
+This will replace all of your configured settings. Any that are not specified will resort to their default values. You also use the CLI to read your current settings, including the default values:
+
+```shell
+dagster-cloud deployment settings get
+```
+
+  </TabItem>
+</TabGroup>
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster Cloud deployment settings reference"
+    href="/dagster-cloud/developing-testing/deployment-settings-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing code locations in Dagster Cloud"
+    href="/dagster-cloud/developing-testing/code-locations"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Branch Deployments in Dagster Cloud"
+    href="/dagster-cloud/developing-testing/branch-deployments"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Testing against production using Branch Deployments"
+    href="/guides/dagster/branch_deployments"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Using the dagster-cloud CLI"
+    href="/dagster-cloud/developing-testing/dagster-cloud-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing users in Dagster Cloud"
+    href="/dagster-cloud/account/managing-users"
+  ></ArticleListItem>
+</ArticleList>
