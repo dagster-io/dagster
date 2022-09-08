@@ -7,6 +7,7 @@
 * With the new `cron_schedule` argument to `TimeWindowPartitionsDefinition`, you can now supply arbitrary cron expressions to define time window-based partition sets.
 * Graph-backed assets can now be subsetted for execution via `AssetsDefinition.from_graph(my_graph, can_subset=True)`.
 * `RunsFilter` is now exported in the public API.
+* [dagster-k8s] The `dagster-user-deployments.deployments[].schedulerName` Helm value  for specifying custom Kubernetes schedulers will now also apply to run and step workers launched for the given user deployment. Previously it would only apply to the grpc server.
 
 ### Bugfixes
 
