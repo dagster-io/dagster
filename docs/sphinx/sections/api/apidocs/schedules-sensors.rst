@@ -52,6 +52,7 @@ Sensors
 .. autoclass:: SensorDefinition
 
 .. autoclass:: SensorEvaluationContext
+   :noindex:
 
 .. autoclass:: MultiAssetSensorEvaluationContext
 
@@ -71,7 +72,6 @@ Sensors
 .. autoclass:: RunStatusSensorDefinition
 
 .. autoclass:: RunStatusSensorContext
-   :members:
 
 .. autoclass:: RunFailureSensorContext
 
