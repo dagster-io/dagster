@@ -36,6 +36,10 @@ export const Tooltip: React.FC<Props> = (props) => {
 
   const [isOpen, setIsOpen] = React.useState<undefined | boolean>(undefined);
 
+  if (!canShow) {
+    return <>{children}</>;
+  }
+
   const styledTooltip = (
     <StyledTooltip
       isOpen={isOpen}
