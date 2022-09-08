@@ -320,10 +320,13 @@ def test_layered_sensor(executor):
             wait_for_all_runs_to_finish(instance)
             run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
             assert len(run_request_runs) == 1
-            assert run_request_runs[0].asset_selection == {AssetKey("d"), AssetKey("f"), AssetKey("g")}
+            assert run_request_runs[0].asset_selection == {
+                AssetKey("d"),
+                AssetKey("f"),
+                AssetKey("g"),
+            }
 
             freeze_datetime = freeze_datetime.add(seconds=60)
-
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())

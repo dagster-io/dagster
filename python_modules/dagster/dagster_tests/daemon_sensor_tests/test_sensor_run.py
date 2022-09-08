@@ -449,6 +449,7 @@ def the_status_in_code_repo():
         never_running_sensor,
     ]
 
+
 @asset
 def x():
     return 1

@@ -1,3 +1,4 @@
+import time
 from dagster import (
     AssetKey,
     AssetOut,
@@ -144,6 +145,16 @@ def downstream(upstream):
     return upstream + 1
 
 
+@asset
+def runs_long():
+    time.sleep(60)
+    return 1
+
+@asset
+def waits(runs_long):
+    return runs_long + 1
+
+
 def get_asset_sensors_repo():
     return [
         asset_a,
@@ -157,5 +168,7 @@ def get_asset_sensors_repo():
         every_fifth_materialization_sensor,
         upstream,
         downstream,
-        build_asset_sensor(selection=AssetSelection.assets(downstream), name="generated_sensor"),
+        runs_long,
+        waits,
+        build_asset_sensor(selection=AssetSelection.assets(downstream, waits), name="generated_sensor"),
     ]
