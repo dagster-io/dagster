@@ -1,0 +1,154 @@
+---
+title: "Dagster Cloud deployment settings reference"
+description: "Detailed info about configurable settings for Dagster Cloud deployments."
+---
+
+# Dagster Cloud deployment settings reference
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+This reference describes the settings that can be configured for full deployments in [Dagster Cloud](/dagster-cloud).
+
+Refer to the [Managing deployments in Dagster Cloud guide](/dagster-cloud/developing-testing/managing-deployments#configuring-deployment-settings) for info about configuring settings in Dagster Cloud or using the dagster-cloud CLI.
+
+---
+
+## Settings schema
+
+Settings are formatted using YAML. For example:
+
+```yaml
+run_queue:
+  max_concurrent_runs: 10
+  tag_concurrency_limits:
+    - key: "database"
+      value: "redshift"
+      limit: 5
+
+run_monitoring:
+  start_timeout_seconds: 1200
+
+run_retries:
+  max_retries: 0
+```
+
+---
+
+## Settings
+
+For each deployment, you can configure settings for:
+
+- [Run queue](#run-queue-run_queue)
+- [Run monitoring](#run-monitoring-run_monitoring)
+- [Run retries](#run-retries-run_retries)
+
+### Run queue (run_queue)
+
+The `run_queue` settings allow you to specify how many runs can execute concurrently in the deployment.
+
+```yaml
+run_queue:
+  max_concurrent_runs: 10
+  tag_concurrency_limits:
+    - key: "database"
+      value: "redshift"
+      limit: 5
+```
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="run_queue.max_concurrent_runs">
+    The maximum number of runs that are allowed to be in progress at once. Set
+    to <code>0</code> to stop any runs from launching. Negative values aren't
+    permitted.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>10</code>
+      </li>
+      <li>
+        <strong>Maximum</strong> - <code>500</code> (
+        <a href="/dagster-cloud/deployment/hybrid">Hybrid</a>), <code>50</code>{" "}
+        (<a href="/dagster-cloud/deployment/serverless">Serverless</a>)
+      </li>
+    </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="run_queue.tag_concurrency_limits">
+    A list of limits applied to runs with particular tags.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>[]</code>
+      </li>
+    </ul>
+    Each list item may have the following properties:
+    <ul>
+      <li>
+        <code>key</code>
+      </li>
+      <li>
+        <code>value</code>
+        <ul>
+          <li>
+            If defined, the <code>limit</code> is applied only to the{" "}
+            <code>key-value</code> pair.
+          </li>
+          <li>
+            If not defined, the <code>limit</code> is applied across all values
+            of the
+            <code>key</code>.
+          </li>
+          <li>
+            If set to a dict with <code>applyLimitPerUniqueValue: true</code>,
+            the <code>limit</code> is applied to the number of unique values for
+            the <code>key</code>.
+          </li>
+        </ul>
+      </li>
+      <li>
+        <code>limit</code>
+      </li>
+    </ul>
+  </ReferenceTableItem>
+</ReferenceTable>
+
+### Run monitoring (run_monitoring)
+
+The `run_monitoring` settings allow you to define how long Dagster Cloud should wait before failing runs in the deployment.
+
+```yaml
+run_monitoring:
+  start_timeout_seconds: 1200
+```
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="run_monitoring.start_timeout_seconds">
+    The number of seconds that Dagster Cloud will wait after a run is launched
+    for the process or container to start executing. After the timeout, the run
+    will fail. This prevents runs from hanging in <code>STARTING</code>{" "}
+    indefinitely when the process or container doesn't start.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>1200</code> (20 minutes)
+      </li>
+    </ul>
+  </ReferenceTableItem>
+</ReferenceTable>
+
+### Run retries (run_retries)
+
+The `run_retries` settings allow you to define how Dagster Cloud handles retrying failed runs in the deployment.
+
+```yaml
+run_retries:
+  max_retries: 0
+```
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="run_retries.max_retries">
+    The maximum number of times Dagster Cloud should attempt to retry a failed
+    run. Dagster Cloud will use the default if this setting is undefined.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>0</code>
+      </li>
+    </ul>
+  </ReferenceTableItem>
+</ReferenceTable>
