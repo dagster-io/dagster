@@ -341,12 +341,15 @@ def asset_key_to_dep_node_handles(
 
                 dep_node_outputs_by_asset_key[asset_key].extend(dep_node_output_handles)
 
-    # handle internal_asset_deps
+    # handle internal_asset_deps within graph-backed assets
     for _, assets_def in assets_defs_by_node_handle.items():
         for asset_key, dep_asset_keys in assets_def.asset_deps.items():
             if asset_key not in assets_def.keys:
                 continue
             for dep_asset_key in [key for key in dep_asset_keys if key in assets_def.keys]:
+                if len(dep_node_outputs_by_asset_key[asset_key]) == 0:
+                    # This case occurs when the asset is not yielded from a graph-backed asset
+                    continue
                 node_output_handle = dep_node_outputs_by_asset_key[asset_key][
                     0
                 ]  # first item in list is the original node output handle that outputs the asset
