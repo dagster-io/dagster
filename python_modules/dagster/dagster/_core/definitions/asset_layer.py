@@ -188,15 +188,15 @@ def _build_graph_dependencies(
         ]
 
 
-def _get_dependency_node_handles(
+def _get_dependency_node_output_handles(
     non_asset_inputs_by_node_handle: Mapping[NodeHandle, Sequence[NodeOutputHandle]],
     outputs_by_graph_handle: Mapping[NodeHandle, Mapping[str, NodeOutputHandle]],
-    dep_node_output_handles_by_node: Dict[NodeOutputHandle, List[NodeOutputHandle]],
+    dep_node_output_handles_by_node_output_handle: Dict[NodeOutputHandle, List[NodeOutputHandle]],
     node_output_handle: NodeOutputHandle,
 ) -> Sequence[NodeOutputHandle]:
     """
-    Given a node handle and an optional output name of the node (if the node is a graph), return
-    all upstream op node handles (leaf nodes).
+    Given a node output handle, return all upstream op node output handles. All node output handles
+    belong in the same graph-backed asset node.
 
     Arguments:
 
@@ -204,20 +204,21 @@ def _get_dependency_node_handles(
         name as a key and a NodeOutputHandle containing the op output name and op node handle
     non_asset_inputs_by_node_handle: A mapping of all node handles to all upstream node handles
         that are not assets. Each key is a node output handle.
-    dep_node_handles_by_node: A mapping of each non-graph node to all non-graph node dependencies.
-        Used for memoization to avoid scanning already visited nodes.
+    dep_node_output_handles_by_node_output_handle: A mapping of each non-graph node output handle
+        to all non-graph node output handle dependencies. Used for memoization to avoid scanning
+        already visited nodes.
     curr_node_handle: The current node handle being traversed.
     graph_output_name: Name of the node output being traversed. Only used if the current node is a
         graph to trace the op that generates this output.
     """
     curr_node_handle = node_output_handle.node_handle
 
-    if node_output_handle in dep_node_output_handles_by_node:
-        return dep_node_output_handles_by_node[node_output_handle]
+    if node_output_handle in dep_node_output_handles_by_node_output_handle:
+        return dep_node_output_handles_by_node_output_handle[node_output_handle]
 
     dependency_node_output_handles: List[
         NodeOutputHandle
-    ] = []  # first node in list is node that outputs the asset
+    ] = []  # first node in list is node output handle that outputs the asset
 
     if curr_node_handle not in outputs_by_graph_handle:
         dependency_node_output_handles.append(node_output_handle)
@@ -226,25 +227,27 @@ def _get_dependency_node_handles(
             node_output_handle.output_name
         ]
         dependency_node_output_handles.extend(
-            _get_dependency_node_handles(
+            _get_dependency_node_output_handles(
                 non_asset_inputs_by_node_handle,
                 outputs_by_graph_handle,
-                dep_node_output_handles_by_node,
+                dep_node_output_handles_by_node_output_handle,
                 dep_node_output_handle,
             )
         )
     for dep_node_output_handle in non_asset_inputs_by_node_handle[curr_node_handle]:
         dependency_node_output_handles.extend(
-            _get_dependency_node_handles(
+            _get_dependency_node_output_handles(
                 non_asset_inputs_by_node_handle,
                 outputs_by_graph_handle,
-                dep_node_output_handles_by_node,
+                dep_node_output_handles_by_node_output_handle,
                 dep_node_output_handle,
             )
         )
 
     if curr_node_handle not in outputs_by_graph_handle:
-        dep_node_output_handles_by_node[node_output_handle] = dependency_node_output_handles
+        dep_node_output_handles_by_node_output_handle[
+            node_output_handle
+        ] = dependency_node_output_handles
 
     return dependency_node_output_handles
 
@@ -277,8 +280,12 @@ def asset_key_to_dep_node_handles(
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
 ) -> Tuple[Mapping[AssetKey, Set[NodeHandle]], Mapping[AssetKey, Sequence[NodeOutputHandle]]]:
     """
-    For each asset in assets_defs_by_node_handle, returns all the op handles within the asset's node
-    that are upstream dependencies of the asset.
+    For each asset in assets_defs_by_node_handle, determines all the op handles and output handles
+    within the asset's node that are upstream dependencies of the asset.
+
+    Returns a tuple with two objects:
+    1. A mapping of each asset key to a set of node handles that are upstream dependencies of the asset.
+    2. A mapping of each asset key to a list of node output handles that are upstream dependencies of the asset.
 
     Arguments:
 
@@ -304,7 +311,6 @@ def asset_key_to_dep_node_handles(
     dep_node_outputs_by_asset_key: Dict[AssetKey, List[NodeOutputHandle]] = {}
 
     for node_handle, assets_defs in assets_defs_by_node_handle.items():
-        # dep_node_handles_by_node: Dict[NodeHandle, List[NodeHandle]] = {}
         dep_node_output_handles_by_node: Dict[
             NodeOutputHandle, List[NodeOutputHandle]
         ] = (
@@ -323,10 +329,10 @@ def asset_key_to_dep_node_handles(
             if node_handle not in outputs_by_graph_handle:
                 dep_nodes_by_asset_key[asset_key].extend([node_handle])
             else:  # is graph
-                node_output_handle = outputs_by_graph_handle[node_handle][output_name]
                 # node output handle for the given asset key
+                node_output_handle = outputs_by_graph_handle[node_handle][output_name]
 
-                dep_node_output_handles = _get_dependency_node_handles(
+                dep_node_output_handles = _get_dependency_node_output_handles(
                     non_asset_inputs_by_node_handle,
                     outputs_by_graph_handle,
                     dep_node_output_handles_by_node,
@@ -341,8 +347,6 @@ def asset_key_to_dep_node_handles(
             if asset_key not in assets_def.keys:
                 continue
             for dep_asset_key in [key for key in dep_asset_keys if key in assets_def.keys]:
-                if len(dep_node_outputs_by_asset_key[asset_key]) == 0:
-                    continue
                 node_output_handle = dep_node_outputs_by_asset_key[asset_key][
                     0
                 ]  # first item in list is the original node output handle that outputs the asset
@@ -357,6 +361,9 @@ def asset_key_to_dep_node_handles(
                     if node_output not in dep_asset_key_node_output_handles
                 ]
 
+    # For graph-backed assets, we've resolved the upstream node output handles dependencies for each
+    # node output handle in dep_node_outputs_by_asset_key. We use this to find the upstream
+    # node handle dependencies.
     for asset_key, dep_node_outputs in dep_node_outputs_by_asset_key.items():
         dep_nodes_by_asset_key[asset_key].extend(
             [node_output.node_handle for node_output in dep_node_outputs]
