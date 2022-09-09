@@ -29,6 +29,11 @@ def _materialization_for_stream(
     )
 
 
+def _get_attempt(attempt: dict) -> List:
+    # the attempt field is nested in some API results, and is not in others
+    return attempt.get("attempt") or attempt
+
+
 def generate_materializations(
     output: AirbyteOutput, asset_key_prefix: List[str]
 ) -> Iterator[AssetMaterialization]:
@@ -46,9 +51,7 @@ def generate_materializations(
     # stats for each stream that had data sync'd
     all_stream_stats = {
         s["streamName"]: s.get("stats", {})
-        for s in output.job_details.get("attempts", [{}])[-1]
-        .get("attempt", {})
-        .get("streamStats", [])
+        for s in _get_attempt(output.job_details.get("attempts", [{}])[-1]).get("streamStats", [])
     }
     for stream_name, stream_props in all_stream_props.items():
         yield _materialization_for_stream(

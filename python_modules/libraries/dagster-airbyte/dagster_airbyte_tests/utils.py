@@ -84,3 +84,33 @@ def get_sample_job_json(schema_prefix=""):
             }
         ],
     }
+
+
+def get_sample_job_list_json(schema_prefix=""):
+    return {
+        "jobs": [
+            {
+                "job": {"id": 1, "status": AirbyteState.SUCCEEDED},
+                "attempts": [
+                    {
+                        "streamStats": [
+                            {
+                                "streamName": schema_prefix + "foo",
+                                "stats": {
+                                    "bytesEmitted": 1234,
+                                    "recordsCommitted": 4321,
+                                },
+                            },
+                            {
+                                "streamName": schema_prefix + "baz",
+                                "stats": {
+                                    "bytesEmitted": 1111,
+                                    "recordsCommitted": 1111,
+                                },
+                            },
+                        ]
+                    }
+                ],
+            }
+        ]
+    }
