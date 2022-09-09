@@ -1,4 +1,5 @@
 import warnings
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -17,7 +18,6 @@ from typing import (
     Union,
     cast,
 )
-from collections import defaultdict
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -191,10 +191,9 @@ def _build_graph_dependencies(
 def _get_dependency_node_handles(
     non_asset_inputs_by_node_handle: Mapping[NodeHandle, Sequence[NodeOutputHandle]],
     outputs_by_graph_handle: Mapping[NodeHandle, Mapping[str, NodeOutputHandle]],
-    dep_node_handles_by_node: Dict[NodeHandle, List[NodeHandle]],
     dep_node_output_handles_by_node: Dict[NodeOutputHandle, List[NodeOutputHandle]],
     node_output_handle: NodeOutputHandle,
-) -> Tuple[Sequence[NodeHandle], Sequence[NodeOutputHandle]]:
+) -> Sequence[NodeOutputHandle]:
     """
     Given a node handle and an optional output name of the node (if the node is a graph), return
     all upstream op node handles (leaf nodes).
@@ -214,53 +213,40 @@ def _get_dependency_node_handles(
     curr_node_handle = node_output_handle.node_handle
 
     if node_output_handle in dep_node_output_handles_by_node:
-        return (
-            dep_node_handles_by_node[curr_node_handle],
-            dep_node_output_handles_by_node[node_output_handle],
-        )
-
-    dependency_node_handles: List[
-        NodeHandle
-    ] = []  # first node in list is node that outputs the asset
+        return dep_node_output_handles_by_node[node_output_handle]
 
     dependency_node_output_handles: List[
         NodeOutputHandle
     ] = []  # first node in list is node that outputs the asset
 
     if curr_node_handle not in outputs_by_graph_handle:
-        dependency_node_handles.append(curr_node_handle)
         dependency_node_output_handles.append(node_output_handle)
     else:  # is graph
-        node_output_handle = outputs_by_graph_handle[curr_node_handle][
+        dep_node_output_handle = outputs_by_graph_handle[curr_node_handle][
             node_output_handle.output_name
         ]
-        recursed_node_handles, recursed_node_output_handles = _get_dependency_node_handles(
-            non_asset_inputs_by_node_handle,
-            outputs_by_graph_handle,
-            dep_node_handles_by_node,
-            dep_node_output_handles_by_node,
-            node_output_handle,
+        dependency_node_output_handles.extend(
+            _get_dependency_node_handles(
+                non_asset_inputs_by_node_handle,
+                outputs_by_graph_handle,
+                dep_node_output_handles_by_node,
+                dep_node_output_handle,
+            )
         )
-        dependency_node_handles.extend(recursed_node_handles)
-        dependency_node_output_handles.extend(recursed_node_output_handles)
-    for node_output_handle in non_asset_inputs_by_node_handle[curr_node_handle]:
-
-        recursed_node_handles, recursed_node_output_handles = _get_dependency_node_handles(
-            non_asset_inputs_by_node_handle,
-            outputs_by_graph_handle,
-            dep_node_handles_by_node,
-            dep_node_output_handles_by_node,
-            node_output_handle,
+    for dep_node_output_handle in non_asset_inputs_by_node_handle[curr_node_handle]:
+        dependency_node_output_handles.extend(
+            _get_dependency_node_handles(
+                non_asset_inputs_by_node_handle,
+                outputs_by_graph_handle,
+                dep_node_output_handles_by_node,
+                dep_node_output_handle,
+            )
         )
-
-        dependency_node_handles.extend(recursed_node_handles)
-        dependency_node_output_handles.extend(recursed_node_output_handles)
 
     if curr_node_handle not in outputs_by_graph_handle:
-        dep_node_handles_by_node[curr_node_handle] = dependency_node_handles
         dep_node_output_handles_by_node[node_output_handle] = dependency_node_output_handles
 
-    return dependency_node_handles, dependency_node_output_handles
+    return dependency_node_output_handles
 
 
 def get_dep_node_handles_of_graph_backed_asset(
@@ -318,10 +304,12 @@ def asset_key_to_dep_node_handles(
     dep_node_outputs_by_asset_key: Dict[AssetKey, List[NodeOutputHandle]] = {}
 
     for node_handle, assets_defs in assets_defs_by_node_handle.items():
-        dep_node_handles_by_node: Dict[
-            NodeHandle, List[NodeHandle]
-        ] = {}  # memoized map of nodehandle to all node handle dependencies that are ops
-        dep_node_output_handles_by_node: Dict[NodeOutputHandle, List[NodeOutputHandle]] = {}
+        # dep_node_handles_by_node: Dict[NodeHandle, List[NodeHandle]] = {}
+        dep_node_output_handles_by_node: Dict[
+            NodeOutputHandle, List[NodeOutputHandle]
+        ] = (
+            {}
+        )  # memoized map of node output handles to all node output handle dependencies that are from ops
         for output_name, asset_key in assets_defs.keys_by_output_name.items():
             output_def = assets_defs.node_def.output_def_named(output_name)
             output_name = output_def.name
@@ -338,42 +326,41 @@ def asset_key_to_dep_node_handles(
                 node_output_handle = outputs_by_graph_handle[node_handle][output_name]
                 # node output handle for the given asset key
 
-                # dep_nodes_by_asset_key[asset_key]
-
-                dep_node_handles, dep_node_output_handles = _get_dependency_node_handles(
+                dep_node_output_handles = _get_dependency_node_handles(
                     non_asset_inputs_by_node_handle,
                     outputs_by_graph_handle,
-                    dep_node_handles_by_node,
                     dep_node_output_handles_by_node,
                     node_output_handle,
                 )
 
-                dep_nodes_by_asset_key[asset_key].extend(dep_node_handles)
                 dep_node_outputs_by_asset_key[asset_key].extend(dep_node_output_handles)
 
     # handle internal_asset_deps
-    for node_handle, assets_def in assets_defs_by_node_handle.items():
+    for _, assets_def in assets_defs_by_node_handle.items():
         for asset_key, dep_asset_keys in assets_def.asset_deps.items():
             if asset_key not in assets_def.keys:
                 continue
             for dep_asset_key in [key for key in dep_asset_keys if key in assets_def.keys]:
-                output_node = dep_nodes_by_asset_key[asset_key][
+                if len(dep_node_outputs_by_asset_key[asset_key]) == 0:
+                    continue
+                node_output_handle = dep_node_outputs_by_asset_key[asset_key][
                     0
-                ]  # first item in list is the original node that output the asset
-                dep_asset_key_node_handles = [
-                    node for node in dep_nodes_by_asset_key[dep_asset_key] if node != output_node
+                ]  # first item in list is the original node output handle that outputs the asset
+                dep_asset_key_node_output_handles = [
+                    output_handle
+                    for output_handle in dep_node_outputs_by_asset_key[dep_asset_key]
+                    if output_handle != node_output_handle
                 ]
-                dep_nodes_by_asset_key[asset_key] = [
-                    node
-                    for node in dep_nodes_by_asset_key[asset_key]
-                    if node not in dep_asset_key_node_handles
-                ]
-                # TODO test internal asset deps
                 dep_node_outputs_by_asset_key[asset_key] = [
                     node_output
                     for node_output in dep_node_outputs_by_asset_key[asset_key]
-                    if node_output.node_handle not in dep_asset_key_node_handles
+                    if node_output not in dep_asset_key_node_output_handles
                 ]
+
+    for asset_key, dep_node_outputs in dep_node_outputs_by_asset_key.items():
+        dep_nodes_by_asset_key[asset_key].extend(
+            [node_output.node_handle for node_output in dep_node_outputs]
+        )
 
     dep_node_set_by_asset_key: Dict[AssetKey, Set[NodeHandle]] = {}
     for asset_key, dep_node_handles in dep_nodes_by_asset_key.items():
