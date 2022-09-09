@@ -351,7 +351,27 @@ def test_lots_of_materializations_sensor(executor):
         with pendulum.test(freeze_datetime):
             for _ in range(5):
                 materialize([x], instance=instance)
-            wait_for_all_runs_to_finish(instance)
+                wait_for_all_runs_to_finish(instance)
+
+            # something is wrong with this test. The in progress asset materialization events are coming in
+            # in reverse order (first planned materialization first) rather than (more recent planned
+            # materialization first as when you run locally in dagit. maybe something with the test storage?)
+
+            from dagster._core.events import DagsterEventType
+            from dagster._core.storage.event_log.base import EventRecordsFilter
+
+            ers = instance.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    asset_key=x.asset_key,
+                ),
+                ascending=False,
+                limit=5,
+            )
+            for e in ers:
+                print("\n")
+                print(e)
+                print("\n")
 
             y_sensor = external_repo.get_external_sensor("just_y")
             instance.start_sensor(y_sensor)
