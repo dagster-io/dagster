@@ -29,7 +29,7 @@ def _materialization_for_stream(
     )
 
 
-def _get_attempt(attempt: dict) -> List:
+def _get_attempt(attempt: dict):
     # the attempt field is nested in some API results, and is not in others
     return attempt.get("attempt") or attempt
 

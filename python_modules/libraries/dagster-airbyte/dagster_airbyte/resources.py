@@ -116,7 +116,7 @@ class AirbyteResource:
                     },
                 )
             )
-            job = next((job for job in out["jobs"] if job["job"]["id"] == job_id), None)
+            job = next((job for job in cast(List, out["jobs"]) if job["job"]["id"] == job_id), None)
 
             return check.not_none(job)
 
@@ -172,13 +172,14 @@ class AirbyteResource:
                 attempts = cast(List, job_details.get("attempts", []))
                 cur_attempt = len(attempts)
                 # spit out the available Airbyte log info
-                if cur_attempt and self._forward_logs:
-                    log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
+                if cur_attempt:
+                    if self._forward_logs:
+                        log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
 
-                    for line in log_lines[logged_lines:]:
-                        sys.stdout.write(line + "\n")
-                        sys.stdout.flush()
-                    logged_lines = len(log_lines)
+                        for line in log_lines[logged_lines:]:
+                            sys.stdout.write(line + "\n")
+                            sys.stdout.flush()
+                        logged_lines = len(log_lines)
 
                     # if there's a next attempt, this one will have no more log messages
                     if logged_attempts < cur_attempt - 1:

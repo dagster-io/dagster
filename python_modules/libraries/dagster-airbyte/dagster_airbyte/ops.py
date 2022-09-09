@@ -99,7 +99,7 @@ def airbyte_sync_op(context):
     yield Output(
         airbyte_output,
         metadata={
-            _get_attempt(**airbyte_output.job_details.get("attempts", [{}])[-1]).get(
+            **_get_attempt(airbyte_output.job_details.get("attempts", [{}])[-1]).get(
                 "totalStats", {}
             )
         },
