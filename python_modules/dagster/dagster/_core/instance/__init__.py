@@ -1029,8 +1029,11 @@ class DagsterInstance:
         return execution_plan_snapshot_id
 
     def _log_asset_materialization_planned_events(self, pipeline_run, execution_plan_snapshot):
-        from dagster._core.events import DagsterEvent
-        from dagster._core.execution.context_creation_pipeline import initialize_console_manager
+        from dagster._core.events import (
+            AssetMaterializationPlannedData,
+            DagsterEvent,
+            DagsterEventType,
+        )
 
         pipeline_name = pipeline_run.pipeline_name
 
@@ -1040,9 +1043,13 @@ class DagsterInstance:
                     asset_key = output.properties.asset_key
                     if asset_key:
                         # Logs and stores asset_materialization_planned event
-                        DagsterEvent.asset_materialization_planned(
-                            pipeline_name, asset_key, initialize_console_manager(pipeline_run, self)
+                        event = DagsterEvent(
+                            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                            pipeline_name=pipeline_name,
+                            message=f"{pipeline_name} intends to materialize asset {asset_key.to_string()}",
+                            event_specific_data=AssetMaterializationPlannedData(asset_key),
                         )
+                        self.report_dagster_event(event, pipeline_run.run_id, logging.DEBUG)
 
     def create_run(
         self,
