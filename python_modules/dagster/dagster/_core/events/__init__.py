@@ -465,22 +465,6 @@ class DagsterEvent(
         log_resource_event(log_manager, event)
         return event
 
-    @staticmethod
-    def asset_materialization_planned(
-        pipeline_name: str,
-        asset_key: AssetKey,
-        log_manager: DagsterLogManager,
-    ) -> "DagsterEvent":
-        event = DagsterEvent(
-            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
-            pipeline_name=pipeline_name,
-            message=f"{pipeline_name} intends to materialize asset {asset_key.to_string()}",
-            event_specific_data=AssetMaterializationPlannedData(asset_key),
-        )
-        log_level = logging.DEBUG
-        log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
-        return event
-
     def __new__(
         cls,
         event_type_value: str,
