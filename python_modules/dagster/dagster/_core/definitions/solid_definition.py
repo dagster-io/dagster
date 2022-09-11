@@ -140,9 +140,15 @@ class SolidDefinition(NodeDefinition):
             else None
         )
 
+        check.list_param(input_defs, "input_defs", InputDefinition)
+        if all(input_def.name != "after" for input_def in input_defs) and (
+            positional_inputs is None or "after" not in positional_inputs
+        ):
+            input_defs = input_defs + [InputDefinition(name="after", dagster_type=type(None))]
+
         super(SolidDefinition, self).__init__(
             name=name,
-            input_defs=check.list_param(input_defs, "input_defs", InputDefinition),
+            input_defs=input_defs,
             output_defs=check.list_param(output_defs, "output_defs", OutputDefinition),
             description=description,
             tags=check.opt_dict_param(tags, "tags", key_type=str),
