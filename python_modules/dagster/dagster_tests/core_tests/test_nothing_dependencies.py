@@ -14,12 +14,10 @@ from dagster import (
     Out,
     Output,
     asset,
-    graph,
     job,
     materialize_to_memory,
     op,
 )
-from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.api import create_execution_plan
 
 
@@ -326,41 +324,6 @@ def test_nothing_infer():
         @op
         def _bad(_previous_steps_complete: Nothing):
             pass
-
-
-def test_mapped_nothing():
-    @op(ins={"start_after": In(Nothing)})
-    def emit():
-        return 1
-
-    @graph
-    def wrapped_no_type(mapped):
-        emit(mapped)
-
-    # This is not necessarily desirable, but documents the current behavior
-    # that if a user wraps a Nothing op in a graph, that the untyped mapping
-    # is inferred as Any and expects a config value
-    with pytest.raises(DagsterInvalidConfigError):
-        wrapped_no_type.execute_in_process()
-
-    # The above issue forces the user to using typing to declare the mapping as a
-    # Nothing
-    @graph
-    def wrapped_nothing_type(mapped: Nothing):
-        emit(mapped)
-
-    result = wrapped_nothing_type.execute_in_process()
-    assert result.success
-    assert result.output_for_node("emit") == 1
-
-    # None can be used instead if passing mypy is desired
-    @graph
-    def wrapped_none_type(mapped: None):
-        emit(mapped)
-
-    result = wrapped_none_type.execute_in_process()
-    assert result.success
-    assert result.output_for_node("emit") == 1
 
 
 def test_none_output_non_none_input():
