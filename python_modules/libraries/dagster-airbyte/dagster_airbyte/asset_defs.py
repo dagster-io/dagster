@@ -10,7 +10,7 @@ from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.load_assets_from_modules import group_assets
+from dagster._core.definitions.load_assets_from_modules import with_group
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 
 
@@ -293,7 +293,7 @@ def load_assets_from_airbyte_project(
         )
 
         if connection_to_group_fn:
-            assets_for_connection = group_assets(
+            assets_for_connection = with_group(
                 assets_for_connection, connection_to_group_fn(connection_name)
             )
         assets.extend(assets_for_connection)
