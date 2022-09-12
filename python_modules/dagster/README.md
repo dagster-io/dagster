@@ -25,6 +25,8 @@
     <img src="https://img.shields.io/coveralls/github/dagster-io/dagster/master?labelColor=4F43DD&color=163B36">
   </a>
   <img src="https://img.shields.io/pypi/pyversions/dagster?labelColor=4F43DD&color=163B36">
+  <br /><br />
+  <a href="https://docs.dagster.io">Documentation</a>
 </p>
 
 Dagster is an orchestrator that's designed for developing and maintaining data assets, such as tables, data sets, machine learning models, and reports.
