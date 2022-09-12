@@ -11,7 +11,6 @@ from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import with_group
-from dagster._core.definitions.utils import VALID_NAME_REGEX
 
 
 @experimental
@@ -131,7 +130,7 @@ def _clean_name(name: str) -> str:
     """
     Cleans an input to be a valid Dagster asset name.
     """
-    return "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in name)
+    return "".join(c if c.isalnum() else "_" for c in name)
 
 
 class AirbyteConnection(
@@ -156,6 +155,26 @@ class AirbyteConnection(
         has_basic_normalization (bool): Whether or not the connection has basic normalization enabled.
         stream_data (List[Mapping[str, Any]]): Unparsed list of dicts with information about each stream.
     """
+
+    @classmethod
+    def from_config(cls, contents: Mapping[str, Any]) -> "AirbyteConnection":
+        config_contents = cast(Mapping[str, Any], contents.get("configuration"))
+        check.invariant(
+            config_contents is not None, "Airbyte connection config is missing 'configuration' key"
+        )
+
+        return cls(
+            name=contents["resource_name"],
+            source_config_path=contents["source_configuration_path"],
+            stream_prefix=config_contents.get("prefix", ""),
+            has_basic_normalization=any(
+                op.get("operator_configuration", {}).get("operator_type") == "normalization"
+                and op.get("operator_configuration", {}).get("normalization", {}).get("option")
+                == "basic"
+                for op in config_contents.get("operations", [])
+            ),
+            stream_data=config_contents.get("sync_catalog", {}).get("streams", []),
+        )
 
     def parse_stream_tables(
         self, return_normalization_tables: bool = False
@@ -196,27 +215,9 @@ class AirbyteSource(NamedTuple("_AirbyteSource", [("name", str)])):
         name (str): The name of the source.
     """
 
-
-def _airbyte_connection_from_config(contents: Mapping[str, Any]) -> AirbyteConnection:
-    config_contents = cast(Mapping[str, Any], contents.get("configuration"))
-    check.invariant(
-        config_contents is not None, "Airbyte connection config is missing 'configuration' key"
-    )
-
-    return AirbyteConnection(
-        name=contents["resource_name"],
-        source_config_path=contents["source_configuration_path"],
-        stream_prefix=config_contents.get("prefix", ""),
-        has_basic_normalization=any(
-            op.get("operator_configuration", {}).get("operator_type") == "normalization"
-            for op in config_contents.get("operations", [])
-        ),
-        stream_data=config_contents.get("sync_catalog", {}).get("streams", []),
-    )
-
-
-def _airbyte_source_from_config(contents: Mapping[str, Any]) -> AirbyteSource:
-    return AirbyteSource(name=contents["resource_name"])
+    @classmethod
+    def from_config(cls, contents: Mapping[str, Any]) -> "AirbyteSource":
+        return cls(name=contents["resource_name"])
 
 
 @experimental
@@ -230,7 +231,7 @@ def load_assets_from_airbyte_project(
     """
     Loads an Airbyte project into a set of Dagster assets.
 
-    Point to the root folder of an Airbye project synced using the Octavia CLI. For
+    Point to the root folder of an Airbyte project synced using the Octavia CLI. For
     more information, see https://github.com/airbytehq/airbyte/tree/master/octavia-cli#octavia-import-all.
 
     Args:
@@ -261,10 +262,10 @@ def load_assets_from_airbyte_project(
     for connection_name in os.listdir(connections_dir):
         connection_dir = os.path.join(connections_dir, connection_name)
         with open(os.path.join(connection_dir, "configuration.yaml"), encoding="utf-8") as f:
-            connection = _airbyte_connection_from_config(yaml.safe_load(f.read()))
+            connection = AirbyteConnection.from_config(yaml.safe_load(f.read()))
 
         with open(os.path.join(project_dir, connection.source_config_path), encoding="utf-8") as f:
-            source = _airbyte_source_from_config(yaml.safe_load(f.read()))
+            source = AirbyteSource.from_config(yaml.safe_load(f.read()))
             if source.name not in source_assets:
                 source_asset_key = AssetKey(source_key_prefix + [_clean_name(source.name)])
                 source_assets[source.name] = SourceAsset(key=source_asset_key)
