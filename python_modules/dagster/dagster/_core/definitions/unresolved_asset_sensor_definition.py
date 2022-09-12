@@ -34,6 +34,9 @@ class UnresolvedAssetSensorDefinition:
         self._description = description
         self._default_status = default_status
 
+        self._asset_keys = None
+        self._source_asset_keys = None
+
     @property
     def name(self):
         return self._name
@@ -96,9 +99,15 @@ class UnresolvedAssetSensorDefinition:
         parent_asset_event_records = {}
 
         for p in parent_assets:
+            print(f"Materializations for parent {p}")
             if p in will_materialize_list:
                 # if the parent will be materialized by this sensor, then we can also
                 # materialize the child
+                parent_asset_event_records[p] = (True, None)
+            elif p in self._source_asset_keys:
+                # if the parent is a source asset, we assume it has always been updated
+                # this will be replaced if we introduce a versioning schema for source assets
+                print("parent is a source asset")
                 parent_asset_event_records[p] = (True, None)
             else:
                 # if the parent has been materialized and is not currently being materialized, then
@@ -114,6 +123,7 @@ class UnresolvedAssetSensorDefinition:
                     ascending=False,
                     limit=1,
                 )
+                print(f"materialization record {event_records}")
 
                 # get the most recent planned materialization
                 materialization_planned_event_records = context.instance.get_event_records(
@@ -124,6 +134,8 @@ class UnresolvedAssetSensorDefinition:
                     ascending=False,
                     limit=1,
                 )
+
+                print(f"will materialize record {materialization_planned_event_records}")
 
                 if event_records and materialization_planned_event_records:
                     # planned materialization is from a different run than the most recent
@@ -160,7 +172,9 @@ class UnresolvedAssetSensorDefinition:
             materialized by this sensor), then the cursor should update to the storage id of the event record
         2. if the parent asset will be materialized by this sensor tick, then we don't know what the storage id will be so we
             keep the cursor the same (TODO figure out what we should actually do)
-        3. if the parent asset has not been materialized and will not be materialized by the sensor then we keep the
+        3. the parent asset is a source asset (that we've determined has been updated). There is no storage id or event record
+            for this, so we keep the cursor the same (TODO figure out what we should actually do)
+        4. if the parent asset has not been materialized and will not be materialized by the sensor then we keep the
             cursor the same
         """
 
@@ -170,6 +184,8 @@ class UnresolvedAssetSensorDefinition:
                 cursor_update_dict[str(p)] = event_record.storage_id
             elif materialization_status:
                 # TODO - figure out the right thing cursor for this scenario
+                # this case encompasses assets that will be materialized by this sensor and
+                # source assets
                 cursor_update_dict[str(p)] = self._get_cursor(current_cursor, p)
             else:
                 cursor_update_dict[str(p)] = self._get_cursor(current_cursor, p)
@@ -242,6 +258,7 @@ class UnresolvedAssetSensorDefinition:
         assets: Sequence["AssetsDefinition"],
         source_assets: Sequence["SourceAsset"],
     ) -> SensorDefinition:
+        self._source_asset_keys = [asset.key for asset in source_assets]
         return self._make_sensor(self._get_upstream_mapping(assets, source_assets))
 
 
