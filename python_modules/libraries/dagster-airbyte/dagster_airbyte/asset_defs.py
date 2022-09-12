@@ -1,6 +1,6 @@
 import os
 from itertools import chain
-from typing import Any, Callable, List, Mapping, NamedTuple, Optional, Sequence, Set
+from typing import Any, Callable, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
 
 import yaml
 from dagster_airbyte.utils import generate_materializations
@@ -173,8 +173,8 @@ class AirbyteConnection(
         ]
 
         for stream in enabled_streams:
-            name = stream.get("stream", {}).get("name")
-            prefixed_name = self.stream_prefix + name
+            name = cast(str, stream.get("stream", {}).get("name"))
+            prefixed_name = f"{self.stream_prefix}{name}"
 
             tables[prefixed_name] = set()
             if self.has_basic_normalization and return_normalization_tables:
@@ -198,7 +198,11 @@ class AirbyteSource(NamedTuple("_AirbyteSource", [("name", str)])):
 
 
 def _airbyte_connection_from_config(contents: Mapping[str, Any]) -> AirbyteConnection:
-    config_contents = contents.get("configuration")
+    config_contents = cast(Mapping[str, Any], contents.get("configuration"))
+    check.invariant(
+        config_contents is not None, "Airbyte connection config is missing 'configuration' key"
+    )
+
     return AirbyteConnection(
         name=contents["resource_name"],
         source_config_path=contents["source_configuration_path"],
@@ -242,6 +246,14 @@ def load_assets_from_airbyte_project(
             to a basic sanitization function.
     """
 
+    if isinstance(source_key_prefix, str):
+        source_key_prefix = [source_key_prefix]
+    source_key_prefix = check.list_param(source_key_prefix or [], "source_key_prefix", of_type=str)
+
+    if isinstance(key_prefix, str):
+        key_prefix = [key_prefix]
+    key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
+
     assets = []
     source_assets = {}
 
@@ -254,7 +266,7 @@ def load_assets_from_airbyte_project(
         with open(os.path.join(project_dir, connection.source_config_path), encoding="utf-8") as f:
             source = _airbyte_source_from_config(yaml.safe_load(f.read()))
             if source.name not in source_assets:
-                source_asset_key = AssetKey.from_user_string(_clean_name(source.name))
+                source_asset_key = AssetKey(source_key_prefix + [_clean_name(source.name)])
                 source_assets[source.name] = SourceAsset(key=source_asset_key)
 
         state_file = next(
@@ -266,7 +278,7 @@ def load_assets_from_airbyte_project(
             "No state file found for connection {} in {}".format(connection_name, connection_dir),
         )
 
-        with open(os.path.join(connection_dir, state_file), encoding="utf-8") as f:
+        with open(os.path.join(connection_dir, cast(str, state_file)), encoding="utf-8") as f:
             state = yaml.safe_load(f.read())
             connection_id = state.get("resource_id")
 
@@ -276,7 +288,7 @@ def load_assets_from_airbyte_project(
             connection_id=connection_id,
             destination_tables=list(table_mapping.keys()),
             normalization_tables=table_mapping,
-            asset_key_prefix=None,
+            asset_key_prefix=key_prefix,
             upstream_assets={source_asset_key},
         )
 
