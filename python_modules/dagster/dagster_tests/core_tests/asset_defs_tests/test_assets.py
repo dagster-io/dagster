@@ -859,6 +859,205 @@ def test_input_subsetting_graph_backed_asset():
             assert set(step_keys) == set(["my_graph.baz", "upstream_1", "upstream_2"])
 
 
+@pytest.mark.parametrize(
+    "asset_selection,selected_output_names_op_1,selected_output_names_op_2,num_materializations",
+    [
+        ([AssetKey("asset_one")], {"out_1"}, None, 1),
+        ([AssetKey("asset_two")], {"out_2"}, {"add_one_1"}, 1),
+        (
+            [AssetKey("asset_two"), AssetKey("asset_three")],
+            {"out_2"},
+            {"add_one_1", "add_one_2"},
+            2,
+        ),
+        (
+            [AssetKey("asset_one"), AssetKey("asset_two"), AssetKey("asset_three")],
+            {"out_1", "out_2"},
+            {"add_one_1", "add_one_2"},
+            3,
+        ),
+    ],
+)
+def test_graph_backed_asset_subset_context(
+    asset_selection, selected_output_names_op_1, selected_output_names_op_2, num_materializations
+):
+    @op(out={"out_1": Out(is_required=False), "out_2": Out(is_required=False)})
+    def op_1(context):
+        assert context.selected_output_names == selected_output_names_op_1
+        if "out_1" in context.selected_output_names:
+            yield Output(1, output_name="out_1")
+        if "out_2" in context.selected_output_names:
+            yield Output(1, output_name="out_2")
+
+    @op(out={"add_one_1": Out(is_required=False), "add_one_2": Out(is_required=False)})
+    def add_one(context, x):
+        assert context.selected_output_names == selected_output_names_op_2
+        if "add_one_1" in context.selected_output_names:
+            yield Output(x, output_name="add_one_1")
+        if "add_one_2" in context.selected_output_names:
+            yield Output(x, output_name="add_one_2")
+
+    @graph(out={"asset_one": GraphOut(), "asset_two": GraphOut(), "asset_three": GraphOut()})
+    def three():
+        out_1, reused_output = op_1()
+        out_2, out_3 = add_one(reused_output)
+        return {"asset_one": out_1, "asset_two": out_2, "asset_three": out_3}
+
+    asset_job = define_asset_job("yay").resolve(
+        [AssetsDefinition.from_graph(three, can_subset=True)],
+        [],
+    )
+
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(asset_selection=asset_selection, instance=instance)
+        assert result.success
+        assert (
+            get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION)
+            == num_materializations
+        )
+
+
+@pytest.mark.parametrize(
+    "asset_selection,selected_output_names_op_1,selected_output_names_op_3,num_materializations",
+    [
+        # Because out_1 of op_1 is an input to generate asset_one and is yielded as asset_4,
+        # we materialize it even though it is not selected. A log message will indicate that it is
+        # an unexpected materialization.
+        ([AssetKey("asset_one")], {"out_1"}, None, 2),
+        ([AssetKey("asset_two")], {"out_2"}, {"op_3_1"}, 1),
+        ([AssetKey("asset_two"), AssetKey("asset_three")], {"out_2"}, {"op_3_1", "op_3_2"}, 2),
+        ([AssetKey("asset_four"), AssetKey("asset_three")], {"out_1", "out_2"}, {"op_3_2"}, 2),
+        ([AssetKey("asset_one"), AssetKey("asset_four")], {"out_1"}, None, 2),
+        (
+            [
+                AssetKey("asset_one"),
+                AssetKey("asset_two"),
+                AssetKey("asset_three"),
+                AssetKey("asset_four"),
+            ],
+            {"out_1", "out_2"},
+            {"op_3_1", "op_3_2"},
+            4,
+        ),
+    ],
+)
+def test_graph_backed_asset_subset_context_intermediate_ops(
+    asset_selection, selected_output_names_op_1, selected_output_names_op_3, num_materializations
+):
+    @op(out={"out_1": Out(is_required=False), "out_2": Out(is_required=False)})
+    def op_1(context):
+        assert context.selected_output_names == selected_output_names_op_1
+        if "out_1" in context.selected_output_names:
+            yield Output(1, output_name="out_1")
+        if "out_2" in context.selected_output_names:
+            yield Output(1, output_name="out_2")
+
+    @op
+    def op_2(x):
+        return x
+
+    @op(out={"op_3_1": Out(is_required=False), "op_3_2": Out(is_required=False)})
+    def op_3(context, x):
+        assert context.selected_output_names == selected_output_names_op_3
+        if "op_3_1" in context.selected_output_names:
+            yield Output(x, output_name="op_3_1")
+        if "op_3_2" in context.selected_output_names:
+            yield Output(x, output_name="op_3_2")
+
+    @graph(
+        out={
+            "asset_one": GraphOut(),
+            "asset_two": GraphOut(),
+            "asset_three": GraphOut(),
+            "asset_four": GraphOut(),
+        }
+    )
+    def graph_asset():
+        out_1, out_2 = op_1()
+        asset_one = op_2(op_2(out_1))
+        asset_two, asset_three = op_3(op_2(out_2))
+        return {
+            "asset_one": asset_one,
+            "asset_two": asset_two,
+            "asset_three": asset_three,
+            "asset_four": out_1,
+        }
+
+    asset_job = define_asset_job("yay").resolve(
+        [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
+        [],
+    )
+
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(asset_selection=asset_selection, instance=instance)
+        assert result.success
+        assert (
+            get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION)
+            == num_materializations
+        )
+
+
+@pytest.mark.parametrize(
+    "asset_selection,selected_output_names_op_1,selected_output_names_op_2,num_materializations",
+    [
+        ([AssetKey("a")], {"op_1_1"}, None, 1),
+        ([AssetKey("b")], {"op_1_2"}, None, 1),
+        # The following two test cases will also yield a materialization for b because b
+        # is required as an input and directly outputted from the graph. A warning is logged.
+        ([AssetKey("c")], {"op_1_2"}, {"op_2_1"}, 2),
+        ([AssetKey("c"), AssetKey("d")], {"op_1_2"}, {"op_2_1", "op_2_2"}, 3),
+        ([AssetKey("b"), AssetKey("d")], {"op_1_2"}, {"op_2_2"}, 2),
+    ],
+)
+def test_nested_graph_subset_context(
+    asset_selection, selected_output_names_op_1, selected_output_names_op_2, num_materializations
+):
+    @op(out={"op_1_1": Out(is_required=False), "op_1_2": Out(is_required=False)})
+    def op_1(context):
+        assert context.selected_output_names == selected_output_names_op_1
+        if "op_1_1" in context.selected_output_names:
+            yield Output(1, output_name="op_1_1")
+        if "op_1_2" in context.selected_output_names:
+            yield Output(1, output_name="op_1_2")
+
+    @op(out={"op_2_1": Out(is_required=False), "op_2_2": Out(is_required=False)})
+    def op_2(context, x):
+        assert context.selected_output_names == selected_output_names_op_2
+        if "op_2_2" in context.selected_output_names:
+            yield Output(x, output_name="op_2_2")
+        if "op_2_1" in context.selected_output_names:
+            yield Output(x, output_name="op_2_1")
+
+    @graph(out={"a": GraphOut(), "b": GraphOut()})
+    def two_outputs_graph():
+        a, b = op_1()
+        return {"a": a, "b": b}
+
+    @graph(out={"c": GraphOut(), "d": GraphOut()})
+    def downstream_graph(b):
+        c, d = op_2(b)
+        return {"c": c, "d": d}
+
+    @graph(out={"a": GraphOut(), "b": GraphOut(), "c": GraphOut(), "d": GraphOut()})
+    def nested_graph():
+        a, b = two_outputs_graph()
+        c, d = downstream_graph(b)
+        return {"a": a, "b": b, "c": c, "d": d}
+
+    asset_job = define_asset_job("yay").resolve(
+        [AssetsDefinition.from_graph(nested_graph, can_subset=True)],
+        [],
+    )
+
+    with instance_for_test() as instance:
+        result = asset_job.execute_in_process(asset_selection=asset_selection, instance=instance)
+        assert result.success
+        assert (
+            get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION)
+            == num_materializations
+        )
+
+
 def test_graph_backed_asset_reused():
     @asset
     def upstream():
