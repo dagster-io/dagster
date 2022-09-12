@@ -291,19 +291,16 @@ weekly_asset_job = define_asset_job(
 
 @multi_asset_sensor(asset_keys=[hourly_asset.key], job=weekly_asset_job)
 def multi_asset_sensor_hourly_to_weekly(context):
-    materialization_by_key = context.latest_materialization_records_by_key()
+    for partition, materialization in context.latest_materialization_records_by_partition(
+        hourly_asset.key
+    ):
+        mapped_partitions = context.get_downstream_partition_keys(
+            partition, to_asset_key=weekly_asset.key, from_asset_key=hourly_asset.key
+        )
+        for partition in mapped_partitions:
+            yield weekly_asset_job.run_request_for_partition(partition_key=partition, run_key=None)
 
-    from_partition = context.get_partition_key_from_event_log_record(
-        materialization_by_key.get(hourly_asset.key)
-    )
-
-    mapped_partitions = context.map_partition(
-        from_partition, to_partitions=weekly_asset_job.partitions_def
-    )
-    for partition in mapped_partitions:
-        yield weekly_asset_job.run_request_for_partition(partition_key=partition, run_key=None)
-
-    context.advance_cursor(materialization_by_key)
+        context.advance_cursor({hourly_asset.key: materialization})
 
 
 @multi_asset_sensor(asset_keys=[hourly_asset.key], job=hourly_asset_job)
@@ -315,8 +312,8 @@ def multi_asset_sensor_hourly_to_hourly(context):
     latest_partition = None
     for partition, materialization in materialization_by_partition.items():
         if materialization:
-            mapped_partitions = context.map_partition(
-                partition, to_partitions=hourly_asset_job.partitions_def
+            mapped_partitions = context.get_downstream_partition_keys(
+                partition, to_asset_key=hourly_asset_3.key, from_asset_key=hourly_asset.key
             )
             for partition in mapped_partitions:
                 yield hourly_asset_job.run_request_for_partition(
