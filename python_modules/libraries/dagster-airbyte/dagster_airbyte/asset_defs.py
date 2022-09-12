@@ -1,6 +1,6 @@
 import os
 from itertools import chain
-from typing import Any, Callable, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
+from typing import Any, Callable, List, Mapping, NamedTuple, Optional, Set, Tuple, cast
 
 import yaml
 from dagster_airbyte.utils import generate_materializations
@@ -182,7 +182,7 @@ class AirbyteConnection(
                     for normalization_table_name in _get_normalization_tables_for_schema(
                         k, v, f"{name}_"
                     ):
-                        prefixed_norm_table_name = self.stream_prefix + normalization_table_name
+                        prefixed_norm_table_name = f"{self.stream_prefix}{normalization_table_name}"
                         tables[prefixed_name].add(prefixed_norm_table_name)
 
         return tables
@@ -226,7 +226,7 @@ def load_assets_from_airbyte_project(
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
-) -> Sequence[AssetsDefinition]:
+) -> Tuple[List[AssetsDefinition], List[SourceAsset]]:
     """
     Loads an Airbyte project into a set of Dagster assets.
 
@@ -254,8 +254,8 @@ def load_assets_from_airbyte_project(
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
-    assets = []
-    source_assets = {}
+    assets: List[AssetsDefinition] = []
+    source_assets: Mapping[str, SourceAsset] = {}
 
     connections_dir = os.path.join(project_dir, "connections")
     for connection_name in os.listdir(connections_dir):
