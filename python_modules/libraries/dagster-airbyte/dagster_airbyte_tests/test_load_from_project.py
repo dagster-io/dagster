@@ -2,8 +2,7 @@ import pytest
 import responses
 from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_project
 
-from dagster import AssetKey, build_init_resource_context
-from dagster._legacy import build_assets_job
+from dagster import AssetKey, build_init_resource_context, materialize, with_resources
 from dagster._utils import file_relative_path
 
 from .utils import get_project_connection_json, get_project_job_json
@@ -24,13 +23,13 @@ def test_load_from_project(use_normalization_tables, connection_to_group_fn):
     )
 
     if connection_to_group_fn:
-        ab_assets, source_assets = load_assets_from_airbyte_project(
+        ab_assets = load_assets_from_airbyte_project(
             file_relative_path(__file__, "./test_airbyte_project"),
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
         )
     else:
-        ab_assets, source_assets = load_assets_from_airbyte_project(
+        ab_assets = load_assets_from_airbyte_project(
             file_relative_path(__file__, "./test_airbyte_project"),
             create_assets_for_normalization_tables=use_normalization_tables,
         )
@@ -73,21 +72,19 @@ def test_load_from_project(use_normalization_tables, connection_to_group_fn):
         status=200,
     )
 
-    ab_job = build_assets_job(
-        "ab_job",
-        ab_assets,
-        source_assets=source_assets,
-        resource_defs={
-            "airbyte": airbyte_resource.configured(
-                {
-                    "host": "some_host",
-                    "port": "8000",
-                }
-            )
-        },
+    res = materialize(
+        with_resources(
+            ab_assets,
+            resource_defs={
+                "airbyte": airbyte_resource.configured(
+                    {
+                        "host": "some_host",
+                        "port": "8000",
+                    }
+                )
+            },
+        )
     )
-
-    res = ab_job.execute_in_process()
 
     materializations = [
         event.event_specific_data.materialization

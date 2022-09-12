@@ -1,6 +1,6 @@
 import os
 from itertools import chain
-from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Set, Tuple, cast
+from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Set, Union, cast
 
 import yaml
 from dagster_airbyte.utils import generate_materializations
@@ -227,7 +227,7 @@ def load_assets_from_airbyte_project(
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
-) -> Tuple[List[AssetsDefinition], List[SourceAsset]]:
+) -> List[Union[AssetsDefinition, SourceAsset]]:
     """
     Loads an Airbyte project into a set of Dagster assets.
 
@@ -299,4 +299,4 @@ def load_assets_from_airbyte_project(
             )
         assets.extend(assets_for_connection)
 
-    return assets, list(source_assets.values())
+    return assets + list(source_assets.values())
