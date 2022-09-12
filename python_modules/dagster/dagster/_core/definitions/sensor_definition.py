@@ -546,9 +546,20 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self, partition_key: str, from_asset_key: AssetKey, to_asset_key: AssetKey
     ) -> Sequence[str]:
         """
-        Given two partitions definitions, converts a partition key in from_partitions to the
-        corresponding partition in to_partitions. Matches based on the time window the partition
-        belongs in.
+        Converts a partition key from one asset to the corresponding partition key in a downstream
+        asset. Uses the existing partition mapping between the upstream asset and the downstream
+        asset if it exists, otherwise, uses the default partition mapping.
+
+        Args:
+            partition_key (str): The partition key to convert.
+            from_asset_key (AssetKey): The asset key of the upstream asset, which the provided
+                partition key belongs to.
+            to_asset_key (AssetKey): The asset key of the downstream asset. The provided partition
+                key will be mapped to partitions within this asset.
+
+        Returns:
+            Sequence[str]: A list of the corresponding downstream partitions in to_asset_key that
+                partition_key maps to.
         """
 
         partition_key = check.str_param(partition_key, "partition_key")
