@@ -123,6 +123,23 @@ class RepositorySelector(
         )
 
 
+@whitelist_for_serdes
+class InstanceSelector(NamedTuple("_InstanceSelector", [])):
+    def __new__(cls):
+        return super(InstanceSelector, cls).__new__(cls)
+
+    def to_graphql_input(self):
+        return {}
+
+    @property
+    def selector_id(self):
+        return create_snapshot_id(self)
+
+    @staticmethod
+    def from_graphql_input(_):
+        return InstanceSelector()
+
+
 class ScheduleSelector(
     NamedTuple(
         "_ScheduleSelector",

@@ -14,7 +14,11 @@ if TYPE_CHECKING:
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
-    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
+    from dagster._core.host_representation.selector import (
+        InstanceSelector,
+        JobSelector,
+        RepositorySelector,
+    )
 
 
 def _default_failure_email_body(context) -> str:
@@ -93,6 +97,7 @@ def make_email_on_run_failure_sensor(
                 "UnresolvedAssetJobDefinition",
                 "RepositorySelector",
                 "JobSelector",
+                "InstanceSelector",
             ]
         ]
     ] = None,
@@ -104,6 +109,7 @@ def make_email_on_run_failure_sensor(
                 "UnresolvedAssetJobDefinition",
                 "RepositorySelector",
                 "JobSelector",
+                "InstanceSelector",
             ]
         ]
     ] = None,
@@ -127,9 +133,10 @@ def make_email_on_run_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "email_on_job_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed run.
-        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition, RepositorySelector, JobSelector]]]):
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition, RepositorySelector, JobSelector, InstanceSelector]]]):
             The jobs that will be monitored by this failure sensor. Defaults to None, which means the alert will
-            be sent when any job in the repository fails. To monitor jobs in external repositories, use RepositorySelector and JobSelector
+            be sent when any job in the repository fails. To monitor jobs in external repositories, use RepositorySelector and JobSelector.
+            To monitor all jobs in the instance, specify InstanceSelector.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition,  RepositorySelector, JobSelector]]]):
             (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure
             sensor. Defaults to None, which means the alert will be sent when any job in the repository fails.

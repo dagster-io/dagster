@@ -436,6 +436,7 @@ from dagster._core.executor.init import (
 from dagster._core.host_representation.selector import (
     RepositorySelector as RepositorySelector,
     JobSelector as JobSelector,
+    InstanceSelector as InstanceSelector,
 )
 from dagster._core.instance import (
     DagsterInstance as DagsterInstance,
