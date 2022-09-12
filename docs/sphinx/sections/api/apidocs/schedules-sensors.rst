@@ -77,6 +77,7 @@ Sensors
 
 .. autoclass:: JobSelector
 .. autoclass:: RepositorySelector
+.. autoclass:: InstanceSelector
 
 .. autofunction:: build_run_status_sensor_context
 
