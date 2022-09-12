@@ -1,6 +1,6 @@
 from dagster._core.utils import check_dagster_package_version
 
-from .asset_defs import build_airbyte_assets
+from .asset_defs import build_airbyte_assets, load_assets_from_airbyte_project
 from .ops import airbyte_sync_op
 from .resources import AirbyteResource, AirbyteState, airbyte_resource
 from .types import AirbyteOutput

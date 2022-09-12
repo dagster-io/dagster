@@ -1,12 +1,17 @@
+import os
 from itertools import chain
-from typing import List, Mapping, Optional, Set
+from typing import Any, Callable, List, Mapping, NamedTuple, Optional, Sequence, Set
 
+import yaml
 from dagster_airbyte.utils import generate_materializations
 
-from dagster import AssetKey, AssetOut, Output
+from dagster import AssetKey, AssetOut, Output, SourceAsset
 from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
+from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.load_assets_from_modules import group_assets
+from dagster._core.definitions.utils import VALID_NAME_REGEX
 
 
 @experimental
@@ -88,3 +93,197 @@ def build_airbyte_assets(
                 yield materialization
 
     return [_assets]
+
+
+def _get_normalization_tables_for_schema(
+    key: str, schema: Mapping[str, Any], prefix: str = ""
+) -> List[str]:
+    """
+    Recursively traverses a schema, returning a list of table names that will be created by the Airbyte
+    normalization process.
+
+    For example, a table `cars` with a nested object field `limited_editions` will produce the tables
+    `cars` and `cars_limited_editions`.
+
+    For more information on Airbyte's normalization process, see:
+    https://docs.airbyte.com/understanding-airbyte/basic-normalization/#nesting
+    """
+
+    out = []
+    # Object types are broken into a new table, as long as they have children
+    if (
+        schema["type"] == "object"
+        or "object" in schema["type"]
+        and len(schema.get("properties", {})) > 0
+    ):
+        out.append(prefix + key)
+        for k, v in schema["properties"].items():
+            out += _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
+    # Array types are also broken into a new table
+    elif schema["type"] == "array" or "array" in schema["type"]:
+        out.append(prefix + key)
+        for k, v in schema["items"]["properties"].items():
+            out += _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
+    return out
+
+
+def _clean_name(name: str) -> str:
+    """
+    Cleans an input to be a valid Dagster asset name.
+    """
+    return "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in name)
+
+
+class AirbyteConnection(
+    NamedTuple(
+        "_AirbyteConnection",
+        [
+            ("name", str),
+            ("source_config_path", str),
+            ("stream_prefix", str),
+            ("has_basic_normalization", bool),
+            ("stream_data", List[Mapping[str, Any]]),
+        ],
+    )
+):
+    """
+    Contains information about an Airbyte connection.
+
+    Attributes:
+        name (str): The name of the connection.
+        source_config_path (str): The path to the Airbyte source configuration file.
+        stream_prefix (str): A prefix to add to all stream names.
+        has_basic_normalization (bool): Whether or not the connection has basic normalization enabled.
+        stream_data (List[Mapping[str, Any]]): Unparsed list of dicts with information about each stream.
+    """
+
+    def parse_stream_tables(
+        self, return_normalization_tables: bool = False
+    ) -> Mapping[str, Set[str]]:
+        """
+        Parses the stream data and returns a mapping, with keys representing destination
+        tables associated with each enabled stream and values representing any affiliated
+        tables created by Airbyte's normalization process, if enabled.
+        """
+
+        tables: Mapping[str, Set[str]] = {}
+
+        enabled_streams = [
+            stream for stream in self.stream_data if stream.get("config", {}).get("selected", False)
+        ]
+
+        for stream in enabled_streams:
+            name = stream.get("stream", {}).get("name")
+            prefixed_name = self.stream_prefix + name
+
+            tables[prefixed_name] = set()
+            if self.has_basic_normalization and return_normalization_tables:
+                for k, v in stream["stream"]["json_schema"]["properties"].items():
+                    for normalization_table_name in _get_normalization_tables_for_schema(
+                        k, v, f"{name}_"
+                    ):
+                        prefixed_norm_table_name = self.stream_prefix + normalization_table_name
+                        tables[prefixed_name].add(prefixed_norm_table_name)
+
+        return tables
+
+
+class AirbyteSource(NamedTuple("_AirbyteSource", [("name", str)])):
+    """
+    Contains information about an Airbyte source.
+
+    Attributes:
+        name (str): The name of the source.
+    """
+
+
+def _airbyte_connection_from_config(contents: Mapping[str, Any]) -> AirbyteConnection:
+    config_contents = contents.get("configuration")
+    return AirbyteConnection(
+        name=contents["resource_name"],
+        source_config_path=contents["source_configuration_path"],
+        stream_prefix=config_contents.get("prefix", ""),
+        has_basic_normalization=any(
+            op.get("operator_configuration", {}).get("operator_type") == "normalization"
+            for op in config_contents.get("operations", [])
+        ),
+        stream_data=config_contents.get("sync_catalog", {}).get("streams", []),
+    )
+
+
+def _airbyte_source_from_config(contents: Mapping[str, Any]) -> AirbyteSource:
+    return AirbyteSource(name=contents["resource_name"])
+
+
+@experimental
+def load_assets_from_airbyte_project(
+    project_dir: str,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    create_assets_for_normalization_tables: bool = True,
+    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+) -> Sequence[AssetsDefinition]:
+    """
+    Loads an Airbyte project into a set of Dagster assets.
+
+    Point to the root folder of an Airbye project synced using the Octavia CLI. For
+    more information, see https://github.com/airbytehq/airbyte/tree/master/octavia-cli#octavia-import-all.
+
+    Args:
+        project_dir (str): The path to the root of your Airbyte project, containing sources, destinations,
+            and connections folders.
+        key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
+        source_key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the source asset keys produced.
+        create_assets_for_normalization_tables (bool): If True, assets will be created for tables
+            created by Airbyte's normalization feature. If False, only the destination tables
+            will be created.
+        connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
+            group name for a given Airbyte connection name. If None, no groups will be created. Defaults
+            to a basic sanitization function.
+    """
+
+    assets = []
+    source_assets = {}
+
+    connections_dir = os.path.join(project_dir, "connections")
+    for connection_name in os.listdir(connections_dir):
+        connection_dir = os.path.join(connections_dir, connection_name)
+        with open(os.path.join(connection_dir, "configuration.yaml"), encoding="utf-8") as f:
+            connection = _airbyte_connection_from_config(yaml.safe_load(f.read()))
+
+        with open(os.path.join(project_dir, connection.source_config_path), encoding="utf-8") as f:
+            source = _airbyte_source_from_config(yaml.safe_load(f.read()))
+            if source.name not in source_assets:
+                source_asset_key = AssetKey.from_user_string(_clean_name(source.name))
+                source_assets[source.name] = SourceAsset(key=source_asset_key)
+
+        state_file = next(
+            (filename for filename in os.listdir(connection_dir) if filename.startswith("state_")),
+            None,
+        )
+        check.invariant(
+            state_file is not None,
+            "No state file found for connection {} in {}".format(connection_name, connection_dir),
+        )
+
+        with open(os.path.join(connection_dir, state_file), encoding="utf-8") as f:
+            state = yaml.safe_load(f.read())
+            connection_id = state.get("resource_id")
+
+        table_mapping = connection.parse_stream_tables(create_assets_for_normalization_tables)
+
+        assets_for_connection = build_airbyte_assets(
+            connection_id=connection_id,
+            destination_tables=list(table_mapping.keys()),
+            normalization_tables=table_mapping,
+            asset_key_prefix=None,
+            upstream_assets={source_asset_key},
+        )
+
+        if connection_to_group_fn:
+            assets_for_connection = group_assets(
+                assets_for_connection, connection_to_group_fn(connection_name)
+            )
+        assets.extend(assets_for_connection)
+
+    return assets, list(source_assets.values())

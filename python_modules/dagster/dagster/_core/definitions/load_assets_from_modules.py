@@ -192,12 +192,7 @@ def load_assets_from_package_module(
     if key_prefix:
         assets = prefix_assets(assets, key_prefix)
     if group_name:
-        assets = [
-            asset.with_prefix_or_group(
-                group_names_by_key={asset_key: group_name for asset_key in asset.keys}
-            )
-            for asset in assets
-        ]
+        assets = group_assets(assets, group_name)
         source_assets = [asset.with_group_name(group_name) for asset in source_assets]
 
     return [*assets, *source_assets]
@@ -313,3 +308,21 @@ def prefix_assets(
             )
         )
     return result_assets
+
+
+def group_assets(
+    assets_defs: Sequence[AssetsDefinition], group_name: Optional[str]
+) -> List[AssetsDefinition]:
+    """
+    Given a list of assets, group them under the group_name.
+    """
+    group_name = check.opt_str_param(group_name, "group_name")
+    if not group_name:
+        return list(assets_defs)
+
+    return [
+        assets_def.with_prefix_or_group(
+            group_names_by_key={asset_key: group_name for asset_key in assets_def.keys}
+        )
+        for assets_def in assets_defs
+    ]
