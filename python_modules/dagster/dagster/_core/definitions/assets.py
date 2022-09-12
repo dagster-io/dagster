@@ -93,6 +93,7 @@ class AssetsDefinition(ResourceAddable):
         metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
+        slas_by_key: Optional[Mapping[AssetKey, AssetSLA]] = None,
     ):
         from .graph_definition import GraphDefinition
 
@@ -155,6 +156,10 @@ class AssetsDefinition(ResourceAddable):
                 node_def.resolve_output_to_origin(output_name, None)[0].metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+
+        self._slas_by_key = check.opt_dict_param(
+            slas_by_key, "slas_by_key", key_type=AssetKey, value_type=AssetSLA
+        )
 
     def __call__(self, *args, **kwargs):
         from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
@@ -527,6 +532,24 @@ class AssetsDefinition(ResourceAddable):
                 else AllPartitionMapping(),
             )
 
+    def with_slas(
+        self,
+        slas_by_key: Optional[Mapping[AssetKey, AssetSLA]] = None,
+    ):
+        return self.__class__(
+            keys_by_input_name=self._keys_by_input_name,
+            keys_by_output_name=self._keys_by_output_name,
+            node_def=self.node_def,
+            partitions_def=self.partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self.asset_deps,
+            can_subset=self.can_subset,
+            selected_asset_keys=self._selected_asset_keys,
+            resource_defs=self.resource_defs,
+            group_names_by_key=self.group_names_by_key,
+            slas_by_key=slas_by_key,
+        )
+
     def with_prefix_or_group(
         self,
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
@@ -567,6 +590,11 @@ class AssetsDefinition(ResourceAddable):
             for key, group_name in self.group_names_by_key.items()
         }
 
+        replaced_slas_by_key = {
+            output_asset_key_replacements.get(key, key): sla
+            for key, sla in self._slas_by_key.items()
+        }
+
         return self.__class__(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -599,6 +627,7 @@ class AssetsDefinition(ResourceAddable):
                 **replaced_group_names_by_key,
                 **group_names_by_key,
             },
+            slas_by_key=replaced_slas_by_key,
         )
 
     def _subset_graph_backed_asset(
@@ -705,6 +734,7 @@ class AssetsDefinition(ResourceAddable):
                 selected_asset_keys=selected_asset_keys & self.keys,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
+                slas_by_key=self._slas_by_key,
             )
         else:
             # multi_asset subsetting
@@ -720,6 +750,7 @@ class AssetsDefinition(ResourceAddable):
                 selected_asset_keys=asset_subselection,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
+                slas_by_key=self._slas_by_key,
             )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
@@ -806,6 +837,7 @@ class AssetsDefinition(ResourceAddable):
             can_subset=self._can_subset,
             resource_defs=relevant_resource_defs,
             group_names_by_key=self.group_names_by_key,
+            slas_by_key=self._slas_by_key,
         )
 
 

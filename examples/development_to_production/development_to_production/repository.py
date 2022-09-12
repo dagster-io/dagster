@@ -57,3 +57,25 @@ def repo():
     return [
         *with_resources([items, comments, stories], resource_defs=resource_defs[deployment_name])
     ]
+
+
+def get_repo(name):
+    from dagster import op, job
+
+    @op
+    def x():
+        return 1
+
+    @job
+    def xx():
+        x()
+
+    @repository(name=name)
+    def _repo():
+        print("************Name", name)
+        return [xx]
+
+    return _repo
+
+
+a = get_repo("a")
