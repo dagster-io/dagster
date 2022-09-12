@@ -14,19 +14,15 @@
   </a>
   <a target="_blank" href="https://github.com/dagster-io/dagster">
     <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
-  <br /><br />
+  </a>
+  <br />
   <a target="_blank" href="https://github.com/dagster-io/dagster/blob/master/LICENSE">
     <img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?label=license&labelColor=4F43DD&color=163B36">
   </a>
   <a target="_blank" href="https://pypi.org/project/dagster/">
     <img src="https://img.shields.io/pypi/v/dagster?labelColor=4F43DD&color=163B36">
   </a>
-  <a target="_blank" href="https://coveralls.io/github/dagster-io/dagster?branch=master">
-    <img src="https://img.shields.io/coveralls/github/dagster-io/dagster/master?labelColor=4F43DD&color=163B36">
-  </a>
   <img src="https://img.shields.io/pypi/pyversions/dagster?labelColor=4F43DD&color=163B36">
-  <br /><br />
-  <a href="https://docs.dagster.io">Documentation</a>
 </p>
 
 Dagster is an orchestrator that's designed for developing and maintaining data assets, such as tables, data sets, machine learning models, and reports.
