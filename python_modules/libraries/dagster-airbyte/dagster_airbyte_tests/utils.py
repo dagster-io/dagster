@@ -302,7 +302,7 @@ def get_project_connection_json(**kwargs):
     )
 
 
-def get_project_job_json(schema_prefix=""):
+def get_project_job_json():
     return {
         "job": {"id": 1, "status": AirbyteState.SUCCEEDED},
         "attempts": [

@@ -1,6 +1,6 @@
 import os
 from itertools import chain
-from typing import Any, Callable, List, Mapping, NamedTuple, Optional, Set, Tuple, cast
+from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Set, Tuple, cast
 
 import yaml
 from dagster_airbyte.utils import generate_materializations
@@ -166,7 +166,7 @@ class AirbyteConnection(
         tables created by Airbyte's normalization process, if enabled.
         """
 
-        tables: Mapping[str, Set[str]] = {}
+        tables: Dict[str, Set[str]] = {}
 
         enabled_streams = [
             stream for stream in self.stream_data if stream.get("config", {}).get("selected", False)
@@ -255,7 +255,7 @@ def load_assets_from_airbyte_project(
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
     assets: List[AssetsDefinition] = []
-    source_assets: Mapping[str, SourceAsset] = {}
+    source_assets: Dict[str, SourceAsset] = {}
 
     connections_dir = os.path.join(project_dir, "connections")
     for connection_name in os.listdir(connections_dir):
