@@ -4,17 +4,17 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
+    IOManager,
     RunRequest,
     SkipReason,
+    SourceAsset,
     asset,
     build_asset_sensor,
+    io_manager,
     job,
     multi_asset,
     multi_asset_sensor,
     op,
-    IOManager,
-    SourceAsset,
-    io_manager,
 )
 
 
