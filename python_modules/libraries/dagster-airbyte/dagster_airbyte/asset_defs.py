@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Set
 import yaml
 from dagster_airbyte.utils import generate_materializations
 
-from dagster import AssetKey, AssetOut, Output, SourceAsset
+from dagster import AssetKey, AssetOut, Output
 from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
@@ -227,7 +227,7 @@ def load_assets_from_airbyte_project(
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
-) -> List[Union[AssetsDefinition, SourceAsset]]:
+) -> List[Union[AssetsDefinition]]:
     """
     Loads an Airbyte project into a set of Dagster assets.
 
@@ -256,7 +256,6 @@ def load_assets_from_airbyte_project(
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
     assets: List[AssetsDefinition] = []
-    source_assets: Dict[str, SourceAsset] = {}
 
     connections_dir = os.path.join(project_dir, "connections")
     for connection_name in os.listdir(connections_dir):
@@ -266,9 +265,7 @@ def load_assets_from_airbyte_project(
 
         with open(os.path.join(project_dir, connection.source_config_path), encoding="utf-8") as f:
             source = AirbyteSource.from_config(yaml.safe_load(f.read()))
-            if source.name not in source_assets:
-                source_asset_key = AssetKey(source_key_prefix + [_clean_name(source.name)])
-                source_assets[source.name] = SourceAsset(key=source_asset_key)
+            source_asset_key = AssetKey(source_key_prefix + [_clean_name(source.name)])
 
         state_file = next(
             (filename for filename in os.listdir(connection_dir) if filename.startswith("state_")),
@@ -299,4 +296,4 @@ def load_assets_from_airbyte_project(
             )
         assets.extend(assets_for_connection)
 
-    return assets + list(source_assets.values())
+    return assets
