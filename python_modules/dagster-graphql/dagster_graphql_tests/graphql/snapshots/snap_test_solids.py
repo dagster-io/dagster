@@ -986,7 +986,23 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': 'daily_partitioned_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'my_op'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'memoization_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'my_op'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'static_partitioned_job'
                         },
                         'solidHandle': {
                             'handleID': 'my_op'

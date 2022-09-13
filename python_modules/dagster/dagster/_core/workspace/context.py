@@ -15,6 +15,7 @@ from dagster._core.errors import (
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
     ExternalExecutionPlan,
+    ExternalPartitionSet,
     ExternalPipeline,
     GrpcServerRepositoryLocation,
     PipelineSelector,
@@ -234,11 +235,11 @@ class BaseWorkspaceRequestContext(IWorkspace):
         )
 
     def get_external_partition_names(
-        self, repository_handle: RepositoryHandle, partition_set_name: str
+        self, external_partition_set: ExternalPartitionSet
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
-            repository_handle.location_name
-        ).get_external_partition_names(repository_handle, partition_set_name)
+            external_partition_set.repository_handle.location_name
+        ).get_external_partition_names(external_partition_set)
 
     def get_external_partition_set_execution_param_data(
         self,
