@@ -184,8 +184,10 @@ def get_partition_set_partition_statuses(
 
     run_partition_data = graphene_info.context.instance.run_storage.get_run_partition_data(
         runs_filter=RunsFilter(
-            pipeline_name=job_name,
-            tags={REPOSITORY_LABEL_TAG: repository_handle.get_external_origin().get_label()},
+            tags={
+                PARTITION_SET_TAG: partition_set_name,
+                REPOSITORY_LABEL_TAG: repository_handle.get_external_origin().get_label(),
+            },
         )
     )
     names_result = graphene_info.context.get_external_partition_names(
