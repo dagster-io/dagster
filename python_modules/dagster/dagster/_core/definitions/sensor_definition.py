@@ -1,6 +1,5 @@
 import inspect
 import json
-from collections import defaultdict
 from contextlib import ExitStack
 from enum import Enum
 from typing import (
@@ -24,10 +23,8 @@ from typing_extensions import TypeGuard
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.partition import Partition, PartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -48,7 +45,6 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.event_log.base import EventLogRecord
@@ -226,14 +222,16 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         asset_keys: Sequence[AssetKey],
         instance: Optional[DagsterInstance] = None,
     ):
-        from dagster._core.definitions import AssetsDefinition
-
         self._repository_def = repository_def
         self._asset_keys = asset_keys
 
         self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
         for asset_key in asset_keys:
-            assets_def = self._repository_def._assets_defs_by_key.get(asset_key)
+            assets_def = (
+                self._repository_def._assets_defs_by_key.get(  # pylint:disable=protected-access
+                    asset_key
+                )
+            )
             if assets_def is None:
                 raise DagsterInvalidDefinitionError(
                     f"No asset with {asset_key} found in repository"
@@ -262,7 +260,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         partitions_def = self._partitions_def_by_asset_key.get(asset_key)
 
-        check.not_none(partitions_def)
+        if not isinstance(partitions_def, PartitionsDefinition):
+            raise DagsterInvalidInvocationError(f"No partitions defined for asset key {asset_key}")
 
         partitions_to_fetch = list(partitions_def.get_partition_keys())
 
@@ -362,9 +361,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             limit=limit,
         )
 
-    def _get_cursor(
-        self, asset_key: Optional[AssetKey] = None
-    ) -> Union[Tuple[Optional[str], Optional[int]], Mapping[str, Tuple[str, int]]]:
+    def _get_cursor(self, asset_key: AssetKey) -> Tuple[Optional[str], Optional[int]]:
         """
         The cursor maps stringified AssetKeys (str(asset_key)) to Tuples. The first value in the
         tuple is the partition of type str, representing the partition key. The second value in the
@@ -382,10 +379,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         asset key and returns the tuple containing partition key and storage ID for that asset. If
         no asset key is provided, the method returns back the unpacked cursor object.
         """
+        check.inst_param(asset_key, "asset_key", AssetKey)
         unpacked_cursor = json.loads(self.cursor) if self.cursor else {}
-
-        if asset_key is None:
-            return unpacked_cursor
 
         partition_key, cursor = unpacked_cursor.get(str(asset_key), (None, None))
         return partition_key, cursor
@@ -407,7 +402,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 unpartitioned assets, this parameter is ignored.
 
         Returns:
-            Mapping[AssetKey, Mapping[str, EventLogRecord]]:
+            Mapping[str, EventLogRecord]:
                 Mapping of AssetKey to a mapping of partitions to EventLogRecords where the
                 EventLogRecord is the most recent materialization event for the partition.
                 Filters for materializations in partitions after the cursor.
@@ -440,7 +435,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         partitions_def = self._partitions_def_by_asset_key.get(asset_key)
 
         materialization_by_partition: Dict[str, EventLogRecord] = {}
-        if partitions_def == None:
+        if not isinstance(partitions_def, PartitionsDefinition):
             raise DagsterInvariantViolationError(
                 "Cannot get latest materialization by partition for assets with no partitions"
             )
@@ -465,9 +460,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 # Only update if no previous materialization for this partition exists,
                 # to ensure we return the most recent materialization for each partition.
                 partition = _get_partition_key_from_event_log_record(materialization)
-                check.not_none(partition)
 
-                if partition not in materialization_by_partition:
+                if isinstance(partition, str) and partition not in materialization_by_partition:
                     materialization_by_partition[partition] = materialization
 
         return materialization_by_partition
@@ -532,10 +526,13 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         )
 
     def _get_asset(self, asset_key: AssetKey) -> AssetsDefinition:
+        repository_assets = (
+            self._repository_def._assets_defs_by_key  # pylint:disable=protected-access
+        )
         if asset_key in self._assets_by_key:
             return self._assets_by_key[asset_key]
-        elif asset_key in self._repository_def._assets_defs_by_key:
-            return self._repository_def._assets_defs_by_key[asset_key]
+        elif asset_key in repository_assets:
+            return repository_assets[asset_key]
         else:
             raise DagsterInvalidInvocationError(
                 f"Asset key {asset_key} not monitored in sensor and does not exist in target jobs"
@@ -614,7 +611,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 an EventLogRecord is provided, the cursor for the AssetKey will be updated and future calls to fetch asset materialization events
                 will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
         """
-        cursor_dict = self._get_cursor()
+        cursor_dict = json.loads(self.cursor) if self.cursor else {}
         check.dict_param(cursor_dict, "cursor_dict", key_type=AssetKey)
 
         update_dict = {
@@ -635,7 +632,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public  # type: ignore
     @property
-    def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+    def assets_defs_by_key(self) -> Mapping[AssetKey, AssetsDefinition]:
         return self._assets_by_key
 
 

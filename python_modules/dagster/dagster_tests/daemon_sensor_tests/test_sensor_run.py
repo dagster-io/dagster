@@ -293,7 +293,7 @@ weekly_asset_job = define_asset_job(
 def multi_asset_sensor_hourly_to_weekly(context):
     for partition, materialization in context.latest_materialization_records_by_partition(
         hourly_asset.key
-    ):
+    ).items():
         mapped_partitions = context.get_downstream_partition_keys(
             partition, to_asset_key=weekly_asset.key, from_asset_key=hourly_asset.key
         )

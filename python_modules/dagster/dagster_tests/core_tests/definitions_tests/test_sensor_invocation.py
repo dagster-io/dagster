@@ -514,8 +514,6 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
     def my_repo():
         return [july_daily_partitions]
 
-    july_partitions_keys = partitions_july.get_partition_keys()
-
     @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
     def after_cursor_partitions_asset_sensor(context):
         events = context.latest_materialization_records_by_key(
@@ -631,7 +629,7 @@ def test_multi_asset_sensor_custom_partition_mapping():
             )
         },
     )
-    def downstream_daily_partitions(upstream):
+    def downstream_daily_partitions(upstream):  # pylint: disable=unused-argument
         return 1
 
     @repository
