@@ -623,10 +623,6 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
         not_finished_runs = [
             run for run in instance.get_runs() if run.status not in FINISHED_STATES
         ]
-        for run in not_finished_runs:
-            print(run.pipeline_name)
-            print(run.status)
-        print(len(not_finished_runs))
 
         if len(not_finished_runs) == 0:
             break
