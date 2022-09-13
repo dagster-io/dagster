@@ -192,7 +192,7 @@ def load_assets_from_package_module(
     if key_prefix:
         assets = prefix_assets(assets, key_prefix)
     if group_name:
-        assets = with_group(assets, group_name)
+        assets = list(with_group(assets, group_name))
         source_assets = [asset.with_group_name(group_name) for asset in source_assets]
 
     return [*assets, *source_assets]

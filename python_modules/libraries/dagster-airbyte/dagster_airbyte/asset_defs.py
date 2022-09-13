@@ -291,8 +291,8 @@ def load_assets_from_airbyte_project(
         )
 
         if connection_to_group_fn:
-            assets_for_connection = with_group(
-                assets_for_connection, connection_to_group_fn(connection_name)
+            assets_for_connection = list(
+                with_group(assets_for_connection, connection_to_group_fn(connection_name))
             )
         assets.extend(assets_for_connection)
 
