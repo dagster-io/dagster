@@ -22,10 +22,10 @@ To run a dbt Cloud job, you'll need to configure three values:
 The first two values can be obtained by navigating to the page for your job in the dbt Cloud console, and looking at the URL. For example, in this screenshot, the `account_id` is `11111`, and the `job_id` is `33333`:
 
 <Image
-  alt="Screenshot of the dbt Cloud console on the job page."
-  src="/images/integrations/dbt/dbt_cloud_job_page.png"
-  width={1055}
-  height={673}
+alt="Screenshot of the dbt Cloud console on the job page."
+src="/images/integrations/dbt/dbt_cloud_job_page.png"
+width={1055}
+height={673}
 />
 
 The `auth_token` can also be found or generated in the dbt Cloud console. It's recommended that you use a [Service account token](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) for this purpose, and that you store this value in an environment variable, rather than hardcoding its value in your codebase.
@@ -70,8 +70,6 @@ def my_two_op_job():
 
 You can run dbt Cloud jobs on a schedule in the same way as any other Dagster job:
 
-Once you have your dbt assets, you can define a job that runs some or all of these assets on a schedule:
-
 ```python startafter=start_schedule_dbt_cloud endbefore=end_schedule_dbt_cloud file=/integrations/dbt/dbt_cloud.py dedent=4
 from dagster import ScheduleDefinition, repository
 
@@ -80,7 +78,7 @@ def my_repo():
     return [
         ScheduleDefinition(
             job=my_dbt_cloud_job,
-            cron_schedule="@daily"
+            cron_schedule="@daily",
         ),
     ]
 ```

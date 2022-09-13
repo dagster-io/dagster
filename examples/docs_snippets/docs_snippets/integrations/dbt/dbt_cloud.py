@@ -3,8 +3,9 @@
 
 def scope_dbt_cloud_job():
     # start_dbt_cloud_job
-    from dagster import job
     from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
+
+    from dagster import job
 
     # configure an operation to run the specific job
     run_dbt_nightly_sync = dbt_cloud_run_op.configured(
@@ -25,7 +26,7 @@ def scope_dbt_cloud_job():
 
 
 def scope_dbt_cloud_job2():
-    from dagster import op, job, ResourceDefinition
+    from dagster import ResourceDefinition, job, op
 
     @op
     def another_op():
@@ -43,6 +44,15 @@ def scope_dbt_cloud_job2():
 
 
 def scope_schedule_dbt_cloud():
+    from dagster import job, op
+
+    @op
+    def foo():
+        pass
+
+    @job
+    def my_dbt_cloud_job():
+        foo()
 
     # start_schedule_dbt_cloud
     from dagster import ScheduleDefinition, repository
