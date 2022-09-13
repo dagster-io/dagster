@@ -721,3 +721,16 @@ class ExternalPartitionSet:
 
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
+
+    def has_partition_name_data(self):
+        # Partition sets from older versions of Dagster as well as partition sets using
+        # a DynamicPartitionsDefinition require calling out to user code to compute the partition
+        # names
+        return self._external_partition_set_data.external_partitions_data != None
+
+    def get_partition_names(self):
+        check.invariant(self.has_partition_name_data())
+        partitions = (
+            self._external_partition_set_data.external_partitions_data.get_partitions_definition()
+        )
+        return partitions.get_partition_keys()

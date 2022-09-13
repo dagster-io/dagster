@@ -3,7 +3,6 @@ import random
 import string
 import sys
 import time
-from contextlib import contextmanager
 
 import pendulum
 import pytest
@@ -33,15 +32,8 @@ from dagster._core.host_representation import (
 )
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._core.test_utils import (
-    create_test_daemon_workspace,
-    instance_for_test,
-    step_did_not_run,
-    step_failed,
-    step_succeeded,
-)
+from dagster._core.test_utils import step_did_not_run, step_failed, step_succeeded
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._legacy import ModeDefinition, pipeline, solid
@@ -265,34 +257,6 @@ def the_repo():
     ]
 
 
-@contextmanager
-def default_repo(instance):
-    load_target = workspace_load_target()
-    origin = load_target.create_origins()[0]
-    with origin.create_single_location(instance) as location:
-        yield location.get_repository("the_repo")
-
-
-def workspace_load_target():
-    return PythonFileTarget(
-        python_file=__file__,
-        attribute=None,
-        working_directory=os.path.dirname(__file__),
-        location_name="test_location",
-    )
-
-
-@contextmanager
-def instance_for_context(external_repo_context, overrides=None):
-    with instance_for_test(overrides) as instance:
-        with create_test_daemon_workspace(
-            workspace_load_target=workspace_load_target(),
-            instance=instance,
-        ) as workspace:
-            with external_repo_context(instance) as external_repo:
-                yield (instance, workspace, external_repo)
-
-
 def wait_for_all_runs_to_start(instance, timeout=10):
     start_time = time.time()
     while True:
@@ -331,493 +295,430 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
             break
 
 
-def test_simple_backfill():
-    with instance_for_context(default_repo) as (
-        instance,
-        workspace,
-        external_repo,
-    ):
-        external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="simple",
-                partition_set_origin=external_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=["one", "two", "three"],
-                from_failure=False,
-                reexecution_steps=None,
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-            )
+def test_simple_backfill(instance, workspace, external_repo):
+    external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="simple",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
         )
-        assert instance.get_runs_count() == 0
+    )
+    assert instance.get_runs_count() == 0
 
-        list(
-            execute_backfill_iteration(
-                instance, workspace, get_default_daemon_logger("BackfillDaemon")
-            )
+    list(
+        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
+    )
+
+    assert instance.get_runs_count() == 3
+    runs = instance.get_runs()
+    three, two, one = runs
+    assert one.tags[BACKFILL_ID_TAG] == "simple"
+    assert one.tags[PARTITION_NAME_TAG] == "one"
+    assert two.tags[BACKFILL_ID_TAG] == "simple"
+    assert two.tags[PARTITION_NAME_TAG] == "two"
+    assert three.tags[BACKFILL_ID_TAG] == "simple"
+    assert three.tags[PARTITION_NAME_TAG] == "three"
+
+
+def test_canceled_backfill(instance, workspace, external_repo):
+    external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="simple",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
         )
+    )
+    assert instance.get_runs_count() == 0
 
-        assert instance.get_runs_count() == 3
-        runs = instance.get_runs()
-        three, two, one = runs
-        assert one.tags[BACKFILL_ID_TAG] == "simple"
-        assert one.tags[PARTITION_NAME_TAG] == "one"
-        assert two.tags[BACKFILL_ID_TAG] == "simple"
-        assert two.tags[PARTITION_NAME_TAG] == "two"
-        assert three.tags[BACKFILL_ID_TAG] == "simple"
-        assert three.tags[PARTITION_NAME_TAG] == "three"
-
-
-def test_canceled_backfill():
-    with instance_for_context(default_repo) as (
-        instance,
-        workspace,
-        external_repo,
-    ):
-        external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="simple",
-                partition_set_origin=external_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=["one", "two", "three"],
-                from_failure=False,
-                reexecution_steps=None,
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-            )
-        )
-        assert instance.get_runs_count() == 0
-
-        iterator = execute_backfill_iteration(
-            instance, workspace, get_default_daemon_logger("BackfillDaemon")
-        )
-        next(iterator)
-        assert instance.get_runs_count() == 1
-        backfill = instance.get_backfills()[0]
-        assert backfill.status == BulkActionStatus.REQUESTED
-        instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
-        list(iterator)
-        backfill = instance.get_backfill(backfill.backfill_id)
-        assert backfill.status == BulkActionStatus.CANCELED
-        assert instance.get_runs_count() == 1
+    iterator = execute_backfill_iteration(
+        instance, workspace, get_default_daemon_logger("BackfillDaemon")
+    )
+    next(iterator)
+    assert instance.get_runs_count() == 1
+    backfill = instance.get_backfills()[0]
+    assert backfill.status == BulkActionStatus.REQUESTED
+    instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
+    list(iterator)
+    backfill = instance.get_backfill(backfill.backfill_id)
+    assert backfill.status == BulkActionStatus.CANCELED
+    assert instance.get_runs_count() == 1
 
 
-def test_failure_backfill():
+def test_failure_backfill(instance, workspace, external_repo):
     output_file = _failure_flag_file()
-    with instance_for_context(default_repo) as (
-        instance,
-        workspace,
-        external_repo,
-    ):
-        external_partition_set = external_repo.get_external_partition_set(
-            "conditionally_fail_partition_set"
+    external_partition_set = external_repo.get_external_partition_set(
+        "conditionally_fail_partition_set"
+    )
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="shouldfail",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
         )
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="shouldfail",
-                partition_set_origin=external_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=["one", "two", "three"],
-                from_failure=False,
-                reexecution_steps=None,
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-            )
-        )
-        assert instance.get_runs_count() == 0
+    )
+    assert instance.get_runs_count() == 0
 
-        try:
-            touch_file(output_file)
-            list(
-                execute_backfill_iteration(
-                    instance, workspace, get_default_daemon_logger("BackfillDaemon")
-                )
-            )
-            wait_for_all_runs_to_start(instance)
-        finally:
-            os.remove(output_file)
-
-        assert instance.get_runs_count() == 3
-        runs = instance.get_runs()
-        three, two, one = runs
-        assert one.tags[BACKFILL_ID_TAG] == "shouldfail"
-        assert one.tags[PARTITION_NAME_TAG] == "one"
-        assert one.status == PipelineRunStatus.FAILURE
-        assert step_succeeded(instance, one, "always_succeed")
-        assert step_failed(instance, one, "conditionally_fail")
-        assert step_did_not_run(instance, one, "after_failure")
-
-        assert two.tags[BACKFILL_ID_TAG] == "shouldfail"
-        assert two.tags[PARTITION_NAME_TAG] == "two"
-        assert two.status == PipelineRunStatus.FAILURE
-        assert step_succeeded(instance, two, "always_succeed")
-        assert step_failed(instance, two, "conditionally_fail")
-        assert step_did_not_run(instance, two, "after_failure")
-
-        assert three.tags[BACKFILL_ID_TAG] == "shouldfail"
-        assert three.tags[PARTITION_NAME_TAG] == "three"
-        assert three.status == PipelineRunStatus.FAILURE
-        assert step_succeeded(instance, three, "always_succeed")
-        assert step_failed(instance, three, "conditionally_fail")
-        assert step_did_not_run(instance, three, "after_failure")
-
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="fromfailure",
-                partition_set_origin=external_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=["one", "two", "three"],
-                from_failure=True,
-                reexecution_steps=None,
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-            )
-        )
-
-        assert not os.path.isfile(_failure_flag_file())
+    try:
+        touch_file(output_file)
         list(
             execute_backfill_iteration(
                 instance, workspace, get_default_daemon_logger("BackfillDaemon")
             )
         )
         wait_for_all_runs_to_start(instance)
+    finally:
+        os.remove(output_file)
 
-        assert instance.get_runs_count() == 6
-        from_failure_filter = RunsFilter(tags={BACKFILL_ID_TAG: "fromfailure"})
-        assert instance.get_runs_count(filters=from_failure_filter) == 3
+    assert instance.get_runs_count() == 3
+    runs = instance.get_runs()
+    three, two, one = runs
+    assert one.tags[BACKFILL_ID_TAG] == "shouldfail"
+    assert one.tags[PARTITION_NAME_TAG] == "one"
+    assert one.status == PipelineRunStatus.FAILURE
+    assert step_succeeded(instance, one, "always_succeed")
+    assert step_failed(instance, one, "conditionally_fail")
+    assert step_did_not_run(instance, one, "after_failure")
 
-        runs = instance.get_runs(filters=from_failure_filter)
-        three, two, one = runs
+    assert two.tags[BACKFILL_ID_TAG] == "shouldfail"
+    assert two.tags[PARTITION_NAME_TAG] == "two"
+    assert two.status == PipelineRunStatus.FAILURE
+    assert step_succeeded(instance, two, "always_succeed")
+    assert step_failed(instance, two, "conditionally_fail")
+    assert step_did_not_run(instance, two, "after_failure")
 
-        assert one.tags[BACKFILL_ID_TAG] == "fromfailure"
-        assert one.tags[PARTITION_NAME_TAG] == "one"
-        assert one.status == PipelineRunStatus.SUCCESS
-        assert step_did_not_run(instance, one, "always_succeed")
-        assert step_succeeded(instance, one, "conditionally_fail")
-        assert step_succeeded(instance, one, "after_failure")
+    assert three.tags[BACKFILL_ID_TAG] == "shouldfail"
+    assert three.tags[PARTITION_NAME_TAG] == "three"
+    assert three.status == PipelineRunStatus.FAILURE
+    assert step_succeeded(instance, three, "always_succeed")
+    assert step_failed(instance, three, "conditionally_fail")
+    assert step_did_not_run(instance, three, "after_failure")
 
-        assert two.tags[BACKFILL_ID_TAG] == "fromfailure"
-        assert two.tags[PARTITION_NAME_TAG] == "two"
-        assert two.status == PipelineRunStatus.SUCCESS
-        assert step_did_not_run(instance, one, "always_succeed")
-        assert step_succeeded(instance, one, "conditionally_fail")
-        assert step_succeeded(instance, one, "after_failure")
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="fromfailure",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=True,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
+        )
+    )
 
-        assert three.tags[BACKFILL_ID_TAG] == "fromfailure"
-        assert three.tags[PARTITION_NAME_TAG] == "three"
-        assert three.status == PipelineRunStatus.SUCCESS
-        assert step_did_not_run(instance, one, "always_succeed")
-        assert step_succeeded(instance, one, "conditionally_fail")
-        assert step_succeeded(instance, one, "after_failure")
+    assert not os.path.isfile(_failure_flag_file())
+    list(
+        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
+    )
+    wait_for_all_runs_to_start(instance)
+
+    assert instance.get_runs_count() == 6
+    from_failure_filter = RunsFilter(tags={BACKFILL_ID_TAG: "fromfailure"})
+    assert instance.get_runs_count(filters=from_failure_filter) == 3
+
+    runs = instance.get_runs(filters=from_failure_filter)
+    three, two, one = runs
+
+    assert one.tags[BACKFILL_ID_TAG] == "fromfailure"
+    assert one.tags[PARTITION_NAME_TAG] == "one"
+    assert one.status == PipelineRunStatus.SUCCESS
+    assert step_did_not_run(instance, one, "always_succeed")
+    assert step_succeeded(instance, one, "conditionally_fail")
+    assert step_succeeded(instance, one, "after_failure")
+
+    assert two.tags[BACKFILL_ID_TAG] == "fromfailure"
+    assert two.tags[PARTITION_NAME_TAG] == "two"
+    assert two.status == PipelineRunStatus.SUCCESS
+    assert step_did_not_run(instance, one, "always_succeed")
+    assert step_succeeded(instance, one, "conditionally_fail")
+    assert step_succeeded(instance, one, "after_failure")
+
+    assert three.tags[BACKFILL_ID_TAG] == "fromfailure"
+    assert three.tags[PARTITION_NAME_TAG] == "three"
+    assert three.status == PipelineRunStatus.SUCCESS
+    assert step_did_not_run(instance, one, "always_succeed")
+    assert step_succeeded(instance, one, "conditionally_fail")
+    assert step_succeeded(instance, one, "after_failure")
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
-def test_partial_backfill():
-    with instance_for_context(default_repo) as (
-        instance,
-        workspace,
-        external_repo,
-    ):
-        external_partition_set = external_repo.get_external_partition_set("partial_partition_set")
+def test_partial_backfill(instance, workspace, external_repo):
+    external_partition_set = external_repo.get_external_partition_set("partial_partition_set")
 
-        # create full runs, where every step is executed
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="full",
-                partition_set_origin=external_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=["one", "two", "three"],
-                from_failure=False,
-                reexecution_steps=None,
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-            )
+    # create full runs, where every step is executed
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="full",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
         )
-        assert instance.get_runs_count() == 0
-        list(
-            execute_backfill_iteration(
-                instance, workspace, get_default_daemon_logger("BackfillDaemon")
-            )
+    )
+    assert instance.get_runs_count() == 0
+    list(
+        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
+    )
+    wait_for_all_runs_to_start(instance)
+
+    assert instance.get_runs_count() == 3
+    runs = instance.get_runs()
+    three, two, one = runs
+
+    assert one.tags[BACKFILL_ID_TAG] == "full"
+    assert one.tags[PARTITION_NAME_TAG] == "one"
+    assert one.status == PipelineRunStatus.SUCCESS
+    assert step_succeeded(instance, one, "step_one")
+    assert step_succeeded(instance, one, "step_two")
+    assert step_succeeded(instance, one, "step_three")
+
+    assert two.tags[BACKFILL_ID_TAG] == "full"
+    assert two.tags[PARTITION_NAME_TAG] == "two"
+    assert two.status == PipelineRunStatus.SUCCESS
+    assert step_succeeded(instance, two, "step_one")
+    assert step_succeeded(instance, two, "step_two")
+    assert step_succeeded(instance, two, "step_three")
+
+    assert three.tags[BACKFILL_ID_TAG] == "full"
+    assert three.tags[PARTITION_NAME_TAG] == "three"
+    assert three.status == PipelineRunStatus.SUCCESS
+    assert step_succeeded(instance, three, "step_one")
+    assert step_succeeded(instance, three, "step_two")
+    assert step_succeeded(instance, three, "step_three")
+
+    # delete one of the runs, the partial reexecution should still succeed because the steps
+    # can be executed independently, require no input/output config
+    instance.delete_run(one.run_id)
+    assert instance.get_runs_count() == 2
+
+    # create partial runs
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="partial",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=["step_one"],
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
         )
-        wait_for_all_runs_to_start(instance)
+    )
+    list(
+        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
+    )
+    wait_for_all_runs_to_start(instance)
 
-        assert instance.get_runs_count() == 3
-        runs = instance.get_runs()
-        three, two, one = runs
+    assert instance.get_runs_count() == 5
+    partial_filter = RunsFilter(tags={BACKFILL_ID_TAG: "partial"})
+    assert instance.get_runs_count(filters=partial_filter) == 3
+    runs = instance.get_runs(filters=partial_filter)
+    three, two, one = runs
 
-        assert one.tags[BACKFILL_ID_TAG] == "full"
-        assert one.tags[PARTITION_NAME_TAG] == "one"
-        assert one.status == PipelineRunStatus.SUCCESS
-        assert step_succeeded(instance, one, "step_one")
-        assert step_succeeded(instance, one, "step_two")
-        assert step_succeeded(instance, one, "step_three")
+    assert one.status == PipelineRunStatus.SUCCESS
+    assert step_succeeded(instance, one, "step_one")
+    assert step_did_not_run(instance, one, "step_two")
+    assert step_did_not_run(instance, one, "step_three")
 
-        assert two.tags[BACKFILL_ID_TAG] == "full"
-        assert two.tags[PARTITION_NAME_TAG] == "two"
-        assert two.status == PipelineRunStatus.SUCCESS
-        assert step_succeeded(instance, two, "step_one")
-        assert step_succeeded(instance, two, "step_two")
-        assert step_succeeded(instance, two, "step_three")
+    assert two.status == PipelineRunStatus.SUCCESS
+    assert step_succeeded(instance, two, "step_one")
+    assert step_did_not_run(instance, two, "step_two")
+    assert step_did_not_run(instance, two, "step_three")
 
-        assert three.tags[BACKFILL_ID_TAG] == "full"
-        assert three.tags[PARTITION_NAME_TAG] == "three"
-        assert three.status == PipelineRunStatus.SUCCESS
-        assert step_succeeded(instance, three, "step_one")
-        assert step_succeeded(instance, three, "step_two")
-        assert step_succeeded(instance, three, "step_three")
+    assert three.status == PipelineRunStatus.SUCCESS
+    assert step_succeeded(instance, three, "step_one")
+    assert step_did_not_run(instance, three, "step_two")
+    assert step_did_not_run(instance, three, "step_three")
 
-        # delete one of the runs, the partial reexecution should still succeed because the steps
-        # can be executed independently, require no input/output config
-        instance.delete_run(one.run_id)
-        assert instance.get_runs_count() == 2
 
-        # create partial runs
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="partial",
-                partition_set_origin=external_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=["one", "two", "three"],
-                from_failure=False,
-                reexecution_steps=["step_one"],
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-            )
+def test_large_backfill(instance, workspace, external_repo):
+    external_partition_set = external_repo.get_external_partition_set("large_partition_set")
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="simple",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
         )
-        list(
-            execute_backfill_iteration(
-                instance, workspace, get_default_daemon_logger("BackfillDaemon")
-            )
+    )
+    assert instance.get_runs_count() == 0
+
+    list(
+        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
+    )
+
+    assert instance.get_runs_count() == 3
+
+
+def test_unloadable_backfill(instance, workspace):
+    unloadable_origin = _unloadable_partition_set_origin()
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="simple",
+            partition_set_origin=unloadable_origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
         )
-        wait_for_all_runs_to_start(instance)
+    )
+    assert instance.get_runs_count() == 0
 
-        assert instance.get_runs_count() == 5
-        partial_filter = RunsFilter(tags={BACKFILL_ID_TAG: "partial"})
-        assert instance.get_runs_count(filters=partial_filter) == 3
-        runs = instance.get_runs(filters=partial_filter)
-        three, two, one = runs
+    list(
+        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
+    )
 
-        assert one.status == PipelineRunStatus.SUCCESS
-        assert step_succeeded(instance, one, "step_one")
-        assert step_did_not_run(instance, one, "step_two")
-        assert step_did_not_run(instance, one, "step_three")
-
-        assert two.status == PipelineRunStatus.SUCCESS
-        assert step_succeeded(instance, two, "step_one")
-        assert step_did_not_run(instance, two, "step_two")
-        assert step_did_not_run(instance, two, "step_three")
-
-        assert three.status == PipelineRunStatus.SUCCESS
-        assert step_succeeded(instance, three, "step_one")
-        assert step_did_not_run(instance, three, "step_two")
-        assert step_did_not_run(instance, three, "step_three")
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill("simple")
+    assert backfill.status == BulkActionStatus.FAILED
+    assert isinstance(backfill.error, SerializableErrorInfo)
 
 
-def test_large_backfill():
-    with instance_for_context(default_repo) as (
-        instance,
-        workspace,
-        external_repo,
-    ):
-        external_partition_set = external_repo.get_external_partition_set("large_partition_set")
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="simple",
-                partition_set_origin=external_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=["one", "two", "three"],
-                from_failure=False,
-                reexecution_steps=None,
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-            )
-        )
-        assert instance.get_runs_count() == 0
-
-        list(
-            execute_backfill_iteration(
-                instance, workspace, get_default_daemon_logger("BackfillDaemon")
-            )
-        )
-
-        assert instance.get_runs_count() == 3
-
-
-def test_unloadable_backfill():
-    with instance_for_context(default_repo) as (
-        instance,
-        workspace,
-        _external_repo,
-    ):
-        unloadable_origin = _unloadable_partition_set_origin()
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="simple",
-                partition_set_origin=unloadable_origin,
-                status=BulkActionStatus.REQUESTED,
-                partition_names=["one", "two", "three"],
-                from_failure=False,
-                reexecution_steps=None,
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-            )
-        )
-        assert instance.get_runs_count() == 0
-
-        list(
-            execute_backfill_iteration(
-                instance, workspace, get_default_daemon_logger("BackfillDaemon")
-            )
-        )
-
-        assert instance.get_runs_count() == 0
-        backfill = instance.get_backfill("simple")
-        assert backfill.status == BulkActionStatus.FAILED
-        assert isinstance(backfill.error, SerializableErrorInfo)
-
-
-def test_backfill_from_partitioned_job():
+def test_backfill_from_partitioned_job(instance, workspace, external_repo):
     partition_name_list = [
         partition.name for partition in my_config.partitions_def.get_partitions()
     ]
-    with instance_for_context(default_repo) as (
-        instance,
-        workspace,
-        external_repo,
-    ):
-        external_partition_set = external_repo.get_external_partition_set(
-            "comp_always_succeed_partition_set"
+    external_partition_set = external_repo.get_external_partition_set(
+        "comp_always_succeed_partition_set"
+    )
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="partition_schedule_from_job",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=partition_name_list[:3],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
         )
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="partition_schedule_from_job",
-                partition_set_origin=external_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=partition_name_list[:3],
-                from_failure=False,
-                reexecution_steps=None,
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-            )
-        )
-        assert instance.get_runs_count() == 0
+    )
+    assert instance.get_runs_count() == 0
 
-        list(
-            execute_backfill_iteration(
-                instance, workspace, get_default_daemon_logger("BackfillDaemon")
-            )
-        )
+    list(
+        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
+    )
 
-        assert instance.get_runs_count() == 3
-        runs = reversed(instance.get_runs())
-        for idx, run in enumerate(runs):
-            assert run.tags[BACKFILL_ID_TAG] == "partition_schedule_from_job"
-            assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
-            assert run.tags[PARTITION_SET_TAG] == "comp_always_succeed_partition_set"
+    assert instance.get_runs_count() == 3
+    runs = reversed(instance.get_runs())
+    for idx, run in enumerate(runs):
+        assert run.tags[BACKFILL_ID_TAG] == "partition_schedule_from_job"
+        assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
+        assert run.tags[PARTITION_SET_TAG] == "comp_always_succeed_partition_set"
 
 
-def test_backfill_with_asset_selection():
+def test_backfill_with_asset_selection(instance, workspace, external_repo):
     partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
-    with instance_for_context(default_repo) as (
-        instance,
-        workspace,
-        external_repo,
-    ):
-        external_partition_set = external_repo.get_external_partition_set(
-            "twisted_asset_mess_partition_set"
+    external_partition_set = external_repo.get_external_partition_set(
+        "twisted_asset_mess_partition_set"
+    )
+    asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="backfill_with_asset_selection",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=partition_name_list,
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
         )
-        asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="backfill_with_asset_selection",
-                partition_set_origin=external_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=partition_name_list,
-                from_failure=False,
-                reexecution_steps=None,
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-                asset_selection=asset_selection,
-            )
+    )
+    assert instance.get_runs_count() == 0
+
+    list(
+        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
+    )
+    wait_for_all_runs_to_start(instance, timeout=30)
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert instance.get_runs_count() == 3
+    runs = reversed(instance.get_runs())
+    for idx, run in enumerate(runs):
+        assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
+        assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
+        assert run.tags[PARTITION_SET_TAG] == "twisted_asset_mess_partition_set"
+        assert step_succeeded(instance, run, "foo")
+        assert step_succeeded(instance, run, "reusable")
+        assert step_succeeded(instance, run, "bar")
+    # selected
+    for asset_key in asset_selection:
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
+    # not selected
+    for asset_key in [AssetKey("a2"), AssetKey("b2")]:
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 0
+
+
+def test_backfill_from_failure_for_subselection(instance, workspace, external_repo):
+    partition = parallel_failure_partition_set.get_partition("one")
+    run_config = parallel_failure_partition_set.run_config_for_partition(partition)
+    tags = parallel_failure_partition_set.tags_for_partition(partition)
+    external_partition_set = external_repo.get_external_partition_set(
+        "parallel_failure_partition_set"
+    )
+
+    execute_pipeline(
+        parallel_failure_pipeline,
+        run_config=run_config,
+        tags=tags,
+        instance=instance,
+        solid_selection=["fail_three", "success_four"],
+        raise_on_error=False,
+    )
+
+    assert instance.get_runs_count() == 1
+    wait_for_all_runs_to_finish(instance)
+    run = instance.get_runs()[0]
+    assert run.status == PipelineRunStatus.FAILURE
+
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="fromfailure",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one"],
+            from_failure=True,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=pendulum.now().timestamp(),
         )
-        assert instance.get_runs_count() == 0
+    )
 
-        list(
-            execute_backfill_iteration(
-                instance, workspace, get_default_daemon_logger("BackfillDaemon")
-            )
-        )
-        wait_for_all_runs_to_start(instance, timeout=30)
-        assert instance.get_runs_count() == 3
-        wait_for_all_runs_to_finish(instance, timeout=30)
-
-        assert instance.get_runs_count() == 3
-        runs = reversed(instance.get_runs())
-        for idx, run in enumerate(runs):
-            assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
-            assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
-            assert run.tags[PARTITION_SET_TAG] == "twisted_asset_mess_partition_set"
-            assert step_succeeded(instance, run, "foo")
-            assert step_succeeded(instance, run, "reusable")
-            assert step_succeeded(instance, run, "bar")
-        # selected
-        for asset_key in asset_selection:
-            assert len(instance.run_ids_for_asset_key(asset_key)) == 3
-        # not selected
-        for asset_key in [AssetKey("a2"), AssetKey("b2")]:
-            assert len(instance.run_ids_for_asset_key(asset_key)) == 0
-
-
-def test_backfill_from_failure_for_subselection():
-    with instance_for_context(default_repo) as (
-        instance,
-        workspace,
-        external_repo,
-    ):
-        partition = parallel_failure_partition_set.get_partition("one")
-        run_config = parallel_failure_partition_set.run_config_for_partition(partition)
-        tags = parallel_failure_partition_set.tags_for_partition(partition)
-        external_partition_set = external_repo.get_external_partition_set(
-            "parallel_failure_partition_set"
-        )
-
-        execute_pipeline(
-            parallel_failure_pipeline,
-            run_config=run_config,
-            tags=tags,
-            instance=instance,
-            solid_selection=["fail_three", "success_four"],
-            raise_on_error=False,
-        )
-
-        assert instance.get_runs_count() == 1
-        wait_for_all_runs_to_finish(instance)
-        run = instance.get_runs()[0]
-        assert run.status == PipelineRunStatus.FAILURE
-
-        instance.add_backfill(
-            PartitionBackfill(
-                backfill_id="fromfailure",
-                partition_set_origin=external_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=["one"],
-                from_failure=True,
-                reexecution_steps=None,
-                tags=None,
-                backfill_timestamp=pendulum.now().timestamp(),
-            )
-        )
-
-        list(
-            execute_backfill_iteration(
-                instance, workspace, get_default_daemon_logger("BackfillDaemon")
-            )
-        )
-        assert instance.get_runs_count() == 2
-        run = instance.get_runs(limit=1)[0]
-        assert run.solids_to_execute
-        assert run.solid_selection
-        assert len(run.solids_to_execute) == 2
-        assert len(run.solid_selection) == 2
+    list(
+        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
+    )
+    assert instance.get_runs_count() == 2
+    run = instance.get_runs(limit=1)[0]
+    assert run.solids_to_execute
+    assert run.solid_selection
+    assert len(run.solids_to_execute) == 2
+    assert len(run.solid_selection) == 2

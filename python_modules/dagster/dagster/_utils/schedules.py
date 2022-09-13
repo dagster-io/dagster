@@ -27,7 +27,7 @@ def is_valid_cron_schedule(cron_schedule: Union[str, Sequence[str]]) -> bool:
 
 
 def cron_string_iterator(
-    start_timestamp: float, cron_string: str, execution_timezone: Optional[str]
+    start_timestamp: float, cron_string: str, execution_timezone: Optional[str], start_offset=0
 ) -> Iterator[datetime.datetime]:
     """Generator of datetimes >= start_timestamp for the given cron string."""
     timezone_str = execution_timezone if execution_timezone else "UTC"
@@ -40,6 +40,10 @@ def cron_string_iterator(
     # Go back one iteration so that the next iteration is the first time that is >= start_datetime
     # and matches the cron schedule
     next_date = date_iter.get_prev(datetime.datetime)
+
+    check.invariant(start_offset <= 0)
+    for _ in range(-start_offset):
+        next_date = date_iter.get_prev(datetime.datetime)
 
     cron_parts, _ = croniter.expand(cron_string)
 

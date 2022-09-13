@@ -199,6 +199,10 @@ def test_graphql_ws_error(test_client: TestClient):
 
 
 def test_graphql_ws_success(instance, test_client: TestClient):
+    gc.collect()
+    # verify no leaks from other tests
+    assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 0
+
     run_id = _add_run(instance)
     # wtf pylint
     # pylint: disable=not-context-manager

@@ -28,17 +28,21 @@ const overwriteMerge = (destination: any[], source: any[]) => source;
 interface Props extends Tooltip2Props {
   display?: React.CSSProperties['display'];
   canShow?: boolean;
+  useDisabledButtonTooltipFix?: boolean;
 }
 
 export const Tooltip: React.FC<Props> = (props) => {
-  const {children, display, canShow = true, ...rest} = props;
+  const {useDisabledButtonTooltipFix = false, children, display, canShow = true, ...rest} = props;
+
+  const [isOpen, setIsOpen] = React.useState<undefined | boolean>(undefined);
 
   if (!canShow) {
     return <>{children}</>;
   }
 
-  return (
+  const styledTooltip = (
     <StyledTooltip
+      isOpen={isOpen}
       {...rest}
       minimal
       $display={display}
@@ -52,6 +56,15 @@ export const Tooltip: React.FC<Props> = (props) => {
       {children}
     </StyledTooltip>
   );
+
+  if (useDisabledButtonTooltipFix) {
+    return (
+      <div onMouseLeave={() => setIsOpen(false)} onMouseEnter={() => setIsOpen(true)}>
+        {styledTooltip}
+      </div>
+    );
+  }
+  return styledTooltip;
 };
 
 interface StyledTooltipProps {

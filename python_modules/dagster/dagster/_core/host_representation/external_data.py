@@ -6,8 +6,9 @@ for that.
 """
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from datetime import datetime
 from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
+
+import pendulum
 
 from dagster import StaticPartitionsDefinition
 from dagster import _check as check
@@ -468,51 +469,68 @@ class ExternalTimeWindowPartitionsDefinitionData(
     NamedTuple(
         "_ExternalTimeWindowPartitionsDefinitionData",
         [
-            ("schedule_type", ScheduleType),
             ("start", float),
             ("timezone", Optional[str]),
             ("fmt", str),
             ("end_offset", int),
-            ("minute_offset", int),
-            ("hour_offset", int),
+            ("cron_schedule", Optional[str]),
+            # superseded by cron_schedule, but kept around for backcompat
+            ("schedule_type", Optional[ScheduleType]),
+            # superseded by cron_schedule, but kept around for backcompat
+            ("minute_offset", Optional[int]),
+            # superseded by cron_schedule, but kept around for backcompat
+            ("hour_offset", Optional[int]),
+            # superseded by cron_schedule, but kept around for backcompat
             ("day_offset", Optional[int]),
         ],
     ),
 ):
     def __new__(
         cls,
-        schedule_type: ScheduleType,
         start: float,
         timezone: Optional[str],
         fmt: str,
         end_offset: int,
-        minute_offset: int = 0,
-        hour_offset: int = 0,
+        cron_schedule: Optional[str] = None,
+        schedule_type: Optional[ScheduleType] = None,
+        minute_offset: Optional[int] = None,
+        hour_offset: Optional[int] = None,
         day_offset: Optional[int] = None,
     ):
         return super(ExternalTimeWindowPartitionsDefinitionData, cls).__new__(
             cls,
-            schedule_type=check.inst_param(schedule_type, "schedule_type", ScheduleType),
+            schedule_type=check.opt_inst_param(schedule_type, "schedule_type", ScheduleType),
             start=check.float_param(start, "start"),
             timezone=check.opt_str_param(timezone, "timezone"),
             fmt=check.str_param(fmt, "fmt"),
             end_offset=check.int_param(end_offset, "end_offset"),
-            minute_offset=check.int_param(minute_offset, "minute_offset"),
-            hour_offset=check.int_param(hour_offset, "hour_offset"),
+            minute_offset=check.opt_int_param(minute_offset, "minute_offset"),
+            hour_offset=check.opt_int_param(hour_offset, "hour_offset"),
             day_offset=check.opt_int_param(day_offset, "day_offset"),
+            cron_schedule=check.opt_str_param(cron_schedule, "cron_schedule"),
         )
 
     def get_partitions_definition(self):
-        return TimeWindowPartitionsDefinition(
-            self.schedule_type,
-            datetime.fromtimestamp(self.start),
-            self.timezone,
-            self.fmt,
-            self.end_offset,
-            self.minute_offset,
-            self.hour_offset,
-            self.day_offset,
-        )
+        if self.cron_schedule is not None:
+            return TimeWindowPartitionsDefinition(
+                cron_schedule=self.cron_schedule,
+                start=pendulum.from_timestamp(self.start, tz=self.timezone),
+                timezone=self.timezone,
+                fmt=self.fmt,
+                end_offset=self.end_offset,
+            )
+        else:
+            # backcompat case
+            return TimeWindowPartitionsDefinition(
+                schedule_type=self.schedule_type,
+                start=pendulum.from_timestamp(self.start, tz=self.timezone),
+                timezone=self.timezone,
+                fmt=self.fmt,
+                end_offset=self.end_offset,
+                minute_offset=self.minute_offset,
+                hour_offset=self.hour_offset,
+                day_offset=self.day_offset,
+            )
 
 
 @whitelist_for_serdes
@@ -538,6 +556,7 @@ class ExternalPartitionSetData(
             ("pipeline_name", str),
             ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
+            ("external_partitions_data", Optional[ExternalPartitionsDefinitionData]),
         ],
     )
 ):
@@ -547,6 +566,7 @@ class ExternalPartitionSetData(
         pipeline_name: str,
         solid_selection: Optional[Sequence[str]],
         mode: Optional[str],
+        external_partitions_data: Optional[ExternalPartitionsDefinitionData] = None,
     ):
         return super(ExternalPartitionSetData, cls).__new__(
             cls,
@@ -556,6 +576,11 @@ class ExternalPartitionSetData(
                 solid_selection, "solid_selection", str
             ),
             mode=check.opt_str_param(mode, "mode"),
+            external_partitions_data=check.opt_inst_param(
+                external_partitions_data,
+                "external_partitions_data",
+                ExternalPartitionsDefinitionData,
+            ),
         )
 
 
@@ -1006,14 +1031,11 @@ def external_time_window_partitions_definition_from_def(
 ) -> ExternalTimeWindowPartitionsDefinitionData:
     check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
     return ExternalTimeWindowPartitionsDefinitionData(
-        schedule_type=partitions_def.schedule_type,
-        start=partitions_def.start.timestamp(),
+        cron_schedule=partitions_def.cron_schedule,
+        start=pendulum.instance(partitions_def.start, tz=partitions_def.timezone).timestamp(),
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,
-        minute_offset=partitions_def.minute_offset,
-        hour_offset=partitions_def.hour_offset,
-        day_offset=partitions_def.day_offset,
     )
 
 
@@ -1030,11 +1052,23 @@ def external_partition_set_data_from_def(
     partition_set_def: PartitionSetDefinition,
 ) -> ExternalPartitionSetData:
     check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
+
+    partitions_def = partition_set_def._partitions_def  # pylint: disable=protected-access
+
+    partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None
+    if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        partitions_def_data = external_time_window_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, StaticPartitionsDefinition):
+        partitions_def_data = external_static_partitions_definition_from_def(partitions_def)
+    else:
+        partitions_def_data = None
+
     return ExternalPartitionSetData(
         name=partition_set_def.name,
         pipeline_name=partition_set_def.pipeline_or_job_name,
         solid_selection=partition_set_def.solid_selection,
         mode=partition_set_def.mode,
+        external_partitions_data=partitions_def_data,
     )
 
 

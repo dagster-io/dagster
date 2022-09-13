@@ -25,6 +25,7 @@ class PipelineRunObservableSubscribe:
         self.run_id = run_id
         self.observer = None
         self.state = State.NULL
+        self.load_thread = None
         self.stopping = None
         self.stopped = None
         self.cursor = cursor
@@ -50,13 +51,13 @@ class PipelineRunObservableSubscribe:
 
         self.stopping = Event()
         self.stopped = Event()
-        load_thread = Thread(
+        self.load_thread = Thread(
             target=self.background_event_loading,
             args=(sleep,),
             name=f"load-events-{self.run_id}",
         )
 
-        load_thread.start()
+        self.load_thread.start()
 
     def watch_events(self):
         self.state = State.WATCHING
@@ -97,6 +98,9 @@ class PipelineRunObservableSubscribe:
             self.instance.end_watch_event_logs(self.run_id, self.handle_new_event)
         elif self.state is State.LOADING:
             self.stopping.set()
+            if self.load_thread and self.load_thread.is_alive():
+                self.load_thread.join(timeout=5)
+                self.load_thread = None
 
     def handle_new_event(self, new_event, cursor):
         if self.observer:

@@ -1,8 +1,7 @@
-from datetime import datetime, timedelta
 from typing import Optional, cast
 
 import dagster._check as check
-from dagster._core.definitions.partition import PartitionsDefinition, ScheduleType
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
@@ -75,40 +74,16 @@ class TimeWindowPartitionMapping(PartitionMapping):
         if to_partitions_def.timezone != from_partitions_def.timezone:
             raise DagsterInvalidDefinitionError("Timezones don't match")
 
-        to_period = to_partitions_def.schedule_type
-        from_period = from_partitions_def.schedule_type
+        from_start_dt = from_partitions_def.start_time_for_partition_key(
+            from_partition_key_range.start
+        )
+        from_end_dt = from_partitions_def.end_time_for_partition_key(from_partition_key_range.end)
 
-        from_start_dt = datetime.strptime(from_partition_key_range.start, from_partitions_def.fmt)
-        from_end_dt = datetime.strptime(from_partition_key_range.end, from_partitions_def.fmt)
-
-        if to_period > from_period:
-            to_start_dt = round_datetime_to_period(from_start_dt, to_period)
-            to_end_dt = round_datetime_to_period(from_end_dt, to_period)
-        elif to_period < from_period:
-            to_start_dt = from_start_dt
-            to_end_dt = (from_end_dt + from_period.delta) - to_period.delta
-        else:
-            to_start_dt = from_start_dt
-            to_end_dt = from_end_dt
-
-        return PartitionKeyRange(
-            to_start_dt.strftime(to_partitions_def.fmt),
-            to_end_dt.strftime(to_partitions_def.fmt),
+        to_start_partition_key = to_partitions_def.get_partition_key_for_timestamp(
+            from_start_dt.timestamp(), end_closed=False
+        )
+        to_end_partition_key = to_partitions_def.get_partition_key_for_timestamp(
+            from_end_dt.timestamp(), end_closed=True
         )
 
-
-def round_datetime_to_period(dt: datetime, period: ScheduleType) -> datetime:
-    if period == ScheduleType.MONTHLY:
-        return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    elif period == ScheduleType.WEEKLY:
-        # isoweekday returns 1 for Monday, 7 for Sunday. Our weekly partitions start from every
-        # Sunday so we mod isoweekday by 7.
-        return (dt - timedelta(days=(dt.isoweekday() % 7))).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-    elif period == ScheduleType.DAILY:
-        return dt.replace(hour=0, minute=0, second=0, microsecond=0)
-    elif period == ScheduleType.HOURLY:
-        return dt.replace(minute=0, second=0, microsecond=0)
-    else:
-        check.failed("Unknown schedule type")
+        return PartitionKeyRange(to_start_partition_key, to_end_partition_key)

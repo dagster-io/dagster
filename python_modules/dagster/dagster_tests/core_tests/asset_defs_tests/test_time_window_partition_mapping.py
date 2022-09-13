@@ -1,17 +1,13 @@
-import pendulum
-import pytest
+from datetime import datetime
 
 from dagster import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partition import ScheduleType
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partition_mapping import (
-    TimeWindowPartitionMapping,
-    round_datetime_to_period,
-)
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
 
 def test_get_upstream_partitions_for_partition_range_same_partitioning():
@@ -95,21 +91,49 @@ def test_get_upstream_partitions_for_partition_range_monthly_downstream_daily_up
     assert result == PartitionKeyRange("2021-05-01", "2021-07-31")
 
 
-@pytest.mark.parametrize(
-    "dt_str, period, expected_str",
-    [
-        ("2020-01-01", ScheduleType.DAILY, "2020-01-01"),
-        ("2020-01-01 01:00:00", ScheduleType.DAILY, "2020-01-01"),
-        ("2020-01-01 01:00:00", ScheduleType.HOURLY, "2020-01-01 01:00:00"),
-        ("2020-01-01", ScheduleType.MONTHLY, "2020-01-01"),
-        ("2020-01-02", ScheduleType.MONTHLY, "2020-01-01"),
-        ("2020-01-02 01:00:00", ScheduleType.MONTHLY, "2020-01-01"),
-        ("2021-12-03", ScheduleType.WEEKLY, "2021-11-28"),
-        ("2021-12-03 01:00:00", ScheduleType.WEEKLY, "2021-11-28"),
-        ("2021-11-28", ScheduleType.WEEKLY, "2021-11-28"),
-    ],
-)
-def test_round_datetime_to_period(dt_str, period, expected_str):
-    dt = pendulum.parse(dt_str)
-    expected_dt = pendulum.parse(expected_str)
-    assert round_datetime_to_period(dt, period) == expected_dt
+def test_get_upstream_partitions_for_partition_range_twice_daily_downstream_daily_upstream():
+    start = datetime(year=2020, month=1, day=5)
+    downstream_partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="0 0 * * *", start=start, fmt="%Y-%m-%d"
+    )
+    upstream_partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="0 0,11 * * *", start=start, fmt="%Y-%m-%d %H:%M"
+    )
+    result = TimeWindowPartitionMapping().get_upstream_partitions_for_partition_range(
+        PartitionKeyRange("2021-05-01", "2021-05-03"),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    )
+    assert result == PartitionKeyRange("2021-05-01 00:00", "2021-05-03 11:00")
+
+
+def test_get_upstream_partitions_for_partition_range_daily_downstream_twice_daily_upstream():
+    start = datetime(year=2020, month=1, day=5)
+    downstream_partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="0 0,11 * * *", start=start, fmt="%Y-%m-%d %H:%M"
+    )
+    upstream_partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="0 0 * * *", start=start, fmt="%Y-%m-%d"
+    )
+    result = TimeWindowPartitionMapping().get_upstream_partitions_for_partition_range(
+        PartitionKeyRange("2021-05-01 00:00", "2021-05-03 00:00"),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    )
+    assert result == PartitionKeyRange("2021-05-01", "2021-05-03")
+
+
+def test_get_upstream_partitions_for_partition_range_daily_non_aligned():
+    start = datetime(year=2020, month=1, day=5)
+    downstream_partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="0 0 * * *", start=start, fmt="%Y-%m-%d"
+    )
+    upstream_partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="0 11 * * *", start=start, fmt="%Y-%m-%d"
+    )
+    result = TimeWindowPartitionMapping().get_upstream_partitions_for_partition_range(
+        PartitionKeyRange("2021-05-02", "2021-05-04"),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    )
+    assert result == PartitionKeyRange("2021-05-01", "2021-05-04")

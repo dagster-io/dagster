@@ -254,7 +254,8 @@ def _has_cycles(deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefi
 
 
 def _attempt_resolve_cycles(
-    assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
+    assets_defs: Iterable["AssetsDefinition"],
+    source_assets: Iterable["SourceAsset"],
 ) -> Sequence["AssetsDefinition"]:
     """
     DFS starting at root nodes to color the asset dependency graph. Each time you leave your

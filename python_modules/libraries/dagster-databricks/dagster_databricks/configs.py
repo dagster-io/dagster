@@ -502,10 +502,18 @@ def _define_submit_run_fields():
         "This token should have at most 64 characters.",
         is_required=False,
     )
+    install_default_libraries = Field(
+        Bool,
+        description="By default, Dagster installs a version of dagster, dagster-databricks, and "
+        "dagster-pyspark matching the locally-installed versions of those libraries. If you would "
+        "like to disable this behavior, this value can be set to False.",
+        is_required=False,
+    )
     return {
         "cluster": _define_cluster(),
         "run_name": run_name,
         "libraries": _define_libraries(),
+        "install_default_libraries": install_default_libraries,
         "timeout_seconds": timeout_seconds,
         "idempotency_token": idempotency_token,
     }

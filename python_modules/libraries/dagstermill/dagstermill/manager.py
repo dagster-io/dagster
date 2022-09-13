@@ -34,7 +34,7 @@ from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition,
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
 from dagster._utils import EventGenerationManager, ensure_gen
-from dagster._utils.backcompat import deprecation_warning
+from dagster._utils.backcompat import canonicalize_backcompat_args, deprecation_warning
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
@@ -213,11 +213,6 @@ class Manager:
         check.opt_inst_param(mode_def, "mode_def", ModeDefinition)
         run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
 
-        if solid_config and op_config:
-            raise DagsterInvariantViolationError(
-                "Attempted to provide both solid_config and op_config arguments to `dagstermill.get_context`. Please provide one or the other."
-            )
-
         if resource_defs and mode_def:
             raise DagsterInvariantViolationError(
                 "Attempted to provide both resource_defs and mode_def arguments to `dagstermill.get_context`. Please provide one or the other."
@@ -228,12 +223,9 @@ class Manager:
                 "Attempted to provide both logger_defs and mode_def arguments to `dagstermill.get_context`. Please provide one or the other."
             )
 
-        if solid_config:
-            deprecation_warning(
-                "solid_config argument to dagstermill.get_context",
-                "0.17.0",
-                "Use the op_config argument instead.",
-            )
+        solid_config = canonicalize_backcompat_args(
+            op_config, "op_config", solid_config, "solid_config", "0.17.0"
+        )
 
         if mode_def:
             deprecation_warning(

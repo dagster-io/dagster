@@ -66,6 +66,7 @@ class K8sRunLauncherConfig(BaseModel):
     labels: Optional[Dict[str, str]]
     failPodOnRunFailure: Optional[bool]
     resources: Optional[kubernetes.ResourceRequirements]
+    schedulerName: Optional[str]
 
     class Config:
         extra = Extra.forbid

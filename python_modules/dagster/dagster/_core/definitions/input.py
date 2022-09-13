@@ -353,6 +353,10 @@ class InputPointer(NamedTuple("_InputPointer", [("solid_name", str), ("input_nam
             check.str_param(input_name, "input_name"),
         )
 
+    @property
+    def node_name(self) -> str:
+        return self.solid_name
+
 
 class FanInInputPointer(
     NamedTuple(
@@ -367,6 +371,10 @@ class FanInInputPointer(
             check.int_param(fan_in_index, "fan_in_index"),
         )
 
+    @property
+    def node_name(self) -> str:
+        return self.solid_name
+
 
 class InputMapping(NamedTuple):
     """Defines an input mapping for a graph.
@@ -377,7 +385,8 @@ class InputMapping(NamedTuple):
         mapped_node_input_name (str): Name of the input in the node (op/graph) that is being mapped to.
         fan_in_index (Optional[int]): The index in to a fanned input, otherwise None.
         graph_input_description (Optional[str]): A description of the input in the graph being mapped from.
-        dagster_type (Optional[DagsterType]): (Deprecated) The dagster type of the graph's input being mapped from. Users should not use this argument when instantiating the class.
+        dagster_type (Optional[DagsterType]): (Deprecated) The dagster type of the graph's input
+            being mapped from. Users should not use this argument when instantiating the class.
 
     Examples:
 

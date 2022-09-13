@@ -210,7 +210,7 @@ class DagsterK8sJobConfig(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
         "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-        "volume_mounts volumes labels resources",
+        "volume_mounts volumes labels resources scheduler_name",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -256,6 +256,8 @@ class DagsterK8sJobConfig(
             https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
         resources (Optional[Dict[str, Any]]) Compute resource requirements for the container. See:
             https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        scheduler_name (Optional[str]): Use a custom Kubernetes scheduler for launched Pods. See:
+            https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
     """
 
     def __new__(
@@ -274,6 +276,7 @@ class DagsterK8sJobConfig(
         volumes=None,
         labels=None,
         resources=None,
+        scheduler_name=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
@@ -301,6 +304,7 @@ class DagsterK8sJobConfig(
             ],
             labels=check.opt_dict_param(labels, "labels", key_type=str, value_type=str),
             resources=check.opt_dict_param(resources, "resources", key_type=str),
+            scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
         )
 
     @classmethod
@@ -469,6 +473,12 @@ class DagsterK8sJobConfig(
                 description="Compute resource requirements for the container. See: "
                 "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
             ),
+            "scheduler_name": Field(
+                Noneable(StringSource),
+                is_required=False,
+                description="Use a custom Kubernetes scheduler for launched Pods. See:"
+                "https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/",
+            ),
         }
 
     @classmethod
@@ -534,7 +544,7 @@ def construct_dagster_k8s_job(
     Args:
         job_config (DagsterK8sJobConfig): Job configuration to use for constructing the Kubernetes
             Job object.
-        args (List[str]): CLI arguments to use with dagster-graphql in this Job.
+        args (Optional[List[str]]): CLI arguments to use with in this Job.
         job_name (str): The name of the Job. Note that this name must be <= 63 characters in length.
         user_defined_k8s_config(Optional[UserDefinedDagsterK8sConfig]): Additional k8s config in tags or Dagster config
             to apply to the job.
@@ -549,7 +559,7 @@ def construct_dagster_k8s_job(
         kubernetes.client.V1Job: A Kubernetes Job object.
     """
     check.inst_param(job_config, "job_config", DagsterK8sJobConfig)
-    check.list_param(args, "args", of_type=str)
+    check.opt_list_param(args, "args", of_type=str)
     check.str_param(job_name, "job_name")
     user_defined_k8s_config = check.opt_inst_param(
         user_defined_k8s_config,
@@ -608,6 +618,9 @@ def construct_dagster_k8s_job(
 
     container_config = copy.deepcopy(user_defined_k8s_config.container_config)
 
+    if args != None:
+        container_config["args"] = args
+
     user_defined_env_vars = container_config.pop("env", [])
 
     user_defined_env_from = container_config.pop("env_from", [])
@@ -627,7 +640,6 @@ def construct_dagster_k8s_job(
         {
             "name": "dagster",
             "image": job_image,
-            "args": args,
             "image_pull_policy": job_config.image_pull_policy,
             "env": env + job_config.env + user_defined_env_vars,
             "env_from": job_config.env_from_sources + user_defined_env_from,
@@ -651,6 +663,8 @@ def construct_dagster_k8s_job(
         "service_account_name", job_config.service_account_name
     )
 
+    scheduler_name = pod_spec_config.pop("scheduler_name", job_config.scheduler_name)
+
     user_defined_containers = pod_spec_config.pop("containers", [])
 
     template = {
@@ -672,6 +686,7 @@ def construct_dagster_k8s_job(
                 "containers": [container_config] + user_defined_containers,
                 "volumes": volumes,
             },
+            {"scheduler_name": scheduler_name} if scheduler_name else {},
         ),
     }
 

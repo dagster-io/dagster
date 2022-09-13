@@ -8,6 +8,7 @@
 import path from 'path';
 
 import {Tab, Transition} from '@headlessui/react';
+import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
 import React, {useContext, useRef, useState} from 'react';
@@ -17,9 +18,9 @@ import {useVersion} from '../../util/useVersion';
 import Icons from '../Icons';
 import Link from '../Link';
 
+import 'react-medium-image-zoom/dist/styles.css';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
-import 'react-medium-image-zoom/dist/styles.css';
 
 export const SearchIndexContext = React.createContext(null);
 
@@ -481,21 +482,22 @@ const ExampleItem = ({title, hrefDoc = null, hrefCode, children, tags = []}) => 
   );
 };
 
-interface Entry {
+interface TabItem {
   name: string;
-  content: any;
+  children: any;
 }
+const TabItem = (_: TabItem) => {}; // container to pass through name and children
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-function TabGroup({entries}: {entries: Entry[]}) {
-  return (
-    <div className="w-full px-2 py-2 sm:px-0">
-      <Tab.Group>
-        <Tab.List className="flex space-x-2 m-2">
-          {entries.map((entry, idx) => (
+const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, persistentKey}) => {
+  const contents = (
+    <>
+      <Tab.List className="flex space-x-2 m-2">
+        {React.Children.map(children, (child, idx) => {
+          return (
             <Tab
               key={idx}
               className={({selected}) =>
@@ -508,21 +510,42 @@ function TabGroup({entries}: {entries: Entry[]}) {
                 )
               }
             >
-              {entry?.name}
+              {child?.props?.name}
             </Tab>
-          ))}
-        </Tab.List>
-        <Tab.Panels>
-          {entries.map((entry, idx) => (
+          );
+        })}
+      </Tab.List>
+      <Tab.Panels>
+        {React.Children.map(children, (child, idx) => {
+          return (
             <Tab.Panel key={idx} className={classNames('p-3')}>
-              {entry?.content}
+              {child.props.children}
             </Tab.Panel>
-          ))}
-        </Tab.Panels>
-      </Tab.Group>
+          );
+        })}
+      </Tab.Panels>
+    </>
+  );
+
+  return (
+    <div className="w-full px-2 py-2 sm:px-0">
+      {persistentKey ? (
+        <PersistentTabContext.Consumer>
+          {(context) => (
+            <Tab.Group
+              selectedIndex={context.getTabState(persistentKey)}
+              onChange={(idx) => context.setTabState(persistentKey, idx)}
+            >
+              {contents}
+            </Tab.Group>
+          )}
+        </PersistentTabContext.Consumer>
+      ) : (
+        <Tab.Group>{contents}</Tab.Group>
+      )}
     </div>
   );
-}
+};
 
 const Image = ({children, ...props}) => {
   /* Only version images when all conditions meet:
@@ -600,4 +623,5 @@ export default {
   ExampleItemSmall,
   ExampleItem,
   TabGroup,
+  TabItem,
 };

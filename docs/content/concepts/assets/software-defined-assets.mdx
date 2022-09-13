@@ -5,6 +5,18 @@ description: A software-defined asset is a description of how to compute the con
 
 # Software-Defined Assets
 
+<Note>
+  Prefer videos? Check out our{" "}
+  <a href="https://www.youtube.com/watch?v=In4CUoFKOfY" target="new">
+    explainer
+  </a>{" "}
+  and{" "}
+  <a href="https://www.youtube.com/watch?v=lRwpcyd6w8k" target="new">
+    demo
+  </a>{" "}
+  videos to get a quick look at Software-defined assets.
+</Note>
+
 An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. A **software-defined asset** is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
 
 Software-defined assets enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
@@ -236,8 +248,6 @@ def store_slack_files_in_sql():
 
 graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
 ```
-
-**Note**: All output assets must be selected when using a graph-backed asset to create a job. Dagster will select all graph outputs automatically upon creating a job.
 
 #### Defining basic dependencies for graph-backed assets
 
