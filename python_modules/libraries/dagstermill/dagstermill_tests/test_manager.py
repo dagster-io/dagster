@@ -85,6 +85,10 @@ def test_get_out_of_pipeline_solid_config():
     assert dagstermill.get_context(solid_config="bar").solid_config == "bar"
 
 
+def test_get_out_of_pipeline_op_config():
+    assert dagstermill.get_context(op_config="bar").op_config == "bar"
+
+
 def test_out_of_pipeline_manager_yield_result():
     manager = Manager()
     assert manager.yield_result("foo") == "foo"
