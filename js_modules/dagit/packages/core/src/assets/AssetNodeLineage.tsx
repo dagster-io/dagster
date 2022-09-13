@@ -41,7 +41,10 @@ export const AssetNodeLineage: React.FC<{
   const currentDepth = Math.max(1, Math.min(maxDepth, requestedDepth));
 
   return (
-    <Box style={{width: '100%', height: '100%', position: 'relative'}} flex={{direction: 'column'}}>
+    <Box
+      style={{width: '100%', flex: 1, minHeight: 0, position: 'relative'}}
+      flex={{direction: 'column'}}
+    >
       <Box
         flex={{justifyContent: 'space-between', alignItems: 'center', gap: 12}}
         padding={{left: 24, right: 12, vertical: 12}}
