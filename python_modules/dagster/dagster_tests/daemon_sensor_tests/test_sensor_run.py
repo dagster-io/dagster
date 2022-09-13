@@ -623,6 +623,10 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
         not_finished_runs = [
             run for run in instance.get_runs() if run.status not in FINISHED_STATES
         ]
+        for run in not_finished_runs:
+            print(run.pipeline_name)
+            print(run.status)
+        print(len(not_finished_runs))
 
         if len(not_finished_runs) == 0:
             break
@@ -1825,13 +1829,10 @@ def test_multi_asset_sensor_hourly_to_weekly(executor, instance, workspace, exte
             TickStatus.SUCCESS,
         )
         run = instance.get_runs()[0]
-        wait_for_all_runs_to_finish(instance)
-
-        records = instance.get_records_for_run(
-            run.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
-        )
-        assert len(records.records) == 1
-        assert records.records[0].event_log_entry.dagster_event.partition == "2022-07-31"
+        assert run.run_config == {}
+        assert run.tags
+        assert run.tags.get("dagster/sensor_name") == "multi_asset_sensor_hourly_to_weekly"
+        assert run.tags.get("dagster/partition") == "2022-07-31"
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
@@ -1858,13 +1859,11 @@ def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace, exte
             TickStatus.SUCCESS,
         )
         run = instance.get_runs()[0]
-        wait_for_all_runs_to_finish(instance)
 
-        records = instance.get_records_for_run(
-            run.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
-        )
-        assert len(records.records) == 1
-        assert records.records[0].event_log_entry.dagster_event.partition == "2022-08-02-00:00"
+        assert run.run_config == {}
+        assert run.tags
+        assert run.tags.get("dagster/sensor_name") == "multi_asset_sensor_hourly_to_hourly"
+        assert run.tags.get("dagster/partition") == "2022-08-02-00:00"
 
         freeze_datetime = freeze_datetime.add(seconds=30)
 

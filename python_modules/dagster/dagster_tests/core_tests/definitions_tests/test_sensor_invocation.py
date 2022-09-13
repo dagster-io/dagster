@@ -1,3 +1,4 @@
+from turtle import down
 from typing import Optional
 from unittest import mock
 
@@ -614,6 +615,10 @@ def test_multi_asset_sensor_custom_partition_mapping():
             downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
+            if not isinstance(downstream_partitions_def, PartitionsDefinition):
+                raise DagsterInvariantViolationError(
+                    "Expected downstream_partitions_def to be a PartitionsDefinition"
+                )
             first_partition_key = downstream_partitions_def.get_first_partition_key()
             return PartitionKeyRange(first_partition_key, first_partition_key)
 
