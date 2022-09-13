@@ -9,7 +9,7 @@ from dagster import (
     SkipReason,
     SourceAsset,
     asset,
-    build_asset_sensor,
+    build_asset_reconciliation_sensor,
     io_manager,
     job,
     multi_asset,
@@ -159,12 +159,14 @@ def runs_long():
 def waits(runs_long):
     return runs_long + 1
 
+
 class MyIOManager(IOManager):
     def handle_output(self, context, obj):
         pass
 
     def load_input(self, context):
         return 5
+
 
 @io_manager
 def the_manager():
@@ -173,9 +175,11 @@ def the_manager():
 
 source_asset = SourceAsset(key=AssetKey("the_source"), io_manager_def=the_manager)
 
+
 @asset
 def downstream_of_source(the_source):
     return the_source + 4
+
 
 def get_asset_sensors_repo():
     return [
@@ -194,7 +198,8 @@ def get_asset_sensors_repo():
         waits,
         source_asset,
         downstream_of_source,
-        build_asset_sensor(
-            selection=AssetSelection.assets(downstream, waits, downstream_of_source), name="generated_sensor"
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(downstream, waits, downstream_of_source),
+            name="generated_sensor",
         ),
     ]

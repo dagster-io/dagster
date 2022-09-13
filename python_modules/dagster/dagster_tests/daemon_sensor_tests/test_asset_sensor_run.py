@@ -9,12 +9,12 @@ from .test_sensor_run import (
     e,
     evaluate_sensors,
     get_sensor_executors,
+    h,
     instance_with_sensors,
     validate_tick,
     wait_for_all_runs_to_finish,
     x,
     z,
-    h,
 )
 
 
@@ -331,13 +331,67 @@ def test_layered_sensor(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
+def test_layered_sensor_no_materialize(executor):
+    """Asset graph:
+        x       z       e
+        \       /\      /
+            d       f
+            \       /
+                g
+    Sensor for g
+    Tests that materializing x, z, and e does not cause a materialization of g
+    """
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="asset_sensor_repo") as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            the_sensor = external_repo.get_external_sensor("just_g")
+            instance.start_sensor(the_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            materialize([x, z, e], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should not materialize
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_lots_of_materializations_sensor(executor):
     """Asset graph:
         x
         |
         y
     Sensor for y
-    Tests that materializing x a few times, then starting the sensor results in only one materialization
+    Tests that materializing x a few times then starting the sensor results in only one materialization
         of y
     """
     freeze_datetime = to_timezone(
@@ -353,26 +407,6 @@ def test_lots_of_materializations_sensor(executor):
             for _ in range(5):
                 materialize([x], instance=instance)
                 wait_for_all_runs_to_finish(instance)
-
-            # something is wrong with this test. The in progress asset materialization events are coming in
-            # in reverse order (first planned materialization first) rather than (more recent planned
-            # materialization first as when you run locally in dagit. maybe something with the test storage?)
-
-            from dagster._core.events import DagsterEventType
-            from dagster._core.storage.event_log.base import EventRecordsFilter
-
-            ers = instance.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                    asset_key=x.asset_key,
-                ),
-                ascending=False,
-                limit=5,
-            )
-            for e in ers:
-                print("\n")
-                print(e)
-                print("\n")
 
             y_sensor = external_repo.get_external_sensor("just_y")
             instance.start_sensor(y_sensor)
@@ -514,6 +548,7 @@ def test_many_materializations_for_one_parent_sensor(executor):
             assert len(run_request_runs) == 3
             assert run_request_runs[0].asset_selection == {AssetKey("d")}
 
+
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_two_graph_sensor(executor):
     """Asset graph:
@@ -593,9 +628,13 @@ def test_two_graph_sensor(executor):
             wait_for_all_runs_to_finish(instance)
             run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
             assert len(run_request_runs) == 2
-            assert [r.asset_selection  for r in run_request_runs] == [{AssetKey("i")}, {AssetKey("y")}]
+            assert [r.asset_selection for r in run_request_runs] == [
+                {AssetKey("i")},
+                {AssetKey("y")},
+            ]
 
             freeze_datetime = freeze_datetime.add(seconds=60)
+
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_source_asset_sensor(executor):

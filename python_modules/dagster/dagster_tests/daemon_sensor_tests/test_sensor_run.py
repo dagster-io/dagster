@@ -16,21 +16,21 @@ from dagster import (
     AssetSelection,
     DagsterRunStatus,
     Field,
+    IOManager,
     JobSelector,
     Output,
     RepositorySelector,
+    SourceAsset,
     asset,
-    build_asset_sensor,
+    build_asset_reconciliation_sensor,
     define_asset_job,
     graph,
+    io_manager,
     load_assets_from_current_module,
     materialize,
     multi_asset_sensor,
     repository,
     run_failure_sensor,
-    SourceAsset,
-    IOManager,
-    io_manager,
 )
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.run_request import InstigatorType
@@ -487,13 +487,16 @@ def f(z, e):
 def g(d, f):
     return d + f
 
+
 @asset
 def h():
     return 1
 
+
 @asset
 def i(h):
     return h + 1
+
 
 class MyIOManager(IOManager):
     def handle_output(self, context, obj):
@@ -502,12 +505,14 @@ class MyIOManager(IOManager):
     def load_input(self, context):
         return 5
 
+
 @io_manager
 def the_manager():
     return MyIOManager()
 
 
 source_asset = SourceAsset(key=AssetKey("the_source"), io_manager_def=the_manager)
+
 
 @asset
 def downstream_of_source(the_source):
@@ -528,13 +533,19 @@ def asset_sensor_repo():
         i,
         source_asset,
         downstream_of_source,
-        build_asset_sensor(selection=AssetSelection.assets(y), name="just_y"),
-        build_asset_sensor(selection=AssetSelection.assets(d), name="just_d"),
-        build_asset_sensor(selection=AssetSelection.assets(d, f), name="d_and_f"),
-        build_asset_sensor(selection=AssetSelection.assets(d, f, g), name="d_and_f_and_g"),
-        build_asset_sensor(selection=AssetSelection.assets(y, d), name="y_and_d"),
-        build_asset_sensor(selection=AssetSelection.assets(y, i), name="y_and_i"),
-        build_asset_sensor(selection=AssetSelection.assets(downstream_of_source), name="downstream_of_source_sensor")
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(y), name="just_y"),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(d), name="just_d"),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(d, f), name="d_and_f"),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(d, f, g), name="d_and_f_and_g"
+        ),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(y, d), name="y_and_d"),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(y, i), name="y_and_i"),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(downstream_of_source),
+            name="downstream_of_source_sensor",
+        ),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(g), name="just_g"),
     ]
 
 

@@ -331,9 +331,8 @@ from dagster._core.definitions.unresolved_asset_job_definition import (
     define_asset_job as define_asset_job,
 )
 
-from dagster._core.definitions.unresolved_asset_sensor_definition import (
-    # UnresolvedAssetSensorDefinition as UnresolvedAssetSensorDefinition,
-    build_asset_sensor as build_asset_sensor,
+from dagster._core.definitions.asset_reconciliation_sensor import (
+    build_asset_reconciliation_sensor as build_asset_reconciliation_sensor,
 )
 from dagster._core.definitions.utils import (
     config_from_files as config_from_files,
