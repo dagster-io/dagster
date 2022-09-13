@@ -636,6 +636,78 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         return self._assets_by_key
 
 
+@experimental
+class AssetSLASensorEvaluationContext(MultiAssetSensorEvaluationContext):
+    """The context object available as the argument to the evaluation function of a :py:class:`dagster.AssetSLASensorDefinition`."""
+
+    def __init__(
+        self,
+        instance_ref: Optional[InstanceRef],
+        last_completion_time: Optional[float],
+        last_run_key: Optional[str],
+        cursor: Optional[str],
+        repository_name: Optional[str],
+        repository_def: "RepositoryDefinition",
+        asset_keys: Optional[Sequence[AssetKey]] = None,
+        instance: Optional[DagsterInstance] = None,
+    ):
+        from dagster._core.definitions import AssetsDefinition
+
+        self._repository_def = repository_def
+        self._asset_keys = asset_keys
+
+        self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
+        for asset_key in asset_keys:
+            assets_def = self._repository_def._assets_defs_by_key.get(asset_key)
+            if assets_def is None:
+                raise DagsterInvalidDefinitionError(
+                    f"No asset with {asset_key} found in repository"
+                )
+            self._assets_by_key[asset_key] = assets_def
+
+        self.cursor_has_been_updated = False
+
+        super(MultiAssetSensorEvaluationContext, self).__init__(
+            instance_ref=instance_ref,
+            last_completion_time=last_completion_time,
+            last_run_key=last_run_key,
+            cursor=cursor,
+            repository_name=repository_name,
+            instance=instance,
+        )
+
+    @public
+    def advance_cursor(
+        self, materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]]
+    ):
+        """Advances the cursor for a group of AssetKeys based on the EventLogRecord provided for each AssetKey.
+
+        Args:
+            materialization_records_by_key (Mapping[AssetKey, Optional[EventLogRecord]]): Mapping of AssetKeys to EventLogRecord or None. If
+                an EventLogRecord is provided, the cursor for the AssetKey will be updated and future calls to fetch asset materialization events
+                will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
+        """
+        cursor_dict = json.loads(self.cursor) if self.cursor else {}
+        update_dict = {
+            str(k): v.storage_id if v else cursor_dict.get(str(k))
+            for k, v in materialization_records_by_key.items()
+        }
+        cursor_str = json.dumps(update_dict)
+        self._cursor = check.opt_str_param(cursor_str, "cursor")
+        self.cursor_has_been_updated = True
+
+    @public
+    def advance_all_cursors(self):
+        """Updates the cursor to the most recent materialization event for all assets monitored by the multi_asset_sensor"""
+        materializations_by_key = self.latest_materialization_records_by_key()
+        self.advance_cursor(materializations_by_key)
+
+    @public  # type: ignore
+    @property
+    def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        return self._assets_by_key
+
+
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
 SensorExecutionContext = SensorEvaluationContext
 
@@ -1204,6 +1276,141 @@ class AssetSensorDefinition(SensorDefinition):
 class MultiAssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a list of
     assets.
+
+    Args:
+        name (str): The name of the sensor to create.
+        asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
+        asset_materialization_fn (Callable[[MultiAssetSensorEvaluationContext], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
+            evaluation function for the sensor, which is run at an interval to determine whether a
+            run should be launched or not. Takes a :py:class:`~dagster.MultiAssetSensorEvaluationContext`.
+
+            This function must return a generator, which must yield either a single SkipReason
+            or one or more RunRequest objects.
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+        job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
+            object to target with this sensor.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
+            (experimental) A list of jobs to be executed when the sensor fires.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        asset_keys: Sequence[AssetKey],
+        job_name: Optional[str],
+        asset_materialization_fn: Callable[
+            ["MultiAssetSensorEvaluationContext"],
+            RawSensorEvaluationFunctionReturn,
+        ],
+        minimum_interval_seconds: Optional[int] = None,
+        description: Optional[str] = None,
+        job: Optional[ExecutableDefinition] = None,
+        jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    ):
+
+        self._asset_keys = check.list_param(asset_keys, "asset_keys", AssetKey)
+
+        def _wrap_asset_fn(materialization_fn):
+            def _fn(context):
+                context.cursor_has_been_updated = False
+                result = materialization_fn(context)
+                if result is None:
+                    return
+
+                # because the materialization_fn can yield results (see _wrapped_fn in multi_asset_sensor decorator),
+                # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) == True.
+                # So keep track to see if we actually return any values and should update the cursor
+                runs_yielded = False
+                if inspect.isgenerator(result) or isinstance(result, list):
+                    for item in result:
+                        runs_yielded = True
+                        yield item
+                elif isinstance(result, RunRequest):
+                    runs_yielded = True
+                    yield result
+                elif isinstance(result, SkipReason):
+                    # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
+                    yield result
+
+                if runs_yielded and not context.cursor_has_been_updated:
+                    raise DagsterInvalidDefinitionError(
+                        "Asset materializations have been handled in this sensor, "
+                        "but the cursor was not updated. This means the same materialization events "
+                        "will be handled in the next sensor tick. Use context.advance_cursor or "
+                        "context.advance_all_cursors to update the cursor."
+                    )
+
+            return _fn
+
+        super(MultiAssetSensorDefinition, self).__init__(
+            name=check_valid_name(name),
+            job_name=job_name,
+            evaluation_fn=_wrap_asset_fn(
+                check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
+            ),
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+            default_status=default_status,
+        )
+
+    def __call__(self, *args, **kwargs):
+
+        if is_context_provided(self._raw_fn):
+            if len(args) + len(kwargs) == 0:
+                raise DagsterInvalidInvocationError(
+                    "Sensor evaluation function expected context argument, but no context argument "
+                    "was provided when invoking."
+                )
+            if len(args) + len(kwargs) > 1:
+                raise DagsterInvalidInvocationError(
+                    "Sensor invocation received multiple arguments. Only a first "
+                    "positional context parameter should be provided when invoking."
+                )
+
+            context_param_name = get_function_params(self._raw_fn)[0].name
+
+            if args:
+                context = check.inst_param(
+                    args[0], context_param_name, MultiAssetSensorEvaluationContext
+                )
+            else:
+                if context_param_name not in kwargs:
+                    raise DagsterInvalidInvocationError(
+                        f"Sensor invocation expected argument '{context_param_name}'."
+                    )
+                context = check.inst_param(
+                    kwargs[context_param_name],
+                    context_param_name,
+                    MultiAssetSensorEvaluationContext,
+                )
+
+            return self._raw_fn(context)
+
+        else:
+            if len(args) + len(kwargs) > 0:
+                raise DagsterInvalidInvocationError(
+                    "Sensor decorated function has no arguments, but arguments were provided to "
+                    "invocation."
+                )
+
+            return self._raw_fn()  # type: ignore [TypeGuard limitation]
+
+    @public  # type: ignore
+    @property
+    def asset_keys(self):
+        return self._asset_keys
+
+
+@experimental
+class AssetSLASensorDefinition(MultiAssetSensorDefinition):
+    """Define a sensor that can initiate a set of runs or alerts when an asset stops passing its defined SLA.
 
     Args:
         name (str): The name of the sensor to create.
