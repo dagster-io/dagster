@@ -9,6 +9,8 @@ Dagster orchestrates dbt alongside other technologies, so you can combine dbt wi
 
 This guide focuses on how to work with dbt models through the SDA framework, which we recommend for most use cases.
 
+If you're using dbt Cloud, check out [Using dbt Cloud with Dagster](/integrations/dbt_cloud) instead!
+
 ---
 
 ## Dagster software-defined assets vs. dbt models
@@ -64,7 +66,7 @@ dbt_assets = load_assets_from_dbt_manifest(
 
 Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. This resource will be responsible for firing off dbt CLI commands. The `dagster-dbt` integration provides the `dbt_cli_resource` for this purpose. This resource can be configured with CLI flags that will be passed into every dbt invocation.
 
-The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. For a full list of configuration options, refer to the [dbt_cli_resource API docs](https://docs.dagster.io/\_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_cli_resource).
+The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. For a full list of configuration options, refer to the [dbt_cli_resource API docs](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_cli_resource).
 
 You can configure this resource and add it to your dbt assets by doing the following:
 
@@ -169,6 +171,34 @@ dbt_assets = load_assets_from_dbt_project(
 ```
 
 ---
+
+## Defining upstream dependencies
+
+Dagster parses information about assets that are upstream of specific dbt models from the dbt project itself. Whenever a model is downstream of a [dbt Source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), that source will be parsed as an upstream asset.
+
+For example, if you a source defined in your `sources.yml` file like this:
+
+```yaml
+sources:
+  - name: jaffle_shop
+    tables:
+      - name: orders
+```
+
+and use it in a model:
+
+```sql
+select * from {{source("jaffle_shop", "orders")}}
+where foo=1
+```
+
+Then the asset created for that model will be given an _upstream_ asset key of `jaffle_shop/orders`. In many cases, this upstream asset might also be managed by Dagster. If you add an asset definition to your repository which produces `jaffle_shop/orders`, then this asset will be upstream of your dbt model.
+
+```python startafter=start_upstream_asset endbefore=end_upstream_asset file=/integrations/dbt/dbt.py dedent=4
+@asset(key_prefix="jaffle_shop")
+def orders():
+    return ...
+```
 
 ## Defining downstream dependencies
 
