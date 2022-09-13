@@ -16,6 +16,7 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -198,6 +199,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        can_subset: bool = False,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -251,6 +253,7 @@ class AssetsDefinition(ResourceAddable):
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
+            can_subset=can_subset,
         )
 
     @public
@@ -327,6 +330,7 @@ class AssetsDefinition(ResourceAddable):
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+        can_subset: bool = False,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
@@ -400,6 +404,7 @@ class AssetsDefinition(ResourceAddable):
             }
             if metadata_by_output_name
             else None,
+            can_subset=can_subset,
         )
 
     @public  # type: ignore
@@ -596,7 +601,45 @@ class AssetsDefinition(ResourceAddable):
             },
         )
 
-    def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
+    def _subset_graph_backed_asset(
+        self,
+        selected_asset_keys: AbstractSet[AssetKey],
+    ):
+        from dagster._core.definitions.graph_definition import GraphDefinition
+        from dagster._core.selector.subset_selector import convert_dot_seperated_string_to_dict
+
+        from .job_definition import get_subselected_graph_definition
+
+        if not isinstance(self.node_def, GraphDefinition):
+            raise DagsterInvalidInvocationError(
+                "Method _subset_graph_backed_asset cannot subset an asset that is not a graph"
+            )
+
+        # All asset keys in selected_asset_keys are outputted from the same top-level graph backed asset
+        dep_node_handles_by_asset_key = get_dep_node_handles_of_graph_backed_asset(
+            self.node_def, self
+        )
+        op_selection = []
+        for asset_key in selected_asset_keys:
+            dep_node_handles = dep_node_handles_by_asset_key[asset_key]
+            for dep_node_handle in dep_node_handles:
+                str_op_path = ".".join(dep_node_handle.path[1:])
+                op_selection.append(str_op_path)
+
+        # Pass an op selection into the original job containing only the ops necessary to
+        # generate the selected assets. The ops should all be nested within a top-level graph
+        # node in the original job.
+
+        resolved_op_selection_dict: Dict = {}
+        for item in op_selection:
+            convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
+
+        return get_subselected_graph_definition(self.node_def, resolved_op_selection_dict)
+
+    def subset_for(
+        self,
+        selected_asset_keys: AbstractSet[AssetKey],
+    ) -> "AssetsDefinition":
         """
         Create a subset of this AssetsDefinition that will only materialize the assets in the
         selected set.
@@ -604,24 +647,80 @@ class AssetsDefinition(ResourceAddable):
         Args:
             selected_asset_keys (AbstractSet[AssetKey]): The total set of asset keys
         """
+        from dagster._core.definitions.graph_definition import GraphDefinition
+
         check.invariant(
             self.can_subset,
             f"Attempted to subset AssetsDefinition for {self.node_def.name}, but can_subset=False.",
         )
-        return AssetsDefinition(
-            # keep track of the original mapping
-            keys_by_input_name=self._keys_by_input_name,
-            keys_by_output_name=self._keys_by_output_name,
-            # TODO: subset this properly for graph-backed-assets
-            node_def=self.node_def,
-            partitions_def=self.partitions_def,
-            partition_mappings=self._partition_mappings,
-            asset_deps=self._asset_deps,
-            can_subset=self.can_subset,
-            selected_asset_keys=selected_asset_keys & self.keys,
-            resource_defs=self.resource_defs,
-            group_names_by_key=self.group_names_by_key,
-        )
+
+        # Set of assets within selected_asset_keys which are outputted by this AssetDefinition
+        asset_subselection = selected_asset_keys & self.keys
+        # Early escape if all assets in AssetsDefinition are selected
+        if asset_subselection == self.keys:
+            return self
+        elif isinstance(self.node_def, GraphDefinition):  # Node is graph-backed asset
+            subsetted_node = self._subset_graph_backed_asset(
+                asset_subselection,
+            )
+
+            # The subsetted node should only include asset inputs that are dependencies of the
+            # selected set of assets.
+            subsetted_input_names = [input_def.name for input_def in subsetted_node.input_defs]
+            subsetted_keys_by_input_name = {
+                key: value
+                for key, value in self.node_keys_by_input_name.items()
+                if key in subsetted_input_names
+            }
+
+            subsetted_output_names = [output_def.name for output_def in subsetted_node.output_defs]
+            subsetted_keys_by_output_name = {
+                key: value
+                for key, value in self.node_keys_by_output_name.items()
+                if key in subsetted_output_names
+            }
+
+            # An op within the graph-backed asset that yields multiple assets will be run
+            # any time any of its output assets are selected. Thus, if an op yields multiple assets
+            # and only one of them is selected, the op will still run and potentially unexpectedly
+            # materialize the unselected asset.
+            #
+            # Thus, we include unselected assets that may be accidentally materialized in
+            # keys_by_output_name and asset_deps so that Dagit can populate an warning when this
+            # occurs. This is the same behavior as multi-asset subsetting.
+
+            subsetted_asset_deps = {
+                out_asset_key: set(self._keys_by_input_name.values())
+                for out_asset_key in subsetted_keys_by_output_name.values()
+            }
+
+            return AssetsDefinition(
+                keys_by_input_name=subsetted_keys_by_input_name,
+                keys_by_output_name=subsetted_keys_by_output_name,
+                node_def=subsetted_node,
+                partitions_def=self.partitions_def,
+                partition_mappings=self._partition_mappings,
+                asset_deps=subsetted_asset_deps,
+                can_subset=self.can_subset,
+                selected_asset_keys=selected_asset_keys & self.keys,
+                resource_defs=self.resource_defs,
+                group_names_by_key=self.group_names_by_key,
+            )
+        else:
+            # multi_asset subsetting
+            return AssetsDefinition(
+                # keep track of the original mapping
+                keys_by_input_name=self._keys_by_input_name,
+                keys_by_output_name=self._keys_by_output_name,
+                node_def=self.node_def,
+                partitions_def=self.partitions_def,
+                partition_mappings=self._partition_mappings,
+                asset_deps=self._asset_deps,
+                can_subset=self.can_subset,
+                selected_asset_keys=asset_subselection,
+                resource_defs=self.resource_defs,
+                group_names_by_key=self.group_names_by_key,
+            )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
         result = []

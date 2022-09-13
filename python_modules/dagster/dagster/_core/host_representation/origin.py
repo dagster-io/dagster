@@ -19,6 +19,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
+from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import (
@@ -151,6 +152,7 @@ class InProcessRepositoryLocationOrigin(
             ("container_image", Optional[str]),
             ("entry_point", List[str]),
             ("container_context", Optional[Dict[str, Any]]),
+            ("location_name", str),
         ],
     ),
     RepositoryLocationOrigin,
@@ -166,6 +168,7 @@ class InProcessRepositoryLocationOrigin(
         container_image: Optional[str] = None,
         entry_point: Optional[List[str]] = None,
         container_context=None,
+        location_name: Optional[str] = None,
     ):
         return super(InProcessRepositoryLocationOrigin, cls).__new__(
             cls,
@@ -179,11 +182,10 @@ class InProcessRepositoryLocationOrigin(
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
             container_context=check.opt_dict_param(container_context, "container_context"),
+            location_name=check.opt_str_param(
+                location_name, "location_name", default=IN_PROCESS_NAME
+            ),
         )
-
-    @property
-    def location_name(self) -> str:
-        return IN_PROCESS_NAME
 
     @property
     def is_reload_supported(self) -> bool:
@@ -244,7 +246,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
 
     @contextmanager
     def create_single_location(
-        self, instance: "DagsterInstance"
+        self, instance: "DagsterInstance" = None
     ) -> Generator["RepositoryLocation", None, None]:
         from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
@@ -254,7 +256,9 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         with ProcessGrpcServerRegistry(
             reload_interval=0,
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-            startup_timeout=instance.code_server_process_startup_timeout,
+            startup_timeout=instance.code_server_process_startup_timeout
+            if instance
+            else DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
         ) as grpc_server_registry:
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
             with GrpcServerRepositoryLocation(

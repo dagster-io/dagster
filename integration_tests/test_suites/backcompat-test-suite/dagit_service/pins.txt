@@ -8,3 +8,6 @@ nbformat<=5.1.3
 
 # protobuf 4 retroactively breaks old versions of dagster
 protobuf>=3.13.0,<4
+
+# Deadlock / hang issue in new version of grpc
+grpcio<1.48.1

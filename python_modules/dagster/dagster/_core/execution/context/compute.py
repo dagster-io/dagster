@@ -317,11 +317,20 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         selected_asset_keys = self.selected_asset_keys
         selected_outputs = set()
         for output_name in self.op.output_dict.keys():
+
             asset_info = self.job_def.asset_layer.asset_info_for_output(
                 self.solid_handle, output_name
             )
-            if asset_info and asset_info.key in selected_asset_keys:
+            if any(  #  For graph-backed assets, check if a downstream asset is selected
+                [
+                    asset_key in selected_asset_keys
+                    for asset_key in self.job_def.asset_layer.downstream_dep_assets(
+                        self.solid_handle, output_name
+                    )
+                ]
+            ) or (asset_info and asset_info.key in selected_asset_keys):
                 selected_outputs.add(output_name)
+
         return selected_outputs
 
     @public
