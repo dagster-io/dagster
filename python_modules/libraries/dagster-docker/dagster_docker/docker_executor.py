@@ -19,6 +19,7 @@ from dagster._core.executor.step_delegating.step_handler.base import (
 )
 from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.utils import parse_env_var
+from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes.utils import hash_str
 from dagster._utils import merge_dicts
 
@@ -157,15 +158,26 @@ class DockerStepHandler(StepHandler):
             )
         return client
 
-    def _get_container_name(self, run_id, step_key):
-        return f"dagster-step-{hash_str(run_id + step_key)}"
+    def _get_container_name(self, execute_step_args: ExecuteStepArgs):
+        run_id = execute_step_args.pipeline_run_id
+        step_keys_to_execute = check.not_none(execute_step_args.step_keys_to_execute)
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        step_key = step_keys_to_execute[0]
+
+        step_name = f"dagster-step-{hash_str(run_id + step_key)}"
+
+        if execute_step_args.known_state:
+            retry_state = execute_step_args.known_state.get_retry_state()
+            retry_number = retry_state.get_attempt_count(step_key)
+            if retry_number:
+                step_name = f"{step_name}-{retry_number}"
+
+        return step_name
 
     def _create_step_container(self, client, container_context, step_image, execute_step_args):
         return client.containers.create(
             step_image,
-            name=self._get_container_name(
-                execute_step_args.pipeline_run_id, execute_step_args.step_keys_to_execute[0]
-            ),
+            name=self._get_container_name(execute_step_args),
             detach=True,
             network=container_context.networks[0] if len(container_context.networks) else None,
             command=execute_step_args.get_command_args(),
@@ -212,18 +224,11 @@ class DockerStepHandler(StepHandler):
         step_container.start()
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
-        step_keys_to_execute = check.not_none(
-            step_handler_context.execute_step_args.step_keys_to_execute
-        )
-        step_key = step_keys_to_execute[0]
         container_context = self._get_docker_container_context(step_handler_context)
 
         client = self._get_client(container_context)
 
-        container_name = self._get_container_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
-            step_key,
-        )
+        container_name = self._get_container_name(step_handler_context.execute_step_args)
 
         container = client.containers.get(container_name)
 
@@ -256,9 +261,7 @@ class DockerStepHandler(StepHandler):
         ), "Terminating multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
-        container_name = self._get_container_name(
-            step_handler_context.execute_step_args.pipeline_run_id, step_key
-        )
+        container_name = self._get_container_name(step_handler_context.execute_step_args)
 
         yield DagsterEvent.engine_event(
             step_handler_context.get_step_context(step_key),
