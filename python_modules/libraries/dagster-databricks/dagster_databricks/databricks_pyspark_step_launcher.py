@@ -107,6 +107,7 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
             default_value=5.0,
             description="How frequently Dagster will poll Databricks to determine the state of the job.",
         ),
+        "verbose_logs": Field(bool, default_value=True),
     }
 )
 def databricks_pyspark_step_launcher(context):
@@ -142,6 +143,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         poll_interval_sec=5,
         local_pipeline_package_path=None,
         local_dagster_job_package_path=None,
+        verbose_logs=True,
     ):
         self.run_config = check.dict_param(run_config, "run_config")
         self.permissions = check.dict_param(permissions, "permissions")
@@ -172,6 +174,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             poll_interval_sec=poll_interval_sec,
             max_wait_time_sec=max_completion_wait_time_seconds,
         )
+        self.verbose_logs = check.bool_param(verbose_logs, "verbose_logs")
 
     def launch_step(self, step_context):
         step_run_ref = step_context_to_step_run_ref(
@@ -242,9 +245,10 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         step_context.log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
         while not done:
             with raise_execution_interrupts():
-                step_context.log.debug(
-                    "Waiting %.1f seconds...", self.databricks_runner.poll_interval_sec
-                )
+                if self.verbose_logs:
+                    step_context.log.debug(
+                        "Waiting %.1f seconds...", self.databricks_runner.poll_interval_sec
+                    )
                 time.sleep(self.databricks_runner.poll_interval_sec)
                 try:
                     done = poll_run_state(
@@ -253,6 +257,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                         start,
                         databricks_run_id,
                         self.databricks_runner.max_wait_time_sec,
+                        verbose_logs=self.verbose_logs,
                     )
                 finally:
                     all_events = self.get_step_events(
