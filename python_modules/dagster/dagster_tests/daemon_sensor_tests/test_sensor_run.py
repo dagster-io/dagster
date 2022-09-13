@@ -13,11 +13,14 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetSelection,
     DagsterRunStatus,
     Field,
+    HourlyPartitionsDefinition,
     JobSelector,
     Output,
     RepositorySelector,
+    WeeklyPartitionsDefinition,
     asset,
     define_asset_job,
     graph,
@@ -66,7 +69,7 @@ def c(a):
     return a + 2
 
 
-asset_job = define_asset_job("abc", selection="*")
+asset_job = define_asset_job("abc", selection=AssetSelection.keys("c", "b").upstream())
 
 
 @solid
@@ -246,6 +249,83 @@ def backlog_sensor(context):
         return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
+hourly_partitions_def_2022 = HourlyPartitionsDefinition(start_date="2022-08-01-00:00")
+
+
+@asset(partitions_def=hourly_partitions_def_2022)
+def hourly_asset():
+    return 1
+
+
+@asset(partitions_def=hourly_partitions_def_2022)
+def hourly_asset_2():
+    return 1
+
+
+@asset(partitions_def=hourly_partitions_def_2022)
+def hourly_asset_3():
+    return 1
+
+
+hourly_asset_job = define_asset_job(
+    "hourly_asset_job",
+    AssetSelection.keys("hourly_asset_3"),
+    partitions_def=hourly_partitions_def_2022,
+)
+
+
+weekly_partitions_def = WeeklyPartitionsDefinition(start_date="2020-01-01")
+
+
+@asset(partitions_def=weekly_partitions_def)
+def weekly_asset():
+    return 1
+
+
+weekly_asset_job = define_asset_job(
+    "weekly_asset_job", AssetSelection.keys("weekly_asset"), partitions_def=weekly_partitions_def
+)
+
+
+@multi_asset_sensor(asset_keys=[hourly_asset.key], job=weekly_asset_job)
+def multi_asset_sensor_hourly_to_weekly(context):
+    for partition, materialization in context.latest_materialization_records_by_partition(
+        hourly_asset.key
+    ).items():
+        mapped_partitions = context.get_downstream_partition_keys(
+            partition, to_asset_key=weekly_asset.key, from_asset_key=hourly_asset.key
+        )
+        for partition in mapped_partitions:
+            yield weekly_asset_job.run_request_for_partition(partition_key=partition, run_key=None)
+
+        context.advance_cursor({hourly_asset.key: materialization})
+
+
+@multi_asset_sensor(asset_keys=[hourly_asset.key], job=hourly_asset_job)
+def multi_asset_sensor_hourly_to_hourly(context):
+    materialization_by_partition = context.latest_materialization_records_by_partition(
+        hourly_asset.key
+    )
+
+    latest_partition = None
+    for partition, materialization in materialization_by_partition.items():
+        if materialization:
+            mapped_partitions = context.get_downstream_partition_keys(
+                partition, to_asset_key=hourly_asset_3.key, from_asset_key=hourly_asset.key
+            )
+            for partition in mapped_partitions:
+                yield hourly_asset_job.run_request_for_partition(
+                    partition_key=partition, run_key=None
+                )
+
+            latest_partition = (
+                partition if latest_partition is None else max(latest_partition, partition)
+            )
+
+    if latest_partition:
+        context.advance_cursor({hourly_asset.key: materialization_by_partition[latest_partition]})
+
+
 def _random_string(length):
     return "".join(random.choice(string.ascii_lowercase) for x in range(length))
 
@@ -412,6 +492,9 @@ def the_repo():
         cross_repo_job_sensor,
         load_assets_from_current_module(),
         asset_selection_sensor,
+        weekly_asset_job,
+        multi_asset_sensor_hourly_to_weekly,
+        multi_asset_sensor_hourly_to_hourly,
     ]
 
 
@@ -1716,6 +1799,81 @@ def test_multi_asset_sensor_w_no_cursor_update(executor, instance, workspace, ex
             freeze_datetime,
             TickStatus.FAILURE,
         )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_multi_asset_sensor_hourly_to_weekly(executor, instance, workspace, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2022, month=8, day=2, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        materialize([hourly_asset], instance=instance, partition_key="2022-08-01-00:00")
+        cursor_sensor = external_repo.get_external_sensor("multi_asset_sensor_hourly_to_weekly")
+        instance.start_sensor(cursor_sensor)
+
+        evaluate_sensors(instance, workspace, executor)
+
+        ticks = instance.get_ticks(
+            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            cursor_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+        run = instance.get_runs()[0]
+        assert run.run_config == {}
+        assert run.tags
+        assert run.tags.get("dagster/sensor_name") == "multi_asset_sensor_hourly_to_weekly"
+        assert run.tags.get("dagster/partition") == "2022-07-31"
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2022, month=8, day=3, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        materialize([hourly_asset], instance=instance, partition_key="2022-08-02-00:00")
+        cursor_sensor = external_repo.get_external_sensor("multi_asset_sensor_hourly_to_hourly")
+        instance.start_sensor(cursor_sensor)
+
+        evaluate_sensors(instance, workspace, executor)
+
+        ticks = instance.get_ticks(
+            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            cursor_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+        run = instance.get_runs()[0]
+
+        assert run.run_config == {}
+        assert run.tags
+        assert run.tags.get("dagster/sensor_name") == "multi_asset_sensor_hourly_to_hourly"
+        assert run.tags.get("dagster/partition") == "2022-08-02-00:00"
+
+        freeze_datetime = freeze_datetime.add(seconds=30)
+
+    with pendulum.test(freeze_datetime):
+        cursor_sensor = external_repo.get_external_sensor("multi_asset_sensor_hourly_to_hourly")
+        instance.start_sensor(cursor_sensor)
+
+        evaluate_sensors(instance, workspace, executor)
+
+        ticks = instance.get_ticks(
+            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
+        )
+        assert len(ticks) == 2
+        validate_tick(ticks[0], cursor_sensor, freeze_datetime, TickStatus.SKIPPED)
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
