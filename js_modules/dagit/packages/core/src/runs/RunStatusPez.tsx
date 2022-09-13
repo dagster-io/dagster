@@ -41,12 +41,12 @@ export const RunStatusPez = (props: Props) => {
 
 interface ListProps {
   fade: boolean;
-  repoAddress: string;
+  jobName: string;
   runs: RunTimeFragment[];
 }
 
 export const RunStatusPezList = (props: ListProps) => {
-  const {fade, runs} = props;
+  const {fade, jobName, runs} = props;
   const count = runs.length;
   const countForStep = Math.max(MIN_OPACITY_STEPS, count);
   const step = (MAX_OPACITY - MIN_OPACITY) / countForStep;
@@ -55,11 +55,11 @@ export const RunStatusPezList = (props: ListProps) => {
       {runs.map((run, ii) => (
         <Popover
           key={run.runId}
-          position="bottom"
+          position="top"
           interactionKind="hover"
           content={
             <div>
-              <RunStatusOverlay run={run} repoAddr={props.repoAddress} />
+              <RunStatusOverlay run={run} name={jobName} />
             </div>
           }
           hoverOpenDelay={100}
@@ -78,22 +78,22 @@ export const RunStatusPezList = (props: ListProps) => {
 
 interface OverlayProps {
   run: RunTimeFragment;
-  repoAddr: string;
+  name: string;
 }
 
-const RunStatusOverlay = (props: OverlayProps) => {
+export const RunStatusOverlay = ({name, run}: OverlayProps) => {
   return (
     <OverlayContainer>
-      <OverlayTitle>{props.repoAddr}</OverlayTitle>
+      <OverlayTitle>{name}</OverlayTitle>
       <RunRow>
-        <RunStatusIndicator status={props.run.status} />
-        <Link to={`/instance/runs/${props.run.runId}`}>
-          <Mono>{titleForRun(props.run)}</Mono>
+        <RunStatusIndicator status={run.status} />
+        <Link to={`/instance/runs/${run.runId}`}>
+          <Mono>{titleForRun(run)}</Mono>
         </Link>
         <HorizontalSpace />
         <Box flex={{direction: 'column'}}>
-          <RunTime run={props.run} />
-          <RunStateSummary run={props.run} />
+          <RunTime run={run} />
+          <RunStateSummary run={run} />
         </Box>
       </RunRow>
     </OverlayContainer>
