@@ -37,6 +37,7 @@ class AirbyteResource:
         request_max_retries: int = 3,
         request_retry_delay: float = 0.25,
         log: logging.Logger = get_dagster_logger(),
+        forward_logs: bool = True,
     ):
         self._host = host
         self._port = port
@@ -45,6 +46,8 @@ class AirbyteResource:
         self._request_retry_delay = request_retry_delay
 
         self._log = log
+
+        self._forward_logs = forward_logs
 
     @property
     def api_base_url(self) -> str:
@@ -96,8 +99,26 @@ class AirbyteResource:
     def cancel_job(self, job_id: int):
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})
 
-    def get_job_status(self, job_id: int) -> dict:
-        return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
+    def get_job_status(self, connection_id: str, job_id: int) -> dict:
+        if self._forward_logs:
+            return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
+        else:
+            # the "list all jobs" endpoint doesn't return logs, which actually makes it much more
+            # lightweight for long-running syncs with many logs
+            out = check.not_none(
+                self.make_request(
+                    endpoint="/jobs/list",
+                    data={
+                        "configTypes": ["sync"],
+                        "configId": connection_id,
+                        # sync should be the most recent, so pageSize 5 is sufficient
+                        "pagination": {"pageSize": 5},
+                    },
+                )
+            )
+            job = next((job for job in cast(List, out["jobs"]) if job["job"]["id"] == job_id), None)
+
+            return check.not_none(job)
 
     def start_sync(self, connection_id: str) -> Dict[str, object]:
         return check.not_none(
@@ -147,17 +168,18 @@ class AirbyteResource:
                         f"Timeout: Airbyte job {job_id} is not ready after the timeout {poll_timeout} seconds"
                     )
                 time.sleep(poll_interval)
-                job_details = self.get_job_status(job_id)
+                job_details = self.get_job_status(connection_id, job_id)
                 attempts = cast(List, job_details.get("attempts", []))
                 cur_attempt = len(attempts)
                 # spit out the available Airbyte log info
                 if cur_attempt:
-                    log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
+                    if self._forward_logs:
+                        log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
 
-                    for line in log_lines[logged_lines:]:
-                        sys.stdout.write(line + "\n")
-                        sys.stdout.flush()
-                    logged_lines = len(log_lines)
+                        for line in log_lines[logged_lines:]:
+                            sys.stdout.write(line + "\n")
+                            sys.stdout.flush()
+                        logged_lines = len(log_lines)
 
                     # if there's a next attempt, this one will have no more log messages
                     if logged_attempts < cur_attempt - 1:
@@ -214,6 +236,11 @@ class AirbyteResource:
             default_value=0.25,
             description="Time (in seconds) to wait between each request retry.",
         ),
+        "forward_logs": Field(
+            bool,
+            default_value=True,
+            description="Whether to forward Airbyte logs to the compute log, can be expensive for long-running syncs.",
+        ),
     },
     description="This resource helps manage Airbyte connectors",
 )
@@ -255,4 +282,5 @@ def airbyte_resource(context) -> AirbyteResource:
         request_max_retries=context.resource_config["request_max_retries"],
         request_retry_delay=context.resource_config["request_retry_delay"],
         log=context.log,
+        forward_logs=context.resource_config["forward_logs"],
     )
