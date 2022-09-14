@@ -467,6 +467,10 @@
         "path": "/integrations/dbt"
       },
       {
+        "title": "dbt",
+        "path": "/integrations/dbt_cloud"
+      },
+      {
         "title": "Great Expectations",
         "path": "/integrations/great-expectations"
       },

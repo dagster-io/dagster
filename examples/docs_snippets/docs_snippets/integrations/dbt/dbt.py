@@ -81,6 +81,17 @@ def scope_downstream_asset():
     # end_downstream_asset
 
 
+def scope_upstream_asset():
+    from dagster import asset
+
+    # start_upstream_asset
+    @asset(key_prefix="jaffle_shop")
+    def orders():
+        return ...
+
+    # end_upstream_asset
+
+
 def scope_input_manager():
     # start_input_manager
     import pandas as pd
