@@ -2,6 +2,7 @@ import logging
 import sys
 import time
 from enum import Enum
+from typing import Optional
 
 import kubernetes
 
@@ -268,8 +269,11 @@ class DagsterKubernetesClient:
         wait_timeout=DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         num_pods_to_wait_for=DEFAULT_JOB_POD_COUNT,
-        start=None,
+        start: Optional[float] = None,
     ):
+        if wait_timeout:
+            check.float_param(start, "start")
+
         # Wait for the job status to be completed. We check the status every
         # wait_time_between_attempts seconds
         while True:
