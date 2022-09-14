@@ -103,6 +103,8 @@ def test_external_pipeline_data(snapshot):
 
 @mock.patch("dagster._core.host_representation.pipeline_index.create_pipeline_snapshot_id")
 def test_external_repo_shared_index(snapshot_mock):
+    # ensure we don't rebuild indexes / snapshot ids repeatedly
+
     snapshot_mock.side_effect = create_pipeline_snapshot_id
     with instance_for_test() as instance:
         with in_process_test_workspace(
@@ -110,10 +112,8 @@ def test_external_repo_shared_index(snapshot_mock):
         ) as workspace:
 
             def _fetch_snap_id():
-                # ensure we don't rebuild indexes / snapshot ids repeatedly
                 location = workspace.repository_locations[0]
                 ex_repo = list(location.get_repositories().values())[0]
-
                 return ex_repo.get_all_external_jobs()[0].identifying_pipeline_snapshot_id
 
             _fetch_snap_id()
@@ -125,6 +125,8 @@ def test_external_repo_shared_index(snapshot_mock):
 
 @mock.patch("dagster._core.host_representation.pipeline_index.create_pipeline_snapshot_id")
 def test_external_repo_shared_index_threaded(snapshot_mock):
+    # ensure we don't rebuild indexes / snapshot ids repeatedly across threads
+
     snapshot_mock.side_effect = create_pipeline_snapshot_id
     with instance_for_test() as instance:
         with in_process_test_workspace(
@@ -132,7 +134,6 @@ def test_external_repo_shared_index_threaded(snapshot_mock):
         ) as workspace:
 
             def _fetch_snap_id():
-                # ensure we don't rebuild indexes / snapshot ids repeatedly
                 location = workspace.repository_locations[0]
                 ex_repo = list(location.get_repositories().values())[0]
                 return ex_repo.get_all_external_jobs()[0].identifying_pipeline_snapshot_id
