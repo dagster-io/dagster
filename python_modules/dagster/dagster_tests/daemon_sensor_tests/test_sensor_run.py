@@ -349,9 +349,6 @@ def large_sensor(_context):
 @sensor(job=asset_job)
 def asset_selection_sensor(_context):
     yield RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
-    yield hourly_asset_job.run_request_for_partition(
-        partition_key="2022-08-01-00:00", run_key=None, asset_selection=[AssetKey("hourly_asset_3")]
-    )
 
 
 @sensor(job=hourly_asset_job)
