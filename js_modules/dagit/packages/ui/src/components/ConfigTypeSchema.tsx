@@ -140,12 +140,14 @@ function renderTypeRecursive(
   return <span>{type.givenName}</span>;
 }
 
-const prettyJsonString = (value: string) => {
+export const tryPrettyPrintJSON = (jsonString: string) => {
   try {
-    const parsed = JSON.parse(value);
-    return JSON.stringify(parsed, null, 2);
-  } catch (e) {
-    return value;
+    return JSON.stringify(JSON.parse(jsonString), null, 2);
+  } catch (err) {
+    // welp, looks like it's not valid JSON. This has happened at least once
+    // in the wild - a user was able to build a metadata entry in Python with
+    // a `NaN` number value: https://github.com/dagster-io/dagster/issues/8959
+    return jsonString;
   }
 };
 
@@ -154,7 +156,7 @@ const ConfigContent = React.memo(({value}: {value: string}) => (
     <ConfigHeader>
       <strong>Default value</strong>
     </ConfigHeader>
-    <ConfigJSON>{prettyJsonString(value)}</ConfigJSON>
+    <ConfigJSON>{tryPrettyPrintJSON(value)}</ConfigJSON>
   </>
 ));
 
