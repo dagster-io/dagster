@@ -480,6 +480,7 @@ class JobDefinition(PipelineDefinition):
             asset_selection=asset_selection,
             asset_selection_data=asset_selection_data,
             config=self.config_mapping,
+            graph_name=self.graph.name,
         )
         return new_job
 

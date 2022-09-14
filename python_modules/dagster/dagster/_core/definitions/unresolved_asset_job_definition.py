@@ -33,6 +33,7 @@ class UnresolvedAssetJobDefinition(
             ("tags", Optional[Dict[str, Any]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("executor_def", Optional["ExecutorDefinition"]),
+            ("graph_name", Optional[str]),
         ],
     )
 ):
@@ -45,6 +46,7 @@ class UnresolvedAssetJobDefinition(
         tags: Optional[Dict[str, Any]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
+        graph_name: Optional[str] = None,
     ):
         from dagster._core.definitions import (
             AssetSelection,
@@ -63,6 +65,7 @@ class UnresolvedAssetJobDefinition(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
             executor_def=check.opt_inst_param(executor_def, "partitions_def", ExecutorDefinition),
+            graph_name=check.opt_str_param(graph_name, "graph_name"),
         )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
@@ -130,6 +133,7 @@ class UnresolvedAssetJobDefinition(
             asset_selection=self.selection.resolve([*assets, *source_assets]),
             partitions_def=self.partitions_def,
             executor_def=self.executor_def or default_executor_def,
+            graph_name=self.graph_name,
         )
 
 
@@ -160,6 +164,7 @@ def define_asset_job(
     tags: Optional[Dict[str, Any]] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
+    graph_name: Optional[str] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will materialize a selection of assets. This will only be
     resolved to a JobDefinition once placed in a repository.
@@ -202,7 +207,9 @@ def define_asset_job(
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The
             default mode of execution is multi-process.
-
+        graph_name (Optional[str]): The name to assign to the underlying graph of the job. Useful in
+            situations where you want to avoid name collisions with other graphs in your repository.
+            If not specified, the job name will be used.
 
     Returns:
         UnresolvedAssetJobDefinition: The job, which can be placed inside a repository.
@@ -260,4 +267,5 @@ def define_asset_job(
         tags=tags,
         partitions_def=partitions_def,
         executor_def=executor_def,
+        graph_name=graph_name,
     )

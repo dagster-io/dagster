@@ -790,6 +790,7 @@ def build_asset_selection_job(
     tags: Optional[Mapping[str, Any]] = None,
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
+    graph_name: Optional[str] = None,
 ) -> "JobDefinition":
     from dagster._core.definitions import build_assets_job
 
@@ -822,6 +823,7 @@ def build_asset_selection_job(
             partitions_def=partitions_def,
             description=description,
             tags=tags,
+            graph_name=graph_name,
             _asset_selection_data=asset_selection_data,
         )
 

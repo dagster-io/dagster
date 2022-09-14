@@ -1910,3 +1910,14 @@ def test_resolve_dependency_multi_asset_different_groups():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
             materialize_to_memory([upstream, assets])
+
+
+def test_define_asset_job_custom_graph_name():
+    @asset
+    def asset1():
+        ...
+
+    job1 = define_asset_job("abc", graph_name="abc_graph")
+    resolved = job1.resolve([asset1], [])
+    assert resolved.name == "abc"
+    assert resolved.graph.name == "abc_graph"

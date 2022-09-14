@@ -37,6 +37,7 @@ def build_assets_job(
     tags: Optional[Mapping[str, object]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    graph_name: Optional[str] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
@@ -106,7 +107,7 @@ def build_assets_job(
         deps, assets_defs_by_node_handle = build_node_deps(assets, resolved_asset_deps)
 
     graph = GraphDefinition(
-        name=name,
+        name=graph_name or name,
         node_defs=[asset.node_def for asset in assets],
         dependencies=deps,
         description=description,
@@ -124,6 +125,7 @@ def build_assets_job(
     if _asset_selection_data:
         original_job = _asset_selection_data.parent_job_def
         return graph.to_job(
+            name=name,
             resource_defs=all_resource_defs,
             config=config,
             tags=tags,
@@ -139,6 +141,7 @@ def build_assets_job(
         )
 
     return graph.to_job(
+        name=name,
         resource_defs=all_resource_defs,
         config=config,
         tags=tags,
