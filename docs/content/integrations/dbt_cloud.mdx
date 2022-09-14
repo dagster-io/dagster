@@ -33,8 +33,9 @@ The `auth_token` can also be found or generated in the dbt Cloud console. It's r
 Putting it all together, you'll get the following:
 
 ```python startafter=start_dbt_cloud_job endbefore=end_dbt_cloud_job file=/integrations/dbt/dbt_cloud.py dedent=4
-from dagster import job
 from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
+
+from dagster import job
 
 # configure an operation to run the specific job
 run_dbt_nightly_sync = dbt_cloud_run_op.configured(
