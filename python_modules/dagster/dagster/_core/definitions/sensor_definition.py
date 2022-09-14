@@ -677,6 +677,10 @@ class AssetSLASensorEvaluationContext(MultiAssetSensorEvaluationContext):
         )
 
     @public
+    def get_current_statuses(self) -> Mapping[AssetKey, int]:
+        pass
+
+    @public
     def advance_cursor(
         self, materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]]
     ):
@@ -687,7 +691,14 @@ class AssetSLASensorEvaluationContext(MultiAssetSensorEvaluationContext):
                 an EventLogRecord is provided, the cursor for the AssetKey will be updated and future calls to fetch asset materialization events
                 will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
         """
-        cursor_dict = json.loads(self.cursor) if self.cursor else {}
+        cursor_dict = (
+            json.loads(self.cursor)
+            if self.cursor
+            else {
+                "record_ids": {},
+                "last_status": {},
+            }
+        )
         update_dict = {
             str(k): v.storage_id if v else cursor_dict.get(str(k))
             for k, v in materialization_records_by_key.items()
