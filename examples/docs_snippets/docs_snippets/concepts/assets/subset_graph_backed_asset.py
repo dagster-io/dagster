@@ -1,14 +1,15 @@
 from dagster import (
-    op,
-    Out,
-    GraphOut,
-    graph,
-    define_asset_job,
-    AssetsDefinition,
-    repository,
     AssetKey,
+    AssetsDefinition,
+    GraphOut,
+    Out,
     Output,
+    define_asset_job,
+    graph,
+    op,
+    repository,
 )
+
 
 # start_graph_backed_asset_foo
 @op(out={"foo_1": Out(is_required=False), "foo_2": Out(is_required=False)})

@@ -1,5 +1,7 @@
+from dagster import AssetKey, Out, op
+
 from .subset_graph_backed_asset import my_repo
-from dagster import op, Out, AssetKey
+
 
 # start_unexpected_materialization_foo
 @op(out={"foo_1": Out(), "foo_2": Out()})
