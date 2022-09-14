@@ -1,3 +1,4 @@
+from threading import Lock
 from typing import Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
@@ -61,6 +62,7 @@ class PipelineIndex:
             for comp_snap in pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
         }
 
+        self._memo_lock = Lock()
         self._pipeline_snapshot_id = None
 
     @property
@@ -81,9 +83,10 @@ class PipelineIndex:
 
     @property
     def pipeline_snapshot_id(self) -> str:
-        if not self._pipeline_snapshot_id:
-            self._pipeline_snapshot_id = create_pipeline_snapshot_id(self.pipeline_snapshot)
-        return self._pipeline_snapshot_id
+        with self._memo_lock:
+            if not self._pipeline_snapshot_id:
+                self._pipeline_snapshot_id = create_pipeline_snapshot_id(self.pipeline_snapshot)
+            return self._pipeline_snapshot_id
 
     def has_dagster_type_name(self, type_name: str) -> bool:
         return type_name in self._dagster_type_snaps_by_name_index

@@ -65,7 +65,7 @@ def test_launch_job_cli(job_cli_args):
 
 @pytest.mark.parametrize(
     "gen_pipeline_args",
-    [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("qux", True)],
+    [python_bar_cli_args("qux"), grpc_server_bar_cli_args("qux")],
 )
 def test_launch_with_run_id(gen_pipeline_args):
     runner = CliRunner()
@@ -100,7 +100,7 @@ def test_launch_with_run_id(gen_pipeline_args):
 
 @pytest.mark.parametrize(
     "gen_job_args",
-    [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("qux", True)],
+    [python_bar_cli_args("qux"), grpc_server_bar_cli_args("qux")],
 )
 def test_job_launch_with_run_id(gen_job_args):
     runner = CliRunner()
@@ -135,7 +135,7 @@ def test_job_launch_with_run_id(gen_job_args):
 
 @pytest.mark.parametrize(
     "gen_pipeline_args",
-    [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("qux", True)],
+    [python_bar_cli_args("qux"), grpc_server_bar_cli_args("qux")],
 )
 def test_launch_queued(gen_pipeline_args):
     runner = CliRunner()
@@ -167,7 +167,7 @@ def test_launch_queued(gen_pipeline_args):
 
 @pytest.mark.parametrize(
     "gen_pipeline_args",
-    [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("qux", True)],
+    [python_bar_cli_args("qux"), grpc_server_bar_cli_args("qux")],
 )
 def test_job_launch_queued(gen_pipeline_args):
     runner = CliRunner()
@@ -220,7 +220,7 @@ def test_default_working_directory():
 def test_launch_using_memoization():
     runner = CliRunner()
     with default_cli_test_instance() as instance:
-        with python_bar_cli_args("memoizable_job", True) as args:
+        with python_bar_cli_args("memoizable_job") as args:
             result = runner.invoke(job_launch_command, args + ["--run-id", "first"])
             assert result.exit_code == 0
             run = instance.get_run_by_id("first")
@@ -238,23 +238,22 @@ def test_launch_using_memoization():
             assert len(run.step_keys_to_execute) == 0
 
 
-def test_job_launch_only_selects_job():
+def test_job_launch_handles_pipeline():
     job_kwargs = {
         "workspace": None,
-        "pipeline_or_job": "my_job",
+        "job_name": "my_job",
         "python_file": file_relative_path(__file__, "repo_pipeline_and_job.py"),
         "module_name": None,
         "attribute": "my_repo",
     }
     pipeline_kwargs = job_kwargs.copy()
-    pipeline_kwargs["pipeline_or_job"] = "my_pipeline"
+    pipeline_kwargs["job_name"] = "my_pipeline"
 
     with default_cli_test_instance() as instance:
         execute_launch_command(
             instance,
             job_kwargs,
-            using_job_op_graph_apis=True,
         )
 
-        with pytest.raises(Exception, match="not found in repository"):
-            execute_launch_command(instance, pipeline_kwargs, using_job_op_graph_apis=True)
+        # dont care if its a pipeline and not a job
+        execute_launch_command(instance, pipeline_kwargs)

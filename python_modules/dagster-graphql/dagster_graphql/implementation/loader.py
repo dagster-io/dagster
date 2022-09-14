@@ -66,7 +66,7 @@ class RepositoryScopedBatchLoader:
         fetched = defaultdict(list)
 
         if data_type == RepositoryDataType.JOB_RUNS:
-            job_names = [x.name for x in self._repository.get_all_external_pipelines()]
+            job_names = [x.name for x in self._repository.get_all_external_jobs()]
             if self._instance.supports_bucket_queries:
                 records = self._instance.get_run_records(
                     filters=RunsFilter(
@@ -225,8 +225,7 @@ class RepositoryScopedBatchLoader:
 
     def get_run_records_for_job(self, job_name, limit):
         check.invariant(
-            job_name
-            in [pipeline.name for pipeline in self._repository.get_all_external_pipelines()]
+            job_name in [pipeline.name for pipeline in self._repository.get_all_external_jobs()]
         )
         return self._get(RepositoryDataType.JOB_RUNS, job_name, limit)
 

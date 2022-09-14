@@ -45,7 +45,7 @@ def test_execute_display_command():
 
             kwargs = {
                 "config": (os.path.join(temp_dir, "pipeline_config.yaml"),),
-                "pipeline": "asset_job",
+                "job_name": "asset_job",
                 "python_file": file_relative_path(
                     __file__, "../../execution_tests/memoized_dev_loop_pipeline.py"
                 ),
