@@ -46,6 +46,7 @@ def make_teams_on_run_failure_sensor(
             ]
         ]
     ] = None,
+    monitor_instance: bool = False,
 ):
     """Create a sensor on run failures that will message the given MS Teams webhook URL.
 
@@ -65,7 +66,9 @@ def make_teams_on_run_failure_sensor(
             status can be overridden from Dagit or via the GraphQL API.
         monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]):
             Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will
-            be sent when any job in the repository matches the requested run_status. To monitor jobs in external repositories, use RepositorySelector and JobSelector
+            be sent when any job in the repository matches the requested run_status. To monitor jobs in external repositories, use RepositorySelector and JobSelector.
+        monitor_instance (bool): If set to True, the sensor will monitor all jobs in the Dagster instance. If used, you cannot also specify monitored_jobs
+            or job_selection. Defaults to False.
 
     Examples:
 
@@ -104,7 +107,12 @@ def make_teams_on_run_failure_sensor(
         verify=verify,
     )
 
-    @run_failure_sensor(name=name, default_status=default_status, monitored_jobs=monitored_jobs)
+    @run_failure_sensor(
+        name=name,
+        default_status=default_status,
+        monitored_jobs=monitored_jobs,
+        monitor_instance=monitor_instance,
+    )
     def teams_on_run_failure(context: RunFailureSensorContext):
 
         text = message_fn(context)

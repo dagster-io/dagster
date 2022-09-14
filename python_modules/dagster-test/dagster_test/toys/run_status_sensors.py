@@ -2,7 +2,6 @@ from time import time
 
 from dagster import (
     DagsterRunStatus,
-    InstanceSelector,
     JobSelector,
     RepositorySelector,
     RunRequest,
@@ -226,9 +225,7 @@ def cross_repo_success_job_sensor(context):
 
 
 @run_status_sensor(
-    monitored_jobs=[
-        InstanceSelector(),
-    ],
+    monitor_instance=True,
     request_job=status_job,
     run_status=DagsterRunStatus.SUCCESS,
 )

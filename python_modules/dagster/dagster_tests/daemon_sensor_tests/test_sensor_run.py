@@ -15,7 +15,6 @@ from dagster import (
     AssetObservation,
     DagsterRunStatus,
     Field,
-    InstanceSelector,
     JobSelector,
     Output,
     RepositorySelector,
@@ -375,7 +374,7 @@ def cross_repo_sensor(context):
 
 
 @run_status_sensor(
-    monitored_jobs=[InstanceSelector()],
+    monitor_instnace=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
 def instance_sensor(context):

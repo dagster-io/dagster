@@ -13,7 +13,6 @@ from dagster import (
     DagsterRunStatus,
     run_status_sensor,
     run_failure_sensor,
-    InstanceSelector,
 )
 
 
@@ -350,7 +349,7 @@ def team_a_data_update_failure_sensor():
 
 # start_instance_sensor
 @run_status_sensor(
-    monitored_jobs=[InstanceSelector()],
+    monitor_instance=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
 def instance_sensor():

@@ -549,11 +549,11 @@ def team_a_data_update_failure_sensor():
     send_slack_alert()
 ```
 
-You can also monitor every job in your Dagster instance by passing an <PyObject object="InstanceSelector" /> to your run status sensor.
+You can also monitor every job in your Dagster instance by specifying `monitor_instance=True` on the sensor decorator. Note that `monitor_instance` cannot be used along with jobs specified via `monitored_jobs`.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_instance_sensor endbefore=end_instance_sensor
 @run_status_sensor(
-    monitored_jobs=[InstanceSelector()],
+    monitor_instance=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
 def instance_sensor():
