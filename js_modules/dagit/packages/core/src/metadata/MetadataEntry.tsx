@@ -10,6 +10,7 @@ import {
   Markdown,
   Tooltip,
   FontFamily,
+  tryPrettyPrintJSON,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -87,9 +88,7 @@ export const MetadataEntry: React.FC<{
 
     case 'JsonMetadataEntry':
       return expandSmallValues && entry.jsonString.length < 1000 ? (
-        <div style={{whiteSpace: 'pre-wrap'}}>
-          {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
-        </div>
+        <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(entry.jsonString)}</div>
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
@@ -102,7 +101,7 @@ export const MetadataEntry: React.FC<{
               border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
               style={{whiteSpace: 'pre-wrap', fontFamily: FontFamily.monospace, overflow: 'auto'}}
             >
-              {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
+              {tryPrettyPrintJSON(entry.jsonString)}
             </Box>
           )}
         >
