@@ -348,7 +348,14 @@ def large_sensor(_context):
 
 @sensor(job=asset_job)
 def asset_selection_sensor(_context):
-    return RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
+    yield RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
+
+
+@sensor(job=hourly_asset_job)
+def partitioned_asset_selection_sensor(_context):
+    return hourly_asset_job.run_request_for_partition(
+        partition_key="2022-08-01-00:00", run_key=None, asset_selection=[AssetKey("hourly_asset_3")]
+    )
 
 
 @asset_sensor(job_name="the_pipeline", asset_key=AssetKey("foo"))
@@ -495,6 +502,7 @@ def the_repo():
         weekly_asset_job,
         multi_asset_sensor_hourly_to_weekly,
         multi_asset_sensor_hourly_to_hourly,
+        partitioned_asset_selection_sensor,
     ]
 
 
@@ -1489,6 +1497,46 @@ def test_asset_selection_sensor(executor, instance, workspace, external_repo):
             )
         }
         assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_partitioned_asset_selection_sensor(executor, instance, workspace, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("partitioned_asset_selection_sensor")
+        external_origin_id = external_sensor.get_external_origin_id()
+        instance.start_sensor(external_sensor)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+        assert len(ticks) == 0
+
+        evaluate_sensors(instance, workspace, executor)
+
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.asset_selection == {AssetKey("hourly_asset_3")}
+        assert run.tags["dagster/partition"] == "2022-08-01-00:00"
+        ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id],
+        )
+
+        planned_asset_keys = {
+            record.event_log_entry.dagster_event.event_specific_data.asset_key
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        }
+        assert planned_asset_keys == {AssetKey("hourly_asset_3")}
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
