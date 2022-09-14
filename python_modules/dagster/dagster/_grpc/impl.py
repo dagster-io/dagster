@@ -14,6 +14,8 @@ from dagster._core.definitions.reconstruct import ReconstructablePipeline, Recon
 from dagster._core.definitions.sensor_definition import (
     MultiAssetSensorDefinition,
     MultiAssetSensorEvaluationContext,
+    AssetSLASensorDefinition,
+    AssetSLASensorEvaluationContext,
     SensorEvaluationContext,
 )
 from dagster._core.errors import (
@@ -290,7 +292,19 @@ def get_external_sensor_execution(
 
     with ExitStack() as stack:
 
-        if isinstance(sensor_def, MultiAssetSensorDefinition):
+        if isinstance(sensor_def, AssetSLASensorDefinition):
+            sensor_context = stack.enter_context(
+                AssetSLASensorEvaluationContext(
+                    instance_ref,
+                    last_completion_time=last_completion_timestamp,
+                    last_run_key=last_run_key,
+                    cursor=cursor,
+                    repository_name=recon_repo.get_definition().name,
+                    repository_def=definition,
+                    asset_keys=sensor_def.asset_keys,
+                )
+            )
+        elif isinstance(sensor_def, MultiAssetSensorDefinition):
             sensor_context = stack.enter_context(
                 MultiAssetSensorEvaluationContext(
                     instance_ref,

@@ -16,6 +16,7 @@ from typing import (
 import dagster._check as check
 from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
+from dagster._core.definitions.asset_sla import AssetSLA
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition

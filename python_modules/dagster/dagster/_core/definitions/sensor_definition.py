@@ -637,7 +637,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
 
 @experimental
-class AssetSLASensorEvaluationContext(MultiAssetSensorEvaluationContext):
+class AssetSLASensorEvaluationContext(SensorEvaluationContext):
     """The context object available as the argument to the evaluation function of a :py:class:`dagster.AssetSLASensorDefinition`."""
 
     def __init__(
@@ -654,20 +654,24 @@ class AssetSLASensorEvaluationContext(MultiAssetSensorEvaluationContext):
         from dagster._core.definitions import AssetsDefinition
 
         self._repository_def = repository_def
-        self._asset_keys = asset_keys
+
+        # if no asset_keys specified, default to all
+        self._asset_keys = asset_keys or repository_def._assets_defs_by_key.keys()
 
         self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
-        for asset_key in asset_keys:
+        for asset_key in self._asset_keys:
             assets_def = self._repository_def._assets_defs_by_key.get(asset_key)
             if assets_def is None:
                 raise DagsterInvalidDefinitionError(
                     f"No asset with {asset_key} found in repository"
                 )
+            if not assets_def._slas_by_key.get(asset_key):
+                continue
             self._assets_by_key[asset_key] = assets_def
 
-        self.cursor_has_been_updated = False
+        self._next_cursor = cursor
 
-        super(MultiAssetSensorEvaluationContext, self).__init__(
+        super(AssetSLASensorEvaluationContext, self).__init__(
             instance_ref=instance_ref,
             last_completion_time=last_completion_time,
             last_run_key=last_run_key,
@@ -677,48 +681,48 @@ class AssetSLASensorEvaluationContext(MultiAssetSensorEvaluationContext):
         )
 
     @public
-    def latest_status_by_key(self) -> Mapping[AssetKey, int]:
-        pass
+    def current_statuses_by_key(self) -> Mapping[AssetKey, int]:
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import EventRecordsFilter
+
+        asset_keys = self._asset_keys
+
+        cursor_dict = json.loads(self.cursor) if self.cursor else {}
+        asset_sla_status = {}
+        for asset_key, assets_def in self._assets_by_key.items():
+            event_records = self.instance.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=asset_key,
+                ),
+                ascending=False,
+                limit=1,
+            )
+
+            if event_records:
+                sla = assets_def._slas_by_key[asset_key]
+                asset_sla_status[asset_key] = sla.is_passing(self, event_records[0])
+
+        self._next_cursor = json.dumps({str(key): value for key, value in asset_sla_status.items()})
+        return asset_sla_status
 
     @public
-    def previous_status_by_key(self) -> Mapping[AssetKey, int]:
+    def previous_statuses_by_key(self) -> Mapping[AssetKey, int]:
         if not self.cursor:
             return {}
-        else:
-            return json.loads(self.cursor)["last_status"]
+        cursor_dict = json.loads(self.cursor)
+        return {asset_key: cursor_dict.get(str(asset_key)) for asset_key in self._asset_keys}
 
     @public
-    def advance_cursor(
-        self, materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]]
-    ):
-        """Advances the cursor for a group of AssetKeys based on the EventLogRecord provided for each AssetKey.
+    def changed_statuses_by_key(self) -> Mapping[AssetKey, int]:
+        previous_statuses = self.previous_statuses_by_key()
+        current_statuses = self.current_statuses_by_key()
 
-        Args:
-            materialization_records_by_key (Mapping[AssetKey, Optional[EventLogRecord]]): Mapping of AssetKeys to EventLogRecord or None. If
-                an EventLogRecord is provided, the cursor for the AssetKey will be updated and future calls to fetch asset materialization events
-                will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
-        """
-        cursor_dict = (
-            json.loads(self.cursor)
-            if self.cursor
-            else {
-                "record_ids": {},
-                "last_status": {},
-            }
-        )
-        update_dict = {
-            str(k): v.storage_id if v else cursor_dict.get(str(k))
-            for k, v in materialization_records_by_key.items()
+        return {
+            key: cur_status
+            for key, cur_status in current_statuses.items()
+            if previous_statuses.get(key) != cur_status
         }
-        cursor_str = json.dumps(update_dict)
-        self._cursor = check.opt_str_param(cursor_str, "cursor")
-        self.cursor_has_been_updated = True
-
-    @public
-    def advance_all_cursors(self):
-        """Updates the cursor to the most recent materialization event for all assets monitored by the multi_asset_sensor"""
-        materializations_by_key = self.latest_materialization_records_by_key()
-        self.advance_cursor(materializations_by_key)
 
     @public  # type: ignore
     @property
@@ -1335,37 +1339,21 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
-                context.cursor_has_been_updated = False
                 result = materialization_fn(context)
                 if result is None:
                     return
 
-                # because the materialization_fn can yield results (see _wrapped_fn in multi_asset_sensor decorator),
-                # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) == True.
-                # So keep track to see if we actually return any values and should update the cursor
-                runs_yielded = False
                 if inspect.isgenerator(result) or isinstance(result, list):
                     for item in result:
-                        runs_yielded = True
                         yield item
-                elif isinstance(result, RunRequest):
-                    runs_yielded = True
-                    yield result
-                elif isinstance(result, SkipReason):
-                    # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
+                else:
                     yield result
 
-                if runs_yielded and not context.cursor_has_been_updated:
-                    raise DagsterInvalidDefinitionError(
-                        "Asset materializations have been handled in this sensor, "
-                        "but the cursor was not updated. This means the same materialization events "
-                        "will be handled in the next sensor tick. Use context.advance_cursor or "
-                        "context.advance_all_cursors to update the cursor."
-                    )
+                context._cursor = context._next_cursor
 
             return _fn
 
-        super(MultiAssetSensorDefinition, self).__init__(
+        super(AssetSLASensorDefinition, self).__init__(
             name=check_valid_name(name),
             job_name=job_name,
             evaluation_fn=_wrap_asset_fn(
@@ -1396,7 +1384,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
             if args:
                 context = check.inst_param(
-                    args[0], context_param_name, MultiAssetSensorEvaluationContext
+                    args[0], context_param_name, AssetSLASensorEvaluationContext
                 )
             else:
                 if context_param_name not in kwargs:
@@ -1406,7 +1394,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                 context = check.inst_param(
                     kwargs[context_param_name],
                     context_param_name,
-                    MultiAssetSensorEvaluationContext,
+                    AssetSLASensorEvaluationContext,
                 )
 
             return self._raw_fn(context)
@@ -1427,7 +1415,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
 
 @experimental
-class AssetSLASensorDefinition(MultiAssetSensorDefinition):
+class AssetSLASensorDefinition(SensorDefinition):
     """Define a sensor that can initiate a set of runs or alerts when an asset stops passing its defined SLA.
 
     Args:

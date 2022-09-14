@@ -18,6 +18,7 @@ from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.asset_sla import AssetSLA
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name

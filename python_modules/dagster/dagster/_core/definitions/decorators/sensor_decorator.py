@@ -14,6 +14,7 @@ from ..sensor_definition import (
     DefaultSensorStatus,
     MultiAssetMaterializationFunction,
     MultiAssetSensorDefinition,
+    AssetSLASensorDefinition,
     RawSensorEvaluationFunction,
     RunRequest,
     SensorDefinition,
@@ -172,6 +173,57 @@ def asset_sensor(
         return AssetSensorDefinition(
             name=sensor_name,
             asset_key=asset_key,
+            job_name=job_name,
+            asset_materialization_fn=_wrapped_fn,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+            default_status=default_status,
+        )
+
+    return inner
+
+
+@experimental
+def asset_sla_sensor(
+    *,
+    asset_keys: Sequence[AssetKey] = None,
+    job_name: Optional[str] = None,
+    name: Optional[str] = None,
+    minimum_interval_seconds: Optional[int] = None,
+    description: Optional[str] = None,
+    job: Optional[ExecutableDefinition] = None,
+    jobs: Optional[Sequence[ExecutableDefinition]] = None,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+):
+    check.opt_str_param(name, "name")
+
+    def inner(fn: MultiAssetMaterializationFunction) -> MultiAssetSensorDefinition:
+        check.callable_param(fn, "fn")
+        sensor_name = name or fn.__name__
+
+        def _wrapped_fn(context):
+            result = fn(context)
+
+            if inspect.isgenerator(result) or isinstance(result, list):
+                for item in result:
+                    yield item
+            elif isinstance(result, (RunRequest, SkipReason)):
+                yield result
+
+            elif result is not None:
+                raise DagsterInvariantViolationError(
+                    (
+                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+                        "{result} of type {type_}.  Should only return SkipReason or "
+                        "RunRequest objects."
+                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
+                )
+
+        return AssetSLASensorDefinition(
+            name=sensor_name,
+            asset_keys=asset_keys,
             job_name=job_name,
             asset_materialization_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,
