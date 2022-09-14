@@ -318,7 +318,7 @@ def with_group(
     """
     group_name = check.opt_str_param(group_name, "group_name")
     if not group_name:
-        return list(assets_defs)
+        return assets_defs
 
     return [
         assets_def.with_prefix_or_group(

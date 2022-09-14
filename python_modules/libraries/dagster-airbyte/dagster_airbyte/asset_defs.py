@@ -1,6 +1,6 @@
 import os
 from itertools import chain
-from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Set, Union, cast
+from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Set, cast
 
 import yaml
 from dagster_airbyte.utils import generate_materializations
@@ -207,27 +207,15 @@ class AirbyteConnection(
         return tables
 
 
-class AirbyteSource(NamedTuple("_AirbyteSource", [("name", str)])):
-    """
-    Contains information about an Airbyte source.
-
-    Attributes:
-        name (str): The name of the source.
-    """
-
-    @classmethod
-    def from_config(cls, contents: Mapping[str, Any]) -> "AirbyteSource":
-        return cls(name=contents["resource_name"])
-
-
 @experimental
 def load_assets_from_airbyte_project(
     project_dir: str,
+    workspace_id: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
-) -> List[Union[AssetsDefinition]]:
+) -> List[AssetsDefinition]:
     """
     Loads an Airbyte project into a set of Dagster assets.
 
@@ -237,6 +225,8 @@ def load_assets_from_airbyte_project(
     Args:
         project_dir (str): The path to the root of your Airbyte project, containing sources, destinations,
             and connections folders.
+        workspace_id (Optional[str]): The ID of the Airbyte workspace to load connections from. Only
+            required if multiple workspace state YAMLfiles exist in the project.
         key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
         source_key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the source asset keys produced.
         create_assets_for_normalization_tables (bool): If True, assets will be created for tables
@@ -263,18 +253,29 @@ def load_assets_from_airbyte_project(
         with open(os.path.join(connection_dir, "configuration.yaml"), encoding="utf-8") as f:
             connection = AirbyteConnection.from_config(yaml.safe_load(f.read()))
 
-        with open(os.path.join(project_dir, connection.source_config_path), encoding="utf-8") as f:
-            source = AirbyteSource.from_config(yaml.safe_load(f.read()))
-            source_asset_key = AssetKey(source_key_prefix + [_clean_name(source.name)])
-
-        state_file = next(
-            (filename for filename in os.listdir(connection_dir) if filename.startswith("state_")),
-            None,
-        )
-        check.invariant(
-            state_file is not None,
-            "No state file found for connection {} in {}".format(connection_name, connection_dir),
-        )
+        if workspace_id:
+            state_file = f"state_{workspace_id}.yaml"
+            check.invariant(
+                state_file in os.listdir(connection_dir),
+                f"Workspace state file {state_file} not found",
+            )
+        else:
+            state_files = [
+                filename for filename in os.listdir(connection_dir) if filename.startswith("state_")
+            ]
+            check.invariant(
+                len(state_files) > 0,
+                "No state files found for connection {} in {}".format(
+                    connection_name, connection_dir
+                ),
+            )
+            check.invariant(
+                len(state_files) <= 1,
+                "More than one state file found for connection {} in {}, specify a workspace_id to disambiguate".format(
+                    connection_name, connection_dir
+                ),
+            )
+            state_file = state_files[0]
 
         with open(os.path.join(connection_dir, cast(str, state_file)), encoding="utf-8") as f:
             state = yaml.safe_load(f.read())
@@ -287,7 +288,6 @@ def load_assets_from_airbyte_project(
             destination_tables=list(table_mapping.keys()),
             normalization_tables=table_mapping,
             asset_key_prefix=key_prefix,
-            upstream_assets={source_asset_key},
         )
 
         if connection_to_group_fn:
