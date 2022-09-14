@@ -9,8 +9,10 @@ import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
+import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceTabs} from './WorkspaceTabs';
 import {buildRepoAddress} from './buildRepoAddress';
+import {repoAddressAsString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 import {WorkspaceJobsQuery} from './types/WorkspaceJobsQuery';
 
@@ -18,6 +20,8 @@ export const WorkspaceJobsRoot = () => {
   useTrackPageView();
 
   const [searchValue, setSearchValue] = React.useState('');
+  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const repoCount = allRepos.length;
 
   const queryResultOverview = useQuery<WorkspaceJobsQuery>(WORKSPACE_JOBS_QUERY, {
     fetchPolicy: 'network-only',
@@ -31,15 +35,28 @@ export const WorkspaceJobsRoot = () => {
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
+  const filteredRepoBuckets = React.useMemo(() => {
+    const visibleRepoKeys = new Set(
+      visibleRepos.map((option) =>
+        repoAddressAsString(
+          buildRepoAddress(option.repository.name, option.repositoryLocation.name),
+        ),
+      ),
+    );
+    return repoBuckets.filter(({repoAddress}) =>
+      visibleRepoKeys.has(repoAddressAsString(repoAddress)),
+    );
+  }, [repoBuckets, visibleRepos]);
+
   const filteredBySearch = React.useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
-    return repoBuckets
+    return filteredRepoBuckets
       .map(({repoAddress, jobs}) => ({
         repoAddress,
         jobs: jobs.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
       .filter(({jobs}) => jobs.length > 0);
-  }, [repoBuckets, sanitizedSearch]);
+  }, [filteredRepoBuckets, sanitizedSearch]);
 
   const content = () => {
     if (!filteredBySearch.length) {
@@ -102,7 +119,7 @@ export const WorkspaceJobsRoot = () => {
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
       >
-        {repoBuckets.length > 1 ? <RepoFilterButton /> : null}
+        {repoCount > 1 ? <RepoFilterButton /> : null}
         <TextInput
           icon="search"
           value={searchValue}
@@ -111,7 +128,7 @@ export const WorkspaceJobsRoot = () => {
           style={{width: '340px'}}
         />
       </Box>
-      {loading && !repoBuckets.length ? (
+      {loading && !repoCount ? (
         <Box padding={64}>
           <Spinner purpose="page" />
         </Box>
