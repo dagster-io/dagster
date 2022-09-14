@@ -175,15 +175,23 @@ class DatabricksJobRunner:
         libraries = list(run_config.get("libraries", []))
         install_default_libraries = run_config.get("install_default_libraries", True)
         if install_default_libraries:
+            import dagster_databricks
+            import dagster_pyspark
+
             python_libraries = {
                 x["pypi"]["package"].split("==")[0].replace("_", "-")
                 for x in libraries
                 if "pypi" in x
             }
-            for library in ["dagster", "dagster-databricks", "dagster-pyspark"]:
-                if library not in python_libraries:
+
+            for library_name, library in [
+                ("dagster", dagster),
+                ("dagster-databricks", dagster_databricks),
+                ("dagster-pyspark", dagster_pyspark),
+            ]:
+                if library_name not in python_libraries:
                     libraries.append(
-                        {"pypi": {"package": "{}=={}".format(library, dagster.__version__)}}
+                        {"pypi": {"package": "{}=={}".format(library_name, library.__version__)}}
                     )
 
         # Only one task should be able to be chosen really; make sure of that here.
