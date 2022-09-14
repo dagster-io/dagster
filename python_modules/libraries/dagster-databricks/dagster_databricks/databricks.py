@@ -1,6 +1,8 @@
 import base64
 import time
 
+import dagster_databricks
+import dagster_pyspark
 import requests.exceptions
 from databricks_api import DatabricksAPI
 
@@ -175,9 +177,6 @@ class DatabricksJobRunner:
         libraries = list(run_config.get("libraries", []))
         install_default_libraries = run_config.get("install_default_libraries", True)
         if install_default_libraries:
-            import dagster_databricks
-            import dagster_pyspark
-
             python_libraries = {
                 x["pypi"]["package"].split("==")[0].replace("_", "-")
                 for x in libraries
