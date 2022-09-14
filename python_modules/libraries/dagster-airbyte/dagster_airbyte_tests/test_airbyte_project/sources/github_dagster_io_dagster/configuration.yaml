@@ -1,0 +1,12 @@
+resource_name: github/dagster-io/dagster
+definition_type: source
+definition_id: ef69ef6e-aa7f-4af1-a01d-ef775033524e
+definition_image: airbyte/source-github
+definition_version: 0.2.46
+configuration:
+  repository: dagster-io/dagster
+  start_date: '2021-03-01T00:00:00Z'
+  credentials:
+    option_title: PAT Credentials
+    personal_access_token: '**********'
+  page_size_for_large_streams: 10

@@ -114,3 +114,227 @@ def get_sample_job_list_json(schema_prefix=""):
             }
         ]
     }
+
+
+def get_project_connection_json(**kwargs):
+    return deep_merge_dicts(
+        {
+            "name": "GitHub <> snowflake-ben",
+            "prefix": "dagster_",
+            "syncCatalog": {
+                "streams": [
+                    {
+                        "stream": {
+                            "name": "releases",
+                            "jsonSchema": {
+                                "type": "object",
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                                "properties": {
+                                    "id": {"type": ["null", "integer"]},
+                                    "url": {"type": ["null", "string"]},
+                                    "body": {"type": ["null", "string"]},
+                                    "name": {"type": ["null", "string"]},
+                                    "draft": {"type": ["null", "boolean"]},
+                                    "assets": {
+                                        "type": ["null", "array"],
+                                        "items": {
+                                            "type": ["null", "object"],
+                                            "properties": {
+                                                "id": {"type": ["null", "integer"]},
+                                                "url": {"type": ["null", "string"]},
+                                                "name": {"type": ["null", "string"]},
+                                                "size": {"type": ["null", "integer"]},
+                                                "label": {"type": ["null", "string"]},
+                                                "state": {"type": ["null", "string"]},
+                                                "node_id": {"type": ["null", "string"]},
+                                                "created_at": {
+                                                    "type": ["null", "string"],
+                                                    "format": "date-time",
+                                                },
+                                                "updated_at": {
+                                                    "type": ["null", "string"],
+                                                    "format": "date-time",
+                                                },
+                                                "uploader_id": {"type": ["null", "integer"]},
+                                                "content_type": {"type": ["null", "string"]},
+                                                "download_count": {"type": ["null", "integer"]},
+                                                "browser_download_url": {
+                                                    "type": ["null", "string"]
+                                                },
+                                            },
+                                        },
+                                    },
+                                    "author": {
+                                        "type": ["null", "object"],
+                                        "properties": {
+                                            "id": {"type": ["null", "integer"]},
+                                            "url": {"type": ["null", "string"]},
+                                            "type": {"type": ["null", "string"]},
+                                            "login": {"type": ["null", "string"]},
+                                            "node_id": {"type": ["null", "string"]},
+                                            "html_url": {"type": ["null", "string"]},
+                                            "gists_url": {"type": ["null", "string"]},
+                                            "repos_url": {"type": ["null", "string"]},
+                                            "avatar_url": {"type": ["null", "string"]},
+                                            "events_url": {"type": ["null", "string"]},
+                                            "site_admin": {"type": ["null", "boolean"]},
+                                            "gravatar_id": {"type": ["null", "string"]},
+                                            "starred_url": {"type": ["null", "string"]},
+                                            "followers_url": {"type": ["null", "string"]},
+                                            "following_url": {"type": ["null", "string"]},
+                                            "organizations_url": {"type": ["null", "string"]},
+                                            "subscriptions_url": {"type": ["null", "string"]},
+                                            "received_events_url": {"type": ["null", "string"]},
+                                        },
+                                    },
+                                    "node_id": {"type": ["null", "string"]},
+                                    "html_url": {"type": ["null", "string"]},
+                                    "tag_name": {"type": ["null", "string"]},
+                                    "assets_url": {"type": ["null", "string"]},
+                                    "created_at": {
+                                        "type": ["null", "string"],
+                                        "format": "date-time",
+                                    },
+                                    "prerelease": {"type": ["null", "boolean"]},
+                                    "repository": {"type": ["string"]},
+                                    "upload_url": {"type": ["null", "string"]},
+                                    "tarball_url": {"type": ["null", "string"]},
+                                    "zipball_url": {"type": ["null", "string"]},
+                                    "published_at": {
+                                        "type": ["null", "string"],
+                                        "format": "date-time",
+                                    },
+                                    "target_commitish": {"type": ["null", "string"]},
+                                },
+                            },
+                            "supportedSyncModes": ["full_refresh", "incremental"],
+                            "sourceDefinedCursor": True,
+                            "defaultCursorField": ["created_at"],
+                            "sourceDefinedPrimaryKey": [["id"]],
+                        },
+                        "config": {
+                            "syncMode": "full_refresh",
+                            "cursorField": ["created_at"],
+                            "destinationSyncMode": "append",
+                            "primaryKey": [["id"]],
+                            "aliasName": "releases",
+                            "selected": True,
+                        },
+                    },
+                    {
+                        "stream": {
+                            "name": "tags",
+                            "jsonSchema": {
+                                "type": "object",
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                                "properties": {
+                                    "name": {"type": ["null", "string"]},
+                                    "commit": {
+                                        "type": ["null", "object"],
+                                        "properties": {
+                                            "sha": {"type": ["null", "string"]},
+                                            "url": {"type": ["null", "string"]},
+                                        },
+                                    },
+                                    "node_id": {"type": ["null", "string"]},
+                                    "repository": {"type": ["string"]},
+                                    "tarball_url": {"type": ["null", "string"]},
+                                    "zipball_url": {"type": ["null", "string"]},
+                                },
+                            },
+                            "supportedSyncModes": ["full_refresh"],
+                            "defaultCursorField": [],
+                            "sourceDefinedPrimaryKey": [["repository"], ["name"]],
+                        },
+                        "config": {
+                            "syncMode": "full_refresh",
+                            "cursorField": [],
+                            "destinationSyncMode": "append",
+                            "primaryKey": [["repository"], ["name"]],
+                            "aliasName": "tags",
+                            "selected": True,
+                        },
+                    },
+                    {
+                        "stream": {
+                            "name": "teams",
+                            "jsonSchema": {
+                                "type": "object",
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                                "properties": {
+                                    "id": {"type": ["null", "integer"]},
+                                    "url": {"type": ["null", "string"]},
+                                    "name": {"type": ["null", "string"]},
+                                    "slug": {"type": ["null", "string"]},
+                                    "parent": {
+                                        "type": ["null", "object"],
+                                        "properties": {},
+                                        "additionalProperties": True,
+                                    },
+                                    "node_id": {"type": ["null", "string"]},
+                                    "privacy": {"type": ["null", "string"]},
+                                    "html_url": {"type": ["null", "string"]},
+                                    "permission": {"type": ["null", "string"]},
+                                    "repository": {"type": ["null", "string"]},
+                                    "description": {"type": ["null", "string"]},
+                                    "members_url": {"type": ["null", "string"]},
+                                    "organization": {"type": ["null", "string"]},
+                                    "repositories_url": {"type": ["null", "string"]},
+                                },
+                            },
+                            "supportedSyncModes": ["full_refresh"],
+                            "defaultCursorField": [],
+                            "sourceDefinedPrimaryKey": [["id"]],
+                        },
+                        "config": {
+                            "syncMode": "full_refresh",
+                            "cursorField": [],
+                            "destinationSyncMode": "append",
+                            "primaryKey": [["id"]],
+                            "aliasName": "teams",
+                            "selected": True,
+                        },
+                    },
+                ]
+            },
+        },
+        kwargs,
+    )
+
+
+def get_project_job_json():
+    return {
+        "job": {"id": 1, "status": AirbyteState.SUCCEEDED},
+        "attempts": [
+            {
+                "attempt": {
+                    "streamStats": [
+                        {
+                            "streamName": "dagster_teams",
+                            "stats": {
+                                "recordsEmitted": 3,
+                                "bytesEmitted": 1493,
+                                "recordsCommitted": 3,
+                            },
+                        },
+                        {
+                            "streamName": "dagster_tags",
+                            "stats": {
+                                "recordsEmitted": 622,
+                                "bytesEmitted": 289815,
+                                "recordsCommitted": 622,
+                            },
+                        },
+                        {
+                            "streamName": "dagster_releases",
+                            "stats": {
+                                "recordsEmitted": 119,
+                                "bytesEmitted": 620910,
+                                "recordsCommitted": 119,
+                            },
+                        },
+                    ],
+                }
+            }
+        ],
+    }
