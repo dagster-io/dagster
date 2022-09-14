@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pendulum
 import pytest
 
 from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
@@ -966,12 +967,25 @@ def test_back_compat_external_sensor():
     assert target.pipeline_name == "my_pipeline"
 
 
+def _check_partitions_def_equal(
+    p1: TimeWindowPartitionsDefinition, p2: TimeWindowPartitionsDefinition
+):
+    assert (
+        pendulum.instance(p1.start, tz=p1.timezone).timestamp()
+        == pendulum.instance(p2.start, tz=p2.timezone).timestamp()
+    )
+    assert p1.timezone == p2.timezone
+    assert p1.fmt == p2.fmt
+    assert p1.end_offset == p2.end_offset
+    assert p1.cron_schedule == p2.cron_schedule
+
+
 def test_back_compat_external_time_window_partitions_def():
     start = datetime(year=2022, month=5, day=5)
 
     external = ExternalTimeWindowPartitionsDefinitionData(
         schedule_type=ScheduleType.WEEKLY,
-        start=start.timestamp(),
+        start=pendulum.instance(start, tz="US/Central").timestamp(),
         timezone="US/Central",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
         end_offset=1,
@@ -979,14 +993,17 @@ def test_back_compat_external_time_window_partitions_def():
         hour_offset=13,
     )
 
-    assert external.get_partitions_definition() == TimeWindowPartitionsDefinition(
-        schedule_type=ScheduleType.WEEKLY,
-        start=start,
-        timezone="US/Central",
-        fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
-        end_offset=1,
-        minute_offset=5,
-        hour_offset=13,
+    _check_partitions_def_equal(
+        external.get_partitions_definition(),
+        TimeWindowPartitionsDefinition(
+            schedule_type=ScheduleType.WEEKLY,
+            start=start,
+            timezone="US/Central",
+            fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+            end_offset=1,
+            minute_offset=5,
+            hour_offset=13,
+        ),
     )
 
 
@@ -1001,5 +1018,8 @@ def test_external_time_window_partitions_def_cron_schedule():
         cron_schedule="0 10,13 * * *",
     )
 
-    external = external_time_window_partitions_definition_from_def(partitions_def)
-    assert external.get_partitions_definition() == partitions_def
+    external = external_time_window_partitions_definition_from_def(
+        partitions_def
+    ).get_partitions_definition()
+
+    _check_partitions_def_equal(external, partitions_def)

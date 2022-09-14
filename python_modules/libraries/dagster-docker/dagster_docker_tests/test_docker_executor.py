@@ -19,7 +19,7 @@ from dagster._utils.yaml_utils import merge_yamls
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
-def test_docker_executor():
+def test_docker_executor(aws_env):
     """
     Note that this test relies on having AWS credentials in the environment.
     """
@@ -27,13 +27,7 @@ def test_docker_executor():
     executor_config = {
         "execution": {
             "docker": {
-                "config": {
-                    "networks": ["container:test-postgres-db-docker"],
-                    "env_vars": [
-                        "AWS_ACCESS_KEY_ID",
-                        "AWS_SECRET_ACCESS_KEY",
-                    ],
-                }
+                "config": {"networks": ["container:test-postgres-db-docker"], "env_vars": aws_env}
             }
         }
     }
@@ -64,17 +58,11 @@ def test_docker_executor():
             ).success
 
 
-def test_docker_executor_check_step_health():
+def test_docker_executor_check_step_health(aws_env):
     executor_config = {
         "execution": {
             "docker": {
-                "config": {
-                    "networks": ["container:test-postgres-db-docker"],
-                    "env_vars": [
-                        "AWS_ACCESS_KEY_ID",
-                        "AWS_SECRET_ACCESS_KEY",
-                    ],
-                }
+                "config": {"networks": ["container:test-postgres-db-docker"], "env_vars": aws_env}
             }
         }
     }
@@ -108,7 +96,7 @@ def test_docker_executor_check_step_health():
             ).success
 
 
-def test_docker_executor_config_on_container_context():
+def test_docker_executor_config_on_container_context(aws_env):
     """
     Note that this test relies on having AWS credentials in the environment.
     """
@@ -141,10 +129,7 @@ def test_docker_executor_config_on_container_context():
                 container_context={
                     "docker": {
                         "networks": ["container:test-postgres-db-docker"],
-                        "env_vars": [
-                            "AWS_ACCESS_KEY_ID",
-                            "AWS_SECRET_ACCESS_KEY",
-                        ],
+                        "env_vars": aws_env,
                     }
                 },
             )

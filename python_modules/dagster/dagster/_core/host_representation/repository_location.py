@@ -28,9 +28,11 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import ExternalPipelineSubsetResult
 from dagster._core.host_representation.external import (
     ExternalExecutionPlan,
+    ExternalPartitionSet,
     ExternalPipeline,
     ExternalRepository,
 )
+from dagster._core.host_representation.external_data import ExternalPartitionNamesData
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.handle import PipelineHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
@@ -63,7 +65,6 @@ if TYPE_CHECKING:
     from dagster._core.host_representation import (
         ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
-        ExternalPartitionNamesData,
         ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
         ExternalScheduleExecutionErrorData,
@@ -160,7 +161,7 @@ class RepositoryLocation(AbstractContextManager):
 
     @abstractmethod
     def get_external_partition_names(
-        self, repository_handle: RepositoryHandle, partition_set_name: str
+        self, external_partition_set: ExternalPartitionSet
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -417,14 +418,20 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_partition_names(
-        self, repository_handle: RepositoryHandle, partition_set_name: str
+        self, external_partition_set: ExternalPartitionSet
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
+        check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
+
+        # Prefer to return the names without calling out to user code if the
+        # partition set allows it
+        if external_partition_set.has_partition_name_data():
+            return ExternalPartitionNamesData(
+                partition_names=external_partition_set.get_partition_names()
+            )
 
         return get_partition_names(
-            recon_repo=self._recon_repos[repository_handle.repository_name],
-            partition_set_name=partition_set_name,
+            recon_repo=self._recon_repos[external_partition_set.repository_handle],
+            partition_set_name=external_partition_set.name,
         )
 
     def get_external_schedule_execution_data(
@@ -750,13 +757,19 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_partition_names(
-        self, repository_handle: RepositoryHandle, partition_set_name: str
+        self, external_partition_set: ExternalPartitionSet
     ) -> "ExternalPartitionNamesData":
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
+        check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
+
+        # Prefer to return the names without calling out to user code if the
+        # partition set allows it
+        if external_partition_set.has_partition_name_data():
+            return ExternalPartitionNamesData(
+                partition_names=external_partition_set.get_partition_names()
+            )
 
         return sync_get_external_partition_names_grpc(
-            self.client, repository_handle, partition_set_name
+            self.client, external_partition_set.repository_handle, external_partition_set.name
         )
 
     def get_external_schedule_execution_data(

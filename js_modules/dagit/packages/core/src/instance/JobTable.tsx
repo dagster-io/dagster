@@ -76,7 +76,7 @@ export const JobTable = (props: Props) => {
                   </Box>
                   {runs.length ? (
                     <Box margin={{top: 4}}>
-                      <RunStatusPezList fade runs={runs} repoAddress={repoAddressString} />
+                      <RunStatusPezList fade runs={runs} jobName={name} />
                     </Box>
                   ) : null}
                 </Box>
@@ -97,7 +97,7 @@ export const JobTable = (props: Props) => {
               </td>
               <td>
                 {runs.length ? (
-                  <LastRunSummary run={runs[runs.length - 1]} />
+                  <LastRunSummary run={runs[runs.length - 1]} name={name} />
                 ) : (
                   <div style={{color: Colors.Gray500}}>None</div>
                 )}

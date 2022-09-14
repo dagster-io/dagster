@@ -13,6 +13,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Tuple,
     Union,
     cast,
 )
@@ -21,6 +22,9 @@ from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -41,7 +45,6 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.event_log.base import EventLogRecord
@@ -161,6 +164,19 @@ class SensorEvaluationContext:
         return self._repository_name
 
 
+def _get_partition_key_from_event_log_record(event_log_record: "EventLogRecord") -> Optional[str]:
+    """
+    Given an event log record, returns the partition key for the event log record if it exists."""
+    from dagster._core.storage.event_log.base import EventLogRecord
+
+    check.inst_param(event_log_record, "event_log_record", EventLogRecord)
+
+    dagster_event = event_log_record.event_log_entry.dagster_event
+    if dagster_event:
+        return dagster_event.partition
+    return None
+
+
 @experimental
 class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     """The context object available as the argument to the evaluation function of a :py:class:`dagster.MultiAssetSensorDefinition`.
@@ -170,6 +186,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     build_multi_asset_sensor_context`.
 
     Attributes:
+        asset_keys (Sequence[AssetKey]): The asset keys that the sensor is configured to monitor.
         repository_def (RepositoryDefinition): The repository that the sensor belongs to.
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
         cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
@@ -205,19 +222,26 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         asset_keys: Sequence[AssetKey],
         instance: Optional[DagsterInstance] = None,
     ):
-        from dagster._core.definitions import AssetsDefinition
-
         self._repository_def = repository_def
         self._asset_keys = asset_keys
 
         self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
         for asset_key in asset_keys:
-            assets_def = self._repository_def._assets_defs_by_key.get(asset_key)
+            assets_def = (
+                self._repository_def._assets_defs_by_key.get(  # pylint:disable=protected-access
+                    asset_key
+                )
+            )
             if assets_def is None:
                 raise DagsterInvalidDefinitionError(
                     f"No asset with {asset_key} found in repository"
                 )
             self._assets_by_key[asset_key] = assets_def
+
+        self._partitions_def_by_asset_key = {
+            asset_key: asset_def.partitions_def
+            for asset_key, asset_def in self._assets_by_key.items()
+        }
 
         self.cursor_has_been_updated = False
 
@@ -230,15 +254,38 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             instance=instance,
         )
 
+    def _get_partitions_after_cursor(self, asset_key: AssetKey) -> List[str]:
+        asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
+        cursor_partition_key, _ = self._get_cursor(asset_key)
+
+        partitions_def = self._partitions_def_by_asset_key.get(asset_key)
+
+        if not isinstance(partitions_def, PartitionsDefinition):
+            raise DagsterInvalidInvocationError(f"No partitions defined for asset key {asset_key}")
+
+        partitions_to_fetch = list(partitions_def.get_partition_keys())
+
+        if cursor_partition_key is not None:
+            # Return partitions after the cursor partition, not including the cursor partition
+            partitions_to_fetch = partitions_to_fetch[
+                partitions_to_fetch.index(cursor_partition_key) + 1 :
+            ]
+        return partitions_to_fetch
+
     @public
     def latest_materialization_records_by_key(
-        self, asset_keys: Optional[Sequence[AssetKey]] = None
+        self,
+        asset_keys: Optional[Sequence[AssetKey]] = None,
+        after_cursor_partition: Optional[bool] = False,
     ) -> Mapping[AssetKey, Optional["EventLogRecord"]]:
         """Fetches the most recent materialization event record for each asset in asset_keys.
 
         Args:
             asset_keys (Optional[Sequence[AssetKey]]): list of asset keys to fetch events for. If not specified, the
                 latest materialization will be fetched for all assets the multi_asset_sensor monitors.
+            after_cursor_partition (Optional[bool]): If True, only materializations with partitions
+                after the cursor's current partition will be returned. By default, set to False. For
+                unpartitioned assets, this parameter is ignored.
 
         Returns: Mapping of AssetKey to EventLogRecord where the EventLogRecord is the latest materialization event for the asset. If there
             is no materialization event for the asset, the value in the mapping will be None.
@@ -248,15 +295,23 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         if asset_keys is None:
             asset_keys = self._asset_keys
+        else:
+            asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
 
-        cursor_dict = json.loads(self.cursor) if self.cursor else {}
         asset_event_records = {}
         for a in asset_keys:
+            _, cursor = self._get_cursor(a)
+
+            partitions_to_fetch = (
+                self._get_partitions_after_cursor(a) if after_cursor_partition else None
+            )
+
             event_records = self.instance.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
                     asset_key=a,
-                    after_cursor=cursor_dict.get(str(a)),
+                    after_cursor=cursor,
+                    asset_partitions=partitions_to_fetch,
                 ),
                 ascending=False,
                 limit=1,
@@ -271,27 +326,279 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public
     def materialization_records_for_key(
-        self, asset_key: AssetKey, limit: int
+        self, asset_key: AssetKey, limit: int, after_cursor_partition: Optional[bool] = False
     ) -> Iterable["EventLogRecord"]:
         """Fetches asset materialization event records for asset_key, with the earliest event first.
 
         Args:
             asset_key (AssetKey): The asset to fetch materialization events for
             limit (int): The number of events to fetch
+            after_cursor_partition (Optional[bool]): If True, only materializations with partitions
+                after the cursor's current partition will be returned. By default, set to False. For
+                unpartitioned assets, this parameter is ignored.
         """
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        cursor_dict = json.loads(self.cursor) if self.cursor else {}
+        asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
+        if asset_key not in self._assets_by_key:
+            raise DagsterInvalidInvocationError(f"Asset key {asset_key} not monitored by sensor.")
+
+        _, cursor = self._get_cursor(asset_key)
+
+        partitions_to_fetch = (
+            self._get_partitions_after_cursor(asset_key) if after_cursor_partition else None
+        )
+
         return self.instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
-                after_cursor=cursor_dict.get(str(asset_key)),
+                after_cursor=cursor,
+                asset_partitions=partitions_to_fetch,
             ),
             ascending=True,
             limit=limit,
         )
+
+    def _get_cursor(self, asset_key: AssetKey) -> Tuple[Optional[str], Optional[int]]:
+        """
+        The cursor maps stringified AssetKeys (str(asset_key)) to Tuples. The first value in the
+        tuple is the partition of type str, representing the partition key. The second value in the
+        tuple is the storage_id (int) of the materialization event for the asset that has been most
+        recently processed by the sensor.
+
+        For example, a multi_asset_sensor that monitors partitioned asset A would have a cursor:
+        {
+            str(asset_a.key): (partition_a, storage_id_a),
+        }
+        Where partition_a and storage_id_a are the partition and storage_id of the most recent
+        materialization processed by the sensor.
+
+        The cursor is stringified as a JSON object and then loaded as needed. This method accepts an
+        asset key and returns the tuple containing partition key and storage ID for that asset. If
+        no asset key is provided, the method returns back the unpacked cursor object.
+        """
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        unpacked_cursor = json.loads(self.cursor) if self.cursor else {}
+
+        partition_key, cursor = unpacked_cursor.get(str(asset_key), (None, None))
+        return partition_key, cursor
+
+    @public
+    def latest_materialization_records_by_partition(
+        self,
+        asset_key: AssetKey,
+        after_cursor_partition: Optional[bool] = False,
+    ) -> Mapping[str, "EventLogRecord"]:
+        """
+        Given an asset, returns a mapping of partition key to the latest materialization event
+        for that partition. Fetches only materializations after the cursor.
+
+        Args:
+            asset_key (AssetKey): The asset to fetch events for.
+            after_cursor_partition (Optional[bool]): If True, only materializations with partitions
+                after the cursor's current partition will be returned. By default, set to False. For
+                unpartitioned assets, this parameter is ignored.
+
+        Returns:
+            Mapping[str, EventLogRecord]:
+                Mapping of AssetKey to a mapping of partitions to EventLogRecords where the
+                EventLogRecord is the most recent materialization event for the partition.
+                Filters for materializations in partitions after the cursor.
+
+        Example:
+            .. code-block:: python
+
+                @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
+                def july_asset():
+                    return 1
+
+                @multi_asset_sensor(asset_keys=[july_asset.key])
+                def my_sensor(context):
+                    context.latest_materialization_records_by_partition(july_asset.key)
+
+                # After materializing july_asset for 2022-07-05, latest_materialization_by_partition
+                # returns {"2022-07-05": EventLogRecord(...)}
+
+        """
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import EventLogRecord, EventRecordsFilter
+
+        asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
+
+        if asset_key not in self._assets_by_key:
+            raise DagsterInvalidInvocationError(
+                f"Asset key {asset_key} not monitored in sensor definition"
+            )
+
+        partitions_def = self._partitions_def_by_asset_key.get(asset_key)
+
+        materialization_by_partition: Dict[str, EventLogRecord] = {}
+        if not isinstance(partitions_def, PartitionsDefinition):
+            raise DagsterInvariantViolationError(
+                "Cannot get latest materialization by partition for assets with no partitions"
+            )
+        else:
+            _, cursor = self._get_cursor(asset_key)
+
+            partitions_to_fetch = (
+                self._get_partitions_after_cursor(asset_key)
+                if after_cursor_partition
+                else list(partitions_def.get_partition_keys())
+            )
+
+            partition_materializations = self.instance.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=asset_key,
+                    asset_partitions=partitions_to_fetch,
+                    after_cursor=cursor,
+                ),
+            )
+            for materialization in partition_materializations:
+                # Only update if no previous materialization for this partition exists,
+                # to ensure we return the most recent materialization for each partition.
+                partition = _get_partition_key_from_event_log_record(materialization)
+
+                if isinstance(partition, str) and partition not in materialization_by_partition:
+                    materialization_by_partition[partition] = materialization
+
+        return materialization_by_partition
+
+    @public
+    def get_cursor_partition(self, asset_key: Optional[AssetKey]) -> Optional[str]:
+        """A utility method to get the current partition the cursor is on."""
+        asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
+        if asset_key not in self._asset_keys:
+            raise DagsterInvalidInvocationError(
+                "Provided asset key must correspond to a provided asset"
+            )
+        if asset_key:
+            partition_key, _ = self._get_cursor(asset_key)
+        elif self._asset_keys is not None and len(self._asset_keys) == 1:
+            partition_key, _ = self._get_cursor(self._asset_keys[0])
+        else:
+            raise DagsterInvalidInvocationError(
+                "Asset key must be provided when multiple assets are defined"
+            )
+
+        return partition_key
+
+    @public
+    def all_partitions_materialized(
+        self, asset_key: AssetKey, partitions: Optional[Sequence[str]] = None
+    ) -> bool:
+        """
+        A utility method to check if a provided list of partitions have been materialized
+        for a particular asset. This method ignores the cursor and checks all materializations
+        for the asset.
+
+        Args:
+            asset_key (AssetKey): The asset to check partitions for.
+            partitions (Optional[Sequence[str]]): A list of partitions to check. If not provided,
+                all partitions for the asset will be checked.
+
+        Returns:
+            bool: True if all selected partitions have been materialized, False otherwise.
+        """
+
+        check.inst_param(asset_key, "asset_key", AssetKey)
+
+        materialization_count_by_partition = self.instance.get_materialization_count_by_partition(
+            [asset_key]
+        ).get(asset_key, {})
+        if not partitions:
+            if asset_key not in self._asset_keys:
+                raise DagsterInvariantViolationError(
+                    f"Asset key {asset_key} not monitored by sensor"
+                )
+
+            partitions_def = self._partitions_def_by_asset_key[asset_key]
+            if not partitions_def:
+                raise DagsterInvariantViolationError(
+                    f"Asset key {asset_key} is not partitioned. Cannot check if partitions have been materialized."
+                )
+            partitions = partitions_def.get_partition_keys()
+
+        return all(
+            [materialization_count_by_partition.get(partition, 0) != 0 for partition in partitions]
+        )
+
+    def _get_asset(self, asset_key: AssetKey) -> AssetsDefinition:
+        repository_assets = (
+            self._repository_def._assets_defs_by_key  # pylint:disable=protected-access
+        )
+        if asset_key in self._assets_by_key:
+            return self._assets_by_key[asset_key]
+        elif asset_key in repository_assets:
+            return repository_assets[asset_key]
+        else:
+            raise DagsterInvalidInvocationError(
+                f"Asset key {asset_key} not monitored in sensor and does not exist in target jobs"
+            )
+
+    @public
+    def get_downstream_partition_keys(
+        self, partition_key: str, from_asset_key: AssetKey, to_asset_key: AssetKey
+    ) -> Sequence[str]:
+        """
+        Converts a partition key from one asset to the corresponding partition key in a downstream
+        asset. Uses the existing partition mapping between the upstream asset and the downstream
+        asset if it exists, otherwise, uses the default partition mapping.
+
+        Args:
+            partition_key (str): The partition key to convert.
+            from_asset_key (AssetKey): The asset key of the upstream asset, which the provided
+                partition key belongs to.
+            to_asset_key (AssetKey): The asset key of the downstream asset. The provided partition
+                key will be mapped to partitions within this asset.
+
+        Returns:
+            Sequence[str]: A list of the corresponding downstream partitions in to_asset_key that
+                partition_key maps to.
+        """
+
+        partition_key = check.str_param(partition_key, "partition_key")
+
+        to_asset = self._get_asset(to_asset_key)
+        from_asset = self._get_asset(from_asset_key)
+
+        if not isinstance(to_asset.partitions_def, PartitionsDefinition):
+            raise DagsterInvalidInvocationError(
+                f"Asset key {to_asset_key} is not partitioned. Cannot get partition keys."
+            )
+        if not isinstance(from_asset.partitions_def, PartitionsDefinition):
+            raise DagsterInvalidInvocationError(
+                f"Asset key {from_asset_key} is not partitioned. Cannot get partition keys."
+            )
+
+        partition_mapping = to_asset.get_partition_mapping(from_asset_key)
+        downstream_partition_key_range = (
+            partition_mapping.get_downstream_partitions_for_partition_range(
+                PartitionKeyRange(partition_key, partition_key),
+                downstream_partitions_def=to_asset.partitions_def,
+                upstream_partitions_def=from_asset.partitions_def,
+            )
+        )
+
+        partition_keys = to_asset.partitions_def.get_partition_keys()
+        if (
+            downstream_partition_key_range.start not in partition_keys
+            or downstream_partition_key_range.end not in partition_keys
+        ):
+            raise DagsterInvalidInvocationError(
+                f"Mapped partition key {partition_key} to downstream partition key range "
+                f"[{downstream_partition_key_range.start}...{downstream_partition_key_range.end}] "
+                "which is not a valid range in the downstream partitions definition."
+            )
+        downstream_partitions = partition_keys[
+            partition_keys.index(downstream_partition_key_range.start) : partition_keys.index(
+                downstream_partition_key_range.end
+            )
+            + 1
+        ]
+        return downstream_partitions
 
     @public
     def advance_cursor(
@@ -305,8 +612,12 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
         """
         cursor_dict = json.loads(self.cursor) if self.cursor else {}
+        check.dict_param(cursor_dict, "cursor_dict", key_type=AssetKey)
+
         update_dict = {
-            str(k): v.storage_id if v else cursor_dict.get(str(k))
+            str(k): (_get_partition_key_from_event_log_record(v), v.storage_id)
+            if v
+            else cursor_dict.get(str(k))
             for k, v in materialization_records_by_key.items()
         }
         cursor_str = json.dumps(update_dict)
@@ -321,7 +632,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public  # type: ignore
     @property
-    def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+    def assets_defs_by_key(self) -> Mapping[AssetKey, AssetsDefinition]:
         return self._assets_by_key
 
 

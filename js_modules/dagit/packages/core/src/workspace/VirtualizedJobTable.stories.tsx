@@ -35,9 +35,10 @@ export const Standard = () => {
       );
     return repos.map((repoAddress) => ({
       repoAddress,
-      jobs: new Array(500)
-        .fill(null)
-        .map(() => faker.random.words(2).replace(' ', '-').toLocaleLowerCase()),
+      jobs: new Array(500).fill(null).map(() => ({
+        name: faker.random.words(2).replace(' ', '-').toLocaleLowerCase(),
+        isJob: true,
+      })),
     }));
   }, []);
 
@@ -50,7 +51,7 @@ export const Standard = () => {
     return workspace
       .map(({repoAddress, jobs}) => ({
         repoAddress,
-        jobs: jobs.filter((name) => name.includes(searchLower)),
+        jobs: jobs.filter(({name}) => name.includes(searchLower)),
       }))
       .filter(({jobs}) => jobs.length > 0);
   }, [searchValue, workspace]);

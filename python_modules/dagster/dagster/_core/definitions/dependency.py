@@ -524,6 +524,10 @@ class SolidInputHandle(
         return self.solid.name
 
     @property
+    def node_name(self) -> str:
+        return self.solid.name
+
+    @property
     def input_name(self) -> str:
         return self.input_def.name
 

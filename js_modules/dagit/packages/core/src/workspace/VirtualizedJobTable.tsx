@@ -4,7 +4,14 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {JobMenu} from '../instance/JobMenu';
+import {LastRunSummary} from '../instance/LastRunSummary';
+import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {RepoSectionHeader} from '../runs/RepoSectionHeader';
+import {RunStatusPezList} from '../runs/RunStatusPez';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 
 import {buildPipelineSelector} from './WorkspaceContext';
@@ -15,7 +22,10 @@ import {workspacePathFromAddress} from './workspacePath';
 
 type Repository = {
   repoAddress: RepoAddress;
-  jobs: string[];
+  jobs: {
+    isJob: boolean;
+    name: string;
+  }[];
 };
 
 interface Props {
@@ -24,7 +34,7 @@ interface Props {
 
 type RowType =
   | {type: 'header'; repoAddress: RepoAddress; jobCount: number}
-  | {type: 'job'; repoAddress: RepoAddress; name: string};
+  | {type: 'job'; repoAddress: RepoAddress; isJob: boolean; name: string};
 
 const JOBS_EXPANSION_STATE_STORAGE_KEY = 'jobs-virtualized-expansion-state';
 
@@ -38,8 +48,8 @@ export const VirtualizedJobTable: React.FC<Props> = ({repos}) => {
       flat.push({type: 'header', repoAddress, jobCount: jobs.length});
       const repoKey = repoAddressAsString(repoAddress);
       if (expandedKeys.includes(repoKey)) {
-        jobs.forEach((name) => {
-          flat.push({type: 'job', repoAddress, name});
+        jobs.forEach(({isJob, name}) => {
+          flat.push({type: 'job', repoAddress, isJob, name});
         });
       }
     });
@@ -53,40 +63,40 @@ export const VirtualizedJobTable: React.FC<Props> = ({repos}) => {
       const row = flattened[ii];
       return row?.type === 'header' ? 32 : 64;
     },
+    overscan: 10,
   });
 
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <>
-      <Container ref={parentRef}>
-        <Inner $totalHeight={totalHeight}>
-          {items.map(({index, key, size, start}) => {
-            const row: RowType = flattened[index];
-            const type = row!.type;
-            return type === 'header' ? (
-              <RepoRow
-                repoAddress={row.repoAddress}
-                jobCount={row.jobCount}
-                key={key}
-                height={size}
-                start={start}
-                onToggle={onToggle}
-              />
-            ) : (
-              <JobRow
-                key={key}
-                name={row.name}
-                repoAddress={row.repoAddress}
-                height={size}
-                start={start}
-              />
-            );
-          })}
-        </Inner>
-      </Container>
-    </>
+    <Container ref={parentRef}>
+      <Inner $totalHeight={totalHeight}>
+        {items.map(({index, key, size, start}) => {
+          const row: RowType = flattened[index];
+          const type = row!.type;
+          return type === 'header' ? (
+            <RepoRow
+              repoAddress={row.repoAddress}
+              jobCount={row.jobCount}
+              key={key}
+              height={size}
+              start={start}
+              onToggle={onToggle}
+            />
+          ) : (
+            <JobRow
+              key={key}
+              name={row.name}
+              isJob={row.isJob}
+              repoAddress={row.repoAddress}
+              height={size}
+              start={start}
+            />
+          );
+        })}
+      </Inner>
+    </Container>
   );
 };
 
@@ -113,13 +123,18 @@ const RepoRow: React.FC<{
 
 const JOB_QUERY_DELAY = 300;
 
-const JobRow: React.FC<{name: string; repoAddress: RepoAddress; height: number; start: number}> = ({
-  name,
-  repoAddress,
-  height,
-  start,
-}) => {
-  const [queryJob, {data}] = useLazyQuery<SingleJobQuery, SingleJobQueryVariables>(
+interface JobRowProps {
+  name: string;
+  isJob: boolean;
+  repoAddress: RepoAddress;
+  height: number;
+  start: number;
+}
+
+const JobRow = (props: JobRowProps) => {
+  const {name, isJob, repoAddress, start, height} = props;
+
+  const [queryJob, {data, loading}] = useLazyQuery<SingleJobQuery, SingleJobQueryVariables>(
     SINGLE_JOB_QUERY,
     {
       fetchPolicy: 'cache-and-network',
@@ -137,40 +152,98 @@ const JobRow: React.FC<{name: string; repoAddress: RepoAddress; height: number; 
     return () => clearTimeout(timer);
   }, [queryJob, name]);
 
+  const {schedules, sensors} = React.useMemo(() => {
+    if (data?.pipelineOrError.__typename === 'Pipeline') {
+      const {schedules, sensors} = data.pipelineOrError;
+      return {schedules, sensors};
+    }
+    return {schedules: [], sensors: []};
+  }, [data]);
+
+  const latestRuns = React.useMemo(() => {
+    if (data?.pipelineOrError.__typename === 'Pipeline') {
+      const runs = data.pipelineOrError.runs;
+      if (runs.length) {
+        return [...runs];
+      }
+    }
+    return [];
+  }, [data]);
+
   return (
     <Row $height={height} $start={start}>
-      <Box
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        style={{display: 'grid', gridTemplateColumns: '30% 30% 30% 10%'}}
-      >
-        <Box
-          flex={{direction: 'column', gap: 4}}
-          style={{height}}
-          padding={{horizontal: 24, top: 12}}
-          border={{side: 'right', width: 1, color: Colors.KeylineGray}}
-        >
+      <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
+        <RowCell>
           <div style={{whiteSpace: 'nowrap'}}>
             <a href={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>{name}</a>
           </div>
-          <div>
-            <Caption style={{color: Colors.Gray500}}>
+          <div
+            style={{
+              maxWidth: '100%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            <Caption
+              style={{
+                color: Colors.Gray500,
+                whiteSpace: 'nowrap',
+              }}
+            >
               {data?.pipelineOrError.__typename === 'Pipeline'
                 ? data.pipelineOrError.description
                 : ''}
             </Caption>
           </div>
-        </Box>
-        <Box
-          flex={{alignItems: 'center'}}
-          padding={{horizontal: 24}}
-          style={{color: Colors.Gray300}}
-        >
-          Loading
-        </Box>
-      </Box>
+        </RowCell>
+        <RowCell>
+          {schedules.length || sensors.length ? (
+            <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
+              <ScheduleOrSensorTag
+                schedules={schedules}
+                sensors={sensors}
+                repoAddress={repoAddress}
+              />
+              {/* {schedules.length ? <NextTick schedules={schedules} /> : null} */}
+            </Box>
+          ) : (
+            <div style={{color: Colors.Gray500}}>{loading && !data ? 'Loading' : 'None'}</div>
+          )}
+        </RowCell>
+        <RowCell>
+          {latestRuns.length ? (
+            <LastRunSummary run={latestRuns[0]} showButton={false} showHover name={name} />
+          ) : (
+            <div style={{color: Colors.Gray500}}>{loading && !data ? 'Loading' : 'None'}</div>
+          )}
+        </RowCell>
+        <RowCell>
+          {latestRuns.length ? (
+            <RunStatusPezList jobName={name} runs={[...latestRuns].reverse()} fade />
+          ) : (
+            <div style={{color: Colors.Gray500}}>{loading && !data ? 'Loading' : 'None'}</div>
+          )}
+        </RowCell>
+        <RowCell>
+          <div>
+            <JobMenu job={{isJob, name, runs: latestRuns}} repoAddress={repoAddress} />
+          </div>
+        </RowCell>
+      </RowGrid>
     </Row>
   );
 };
+
+const RowCell: React.FC = ({children}) => (
+  <Box
+    padding={{horizontal: 24}}
+    flex={{direction: 'column', justifyContent: 'center'}}
+    style={{color: Colors.Gray500, overflow: 'hidden'}}
+    border={{side: 'right', width: 1, color: Colors.KeylineGray}}
+  >
+    {children}
+  </Box>
+);
 
 const Container = styled.div`
   height: 100%;
@@ -202,6 +275,13 @@ const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   position: absolute;
   right: 0;
   top: 0;
+  overflow: hidden;
+`;
+
+const RowGrid = styled(Box)`
+  display: grid;
+  grid-template-columns: 34% 30% 20% 8% 8%;
+  height: 100%;
 `;
 
 const SINGLE_JOB_QUERY = gql`
@@ -212,7 +292,23 @@ const SINGLE_JOB_QUERY = gql`
         name
         isJob
         description
+        runs(limit: 5) {
+          id
+          ...RunTimeFragment
+        }
+        schedules {
+          id
+          ...ScheduleSwitchFragment
+        }
+        sensors {
+          id
+          ...SensorSwitchFragment
+        }
       }
     }
   }
+
+  ${RUN_TIME_FRAGMENT}
+  ${SCHEDULE_SWITCH_FRAGMENT}
+  ${SENSOR_SWITCH_FRAGMENT}
 `;

@@ -817,10 +817,7 @@ def _execute_backfill_command_at_location(
     )
 
     try:
-        partition_names_or_error = repo_location.get_external_partition_names(
-            repo_handle,
-            partition_set_name,
-        )
+        partition_names_or_error = repo_location.get_external_partition_names(partition_set)
     except Exception as e:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise DagsterBackfillFailedError(
