@@ -677,8 +677,15 @@ class AssetSLASensorEvaluationContext(MultiAssetSensorEvaluationContext):
         )
 
     @public
-    def get_current_statuses(self) -> Mapping[AssetKey, int]:
+    def latest_status_by_key(self) -> Mapping[AssetKey, int]:
         pass
+
+    @public
+    def previous_status_by_key(self) -> Mapping[AssetKey, int]:
+        if not self.cursor:
+            return {}
+        else:
+            return json.loads(self.cursor)["last_status"]
 
     @public
     def advance_cursor(
