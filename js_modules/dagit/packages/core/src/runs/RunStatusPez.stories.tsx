@@ -63,12 +63,12 @@ export const List = () => {
     <StorybookProvider apolloProps={{mocks}}>
       <Box flex={{direction: 'column', gap: 8}}>
         <RunStatusPezList
-          repoAddress={fakeRepo}
+          jobName={fakeRepo}
           fade
           runs={wrapToFragment(generateRunMocks(10, [tenDaysAgo, now]))}
         />
         <RunStatusPezList
-          repoAddress={fakeRepo}
+          jobName={fakeRepo}
           fade
           runs={wrapToFragment(generateRunMocks(9, [tenDaysAgo, now])).map((f) => ({
             ...f,
@@ -76,7 +76,7 @@ export const List = () => {
           }))}
         />
         <RunStatusPezList
-          repoAddress={fakeRepo}
+          jobName={fakeRepo}
           fade
           runs={[
             ...wrapToFragment(generateRunMocks(7, [tenDaysAgo, now])),
