@@ -211,6 +211,8 @@ export const TICK_TAG_FRAGMENT = gql`
       ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const LAUNCHED_RUN_LIST_QUERY = gql`

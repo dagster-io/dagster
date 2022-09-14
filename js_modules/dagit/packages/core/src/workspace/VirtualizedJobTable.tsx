@@ -13,6 +13,7 @@ import {RunStatusPezList} from '../runs/RunStatusPez';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {Container, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 
 import {buildPipelineSelector} from './WorkspaceContext';
@@ -234,50 +235,6 @@ const JobRow = (props: JobRowProps) => {
     </Row>
   );
 };
-
-const RowCell: React.FC = ({children}) => (
-  <Box
-    padding={{horizontal: 24}}
-    flex={{direction: 'column', justifyContent: 'center'}}
-    style={{color: Colors.Gray500, overflow: 'hidden'}}
-    border={{side: 'right', width: 1, color: Colors.KeylineGray}}
-  >
-    {children}
-  </Box>
-);
-
-const Container = styled.div`
-  height: 100%;
-  overflow: auto;
-`;
-
-type InnerProps = {
-  $totalHeight: number;
-};
-
-const Inner = styled.div.attrs<InnerProps>(({$totalHeight}) => ({
-  style: {
-    height: `${$totalHeight}px`,
-  },
-}))<InnerProps>`
-  position: relative;
-  width: 100%;
-`;
-
-type RowProps = {$height: number; $start: number};
-
-const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
-  style: {
-    height: `${$height}px`,
-    transform: `translateY(${$start}px)`,
-  },
-}))<RowProps>`
-  left: 0;
-  position: absolute;
-  right: 0;
-  top: 0;
-  overflow: hidden;
-`;
 
 const RowGrid = styled(Box)`
   display: grid;
