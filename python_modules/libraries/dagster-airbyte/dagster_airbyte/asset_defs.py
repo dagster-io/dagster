@@ -1,16 +1,19 @@
 import os
+import re
 from itertools import chain
 from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Set, cast
 
 import yaml
+from dagster_airbyte.resources import AirbyteResource
 from dagster_airbyte.utils import generate_materializations
 
-from dagster import AssetKey, AssetOut, Output
+from dagster import AssetKey, AssetOut, Output, ResourceDefinition
 from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import with_group
+from dagster._core.execution.context.init import build_init_resource_context
 
 
 @experimental
@@ -130,7 +133,7 @@ def _clean_name(name: str) -> str:
     """
     Cleans an input to be a valid Dagster asset name.
     """
-    return "".join(c if c.isalnum() else "_" for c in name)
+    return re.sub(r"[^a-z0-9]+", "_", name.lower())
 
 
 class AirbyteConnection(
@@ -138,7 +141,6 @@ class AirbyteConnection(
         "_AirbyteConnection",
         [
             ("name", str),
-            ("source_config_path", str),
             ("stream_prefix", str),
             ("has_basic_normalization", bool),
             ("stream_data", List[Mapping[str, Any]]),
@@ -150,11 +152,26 @@ class AirbyteConnection(
 
     Attributes:
         name (str): The name of the connection.
-        source_config_path (str): The path to the Airbyte source configuration file.
         stream_prefix (str): A prefix to add to all stream names.
         has_basic_normalization (bool): Whether or not the connection has basic normalization enabled.
         stream_data (List[Mapping[str, Any]]): Unparsed list of dicts with information about each stream.
     """
+
+    @classmethod
+    def from_api_json(
+        cls, contents: Mapping[str, Any], operations: Mapping[str, Any]
+    ) -> "AirbyteConnection":
+        return cls(
+            name=contents["name"],
+            stream_prefix=contents.get("prefix", ""),
+            has_basic_normalization=any(
+                op.get("operatorConfiguration", {}).get("operatorType") == "normalization"
+                and op.get("operatorConfiguration", {}).get("normalization", {}).get("option")
+                == "basic"
+                for op in operations.get("operations", [])
+            ),
+            stream_data=contents.get("syncCatalog", {}).get("streams", []),
+        )
 
     @classmethod
     def from_config(cls, contents: Mapping[str, Any]) -> "AirbyteConnection":
@@ -165,7 +182,6 @@ class AirbyteConnection(
 
         return cls(
             name=contents["resource_name"],
-            source_config_path=contents["source_configuration_path"],
             stream_prefix=config_contents.get("prefix", ""),
             has_basic_normalization=any(
                 op.get("operator_configuration", {}).get("operator_type") == "normalization"
@@ -197,7 +213,12 @@ class AirbyteConnection(
 
             tables[prefixed_name] = set()
             if self.has_basic_normalization and return_normalization_tables:
-                for k, v in stream["stream"]["json_schema"]["properties"].items():
+                schema = (
+                    stream["stream"]["json_schema"]
+                    if "json_schema" in stream["stream"]
+                    else stream["stream"]["jsonSchema"]
+                )
+                for k, v in schema["properties"].items():
                     for normalization_table_name in _get_normalization_tables_for_schema(
                         k, v, f"{name}_"
                     ):
@@ -208,11 +229,98 @@ class AirbyteConnection(
 
 
 @experimental
+def load_assets_from_airbyte_instance(
+    airbyte: ResourceDefinition,
+    workspace_id: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    create_assets_for_normalization_tables: bool = True,
+    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+) -> List[AssetsDefinition]:
+    """
+    Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
+    about defined connections at initialization time, and will error on workspace load if the Airbyte
+    instance is not reachable.
+
+    Args:
+        airbyte (ResourceDefinition): An AirbyteResource configured with the appropriate connection
+            details.
+        workspace_id (Optional[str]): The ID of the Airbyte workspace to load connections from. Only
+            required if multiple workspaces exist in your instance.
+        key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
+        create_assets_for_normalization_tables (bool): If True, assets will be created for tables
+            created by Airbyte's normalization feature. If False, only the destination tables
+            will be created.
+        connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
+            group name for a given Airbyte connection name. If None, no groups will be created. Defaults
+            to a basic sanitization function.
+    """
+
+    airbyte_instance: AirbyteResource = airbyte(build_init_resource_context())
+
+    if isinstance(key_prefix, str):
+        key_prefix = [key_prefix]
+    key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
+
+    if not workspace_id:
+        workspaces = cast(
+            List[Dict[str, Any]],
+            check.not_none(airbyte_instance.make_request(endpoint="/workspaces/list", data={})).get(
+                "workspaces", []
+            ),
+        )
+
+        check.invariant(len(workspaces) <= 1, "Airbyte instance has more than one workspace")
+        check.invariant(len(workspaces) > 0, "Airbyte instance has no workspaces")
+
+        workspace_id = workspaces[0].get("workspaceId")
+
+    connections = cast(
+        List[Dict[str, Any]],
+        check.not_none(
+            airbyte_instance.make_request(
+                endpoint="/connections/list", data={"workspaceId": workspace_id}
+            )
+        ).get("connections", []),
+    )
+
+    assets = []
+    for connection_json in connections:
+        connection_id = cast(str, connection_json.get("connectionId"))
+
+        operations_json = cast(
+            Dict[str, Any],
+            check.not_none(
+                airbyte_instance.make_request(
+                    endpoint="/operations/list",
+                    data={"connectionId": connection_id},
+                )
+            ),
+        )
+        connection = AirbyteConnection.from_api_json(connection_json, operations_json)
+
+        table_mapping = connection.parse_stream_tables(create_assets_for_normalization_tables)
+
+        assets_for_connection = build_airbyte_assets(
+            connection_id=connection_id,
+            destination_tables=list(table_mapping.keys()),
+            normalization_tables=table_mapping,
+            asset_key_prefix=key_prefix,
+        )
+
+        if connection_to_group_fn:
+            assets_for_connection = list(
+                with_group(assets_for_connection, connection_to_group_fn(connection.name))
+            )
+        assets.extend(assets_for_connection)
+
+    return assets
+
+
+@experimental
 def load_assets_from_airbyte_project(
     project_dir: str,
     workspace_id: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
 ) -> List[AssetsDefinition]:
@@ -228,7 +336,6 @@ def load_assets_from_airbyte_project(
         workspace_id (Optional[str]): The ID of the Airbyte workspace to load connections from. Only
             required if multiple workspace state YAMLfiles exist in the project.
         key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
-        source_key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the source asset keys produced.
         create_assets_for_normalization_tables (bool): If True, assets will be created for tables
             created by Airbyte's normalization feature. If False, only the destination tables
             will be created.
@@ -236,10 +343,6 @@ def load_assets_from_airbyte_project(
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
     """
-
-    if isinstance(source_key_prefix, str):
-        source_key_prefix = [source_key_prefix]
-    source_key_prefix = check.list_param(source_key_prefix or [], "source_key_prefix", of_type=str)
 
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
