@@ -844,7 +844,7 @@ def test_instance_run_status_sensor(executor):
             time.sleep(1)
 
         with pendulum.test(freeze_datetime):
-            external_pipeline = the_other_repo.get_full_external_pipeline("the_pipeline")
+            external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
             run = instance.create_run_for_pipeline(
                 the_pipeline,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
