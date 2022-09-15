@@ -1,5 +1,6 @@
 import inspect
 import json
+import warnings
 from collections import OrderedDict
 from contextlib import ExitStack
 from enum import Enum
@@ -26,6 +27,7 @@ from dagster._annotations import experimental, public
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -512,6 +514,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         check.inst_param(asset_key, "asset_key", AssetKey)
 
+        if partitions is not None:
+            check.list_param(partitions, "partitions", of_type=str)
+            if len(partitions) == 0:
+                raise DagsterInvalidInvocationError("Must provide at least one partition in list")
+
         materialization_count_by_partition = self.instance.get_materialization_count_by_partition(
             [asset_key]
         ).get(asset_key, {})
@@ -594,11 +601,21 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             downstream_partition_key_range.start not in partition_keys
             or downstream_partition_key_range.end not in partition_keys
         ):
-            raise DagsterInvalidInvocationError(
-                f"Mapped partition key {partition_key} to downstream partition key range "
-                f"[{downstream_partition_key_range.start}...{downstream_partition_key_range.end}] "
-                "which is not a valid range in the downstream partitions definition."
+            error_msg = f"""Mapped partition key {partition_key} to downstream partition key range
+            [{downstream_partition_key_range.start}...{downstream_partition_key_range.end}] which
+            is not a valid range in the downstream partitions definition."""
+
+            if not isinstance(to_asset.partitions_def, TimeWindowPartitionsDefinition):
+                raise DagsterInvalidInvocationError(error_msg)
+            else:
+                warnings.warn(error_msg)
+
+        if isinstance(to_asset.partitions_def, TimeWindowPartitionsDefinition):
+            return to_asset.partitions_def.get_partition_keys_in_range(
+                downstream_partition_key_range
             )
+
+        # Not a time-window partition definition
         downstream_partitions = partition_keys[
             partition_keys.index(downstream_partition_key_range.start) : partition_keys.index(
                 downstream_partition_key_range.end
@@ -619,15 +636,18 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
         """
         cursor_dict = json.loads(self.cursor) if self.cursor else {}
-        check.dict_param(cursor_dict, "cursor_dict", key_type=AssetKey)
+        check.dict_param(cursor_dict, "cursor_dict", key_type=str)
 
-        update_dict = {
-            str(k): (_get_partition_key_from_event_log_record(v), v.storage_id)
-            if v
-            else cursor_dict.get(str(k))
-            for k, v in materialization_records_by_key.items()
-        }
-        cursor_str = json.dumps(update_dict)
+        # Use default values from cursor dictionary if not provided in materialization_records_by_key
+        cursor_dict.update(
+            {
+                str(k): (_get_partition_key_from_event_log_record(v), v.storage_id)
+                if v
+                else cursor_dict.get(str(k))
+                for k, v in materialization_records_by_key.items()
+            }
+        )
+        cursor_str = json.dumps(cursor_dict)
         self._cursor = check.opt_str_param(cursor_str, "cursor")
         self.cursor_has_been_updated = True
 
@@ -641,6 +661,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     @property
     def assets_defs_by_key(self) -> Mapping[AssetKey, AssetsDefinition]:
         return self._assets_by_key
+
+    @public  # type: ignore
+    @property
+    def asset_keys(self) -> Sequence[AssetKey]:
+        return self._asset_keys
 
 
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
