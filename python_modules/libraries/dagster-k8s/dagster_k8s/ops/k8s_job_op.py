@@ -14,12 +14,7 @@ from ..job import (
     get_k8s_job_name,
 )
 from ..launcher import K8sRunLauncher
-from ..utils import (
-    get_pod_names_in_job,
-    wait_for_job,
-    wait_for_pod,
-    wait_for_running_job_to_succeed,
-)
+from ..utils import wait_for_job, wait_for_pod, wait_for_running_job_to_succeed
 
 
 @op(
@@ -177,11 +172,13 @@ def k8s_job_op(context):
 
     job_name = get_k8s_job_name(context.run_id, context.op.name)
 
+    pod_name = job_name
+
     job = construct_dagster_k8s_job(
         job_config=k8s_job_config,
         args=config.get("args"),
         job_name=job_name,
-        pod_name=job_name,
+        pod_name=pod_name,
         component="k8s_job_op",
         user_defined_k8s_config=user_defined_k8s_config,
         labels={
@@ -211,22 +208,14 @@ def k8s_job_op(context):
     wait_for_job(
         job_name=job_name,
         namespace=namespace,
-        wait_timeout=config.get("timeout", 0),
+        wait_timeout=timeout,
     )
 
-    pod_names = get_pod_names_in_job(job_name, namespace=namespace)
-
-    if not pod_names:
-        raise Exception("No pod names in job after it started")
-
-    pod_to_watch = pod_names[0]
     watch = kubernetes.watch.Watch()
 
-    wait_for_pod(pod_to_watch, namespace, wait_timeout=timeout)
+    wait_for_pod(pod_name, namespace, wait_timeout=timeout)
 
-    log_stream = watch.stream(
-        core_api.read_namespaced_pod_log, name=pod_to_watch, namespace=namespace
-    )
+    log_stream = watch.stream(core_api.read_namespaced_pod_log, name=pod_name, namespace=namespace)
 
     while True:
         if timeout and time.time() - start_time > timeout:
