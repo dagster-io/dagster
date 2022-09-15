@@ -5,7 +5,11 @@ description: Defining a software-defined asset with multiple discrete computatio
 
 # Graph-Backed Assets
 
-A graph-backed asset is a software-defined asset whose computations are separated into multiple [ops](/concepts/ops-jobs-graphs/ops) that are combined to build a [graph](/concepts/ops-jobs-graphs/graphs). A graph-backed asset can output multiple assets.
+[Basic software-defined assets](/software-defined-assets#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries but doesn't require you to link each intermediate value to an asset in persistent storage.
+
+Graph-backed assets are useful if you have an existing graph that produces and consumes assets. Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph.
+
+Additionally, graph-backed assets allow you to reuse an existing op across other graph-backed assets and jobs, or within the same graph.
 
 ---
 
@@ -14,16 +18,6 @@ A graph-backed asset is a software-defined asset whose computations are separate
 | Name                                                       | Description                                   |
 | ---------------------------------------------------------- | --------------------------------------------- |
 | <PyObject object="AssetsDefinition" method="from_graph" /> | Constructs an asset given a graph definition. |
-
----
-
-## Overview
-
-[Basic software-defined assets](software-defined-assets#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries but doesn't require you to link each intermediate value to an asset in persistent storage.
-
-Graph-backed assets are useful if you have an existing graph that produces and consumes assets. Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph.
-
-Additionally, graph-backed assets allow you to reuse an existing op across other graph-backed assets and jobs, or within the same graph.
 
 ---
 
@@ -138,12 +132,14 @@ By default, when executing a graph-backed asset, every asset produced by the gra
 
 If the underlying computation is sufficiently flexible to selectively output a subset of assets, a graph-backed asset can be subsetted. For example, let’s say we wanted to define a graph-backed asset with the structure depicted in the image below. In this case, we want to independently materialize `foo_asset` and `baz_asset`.
 
-<Image
-alt="Graph-backed asset"
-src="/images/concepts/assets/graph-backed-asset.png"
-width={1568}
-height={1824}
-/>
+<center>
+  <Image
+    alt="Graph-backed asset"
+    src="/images/concepts/assets/graph-backed-asset.png"
+    width={833}
+    height={621}
+  />
+</center>
 
 In order to selectively output an asset from a graph-backed asset, Dagster will run each op that is a dependency of the outputted asset. In the example, if we wanted to selectively materialize `foo_asset`, Dagster would run `foo` and `bar`. If we wanted to selectively materialize `baz_asset`, Dagster would run all three ops (`foo`, `bar`, and `baz`).
 

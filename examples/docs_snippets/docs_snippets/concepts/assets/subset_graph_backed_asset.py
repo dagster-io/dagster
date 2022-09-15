@@ -1,5 +1,4 @@
 from dagster import (
-    AssetKey,
     AssetsDefinition,
     GraphOut,
     Out,
