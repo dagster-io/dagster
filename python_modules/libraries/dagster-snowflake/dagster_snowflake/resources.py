@@ -160,7 +160,8 @@ class SnowflakeConnection:
     description="This resource is for connecting to the Snowflake data warehouse",
 )
 def snowflake_resource(context):
-    """A resource for connecting to the Snowflake data warehouse.
+    """A resource for connecting to the Snowflake data warehouse. The returned resource object is an
+    instance of :py:class:`SnowflakeConnection`.
 
     A simple example of loading data into Snowflake and subsequently querying that data is shown below:
 
