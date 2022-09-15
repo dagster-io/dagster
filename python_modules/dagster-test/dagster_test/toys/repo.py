@@ -40,6 +40,7 @@ from dagster_test.toys.run_status_sensors import (
     cross_repo_success_job_sensor,
     fails_job,
     fails_sensor,
+    instance_success_sensor,
     return_multi_run_request_success_sensor,
     return_run_request_succeeds_sensor,
     status_job,
@@ -114,6 +115,7 @@ def toys_repository():
             yield_multi_run_request_success_sensor,
             return_multi_run_request_success_sensor,
             success_sensor_with_pipeline_run_reaction,
+            instance_success_sensor,
         ]
         + get_toys_schedules()
         + get_toys_sensors()

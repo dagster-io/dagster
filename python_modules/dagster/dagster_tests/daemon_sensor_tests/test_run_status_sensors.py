@@ -810,3 +810,63 @@ def test_different_instance_run_status_sensor(executor):
                     freeze_datetime,
                     TickStatus.SKIPPED,
                 )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_instance_run_status_sensor(executor):
+    freeze_datetime = pendulum.now()
+    with instance_with_multiple_repos_with_sensors() as (
+        instance,
+        workspace,
+        repos,
+    ):
+        the_repo = repos["the_repo"]
+        the_other_repo = repos["the_other_repo"]
+
+        with pendulum.test(freeze_datetime):
+            instance_sensor = the_repo.get_external_sensor("instance_sensor")
+            instance.start_sensor(instance_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(
+                instance_sensor.get_external_origin_id(), instance_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                instance_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+            time.sleep(1)
+
+        with pendulum.test(freeze_datetime):
+            external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
+            run = instance.create_run_for_pipeline(
+                the_pipeline,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            instance.submit_run(run.run_id, workspace)
+            wait_for_all_runs_to_finish(instance)
+            run = instance.get_runs()[0]
+            assert run.status == DagsterRunStatus.SUCCESS
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(
+                instance_sensor.get_external_origin_id(), instance_sensor.selector_id
+            )
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                instance_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
