@@ -9,6 +9,7 @@ from dagster_airbyte.utils import generate_materializations
 
 from dagster import AssetKey, AssetOut, Output, ResourceDefinition
 from dagster import _check as check
+from dagster import with_resources
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
@@ -313,7 +314,10 @@ def load_assets_from_airbyte_instance(
             )
         assets.extend(assets_for_connection)
 
-    return assets
+    return with_resources(
+        assets,
+        resource_defs={"airbyte": airbyte},
+    )
 
 
 @experimental
