@@ -19,8 +19,8 @@ export const WorkspaceTabs = <TData extends Record<string, any>>(props: Props<TD
       <Tabs selectedTabId={tab}>
         <TabLink id="jobs" title="Jobs" to="/workspace/jobs" />
         <TabLink id="schedules" title="Schedules" to="/workspace/schedules" />
-        {/* <TabLink id="sensors" title="Sensors" to="/workspace/sensors" />
-        <TabLink id="graphs" title="Graphs" to="/workspace/graphs" />
+        <TabLink id="sensors" title="Sensors" to="/workspace/sensors" />
+        {/* <TabLink id="graphs" title="Graphs" to="/workspace/graphs" />
         <TabLink id="ops" title="Ops" to="/workspace/ops" /> */}
       </Tabs>
       {refreshState ? (

@@ -15,6 +15,7 @@ import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
 import {WorkspaceRepoRoot} from './WorkspaceRepoRoot';
 import {WorkspaceSchedulesRoot} from './WorkspaceSchedulesRoot';
+import {WorkspaceSensorsRoot} from './WorkspaceSensorsRoot';
 import {repoAddressFromPath} from './repoAddressFromPath';
 
 const RepoRouteContainer = () => {
@@ -129,6 +130,11 @@ export const WorkspaceRoot = () => {
         {flagNewWorkspace ? (
           <Route path="/workspace/schedules" exact>
             <WorkspaceSchedulesRoot />
+          </Route>
+        ) : null}
+        {flagNewWorkspace ? (
+          <Route path="/workspace/sensors" exact>
+            <WorkspaceSensorsRoot />
           </Route>
         ) : null}
         <Route path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}>
