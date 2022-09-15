@@ -225,7 +225,7 @@ def cross_repo_success_job_sensor(context):
 
 
 @run_status_sensor(
-    monitor_instance=True,
+    monitor_all_repositories=True,
     request_job=status_job,
     run_status=DagsterRunStatus.SUCCESS,
 )

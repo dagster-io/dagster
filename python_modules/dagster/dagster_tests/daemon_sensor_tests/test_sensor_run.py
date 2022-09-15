@@ -374,7 +374,7 @@ def cross_repo_sensor(context):
 
 
 @run_status_sensor(
-    monitor_instance=True,
+    monitor_all_repositories=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
 def instance_sensor(context):

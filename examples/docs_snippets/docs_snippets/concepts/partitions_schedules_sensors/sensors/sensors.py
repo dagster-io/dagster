@@ -349,7 +349,7 @@ def team_a_data_update_failure_sensor():
 
 # start_instance_sensor
 @run_status_sensor(
-    monitor_instance=True,
+    monitor_all_repositories=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
 def instance_sensor():

@@ -215,7 +215,7 @@ def run_failure_sensor(
             ]
         ]
     ] = None,
-    monitor_instance: bool = False,
+    monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -235,14 +235,17 @@ def run_failure_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]): The jobs
-            in the current repository that will be monitored by this failure sensor. Defaults to None, which means the alert will
-            be sent when any job in the current repository fails.
-        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): (deprecated in favor of monitored_jobs)
-            The jobs in the current repository that will be monitored by this failure sensor. Defaults to None, which means
-            the alert will be sent when any job in the repository fails.
-        monitor_instance (bool): If set to True, the sensor will monitor all jobs in the Dagster instance. If used, you cannot also specify monitored_jobs
-            or job_selection. Defaults to False.
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]):
+            The jobs in the current repository that will be monitored by this failure sensor.
+            Defaults to None, which means the alert will be sent when any job in the current
+            repository fails.
+        monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
+            Dagster instance. If set to True, an error will be raised if you also specify
+            monitored_jobs or job_selection. Defaults to False.
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector]]]):
+            (deprecated in favor of monitored_jobs) The jobs in the current repository that will be
+            monitored by this failure sensor. Defaults to None, which means the alert will be sent
+            when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
@@ -270,7 +273,7 @@ def run_failure_sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             monitored_jobs=jobs,
-            monitor_instance=monitor_instance,
+            monitor_all_repositories=monitor_all_repositories,
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,
@@ -301,11 +304,12 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]): The jobs
-            in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will be sent
-            when any job in the repository fails.
-        monitor_instance (bool): If set to True, the sensor will monitor all jobs in the Dagster instance. If used, you cannot also
-            specify monitored_jobs or job_selection. Defaults to False.
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobSelector, RepositorySelector]]]):
+            The jobs in the current repository that will be monitored by this sensor. Defaults to
+            None, which means the alert will be sent when any job in the repository fails.
+        monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
+            Dagster instance. If set to True, an error will be raised if you also specify
+            monitored_jobs or job_selection. Defaults to False.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
@@ -332,7 +336,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                 ]
             ]
         ] = None,
-        monitor_instance: bool = False,
+        monitor_all_repositories: bool = False,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -453,8 +457,8 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 job_match = False
 
-                # if monitor_instance is provided, then we want to run the sensor for all jobs in all repositories
-                if monitor_instance:
+                # if monitor_all_repositories is provided, then we want to run the sensor for all jobs in all repositories
+                if monitor_all_repositories:
                     job_match = True
 
                 # check if the run is in the current repository and (if provided) one of jobs specified in monitored_jobs
@@ -635,7 +639,7 @@ def run_status_sensor(
             ]
         ]
     ] = None,
-    monitor_instance: bool = False,
+    monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -660,11 +664,13 @@ def run_status_sensor(
             Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the repository matches the requested run_status. Jobs in external repositories can be monitored by using
             RepositorySelector or JobSelector.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): (deprecated in favor of monitored_jobs)
-            Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will be sent when
+        monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the Dagster instance.
+            If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
+            Defaults to False.
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]):
+            (deprecated in favor of monitored_jobs) Jobs in the current repository that will be
+            monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.
-        monitor_instance (bool): If set to True, the sensor will monitor all jobs in the Dagster instance. If used, you cannot also specify monitored_jobs
-            or job_selection. Defaults to False.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
@@ -684,9 +690,9 @@ def run_status_sensor(
             deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
-        if jobs and monitor_instance:
+        if jobs and monitor_all_repositories:
             DagsterInvalidDefinitionError(
-                f"Cannot specify both monitor_instance and {'monitored_jobs' if monitored_jobs else 'job_selection'}."
+                f"Cannot specify both monitor_all_repositories and {'monitored_jobs' if monitored_jobs else 'job_selection'}."
             )
 
         return RunStatusSensorDefinition(
@@ -696,7 +702,7 @@ def run_status_sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             monitored_jobs=jobs,
-            monitor_instance=monitor_instance,
+            monitor_all_repositories=monitor_all_repositories,
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,

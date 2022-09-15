@@ -549,11 +549,11 @@ def team_a_data_update_failure_sensor():
     send_slack_alert()
 ```
 
-You can also monitor every job in your Dagster instance by specifying `monitor_instance=True` on the sensor decorator. Note that `monitor_instance` cannot be used along with jobs specified via `monitored_jobs`.
+You can also monitor every job in your Dagster instance by specifying `monitor_all_repositories=True` on the sensor decorator. Note that `monitor_all_repositories` cannot be used along with jobs specified via `monitored_jobs`.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_instance_sensor endbefore=end_instance_sensor
 @run_status_sensor(
-    monitor_instance=True,
+    monitor_all_repositories=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
 def instance_sensor():
