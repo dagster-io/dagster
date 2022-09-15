@@ -149,6 +149,7 @@ from dagster._core.definitions.decorators.sensor_decorator import (
     asset_sensor as asset_sensor,
     sensor as sensor,
     multi_asset_sensor as multi_asset_sensor,
+    asset_sla_sensor as asset_sla_sensor,
 )
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
@@ -247,6 +248,10 @@ from dagster._core.definitions.partition import (
     dynamic_partitioned_config as dynamic_partitioned_config,
     static_partitioned_config as static_partitioned_config,
 )
+from dagster._core.definitions.asset_sla import (
+    CronSLA as CronSLA,
+    StalenessSLA as StalenessSLA,
+)
 from dagster._core.definitions.partition_key_range import (
     PartitionKeyRange as PartitionKeyRange,
 )
@@ -299,11 +304,14 @@ from dagster._core.definitions.sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
     DefaultSensorStatus as DefaultSensorStatus,
     MultiAssetSensorDefinition as MultiAssetSensorDefinition,
+    AssetSLASensorDefinition as AssetSLASensorDefinition,
     MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
+    AssetSLASensorEvaluationContext as AssetSLASensorEvaluationContext,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
     build_sensor_context as build_sensor_context,
     build_multi_asset_sensor_context as build_multi_asset_sensor_context,
+    build_asset_sla_sensor_context as build_asset_sla_sensor_context,
 )
 from dagster._core.definitions.source_asset import (
     SourceAsset as SourceAsset,

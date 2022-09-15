@@ -16,8 +16,8 @@ from typing import (
 import dagster._check as check
 from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
-from dagster._core.definitions.asset_sla import AssetSLA
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
+from dagster._core.definitions.asset_sla import AssetSLA
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
@@ -300,7 +300,7 @@ class _Asset:
             partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=self.resource_defs,
             group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
-            slas_by_key={out_asset_key: self.sla},
+            slas_by_key={out_asset_key: self.sla} if self.sla else None,
         )
 
 

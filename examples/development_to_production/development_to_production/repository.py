@@ -60,7 +60,7 @@ def repo():
 
 
 def get_repo(name):
-    from dagster import op, job
+    from dagster import job, op
 
     @op
     def x():
@@ -72,7 +72,6 @@ def get_repo(name):
 
     @repository(name=name)
     def _repo():
-        print("************Name", name)
         return [xx]
 
     return _repo

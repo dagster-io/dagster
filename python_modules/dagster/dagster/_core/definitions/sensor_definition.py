@@ -665,7 +665,7 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
                 raise DagsterInvalidDefinitionError(
                     f"No asset with {asset_key} found in repository"
                 )
-            if not assets_def._slas_by_key.get(asset_key):
+            if not assets_def.slas_by_key.get(asset_key):
                 continue
             self._assets_by_key[asset_key] = assets_def
 
@@ -680,14 +680,15 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
             instance=instance,
         )
 
+    @property
+    def next_cursor(self) -> Optional[str]:
+        return self._next_cursor
+
     @public
     def current_statuses_by_key(self) -> Mapping[AssetKey, int]:
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        asset_keys = self._asset_keys
-
-        cursor_dict = json.loads(self.cursor) if self.cursor else {}
         asset_sla_status = {}
         for asset_key, assets_def in self._assets_by_key.items():
             event_records = self.instance.get_event_records(
@@ -699,9 +700,9 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
                 limit=1,
             )
 
-            if event_records:
-                sla = assets_def._slas_by_key[asset_key]
-                asset_sla_status[asset_key] = sla.is_passing(self, event_records[0])
+            latest_asset_event = event_records[0] if event_records else None
+            sla = assets_def.slas_by_key[asset_key]
+            asset_sla_status[asset_key] = sla.is_passing(latest_asset_event)
 
         self._next_cursor = json.dumps({str(key): value for key, value in asset_sla_status.items()})
         return asset_sla_status
@@ -1183,6 +1184,56 @@ def build_multi_asset_sensor_context(
     )
 
 
+@experimental
+def build_asset_sla_sensor_context(
+    asset_keys: Sequence[AssetKey],
+    repository_def: "RepositoryDefinition",
+    instance: Optional[DagsterInstance] = None,
+    cursor: Optional[str] = None,
+    repository_name: Optional[str] = None,
+) -> AssetSLASensorEvaluationContext:
+    """Builds asset sla sensor execution context using the provided parameters.
+
+    This function can be used to provide a context to the invocation of an asset sla sensor definition. If
+    provided, the dagster instance must be persistent; DagsterInstance.ephemeral() will result in an
+    error.
+
+    Args:
+        asset_keys (Sequence[AssetKey]): The list of asset keys monitored by the sensor
+        repository_def (RepositoryDefinition): The repository definition that the sensor belongs to.
+        instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
+        cursor (Optional[str]): A string cursor to provide to the evaluation of the sensor. Must be
+            a dictionary of asset key strings to ints that has been converted to a json string
+        repository_name (Optional[str]): The name of the repository that the sensor belongs to.
+
+    Examples:
+
+        .. code-block:: python
+
+            with instance_for_test() as instance:
+                context = build_multi_asset_sensor_context(asset_keys=[AssetKey("asset_1"), AssetKey("asset_2")], instance=instance)
+                my_asset_sensor(context)
+
+    """
+    from dagster._core.definitions import RepositoryDefinition
+
+    check.opt_inst_param(instance, "instance", DagsterInstance)
+    check.opt_str_param(cursor, "cursor")
+    check.opt_str_param(repository_name, "repository_name")
+    check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+    check.inst_param(repository_def, "repository_def", RepositoryDefinition)
+    return AssetSLASensorEvaluationContext(
+        instance_ref=None,
+        last_completion_time=None,
+        last_run_key=None,
+        cursor=cursor,
+        repository_name=repository_name,
+        instance=instance,
+        asset_keys=asset_keys,
+        repository_def=repository_def,
+    )
+
+
 AssetMaterializationFunctionReturn = Union[
     Iterator[Union[RunRequest, SkipReason]], Sequence[RunRequest], RunRequest, SkipReason, None
 ]
@@ -1441,7 +1492,7 @@ class AssetSLASensorDefinition(SensorDefinition):
     def __init__(
         self,
         name: str,
-        asset_keys: Sequence[AssetKey],
+        asset_keys: Optional[Sequence[AssetKey]],
         job_name: Optional[str],
         asset_materialization_fn: Callable[
             ["MultiAssetSensorEvaluationContext"],
@@ -1454,7 +1505,7 @@ class AssetSLASensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
 
-        self._asset_keys = check.list_param(asset_keys, "asset_keys", AssetKey)
+        self._asset_keys = check.opt_nullable_sequence_param(asset_keys, "asset_keys", AssetKey)
 
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
@@ -1478,13 +1529,7 @@ class AssetSLASensorDefinition(SensorDefinition):
                     # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
                     yield result
 
-                if runs_yielded and not context.cursor_has_been_updated:
-                    raise DagsterInvalidDefinitionError(
-                        "Asset materializations have been handled in this sensor, "
-                        "but the cursor was not updated. This means the same materialization events "
-                        "will be handled in the next sensor tick. Use context.advance_cursor or "
-                        "context.advance_all_cursors to update the cursor."
-                    )
+                context.update_cursor(context.next_cursor)
 
             return _fn
 

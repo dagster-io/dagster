@@ -10,11 +10,11 @@ from ...errors import DagsterInvariantViolationError
 from ..events import AssetKey
 from ..sensor_definition import (
     AssetMaterializationFunction,
+    AssetSLASensorDefinition,
     AssetSensorDefinition,
     DefaultSensorStatus,
     MultiAssetMaterializationFunction,
     MultiAssetSensorDefinition,
-    AssetSLASensorDefinition,
     RawSensorEvaluationFunction,
     RunRequest,
     SensorDefinition,
@@ -199,7 +199,7 @@ def asset_sla_sensor(
 ):
     check.opt_str_param(name, "name")
 
-    def inner(fn: MultiAssetMaterializationFunction) -> MultiAssetSensorDefinition:
+    def inner(fn: MultiAssetMaterializationFunction) -> AssetSLASensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 

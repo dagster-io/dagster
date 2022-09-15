@@ -12,10 +12,10 @@ from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.definitions.sensor_definition import (
-    MultiAssetSensorDefinition,
-    MultiAssetSensorEvaluationContext,
     AssetSLASensorDefinition,
     AssetSLASensorEvaluationContext,
+    MultiAssetSensorDefinition,
+    MultiAssetSensorEvaluationContext,
     SensorEvaluationContext,
 )
 from dagster._core.errors import (
