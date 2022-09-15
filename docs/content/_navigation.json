@@ -436,6 +436,19 @@
                 "path": "/dagster-cloud/developing-testing/dagster-cloud-cli"
               },
               {
+                "title": "Full deployments",
+                "children": [
+                  {
+                    "title": "Management",
+                    "path": "/dagster-cloud/developing-testing/managing-deployments"
+                  },
+                  {
+                    "title": "Settings",
+                    "path": "/dagster-cloud/developing-testing/deployment-settings-reference"
+                  }
+                ]
+              },
+              {
                 "title": "Code locations",
                 "path": "/dagster-cloud/developing-testing/code-locations"
               },
@@ -465,6 +478,10 @@
       {
         "title": "dbt",
         "path": "/integrations/dbt"
+      },
+      {
+        "title": "dbt",
+        "path": "/integrations/dbt_cloud"
       },
       {
         "title": "Great Expectations",
@@ -498,45 +515,63 @@
     "path": "/guides",
     "children": [
       {
-        "title": "Upgrading to Software-Defined Assets",
-        "path": "/guides/dagster/enriching-with-software-defined-assets"
+        "title": "General",
+        "path": "/guides/general",
+        "children": [
+          {
+            "title": "Enriching with Software-defined assets",
+            "path": "/guides/dagster/enriching-with-software-defined-assets"
+          },
+          {
+            "title": "Software-defined assets with Pandas & PySpark",
+            "path": "/guides/dagster/software-defined-assets"
+          },
+          {
+            "title": "Re-executing jobs",
+            "path": "/guides/dagster/re-execution"
+          },
+          {
+            "title": "Validating data",
+            "path": "/guides/dagster/dagster_type_factories"
+          },
+          {
+            "title": "Migrating to graphs, jobs, ops",
+            "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
+            "isExternalLink": true
+          }
+        ]
       },
       {
-        "title": "Transitioning Data Pipelines from Development to Production",
-        "path":"/guides/dagster/transitioning-data-pipelines-from-development-to-production"
+        "title": "Best practices",
+        "path": "/guides/best-practices",
+        "children": [
+          {
+            "title": "Exploring a Dagster project",
+            "path": "/guides/dagster/example_project"
+          },
+          {
+            "title": "Transitioning from dev to prod",
+            "path": "/guides/dagster/transitioning-data-pipelines-from-development-to-production"
+          },
+          {
+            "title": "Testing with Branch Deployments",
+            "path": "/guides/dagster/branch_deployments"
+          }
+        ]
       },
       {
-        "title": "Testing Against Production with Dagster Cloud Branch Deployments",
-        "path": "/guides/dagster/branch_deployments"
-      },
-      {
-        "title": "Versioning and Memoization (Experimental)",
-        "path": "/guides/dagster/memoization"
-      },
-      {
-        "title": "Software-Defined Assets with Pandas and PySpark",
-        "path": "/guides/dagster/software-defined-assets"
-      },
-      {
-        "title": "Run Attribution (Experimental)",
-        "path": "/guides/dagster/run-attribution"
-      },
-      {
-        "title": "Migrating to Graphs, Jobs, and Ops",
-        "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
-        "isExternalLink": true
-      },
-      {
-        "title": "Re-execution",
-        "path": "/guides/dagster/re-execution"
-      },
-      {
-        "title": "Fully-Featured Example Project",
-        "path": "/guides/dagster/example_project"
-      },
-      {
-        "title": "Validating Data with Dagster Type Factories",
-        "path": "/guides/dagster/dagster_type_factories"
+        "title": "Experimental features",
+        "path": "/guides/experimental-features",
+        "children": [
+          {
+            "title": "Versioning and memoization",
+            "path": "/guides/dagster/memoization"
+          },
+          {
+            "title": "Using custom run coordinators",
+            "path": "/guides/dagster/run-attribution"
+          }
+        ]
       }
     ]
   },

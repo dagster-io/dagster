@@ -20,7 +20,7 @@ import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {PartitionRunListForStep} from './PartitionRunListForStep';
+import {PartitionRunList} from './PartitionRunList';
 import {
   BOX_SIZE,
   GridColumn,
@@ -37,7 +37,6 @@ import {
 } from './types/PartitionStepStatusPipelineQuery';
 import {
   PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
-  isStepKeyForNode,
   MatrixStep,
   PartitionRuns,
   StatusSquareFinalColor,
@@ -46,7 +45,7 @@ import {
 
 interface PartitionRunSelection {
   partitionName: string;
-  stepName: string;
+  stepName?: string;
 }
 
 interface PartitionStepStatusProps {
@@ -128,30 +127,20 @@ export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) =
   const [minUnix, maxUnix] = timeboundsOfPartitions(partitionColumns);
   const topLabelHeight = topLabelHeightForLabels(partitionColumns.map((p) => p.name));
 
+  console.log(visibleColumns);
   return (
     <PartitionRunMatrixContainer>
       <Dialog
         isOpen={!!focused}
         onClose={() => setFocused(null)}
         style={{width: '90vw'}}
-        title={focused ? `${focused.partitionName} runs (${focused.stepName})` : ''}
+        title={focused ? `${focused.partitionName} runs` : ''}
       >
         <Box padding={{bottom: 12}}>
           {focused && (
-            <PartitionRunListForStep
+            <PartitionRunList
               pipelineName={props.pipelineName}
               partitionName={focused.partitionName}
-              stepName={focused.stepName}
-              stepStatsByRunId={Object.assign(
-                {},
-                ...(props.partitions.find((p) => p.name === focused.partitionName)?.runs || []).map(
-                  (run) => ({
-                    [run.runId]: run.stepStats.find((s) =>
-                      isStepKeyForNode(focused.stepName, s.stepKey),
-                    ),
-                  }),
-                ),
-              )}
             />
           )}
         </Box>
@@ -171,7 +160,7 @@ export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) =
         <GridFloatingContainer floating={props.offset + visibleCount < props.partitionNames.length}>
           <GridColumn disabled style={{flex: 1, flexShrink: 1, overflow: 'hidden'}}>
             <TopLabel style={{height: topLabelHeight}} />
-            <LeftLabel style={{paddingLeft: 24}}>Number of Runs</LeftLabel>
+            <LeftLabel style={{paddingLeft: 24}}>Last Run</LeftLabel>
             <Divider />
             {stepRows.map((step) => (
               <LeftLabel
@@ -225,14 +214,22 @@ export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) =
                 }}
               >
                 <TopLabelTilted $height={topLabelHeight} label={p.name} />
-                {p.runsLoaded ? (
-                  <LeftLabel style={{textAlign: 'center'}}>{p.runs.length}</LeftLabel>
-                ) : (
-                  <LeftLabel style={{textAlign: 'center', opacity: 0.2}}>–</LeftLabel>
-                )}
+                <LeftLabel style={{textAlign: 'center'}}>
+                  <PartitionSquare
+                    key={`${p.name}:__full_status`}
+                    runs={p.runs}
+                    runsLoaded={p.runsLoaded}
+                    minUnix={minUnix}
+                    maxUnix={maxUnix}
+                    hovered={hovered}
+                    setHovered={setHovered}
+                    setFocused={setFocused}
+                    partitionName={p.name}
+                  />
+                </LeftLabel>
                 <Divider />
                 {sortPartitionSteps(p.steps).map((s) => (
-                  <PartitionStepSquare
+                  <PartitionSquare
                     key={s.name}
                     step={s}
                     runs={p.runs}
@@ -329,8 +326,13 @@ const PARTITION_STEP_STATUS_PIPELINE_QUERY = gql`
   ${PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT}
 `;
 
-const PartitionStepSquare: React.FC<{
-  step: MatrixStep;
+const TOOLTIP_STYLE = JSON.stringify({
+  top: 20,
+  left: 10,
+});
+
+const PartitionSquare: React.FC<{
+  step?: MatrixStep;
   runs: PartitionMatrixStepRunFragment[];
   runsLoaded: boolean;
   hovered: PartitionRunSelection | null;
@@ -341,23 +343,33 @@ const PartitionStepSquare: React.FC<{
   setFocused: (hovered: PartitionRunSelection | null) => void;
 }> = ({step, runs, runsLoaded, hovered, setHovered, setFocused, partitionName}) => {
   const [opened, setOpened] = React.useState(false);
-  const {name, color} = step;
+  let squareStatus;
 
-  const className = `square
-  ${!runsLoaded ? 'loading' : runs.length === 0 ? 'empty' : ''}
-  ${(StatusSquareFinalColor[color] || color).toLowerCase()}`;
+  if (!runsLoaded) {
+    squareStatus = 'loading';
+  } else if (runs.length === 0) {
+    squareStatus = 'empty';
+  } else if (step) {
+    squareStatus = (StatusSquareFinalColor[step.color] || step.color).toLowerCase();
+  } else {
+    squareStatus = runs[runs.length - 1].status.toLowerCase();
+  }
 
   const content = (
     <div
-      className={className}
-      onMouseEnter={() => setHovered({stepName: name, partitionName})}
+      className={`square ${squareStatus}`}
+      onMouseEnter={() => setHovered({stepName: step?.name, partitionName})}
       onMouseLeave={() => setHovered(null)}
+      data-tooltip={
+        runsLoaded && !step ? (runs.length === 1 ? `1 run` : `${runs.length} runs`) : undefined
+      }
+      data-tooltip-style={TOOLTIP_STYLE}
     />
   );
 
   if (
     !opened &&
-    (!runs.length || hovered?.stepName !== name || hovered?.partitionName !== partitionName)
+    (!runs.length || hovered?.stepName !== step?.name || hovered?.partitionName !== partitionName)
   ) {
     return content;
   }
@@ -373,12 +385,12 @@ const PartitionStepSquare: React.FC<{
           <MenuLink
             icon="open_in_new"
             text="Show Logs From Last Run"
-            to={linkToRunEvent(runs[runs.length - 1], {stepKey: name})}
+            to={linkToRunEvent(runs[runs.length - 1], {stepKey: step ? step.name : null})}
           />
           <MenuItem
             icon="settings_backup_restore"
             text={`View Runs (${runs.length})`}
-            onClick={() => setFocused({stepName: name, partitionName})}
+            onClick={() => setFocused({stepName: step?.name, partitionName})}
           />
         </Menu>
       }

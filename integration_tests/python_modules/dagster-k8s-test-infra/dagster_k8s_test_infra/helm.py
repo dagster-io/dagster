@@ -1,16 +1,15 @@
 # pylint: disable=print-call, redefined-outer-name, unused-argument
 import base64
-import json
 import os
 import subprocess
 import time
 from contextlib import ExitStack, contextmanager
 
-import boto3
 import kubernetes
 import pytest
 import requests
 import yaml
+from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
 from dagster_k8s.utils import wait_for_pod
 
 import dagster._check as check
@@ -162,27 +161,14 @@ def configmaps(namespace, should_cleanup):
 def aws_configmap(namespace, should_cleanup):
     if not IS_BUILDKITE:
         kube_api = kubernetes.client.CoreV1Api()
-        aws_data = {
-            "AWS_ACCOUNT_ID": os.getenv("AWS_ACCOUNT_ID"),
-            "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID"),
-            "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
-        }
 
-        if not aws_data["AWS_ACCESS_KEY_ID"] or not aws_data["AWS_SECRET_ACCESS_KEY"]:
-            sm_client = boto3.client("secretsmanager", region_name="us-west-1")
-            try:
-                creds = json.loads(
-                    sm_client.get_secret_value(
-                        SecretId=os.getenv("AWS_SSM_REFERENCE", "development/DOCKER_AWS_CREDENTIAL")
-                    ).get("SecretString")
-                )
-                aws_data["AWS_ACCESS_KEY_ID"] = creds["aws_access_key_id"]
-                aws_data["AWS_SECRET_ACCESS_KEY"] = creds["aws_secret_access_key"]
-            except Exception as e:
-                raise Exception(
-                    "Must have AWS credentials set to be able to run Helm tests locally. Run "
-                    f"'aws sso login' to authenticate. Original error: {e}"
-                )
+        creds = get_aws_creds()
+
+        aws_data = {
+            "AWS_ACCOUNT_ID": creds.get("aws_account_id"),
+            "AWS_ACCESS_KEY_ID": creds.get("aws_access_key_id"),
+            "AWS_SECRET_ACCESS_KEY": creds.get("aws_secret_access_key"),
+        }
 
         print("Creating ConfigMap %s with AWS credentials" % (TEST_AWS_CONFIGMAP_NAME))
         aws_configmap = kubernetes.client.V1ConfigMap(

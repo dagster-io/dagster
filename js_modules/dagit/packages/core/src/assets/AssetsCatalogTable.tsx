@@ -357,12 +357,20 @@ function buildFlatProps(assets: Asset[], prefixPath: string[], cursor: string | 
 }
 
 function buildNamespaceProps(assets: Asset[], prefixPath: string[], cursor: string | undefined) {
+  // Return all assets from the next PAGE_SIZE namespaces - the AssetTable component will later
+  // group them by namespace
+
   const namespaceForAsset = (asset: Asset) => {
     return asset.key.path.slice(prefixPath.length, prefixPath.length + 1);
   };
 
+  // Only consider assets that start with the prefix path
+  const assetsWithPathPrefix = assets.filter((asset) =>
+    asset.key.path.join(',').startsWith(prefixPath.join(',')),
+  );
+
   const namespaces = Array.from(
-    new Set(assets.map((asset) => JSON.stringify(namespaceForAsset(asset)))),
+    new Set(assetsWithPathPrefix.map((asset) => JSON.stringify(namespaceForAsset(asset)))),
   )
     .map((x) => JSON.parse(x))
     .sort();
@@ -379,21 +387,22 @@ function buildNamespaceProps(assets: Asset[], prefixPath: string[], cursor: stri
     };
   }
 
+  const namespaceSlice = namespaces.slice(cursorIndex, cursorIndex + PAGE_SIZE);
+
   const prevPageIndex = Math.max(0, cursorIndex - PAGE_SIZE);
   const prevCursor = cursorIndex !== 0 ? cursorValue(namespaces[prevPageIndex]) : undefined;
   const nextPageIndex = cursorIndex + PAGE_SIZE;
   const nextCursor =
     namespaces.length > nextPageIndex ? cursorValue(namespaces[nextPageIndex]) : undefined;
-  const displayed = filterAssetsByNamespace(
-    assets,
-    namespaces.map((ns) => [...prefixPath, ...ns]),
-  ).slice(cursorIndex, cursorIndex + PAGE_SIZE);
 
   return {
     nextCursor,
     prevCursor,
     displayPathForAsset: namespaceForAsset,
-    displayed,
+    displayed: filterAssetsByNamespace(
+      assetsWithPathPrefix,
+      namespaceSlice.map((ns) => [...prefixPath, ...ns]),
+    ),
   };
 }
 

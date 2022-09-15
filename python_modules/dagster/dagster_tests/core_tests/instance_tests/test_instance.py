@@ -148,7 +148,7 @@ def test_submit_run():
             external_pipeline = (
                 workspace.get_repository_location("bar_repo_location")
                 .get_repository("bar_repo")
-                .get_full_external_pipeline("foo")
+                .get_full_external_job("foo")
             )
 
             run = create_run_for_test(

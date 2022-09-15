@@ -183,7 +183,7 @@ class DbtCliResource(DbtResource):
             # do not include these arguments if both are True, as these are deprecated in later
             # versions of dbt, and for older versions the functionality is the same regardless of
             # if both are set or neither are set.
-            return self.cli("test", models=models, exclude=exclude, **kwargs)
+            return self.cli("test", models=models, exclude=exclude, select=select, **kwargs)
         return self.cli(
             "test",
             models=models,

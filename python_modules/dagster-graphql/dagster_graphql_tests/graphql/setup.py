@@ -62,6 +62,7 @@ from dagster import (
     asset,
     dagster_type_loader,
     dagster_type_materializer,
+    daily_partitioned_config,
     define_asset_job,
     graph,
     job,
@@ -70,6 +71,7 @@ from dagster import (
     op,
     repository,
     resource,
+    static_partitioned_config,
     usable_as_dagster_type,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
@@ -1533,7 +1535,27 @@ static_partitioned_assets_job = build_assets_job(
 )
 
 
+@static_partitioned_config(partition_keys=["1", "2", "3", "4", "5"])
+def my_static_partitioned_config(_partition_key: str):
+    return {}
+
+
+@job(config=my_static_partitioned_config)
+def static_partitioned_job():
+    my_op()
+
+
 hourly_partition = HourlyPartitionsDefinition(start_date="2021-05-05-01:00")
+
+
+@daily_partitioned_config(start_date=datetime.datetime(2022, 5, 1), minute_offset=15)
+def my_daily_partitioned_config(_start, _end):
+    return {}
+
+
+@job(config=my_daily_partitioned_config)
+def daily_partitioned_job():
+    my_op()
 
 
 @asset(partitions_def=hourly_partition)
@@ -1735,6 +1757,7 @@ def define_pipelines():
         csv_hello_world_two,
         csv_hello_world_with_expectations,
         csv_hello_world,
+        daily_partitioned_job,
         eventually_successful,
         hard_failer,
         hello_world_with_tags,
@@ -1764,6 +1787,7 @@ def define_pipelines():
         scalar_output_pipeline,
         single_asset_pipeline,
         spew_pipeline,
+        static_partitioned_job,
         tagged_pipeline,
         chained_failure_pipeline,
         dynamic_pipeline,

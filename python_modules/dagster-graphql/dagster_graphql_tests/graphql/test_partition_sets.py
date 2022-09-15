@@ -105,6 +105,10 @@ GET_PARTITION_SET_STATUS_QUERY = """
                             runStatus
                         }
                     }
+                    ... on PythonError {
+                        message
+                        stack
+                    }
                 }
             }
         }
@@ -254,3 +258,85 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
         assert len(partitionStatuses) == 10
         for partitionStatus in partitionStatuses:
             assert partitionStatus["runStatus"] == "SUCCESS"
+
+    def test_get_status_time_window_partitioned_job(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "daily_partitioned_job_partition_set",
+                    },
+                    "partitionNames": ["2022-06-01", "2022-06-02"],
+                    "forceSynchronousSubmission": True,
+                }
+            },
+        )
+        assert not result.errors
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        assert len(result.data["launchPartitionBackfill"]["launchedRunIds"]) == 2
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            query=GET_PARTITION_SET_STATUS_QUERY,
+            variables={
+                "partitionSetName": "daily_partitioned_job_partition_set",
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        partitionStatuses = result.data["partitionSetOrError"]["partitionStatusesOrError"][
+            "results"
+        ]
+        assert len(partitionStatuses) > 2
+
+        for partitionStatus in partitionStatuses:
+            if partitionStatus["partitionName"] in ["2022-06-01", "2022-06-02"]:
+                assert partitionStatus["runStatus"] == "SUCCESS"
+            else:
+                assert partitionStatus["runStatus"] is None
+
+    def test_get_status_static_partitioned_job(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "static_partitioned_job_partition_set",
+                    },
+                    "partitionNames": ["2", "3"],
+                    "forceSynchronousSubmission": True,
+                }
+            },
+        )
+        assert not result.errors
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        assert len(result.data["launchPartitionBackfill"]["launchedRunIds"]) == 2
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            query=GET_PARTITION_SET_STATUS_QUERY,
+            variables={
+                "partitionSetName": "static_partitioned_job_partition_set",
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        partitionStatuses = result.data["partitionSetOrError"]["partitionStatusesOrError"][
+            "results"
+        ]
+        assert len(partitionStatuses) == 5
+
+        for partitionStatus in partitionStatuses:
+            if partitionStatus["partitionName"] in ["2", "3"]:
+                assert partitionStatus["runStatus"] == "SUCCESS"
+            else:
+                assert partitionStatus["runStatus"] is None

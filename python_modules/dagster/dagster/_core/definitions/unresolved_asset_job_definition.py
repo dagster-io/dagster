@@ -3,6 +3,7 @@ from functools import reduce
 from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
+from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.selector.subset_selector import parse_clause
 
@@ -96,6 +97,7 @@ class UnresolvedAssetJobDefinition(
         partition_key: str,
         run_key: Optional[str],
         tags: Optional[Dict[str, str]] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
     ) -> RunRequest:
         partition_set = self.get_partition_set_def()
         if not partition_set:
@@ -109,7 +111,12 @@ class UnresolvedAssetJobDefinition(
             else partition_set.tags_for_partition(partition)
         )
 
-        return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
+        return RunRequest(
+            run_key=run_key,
+            run_config=run_config,
+            tags=run_request_tags,
+            asset_selection=asset_selection,
+        )
 
     def resolve(
         self,

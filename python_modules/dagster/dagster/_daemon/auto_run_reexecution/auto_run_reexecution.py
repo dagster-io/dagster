@@ -111,14 +111,14 @@ def retry_run(
 
     external_repo = repo_location.get_repository(repo_name)
 
-    if not external_repo.has_external_pipeline(failed_run.pipeline_name):
+    if not external_repo.has_external_job(failed_run.pipeline_name):
         instance.report_engine_event(
             f"Could not find job {failed_run.pipeline_name} in repository {repo_name}, unable to retry the run. It was likely renamed or deleted.",
             failed_run,
         )
         return
 
-    external_pipeline = external_repo.get_full_external_pipeline(failed_run.pipeline_name)
+    external_pipeline = external_repo.get_full_external_job(failed_run.pipeline_name)
 
     strategy = get_reexecution_strategy(failed_run, instance) or DEFAULT_REEXECUTION_POLICY
 

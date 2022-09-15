@@ -249,8 +249,6 @@ def store_slack_files_in_sql():
 graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
 ```
 
-**Note**: All output assets must be selected when using a graph-backed asset to create a job. Dagster will select all graph outputs automatically upon creating a job.
-
 #### Defining basic dependencies for graph-backed assets
 
 The `from_graph` attribute on the `AssetsDefinition` object infers upstream and downstream asset dependencies from the graph definition provided. In the most simple case when the graph returns a singular output, Dagster infers the name of the graph to be the outputted asset key.

@@ -243,4 +243,5 @@ def k8s_job_op(context):
         job_name=job_name,
         namespace=namespace,
         wait_timeout=config.get("timeout", 0),
+        start_time=start_time,
     )

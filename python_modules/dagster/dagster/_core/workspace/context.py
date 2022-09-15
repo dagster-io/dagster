@@ -15,6 +15,7 @@ from dagster._core.errors import (
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
     ExternalExecutionPlan,
+    ExternalPartitionSet,
     ExternalPipeline,
     GrpcServerRepositoryLocation,
     PipelineSelector,
@@ -175,7 +176,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
-    def has_external_pipeline(self, selector: PipelineSelector) -> bool:
+    def has_external_job(self, selector: PipelineSelector) -> bool:
         check.inst_param(selector, "selector", PipelineSelector)
         if not self.has_repository_location(selector.location_name):
             return False
@@ -183,13 +184,13 @@ class BaseWorkspaceRequestContext(IWorkspace):
         loc = self.get_repository_location(selector.location_name)
         return loc.has_repository(selector.repository_name) and loc.get_repository(
             selector.repository_name
-        ).has_external_pipeline(selector.pipeline_name)
+        ).has_external_job(selector.pipeline_name)
 
-    def get_full_external_pipeline(self, selector: PipelineSelector) -> ExternalPipeline:
+    def get_full_external_job(self, selector: PipelineSelector) -> ExternalPipeline:
         return (
             self.get_repository_location(selector.location_name)
             .get_repository(selector.repository_name)
-            .get_full_external_pipeline(selector.pipeline_name)
+            .get_full_external_job(selector.pipeline_name)
         )
 
     def get_external_execution_plan(
@@ -234,11 +235,11 @@ class BaseWorkspaceRequestContext(IWorkspace):
         )
 
     def get_external_partition_names(
-        self, repository_handle: RepositoryHandle, partition_set_name: str
+        self, external_partition_set: ExternalPartitionSet
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
-            repository_handle.location_name
-        ).get_external_partition_names(repository_handle, partition_set_name)
+            external_partition_set.repository_handle.location_name
+        ).get_external_partition_names(external_partition_set)
 
     def get_external_partition_set_execution_param_data(
         self,

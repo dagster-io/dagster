@@ -7,7 +7,7 @@ from dagster import Failure, MetadataEntry
 from dagster import _check as check
 from dagster import build_init_resource_context
 
-from .utils import get_sample_connection_json, get_sample_job_json
+from .utils import get_sample_connection_json, get_sample_job_json, get_sample_job_list_json
 
 
 @responses.activate
@@ -43,12 +43,17 @@ def test_trigger_connection_fail():
     "state",
     [AirbyteState.SUCCEEDED, AirbyteState.CANCELLED, AirbyteState.ERROR, "unrecognized"],
 )
-def test_sync_and_poll(state):
+@pytest.mark.parametrize(
+    "forward_logs",
+    [True, False],
+)
+def test_sync_and_poll(state, forward_logs):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
                 "host": "some_host",
                 "port": "8000",
+                "forward_logs": forward_logs,
             }
         )
     )
@@ -64,12 +69,21 @@ def test_sync_and_poll(state):
         json={"job": {"id": 1}},
         status=200,
     )
-    responses.add(
-        method=responses.POST,
-        url=ab_resource.api_base_url + "/jobs/get",
-        json={"job": {"id": 1, "status": state}},
-        status=200,
-    )
+    if forward_logs:
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/get",
+            json={"job": {"id": 1, "status": state}},
+            status=200,
+        )
+    else:
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/list",
+            json={"jobs": [{"job": {"id": 1, "status": state}}]},
+            status=200,
+        )
+
     if state == "unrecognized":
         responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
 
@@ -150,7 +164,35 @@ def test_get_job_status_bad_out_fail():
         status=204,
     )
     with pytest.raises(check.CheckError):
-        ab_resource.get_job_status("some_connection")
+        ab_resource.get_job_status("some_connection", 5)
+
+    # Test no-forward-logs config
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+                "forward_logs": False,
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/list",
+        json=None,
+        status=204,
+    )
+    with pytest.raises(check.CheckError):
+        ab_resource.get_job_status("some_connection", 5)
+
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/list",
+        json={"jobs": []},
+        status=200,
+    )
+    with pytest.raises(check.CheckError):
+        ab_resource.get_job_status("some_connection", 5)
 
 
 @responses.activate
@@ -231,13 +273,18 @@ def test_logging_multi_attempts(capsys):
 
 
 @responses.activate
-def test_assets():
+@pytest.mark.parametrize(
+    "forward_logs",
+    [True, False],
+)
+def test_assets(forward_logs):
 
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
                 "host": "some_host",
                 "port": "8000",
+                "forward_logs": forward_logs,
             }
         )
     )
@@ -253,12 +300,21 @@ def test_assets():
         json={"job": {"id": 1}},
         status=200,
     )
-    responses.add(
-        method=responses.POST,
-        url=ab_resource.api_base_url + "/jobs/get",
-        json=get_sample_job_json(),
-        status=200,
-    )
+
+    if forward_logs:
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/get",
+            json=get_sample_job_json(),
+            status=200,
+        )
+    else:
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/list",
+            json=get_sample_job_list_json(),
+            status=200,
+        )
     responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
 
     airbyte_output = ab_resource.sync_and_poll("some_connection", 0, None)
@@ -271,12 +327,17 @@ def test_assets():
 
 
 @responses.activate
-def test_sync_and_poll_timeout():
+@pytest.mark.parametrize(
+    "forward_logs",
+    [True, False],
+)
+def test_sync_and_poll_timeout(forward_logs):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
                 "host": "some_host",
                 "port": "8000",
+                "forward_logs": forward_logs,
             }
         )
     )
@@ -292,24 +353,44 @@ def test_sync_and_poll_timeout():
         json={"job": {"id": 1}},
         status=200,
     )
-    responses.add(
-        method=responses.POST,
-        url=ab_resource.api_base_url + "/jobs/get",
-        json={"job": {"id": 1, "status": "pending"}},
-        status=200,
-    )
-    responses.add(
-        method=responses.POST,
-        url=ab_resource.api_base_url + "/jobs/get",
-        json={"job": {"id": 1, "status": "running"}},
-        status=200,
-    )
-    responses.add(
-        method=responses.POST,
-        url=ab_resource.api_base_url + "/jobs/get",
-        json={"job": {"id": 1, "status": "running"}},
-        status=200,
-    )
+    if forward_logs:
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/get",
+            json={"job": {"id": 1, "status": "pending"}},
+            status=200,
+        )
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/get",
+            json={"job": {"id": 1, "status": "running"}},
+            status=200,
+        )
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/get",
+            json={"job": {"id": 1, "status": "running"}},
+            status=200,
+        )
+    else:
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/list",
+            json={"jobs": [{"job": {"id": 1, "status": "pending"}}]},
+            status=200,
+        )
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/list",
+            json={"jobs": [{"job": {"id": 1, "status": "running"}}]},
+            status=200,
+        )
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/list",
+            json={"jobs": [{"job": {"id": 1, "status": "running"}}]},
+            status=200,
+        )
     responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
     poll_wait_second = 2
     timeout = 1
