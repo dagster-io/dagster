@@ -32,9 +32,9 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_celery_k8s_tests*"]),
         install_requires=[
-            "dagster==0.15.9",
-            "dagster-k8s==0.15.9",
-            "dagster-celery==0.15.9",
+            "dagster==0.15.10",
+            "dagster-k8s==0.15.10",
+            "dagster-celery==0.15.10",
         ],
         zip_safe=False,
     )

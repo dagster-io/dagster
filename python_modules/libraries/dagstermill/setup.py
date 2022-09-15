@@ -32,7 +32,7 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         install_requires=[
-            "dagster==0.15.9",
+            "dagster==0.15.10",
             # ipykernel 5.4.0 and 5.4.1 broke papermill
             # see https://github.com/dagster-io/dagster/issues/3401,
             # https://github.com/nteract/papermill/issues/519,
