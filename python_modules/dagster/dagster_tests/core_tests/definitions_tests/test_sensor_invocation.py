@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 from unittest import mock
 
@@ -662,3 +663,84 @@ def test_multi_asset_sensor_custom_partition_mapping():
             [july_daily_partitions.key], instance=instance, repository_def=my_repo
         )
         list(asset_sensor(ctx))
+
+
+def test_multi_asset_sensor_partitions_retains_ordering():
+    partition_ordering = ["2022-07-15", "2022-07-14", "2022-07-13", "2022-07-12"]
+    partitions_july = DailyPartitionsDefinition("2022-07-01")
+
+    @asset(partitions_def=partitions_july)
+    def july_daily_partitions():
+        return 1
+
+    @repository
+    def my_repo():
+        return [july_daily_partitions]
+
+    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
+    def asset_sensor(context):
+        assert (
+            list(
+                context.latest_materialization_records_by_partition(
+                    july_daily_partitions.key
+                ).keys()
+            )
+            == partition_ordering
+        )
+
+    with instance_for_test() as instance:
+        for partition in partition_ordering:
+            materialize(
+                [july_daily_partitions],
+                partition_key=partition,
+                instance=instance,
+            )
+        ctx = build_multi_asset_sensor_context(
+            [july_daily_partitions.key], instance=instance, repository_def=my_repo
+        )
+        list(asset_sensor(ctx))
+
+
+def test_multi_asset_sensor_update_cursor_no_overwrite():
+    @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
+    def july_asset():
+        return 1
+
+    @asset(partitions_def=DailyPartitionsDefinition("2022-08-01"))
+    def august_asset():
+        return 1
+
+    @repository
+    def my_repo():
+        return [july_asset, august_asset]
+
+    @multi_asset_sensor(asset_keys=[july_asset.key, august_asset.key])
+    def after_cursor_partitions_asset_sensor(context):
+        events = context.latest_materialization_records_by_key()
+
+        if (
+            events[july_asset.key]
+            and events[july_asset.key].event_log_entry.dagster_event.partition == "2022-07-10"
+        ):  # first sensor invocation
+            context.advance_cursor({july_asset.key: events[july_asset.key]})
+        else:  # second sensor invocation
+            materialization = events[august_asset.key]
+            assert materialization
+            context.advance_cursor({august_asset.key: materialization})
+
+            cursor = json.loads(context.cursor)
+            partition, _ = cursor[str(july_asset.key)]
+            assert partition == "2022-07-10"
+
+    with instance_for_test() as instance:
+        materialize(
+            [july_asset],
+            partition_key="2022-07-10",
+            instance=instance,
+        )
+        ctx = build_multi_asset_sensor_context(
+            [july_asset.key, august_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(after_cursor_partitions_asset_sensor(ctx))
+        materialize([august_asset], partition_key="2022-08-05", instance=instance)
+        list(after_cursor_partitions_asset_sensor(ctx))
