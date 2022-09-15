@@ -15,8 +15,8 @@ from ..job import (
 )
 from ..launcher import K8sRunLauncher
 from ..utils import (
-    get_pod_names_in_job,
     wait_for_job,
+    wait_for_job_to_have_pods,
     wait_for_pod,
     wait_for_running_job_to_succeed,
 )
@@ -211,10 +211,18 @@ def k8s_job_op(context):
     wait_for_job(
         job_name=job_name,
         namespace=namespace,
-        wait_timeout=config.get("timeout", 0),
+        wait_timeout=timeout,
+        start_time=start_time,
     )
 
-    pod_names = get_pod_names_in_job(job_name, namespace=namespace)
+    pods = wait_for_job_to_have_pods(
+        job_name,
+        namespace,
+        wait_timeout=timeout,
+        start_time=start_time,
+    )
+
+    pod_names = [p.metadata.name for p in pods]
 
     if not pod_names:
         raise Exception("No pod names in job after it started")
@@ -222,7 +230,7 @@ def k8s_job_op(context):
     pod_to_watch = pod_names[0]
     watch = kubernetes.watch.Watch()
 
-    wait_for_pod(pod_to_watch, namespace, wait_timeout=timeout)
+    wait_for_pod(pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time)
 
     log_stream = watch.stream(
         core_api.read_namespaced_pod_log, name=pod_to_watch, namespace=namespace
@@ -242,6 +250,6 @@ def k8s_job_op(context):
     wait_for_running_job_to_succeed(
         job_name=job_name,
         namespace=namespace,
-        wait_timeout=config.get("timeout", 0),
+        wait_timeout=timeout,
         start_time=start_time,
     )
