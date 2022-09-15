@@ -3,6 +3,7 @@ import pendulum
 import pytest
 
 from dagster import CronSLA, StalenessSLA
+from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 @pytest.mark.parametrize(
@@ -10,61 +11,61 @@ from dagster import CronSLA, StalenessSLA
     [
         (
             StalenessSLA(allowed_staleness_minutes=30),
-            pendulum.datetime(2022, 1, 1, 0),
-            pendulum.datetime(2022, 1, 1, 0, 25),
+            create_pendulum_time(2022, 1, 1, 0),
+            create_pendulum_time(2022, 1, 1, 0, 25),
             True,
         ),
         (
             StalenessSLA(allowed_staleness_minutes=120),
-            pendulum.datetime(2022, 1, 1, 0),
-            pendulum.datetime(2022, 1, 1, 1),
+            create_pendulum_time(2022, 1, 1, 0),
+            create_pendulum_time(2022, 1, 1, 1),
             True,
         ),
         (
             StalenessSLA(allowed_staleness_minutes=30),
-            pendulum.datetime(2022, 1, 1, 0),
-            pendulum.datetime(2022, 1, 1, 1),
+            create_pendulum_time(2022, 1, 1, 0),
+            create_pendulum_time(2022, 1, 1, 1),
             False,
         ),
         (
             StalenessSLA(allowed_staleness_minutes=500),
             None,
-            pendulum.datetime(2022, 1, 1, 0, 25),
+            create_pendulum_time(2022, 1, 1, 0, 25),
             False,
         ),
         # materialization happened before SLA
         (
             CronSLA(cron_schedule="@daily", allowed_staleness_minutes=15),
-            pendulum.datetime(2022, 1, 1, 0, 5),
-            pendulum.datetime(2022, 1, 1, 0, 10),
+            create_pendulum_time(2022, 1, 1, 0, 5),
+            create_pendulum_time(2022, 1, 1, 0, 10),
             True,
         ),
         # materialization happened after SLA, but is fine now
         (
             CronSLA(cron_schedule="@daily", allowed_staleness_minutes=15),
-            pendulum.datetime(2022, 1, 1, 0, 30),
-            pendulum.datetime(2022, 1, 1, 1, 0),
+            create_pendulum_time(2022, 1, 1, 0, 30),
+            create_pendulum_time(2022, 1, 1, 1, 0),
             True,
         ),
         # materialization for this data has not happened yet (day before)
         (
             CronSLA(cron_schedule="@daily", allowed_staleness_minutes=15),
-            pendulum.datetime(2022, 1, 1, 23, 0),
-            pendulum.datetime(2022, 1, 2, 1, 0),
+            create_pendulum_time(2022, 1, 1, 23, 0),
+            create_pendulum_time(2022, 1, 2, 1, 0),
             False,
         ),
         # weird one, basically want to have a materialization every hour no more than 5 hours after
         # that data arrives -- edge case probably not useful in practice?
         (
             CronSLA(cron_schedule="@hourly", allowed_staleness_minutes=60 * 5),
-            pendulum.datetime(2022, 1, 1, 1, 0),
-            pendulum.datetime(2022, 1, 1, 4, 0),
+            create_pendulum_time(2022, 1, 1, 1, 0),
+            create_pendulum_time(2022, 1, 1, 4, 0),
             True,
         ),
         (
             CronSLA(cron_schedule="@hourly", allowed_staleness_minutes=60 * 5),
-            pendulum.datetime(2022, 1, 1, 1, 0),
-            pendulum.datetime(2022, 1, 1, 6, 30),
+            create_pendulum_time(2022, 1, 1, 1, 0),
+            create_pendulum_time(2022, 1, 1, 6, 30),
             False,
         ),
     ],

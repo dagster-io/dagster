@@ -1,11 +1,9 @@
-from typing import NamedTuple
-
 import pendulum
 from croniter import croniter
 
 
 class AssetSLA:
-    def is_passing(self, asset_event):
+    def is_passing(self, latest_asset_event):
         pass
 
 

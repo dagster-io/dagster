@@ -651,8 +651,6 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
         asset_keys: Optional[Sequence[AssetKey]] = None,
         instance: Optional[DagsterInstance] = None,
     ):
-        from dagster._core.definitions import AssetsDefinition
-
         self._repository_def = repository_def
 
         # if no asset_keys specified, default to all
@@ -1390,21 +1388,37 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
+                context.cursor_has_been_updated = False
                 result = materialization_fn(context)
                 if result is None:
                     return
 
+                # because the materialization_fn can yield results (see _wrapped_fn in multi_asset_sensor decorator),
+                # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) == True.
+                # So keep track to see if we actually return any values and should update the cursor
+                runs_yielded = False
                 if inspect.isgenerator(result) or isinstance(result, list):
                     for item in result:
+                        runs_yielded = True
                         yield item
-                else:
+                elif isinstance(result, RunRequest):
+                    runs_yielded = True
+                    yield result
+                elif isinstance(result, SkipReason):
+                    # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
                     yield result
 
-                context._cursor = context._next_cursor
+                if runs_yielded and not context.cursor_has_been_updated:
+                    raise DagsterInvalidDefinitionError(
+                        "Asset materializations have been handled in this sensor, "
+                        "but the cursor was not updated. This means the same materialization events "
+                        "will be handled in the next sensor tick. Use context.advance_cursor or "
+                        "context.advance_all_cursors to update the cursor."
+                    )
 
             return _fn
 
-        super(AssetSLASensorDefinition, self).__init__(
+        super(MultiAssetSensorDefinition, self).__init__(
             name=check_valid_name(name),
             job_name=job_name,
             evaluation_fn=_wrap_asset_fn(
@@ -1435,7 +1449,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
             if args:
                 context = check.inst_param(
-                    args[0], context_param_name, AssetSLASensorEvaluationContext
+                    args[0], context_param_name, MultiAssetSensorEvaluationContext
                 )
             else:
                 if context_param_name not in kwargs:
@@ -1445,7 +1459,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                 context = check.inst_param(
                     kwargs[context_param_name],
                     context_param_name,
-                    AssetSLASensorEvaluationContext,
+                    MultiAssetSensorEvaluationContext,
                 )
 
             return self._raw_fn(context)
@@ -1514,16 +1528,10 @@ class AssetSLASensorDefinition(SensorDefinition):
                 if result is None:
                     return
 
-                # because the materialization_fn can yield results (see _wrapped_fn in multi_asset_sensor decorator),
-                # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) == True.
-                # So keep track to see if we actually return any values and should update the cursor
-                runs_yielded = False
                 if inspect.isgenerator(result) or isinstance(result, list):
                     for item in result:
-                        runs_yielded = True
                         yield item
                 elif isinstance(result, RunRequest):
-                    runs_yielded = True
                     yield result
                 elif isinstance(result, SkipReason):
                     # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
@@ -1533,7 +1541,7 @@ class AssetSLASensorDefinition(SensorDefinition):
 
             return _fn
 
-        super(MultiAssetSensorDefinition, self).__init__(
+        super(AssetSLASensorDefinition, self).__init__(
             name=check_valid_name(name),
             job_name=job_name,
             evaluation_fn=_wrap_asset_fn(
@@ -1564,7 +1572,7 @@ class AssetSLASensorDefinition(SensorDefinition):
 
             if args:
                 context = check.inst_param(
-                    args[0], context_param_name, MultiAssetSensorEvaluationContext
+                    args[0], context_param_name, AssetSLASensorEvaluationContext
                 )
             else:
                 if context_param_name not in kwargs:
@@ -1574,7 +1582,7 @@ class AssetSLASensorDefinition(SensorDefinition):
                 context = check.inst_param(
                     kwargs[context_param_name],
                     context_param_name,
-                    MultiAssetSensorEvaluationContext,
+                    AssetSLASensorEvaluationContext,
                 )
 
             return self._raw_fn(context)
