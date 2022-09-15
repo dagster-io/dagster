@@ -19,6 +19,7 @@ import Icons from '../Icons';
 import Link from '../Link';
 
 import 'react-medium-image-zoom/dist/styles.css';
+import {RenderedDAG} from './RenderedDAG';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
 
@@ -338,6 +339,9 @@ const Experimental = () => {
 };
 
 const Pre = ({children, ...props}) => {
+  // Retrieve the DAG image to display next to the code block, if any
+  const dagImage = React.Children.toArray(children)[0]['props']['dagimage'];
+
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
 
@@ -355,53 +359,66 @@ const Pre = ({children, ...props}) => {
   };
 
   return (
-    <div className="relative">
-      <Transition
-        show={!copied}
-        appear={true}
-        enter="transition ease-out duration-150 transform"
-        enterFrom="opacity-0 scale-95"
-        enterTo="opacity-100 scale-100"
-        leave="transition ease-in duration-150 transform"
-        leaveFrom="opacity-100 scale-100"
-        leaveTo="opacity-0 scale-95"
-      >
-        <div className="absolute top-0 right-0 mt-2 mr-2">
-          <svg
-            className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-300"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            onClick={onClick}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-        </div>
-      </Transition>
-      <Transition
-        show={copied}
-        appear={true}
-        enter="transition ease-out duration-150 transform"
-        enterFrom="opacity-0 scale-95"
-        enterTo="opacity-500 scale-100"
-        leave="transition ease-in duration-200 transform"
-        leaveFrom="opacity-100 scale-100"
-        leaveTo="opacity-0 scale-95"
-      >
-        <div className="absolute top-0 right-0 mt-1 mr-2">
-          <span className="inline-flex items-center px-2 rounded text-xs font-medium leading-4 bg-gray-100 text-gray-800">
-            Copied
-          </span>
-        </div>
-      </Transition>
-      <pre ref={preRef} {...(props as any)}>
-        {children}
-      </pre>
+    <div className="relative" style={{display: 'flex'}}>
+      <div style={{flex: '1 1 auto', position: 'relative', minWidth: 0}}>
+        <Transition
+          show={!copied}
+          appear={true}
+          enter="transition ease-out duration-150 transform"
+          enterFrom="opacity-0 scale-95"
+          enterTo="opacity-100 scale-100"
+          leave="transition ease-in duration-150 transform"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-95"
+        >
+          <div className="absolute top-0 right-0 mt-2 mr-2">
+            <svg
+              className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              onClick={onClick}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+          </div>
+        </Transition>
+        <Transition
+          show={copied}
+          appear={true}
+          enter="transition ease-out duration-150 transform"
+          enterFrom="opacity-0 scale-95"
+          enterTo="opacity-500 scale-100"
+          leave="transition ease-in duration-200 transform"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-95"
+        >
+          <div className="absolute top-0 right-0 mt-1 mr-2">
+            <span className="inline-flex items-center px-2 rounded text-xs font-medium leading-4 bg-gray-100 text-gray-800">
+              Copied
+            </span>
+          </div>
+        </Transition>
+        <pre
+          ref={preRef}
+          style={{height: '100%', marginBottom: 0, marginTop: 0}}
+          {...(props as any)}
+        >
+          {children}
+        </pre>
+      </div>
+      {dagImage && (
+        <RenderedDAG
+          svgSrc="/images/asset-screenshots/my_assets.svg"
+          isAssetGraph
+          mobileImgSrc="/images-2022-july/screenshots/python-assets2.png"
+        />
+      )}
     </div>
   );
 };
@@ -624,4 +641,5 @@ export default {
   ExampleItem,
   TabGroup,
   TabItem,
+  RenderedDAG,
 };
