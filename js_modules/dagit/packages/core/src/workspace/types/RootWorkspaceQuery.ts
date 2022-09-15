@@ -15,20 +15,12 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_d
   value: string;
 }
 
-export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes {
-  __typename: "Mode";
-  id: string;
-  name: string;
-}
-
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines {
   __typename: "Pipeline";
   id: string;
   name: string;
   isJob: boolean;
-  graphName: string;
   pipelineSnapshotId: string;
-  modes: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes[];
 }
 
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_scheduleState {
