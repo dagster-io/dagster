@@ -25,6 +25,8 @@ Graph-backed assets are useful if you have an existing graph that produces and c
 
 Additionally, graph-backed assets allow you to reuse an existing op across other graph-backed assets and jobs, or within the same graph.
 
+---
+
 ## Defining graph-backed assets
 
 To define a graph-backed asset, use the `from_graph` attribute on the <PyObject object="AssetsDefinition" /> object. The value returned from the graph that becomes the graph-backed asset will be stored in persistent storage as the asset:
@@ -161,7 +163,9 @@ def foo(context, bar_1):
 
 Because Dagster flattens each graph into a flat input/output mapping between ops under the hood, any op that produces an output of the graph must be structured to yield its outputs optionally, enabling the outputs to be returned independently.
 
-In the example, `foo` and `baz` produce outputs of `my_graph`. Subsequently, their outputs need to be yielded optionally. Because `foo` yields multiple outputs, we must structure our code to conditionally yield its outputs in the code snippet above. However, because `baz` only yields a singular output, Dagster will only run `baz` when its asset output `baz_asset` is selected. So, we don’t have to structure `baz` to return an optional output. Because `bar` does not yield any outputs that are returned from `my_graph`, its outputs do not have to be selectively returned.
+In the example, `foo` and `baz` produce outputs of `my_graph`. Subsequently, their outputs need to be yielded optionally. Because `foo` yields multiple outputs, we must structure our code to conditionally yield its outputs like in the code snippet above.
+
+However, because `baz` only yields a singular output, Dagster will only run `baz` when its asset output `baz_asset` is selected. So, we don’t have to structure `baz` to return an optional output. Because `bar` does not yield any outputs that are returned from `my_graph`, its outputs do not have to be selectively returned.
 
 We could define the asset using the code below. Notice that `can_subset` must be set to `True` in the asset definition to signify that the graph-backed asset can be subsetted.
 
