@@ -1,5 +1,6 @@
 import inspect
 import json
+from collections import OrderedDict
 from contextlib import ExitStack
 from enum import Enum
 from typing import (
@@ -405,7 +406,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             Mapping[str, EventLogRecord]:
                 Mapping of AssetKey to a mapping of partitions to EventLogRecords where the
                 EventLogRecord is the most recent materialization event for the partition.
-                Filters for materializations in partitions after the cursor.
+                Filters for materializations in partitions after the cursor. The mapping
+                preserves the order of
 
         Example:
             .. code-block:: python
@@ -434,7 +436,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         partitions_def = self._partitions_def_by_asset_key.get(asset_key)
 
-        materialization_by_partition: Dict[str, EventLogRecord] = {}
+        # Retain ordering of materializations
+        materialization_by_partition: Dict[str, EventLogRecord] = OrderedDict()
         if not isinstance(partitions_def, PartitionsDefinition):
             raise DagsterInvariantViolationError(
                 "Cannot get latest materialization by partition for assets with no partitions"
@@ -455,13 +458,17 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                     asset_partitions=partitions_to_fetch,
                     after_cursor=cursor,
                 ),
+                ascending=True,
             )
             for materialization in partition_materializations:
-                # Only update if no previous materialization for this partition exists,
-                # to ensure we return the most recent materialization for each partition.
                 partition = _get_partition_key_from_event_log_record(materialization)
 
-                if isinstance(partition, str) and partition not in materialization_by_partition:
+                if isinstance(partition, str):
+                    if partition in materialization_by_partition:
+                        # Remove partition to ensure materialization_by_partition preserves
+                        # the order of materializations
+                        materialization_by_partition.pop(partition)
+                    # Add partition and materialization to the end of the OrderedDict
                     materialization_by_partition[partition] = materialization
 
         return materialization_by_partition
