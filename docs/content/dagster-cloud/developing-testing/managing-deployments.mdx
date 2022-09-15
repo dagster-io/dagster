@@ -9,7 +9,7 @@ description: Learn to manage and configure your Dagster Cloud deployments.
 
 In Dagster Cloud, there are two types of deployments:
 
-- [**Branch deployments**](/dagster-cloud/developing-testing/branch-deployments), which are temporary deployments built for testing purposes that spin down when a branch is merged
+- [**Branch deployments**](/dagster-cloud/developing-testing/branch-deployments), which are temporary deployments built for testing purposes
 - **Full deployments**, which are persistent, fully-featured deployments intended to perform actions on a recurring basis
 
 This guide will focus on **full deployments**, hereafter referred to simply as deployments.
@@ -20,11 +20,13 @@ This guide will focus on **full deployments**, hereafter referred to simply as d
 
 Deployments are standalone environments, allowing you to operate independent instances of Dagster with separately managed permissions.
 
-When a Dagster Cloud organization is created, a single deployment named `prod` will also be created. To use additional deployments, an [Enterprise plan](https://dagster.io/pricing) is required.
+When a Dagster Cloud organization is created, a single deployment named `prod` will also be created. To create additional deployments, an [Enterprise plan](https://dagster.io/pricing) is required.
 
 Each deployment can have one or multiple [code locations](/dagster-cloud/developing-testing/code-locations).
 
-**Concerned about testing environments?** We recommend using Branch Deployments to test your changes, even if you're able to create additional deployments. Refer to the [Branch Deployment docs](/dagster-cloud/developing-testing/branch-deployments) for more info, or the [Testing against production using Branch Deployments guide](/guides/dagster/branch_deployments) for a real-world example.
+**Concerned about testing environments?** We recommend using Branch Deployments to test your changes, even if you're able to create additional deployments. Branch deployments are available for all Dagster Cloud users, regardless of plan.
+
+Refer to the [Branch Deployment docs](/dagster-cloud/developing-testing/branch-deployments) for more info, or the [Testing against production using Branch Deployments guide](/guides/dagster/branch_deployments) for a real-world example.
 
 ---
 
@@ -39,7 +41,7 @@ width={660}
 height={207}
 />
 
-To manage deployments, click **View all deployments**. **Note**: Only users with [**Organization Admin** permissions](/dagster-cloud/account/managing-users#understanding-user-permissions) will see this option in the drop-down.
+To view all deployments, click **View all deployments**.
 
 ---
 
@@ -60,9 +62,9 @@ To manage deployments, click **View all deployments**. **Note**: Only users with
 To create a deployment:
 
 1. Sign in to your Dagster Cloud account.
-2. Access the **Deployments** page using on eof the following options:
+2. Access the **Deployments** page using one of the following options:
    - Click the **deployment switcher > View all deployments**.
-   - Click **your user icon > Cloud Settings**.
+   - Click **your user icon > Cloud Settings > Deployments**.
 3. Click the **+ New deployment** button.
 4. In the modal that displays, fill in the following:
    - **Name** - Enter a name for the deployment.
@@ -89,7 +91,8 @@ To delete a deployment:
 1. Sign in to your Dagster Cloud account.
 2. Access the **Deployments** page using on eof the following options:
    - Click the **deployment switcher > View all deployments**.
-   - Click **your user icon > Cloud Settings**.
+   - Click the **deployment switcher**, then the **gear icon** next to the deployment.
+   - Click **your user icon > Cloud Settings > Deployments**.
 3. Click the **Delete** button next to the deployment you want to delete.
 4. When prompted, confirm the deletion.
 
@@ -115,7 +118,8 @@ Deployment settings can be configured in the Dagster Cloud interface or using th
     <li>Access the <strong>Deployments</strong> page using one of the following:
      <ul>
       <li>Click the <strong>deployment switcher > View all deployments</strong>.</li>
-      <li>Click <strong>your user icon > Cloud Settings</strong>.</li>
+      <li>Click the <strong>deployment switcher</strong>, then the <strong>gear icon</strong> next to the deployment.</li>
+      <li>Click <strong>your user icon > Cloud Settings > Deployments</strong>.</li>
      </ul>
     </li>
     <li>Click the <strong>Settings</strong> button next to the deployment you want to configure.</li>
