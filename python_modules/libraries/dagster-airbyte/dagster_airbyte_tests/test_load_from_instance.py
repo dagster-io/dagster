@@ -3,7 +3,7 @@ import responses
 from dagster_airbyte import airbyte_resource
 from dagster_airbyte.asset_defs import load_assets_from_airbyte_instance
 
-from dagster import AssetKey, build_init_resource_context, materialize, with_resources
+from dagster import AssetKey, build_init_resource_context, materialize
 
 from .utils import (
     get_instance_connections_json,
@@ -102,12 +102,7 @@ def test_load_from_instance(use_normalization_tables, connection_to_group_fn):
         status=200,
     )
 
-    res = materialize(
-        with_resources(
-            ab_assets,
-            resource_defs={"airbyte": ab_instance},
-        )
-    )
+    res = materialize(ab_assets)
 
     materializations = [
         event.event_specific_data.materialization
