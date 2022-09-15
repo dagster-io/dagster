@@ -574,7 +574,7 @@ class JobDefinition(PipelineDefinition):
         """
         Creates a RunRequest object for a run that processes the given partition.
 
-        Args
+        Args:
             partition_key: The key of the partition to request a run for.
             run_key (Optional[str]): A string key to identify this launched run. For sensors, ensures that
                 only one run is created per run key across all sensor evaluations.  For schedules,
