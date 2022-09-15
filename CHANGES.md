@@ -31,6 +31,7 @@
 
 * [dagster-dbt] Added a new guide focused on the dbt Cloud integration.
 * Fixed a bug that was hiding display of some public methods in the API docs.
+* Added documentation for [managing full deployments in Dagster Cloud](https://docs.dagster.io/dagster-cloud/developing-testing/managing-deployments), including a [reference for deployment configuration options](https://docs.dagster.io/dagster-cloud/developing-testing/deployment-settings-reference).
 
 
 # 1.0.8 (core) / 0.16.8 (libraries)
