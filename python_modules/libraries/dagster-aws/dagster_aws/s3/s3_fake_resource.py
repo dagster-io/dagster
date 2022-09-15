@@ -28,13 +28,20 @@ class S3FakeSession:
         self.mock_extras.head_object(*args, **kwargs)
         return {"ContentLength": len(self.buckets.get(Bucket, {}).get(Key, b""))}
 
-    def list_objects_v2(self, Bucket, Prefix, *args, **kwargs):
-        self.mock_extras.list_objects_v2(*args, **kwargs)
+    def _list_objects(self, Bucket, Prefix):
         key = self.buckets.get(Bucket, {}).get(Prefix)
         if key:
             return {"KeyCount": 1, "Contents": [{"Key": key}], "IsTruncated": False}
         else:
             return {"KeyCount": 0, "Contents": [], "IsTruncated": False}
+
+    def list_objects_v2(self, Bucket, Prefix, *args, **kwargs):
+        self.mock_extras.list_objects_v2(*args, **kwargs)
+        return self._list_objects(Bucket, Prefix)
+
+    def list_objects(self, Bucket, Prefix, *args, **kwargs):
+        self.mock_extras.list_objects(*args, **kwargs)
+        return self._list_objects(Bucket, Prefix)
 
     def put_object(self, Bucket, Key, Body, *args, **kwargs):
         self.mock_extras.put_object(*args, **kwargs)

@@ -110,6 +110,16 @@ extensions = [
 # Full list of options here:
 #   https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 
+
+# Include members (e.g. methods on classes) for all objects rendered with auto* methods by default.
+# Without this, no methods will be rendered unless `:members:` is explicitly set on an individual
+# directive invocation. Note that filtration by publicity (done in the `autodoc_dagster` extension)
+# is performed on the member list controlled by this option-- without `members` set, even a method
+# marked `@public` will _not_ be included in the docs!
+autodoc_default_options = {
+    "members": True
+}
+
 # List of all packages that should be mocked when autodoc is running. Autodoc is going to import
 # dagster packages, which in turn import various third-party packages. The vast majority of those
 # packages are not actually needed to build the docs, but autodoc will nonetheless choke if it can't

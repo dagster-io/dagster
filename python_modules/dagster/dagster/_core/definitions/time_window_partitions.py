@@ -75,9 +75,9 @@ class TimeWindowPartitionsDefinition(
         schedule_type: Optional[ScheduleType] = None,
         timezone: Optional[str] = None,
         end_offset: int = 0,
-        minute_offset: int = 0,
-        hour_offset: int = 0,
-        day_offset: Optional[int] = 0,
+        minute_offset: Optional[int] = None,
+        hour_offset: Optional[int] = None,
+        day_offset: Optional[int] = None,
         cron_schedule: Optional[str] = None,
     ):
         if isinstance(start, datetime):
@@ -97,8 +97,8 @@ class TimeWindowPartitionsDefinition(
 
             cron_schedule = cron_schedule_from_schedule_type_and_offsets(
                 schedule_type=schedule_type,
-                minute_offset=minute_offset,
-                hour_offset=hour_offset,
+                minute_offset=minute_offset or 0,
+                hour_offset=hour_offset or 0,
                 day_offset=day_offset or 0,
             )
 
