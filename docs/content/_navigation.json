@@ -436,6 +436,19 @@
                 "path": "/dagster-cloud/developing-testing/dagster-cloud-cli"
               },
               {
+                "title": "Full deployments",
+                "children": [
+                  {
+                    "title": "Management",
+                    "path": "/dagster-cloud/developing-testing/managing-deployments"
+                  },
+                  {
+                    "title": "Settings",
+                    "path": "/dagster-cloud/developing-testing/deployment-settings-reference"
+                  }
+                ]
+              },
+              {
                 "title": "Code locations",
                 "path": "/dagster-cloud/developing-testing/code-locations"
               },
