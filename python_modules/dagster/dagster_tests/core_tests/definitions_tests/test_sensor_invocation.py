@@ -500,7 +500,7 @@ def test_invalid_partition_mapping():
         ctx = build_multi_asset_sensor_context(
             [july_daily_partitions.key], instance=instance, repository_def=my_repo
         )
-        with pytest.raises(DagsterInvalidInvocationError):
+        with pytest.warns(UserWarning):
             list(asset_sensor(ctx))
 
 

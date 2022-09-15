@@ -578,7 +578,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         to_asset = self._get_asset(to_asset_key)
         from_asset = self._get_asset(from_asset_key)
 
-        if not isinstance(to_asset.partitions_def, PartitionsDefinition):
+        to_partitions_def = to_asset.partitions_def
+
+        if not isinstance(to_partitions_def, PartitionsDefinition):
             raise DagsterInvalidInvocationError(
                 f"Asset key {to_asset_key} is not partitioned. Cannot get partition keys."
             )
@@ -591,12 +593,12 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         downstream_partition_key_range = (
             partition_mapping.get_downstream_partitions_for_partition_range(
                 PartitionKeyRange(partition_key, partition_key),
-                downstream_partitions_def=to_asset.partitions_def,
+                downstream_partitions_def=to_partitions_def,
                 upstream_partitions_def=from_asset.partitions_def,
             )
         )
 
-        partition_keys = to_asset.partitions_def.get_partition_keys()
+        partition_keys = to_partitions_def.get_partition_keys()
         if (
             downstream_partition_key_range.start not in partition_keys
             or downstream_partition_key_range.end not in partition_keys
@@ -605,15 +607,13 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             [{downstream_partition_key_range.start}...{downstream_partition_key_range.end}] which
             is not a valid range in the downstream partitions definition."""
 
-            if not isinstance(to_asset.partitions_def, TimeWindowPartitionsDefinition):
+            if not isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
                 raise DagsterInvalidInvocationError(error_msg)
             else:
                 warnings.warn(error_msg)
 
-        if isinstance(to_asset.partitions_def, TimeWindowPartitionsDefinition):
-            return to_asset.partitions_def.get_partition_keys_in_range(
-                downstream_partition_key_range
-            )
+        if isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
+            return to_partitions_def.get_partition_keys_in_range(downstream_partition_key_range)  # type: ignore[attr-defined]
 
         # Not a time-window partition definition
         downstream_partitions = partition_keys[
