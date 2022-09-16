@@ -1,7 +1,7 @@
 import sys
 import warnings
 from contextlib import closing, contextmanager
-from typing import Mapping
+from typing import Any, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster import resource
@@ -24,8 +24,9 @@ except ImportError:
 
 
 class SnowflakeConnection:
-    """A connection to Snowflake that can execute queries. In general this class should not be
-    directly instantiated, but rather used as a resource in an op or asset via the :py:func:`snowflake_resource`.
+    """A connection to Snowflake that can provide a Snowflake connection and execute queries. In
+    general this class should not be directly instantiated, but rather used as a resource in an op
+    or asset via the :py:func:`snowflake_resource`.
     """
 
     def __init__(self, config: Mapping[str, str], log):  # pylint: disable=too-many-locals
@@ -81,7 +82,7 @@ class SnowflakeConnection:
 
     @public
     @contextmanager
-    def get_connection(self, raw_conn=True):
+    def get_connection(self, raw_conn: bool = True):
         """Gets a connection to Snowflake as a context manager.
 
         If using the execute_query, execute_queries, or load_table_from_local_parquet methods,
@@ -89,7 +90,7 @@ class SnowflakeConnection:
         connection using this context manager.
 
         Args:
-            raw_conn: If using the sqlalchemy connector, set raw_conn to True to create a raw
+            raw_conn (bool): If using the sqlalchemy connector, you can set raw_conn to True to create a raw
                 connection. Defaults to True.
 
         """
@@ -112,14 +113,20 @@ class SnowflakeConnection:
             conn.close()
 
     @public
-    def execute_query(self, sql, parameters=None, fetch_results=False, use_pandas_result=False):
+    def execute_query(
+        self,
+        sql: str,
+        parameters: Optional[Mapping[Any, Any]] = None,
+        fetch_results: bool = False,
+        use_pandas_result: bool = False,
+    ):
         """Execute a query in Snowflake.
 
         Args:
-            sql: the query to be executed
-            parameters: parameters to be passed to the query
-            fetch_results: If True, will return the result of the query. Defaults to False
-            use_pandas_result: If True, will return the result of the query as a Pandas DataFrame.
+            sql (str): the query to be executed
+            parameters (Optional[Mapping]): dictionary of parameters to be passed to the query
+            fetch_results (bool): If True, will return the result of the query. Defaults to False
+            use_pandas_result (bool): If True, will return the result of the query as a Pandas DataFrame.
                 Defaults to False
 
         Returns:
@@ -153,15 +160,19 @@ class SnowflakeConnection:
 
     @public
     def execute_queries(
-        self, sql_queries, parameters=None, fetch_results=False, use_pandas_result=False
+        self,
+        sql_queries: Sequence[str],
+        parameters: Optional[Mapping[Any, Any]] = None,
+        fetch_results: bool = False,
+        use_pandas_result: bool = False,
     ):
         """Execute multiple queries in Snowflake.
 
         Args:
-            sql_queries: List of queries to be executed in series
-            parameters: parameters to be passed to every query
-            fetch_results: If True, will return the results of the queries as a list. Defaults to False
-            use_pandas_result: If True, will return the results of the queries as a list of a Pandas DataFrames.
+            sql_queries (str): List of queries to be executed in series
+            parameters (Optional[Mapping]): dictionary of parameters to be passed to every query
+            fetch_results (bool): If True, will return the results of the queries as a list. Defaults to False
+            use_pandas_result (bool): If True, will return the results of the queries as a list of a Pandas DataFrames.
                 Defaults to False
 
         Returns:
