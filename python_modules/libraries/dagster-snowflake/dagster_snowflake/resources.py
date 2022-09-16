@@ -5,6 +5,7 @@ from typing import Mapping
 
 import dagster._check as check
 from dagster import resource
+from dagster._annotations import public
 
 from .configs import define_snowflake_config
 
@@ -23,6 +24,10 @@ except ImportError:
 
 
 class SnowflakeConnection:
+    """A connection to Snowflake that can execute queries. In general this class should not be
+    directly instantiated, but rather used as a resource in an op or asset via the :py:func:`snowflake_resource`.
+    """
+
     def __init__(self, config: Mapping[str, str], log):  # pylint: disable=too-many-locals
         # Extract parameters from resource config. Note that we can't pass None values to
         # snowflake.connector.connect() because they will override the default values set within the
@@ -74,8 +79,20 @@ class SnowflakeConnection:
         self.autocommit = self.conn_args.get("autocommit", False)
         self.log = log
 
+    @public
     @contextmanager
     def get_connection(self, raw_conn=True):
+        """Gets a connection to Snowflake as a context manager.
+
+        If using the execute_query, execute_queries, or load_table_from_local_parquet methods,
+        you do not need to create a
+        connection using this context manager.
+
+        Args:
+            raw_conn: If using the sqlalchemy connector, set raw_conn to True to create a raw
+                connection. Defaults to True.
+
+        """
         if self.connector == "sqlalchemy":
             from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
             from sqlalchemy import create_engine
@@ -94,7 +111,30 @@ class SnowflakeConnection:
                 conn.commit()
             conn.close()
 
+    @public
     def execute_query(self, sql, parameters=None, fetch_results=False, use_pandas_result=False):
+        """Execute a query in Snowflake.
+
+        Args:
+            sql: the query to be executed
+            parameters: parameters to be passed to the query
+            fetch_results: If True, will return the result of the query. Defaults to False
+            use_pandas_result: If True, will return the result of the query as a Pandas DataFrame.
+                Defaults to False
+
+        Returns:
+            The result of the query if fetch_results or use_pandas_result is True, otherwise returns None
+
+        Examples:
+            .. code-block:: python
+
+                @op(required_resource_keys={"snowflake"})
+                def drop_database(context):
+                    context.resources.snowflake.execute_query(
+                        "DROP DATABASE IF EXISTS MY_DATABASE"
+                    )
+        """
+
         check.str_param(sql, "sql")
         check.opt_dict_param(parameters, "parameters")
         check.bool_param(fetch_results, "fetch_results")
@@ -111,9 +151,34 @@ class SnowflakeConnection:
                 if use_pandas_result:
                     return cursor.fetch_pandas_all()
 
+    @public
     def execute_queries(
         self, sql_queries, parameters=None, fetch_results=False, use_pandas_result=False
     ):
+        """Execute multiple queries in Snowflake.
+
+        Args:
+            sql_queries: List of queries to be executed in series
+            parameters: parameters to be passed to every query
+            fetch_results: If True, will return the results of the queries as a list. Defaults to False
+            use_pandas_result: If True, will return the results of the queries as a list of a Pandas DataFrames.
+                Defaults to False
+
+        Returns:
+            The results of the queries as a list if fetch_results or use_pandas_result is True,
+            otherwise returns None
+
+        Examples:
+            .. code-block:: python
+
+                @op(required_resource_keys={"snowflake"})
+                def drop_database(context):
+                    queries = ["DROP DATABASE IF EXISTS MY_DATABASE", "CREATE DATABASE MY_DATABASE"]
+                    context.resources.snowflake.execute_queries(
+                        sql=queries
+                    )
+
+        """
         check.list_param(sql_queries, "sql_queries", of_type=str)
         check.opt_dict_param(parameters, "parameters")
         check.bool_param(fetch_results, "fetch_results")
@@ -139,7 +204,15 @@ class SnowflakeConnection:
 
         return results if fetch_results else None
 
-    def load_table_from_local_parquet(self, src, table):
+    @public
+    def load_table_from_local_parquet(self, src: str, table: str):
+        """Stores the content of a parquet file to a Snowflake table
+
+        Args:
+            src (str): the name of the file to store in Snowflake
+            table (str): the name of the table to store the data. If the table does not exist, it will
+                be created. Otherwise the contents of the table will be replaced with the data in src
+        """
         check.str_param(src, "src")
         check.str_param(table, "table")
 
