@@ -69,6 +69,23 @@ export interface WorkspaceSchedulesQuery_workspaceOrError_PythonError {
 
 export type WorkspaceSchedulesQuery_workspaceOrError = WorkspaceSchedulesQuery_workspaceOrError_Workspace | WorkspaceSchedulesQuery_workspaceOrError_PythonError;
 
+export interface WorkspaceSchedulesQuery_unloadableInstigationStatesOrError_PythonError {
+  __typename: "PythonError";
+}
+
+export interface WorkspaceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results {
+  __typename: "InstigationState";
+  id: string;
+}
+
+export interface WorkspaceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates {
+  __typename: "InstigationStates";
+  results: WorkspaceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results[];
+}
+
+export type WorkspaceSchedulesQuery_unloadableInstigationStatesOrError = WorkspaceSchedulesQuery_unloadableInstigationStatesOrError_PythonError | WorkspaceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates;
+
 export interface WorkspaceSchedulesQuery {
   workspaceOrError: WorkspaceSchedulesQuery_workspaceOrError;
+  unloadableInstigationStatesOrError: WorkspaceSchedulesQuery_unloadableInstigationStatesOrError;
 }
