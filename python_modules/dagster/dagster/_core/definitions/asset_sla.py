@@ -3,7 +3,7 @@ from croniter import croniter
 
 
 class AssetSLA:
-    def is_passing(self, latest_asset_event):
+    def is_passing(self, data_timestamp: float):
         pass
 
 
@@ -15,14 +15,11 @@ class StalenessSLA(AssetSLA):
     def __init__(self, allowed_staleness_minutes: float):
         self._allowed_staleness = pendulum.duration(minutes=allowed_staleness_minutes)
 
-    def is_passing(self, latest_asset_event) -> bool:
-        if latest_asset_event is None:
+    def is_passing(self, data_timestamp: float) -> bool:
+        if data_timestamp is None:
             return False
 
-        latest_materialization_time = pendulum.from_timestamp(
-            latest_asset_event.event_log_entry.timestamp
-        )
-        return latest_materialization_time > pendulum.now() - self._allowed_staleness
+        return pendulum.from_timestamp(data_timestamp) > pendulum.now() - self._allowed_staleness
 
 
 class CronSLA(AssetSLA):
@@ -34,8 +31,8 @@ class CronSLA(AssetSLA):
         self._cron_schedule = cron_schedule
         self._allowed_staleness = pendulum.duration(minutes=allowed_staleness_minutes)
 
-    def is_passing(self, latest_asset_event) -> bool:
-        if latest_asset_event is None:
+    def is_passing(self, data_timestamp: float) -> bool:
+        if data_timestamp is None:
             return False
 
         now = pendulum.now()
@@ -46,8 +43,4 @@ class CronSLA(AssetSLA):
         while latest_data_time + self._allowed_staleness > now:
             latest_data_time = next(data_times)
 
-        latest_materialization_time = pendulum.from_timestamp(
-            latest_asset_event.event_log_entry.timestamp
-        )
-
-        return latest_materialization_time > latest_data_time
+        return pendulum.from_timestamp(data_timestamp) > latest_data_time

@@ -651,10 +651,17 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
         asset_keys: Optional[Sequence[AssetKey]] = None,
         instance: Optional[DagsterInstance] = None,
     ):
+        from dagster._core.selector.subset_selector import generate_asset_dep_graph
+
         self._repository_def = repository_def
 
         # if no asset_keys specified, default to all
         self._asset_keys = asset_keys or repository_def._assets_defs_by_key.keys()
+
+        self._upstream_assets = generate_asset_dep_graph(
+            self._repository_def._assets_defs_by_key.values(),
+            self._repository_def.source_assets_by_key.values(),
+        )["upstream"]
 
         self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
         for asset_key in self._asset_keys:
@@ -678,29 +685,96 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
             instance=instance,
         )
 
+    def _data_time_for_asset(self, asset_key):
+        from dagster import RunShardedEventsCursor
+        from dagster._core.events import DagsterEventType
+        from dagster._core.selector.subset_selector import generate_asset_dep_graph
+        from dagster._core.storage.event_log.base import EventRecordsFilter
+
+        dp = {}
+
+        def _recursive(key, as_of_id, assets_in_run, run_timestamp):
+            if (key, id) in dp:
+                return dp[(key, id)]
+            if key not in assets_in_run:
+                # this asset was not materialized in the current run, so find the latest materialization
+                # that happened before this run
+                event_records = self.instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                        asset_key=key,
+                        before_timestamp=run_timestamp,
+                    ),
+                    ascending=False,
+                    limit=1,
+                )
+
+                # if no record found, then break
+                latest_asset_event = event_records[0] if event_records else None
+                if not latest_asset_event:
+                    dp[(key, as_of_id)] = None
+                    return None
+
+                # get a timestamp for when the run started
+                run_id = latest_asset_event.event_log_entry.run_id
+                event_records = self.instance.get_records_for_run(
+                    run_id, of_type=DagsterEventType.RUN_START, limit=1
+                )
+                run_record = event_records.records[0] if event_records else None
+                if not run_record:
+                    raise Exception("oops")
+
+                # get a list of all other assets in this run so we don't redo work
+                as_of_id = run_record.storage_id
+                run_timestamp = run_record.event_log_entry.timestamp
+                assets_in_run = {
+                    record.event_log_entry.dagster_event.event_specific_data.materialization.asset_key
+                    for record in self.instance.get_records_for_run(
+                        run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
+                    ).records
+                }
+
+            # recurse over all the parents
+            parents = self._upstream_assets[key.to_user_string()]
+            if not parents:
+                dp[(key, as_of_id)] = run_timestamp
+            else:
+                parent_data_times = [
+                    _recursive(
+                        AssetKey.from_user_string(parent_key),
+                        as_of_id,
+                        assets_in_run,
+                        run_timestamp,
+                    )
+                    for parent_key in parents
+                ]
+                if None in parent_data_times:
+                    dp[(key, as_of_id)] = None
+                else:
+                    dp[(key, as_of_id)] = min(parent_data_times)
+
+            return dp[(key, as_of_id)]
+
+        ret = _recursive(asset_key, as_of_id=None, assets_in_run={}, run_timestamp=None)
+        return ret
+
     @property
     def next_cursor(self) -> Optional[str]:
         return self._next_cursor
 
     @public
     def current_statuses_by_key(self) -> Mapping[AssetKey, int]:
+        import pendulum
+
         from dagster._core.events import DagsterEventType
+        from dagster._core.selector.subset_selector import generate_asset_dep_graph
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
         asset_sla_status = {}
-        for asset_key, assets_def in self._assets_by_key.items():
-            event_records = self.instance.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=asset_key,
-                ),
-                ascending=False,
-                limit=1,
-            )
 
-            latest_asset_event = event_records[0] if event_records else None
-            sla = assets_def.slas_by_key[asset_key]
-            asset_sla_status[asset_key] = sla.is_passing(latest_asset_event)
+        for asset_key, assets_def in self._assets_by_key.items():
+            sla = assets_def.slas_by_key.get(asset_key)
+            asset_sla_status[asset_key] = sla.is_passing(self._data_time_for_asset(asset_key))
 
         self._next_cursor = json.dumps({str(key): value for key, value in asset_sla_status.items()})
         return asset_sla_status

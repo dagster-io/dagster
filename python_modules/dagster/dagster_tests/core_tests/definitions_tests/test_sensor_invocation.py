@@ -8,10 +8,12 @@ from dagster import (
     AssetIn,
     AssetKey,
     AssetOut,
+    AssetSelection,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
     DailyPartitionsDefinition,
+    Output,
     PartitionKeyRange,
     PartitionMapping,
     PartitionsDefinition,
@@ -36,6 +38,7 @@ from dagster import (
     run_status_sensor,
     sensor,
 )
+from dagster._core.definitions.asset_layer import build_asset_selection_job
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import SensorExecutionContext
@@ -668,55 +671,171 @@ def test_multi_asset_sensor_custom_partition_mapping():
         list(asset_sensor(ctx))
 
 
-def test_asset_sla_sensors():
-    @asset(sla=StalenessSLA(allowed_staleness_minutes=60))
-    def asset_a():
+@pytest.mark.parametrize(
+    ["asset_keys", "materialization_effects"],
+    [
+        (
+            "e",
+            [
+                ("e", {"e": False}),
+                ("abd", {"e": False}),
+                ("ac", {"e": False}),
+                ("e", {"e": True}),
+            ],
+        ),
+        (
+            "e",
+            [
+                ("abce", {"e": True}),
+            ],
+        ),
+        (
+            "e",
+            [
+                ("ae", {"e": False}),
+                ("b", {"e": False}),
+                ("c", {"e": False}),
+                ("e", {"e": True}),
+            ],
+        ),
+        (
+            "e",
+            [
+                ("a", {"e": False}),
+                ("c", {"e": False}),
+                ("e", {"e": True}),
+            ],
+        ),
+        (
+            "e",
+            [
+                ("ce", {"e": False}),
+                ("ac", {"e": False}),
+                ("e", {"e": True}),
+            ],
+        ),
+        (
+            "f",
+            [
+                ("bdf", {"f": False}),
+                ("a", {"f": False}),
+                ("bdf", {"f": True}),
+            ],
+        ),
+        (
+            "ef",
+            [
+                ("a", {"f": False, "e": False}),
+                ("bc", {"f": False, "e": False}),
+                ("de", {"f": False, "e": True}),
+                ("f", {"f": True, "e": True}),
+            ],
+        ),
+        (
+            "ef",
+            [
+                ("cdef", {"f": False, "e": False}),
+                ("ab", {"f": False, "e": False}),
+                ("cdef", {"f": True, "e": True}),
+            ],
+        ),
+        (
+            "ef",
+            [
+                ("acdef", {"f": False, "e": True}),
+                ("ab", {"f": False, "e": True}),
+                ("bd", {"f": False, "e": True}),
+                ("f", {"f": True, "e": True}),
+            ],
+        ),
+    ],
+)
+def test_asset_sla_sensors(asset_keys, materialization_effects):
+    """
+    A - B - D - F
+      \   /
+        C - E
+
+    B,C,D share an op
+    """
+
+    @asset
+    def a():
         return 1
 
-    @asset(sla=StalenessSLA(allowed_staleness_minutes=60))
-    def asset_b():
+    @multi_asset(
+        non_argument_deps={AssetKey("a")},
+        outs={
+            "b": AssetOut(is_required=False),
+            "c": AssetOut(is_required=False),
+            "d": AssetOut(is_required=False),
+        },
+        can_subset=True,
+        internal_asset_deps={
+            "b": {AssetKey("a")},
+            "c": {AssetKey("a")},
+            "d": {AssetKey("b"), AssetKey("c")},
+        },
+    )
+    def bcd(context):
+        for output_name in context.selected_output_names:
+            yield Output(output_name, output_name)
+
+    @asset(
+        non_argument_deps={AssetKey("c")},
+        sla=StalenessSLA(allowed_staleness_minutes=60),
+    )
+    def e():
         return 1
 
-    asset_keys = [AssetKey("asset_a"), AssetKey("asset_b")]
+    @asset(
+        non_argument_deps={AssetKey("d")},
+        sla=StalenessSLA(allowed_staleness_minutes=60),
+    )
+    def f():
+        return 1
+
+    asset_keys = [AssetKey(c) for c in asset_keys]
 
     @asset_sla_sensor(asset_keys=asset_keys)
     def my_sla_sensor(context):
-        # unrealistic sensor, yield a run request for each asset that changed its status since last tick
-        for asset_key, current_status in context.changed_statuses_by_key().items():
+        # just for testing, yield a RunRequest for each current status
+        for asset_key, current_status in context.current_statuses_by_key().items():
             yield RunRequest(
                 run_key=None, tags={"status": str(current_status)}, asset_selection=[asset_key]
             )
 
+    all_assets = [a, bcd, e, f]
+
     @repository
     def my_repo():
-        return [asset_a, asset_b, my_sla_sensor]
+        return [all_assets, my_sla_sensor]
 
     with instance_for_test() as instance:
-        freeze_datetime = pendulum.now()
-        # initial state, no materializations, so both assets changed state
-        with pendulum.test(freeze_datetime):
+
+        for to_materialize, expected_results in materialization_effects:
+            # materialize selected assets
+            build_asset_selection_job(
+                "materialize_job",
+                assets=all_assets,
+                source_assets=[],
+                asset_selection=AssetSelection.keys(*(AssetKey(c) for c in to_materialize)).resolve(
+                    all_assets
+                ),
+            ).execute_in_process(instance=instance)
+
             ctx = build_asset_sla_sensor_context(asset_keys, my_repo, instance=instance)
             ret = list(my_sla_sensor(ctx))
-            assert len(ret) == 2
-            assert (
-                RunRequest(
-                    run_key=None, tags={"status": "False"}, asset_selection=[AssetKey("asset_a")]
+            assert len(ret) == len(expected_results)
+            for key, result in expected_results.items():
+                assert (
+                    RunRequest(
+                        run_key=None, tags={"status": str(result)}, asset_selection=[AssetKey(key)]
+                    )
+                    in ret
                 )
-                in ret
-            )
-            assert (
-                RunRequest(
-                    run_key=None, tags={"status": "False"}, asset_selection=[AssetKey("asset_b")]
-                )
-                in ret
-            )
 
-        # materialize asset_a
-        materialize([asset_a], instance=instance)
-
-        # test again, now asset_a should be passing
-        freeze_datetime = freeze_datetime.add(minutes=15)
-        with pendulum.test(freeze_datetime):
+        with pendulum.test(pendulum.now().add(hours=1)):
             ctx = build_asset_sla_sensor_context(
                 asset_keys,
                 my_repo,
@@ -724,28 +843,8 @@ def test_asset_sla_sensors():
                 instance=instance,
             )
             ret = list(my_sla_sensor(ctx))
-            assert len(ret) == 1
-            assert (
-                RunRequest(
-                    run_key=None, tags={"status": "True"}, asset_selection=[AssetKey("asset_a")]
+            assert len(ret) == len(asset_keys)
+            for ak in asset_keys:
+                assert (
+                    RunRequest(run_key=None, tags={"status": "False"}, asset_selection=[ak]) in ret
                 )
-                in ret
-            )
-
-        # test one hour later, now asset_a no longer passing
-        freeze_datetime = freeze_datetime.add(hours=1)
-        with pendulum.test(freeze_datetime):
-            ctx = build_asset_sla_sensor_context(
-                asset_keys,
-                my_repo,
-                cursor=ctx.cursor,
-                instance=instance,
-            )
-            ret = list(my_sla_sensor(ctx))
-            assert len(ret) == 1
-            assert (
-                RunRequest(
-                    run_key=None, tags={"status": "False"}, asset_selection=[AssetKey("asset_a")]
-                )
-                in ret
-            )
