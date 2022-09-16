@@ -18,8 +18,8 @@ export const WorkspaceTabs = <TData extends Record<string, any>>(props: Props<TD
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
         <TabLink id="jobs" title="Jobs" to="/workspace/jobs" />
-        {/* <TabLink id="schedules" title="Schedules" to="/workspace/schedules" />
-        <TabLink id="sensors" title="Sensors" to="/workspace/sensors" />
+        <TabLink id="schedules" title="Schedules" to="/workspace/schedules" />
+        {/* <TabLink id="sensors" title="Sensors" to="/workspace/sensors" />
         <TabLink id="graphs" title="Graphs" to="/workspace/graphs" />
         <TabLink id="ops" title="Ops" to="/workspace/ops" /> */}
       </Tabs>

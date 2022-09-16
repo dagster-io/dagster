@@ -4,60 +4,42 @@ import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useTrackPageView} from '../app/analytics';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {HeaderCell} from '../ui/VirtualizedTable';
 
-import {VirtualizedJobTable} from './VirtualizedJobTable';
+import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceTabs} from './WorkspaceTabs';
 import {buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsString} from './repoAddressAsString';
 import {RepoAddress} from './types';
-import {WorkspaceJobsQuery} from './types/WorkspaceJobsQuery';
+import {WorkspaceSchedulesQuery} from './types/WorkspaceSchedulesQuery';
 
-export const WorkspaceJobsRoot = () => {
+export const WorkspaceSchedulesRoot = () => {
   useTrackPageView();
 
   const [searchValue, setSearchValue] = React.useState('');
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {allRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery<WorkspaceJobsQuery>(WORKSPACE_JOBS_QUERY, {
+  const queryResultOverview = useQuery<WorkspaceSchedulesQuery>(WORKSPACE_SCHEDULES_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
   });
   const {data, loading} = queryResultOverview;
 
-  // Batch up the data and bucket by repo.
   const repoBuckets = useRepoBuckets(data);
-
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const filteredRepoBuckets = React.useMemo(() => {
-    const visibleRepoKeys = new Set(
-      visibleRepos.map((option) =>
-        repoAddressAsString(
-          buildRepoAddress(option.repository.name, option.repositoryLocation.name),
-        ),
-      ),
-    );
-    return repoBuckets.filter(({repoAddress}) =>
-      visibleRepoKeys.has(repoAddressAsString(repoAddress)),
-    );
-  }, [repoBuckets, visibleRepos]);
-
   const filteredBySearch = React.useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
-    return filteredRepoBuckets
-      .map(({repoAddress, jobs}) => ({
+    return repoBuckets
+      .map(({repoAddress, schedules}) => ({
         repoAddress,
-        jobs: jobs.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower)),
+        schedules: schedules.filter((name) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
-      .filter(({jobs}) => jobs.length > 0);
-  }, [filteredRepoBuckets, sanitizedSearch]);
+      .filter(({schedules}) => schedules.length > 0);
+  }, [repoBuckets, sanitizedSearch]);
 
   const content = () => {
     if (loading && !data) {
@@ -65,7 +47,7 @@ export const WorkspaceJobsRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading jobs…</div>
+            <div style={{color: Colors.Gray600}}>Loading schedules…</div>
           </Box>
         </Box>
       );
@@ -77,10 +59,10 @@ export const WorkspaceJobsRoot = () => {
           <Box padding={{top: 20}}>
             <NonIdealState
               icon="search"
-              title="No matching jobs"
+              title="No matching schedules"
               description={
                 <div>
-                  No jobs matching <strong>{searchValue}</strong> were found in this workspace
+                  No schedules matching <strong>{searchValue}</strong> were found in this workspace
                 </div>
               }
             />
@@ -92,8 +74,8 @@ export const WorkspaceJobsRoot = () => {
         <Box padding={{top: 20}}>
           <NonIdealState
             icon="search"
-            title="No jobs"
-            description="No jobs were found in this workspace"
+            title="No schedules"
+            description="No schedules were found in this workspace"
           />
         </Box>
       );
@@ -105,20 +87,21 @@ export const WorkspaceJobsRoot = () => {
           border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
           style={{
             display: 'grid',
-            gridTemplateColumns: '34% 30% 20% 8% 8%',
+            gridTemplateColumns: '76px 28% 30% 10% 20% 10%',
             height: '32px',
             fontSize: '12px',
             color: Colors.Gray600,
           }}
         >
+          <HeaderCell />
           <HeaderCell>Job name</HeaderCell>
-          <HeaderCell>Schedules/sensors</HeaderCell>
-          <HeaderCell>Latest run</HeaderCell>
-          <HeaderCell>Run history</HeaderCell>
+          <HeaderCell>Schedule</HeaderCell>
+          <HeaderCell>Last tick</HeaderCell>
+          <HeaderCell>Last run</HeaderCell>
           <HeaderCell>Actions</HeaderCell>
         </Box>
         <div style={{overflow: 'hidden'}}>
-          <VirtualizedJobTable repos={filteredBySearch} />
+          <VirtualizedScheduleTable repos={filteredBySearch} />
         </div>
       </>
     );
@@ -126,17 +109,17 @@ export const WorkspaceJobsRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>Workspace</Heading>} tabs={<WorkspaceTabs tab="jobs" />} />
+      <PageHeader title={<Heading>Workspace</Heading>} tabs={<WorkspaceTabs tab="schedules" />} />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
       >
-        {repoCount > 1 ? <RepoFilterButton /> : null}
+        {repoCount > 0 ? <RepoFilterButton /> : null}
         <TextInput
           icon="search"
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Filter by job name…"
+          placeholder="Filter by schedule name…"
           style={{width: '340px'}}
         />
       </Box>
@@ -153,13 +136,10 @@ export const WorkspaceJobsRoot = () => {
 
 type RepoBucket = {
   repoAddress: RepoAddress;
-  jobs: {
-    isJob: boolean;
-    name: string;
-  }[];
+  schedules: string[];
 };
 
-const useRepoBuckets = (data?: WorkspaceJobsQuery): RepoBucket[] => {
+const useRepoBuckets = (data?: WorkspaceSchedulesQuery): RepoBucket[] => {
   return React.useMemo(() => {
     if (data?.workspaceOrError.__typename !== 'Workspace') {
       return [];
@@ -175,21 +155,14 @@ const useRepoBuckets = (data?: WorkspaceJobsQuery): RepoBucket[] => {
       }
 
       for (const repo of entry.repositories) {
-        const {name, pipelines} = repo;
+        const {name, schedules} = repo;
         const repoAddress = buildRepoAddress(name, entry.name);
-        const jobs = pipelines
-          .filter(({name}) => !isHiddenAssetGroupJob(name))
-          .map((pipeline) => {
-            return {
-              isJob: pipeline.isJob,
-              name: pipeline.name,
-            };
-          });
+        const scheduleNames = schedules.map(({name}) => name);
 
-        if (jobs.length > 0) {
+        if (scheduleNames.length > 0) {
           buckets.push({
             repoAddress,
-            jobs,
+            schedules: scheduleNames,
           });
         }
       }
@@ -199,8 +172,8 @@ const useRepoBuckets = (data?: WorkspaceJobsQuery): RepoBucket[] => {
   }, [data]);
 };
 
-export const WORKSPACE_JOBS_QUERY = gql`
-  query WorkspaceJobsQuery {
+const WORKSPACE_SCHEDULES_QUERY = gql`
+  query WorkspaceSchedulesQuery {
     workspaceOrError {
       ... on Workspace {
         locationEntries {
@@ -212,10 +185,10 @@ export const WORKSPACE_JOBS_QUERY = gql`
               repositories {
                 id
                 name
-                pipelines {
+                schedules {
                   id
                   name
-                  isJob
+                  description
                 }
               }
             }
@@ -228,40 +201,4 @@ export const WORKSPACE_JOBS_QUERY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const RECENT_RUNS_PER_JOB_QUERY = gql`
-  query RecentRunsPerJobQuery {
-    workspaceOrError {
-      ... on Workspace {
-        locationEntries {
-          id
-          locationOrLoadError {
-            ... on RepositoryLocation {
-              id
-              name
-              repositories {
-                id
-                name
-                pipelines {
-                  id
-                  name
-                  isJob
-                  runs(limit: 5) {
-                    id
-                    ...RunTimeFragment
-                  }
-                }
-              }
-            }
-            ...PythonErrorFragment
-          }
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
-  ${RUN_TIME_FRAGMENT}
 `;
