@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Colors, Tag} from '@dagster-io/ui';
+import {Box, Caption, Colors, Tag, Tooltip} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,14 +8,15 @@ import styled from 'styled-components/macro';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
-import {RepoSectionHeader} from '../runs/RepoSectionHeader';
 import {RunStatusPezList} from '../runs/RunStatusPez';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {Container, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 
+import {LoadingOrNone, RepoRow, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {buildPipelineSelector} from './WorkspaceContext';
 import {repoAddressAsString} from './repoAddressAsString';
 import {RepoAddress} from './types';
@@ -58,6 +59,8 @@ export const VirtualizedJobTable: React.FC<Props> = ({repos}) => {
     return flat;
   }, [repos, expandedKeys]);
 
+  const duplicateRepoNames = findDuplicateRepoNames(repos.map(({repoAddress}) => repoAddress.name));
+
   const rowVirtualizer = useVirtualizer({
     count: flattened.length,
     getScrollElement: () => parentRef.current,
@@ -80,11 +83,19 @@ export const VirtualizedJobTable: React.FC<Props> = ({repos}) => {
           return type === 'header' ? (
             <RepoRow
               repoAddress={row.repoAddress}
-              jobCount={row.jobCount}
               key={key}
               height={size}
               start={start}
               onToggle={onToggle}
+              showLocation={duplicateRepoNames.has(row.repoAddress.name)}
+              rightElement={
+                <Tooltip
+                  content={row.jobCount === 1 ? '1 job' : `${row.jobCount} jobs`}
+                  placement="top"
+                >
+                  <Tag intent="primary">{row.jobCount}</Tag>
+                </Tooltip>
+              }
             />
           ) : (
             <JobRow
@@ -102,29 +113,6 @@ export const VirtualizedJobTable: React.FC<Props> = ({repos}) => {
   );
 };
 
-const RepoRow: React.FC<{
-  repoAddress: RepoAddress;
-  jobCount: number;
-  height: number;
-  start: number;
-  onToggle: (repoAddress: RepoAddress) => void;
-}> = ({repoAddress, jobCount, height, start, onToggle}) => {
-  return (
-    <Row $height={height} $start={start}>
-      <RepoSectionHeader
-        repoName={repoAddress.name}
-        repoLocation={repoAddress.location}
-        expanded
-        onClick={() => onToggle(repoAddress)}
-        showLocation={false}
-        rightElement={<Tag intent="primary">{jobCount}</Tag>}
-      />
-    </Row>
-  );
-};
-
-const JOB_QUERY_DELAY = 300;
-
 interface JobRowProps {
   name: string;
   isJob: boolean;
@@ -136,7 +124,7 @@ interface JobRowProps {
 const JobRow = (props: JobRowProps) => {
   const {name, isJob, repoAddress, start, height} = props;
 
-  const [queryJob, {data, loading}] = useLazyQuery<SingleJobQuery, SingleJobQueryVariables>(
+  const [queryJob, queryResult] = useLazyQuery<SingleJobQuery, SingleJobQueryVariables>(
     SINGLE_JOB_QUERY,
     {
       fetchPolicy: 'cache-and-network',
@@ -146,13 +134,8 @@ const JobRow = (props: JobRowProps) => {
     },
   );
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      queryJob();
-    }, JOB_QUERY_DELAY);
-
-    return () => clearTimeout(timer);
-  }, [queryJob, name]);
+  useDelayedRowQuery(queryJob);
+  const {data} = queryResult;
 
   const {schedules, sensors} = React.useMemo(() => {
     if (data?.pipelineOrError.__typename === 'Pipeline') {
@@ -209,21 +192,21 @@ const JobRow = (props: JobRowProps) => {
               {/* {schedules.length ? <NextTick schedules={schedules} /> : null} */}
             </Box>
           ) : (
-            <div style={{color: Colors.Gray500}}>{loading && !data ? 'Loading' : 'None'}</div>
+            <LoadingOrNone queryResult={queryResult} />
           )}
         </RowCell>
         <RowCell>
           {latestRuns.length ? (
             <LastRunSummary run={latestRuns[0]} showButton={false} showHover name={name} />
           ) : (
-            <div style={{color: Colors.Gray500}}>{loading && !data ? 'Loading' : 'None'}</div>
+            <LoadingOrNone queryResult={queryResult} />
           )}
         </RowCell>
         <RowCell>
           {latestRuns.length ? (
             <RunStatusPezList jobName={name} runs={[...latestRuns].reverse()} fade />
           ) : (
-            <div style={{color: Colors.Gray500}}>{loading && !data ? 'Loading' : 'None'}</div>
+            <LoadingOrNone queryResult={queryResult} />
           )}
         </RowCell>
         <RowCell>

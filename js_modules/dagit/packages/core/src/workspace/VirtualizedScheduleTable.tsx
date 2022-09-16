@@ -8,7 +8,6 @@ import styled from 'styled-components/macro';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {RepoSectionHeader} from '../runs/RepoSectionHeader';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {errorDisplay} from '../schedules/SchedulesTable';
@@ -17,8 +16,10 @@ import {humanCronString} from '../schedules/humanCronString';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {Container, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 
+import {LoadingOrNone, RepoRow, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext';
 import {repoAddressAsString} from './repoAddressAsString';
 import {RepoAddress} from './types';
@@ -58,6 +59,8 @@ export const VirtualizedScheduleTable: React.FC<Props> = ({repos}) => {
     return flat;
   }, [repos, expandedKeys]);
 
+  const duplicateRepoNames = findDuplicateRepoNames(repos.map(({repoAddress}) => repoAddress.name));
+
   const rowVirtualizer = useVirtualizer({
     count: flattened.length,
     getScrollElement: () => parentRef.current,
@@ -80,11 +83,21 @@ export const VirtualizedScheduleTable: React.FC<Props> = ({repos}) => {
           return type === 'header' ? (
             <RepoRow
               repoAddress={row.repoAddress}
-              jobCount={row.scheduleCount}
               key={key}
               height={size}
               start={start}
               onToggle={onToggle}
+              showLocation={duplicateRepoNames.has(row.repoAddress.name)}
+              rightElement={
+                <Tooltip
+                  content={
+                    row.scheduleCount === 1 ? '1 schedule' : `${row.scheduleCount} schedules`
+                  }
+                  placement="top"
+                >
+                  <Tag intent="primary">{row.scheduleCount}</Tag>
+                </Tooltip>
+              }
             />
           ) : (
             <ScheduleRow
@@ -101,29 +114,6 @@ export const VirtualizedScheduleTable: React.FC<Props> = ({repos}) => {
   );
 };
 
-const RepoRow: React.FC<{
-  repoAddress: RepoAddress;
-  jobCount: number;
-  height: number;
-  start: number;
-  onToggle: (repoAddress: RepoAddress) => void;
-}> = ({repoAddress, jobCount, height, start, onToggle}) => {
-  return (
-    <Row $height={height} $start={start}>
-      <RepoSectionHeader
-        repoName={repoAddress.name}
-        repoLocation={repoAddress.location}
-        expanded
-        onClick={() => onToggle(repoAddress)}
-        showLocation={false}
-        rightElement={<Tag intent="primary">{jobCount}</Tag>}
-      />
-    </Row>
-  );
-};
-
-const JOB_QUERY_DELAY = 300;
-
 interface ScheduleRowProps {
   name: string;
   repoAddress: RepoAddress;
@@ -136,7 +126,7 @@ const ScheduleRow = (props: ScheduleRowProps) => {
 
   const repo = useRepository(repoAddress);
 
-  const [queryJob, {data, loading}] = useLazyQuery<
+  const [querySchedule, queryResult] = useLazyQuery<
     SingleScheduleQuery,
     SingleScheduleQueryVariables
   >(SINGLE_SCHEDULE_QUERY, {
@@ -150,13 +140,8 @@ const ScheduleRow = (props: ScheduleRowProps) => {
     },
   });
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      queryJob();
-    }, JOB_QUERY_DELAY);
-
-    return () => clearTimeout(timer);
-  }, [queryJob, name]);
+  useDelayedRowQuery(querySchedule);
+  const {data} = queryResult;
 
   const scheduleData = React.useMemo(() => {
     if (data?.scheduleOrError.__typename !== 'Schedule') {
@@ -227,7 +212,7 @@ const ScheduleRow = (props: ScheduleRowProps) => {
               </Caption>
             </Box>
           ) : (
-            <div style={{color: Colors.Gray500}}>{loading && !data ? 'Loading' : 'None'}</div>
+            <LoadingOrNone queryResult={queryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -239,7 +224,7 @@ const ScheduleRow = (props: ScheduleRowProps) => {
               />
             </div>
           ) : (
-            <div style={{color: Colors.Gray500}}>{loading && !data ? 'Loading' : 'None'}</div>
+            <LoadingOrNone queryResult={queryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -251,7 +236,7 @@ const ScheduleRow = (props: ScheduleRowProps) => {
               showHover
             />
           ) : (
-            <div style={{color: Colors.Gray500}}>{loading && !data ? 'Loading' : 'None'}</div>
+            <LoadingOrNone queryResult={queryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -284,7 +269,7 @@ const ScheduleRow = (props: ScheduleRowProps) => {
               <Button icon={<Icon name="expand_more" />} />
             </Popover>
           ) : (
-            <div style={{color: Colors.Gray500}}>{loading && !data ? 'Loading' : 'None'}</div>
+            <LoadingOrNone queryResult={queryResult} />
           )}
         </RowCell>
       </RowGrid>

@@ -7,21 +7,21 @@ import {useTrackPageView} from '../app/analytics';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {HeaderCell} from '../ui/VirtualizedTable';
 
-import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
+import {VirtualizedSensorTable} from './VirtualizedSensorTable';
 import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceTabs} from './WorkspaceTabs';
 import {buildRepoAddress} from './buildRepoAddress';
 import {RepoAddress} from './types';
-import {WorkspaceSchedulesQuery} from './types/WorkspaceSchedulesQuery';
+import {WorkspaceSensorsQuery} from './types/WorkspaceSensorsQuery';
 
-export const WorkspaceSchedulesRoot = () => {
+export const WorkspaceSensorsRoot = () => {
   useTrackPageView();
 
   const [searchValue, setSearchValue] = React.useState('');
   const {allRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery<WorkspaceSchedulesQuery>(WORKSPACE_SCHEDULES_QUERY, {
+  const queryResultOverview = useQuery<WorkspaceSensorsQuery>(WORKSPACE_SENSORS_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
   });
@@ -34,12 +34,14 @@ export const WorkspaceSchedulesRoot = () => {
   const filteredBySearch = React.useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return repoBuckets
-      .map(({repoAddress, schedules}) => ({
+      .map(({repoAddress, sensors}) => ({
         repoAddress,
-        schedules: schedules.filter((name) => name.toLocaleLowerCase().includes(searchToLower)),
+        sensors: sensors.filter((name) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
-      .filter(({schedules}) => schedules.length > 0);
+      .filter(({sensors}) => sensors.length > 0);
   }, [repoBuckets, sanitizedSearch]);
+
+  console.log(filteredBySearch);
 
   const content = () => {
     if (loading && !data) {
@@ -47,7 +49,7 @@ export const WorkspaceSchedulesRoot = () => {
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading schedules…</div>
+            <div style={{color: Colors.Gray600}}>Loading sensors…</div>
           </Box>
         </Box>
       );
@@ -59,10 +61,10 @@ export const WorkspaceSchedulesRoot = () => {
           <Box padding={{top: 20}}>
             <NonIdealState
               icon="search"
-              title="No matching schedules"
+              title="No matching sensors"
               description={
                 <div>
-                  No schedules matching <strong>{searchValue}</strong> were found in this workspace
+                  No sensors matching <strong>{searchValue}</strong> were found in this workspace
                 </div>
               }
             />
@@ -74,8 +76,8 @@ export const WorkspaceSchedulesRoot = () => {
         <Box padding={{top: 20}}>
           <NonIdealState
             icon="search"
-            title="No schedules"
-            description="No schedules were found in this workspace"
+            title="No sensors"
+            description="No sensors were found in this workspace"
           />
         </Box>
       );
@@ -87,21 +89,20 @@ export const WorkspaceSchedulesRoot = () => {
           border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
           style={{
             display: 'grid',
-            gridTemplateColumns: '76px 28% 30% 10% 20% 10%',
+            gridTemplateColumns: '76px 38% 30% 10% 20%',
             height: '32px',
             fontSize: '12px',
             color: Colors.Gray600,
           }}
         >
           <HeaderCell />
-          <HeaderCell>Schedule name</HeaderCell>
-          <HeaderCell>Schedule</HeaderCell>
+          <HeaderCell>Sensor name</HeaderCell>
+          <HeaderCell>Frequency</HeaderCell>
           <HeaderCell>Last tick</HeaderCell>
           <HeaderCell>Last run</HeaderCell>
-          <HeaderCell>Actions</HeaderCell>
         </Box>
         <div style={{overflow: 'hidden'}}>
-          <VirtualizedScheduleTable repos={filteredBySearch} />
+          <VirtualizedSensorTable repos={filteredBySearch} />
         </div>
       </>
     );
@@ -109,7 +110,7 @@ export const WorkspaceSchedulesRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>Workspace</Heading>} tabs={<WorkspaceTabs tab="schedules" />} />
+      <PageHeader title={<Heading>Workspace</Heading>} tabs={<WorkspaceTabs tab="sensors" />} />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
@@ -119,7 +120,7 @@ export const WorkspaceSchedulesRoot = () => {
           icon="search"
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Filter by schedule name…"
+          placeholder="Filter by sensor name…"
           style={{width: '340px'}}
         />
       </Box>
@@ -136,10 +137,10 @@ export const WorkspaceSchedulesRoot = () => {
 
 type RepoBucket = {
   repoAddress: RepoAddress;
-  schedules: string[];
+  sensors: string[];
 };
 
-const useRepoBuckets = (data?: WorkspaceSchedulesQuery): RepoBucket[] => {
+const useRepoBuckets = (data?: WorkspaceSensorsQuery): RepoBucket[] => {
   return React.useMemo(() => {
     if (data?.workspaceOrError.__typename !== 'Workspace') {
       return [];
@@ -155,14 +156,14 @@ const useRepoBuckets = (data?: WorkspaceSchedulesQuery): RepoBucket[] => {
       }
 
       for (const repo of entry.repositories) {
-        const {name, schedules} = repo;
+        const {name, sensors} = repo;
         const repoAddress = buildRepoAddress(name, entry.name);
-        const scheduleNames = schedules.map(({name}) => name);
+        const sensorNames = sensors.map(({name}) => name);
 
-        if (scheduleNames.length > 0) {
+        if (sensorNames.length > 0) {
           buckets.push({
             repoAddress,
-            schedules: scheduleNames,
+            sensors: sensorNames,
           });
         }
       }
@@ -172,8 +173,8 @@ const useRepoBuckets = (data?: WorkspaceSchedulesQuery): RepoBucket[] => {
   }, [data]);
 };
 
-const WORKSPACE_SCHEDULES_QUERY = gql`
-  query WorkspaceSchedulesQuery {
+const WORKSPACE_SENSORS_QUERY = gql`
+  query WorkspaceSensorsQuery {
     workspaceOrError {
       ... on Workspace {
         locationEntries {
@@ -185,7 +186,7 @@ const WORKSPACE_SCHEDULES_QUERY = gql`
               repositories {
                 id
                 name
-                schedules {
+                sensors {
                   id
                   name
                   description
