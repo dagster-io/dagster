@@ -50,7 +50,9 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
+                run_config={
+                    "ops": {"process_file": {"config": {"filename": filename}}}
+                },
             )
 
 
@@ -170,7 +172,9 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
+                run_config={
+                    "ops": {"process_file": {"config": {"filename": filename}}}
+                },
             )
             has_files = True
     if not has_files:
@@ -233,7 +237,9 @@ def asset_a_and_b_sensor(context):
 )
 def every_fifth_asset_c_sensor(context):
     # this sensor will return a run request every fifth materialization of asset_c
-    asset_events = context.materialization_records_for_key(asset_key=AssetKey("asset_c"), limit=5)
+    asset_events = context.materialization_records_for_key(
+        asset_key=AssetKey("asset_c"), limit=5
+    )
     if len(asset_events) == 5:
         context.advance_cursor({AssetKey("asset_c"): asset_events[-1]})
         return RunRequest(run_key=f"{context.cursor}")
@@ -263,7 +269,9 @@ downstream_daily_job = define_asset_job(
 )
 
 
-@multi_asset_sensor(asset_keys=[AssetKey("upstream_daily_asset")], job=downstream_daily_job)
+@multi_asset_sensor(
+    asset_keys=[AssetKey("upstream_daily_asset")], job=downstream_daily_job
+)
 def trigger_daily_asset_from_daily_asset(context):
     # Get all partitioned materializations after the cursor
     materializations_by_partition = context.latest_materialization_records_by_partition(
@@ -327,9 +335,13 @@ def trigger_weekly_asset_from_daily_asset(context):
             if context.all_partitions_materialized(
                 AssetKey("upstream_daily_asset"), daily_partitions_in_week
             ):
-                yield weekly_asset_job.run_request_for_partition(weekly_partitions[0], run_key=None)
+                yield weekly_asset_job.run_request_for_partition(
+                    weekly_partitions[0], run_key=None
+                )
                 # Advance the cursor so we only check event log records past the cursor
-                context.advance_cursor({AssetKey("upstream_daily_asset"): materialization})
+                context.advance_cursor(
+                    {AssetKey("upstream_daily_asset"): materialization}
+                )
 
 
 # end_daily_asset_to_weekly_asset
@@ -344,10 +356,13 @@ def trigger_weekly_asset_from_daily_asset(context):
 def trigger_daily_asset_if_all_upstream_partitions_materialized(context):
     def evaluate_latest_partitions(asset_key):
         # For each asset, get the latest materialization record for each partition.
-        other_asset_keys = [other_key for other_key in context.asset_keys if other_key != asset_key]
-        for partition, materialization in context.latest_materialization_records_by_partition(
-            asset_key
-        ).items():
+        other_asset_keys = [
+            other_key for other_key in context.asset_keys if other_key != asset_key
+        ]
+        for (
+            partition,
+            materialization,
+        ) in context.latest_materialization_records_by_partition(asset_key).items():
             # Check that the partition is materialized in the other asset. If so,
             # yield a run request for the downstream partition.
             if all(
@@ -356,7 +371,9 @@ def trigger_daily_asset_if_all_upstream_partitions_materialized(context):
                     for other_key in other_asset_keys
                 ]
             ):
-                yield downstream_daily_job.run_request_for_partition(partition, run_key=None)
+                yield downstream_daily_job.run_request_for_partition(
+                    partition, run_key=None
+                )
             context.advance_cursor({asset_key: materialization})
 
     for asset_key in context.asset_keys:
@@ -434,7 +451,9 @@ def send_slack_alert():
 
 @run_status_sensor(
     monitored_jobs=[
-        RepositorySelector(location_name="repository.location", repository_name="team_a_repository")
+        RepositorySelector(
+            location_name="repository.location", repository_name="team_a_repository"
+        )
     ],
     run_status=DagsterRunStatus.SUCCESS,
 )
