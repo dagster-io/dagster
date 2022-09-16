@@ -15,6 +15,7 @@ from dagster import (
     run_failure_sensor,
     DailyPartitionsDefinition,
     AssetSelection,
+    WeeklyPartitionsDefinition,
 )
 
 
@@ -285,6 +286,20 @@ def trigger_daily_asset_from_daily_asset(context):
 
 # end_daily_asset_to_daily_asset
 
+weekly_partitions_def = WeeklyPartitionsDefinition(start_date="2022-08-01")
+
+
+@asset(partitions_def=weekly_partitions_def)
+def downstream_weekly_asset():
+    return 1
+
+
+weekly_asset_job = define_asset_job(
+    "weekly_asset_job",
+    AssetSelection.keys("downstream_weekly_asset"),
+    partitions_def=weekly_partitions_def,
+)
+
 # start_daily_asset_to_weekly_asset
 
 
@@ -318,6 +333,37 @@ def trigger_weekly_asset_from_daily_asset(context):
 
 
 # end_daily_asset_to_weekly_asset
+
+# start_daily_partitioned_asset_with_two_upstreams
+
+
+@multi_asset_sensor(
+    asset_keys=[AssetKey("upstream_daily_1"), AssetKey("upstream_daily_2")],
+    job=downstream_daily_job,
+)
+def trigger_daily_asset_if_all_upstream_partitions_materialized(context):
+    def evaluate_latest_partitions(asset_key):
+        # For each asset, get the latest materialization record for each partition.
+        other_asset_keys = [other_key for other_key in context.asset_keys if other_key != asset_key]
+        for partition, materialization in context.latest_materialization_records_by_partition(
+            asset_key
+        ).items():
+            # Check that the partition is materialized in the other asset. If so,
+            # yield a run request for the downstream partition.
+            if all(
+                [
+                    context.all_partitions_materialized(other_key, [partition])
+                    for other_key in other_asset_keys
+                ]
+            ):
+                yield downstream_daily_job.run_request_for_partition(partition, run_key=None)
+            context.advance_cursor({asset_key: materialization})
+
+    for asset_key in context.asset_keys:
+        yield from evaluate_latest_partitions(asset_key)
+
+
+# end_daily_partitioned_asset_with_two_upstreams
 
 # start_s3_sensors_marker
 from dagster_aws.s3.sensor import get_s3_keys
