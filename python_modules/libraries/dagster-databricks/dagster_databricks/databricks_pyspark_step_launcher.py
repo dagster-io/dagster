@@ -107,7 +107,13 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
             default_value=5.0,
             description="How frequently Dagster will poll Databricks to determine the state of the job.",
         ),
-        "verbose_logs": Field(bool, default_value=True),
+        "verbose_logs": Field(
+            bool,
+            default_value=True,
+            description="Determines whether to display debug logs emitted while job is being polled. "
+            "It can be helpful for Dagit performance to set to False when running long-running or fan-out "
+            "Databricks jobs, to avoid forcing the UI to fetch large amounts of debug logs.",
+        ),
     }
 )
 def databricks_pyspark_step_launcher(context):
