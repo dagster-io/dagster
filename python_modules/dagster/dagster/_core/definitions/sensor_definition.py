@@ -25,6 +25,7 @@ from typing_extensions import TypeGuard
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
@@ -222,14 +223,16 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         cursor: Optional[str],
         repository_name: Optional[str],
         repository_def: "RepositoryDefinition",
-        asset_keys: Sequence[AssetKey],
+        asset_selection: AssetSelection,
         instance: Optional[DagsterInstance] = None,
     ):
         self._repository_def = repository_def
-        self._asset_keys = asset_keys
+        self._asset_keys = list(
+            asset_selection.resolve(list(set(self._repository_def._assets_defs_by_key.values())))
+        )
 
         self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
-        for asset_key in asset_keys:
+        for asset_key in self._asset_keys:
             assets_def = (
                 self._repository_def._assets_defs_by_key.get(  # pylint:disable=protected-access
                     asset_key
@@ -1073,8 +1076,9 @@ def build_sensor_context(
 
 @experimental
 def build_multi_asset_sensor_context(
-    asset_keys: Sequence[AssetKey],
     repository_def: "RepositoryDefinition",
+    asset_keys: Optional[Sequence[AssetKey]] = None,
+    asset_selection: Optional[AssetSelection] = None,
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
@@ -1086,6 +1090,7 @@ def build_multi_asset_sensor_context(
     error.
 
     Args:
+    # TODO update docstring
         asset_keys (Sequence[AssetKey]): The list of asset keys monitored by the sensor
         repository_def (RepositoryDefinition): The repository definition that the sensor belongs to.
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
@@ -1107,8 +1112,15 @@ def build_multi_asset_sensor_context(
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
-    check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
+
+    check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
+    if asset_selection:
+        asset_selection = check.inst_param(asset_selection, "asset_selection", AssetSelection)
+    else:  # asset keys provided
+        asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
+        asset_selection = AssetSelection.keys(*asset_keys)
+
     return MultiAssetSensorEvaluationContext(
         instance_ref=None,
         last_completion_time=None,
@@ -1116,7 +1128,7 @@ def build_multi_asset_sensor_context(
         cursor=cursor,
         repository_name=repository_name,
         instance=instance,
-        asset_keys=asset_keys,
+        asset_selection=asset_selection,
         repository_def=repository_def,
     )
 
@@ -1260,7 +1272,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
     def __init__(
         self,
         name: str,
-        asset_keys: Sequence[AssetKey],
+        asset_keys: Optional[Sequence[AssetKey]],
+        asset_selection: Optional[AssetSelection],
         job_name: Optional[str],
         asset_materialization_fn: Callable[
             ["MultiAssetSensorEvaluationContext"],
@@ -1273,7 +1286,14 @@ class MultiAssetSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
 
-        self._asset_keys = check.list_param(asset_keys, "asset_keys", AssetKey)
+        check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
+        if asset_selection:
+            self._asset_selection = check.inst_param(
+                asset_selection, "asset_selection", AssetSelection
+            )
+        else:  # asset keys provided
+            asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
+            self._asset_selection = AssetSelection.keys(*asset_keys)
 
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
@@ -1364,5 +1384,5 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
     @public  # type: ignore
     @property
-    def asset_keys(self):
-        return self._asset_keys
+    def asset_selection(self) -> AssetSelection:
+        return self._asset_selection
