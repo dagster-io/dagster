@@ -409,7 +409,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 Mapping of AssetKey to a mapping of partitions to EventLogRecords where the
                 EventLogRecord is the most recent materialization event for the partition.
                 Filters for materializations in partitions after the cursor. The mapping
-                preserves the order of
+                preserves the order that the materializations occurred.
 
         Example:
             .. code-block:: python
