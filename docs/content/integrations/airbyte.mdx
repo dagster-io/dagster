@@ -85,7 +85,7 @@ airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
 
 The `load_assets_from_airbyte_instance` function retrieves all of the connections you have defined in the Airbyte interface, creating software-defined assets for each data stream. Each connection has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.
 
-The assets produced by this function are automatically bound the passed `airbyte_resource` to use at runtime.
+You don't need to use `with_resources` to bind an Airbyte resource to the assets produced by `load_asset_from_airbyte_instance`; the Airbyte instance you supply to the function will automatically be bound to them.
 
 ### Manually building Airbyte asset definitions
 
