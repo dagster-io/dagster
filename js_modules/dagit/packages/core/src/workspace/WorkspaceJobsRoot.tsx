@@ -7,10 +7,13 @@ import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {HeaderCell} from '../ui/VirtualizedTable';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
+import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceTabs} from './WorkspaceTabs';
 import {buildRepoAddress} from './buildRepoAddress';
+import {repoAddressAsString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 import {WorkspaceJobsQuery} from './types/WorkspaceJobsQuery';
 
@@ -18,6 +21,8 @@ export const WorkspaceJobsRoot = () => {
   useTrackPageView();
 
   const [searchValue, setSearchValue] = React.useState('');
+  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const repoCount = allRepos.length;
 
   const queryResultOverview = useQuery<WorkspaceJobsQuery>(WORKSPACE_JOBS_QUERY, {
     fetchPolicy: 'network-only',
@@ -31,17 +36,41 @@ export const WorkspaceJobsRoot = () => {
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
+  const filteredRepoBuckets = React.useMemo(() => {
+    const visibleRepoKeys = new Set(
+      visibleRepos.map((option) =>
+        repoAddressAsString(
+          buildRepoAddress(option.repository.name, option.repositoryLocation.name),
+        ),
+      ),
+    );
+    return repoBuckets.filter(({repoAddress}) =>
+      visibleRepoKeys.has(repoAddressAsString(repoAddress)),
+    );
+  }, [repoBuckets, visibleRepos]);
+
   const filteredBySearch = React.useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
-    return repoBuckets
+    return filteredRepoBuckets
       .map(({repoAddress, jobs}) => ({
         repoAddress,
         jobs: jobs.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
       .filter(({jobs}) => jobs.length > 0);
-  }, [repoBuckets, sanitizedSearch]);
+  }, [filteredRepoBuckets, sanitizedSearch]);
 
   const content = () => {
+    if (loading && !data) {
+      return (
+        <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+            <Spinner purpose="body-text" />
+            <div style={{color: Colors.Gray600}}>Loading jobs…</div>
+          </Box>
+        </Box>
+      );
+    }
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -102,7 +131,7 @@ export const WorkspaceJobsRoot = () => {
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
       >
-        {repoBuckets.length > 1 ? <RepoFilterButton /> : null}
+        {repoCount > 1 ? <RepoFilterButton /> : null}
         <TextInput
           icon="search"
           value={searchValue}
@@ -111,7 +140,7 @@ export const WorkspaceJobsRoot = () => {
           style={{width: '340px'}}
         />
       </Box>
-      {loading && !repoBuckets.length ? (
+      {loading && !repoCount ? (
         <Box padding={64}>
           <Spinner purpose="page" />
         </Box>
@@ -121,16 +150,6 @@ export const WorkspaceJobsRoot = () => {
     </Box>
   );
 };
-
-const HeaderCell: React.FC = ({children}) => (
-  <Box
-    padding={{vertical: 8, horizontal: 24}}
-    border={{side: 'right', width: 1, color: Colors.KeylineGray}}
-    style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}}
-  >
-    {children}
-  </Box>
-);
 
 type RepoBucket = {
   repoAddress: RepoAddress;

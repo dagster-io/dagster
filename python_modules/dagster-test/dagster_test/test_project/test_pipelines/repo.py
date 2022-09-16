@@ -224,6 +224,25 @@ def define_demo_pipeline_docker():
     return demo_pipeline_docker
 
 
+@solid
+def fail_first_time(context):
+    event_records = context.instance.all_logs(context.run_id)
+    for event_record in event_records:
+        context.log.info(event_record.message)
+        if "Started re-execution" in event_record.message:
+            return "okay perfect"
+
+    raise RetryRequested()
+
+
+def definie_step_retries_pipeline_docker():
+    @pipeline(mode_defs=docker_mode_defs())
+    def step_retries_pipeline_docker():
+        fail_first_time()
+
+    return step_retries_pipeline_docker
+
+
 def define_demo_pipeline_docker_slow():
     @pipeline(mode_defs=docker_mode_defs())
     def demo_pipeline_docker_slow():
@@ -489,16 +508,6 @@ def define_schedules():
 
 
 def define_step_retry_pipeline():
-    @solid
-    def fail_first_time(context):
-        event_records = context.instance.all_logs(context.run_id)
-        for event_record in event_records:
-            context.log.info(event_record.message)
-            if "Started re-execution" in event_record.message:
-                return "okay perfect"
-
-        raise RetryRequested()
-
     @pipeline(mode_defs=celery_mode_defs() + k8s_mode_defs(name="k8s"))
     def retry_pipeline():
         fail_first_time()
@@ -698,6 +707,7 @@ def define_demo_execution_repo():
                 "demo_pipeline_celery": define_demo_pipeline_celery,
                 "demo_pipeline_docker": define_demo_pipeline_docker,
                 "demo_pipeline_docker_slow": define_demo_pipeline_docker_slow,
+                "step_retries_pipeline_docker": definie_step_retries_pipeline_docker,
                 "large_pipeline_celery": define_large_pipeline_celery,
                 "long_running_pipeline_celery": define_long_running_pipeline_celery,
                 "optional_outputs": optional_outputs,

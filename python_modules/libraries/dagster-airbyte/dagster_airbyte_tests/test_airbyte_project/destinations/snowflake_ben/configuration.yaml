@@ -1,0 +1,16 @@
+resource_name: snowflake-ben
+definition_type: destination
+definition_id: 424892c4-daac-4491-b35d-c6688ba547ba
+definition_image: airbyte/destination-snowflake
+definition_version: 0.4.35
+configuration:
+  host: XXXXXXX.us-east-1.snowflakecomputing.com
+  role: AIRBYTE
+  schema: BEN_DEMO
+  database: AIRBYTE
+  username: BEN_DEMO
+  warehouse: AIRBYTE
+  credentials:
+    password: '**********'
+  loading_method:
+    method: Internal Staging

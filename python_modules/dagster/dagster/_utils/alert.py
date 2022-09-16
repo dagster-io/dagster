@@ -107,6 +107,7 @@ def make_email_on_run_failure_sensor(
             ]
         ]
     ] = None,
+    monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a job failure sensor that sends email via the SMTP protocol.
@@ -129,7 +130,11 @@ def make_email_on_run_failure_sensor(
             messages to include deeplinks to the failed run.
         monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition, RepositorySelector, JobSelector]]]):
             The jobs that will be monitored by this failure sensor. Defaults to None, which means the alert will
-            be sent when any job in the repository fails. To monitor jobs in external repositories, use RepositorySelector and JobSelector
+            be sent when any job in the repository fails. To monitor jobs in external repositories,
+            use RepositorySelector and JobSelector.
+        monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
+            Dagster instance. If set to True, an error will be raised if you also specify
+            monitored_jobs or job_selection. Defaults to False.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition,  RepositorySelector, JobSelector]]]):
             (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure
             sensor. Defaults to None, which means the alert will be sent when any job in the repository fails.
@@ -183,6 +188,7 @@ def make_email_on_run_failure_sensor(
         name=name,
         monitored_jobs=jobs,
         default_status=default_status,
+        monitor_all_repositories=monitor_all_repositories,
     )
     def email_on_run_failure(context: RunFailureSensorContext):
 

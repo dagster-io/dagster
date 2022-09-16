@@ -10,6 +10,6 @@ def test_all_snapshot_ids(snapshot):
     # schema of PipelineSnapshots you are free to rerecord
     with instance_for_test() as instance:
         with get_main_external_repo(instance) as repo:
-            for pipeline in sorted(repo.get_all_external_pipelines(), key=lambda p: p.name):
+            for pipeline in sorted(repo.get_all_external_jobs(), key=lambda p: p.name):
                 snapshot.assert_match(serialize_pp(pipeline.pipeline_snapshot))
                 snapshot.assert_match(pipeline.computed_pipeline_snapshot_id)

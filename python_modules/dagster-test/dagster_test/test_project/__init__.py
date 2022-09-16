@@ -280,7 +280,7 @@ def get_test_project_external_pipeline_hierarchy(instance, pipeline_name, contai
     with get_test_project_workspace(instance, container_image) as workspace:
         location = workspace.get_repository_location(workspace.repository_location_names[0])
         repo = location.get_repository("demo_execution_repo")
-        pipeline = repo.get_full_external_pipeline(pipeline_name)
+        pipeline = repo.get_full_external_job(pipeline_name)
         yield workspace, location, repo, pipeline
 
 
