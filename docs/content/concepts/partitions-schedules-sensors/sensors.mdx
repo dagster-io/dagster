@@ -29,8 +29,6 @@ Sensors allow you to instigate runs based on any external state change.
 | <PyObject object="RunStatusSensorContext" />              | The context object passed to a run status sensor evaluation.                                                                                                                                                                                                                                                                                                            |
 | <PyObject object="build_run_status_sensor_context" />     | A function that constructs an instance of <PyObject object="RunStatusSensorContext" />. This is intended to be used to test a run status sensor.                                                                                                                                                                                                                        |
 
-                                                                                                                                                                                    |
-
 ## Overview
 
 Sensors are definitions in Dagster that allow you to instigate runs based on some external state change. For example, you can:
@@ -81,9 +79,7 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
 ```
 
@@ -144,23 +140,19 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
 
 Multi-asset sensors, which can trigger job executions based on multiple asset materialization event streams, can be handled using the <PyObject object="multi_asset_sensor" decorator/> decorator.
 
-In the body of the sensor, you have access to the materialization event records for each asset via the `context`. The context provides two methods for fetching the materialization event records:
+In the body of the sensor, you have access to the materialization event records for each asset via the `context`. The context provides methods for fetching the materialization event records, as well as methods to handle partitioned materializations:
 
-- <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="latest_materialization_records_by_key"
-  />
-  :
+| Method                                                                                                      | Description                                                                                                                                                                                                          |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_key" />      | Returns a dictionary mapping the `AssetKey` for each monitored asset to the most recent materialization record. If there is no materialization event, the mapped value will be `None`.                               |
+| <PyObject object="MultiAssetSensorEvaluationContext" method="materialization_records_for_key"/>             | Returns a list of materialization event records for a specified `AssetKey`.                                                                                                                                          |
+| <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_partition"/> | Returns a dictionary mapping the partition keys of a specified `AssetKey` to the most recent materialization record. Will only return a partition key in the mapping if a materialization exists for that partition. |
+| <PyObject object="MultiAssetSensorEvaluationContext" method="all_partitions_materialized"/>                 | Given an asset key and a list of partition keys for the asset, returns `True` if all partitions are materialized, otherwise returns `False`. Will search through all materializations (ignoring the cursor).         |
+| <PyObject object="MultiAssetSensorEvaluationContext" method="get_downstream_partition_keys"/>               | Given an upstream asset key, downstream asset key, and a partition in the upstream asset, returns a list of the corresponding partitions in the downstream asset.                                                    |
 
-Returns a dictionary mapping the `AssetKey` for each monitored asset to the most recent materialization record. If there is no materialization event, the mapped value will be `None`
+#### Triggering a run after monitored assets are materialized
 
-- <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="materialization_records_for_key"
-  />
-  :
-
-Returns a list of materialization event records for a specified `AssetKey`.
+You can use the <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_key" /> to monitor when multiple assets are materialized:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
 @multi_asset_sensor(
@@ -183,7 +175,7 @@ def asset_a_and_b_sensor(context):
 
 Note the `context.advance_all_cursors` call near the end of the sensor. The cursor helps keep track of which materialization events have been processed by the sensor so that the next time the sensor runs, only newer events are fetched. Since `multi_asset_sensor`s provide increased flexibility to determine what conditions should result in `RunRequest`s, the sensor must manually update the cursor if a `RunRequest` is returned.
 
-You can also return a `SkipReason` to document why the sensor didn't launch a run.
+You can also use the <PyObject object="MultiAssetSensorEvaluationContext" method="materialization_records_for_key"/> method to kick off runs after multiple materializations occur. The example below triggers a run on every fifth materialization. You can also return a `SkipReason` to document why the sensor didn't launch a run.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_w_skip_reason endbefore=end_multi_asset_sensor_w_skip_reason
 @multi_asset_sensor(
@@ -192,9 +184,7 @@ You can also return a `SkipReason` to document why the sensor didn't launch a ru
 )
 def every_fifth_asset_c_sensor(context):
     # this sensor will return a run request every fifth materialization of asset_c
-    asset_events = context.materialization_records_for_key(
-        asset_key=AssetKey("asset_c"), limit=5
-    )
+    asset_events = context.materialization_records_for_key(asset_key=AssetKey("asset_c"), limit=5)
     if len(asset_events) == 5:
         context.advance_cursor({AssetKey("asset_c"): asset_events[-1]})
         return RunRequest(run_key=f"{context.cursor}")
@@ -204,6 +194,46 @@ def every_fifth_asset_c_sensor(context):
         # fetch 5 events
         return SkipReason(f"asset_c only materialized {len(asset_events)} times.")
 ```
+
+#### Triggering a partitioned run after upstream partitions are materialized
+
+The <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_partition"/> method fetches the latest materialization records by partition for a given asset. Using this method, you can trigger downstream partitioned runs when the corresponding partitions of upstream assets are materialized:
+
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_daily_asset_to_daily_asset endbefore=end_daily_asset_to_daily_asset
+downstream_daily_job = define_asset_job(
+    "downstream_daily_job",
+    AssetSelection.keys("downstream_daily_asset"),
+    partitions_def=daily_partitions_def,
+)
+
+
+@multi_asset_sensor(asset_keys=[AssetKey("upstream_daily_asset")], job=downstream_daily_job)
+def trigger_daily_asset_from_daily_asset(context):
+    # Get all partitioned materializations after the cursor
+    materializations_by_partition = context.latest_materialization_records_by_partition(
+        AssetKey("upstream_daily_asset")
+    )
+
+    for partition, materialization in materializations_by_partition.items():
+        downstream_partitions = context.get_downstream_partition_keys(
+            partition,
+            from_asset_key=AssetKey("upstream_daily_asset"),
+            to_asset_key=AssetKey("downstream_daily_asset"),
+        )
+        if downstream_partitions:  # Check that a downstream daily partition exists
+            # Upstream daily partition can only map to at most one downstream daily partition
+            yield downstream_daily_job.run_request_for_partition(
+                downstream_partitions[0], run_key=None
+            )
+            context.advance_cursor({AssetKey("upstream_daily_asset"): materialization})
+```
+
+#### Additional examples
+
+The examples section at the bottom of the page explores additional use cases for triggering materializations by partition:
+
+- Materializing a weekly asset when any upstream daily partitions are materialized or replaced
+- Materializing a daily partition only if both upstream daily partitions are materialized
 
 ## Idempotence and Cursors
 
@@ -300,9 +330,7 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
             has_files = True
     if not has_files:
@@ -385,19 +413,19 @@ You can monitor and operate sensors in Dagit. There are multiple views that help
 To view the sensors page, you can navigate to the "Sensors" tab from the [Repository page](/concepts/repositories-workspaces/repositories#using-a-repository). Here you can start and stop sensors using the toggle.
 
 <Image
-alt="All Sensors"
-src="/images/concepts/partitions-schedules-sensors/sensors/all-sensors.png"
-width={1982}
-height={1400}
+  alt="All Sensors"
+  src="/images/concepts/partitions-schedules-sensors/sensors/all-sensors.png"
+  width={1982}
+  height={1400}
 />
 
 If you click on any sensor, you can monitor all sensor evaluations on a timeline and view a table of runs launched by the sensor:
 
 <Image
-alt="Sensor A"
-src="/images/concepts/partitions-schedules-sensors/sensors/sensor-A.png"
-width={1982}
-height={1400}
+  alt="Sensor A"
+  src="/images/concepts/partitions-schedules-sensors/sensors/sensor-A.png"
+  width={1982}
+  height={1400}
 />
 
 ## Run status sensors
@@ -524,9 +552,7 @@ Sometimes, you may want to monitor jobs in a repository other than the one where
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cross_repo_run_status_sensor endbefore=end_cross_repo_run_status_sensor
 @run_status_sensor(
     monitored_jobs=[
-        RepositorySelector(
-            location_name="repository.location", repository_name="team_a_repository"
-        )
+        RepositorySelector(location_name="repository.location", repository_name="team_a_repository")
     ],
     run_status=DagsterRunStatus.SUCCESS,
 )
@@ -720,6 +746,12 @@ def uses_db_connection():
 ```
 
 If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>. For more in-depth usage, check out the [Initializing Resources Outside of Execution](/concepts/resources#initializing-resources-outside-of-execution) section.
+
+### Multi-asset sensor examples with partitions
+
+#### Materializing a weekly asset when any upstream daily partitions are materialized or replaced
+
+#### Materializing a daily partition only if both upstream daily partitions are materialized
 
 ## See it in action
 
