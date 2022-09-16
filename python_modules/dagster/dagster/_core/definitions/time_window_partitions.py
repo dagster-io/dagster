@@ -175,7 +175,8 @@ class TimeWindowPartitionsDefinition(
             else:
                 break
 
-        return result
+        current_partitions = [partition.name for partition in self.get_partitions()]
+        return [partition for partition in result if partition in current_partitions]
 
     @public  # type: ignore
     @property
