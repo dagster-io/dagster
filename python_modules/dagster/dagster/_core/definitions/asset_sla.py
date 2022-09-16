@@ -1,9 +1,11 @@
+from typing import Optional
+
 import pendulum
 from croniter import croniter
 
 
 class AssetSLA:
-    def is_passing(self, data_timestamp: float):
+    def is_passing(self, data_timestamp: Optional[float]) -> bool:
         pass
 
 
@@ -15,7 +17,7 @@ class StalenessSLA(AssetSLA):
     def __init__(self, allowed_staleness_minutes: float):
         self._allowed_staleness = pendulum.duration(minutes=allowed_staleness_minutes)
 
-    def is_passing(self, data_timestamp: float) -> bool:
+    def is_passing(self, data_timestamp: Optional[float]) -> bool:
         if data_timestamp is None:
             return False
 
@@ -31,7 +33,7 @@ class CronSLA(AssetSLA):
         self._cron_schedule = cron_schedule
         self._allowed_staleness = pendulum.duration(minutes=allowed_staleness_minutes)
 
-    def is_passing(self, data_timestamp: float) -> bool:
+    def is_passing(self, data_timestamp: Optional[float]) -> bool:
         if data_timestamp is None:
             return False
 

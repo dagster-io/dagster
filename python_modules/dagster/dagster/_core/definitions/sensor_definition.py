@@ -13,6 +13,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
     cast,
@@ -655,16 +656,14 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
 
         self._repository_def = repository_def
 
-        # if no asset_keys specified, default to all
-        self._asset_keys = asset_keys or repository_def._assets_defs_by_key.keys()
-
         self._upstream_assets = generate_asset_dep_graph(
             self._repository_def._assets_defs_by_key.values(),
             self._repository_def.source_assets_by_key.values(),
         )["upstream"]
 
         self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
-        for asset_key in self._asset_keys:
+        # if no asset_keys supplied, default to all
+        for asset_key in asset_keys or repository_def._assets_defs_by_key.keys():
             assets_def = self._repository_def._assets_defs_by_key.get(asset_key)
             if assets_def is None:
                 raise DagsterInvalidDefinitionError(
@@ -685,25 +684,50 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
             instance=instance,
         )
 
-    def _data_time_for_asset(self, asset_key):
-        from dagster import RunShardedEventsCursor
+    def _data_times_by_key(self) -> Mapping[AssetKey, Optional[float]]:
+        """
+        For each asset monitored by this sensor, calculate its "data time". The data time of an
+        asset is the time of the earliest data that could be incorporated into the current state
+        of the asset, calculated for each asset by comparing their latest timestamp to the latest
+        parent timestamp that happened before that materialization (as you cannot incorporate parent
+        data if that parent runs after you do).
+        """
         from dagster._core.events import DagsterEventType
-        from dagster._core.selector.subset_selector import generate_asset_dep_graph
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        dp = {}
+        calculated_data_times: Dict[Tuple[AssetKey, Optional[float]], Optional[float]] = {}
 
-        def _recursive(key, as_of_id, assets_in_run, run_timestamp):
-            if (key, id) in dp:
-                return dp[(key, id)]
-            if key not in assets_in_run:
-                # this asset was not materialized in the current run, so find the latest materialization
-                # that happened before this run
+        def _data_time_for_asset(
+            key: AssetKey,
+            as_of_timestamp: Optional[float] = None,
+            current_run_keys: Optional[Set[AssetKey]] = None,
+        ) -> Optional[float]:
+            """Recursive helper function for calculating this data time. Keeps track of previously
+            calculated values, as many assets end up traversing similar paths through the
+            historical materialization graph, and these queries can be expensive.
+
+            If an asset is materialized in the same run as its parents, there's no need to do
+            separate queries to determine the "most recent asset materialization for the parent
+            which happened before this asset materialization", as that materialization is assumed
+            to be the materialization that occured within that run (it would be very hard for this
+            not to be the case). In this way, we can "fast forward" through the asset graph in
+            common cases (where most materialization events happen as part of larger runs).
+            """
+            index = (key, as_of_timestamp)
+
+            # if we've already calculated the data time of this key as of this index, return it
+            # instead of calculating it from scratch
+            if index in calculated_data_times:
+                return calculated_data_times[index]
+
+            # this asset was not materialized in the current run, so find the latest materialization
+            # that happened before as_of_timestamp
+            if key not in (current_run_keys or {}):
                 event_records = self.instance.get_event_records(
                     EventRecordsFilter(
                         event_type=DagsterEventType.ASSET_MATERIALIZATION,
                         asset_key=key,
-                        before_timestamp=run_timestamp,
+                        before_timestamp=as_of_timestamp,
                     ),
                     ascending=False,
                     limit=1,
@@ -712,22 +736,23 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
                 # if no record found, then break
                 latest_asset_event = event_records[0] if event_records else None
                 if not latest_asset_event:
-                    dp[(key, as_of_id)] = None
+                    calculated_data_times[index] = None
                     return None
 
-                # get a timestamp for when the run started
+                # found the latest event, while we're at it grab the start time of the run
                 run_id = latest_asset_event.event_log_entry.run_id
                 event_records = self.instance.get_records_for_run(
                     run_id, of_type=DagsterEventType.RUN_START, limit=1
                 )
                 run_record = event_records.records[0] if event_records else None
                 if not run_record:
-                    raise Exception("oops")
+                    # might want to error here
+                    calculated_data_times[index] = None
+                    return None
 
-                # get a list of all other assets in this run so we don't redo work
-                as_of_id = run_record.storage_id
-                run_timestamp = run_record.event_log_entry.timestamp
-                assets_in_run = {
+                # update these values based on current run
+                as_of_timestamp = run_record.event_log_entry.timestamp
+                current_run_keys = {
                     record.event_log_entry.dagster_event.event_specific_data.materialization.asset_key
                     for record in self.instance.get_records_for_run(
                         run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
@@ -737,57 +762,61 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
             # recurse over all the parents
             parents = self._upstream_assets[key.to_user_string()]
             if not parents:
-                dp[(key, as_of_id)] = run_timestamp
+                # use the timestamp of the current run
+                calculated_data_times[index] = as_of_timestamp
             else:
-                parent_data_times = [
-                    _recursive(
-                        AssetKey.from_user_string(parent_key),
-                        as_of_id,
-                        assets_in_run,
-                        run_timestamp,
-                    )
-                    for parent_key in parents
-                ]
-                if None in parent_data_times:
-                    dp[(key, as_of_id)] = None
-                else:
-                    dp[(key, as_of_id)] = min(parent_data_times)
+                # your data time is the minimum data time of yourself and your parents
+                data_time = as_of_timestamp
+                if data_time is not None:
+                    for p in parents:
+                        parent_data_time = _data_time_for_asset(
+                            AssetKey.from_user_string(p),
+                            as_of_timestamp=as_of_timestamp,
+                            current_run_keys=current_run_keys,
+                        )
+                        if parent_data_time is None:
+                            data_time = None
+                            break
+                        data_time = min(data_time, parent_data_time)
+                calculated_data_times[index] = data_time
 
-            return dp[(key, as_of_id)]
+            return calculated_data_times[index]
 
-        ret = _recursive(asset_key, as_of_id=None, assets_in_run={}, run_timestamp=None)
-        return ret
+        return {
+            asset_key: _data_time_for_asset(asset_key) for asset_key in self._assets_by_key.keys()
+        }
 
     @property
     def next_cursor(self) -> Optional[str]:
         return self._next_cursor
 
     @public
-    def current_statuses_by_key(self) -> Mapping[AssetKey, int]:
-        import pendulum
+    def current_statuses_by_key(self) -> Mapping[AssetKey, bool]:
+        current_data_times: Mapping[AssetKey, Optional[float]] = self._data_times_by_key()
 
-        from dagster._core.events import DagsterEventType
-        from dagster._core.selector.subset_selector import generate_asset_dep_graph
-        from dagster._core.storage.event_log.base import EventRecordsFilter
-
-        asset_sla_status = {}
-
+        asset_sla_statuses = {}
         for asset_key, assets_def in self._assets_by_key.items():
             sla = assets_def.slas_by_key.get(asset_key)
-            asset_sla_status[asset_key] = sla.is_passing(self._data_time_for_asset(asset_key))
+            if not sla:
+                continue
+            asset_sla_statuses[asset_key] = sla.is_passing(current_data_times.get(asset_key))
 
-        self._next_cursor = json.dumps({str(key): value for key, value in asset_sla_status.items()})
-        return asset_sla_status
+        self._next_cursor = json.dumps(
+            {str(key): value for key, value in asset_sla_statuses.items()}
+        )
+        return asset_sla_statuses
 
     @public
-    def previous_statuses_by_key(self) -> Mapping[AssetKey, int]:
+    def previous_statuses_by_key(self) -> Mapping[AssetKey, bool]:
         if not self.cursor:
             return {}
         cursor_dict = json.loads(self.cursor)
-        return {asset_key: cursor_dict.get(str(asset_key)) for asset_key in self._asset_keys}
+        return {
+            asset_key: cursor_dict.get(str(asset_key)) for asset_key in self._assets_by_key.keys()
+        }
 
     @public
-    def changed_statuses_by_key(self) -> Mapping[AssetKey, int]:
+    def changed_statuses_by_key(self) -> Mapping[AssetKey, bool]:
         previous_statuses = self.previous_statuses_by_key()
         current_statuses = self.current_statuses_by_key()
 

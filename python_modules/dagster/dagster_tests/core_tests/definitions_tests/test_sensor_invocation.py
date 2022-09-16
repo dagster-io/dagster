@@ -717,8 +717,18 @@ def test_multi_asset_sensor_custom_partition_mapping():
         (
             "f",
             [
+                ("acd", {"f": False}),
+                ("bf", {"f": False}),
+                ("bdf", {"f": True}),
+            ],
+        ),
+        (
+            "f",
+            [
                 ("bdf", {"f": False}),
                 ("a", {"f": False}),
+                ("bdf", {"f": False}),
+                ("c", {"f": False}),
                 ("bdf", {"f": True}),
             ],
         ),
@@ -752,9 +762,9 @@ def test_multi_asset_sensor_custom_partition_mapping():
 )
 def test_asset_sla_sensors(asset_keys, materialization_effects):
     """
-    A - B - D - F
-      \   /
-        C - E
+    A = B = D = F
+     \\  //
+       C = E
 
     B,C,D share an op
     """
