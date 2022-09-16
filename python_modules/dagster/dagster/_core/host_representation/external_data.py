@@ -1044,12 +1044,11 @@ def external_asset_graph_from_defs(
                 or node_def.name,
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
-                op_description=node_def.description,
+                op_description=node_def.description or output_def.description,
                 node_definition_name=node_def.name,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
-                output_description=output_def.description,
                 metadata_entries=asset_metadata_entries,
                 # assets defined by Out(asset_key="k") do not have any group
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
