@@ -2,6 +2,7 @@ import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Caption, Colors, Tag} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {JobMenu} from '../instance/JobMenu';
@@ -175,7 +176,7 @@ const JobRow = (props: JobRowProps) => {
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <RowCell>
           <div style={{whiteSpace: 'nowrap'}}>
-            <a href={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>{name}</a>
+            <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>{name}</Link>
           </div>
           <div
             style={{
