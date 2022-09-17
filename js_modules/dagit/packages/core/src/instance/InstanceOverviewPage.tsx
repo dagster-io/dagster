@@ -343,14 +343,9 @@ const OVERVIEW_JOB_FRAGMENT = gql`
     isJob
     runs(limit: 1) {
       id
-      mode
       runId
       status
       ...RunTimeFragment
-    }
-    modes {
-      id
-      name
     }
   }
 
