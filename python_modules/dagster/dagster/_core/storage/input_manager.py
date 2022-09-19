@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import update_wrapper
+from typing import cast, Dict, Any
 
 import dagster._check as check
 from dagster._core.definitions.config import is_callable_valid_config_arg
@@ -58,6 +59,7 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
         )
+        print(input_config_schema)
         super(InputManagerDefinition, self).__init__(
             resource_fn=resource_fn,
             config_schema=config_schema,
@@ -150,10 +152,28 @@ def input_manager(
 
 
 class InputManagerWrapper(InputManager):
-    def __init__(self, load_fn):
+    def __init__(self, load_fn, input_config_schema):
+        self._input_config_schema = input_config_schema
         self._load_fn = load_fn
 
     def load_input(self, context):
+        from dagster._config import process_config
+
+        config_evr = process_config(self._input_config_schema, check.not_none(context.config))
+        if not config_evr.success:
+            # TODO update message
+            raise DagsterInvalidConfigError(
+                f"Error in config for IO Manager",
+                config_evr.errors,
+                run_config,
+            )
+
+        config_value = cast(Dict[str, Any], config_evr.value)
+
+        # resolve config from context and from input config
+        print("load input called!!")
+        context._set_config(config_value)
+
         # the @input_manager decorated function (self._load_fn) may return a direct value that
         # should be used or an instance of an InputManager. So we call self._load_fn and see if the
         # result is an InputManager. If so we call it's load_input method
@@ -185,7 +205,7 @@ class _InputManagerDecoratorCallable:
         check.callable_param(load_fn, "load_fn")
 
         def _resource_fn(_):
-            return InputManagerWrapper(load_fn)
+            return InputManagerWrapper(load_fn, self.input_config_schema)
 
         root_input_manager_def = InputManagerDefinition(
             resource_fn=_resource_fn,

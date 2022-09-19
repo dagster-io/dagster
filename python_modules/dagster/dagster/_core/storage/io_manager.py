@@ -260,6 +260,7 @@ def io_manager(
             my_op()
 
     """
+    # is it possible to do some dark magic here to provide the config?
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         config_schema = cast(IOManagerFunction, config_schema)
         return _IOManagerDecoratorCallable()(config_schema)

@@ -429,6 +429,9 @@ class InputContext:
             if self._step_context:
                 self._events.append(DagsterEvent.asset_observation(self._step_context, observation))
 
+    def _set_config(self, config: Any):
+        self._config = config
+
     def get_observations(
         self,
     ) -> List[AssetObservation]:

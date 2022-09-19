@@ -828,6 +828,7 @@ def _config_mapping_with_default_value(
     default_config: Dict[str, Any],
     job_name: str,
 ) -> ConfigMapping:
+    # could use this method
     if not isinstance(inner_schema, Shape):
         check.failed("Only Shape (dictionary) config_schema allowed on Job ConfigMapping")
 

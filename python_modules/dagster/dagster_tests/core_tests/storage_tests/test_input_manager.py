@@ -1,8 +1,12 @@
 import tempfile
 
 import pytest
+import os
 
 from dagster import (
+    build_input_context,
+    build_output_context,
+    Field,
     DagsterInstance,
     DagsterInvalidDefinitionError,
     IOManager,
@@ -16,7 +20,7 @@ from dagster import (
     job,
     op,
     resource,
-    root_input_manager,
+    input_manager,
 )
 from dagster._core.definitions.events import Failure, RetryRequested
 from dagster._core.errors import DagsterInvalidConfigError
@@ -751,3 +755,50 @@ def test_root_manager_inside_composite():
     )
 
     assert result.output_for_solid("my_composite_solid") == "hello"
+
+
+def test_default_config_populated_on_input_manager_invocation():
+    @input_manager(
+        input_config_schema={
+            "filepath": Field(str, is_required=True),
+            "sep": Field(
+                str, default_value=",", is_required=False, description="Delimiter to use."
+            ),
+        }
+    )
+    def csv_to_df(context):
+        print(context.config)
+        assert context.config["filepath"] == "csv_to_df.csv"
+        assert context.config["sep"] == ","
+        return 1
+
+    manager = csv_to_df(None)
+    context = build_input_context(config={"filepath": "csv_to_df.csv"})
+
+    result = manager.load_input(context)
+    assert result == 1
+
+
+def test_default_config_on_io_manager_invocation():
+    class MyIOManager(IOManager):
+        def __init__(self):
+            self.storage_dict = {}
+
+        def handle_output(self, context, obj):
+            assert context.resource_config
+            assert context.resource_config["foo"] == "yay"
+
+        def load_input(self, context):
+            assert context.resource_config
+            assert context.resource_config["foo"] == "yay"
+
+    @io_manager(config_schema={"foo": Field(str, default_value="yay")})
+    def my_io_manager(_):
+        return MyIOManager()
+
+    manager = my_io_manager(None)
+    context = build_input_context(name="abc")
+    manager.load_input(context)
+
+    context = build_output_context(name="abc")
+    manager.handle_output(context, 5)
