@@ -166,8 +166,9 @@ class UnresolvedStepOutputHandle(
         [
             ("unresolved_step_handle", UnresolvedStepHandle),
             ("output_name", str),
-            ("resolved_by_step_key", str),
-            ("resolved_by_output_name", str),
+            ("resolution_source", tuple)
+            # ("resolved_by_step_key", str),
+            # ("resolved_by_output_name", str),
         ],
     )
 ):
@@ -180,8 +181,9 @@ class UnresolvedStepOutputHandle(
         cls,
         unresolved_step_handle: UnresolvedStepHandle,
         output_name: str,
-        resolved_by_step_key: str,
-        resolved_by_output_name: str,
+        resolution_source,
+        # resolved_by_step_key: str,
+        # resolved_by_output_name: str,
     ):
         return super(UnresolvedStepOutputHandle, cls).__new__(
             cls,
@@ -189,18 +191,32 @@ class UnresolvedStepOutputHandle(
                 unresolved_step_handle, "unresolved_step_handle", UnresolvedStepHandle
             ),
             output_name=check.str_param(output_name, "output_name"),
+            resolution_source=resolution_source,
             # this could be a set of resolution keys to support multiple mapping operations
-            resolved_by_step_key=check.str_param(resolved_by_step_key, "resolved_by_step_key"),
-            resolved_by_output_name=check.str_param(
-                resolved_by_output_name, "resolved_by_output_name"
-            ),
+            # resolved_by_step_key=check.str_param(resolved_by_step_key, "resolved_by_step_key"),
+            # resolved_by_output_name=check.str_param(
+            #     resolved_by_output_name, "resolved_by_output_name"
+            # ),
         )
 
-    def resolve(self, map_key) -> StepOutputHandle:
-        """Return a resolved StepOutputHandle"""
-        return StepOutputHandle(
-            self.unresolved_step_handle.resolve(map_key).to_key(), self.output_name
-        )
+    def resolve(self, map_key) -> Union[StepOutputHandle, "UnresolvedStepOutputHandle"]:
+        """
+        Return either a fully resolved StepOutputHandle or a partially resolved UnresolvedStepOutputHandle
+        """
+        from .inputs import FromStepOutput
+
+        new_source = self.resolution_source.resolve(map_key)
+        if isinstance(new_source, FromStepOutput):
+            return StepOutputHandle(
+                self.unresolved_step_handle.resolve(map_key).to_key(),
+                self.output_name,
+            )
+        else:
+            return UnresolvedStepOutputHandle(
+                self.unresolved_step_handle.partial_resolve(map_key),
+                self.output_name,
+                new_source,
+            )
 
     def get_step_output_handle_with_placeholder(self) -> StepOutputHandle:
         """Return a StepOutputHandle with a unresolved step key as a placeholder"""

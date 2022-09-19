@@ -911,13 +911,16 @@ class FromPendingDynamicStepOutput(
             input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
 
-    @property
-    def resolved_by_step_key(self) -> str:
-        return self.step_output_handle.step_key
+    # @property
+    # def resolved_by_step_key(self) -> str:
+    #     return self.step_output_handle.step_key
 
-    @property
-    def resolved_by_output_name(self) -> str:
-        return self.step_output_handle.output_name
+    # @property
+    # def resolved_by_output_name(self) -> str:
+    #     return self.step_output_handle.output_name
+
+    def get_resolving_handle(self):
+        return self.step_output_handle
 
     def resolve(self, mapping_key) -> FromStepOutput:
         check.str_param(mapping_key, "mapping_key")
@@ -976,19 +979,79 @@ class FromUnresolvedStepOutput(
             input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
 
-    @property
-    def resolved_by_step_key(self) -> str:
-        return self.unresolved_step_output_handle.resolved_by_step_key
+    def get_resolving_handle(self):
+        return self.unresolved_step_output_handle.resolution_source.get_resolving_handle()
 
-    @property
-    def resolved_by_output_name(self) -> str:
-        return self.unresolved_step_output_handle.resolved_by_output_name
+    # @property
+    # def resolved_by_step_key(self) -> str:
+    #     return self.unresolved_step_output_handle.resolved_by_step_key
 
-    def resolve(self, mapping_key: str) -> FromStepOutput:
+    # @property
+    # def resolved_by_output_name(self) -> str:
+    #     return self.unresolved_step_output_handle.resolved_by_output_name
+
+    def resolve(self, mapping_key: str) -> Union[FromStepOutput, FromPendingDynamicStepOutput]:
         check.str_param(mapping_key, "mapping_key")
-        return FromStepOutput(
+        output_handle = self.unresolved_step_output_handle.resolve(mapping_key)
+        if isinstance(output_handle, StepOutputHandle):
+            return FromStepOutput(
+                step_output_handle=output_handle,
+                fan_in=False,
+            )
+        else:
+            return FromUnresolvedStepOutput(
+                unresolved_step_output_handle=output_handle,
+            )
+
+    def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
+        return self.unresolved_step_output_handle.get_step_output_handle_with_placeholder()
+
+    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
+        return set()
+
+
+# prototype note: feels bad to have to add another but this models it cleanly
+@whitelist_for_serdes
+class FromUnresolvedDynamicStepOutput(
+    NamedTuple(
+        "_FromUnresolvedDynamicStepOutput",
+        [
+            ("unresolved_step_output_handle", UnresolvedStepOutputHandle),
+        ],
+    ),
+):
+    """
+    This step input source models being downstream of unresolved step that has a dynamic output.
+    """
+
+    def __new__(
+        cls,
+        unresolved_step_output_handle: UnresolvedStepOutputHandle,
+    ):
+        return super().__new__(
+            cls,
+            unresolved_step_output_handle=check.inst_param(
+                unresolved_step_output_handle,
+                "unresolved_step_output_handle",
+                UnresolvedStepOutputHandle,
+            ),
+        )
+
+    # @property
+    # def resolved_by_step_key(self) -> str:
+    #     return self.unresolved_step_output_handle.resolved_by_step_key
+
+    # @property
+    # def resolved_by_output_name(self) -> str:
+    #     return self.unresolved_step_output_handle.resolved_by_output_name
+    def get_resolving_handle(self):
+        return self.unresolved_step_output_handle.resolution_source.get_resolving_handle()
+
+    def resolve(self, mapping_key: str) -> FromPendingDynamicStepOutput:
+        check.str_param(mapping_key, "mapping_key")
+        # self.unresolved_step_output_handle.resolution_source.resolve(mapping_key)
+        return FromPendingDynamicStepOutput(
             step_output_handle=self.unresolved_step_output_handle.resolve(mapping_key),
-            fan_in=False,
         )
 
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
@@ -1003,7 +1066,16 @@ class FromDynamicCollect(
     NamedTuple(
         "_FromDynamicCollect",
         [
-            ("source", Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]),
+            (
+                "sources",  # will have to back compat dance here
+                List[
+                    Union[
+                        FromPendingDynamicStepOutput,
+                        FromUnresolvedStepOutput,
+                        FromPendingDynamicStepOutput,
+                    ]
+                ],
+            ),
             # deprecated, preserved for back-compat
             ("solid_handle", NodeHandle),
             ("input_name", str),
@@ -1012,14 +1084,25 @@ class FromDynamicCollect(
 ):
     def __new__(
         cls,
-        source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput],
+        sources: List[Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]] = None,
         # deprecated, preserved for back-compat
         solid_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
+        source=None,
     ):
+        if source and not sources:
+            sources = [source]
         return super().__new__(
             cls,
-            source=source,
+            sources=check.list_param(
+                sources,
+                "sources",
+                (
+                    FromPendingDynamicStepOutput,
+                    FromUnresolvedStepOutput,
+                    FromPendingDynamicStepOutput,
+                ),
+            ),
             # add placeholder values for back-compat
             solid_handle=check.opt_inst_param(
                 solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
@@ -1027,24 +1110,35 @@ class FromDynamicCollect(
             input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
 
-    @property
-    def resolved_by_step_key(self) -> str:
-        return self.source.resolved_by_step_key
+    # @property
+    # def resolved_by_step_key(self) -> str:
+    #     return self.source.resolved_by_step_key
 
-    @property
-    def resolved_by_output_name(self) -> str:
-        return self.source.resolved_by_output_name
+    # @property
+    # def resolved_by_output_name(self) -> str:
+    #     return self.source.resolved_by_output_name
+
+    def get_resolving_handles(self):
+        return [source.get_resolving_handle() for source in self.sources]
 
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
-        return self.source.get_step_output_handle_dep_with_placeholder()
+        # proto note: spicy but i think works
+        return self.sources[0].get_step_output_handle_dep_with_placeholder()
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
 
-    def resolve(self, mapping_keys):
-        return FromMultipleSources(
-            sources=[self.source.resolve(map_key) for map_key in mapping_keys],
-        )
+    def resolve(self, mappings: Dict[str, Dict[str, List[str]]]):
+        new_sources = []
+        for source in self.sources:
+            handle = source.get_resolving_handle()
+            mapping_keys = mappings[handle.step_key][handle.output_name]
+            new_sources += [source.resolve(map_key) for map_key in mapping_keys]
+
+        if all(isinstance(src, FromStepOutput) for src in new_sources):
+            return FromMultipleSources(sources=new_sources)
+
+        return FromDynamicCollect(sources=new_sources)
 
 
 class UnresolvedMappedStepInput(NamedTuple):
@@ -1052,21 +1146,33 @@ class UnresolvedMappedStepInput(NamedTuple):
 
     name: str
     dagster_type_key: str
-    source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]
+    source: Union[
+        FromPendingDynamicStepOutput,
+        FromUnresolvedStepOutput,
+        FromUnresolvedDynamicStepOutput,
+    ]
 
-    @property
-    def resolved_by_step_key(self) -> str:
-        return self.source.resolved_by_step_key
+    # @property
+    # def resolved_by_step_key(self) -> str:
+    #     return self.source.resolved_by_step_key
 
-    @property
-    def resolved_by_output_name(self) -> str:
-        return self.source.resolved_by_output_name
+    # @property
+    # def resolved_by_output_name(self) -> str:
+    #     return self.source.resolved_by_output_name
 
-    def resolve(self, map_key) -> StepInput:
-        return StepInput(
+    def resolve(self, map_key) -> Union[StepInput, "UnresolvedMappedStepInput"]:
+        source = self.source.resolve(map_key)
+        if isinstance(source, FromStepOutput):
+            return StepInput(
+                name=self.name,
+                dagster_type_key=self.dagster_type_key,
+                source=self.source.resolve(map_key),
+            )
+
+        return UnresolvedMappedStepInput(
             name=self.name,
             dagster_type_key=self.dagster_type_key,
-            source=self.source.resolve(map_key),
+            source=source,
         )
 
     def get_step_output_handle_deps_with_placeholders(self) -> List[StepOutputHandle]:
@@ -1082,20 +1188,28 @@ class UnresolvedCollectStepInput(NamedTuple):
     dagster_type_key: str
     source: FromDynamicCollect
 
-    @property
-    def resolved_by_step_key(self) -> str:
-        return self.source.resolved_by_step_key
+    # @property
+    # def resolved_by_step_key(self) -> str:
+    #     return self.source.resolved_by_step_key
 
-    @property
-    def resolved_by_output_name(self) -> str:
-        return self.source.resolved_by_output_name
+    # @property
+    # def resolved_by_output_name(self) -> str:
+    #     return self.source.resolved_by_output_name
 
-    def resolve(self, mapping_keys: List[str]) -> StepInput:
-        return StepInput(
-            name=self.name,
-            dagster_type_key=self.dagster_type_key,
-            source=self.source.resolve(mapping_keys),
-        )
+    def resolve(self, mappings: Dict[str, Dict[str, List[str]]]) -> StepInput:
+        new_source = self.source.resolve(mappings)
+        if isinstance(new_source, FromMultipleSources):
+            return StepInput(
+                name=self.name,
+                dagster_type_key=self.dagster_type_key,
+                source=new_source,
+            )
+        else:
+            return UnresolvedCollectStepInput(
+                name=self.name,
+                dagster_type_key=self.dagster_type_key,
+                source=new_source,
+            )
 
     def get_step_output_handle_deps_with_placeholders(self) -> List[StepOutputHandle]:
         """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys"""
@@ -1108,6 +1222,7 @@ StepInputSourceUnion = Union[
     FromDynamicCollect,
     FromUnresolvedStepOutput,
     FromPendingDynamicStepOutput,
+    FromUnresolvedDynamicStepOutput,
 ]
 
 StepInputSourceTypes = StepInputSourceUnion.__args__  # type: ignore

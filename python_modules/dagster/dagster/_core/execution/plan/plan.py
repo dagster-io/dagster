@@ -58,6 +58,7 @@ from .inputs import (
     FromRootInputManager,
     FromSourceAsset,
     FromStepOutput,
+    FromUnresolvedDynamicStepOutput,
     FromUnresolvedStepOutput,
     StepInput,
     StepInputSource,
@@ -292,7 +293,11 @@ class _PlanBuilder:
 
                 if isinstance(
                     step_input_source,
-                    (FromPendingDynamicStepOutput, FromUnresolvedStepOutput),
+                    (
+                        FromPendingDynamicStepOutput,
+                        FromUnresolvedStepOutput,
+                        FromUnresolvedDynamicStepOutput,
+                    ),
                 ):
                     has_unresolved_input = True
                     step_inputs.append(
@@ -403,8 +408,9 @@ class _PlanBuilder:
                     step_output_handle = UnresolvedStepOutputHandle(
                         step.handle,
                         resolved_output_def.name,
-                        step.resolved_by_step_key,
-                        step.resolved_by_output_name,
+                        resolution_source=step.resolution_source,
+                        # # step.resolved_by_step_key,
+                        # step.resolved_by_output_name,
                     )
                 else:
                     check.failed(f"Unexpected step type {step}")
@@ -492,11 +498,16 @@ def get_step_input_source(
         solid_output_handle = dependency_structure.get_direct_dep(input_handle)
         step_output_handle = plan_builder.get_output_handle(solid_output_handle)
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
+            if solid_output_handle.is_dynamic:
+                return FromUnresolvedDynamicStepOutput(
+                    unresolved_step_output_handle=step_output_handle,
+                )
+
             return FromUnresolvedStepOutput(
                 unresolved_step_output_handle=step_output_handle,
             )
 
-        if solid_output_handle.output_def.is_dynamic:
+        if solid_output_handle.is_dynamic:
             return FromPendingDynamicStepOutput(
                 step_output_handle=step_output_handle,
             )
@@ -549,6 +560,12 @@ def get_step_input_source(
         solid_output_handle = dependency_structure.get_dynamic_fan_in_dep(input_handle)
         step_output_handle = plan_builder.get_output_handle(solid_output_handle)
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
+            if solid_output_handle.is_dynamic:
+                return FromDynamicCollect(
+                    source=FromUnresolvedDynamicStepOutput(
+                        unresolved_step_output_handle=step_output_handle,
+                    ),
+                )
             return FromDynamicCollect(
                 source=FromUnresolvedStepOutput(
                     unresolved_step_output_handle=step_output_handle,
@@ -1032,7 +1049,11 @@ class ExecutionPlan(
 
         if isinstance(
             step_input_source,
-            (FromPendingDynamicStepOutput, FromUnresolvedStepOutput),
+            (
+                FromPendingDynamicStepOutput,
+                FromUnresolvedStepOutput,
+                FromUnresolvedDynamicStepOutput,
+            ),
         ):
             return UnresolvedMappedStepInput(
                 step_input_snap.name,
@@ -1155,7 +1176,8 @@ def _update_from_resolved_dynamic_outputs(
     step_handles_to_execute: List[StepHandleUnion],
     dynamic_mappings: Dict[str, Dict[str, List[str]]],
 ) -> None:
-    resolved_steps = []
+    resolved_steps: List[ExecutionStep] = []
+    unresolved_steps: List[UnresolvedMappedExecutionStep] = []
     key_sets_to_clear = []
 
     # find entries in the resolvable map whose requirements are now all ready
@@ -1173,15 +1195,29 @@ def _update_from_resolved_dynamic_outputs(
             resolvable_step = step_dict[unresolved_step_handle]
 
             if isinstance(resolvable_step, UnresolvedMappedExecutionStep):
-                resolved_steps += resolvable_step.resolve(dynamic_mappings)
+                new_resolved_steps, new_unresolved_steps = resolvable_step.resolve(dynamic_mappings)
+                resolved_steps += new_resolved_steps
+                unresolved_steps += new_unresolved_steps
             elif isinstance(resolvable_step, UnresolvedCollectExecutionStep):
-                resolved_steps.append(resolvable_step.resolve(dynamic_mappings))
+                step = resolvable_step.resolve(dynamic_mappings)
+                if isinstance(step, UnresolvedCollectExecutionStep):
+                    unresolved_steps.append(step)
+                else:
+                    resolved_steps.append(step)
 
     # update structures
     for step in resolved_steps:
         step_dict[step.handle] = step
         executable_map[step.key] = step.handle
         step_dict_by_key[step.key] = step
+        print(f"Adding executable {step.key}")
+
+    for step in unresolved_steps:
+        step_dict[step.handle] = step  # spooky overwrite?
+        step_dict_by_key[step.key] = step  # spooky overwrite?
+        step_handles_to_execute.append(step.handle)  # spooky mutable manipulation
+        print(f"Adding unresolved {step.key} resolved by {step.resolved_by_step_keys}")
+        resolvable_map[step.resolved_by_step_keys].append(step.handle)
 
     for key_set in key_sets_to_clear:
         del resolvable_map[key_set]
@@ -1380,7 +1416,9 @@ def _get_executable_step_deps(
     step_keys_to_execute = [handle.to_key() for handle in step_handles_to_execute]
 
     for key, handle in executable_map.items():
-        step = cast(ExecutionStep, step_dict[handle])
+        step = step_dict[handle]
+        if not isinstance(step, ExecutionStep):
+            check.failed(f"unexpected non ExecutionStep {step}")
         filtered_deps = []
         depends_on_unresolved = False
         for dep in step.get_execution_dependency_keys():
@@ -1402,6 +1440,10 @@ def _get_executable_step_deps(
 
 def _get_step_output(step_dict_by_key, step_output_handle: StepOutputHandle) -> StepOutput:
     check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
+    if step_output_handle.step_key not in step_dict_by_key:
+        check.invariant(
+            f"attempting to find output from step {step_output_handle.step_key} that does not exist"
+        )
     step = step_dict_by_key[step_output_handle.step_key]
     return step.step_output_named(step_output_handle.output_name)
 

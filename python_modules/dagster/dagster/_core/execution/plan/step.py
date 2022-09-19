@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Type,
     Union,
     cast,
@@ -217,6 +218,7 @@ class UnresolvedMappedExecutionStep(
             ("step_input_dict", Dict[str, Union[StepInput, UnresolvedMappedStepInput]]),
             ("step_output_dict", Dict[str, StepOutput]),
             ("tags", Dict[str, str]),
+            ("partially_resolved_by_keys", List[str]),
         ],
     ),
     IExecutionStep,
@@ -232,6 +234,7 @@ class UnresolvedMappedExecutionStep(
         step_inputs: List[Union[StepInput, UnresolvedMappedStepInput]],
         step_outputs: List[StepOutput],
         tags: Optional[Dict[str, str]],
+        partially_resolved_by_keys: Optional[List[str]] = None,
     ):
         return super(UnresolvedMappedExecutionStep, cls).__new__(
             cls,
@@ -248,6 +251,9 @@ class UnresolvedMappedExecutionStep(
                 for so in check.list_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
             tags=check.opt_dict_param(tags, "tags", key_type=str),
+            partially_resolved_by_keys=check.opt_list_param(
+                partially_resolved_by_keys, "partially_resolved_by_keys"
+            ),
         )
 
     @property
@@ -297,57 +303,78 @@ class UnresolvedMappedExecutionStep(
 
         return deps
 
-    @property
-    def resolved_by_step_key(self) -> str:
-        # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
-        keys = self.resolved_by_step_keys
-        check.invariant(len(keys) == 1, "Unresolved step expects one and only one dynamic step key")
-        return list(keys)[0]
+    # @property
+    # def resolved_by_step_key(self) -> str:
+    #     # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
+    #     keys = self.resolved_by_step_keys
+    #     check.invariant(len(keys) == 1, "Unresolved step expects one and only one dynamic step key")
+    #     return list(keys)[0]
 
     @property
-    def resolved_by_output_name(self) -> str:
-        # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
-        keys = set()
+    def resolution_source(self):
+        # proto note: this will be sources to support N direct
+        sources = set()
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedMappedStepInput):
-                keys.add(inp.resolved_by_output_name)
+                sources.add(inp.source)
 
+        # proto note: and this will go away
         check.invariant(
-            len(keys) == 1, "Unresolved step expects one and only one dynamic output name"
+            len(sources) == 1, "Unresolved step expects one and only one dynamic output name"
         )
 
-        return list(keys)[0]
+        return list(sources)[0]
 
     @property
     def resolved_by_step_keys(self) -> FrozenSet[str]:
-        keys = set()
-        for inp in self.step_inputs:
-            if isinstance(inp, UnresolvedMappedStepInput):
-                keys.add(inp.resolved_by_step_key)
+        # keys = set()
+        # for inp in self.step_inputs:
+        #     if isinstance(inp, UnresolvedMappedStepInput):
+        #         keys.add(inp.resolved_by_step_key)
 
-        return frozenset(keys)
+        # return frozenset(keys)
+        return frozenset([self.resolution_source.get_resolving_handle().step_key])
 
-    def resolve(self, mappings: Dict[str, Dict[str, List[str]]]) -> List[ExecutionStep]:
-        check.invariant(
-            all(key in mappings for key in self.resolved_by_step_keys),
-            "resolving with mappings that do not contain all required step keys",
-        )
-        execution_steps = []
-
-        for mapped_key in mappings[self.resolved_by_step_key][self.resolved_by_output_name]:
-            resolved_inputs = [_resolved_input(inp, mapped_key) for inp in self.step_inputs]
-
-            execution_steps.append(
-                ExecutionStep(
-                    handle=ResolvedFromDynamicStepHandle(self.handle.solid_handle, mapped_key),
-                    pipeline_name=self.pipeline_name,
-                    step_inputs=resolved_inputs,
-                    step_outputs=self.step_outputs,
-                    tags=self.tags,
-                )
+    def resolve(
+        self, mappings: Dict[str, Dict[str, List[str]]]
+    ) -> Tuple[List[ExecutionStep], List["UnresolvedMappedExecutionStep"]]:
+        if not all(key in mappings for key in self.resolved_by_step_keys):
+            check.failed(
+                "resolving with mappings that do not contain all required step keys",
             )
 
-        return execution_steps
+        execution_steps = []
+        unresolved_steps = []
+        handle = self.resolution_source.get_resolving_handle()
+
+        for mapped_key in mappings[handle.step_key][handle.output_name]:
+            resolved_inputs = [_resolved_input(inp, mapped_key) for inp in self.step_inputs]
+            # guard against any([]) => true
+            check.invariant(len(resolved_inputs) > 0, "there must some resolved inputs")
+            keys = [*self.partially_resolved_by_keys, mapped_key]
+            if any(isinstance(inp, UnresolvedMappedStepInput) for inp in resolved_inputs):
+                unresolved_steps.append(
+                    UnresolvedMappedExecutionStep(
+                        handle=self.handle.partial_resolve(mapped_key),
+                        pipeline_name=self.pipeline_name,
+                        step_inputs=resolved_inputs,
+                        step_outputs=self.step_outputs,
+                        tags=self.tags,
+                        partially_resolved_by_keys=keys,
+                    )
+                )
+            else:
+                execution_steps.append(
+                    ExecutionStep(
+                        handle=ResolvedFromDynamicStepHandle(self.handle.solid_handle, keys),
+                        pipeline_name=self.pipeline_name,
+                        step_inputs=resolved_inputs,
+                        step_outputs=self.step_outputs,
+                        tags=self.tags,
+                    )
+                )
+
+        return execution_steps, unresolved_steps
 
 
 def _resolved_input(
@@ -454,7 +481,8 @@ class UnresolvedCollectExecutionStep(
         keys = set()
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedCollectStepInput):
-                keys.add(inp.resolved_by_step_key)
+                for h in inp.source.get_resolving_handles():
+                    keys.add(h.step_key)
 
         return frozenset(keys)
 
@@ -465,18 +493,28 @@ class UnresolvedCollectExecutionStep(
         )
 
         resolved_inputs = []
+        unresolved = False
         for inp in self.step_inputs:
             if isinstance(inp, StepInput):
                 resolved_inputs.append(inp)
             else:
-                resolved_inputs.append(
-                    inp.resolve(mappings[inp.resolved_by_step_key][inp.resolved_by_output_name])
-                )
-
-        return ExecutionStep(
-            handle=self.handle,
-            pipeline_name=self.pipeline_name,
-            step_inputs=resolved_inputs,
-            step_outputs=self.step_outputs,
-            tags=self.tags,
-        )
+                new_inp = inp.resolve(mappings)
+                if isinstance(new_inp, UnresolvedCollectStepInput):
+                    unresolved = True
+                resolved_inputs.append(new_inp)
+        if unresolved:
+            return UnresolvedCollectExecutionStep(
+                handle=self.handle,
+                pipeline_name=self.pipeline_name,
+                step_inputs=resolved_inputs,
+                step_outputs=self.step_outputs,
+                tags=self.tags,
+            )
+        else:
+            return ExecutionStep(
+                handle=self.handle,
+                pipeline_name=self.pipeline_name,
+                step_inputs=resolved_inputs,
+                step_outputs=self.step_outputs,
+                tags=self.tags,
+            )

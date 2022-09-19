@@ -941,12 +941,14 @@ class DependencyStructure:
             self._dynamic_fan_out_index[input_handle.solid_name] = output_handle
             return
 
-        if self._dynamic_fan_out_index[input_handle.solid_name] != output_handle:
-            raise DagsterInvalidDefinitionError(
-                f"{input_handle.solid.describe_node()} cannot be downstream of more than one dynamic output. "
-                f'It is downstream of both "{output_handle.describe()}" and '
-                f'"{self._dynamic_fan_out_index[input_handle.solid_name].describe()}"'
-            )
+        # gating
+        #
+        # if self._dynamic_fan_out_index[input_handle.solid_name] != output_handle:
+        #     raise DagsterInvalidDefinitionError(
+        #         f"{input_handle.solid.describe_node()} cannot be downstream of more than one dynamic output. "
+        #         f'It is downstream of both "{output_handle.describe()}" and '
+        #         f'"{self._dynamic_fan_out_index[input_handle.solid_name].describe()}"'
+        #     )
 
     def _validate_and_set_collect(
         self,
@@ -963,12 +965,15 @@ class DependencyStructure:
         self._collect_index[input_handle.solid_name].add(output_handle)
 
         # if the output is already fanned out
-        if self._dynamic_fan_out_index.get(output_handle.solid_name):
-            raise DagsterInvalidDefinitionError(
-                f"{input_handle.solid.describe_node()} cannot be downstream of more than one dynamic output. "
-                f'It is downstream of both "{output_handle.describe()}" and '
-                f'"{self._dynamic_fan_out_index[output_handle.solid_name].describe()}"'
-            )
+        #
+        # gating
+        #
+        # if self._dynamic_fan_out_index.get(output_handle.solid_name):
+        #     raise DagsterInvalidDefinitionError(
+        #         f"{input_handle.solid.describe_node()} cannot be downstream of more than one dynamic output. "
+        #         f'It is downstream of both "{output_handle.describe()}" and '
+        #         f'"{self._dynamic_fan_out_index[output_handle.solid_name].describe()}"'
+        #     )
 
     def all_upstream_outputs_from_solid(self, solid_name: str) -> List[SolidOutputHandle]:
         check.str_param(solid_name, "solid_name")
