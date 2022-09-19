@@ -6,12 +6,44 @@ import {AppContext} from '../app/AppContext';
 import {ComputeLogContent} from './ComputeLogContent';
 import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
 import {useComputeLogs} from './useComputeLogs';
-interface RunComputeLogs {
+
+interface ComputeLogPanelProps {
   runId: string;
-  stepKeys: string[];
-  computeLogKey?: string;
   ioType: string;
   setComputeLogUrl: (url: string | null) => void;
+}
+
+interface ComputeLogPanelMaybeKeyProps extends ComputeLogPanelProps {
+  computeLogKey?: string;
+  stepKeys: string[];
+}
+
+export const ComputeLogPanel: React.FC<ComputeLogPanelMaybeKeyProps> = (props) => {
+  const {runId, stepKeys, computeLogKey, ioType, setComputeLogUrl} = props;
+
+  if (!stepKeys.length || !computeLogKey) {
+    return (
+      <Box
+        flex={{justifyContent: 'center', alignItems: 'center'}}
+        style={{flex: 1, height: '100%'}}
+      >
+        <Spinner purpose="section" />
+      </Box>
+    );
+  }
+
+  return (
+    <ComputeLogsPanelWithKey
+      runId={runId}
+      computeLogKey={computeLogKey}
+      ioType={ioType}
+      setComputeLogUrl={setComputeLogUrl}
+    />
+  );
+};
+
+interface ComputeLogPanelWithKeyProps extends ComputeLogPanelProps {
+  computeLogKey: string;
 }
 
 const resolveDownloadUrl = (
@@ -26,45 +58,33 @@ const resolveDownloadUrl = (
   return isRelativeUrl(downloadUrl) ? rootServerURI + downloadUrl : downloadUrl;
 };
 
-export const ComputeLogPanel: React.FC<RunComputeLogs> = React.memo(
-  ({runId, stepKeys, computeLogKey, ioType, setComputeLogUrl}) => {
-    const {rootServerURI} = React.useContext(AppContext);
-    const {isLoading, stdout, stderr} = useComputeLogs(runId, computeLogKey);
+const ComputeLogsPanelWithKey: React.FC<ComputeLogPanelWithKeyProps> = React.memo((props) => {
+  const {runId, computeLogKey, ioType, setComputeLogUrl} = props;
+  const {rootServerURI} = React.useContext(AppContext);
 
-    if (!stepKeys.length || !computeLogKey) {
-      return (
-        <Box
-          flex={{justifyContent: 'center', alignItems: 'center'}}
-          style={{flex: 1, height: '100%'}}
-        >
-          <Spinner purpose="section" />
-        </Box>
-      );
-    }
+  const {isLoading, stdout, stderr} = useComputeLogs(runId, computeLogKey);
+  const logData = ioType === 'stdout' ? stdout : stderr;
+  const downloadUrl = resolveDownloadUrl(rootServerURI, logData);
 
-    const logData = ioType === 'stdout' ? stdout : stderr;
-    const downloadUrl = resolveDownloadUrl(rootServerURI, logData);
-
-    return (
-      <div style={{flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column'}}>
-        <ContentWrapper
-          logData={stdout}
-          isLoading={isLoading}
-          isVisible={ioType === 'stdout'}
-          downloadUrl={downloadUrl}
-          setComputeLogUrl={setComputeLogUrl}
-        />
-        <ContentWrapper
-          logData={stderr}
-          isLoading={isLoading}
-          isVisible={ioType === 'stderr'}
-          downloadUrl={downloadUrl}
-          setComputeLogUrl={setComputeLogUrl}
-        />
-      </div>
-    );
-  },
-);
+  return (
+    <div style={{flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column'}}>
+      <ContentWrapper
+        logData={stdout}
+        isLoading={isLoading}
+        isVisible={ioType === 'stdout'}
+        downloadUrl={downloadUrl}
+        setComputeLogUrl={setComputeLogUrl}
+      />
+      <ContentWrapper
+        logData={stderr}
+        isLoading={isLoading}
+        isVisible={ioType === 'stderr'}
+        downloadUrl={downloadUrl}
+        setComputeLogUrl={setComputeLogUrl}
+      />
+    </div>
+  );
+});
 
 const ContentWrapper = ({
   isLoading,
