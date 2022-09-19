@@ -14,6 +14,14 @@ interface RunComputeLogs {
   setComputeLogUrl: (url: string | null) => void;
 }
 
+interface RunComputeLogsContent {
+  runId: string;
+  stepKeys: string[];
+  computeLogKey: string;
+  ioType: string;
+  setComputeLogUrl: (url: string | null) => void;
+}
+
 const resolveDownloadUrl = (
   rootServerURI: string,
   logData: ComputeLogContentFileFragment | null,
@@ -26,22 +34,12 @@ const resolveDownloadUrl = (
   return isRelativeUrl(downloadUrl) ? rootServerURI + downloadUrl : downloadUrl;
 };
 
-export const ComputeLogPanel: React.FC<RunComputeLogs> = React.memo(
+const ComputeLogsContent: React.FC<RunComputeLogsContent> = React.memo(
   ({runId, stepKeys, computeLogKey, ioType, setComputeLogUrl}) => {
     const {rootServerURI} = React.useContext(AppContext);
+    console.log(runId, stepKeys, computeLogKey, ioType, setComputeLogUrl);
+
     const {isLoading, stdout, stderr} = useComputeLogs(runId, computeLogKey);
-
-    if (!stepKeys.length || !computeLogKey) {
-      return (
-        <Box
-          flex={{justifyContent: 'center', alignItems: 'center'}}
-          style={{flex: 1, height: '100%'}}
-        >
-          <Spinner purpose="section" />
-        </Box>
-      );
-    }
-
     const logData = ioType === 'stdout' ? stdout : stderr;
     const downloadUrl = resolveDownloadUrl(rootServerURI, logData);
 
@@ -62,6 +60,33 @@ export const ComputeLogPanel: React.FC<RunComputeLogs> = React.memo(
           setComputeLogUrl={setComputeLogUrl}
         />
       </div>
+    );
+  },
+);
+
+export const ComputeLogPanel: React.FC<RunComputeLogs> = React.memo(
+  ({runId, stepKeys, computeLogKey, ioType, setComputeLogUrl}) => {
+    console.log(runId, stepKeys, computeLogKey, ioType, setComputeLogUrl);
+
+    if (!stepKeys.length || !computeLogKey) {
+      return (
+        <Box
+          flex={{justifyContent: 'center', alignItems: 'center'}}
+          style={{flex: 1, height: '100%'}}
+        >
+          <Spinner purpose="section" />
+        </Box>
+      );
+    }
+
+    return (
+      <ComputeLogsContent
+        runId={runId}
+        stepKeys={stepKeys}
+        computeLogKey={computeLogKey}
+        ioType={ioType}
+        setComputeLogUrl={setComputeLogUrl}
+      />
     );
   },
 );
