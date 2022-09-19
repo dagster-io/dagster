@@ -15,7 +15,7 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
-import {Container, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 
@@ -75,42 +75,63 @@ export const VirtualizedScheduleTable: React.FC<Props> = ({repos}) => {
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <Container ref={parentRef}>
-      <Inner $totalHeight={totalHeight}>
-        {items.map(({index, key, size, start}) => {
-          const row: RowType = flattened[index];
-          const type = row!.type;
-          return type === 'header' ? (
-            <RepoRow
-              repoAddress={row.repoAddress}
-              key={key}
-              height={size}
-              start={start}
-              onToggle={onToggle}
-              showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-              rightElement={
-                <Tooltip
-                  content={
-                    row.scheduleCount === 1 ? '1 schedule' : `${row.scheduleCount} schedules`
+    <>
+      <Box
+        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '76px 28% 30% 10% 20% 10%',
+          height: '32px',
+          fontSize: '12px',
+          color: Colors.Gray600,
+        }}
+      >
+        <HeaderCell />
+        <HeaderCell>Schedule name</HeaderCell>
+        <HeaderCell>Schedule</HeaderCell>
+        <HeaderCell>Last tick</HeaderCell>
+        <HeaderCell>Last run</HeaderCell>
+        <HeaderCell>Actions</HeaderCell>
+      </Box>
+      <div style={{overflow: 'hidden'}}>
+        <Container ref={parentRef}>
+          <Inner $totalHeight={totalHeight}>
+            {items.map(({index, key, size, start}) => {
+              const row: RowType = flattened[index];
+              const type = row!.type;
+              return type === 'header' ? (
+                <RepoRow
+                  repoAddress={row.repoAddress}
+                  key={key}
+                  height={size}
+                  start={start}
+                  onToggle={onToggle}
+                  showLocation={duplicateRepoNames.has(row.repoAddress.name)}
+                  rightElement={
+                    <Tooltip
+                      content={
+                        row.scheduleCount === 1 ? '1 schedule' : `${row.scheduleCount} schedules`
+                      }
+                      placement="top"
+                    >
+                      <Tag intent="primary">{row.scheduleCount}</Tag>
+                    </Tooltip>
                   }
-                  placement="top"
-                >
-                  <Tag intent="primary">{row.scheduleCount}</Tag>
-                </Tooltip>
-              }
-            />
-          ) : (
-            <ScheduleRow
-              key={key}
-              name={row.name}
-              repoAddress={row.repoAddress}
-              height={size}
-              start={start}
-            />
-          );
-        })}
-      </Inner>
-    </Container>
+                />
+              ) : (
+                <ScheduleRow
+                  key={key}
+                  name={row.name}
+                  repoAddress={row.repoAddress}
+                  height={size}
+                  start={start}
+                />
+              );
+            })}
+          </Inner>
+        </Container>
+      </div>
+    </>
   );
 };
 

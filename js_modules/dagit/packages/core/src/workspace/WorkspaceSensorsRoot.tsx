@@ -1,17 +1,31 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Heading, NonIdealState, PageHeader, Spinner, TextInput} from '@dagster-io/ui';
+import {
+  Alert,
+  Box,
+  Button,
+  Colors,
+  Dialog,
+  DialogFooter,
+  Heading,
+  NonIdealState,
+  PageHeader,
+  Spinner,
+  TextInput,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useTrackPageView} from '../app/analytics';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {HeaderCell} from '../ui/VirtualizedTable';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
+import {UnloadableSensors} from '../instigation/Unloadable';
 
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
 import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceTabs} from './WorkspaceTabs';
 import {buildRepoAddress} from './buildRepoAddress';
 import {RepoAddress} from './types';
+import {UnloadableSchedulesQuery} from './types/UnloadableSchedulesQuery';
 import {WorkspaceSensorsQuery} from './types/WorkspaceSensorsQuery';
 
 export const WorkspaceSensorsRoot = () => {
@@ -40,8 +54,6 @@ export const WorkspaceSensorsRoot = () => {
       }))
       .filter(({sensors}) => sensors.length > 0);
   }, [repoBuckets, sanitizedSearch]);
-
-  console.log(filteredBySearch);
 
   const content = () => {
     if (loading && !data) {
@@ -83,29 +95,7 @@ export const WorkspaceSensorsRoot = () => {
       );
     }
 
-    return (
-      <>
-        <Box
-          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '76px 38% 30% 10% 20%',
-            height: '32px',
-            fontSize: '12px',
-            color: Colors.Gray600,
-          }}
-        >
-          <HeaderCell />
-          <HeaderCell>Sensor name</HeaderCell>
-          <HeaderCell>Frequency</HeaderCell>
-          <HeaderCell>Last tick</HeaderCell>
-          <HeaderCell>Last run</HeaderCell>
-        </Box>
-        <div style={{overflow: 'hidden'}}>
-          <VirtualizedSensorTable repos={filteredBySearch} />
-        </div>
-      </>
-    );
+    return <VirtualizedSensorTable repos={filteredBySearch} />;
   };
 
   return (
@@ -129,10 +119,87 @@ export const WorkspaceSensorsRoot = () => {
           <Spinner purpose="page" />
         </Box>
       ) : (
-        content()
+        <>
+          {data?.unloadableInstigationStatesOrError.__typename === 'InstigationStates' ? (
+            <UnloadableSensorsAlert
+              count={data.unloadableInstigationStatesOrError.results.length}
+            />
+          ) : null}
+          {content()}
+        </>
       )}
     </Box>
   );
+};
+
+const UnloadableSensorsAlert: React.FC<{
+  count: number;
+}> = ({count}) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  if (!count) {
+    return null;
+  }
+
+  const title = count === 1 ? '1 unloadable sensor' : `${count} unloadable sensors`;
+
+  return (
+    <>
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+      >
+        <Alert
+          intent="warning"
+          title={title}
+          description={
+            <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
+              <div>
+                Sensors were previously started but now cannot be loaded. They may be part of a
+                different workspace or from a sensor or repository that no longer exists in code.
+                You can turn them off, but you cannot turn them back on.
+              </div>
+              <Button onClick={() => setIsOpen(true)}>
+                {count === 1 ? 'View unloadable sensor' : 'View unloadable sensors'}
+              </Button>
+            </Box>
+          }
+        />
+      </Box>
+      <Dialog
+        isOpen={isOpen}
+        title="Unloadable schedules"
+        style={{width: '90vw', maxWidth: '1200px'}}
+      >
+        <Box padding={{bottom: 8}}>
+          <UnloadableSensorDialog />
+        </Box>
+        <DialogFooter>
+          <Button intent="primary" onClick={() => setIsOpen(false)}>
+            Done
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </>
+  );
+};
+
+const UnloadableSensorDialog: React.FC = () => {
+  const {data} = useQuery<UnloadableSchedulesQuery>(UNLOADABLE_SENSORS_QUERY);
+  if (!data) {
+    return <Spinner purpose="section" />;
+  }
+
+  if (data?.unloadableInstigationStatesOrError.__typename === 'InstigationStates') {
+    return (
+      <UnloadableSensors
+        sensorStates={data.unloadableInstigationStatesOrError.results}
+        showSubheading={false}
+      />
+    );
+  }
+
+  return <PythonErrorInfo error={data?.unloadableInstigationStatesOrError} />;
 };
 
 type RepoBucket = {
@@ -199,7 +266,31 @@ const WORKSPACE_SENSORS_QUERY = gql`
       }
       ...PythonErrorFragment
     }
+    unloadableInstigationStatesOrError(instigationType: SENSOR) {
+      ... on InstigationStates {
+        results {
+          id
+        }
+      }
+    }
   }
 
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+const UNLOADABLE_SENSORS_QUERY = gql`
+  query UnloadableSensorsQuery {
+    unloadableInstigationStatesOrError(instigationType: SENSOR) {
+      ... on InstigationStates {
+        results {
+          id
+          ...InstigationStateFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  ${INSTIGATION_STATE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

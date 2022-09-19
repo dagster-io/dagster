@@ -13,7 +13,7 @@ import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {InstigationType} from '../types/globalTypes';
-import {Container, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 
@@ -73,40 +73,60 @@ export const VirtualizedSensorTable: React.FC<Props> = ({repos}) => {
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <Container ref={parentRef}>
-      <Inner $totalHeight={totalHeight}>
-        {items.map(({index, key, size, start}) => {
-          const row: RowType = flattened[index];
-          const type = row!.type;
-          return type === 'header' ? (
-            <RepoRow
-              repoAddress={row.repoAddress}
-              key={key}
-              height={size}
-              start={start}
-              onToggle={onToggle}
-              showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-              rightElement={
-                <Tooltip
-                  content={row.sensorCount === 1 ? '1 sensor' : `${row.sensorCount} sensors`}
-                  placement="top"
-                >
-                  <Tag intent="primary">{row.sensorCount}</Tag>
-                </Tooltip>
-              }
-            />
-          ) : (
-            <SensorRow
-              key={key}
-              name={row.name}
-              repoAddress={row.repoAddress}
-              height={size}
-              start={start}
-            />
-          );
-        })}
-      </Inner>
-    </Container>
+    <>
+      <Box
+        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '76px 38% 30% 10% 20%',
+          height: '32px',
+          fontSize: '12px',
+          color: Colors.Gray600,
+        }}
+      >
+        <HeaderCell />
+        <HeaderCell>Sensor name</HeaderCell>
+        <HeaderCell>Frequency</HeaderCell>
+        <HeaderCell>Last tick</HeaderCell>
+        <HeaderCell>Last run</HeaderCell>
+      </Box>
+      <div style={{overflow: 'hidden'}}>
+        <Container ref={parentRef}>
+          <Inner $totalHeight={totalHeight}>
+            {items.map(({index, key, size, start}) => {
+              const row: RowType = flattened[index];
+              const type = row!.type;
+              return type === 'header' ? (
+                <RepoRow
+                  repoAddress={row.repoAddress}
+                  key={key}
+                  height={size}
+                  start={start}
+                  onToggle={onToggle}
+                  showLocation={duplicateRepoNames.has(row.repoAddress.name)}
+                  rightElement={
+                    <Tooltip
+                      content={row.sensorCount === 1 ? '1 sensor' : `${row.sensorCount} sensors`}
+                      placement="top"
+                    >
+                      <Tag intent="primary">{row.sensorCount}</Tag>
+                    </Tooltip>
+                  }
+                />
+              ) : (
+                <SensorRow
+                  key={key}
+                  name={row.name}
+                  repoAddress={row.repoAddress}
+                  height={size}
+                  start={start}
+                />
+              );
+            })}
+          </Inner>
+        </Container>
+      </div>
+    </>
   );
 };
 
