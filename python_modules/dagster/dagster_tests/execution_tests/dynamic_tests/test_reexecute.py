@@ -2,27 +2,29 @@ from typing import List
 
 import pytest
 
-from dagster import DynamicOutput, fs_io_manager, job, op, reconstructable
+from dagster import (
+    DynamicOutput,
+    ReexecutionOptions,
+    execute_job,
+    fs_io_manager,
+    in_process_executor,
+    job,
+    op,
+    reconstructable,
+)
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import (
-    DynamicOutputDefinition,
-    execute_pipeline,
-    pipeline,
-    reexecute_pipeline,
-    solid,
-)
+from dagster._core.test_utils import instance_for_test
 
 
-@solid
+@op
 def multiply_by_two(context, y):
     context.log.info("multiply_by_two is returning " + str(y * 2))
     return y * 2
 
 
-@solid
+@op
 def multiply_inputs(context, y, ten):
     # current_run = context.instance.get_run_by_id(context.run_id)
     # if y == 2 and current_run.parent_run_id is None:
@@ -31,69 +33,74 @@ def multiply_inputs(context, y, ten):
     return y * ten
 
 
-@solid
+@op
 def emit_ten(_):
     return 10
 
 
-@solid(output_defs=[DynamicOutputDefinition()])
+@op(out=DynamicOut())
 def emit(_):
     for i in range(3):
         yield DynamicOutput(value=i, mapping_key=str(i))
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@job(executor_def=in_process_executor)
 def dynamic_pipeline():
     # pylint: disable=no-member
     emit().map(lambda n: multiply_by_two(multiply_inputs(n, emit_ten())))
 
 
 def test_map():
-    result = execute_pipeline(
-        dynamic_pipeline,
-    )
+    result = dynamic_pipeline.execute_in_process()
     assert result.success
 
 
 def test_reexec_from_parent_basic():
     with instance_for_test() as instance:
-        parent_result = execute_pipeline(dynamic_pipeline, instance=instance)
-        parent_run_id = parent_result.run_id
-
-        reexec_result = reexecute_pipeline(
-            pipeline=dynamic_pipeline,
-            parent_run_id=parent_run_id,
-            step_selection=["emit"],
+        parent_result = execute_job(
+            reconstructable(dynamic_pipeline),
             instance=instance,
         )
-        assert reexec_result.success
-        assert reexec_result.result_for_solid("emit").output_value() == {
-            "0": 0,
-            "1": 1,
-            "2": 2,
-        }
+        parent_run_id = parent_result.run_id
+
+        with execute_job(
+            reconstructable(dynamic_pipeline),
+            instance=instance,
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=parent_run_id,
+                step_selection=["emit"],
+            ),
+        ) as reexec_result:
+            assert reexec_result.success
+            assert reexec_result.output_for_node("emit") == {
+                "0": 0,
+                "1": 1,
+                "2": 2,
+            }
 
 
 def test_reexec_from_parent_1():
     with instance_for_test() as instance:
-        parent_result = execute_pipeline(dynamic_pipeline, instance=instance)
+        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
         parent_run_id = parent_result.run_id
 
-        reexec_result = reexecute_pipeline(
-            pipeline=dynamic_pipeline,
-            parent_run_id=parent_run_id,
-            step_selection=["multiply_inputs[0]"],
+        with execute_job(
+            reconstructable(dynamic_pipeline),
             instance=instance,
-        )
-        assert reexec_result.success
-        assert reexec_result.result_for_solid("multiply_inputs").output_value() == {
-            "0": 0,
-        }
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=parent_run_id,
+                step_selection=["multiply_inputs[0]"],
+            ),
+        ) as reexec_result:
+            assert reexec_result.success
+            assert reexec_result.output_for_node("multiply_inputs") == {
+                "0": 0,
+            }
 
 
 def test_reexec_from_parent_dynamic_fails():
     with instance_for_test() as instance:
-        parent_result = execute_pipeline(dynamic_pipeline, instance=instance)
+        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
         parent_run_id = parent_result.run_id
 
         # not currently supported, this needs to know all fan outs of previous step, should just run previous step
@@ -101,49 +108,55 @@ def test_reexec_from_parent_dynamic_fails():
             DagsterInvariantViolationError,
             match=r'Unresolved ExecutionStep "multiply_inputs\[\?\]" is resolved by "emit" which is not part of the current step selection',
         ):
-            reexecute_pipeline(
-                pipeline=dynamic_pipeline,
-                parent_run_id=parent_run_id,
-                step_selection=["multiply_inputs[?]"],
+            execute_job(
+                reconstructable(dynamic_pipeline),
                 instance=instance,
+                reexecution_options=ReexecutionOptions(
+                    parent_run_id=parent_run_id,
+                    step_selection=["multiply_inputs[?]"],
+                ),
             )
 
 
 def test_reexec_from_parent_2():
     with instance_for_test() as instance:
-        parent_result = execute_pipeline(dynamic_pipeline, instance=instance)
+        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
         parent_run_id = parent_result.run_id
 
-        reexec_result = reexecute_pipeline(
-            pipeline=dynamic_pipeline,
-            parent_run_id=parent_run_id,
-            step_selection=["multiply_by_two[1]"],
+        with execute_job(
+            reconstructable(dynamic_pipeline),
             instance=instance,
-        )
-        assert reexec_result.success
-        assert reexec_result.result_for_solid("multiply_by_two").output_value() == {
-            "1": 20,
-        }
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=parent_run_id,
+                step_selection=["multiply_by_two[1]"],
+            ),
+        ) as reexec_result:
+            assert reexec_result.success
+            assert reexec_result.output_for_node("multiply_by_two") == {
+                "1": 20,
+            }
 
 
 def test_reexec_from_parent_3():
     with instance_for_test() as instance:
-        parent_result = execute_pipeline(dynamic_pipeline, instance=instance)
+        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
         parent_run_id = parent_result.run_id
 
-        reexec_result = reexecute_pipeline(
-            pipeline=dynamic_pipeline,
-            parent_run_id=parent_run_id,
-            step_selection=["multiply_inputs[1]", "multiply_by_two[2]"],
+        with execute_job(
+            reconstructable(dynamic_pipeline),
             instance=instance,
-        )
-        assert reexec_result.success
-        assert reexec_result.result_for_solid("multiply_inputs").output_value() == {
-            "1": 10,
-        }
-        assert reexec_result.result_for_solid("multiply_by_two").output_value() == {
-            "2": 40,
-        }
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=parent_run_id,
+                step_selection=["multiply_inputs[1]", "multiply_by_two[2]"],
+            ),
+        ) as reexec_result:
+            assert reexec_result.success
+            assert reexec_result.output_for_node("multiply_inputs") == {
+                "1": 10,
+            }
+            assert reexec_result.output_for_node("multiply_by_two") == {
+                "2": 40,
+            }
 
 
 @op
@@ -190,13 +203,15 @@ def test_reexec_dynamic_with_optional_output_job_1():
         result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute all
-        re_result = reexecute_pipeline(
+        with execute_job(
             reconstructable(dynamic_with_optional_output_job),
-            parent_run_id=result.run_id,
             instance=instance,
-        )
-        assert re_result.success
-        assert re_result.output_for_solid("adder") == sum([i for i in range(10) if i % 2 == 0])
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=result.run_id,
+            ),
+        ) as re_result:
+            assert re_result.success
+            assert re_result.output_for_node("adder") == sum([i for i in range(10) if i % 2 == 0])
 
 
 def test_reexec_dynamic_with_optional_output_job_2():
@@ -204,16 +219,18 @@ def test_reexec_dynamic_with_optional_output_job_2():
         result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source yielded an output
-        re_result = reexecute_pipeline(
+        with execute_job(
             reconstructable(dynamic_with_optional_output_job),
-            parent_run_id=result.run_id,
             instance=instance,
-            step_selection=["echo[1]"],
-        )
-        assert re_result.success
-        assert re_result.result_for_solid("echo").output_value() == {
-            "1": 1,
-        }
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=result.run_id,
+                step_selection=["echo[1]"],
+            ),
+        ) as re_result:
+            assert re_result.success
+            assert re_result.output_for_node("echo") == {
+                "1": 1,
+            }
 
 
 def test_reexec_dynamic_with_optional_output_job_3():
@@ -226,11 +243,13 @@ def test_reexec_dynamic_with_optional_output_job_3():
             DagsterExecutionStepNotFoundError,
             match=r"Step selection refers to unknown step: echo\[0\]",
         ):
-            reexecute_pipeline(
+            execute_job(
                 reconstructable(dynamic_with_optional_output_job),
-                parent_run_id=result.run_id,
                 instance=instance,
-                step_selection=["echo[0]"],
+                reexecution_options=ReexecutionOptions(
+                    parent_run_id=result.run_id,
+                    step_selection=["echo[0]"],
+                ),
             )
 
 
@@ -260,13 +279,17 @@ def test_reexec_dynamic_with_transitive_optional_output_job_1():
         assert result.output_for_node("adder") == sum([i + 1 for i in range(10) if i % 2 == 1])
 
         # re-execute all
-        re_result = reexecute_pipeline(
+        with execute_job(
             reconstructable(dynamic_with_transitive_optional_output_job),
-            parent_run_id=result.run_id,
             instance=instance,
-        )
-        assert re_result.success
-        assert re_result.output_for_solid("adder") == sum([i + 1 for i in range(10) if i % 2 == 0])
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=result.run_id,
+            ),
+        ) as re_result:
+            assert re_result.success
+            assert re_result.output_for_node("adder") == sum(
+                [i + 1 for i in range(10) if i % 2 == 0]
+            )
 
 
 def test_reexec_dynamic_with_transitive_optional_output_job_2():
@@ -274,14 +297,16 @@ def test_reexec_dynamic_with_transitive_optional_output_job_2():
         result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source yielded an output
-        re_result = reexecute_pipeline(
+        with execute_job(
             reconstructable(dynamic_with_transitive_optional_output_job),
-            parent_run_id=result.run_id,
             instance=instance,
-            step_selection=["echo[1]"],
-        )
-        assert re_result.success
-        assert re_result.result_for_solid("echo").output_value() == {"1": 2}
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=result.run_id,
+                step_selection=["echo[1]"],
+            ),
+        ) as re_result:
+            assert re_result.success
+            assert re_result.output_for_node("echo") == {"1": 2}
 
 
 def test_reexec_dynamic_with_transitive_optional_output_job_3():
@@ -289,12 +314,14 @@ def test_reexec_dynamic_with_transitive_optional_output_job_3():
         result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source did not yield
-        re_result = reexecute_pipeline(
+        re_result = execute_job(
             reconstructable(dynamic_with_transitive_optional_output_job),
-            parent_run_id=result.run_id,
             instance=instance,
-            step_selection=["echo[0]"],
             raise_on_error=False,
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=result.run_id,
+                step_selection=["echo[0]"],
+            ),
         )
         # when all the previous runs have skipped yielding the source,
         # run would fail because of run_id returns None
