@@ -106,7 +106,7 @@ class ExecuteRunArgs(
             set_exit_code_on_failure=(
                 True
                 if check.opt_bool_param(set_exit_code_on_failure, "set_exit_code_on_failure")
-                == True
+                is True
                 else None
             ),  # for back-compat
         )
@@ -151,7 +151,7 @@ class ResumeRunArgs(
             set_exit_code_on_failure=(
                 True
                 if check.opt_bool_param(set_exit_code_on_failure, "set_exit_code_on_failure")
-                == True
+                is True
                 else None
             ),  # for back-compat
         )

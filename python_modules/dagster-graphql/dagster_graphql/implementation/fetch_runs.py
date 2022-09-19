@@ -308,7 +308,7 @@ def _get_in_progress_runs_for_assets(
 
         selected_assets = (
             set.union(*[asset_key_by_step_key[run_step_key] for run_step_key in run_step_keys])
-            if asset_selection == None
+            if asset_selection is None
             else cast(frozenset, asset_selection)
         )  # only display in progress/unstarted indicators for selected assets
 

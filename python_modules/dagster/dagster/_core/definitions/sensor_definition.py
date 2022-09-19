@@ -1283,7 +1283,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     return
 
                 # because the materialization_fn can yield results (see _wrapped_fn in multi_asset_sensor decorator),
-                # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) == True.
+                # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) to be True.
                 # So keep track to see if we actually return any values and should update the cursor
                 runs_yielded = False
                 if inspect.isgenerator(result) or isinstance(result, list):

@@ -236,7 +236,7 @@ def test_error_daemon(monkeypatch):
                         heartbeat_interval_seconds=heartbeat_interval_seconds,
                     )[SensorDaemon.daemon_type()]
 
-                    assert status.healthy == False
+                    assert status.healthy is False
 
                     # Errors build up until there are > 5, then pull off the last
                     if len(status.last_heartbeat.errors) >= 5:
@@ -354,7 +354,7 @@ def test_multiple_error_daemon(monkeypatch):
                         instance, [SensorDaemon.daemon_type()], now.float_timestamp
                     )[SensorDaemon.daemon_type()]
 
-                    if status.healthy == False and len(status.last_heartbeat.errors) == 2:
+                    if status.healthy is False and len(status.last_heartbeat.errors) == 2:
                         assert status.last_heartbeat.errors[0].message.strip() == "bizbuz"
                         assert status.last_heartbeat.errors[1].message.strip() == "foobar"
                         break

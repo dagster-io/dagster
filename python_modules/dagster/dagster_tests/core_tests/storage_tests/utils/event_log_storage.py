@@ -2017,12 +2017,12 @@ class TestEventLogStorage:
                 ][0]
                 assert asset_entry.last_materialization.dagster_event == materialize_event
                 assert asset_entry.last_run_id == result.run_id
-                assert asset_entry.asset_details == None
+                assert asset_entry.asset_details is None
 
                 if self.can_wipe():
                     storage.wipe_asset(my_asset_key)
 
-                    # confirm that last_run_id == None when asset is wiped
+                    # confirm that last_run_id is None when asset is wiped
                     assert len(storage.get_asset_records([my_asset_key])) == 0
 
                     result = _execute_job_and_store_events(
@@ -2078,7 +2078,7 @@ class TestEventLogStorage:
                 for event in events:
                     storage.store_event(event)
                 asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
-                assert asset_entry.last_run_id == None
+                assert asset_entry.last_run_id is None
 
                 events, result = _synthesize_events(
                     lambda: materialize_asset(),
@@ -2102,7 +2102,7 @@ class TestEventLogStorage:
                     for event in events:
                         storage.store_event(event)
                     asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
-                    assert asset_entry.last_run_id == None
+                    assert asset_entry.last_run_id is None
 
     def test_last_run_id_updates_on_materialization_planned(self, storage, instance):
         @asset
@@ -2134,7 +2134,7 @@ class TestEventLogStorage:
                 if self.can_wipe():
                     storage.wipe_asset(asset_key)
 
-                    # confirm that last_run_id == None when asset is wiped
+                    # confirm that last_run_id is None when asset is wiped
                     assert len(storage.get_asset_records([asset_key])) == 0
 
                     result = _execute_job_and_store_events(
@@ -2268,7 +2268,7 @@ class TestEventLogStorage:
             pytest.skip("storage does not support event consumer queries")
 
         storage.wipe()
-        assert storage.get_maximum_record_id() == None
+        assert storage.get_maximum_record_id() is None
 
         storage.store_event(
             EventLogEntry(

@@ -164,7 +164,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return external_partition_sets[0]
 
     def _get_records(self, graphene_info):
-        if self._records == None:
+        if self._records is None:
             filters = RunsFilter.for_backfill(self._backfill_job.backfill_id)
             self._records = graphene_info.context.instance.get_run_records(
                 filters=filters,

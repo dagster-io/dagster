@@ -977,7 +977,7 @@ def test_add_bulk_actions_columns():
             unmigrated_row_count = instance._run_storage.fetchone(
                 db.select([db.func.count()])
                 .select_from(BulkActionsTable)
-                .where(BulkActionsTable.c.selector_id == None)
+                .where(BulkActionsTable.c.selector_id.is_(None))
             )[0]
             assert unmigrated_row_count == 0
 
