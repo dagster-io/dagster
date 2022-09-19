@@ -111,7 +111,7 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
             return calls["final_state"]
 
     with mock.patch.object(runner.client, "get_run_state", new=new_get_run_state):
-        runner.wait_for_run_to_complete(context.log, databricks_run_id)
+        runner.wait_for_run_to_complete(context.log, databricks_run_id, verbose_logs=True)
 
     calls["num_calls"] = 0
     calls["final_state"] = DatabricksRunState(
@@ -121,5 +121,5 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
     )
     with pytest.raises(DatabricksError) as exc_info:
         with mock.patch.object(runner.client, "get_run_state", new=new_get_run_state):
-            runner.wait_for_run_to_complete(context.log, databricks_run_id)
+            runner.wait_for_run_to_complete(context.log, databricks_run_id, verbose_logs=True)
     assert "Run 1 failed with result state" in str(exc_info.value)
