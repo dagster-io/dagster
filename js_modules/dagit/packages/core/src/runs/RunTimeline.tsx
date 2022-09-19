@@ -1,4 +1,14 @@
-import {Box, Colors, Popover, Mono, FontFamily, Tooltip, Tag, NonIdealState} from '@dagster-io/ui';
+import {
+  Box,
+  Colors,
+  Popover,
+  Mono,
+  FontFamily,
+  Tooltip,
+  Tag,
+  NonIdealState,
+  Icon,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -37,6 +47,7 @@ export type TimelineJob = {
   key: string;
   repoAddress: RepoAddress;
   jobName: string;
+  jobType: 'job' | 'asset';
   path: string;
   runs: TimelineRun[];
 };
@@ -456,7 +467,12 @@ const RunTimelineRow = ({
   return (
     <Row $top={top}>
       <JobName>
-        <Link to={job.path}>{job.jobName}</Link>
+        <Icon name={job.jobType === 'asset' ? 'asset' : 'job'} />
+        {job.jobType === 'asset' ? (
+          <span style={{color: Colors.Gray900}}>{job.jobName}</span>
+        ) : (
+          <Link to={job.path}>{job.jobName}</Link>
+        )}
       </JobName>
       <RunChunks>
         {batched.map((batch) => {
@@ -535,7 +551,8 @@ const JobName = styled.div`
   align-items: center;
   display: flex;
   font-size: 13px;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 8px;
   line-height: 16px;
   overflow: hidden;
   padding: 0 12px 0 24px;
