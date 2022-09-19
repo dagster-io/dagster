@@ -1,7 +1,7 @@
 import sys
 import warnings
 from contextlib import closing, contextmanager
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster import resource
@@ -93,6 +93,17 @@ class SnowflakeConnection:
             raw_conn (bool): If using the sqlalchemy connector, you can set raw_conn to True to create a raw
                 connection. Defaults to True.
 
+        Examples:
+            .. code-block:: python
+
+                @op(required_resource_keys={"snowflake"})
+                def get_query_status(context, query_id):
+                    with context.resources.snowflake.get_connection() as conn:
+                        # conn is a Snowflake Connection object or a SQLAlchemy Connection if
+                        # sqlalchemy is specified as the connector in the Snowflake Resource config
+
+                        return conn.get_query_status(query_id)
+
         """
         if self.connector == "sqlalchemy":
             from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
@@ -116,7 +127,7 @@ class SnowflakeConnection:
     def execute_query(
         self,
         sql: str,
-        parameters: Optional[Mapping[Any, Any]] = None,
+        parameters: Optional[Union[Sequence[Any], Mapping[Any, Any]]] = None,
         fetch_results: bool = False,
         use_pandas_result: bool = False,
     ):
@@ -124,7 +135,8 @@ class SnowflakeConnection:
 
         Args:
             sql (str): the query to be executed
-            parameters (Optional[Mapping]): dictionary of parameters to be passed to the query
+            parameters (Optional[Union[Sequence[Any], Mapping[Any, Any]]]): Parameters to be passed to the query. See
+                https://docs.snowflake.com/en/user-guide/python-connector-example.html#binding-data
             fetch_results (bool): If True, will return the result of the query. Defaults to False
             use_pandas_result (bool): If True, will return the result of the query as a Pandas DataFrame.
                 Defaults to False
@@ -162,7 +174,7 @@ class SnowflakeConnection:
     def execute_queries(
         self,
         sql_queries: Sequence[str],
-        parameters: Optional[Mapping[Any, Any]] = None,
+        parameters: Optional[Union[Sequence[Any], Mapping[Any, Any]]] = None,
         fetch_results: bool = False,
         use_pandas_result: bool = False,
     ):
@@ -170,7 +182,8 @@ class SnowflakeConnection:
 
         Args:
             sql_queries (str): List of queries to be executed in series
-            parameters (Optional[Mapping]): dictionary of parameters to be passed to every query
+            parameters (Optional[Union[Sequence[Any], Mapping[Any, Any]]]): Parameters to be passed to every query. See
+                https://docs.snowflake.com/en/user-guide/python-connector-example.html#binding-data
             fetch_results (bool): If True, will return the results of the queries as a list. Defaults to False
             use_pandas_result (bool): If True, will return the results of the queries as a list of a Pandas DataFrames.
                 Defaults to False
@@ -183,7 +196,7 @@ class SnowflakeConnection:
             .. code-block:: python
 
                 @op(required_resource_keys={"snowflake"})
-                def drop_database(context):
+                def create_fresh_database(context):
                     queries = ["DROP DATABASE IF EXISTS MY_DATABASE", "CREATE DATABASE MY_DATABASE"]
                     context.resources.snowflake.execute_queries(
                         sql=queries
@@ -223,6 +236,24 @@ class SnowflakeConnection:
             src (str): the name of the file to store in Snowflake
             table (str): the name of the table to store the data. If the table does not exist, it will
                 be created. Otherwise the contents of the table will be replaced with the data in src
+
+        Examples:
+            .. code-block:: python
+
+                import pandas as pd
+                import pyarrow as pa
+                import pyarrow.parquet as pq
+
+                @op(required_resource_keys={"snowflake"})
+                def write_parquet_file(context):
+                    df = pd.DataFrame({"one": [1, 2, 3], "ten": [11, 12, 13]})
+                    table = pa.Table.from_pandas(df)
+                    pq.write_table(table, "example.parquet')
+                    context.resources.snowflake.load_table_from_local_parquet(
+                        src="example.parquet",
+                        table="MY_TABLE"
+                    )
+
         """
         check.str_param(src, "src")
         check.str_param(table, "table")
