@@ -9,12 +9,12 @@ import {
   CursorPaginationControls,
   CursorPaginationProps,
   NonIdealState,
+  Subheading,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
 import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {OptionsContainer} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
 import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/BackfillTable';
 import {RepositorySelector, RunStatus} from '../types/globalTypes';
@@ -178,11 +178,9 @@ const PartitionViewContent: React.FC<{
       <Box
         flex={{justifyContent: 'space-between', direction: 'row', alignItems: 'center'}}
         border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
-        padding={16}
+        padding={{vertical: 16, horizontal: 24}}
       >
-        <div>
-          <strong>Status</strong>
-        </div>
+        <Subheading>Status</Subheading>
         <Box flex={{gap: 8}}>
           <Button onClick={() => setShowSteps(!showSteps)} active={showBackfillSetup}>
             {showSteps ? 'Hide per-step status' : 'Show per-step status'}
@@ -205,8 +203,9 @@ const PartitionViewContent: React.FC<{
         </Box>
       </Box>
       <Box
-        flex={{justifyContent: 'space-between', direction: 'row', alignItems: 'center'}}
+        flex={{direction: 'row', alignItems: 'center'}}
         border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
+        padding={{horizontal: 8}}
       >
         <CountBox count={partitionNames.length} label="Total partitions" />
         <CountBox
@@ -223,7 +222,7 @@ const PartitionViewContent: React.FC<{
           label="Missing partitions"
         />
       </Box>
-      <Box margin={16}>
+      <Box padding={{vertical: 16, horizontal: 24}}>
         <div {...containerProps}>
           <PartitionStatus
             partitionNames={partitionNames}
@@ -259,13 +258,16 @@ const PartitionViewContent: React.FC<{
           </Box>
         ) : null}
       </Box>
-      <OptionsContainer>
-        <strong>Run duration</strong>
-      </OptionsContainer>
+      <Box
+        padding={{horizontal: 24, vertical: 16}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      >
+        <Subheading>Run duration</Subheading>
+      </Box>
       <Box margin={24}>
         <PartitionGraph
           isJob={true}
-          title="Execution Time by Partition"
+          title="Execution time by partition"
           yLabel="Execution time (secs)"
           partitionNames={showSteps ? selectedPartitions : partitionNames}
           jobDataByPartition={runDurationData}
@@ -273,13 +275,13 @@ const PartitionViewContent: React.FC<{
       </Box>
       {showSteps ? (
         <>
-          <OptionsContainer>
-            <strong>Step duration</strong>
-          </OptionsContainer>
+          <Box padding={{horizontal: 24, vertical: 16}}>
+            <Subheading>Step duration</Subheading>
+          </Box>
           <Box margin={24}>
             <PartitionGraph
               isJob={true}
-              title="Execution Time by Partition"
+              title="Execution time by partition"
               yLabel="Execution time (secs)"
               partitionNames={selectedPartitions}
               stepDataByPartition={stepDurationData}
@@ -287,10 +289,10 @@ const PartitionViewContent: React.FC<{
           </Box>
         </>
       ) : null}
-      <OptionsContainer>
-        <strong>Backfill History</strong>
-      </OptionsContainer>
-      <Box margin={16}>
+      <Box padding={{horizontal: 24, vertical: 16}}>
+        <Subheading>Backfill history</Subheading>
+      </Box>
+      <Box margin={{bottom: 20}}>
         <JobBackfills
           partitionSet={partitionSet}
           repositorySelector={repositorySelector}
@@ -384,12 +386,12 @@ const CountBox: React.FC<{
   count: number;
   label: string;
 }> = ({count, label}) => (
-  <div style={{flex: 1, borderLeft: `1px solid ${Colors.KeylineGray}`, padding: 16}}>
+  <Box padding={16} style={{flex: 1}} border={{side: 'right', width: 1, color: Colors.KeylineGray}}>
     <div style={{fontSize: 18, marginBottom: 4}}>
       <strong>{count}</strong>
     </div>
     <div>{label}</div>
-  </div>
+  </Box>
 );
 
 const PARTITIONS_STATUS_QUERY = gql`
