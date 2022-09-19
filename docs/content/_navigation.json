@@ -484,7 +484,7 @@
         "path": "/integrations/dbt"
       },
       {
-        "title": "dbt",
+        "title": "dbt Cloud",
         "path": "/integrations/dbt_cloud"
       },
       {
