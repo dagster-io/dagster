@@ -1,8 +1,8 @@
-from dagster._legacy import lambda_solid, solid
+from dagster import op
 
 
 def test_single_input():
-    @solid
+    @op
     def add_one(_context, num):
         return num + 1
 
@@ -13,7 +13,7 @@ def test_single_input():
 
 
 def test_double_input():
-    @solid
+    @op
     def subtract(_context, num_one, num_two):
         return num_one + num_two
 
@@ -24,25 +24,3 @@ def test_double_input():
 
     assert subtract.input_defs[1].name == "num_two"
     assert subtract.input_defs[1].dagster_type.unique_name == "Any"
-
-
-def test_noop_lambda_solid():
-    @lambda_solid
-    def noop():
-        pass
-
-    assert noop
-    assert len(noop.input_defs) == 0
-    assert len(noop.output_defs) == 1
-
-
-def test_one_arg_lambda_solid():
-    @lambda_solid
-    def one_arg(num):
-        return num
-
-    assert one_arg
-    assert len(one_arg.input_defs) == 1
-    assert one_arg.input_defs[0].name == "num"
-    assert one_arg.input_defs[0].dagster_type.unique_name == "Any"
-    assert len(one_arg.output_defs) == 1
