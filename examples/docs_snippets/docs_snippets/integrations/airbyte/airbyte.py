@@ -12,20 +12,6 @@ def scope_load_assets_from_airbyte_project():
     # end_load_assets_from_airbyte_project
 
 
-def scope_load_assets_from_airbyte_instance():
-    # start_load_assets_from_airbyte_instance
-    from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_instance
-
-    airbyte_instance = airbyte_resource.configured(
-        {
-            "host": "localhost",
-            "port": "8000",
-        }
-    )
-    airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
-    # end_load_assets_from_airbyte_instance
-
-
 def scope_airbyte_project_config():
     # start_airbyte_project_config
     from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_project
