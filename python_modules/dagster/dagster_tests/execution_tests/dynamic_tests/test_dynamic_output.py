@@ -4,87 +4,103 @@ from typing import NamedTuple
 import objgraph
 import pytest
 
-from dagster import DynamicOut, DynamicOutput, Out, graph, job, op, reconstructable
-from dagster._core.definitions.events import Output
-from dagster._core.definitions.output import OutputDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.test_utils import instance_for_test
-from dagster._legacy import (
-    DynamicOutputDefinition,
-    build_solid_context,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-    solid,
+from dagster import (
+    DynamicOut,
+    DynamicOutput,
+    Out,
+    build_op_context,
+    execute_job,
+    graph,
+    job,
+    op,
+    reconstructable,
 )
+from dagster._core.definitions.events import Output
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.events import DagsterEventType
+from dagster._core.test_utils import instance_for_test
 
 
 def test_basic():
-    @solid(output_defs=[DynamicOutputDefinition()])
-    def should_work(_):
-        yield DynamicOutput(1, mapping_key="1")
-        yield DynamicOutput(2, mapping_key="2")
-
-    result = execute_solid(should_work)
-
-    assert result.success
-    assert len(result.get_output_events_for_compute()) == 2
-    assert len(result.compute_output_events_dict["result"]) == 2
-    assert result.output_values == {"result": {"1": 1, "2": 2}}
-    assert result.output_value() == {"1": 1, "2": 2}
-
-
-def test_basic_op():
     @op(out=DynamicOut())
-    def should_work(_):
+    def should_work():
         yield DynamicOutput(1, mapping_key="1")
         yield DynamicOutput(2, mapping_key="2")
 
-    result = execute_solid(should_work)
-
-    assert result.success
-    assert len(result.get_output_events_for_compute()) == 2
-    assert len(result.compute_output_events_dict["result"]) == 2
-    assert result.output_values == {"result": {"1": 1, "2": 2}}
-    assert result.output_value() == {"1": 1, "2": 2}
+    assert [do.value for do in should_work()] == [1, 2]
 
 
 def test_fails_without_def():
-    @solid
-    def should_fail(_):
+    @op
+    def should_fail():
         yield DynamicOutput(True, mapping_key="foo")
 
+    @graph
+    def wrap():
+        should_fail()
+
     with pytest.raises(DagsterInvariantViolationError, match="did not use DynamicOutputDefinition"):
-        execute_solid(should_fail)
+        wrap.execute_in_process(raise_on_error=True)
+
+    # https://github.com/dagster-io/dagster/issues/9727
+    # with pytest.raises(DagsterInvariantViolationError, match="did not use DynamicOutputDefinition"):
+    #     list(should_fail())
 
 
 def test_fails_with_wrong_output():
-    @solid(output_defs=[DynamicOutputDefinition()])
-    def should_fail(_):
+    @op(out=DynamicOut())
+    def should_fail():
         yield Output(1)
 
-    with pytest.raises(DagsterInvariantViolationError, match="must yield DynamicOutput"):
-        execute_solid(should_fail)
+    @graph
+    def wrap():
+        should_fail()
 
-    @solid(output_defs=[DynamicOutputDefinition()])
-    def should_also_fail(_):
+    with pytest.raises(DagsterInvariantViolationError, match="must yield DynamicOutput"):
+        wrap.execute_in_process(raise_on_error=True)
+
+    # https://github.com/dagster-io/dagster/issues/9727
+    # with pytest.raises(DagsterInvariantViolationError, match="must yield DynamicOutput"):
+    #     list(should_fail())
+
+    @op(out=DynamicOut())
+    def should_also_fail():
         return 1
+
+    @graph
+    def wrap_also():
+        should_also_fail()
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match="dynamic output 'result' expected a list of DynamicOutput objects",
     ):
-        execute_solid(should_also_fail)
+        wrap_also.execute_in_process(raise_on_error=True)
+
+    # https://github.com/dagster-io/dagster/issues/9727
+    # with pytest.raises(
+    #     DagsterInvariantViolationError,
+    #     match="dynamic output 'result' expected a list of DynamicOutput objects",
+    # ):
+    #     list(should_also_fail())
 
 
 def test_fails_dupe_keys():
-    @solid(output_defs=[DynamicOutputDefinition()])
-    def should_fail(_):
+    @op(out=DynamicOut())
+    def should_fail():
         yield DynamicOutput(True, mapping_key="dunk")
         yield DynamicOutput(True, mapping_key="dunk")
 
+    @graph
+    def wrap():
+        should_fail()
+
     with pytest.raises(DagsterInvariantViolationError, match='mapping_key "dunk" multiple times'):
-        execute_solid(should_fail)
+        wrap.execute_in_process(raise_on_error=True)
+
+    # https://github.com/dagster-io/dagster/issues/9727
+    # with pytest.raises(DagsterInvariantViolationError, match='mapping_key "dunk" multiple times'):
+    #     list(should_fail())
 
 
 def test_invalid_mapping_keys():
@@ -99,14 +115,14 @@ def test_invalid_mapping_keys():
 
 
 def test_multi_output():
-    @solid(
-        output_defs=[
-            DynamicOutputDefinition(int, "numbers"),
-            DynamicOutputDefinition(str, "letters"),
-            OutputDefinition(str, "wildcard"),
-        ]
+    @op(
+        out={
+            "numbers": DynamicOut(int),
+            "letters": DynamicOut(str),
+            "wildcard": Out(str),
+        }
     )
-    def multiout(_):
+    def multiout():
         yield DynamicOutput(1, output_name="numbers", mapping_key="1")
         yield DynamicOutput(2, output_name="numbers", mapping_key="2")
         yield DynamicOutput("a", output_name="letters", mapping_key="a")
@@ -114,51 +130,39 @@ def test_multi_output():
         yield DynamicOutput("c", output_name="letters", mapping_key="c")
         yield Output("*", "wildcard")
 
-    @solid
+    @op
     def double(n):
         return n * 2
 
-    @pipeline
+    @job
     def multi_dyn():
         numbers, _, _ = multiout()
         numbers.map(double)
 
-    pipe_result = execute_pipeline(multi_dyn)
+    pipe_result = multi_dyn.execute_in_process()
 
     assert pipe_result.success
 
-    result = pipe_result.result_for_solid("multiout")
-    assert len(result.get_output_events_for_compute("numbers")) == 2
-    assert len(result.get_output_events_for_compute("letters")) == 3
-    assert result.get_output_event_for_compute("wildcard")
-    assert len(result.compute_output_events_dict["numbers"]) == 2
-    assert len(result.compute_output_events_dict["letters"]) == 3
-    assert len(result.compute_output_events_dict["wildcard"]) == 1
-    assert result.output_values == {
-        "numbers": {"1": 1, "2": 2},
-        "letters": {"a": "a", "b": "b", "c": "c"},
-        "wildcard": "*",
-    }
-    assert result.output_value("numbers") == {"1": 1, "2": 2}
-    assert result.output_value("letters") == {"a": "a", "b": "b", "c": "c"}
-    assert result.output_value("wildcard") == "*"
+    assert pipe_result.output_for_node("multiout", "numbers") == {"1": 1, "2": 2}
+    assert pipe_result.output_for_node("multiout", "letters") == {"a": "a", "b": "b", "c": "c"}
+    assert pipe_result.output_for_node("multiout", "wildcard") == "*"
 
-    assert pipe_result.output_for_solid("double") == {"1": 2, "2": 4}
+    assert pipe_result.output_for_node("double") == {"1": 2, "2": 4}
 
 
 def test_multi_out_map():
-    @solid(output_defs=[DynamicOutputDefinition()])
+    @op(out=DynamicOut())
     def emit():
         yield DynamicOutput(1, mapping_key="1")
         yield DynamicOutput(2, mapping_key="2")
         yield DynamicOutput(3, mapping_key="3")
 
-    @solid(
-        output_defs=[
-            OutputDefinition(name="a", is_required=False),
-            OutputDefinition(name="b", is_required=False),
-            OutputDefinition(name="c", is_required=False),
-        ]
+    @op(
+        out={
+            "a": Out(is_required=False),
+            "b": Out(is_required=False),
+            "c": Out(is_required=False),
+        },
     )
     def multiout(inp: int):
         if inp == 1:
@@ -166,47 +170,51 @@ def test_multi_out_map():
         else:
             yield Output(inp, output_name="b")
 
-    @solid
+    @op
     def echo(a):
         return a
 
-    @pipeline
+    @job
     def destructure():
         a, b, c = emit().map(multiout)
         echo.alias("echo_a")(a.collect())
         echo.alias("echo_b")(b.collect())
         echo.alias("echo_c")(c.collect())
 
-    result = execute_pipeline(destructure)
-    assert result.result_for_solid("echo_a").output_value() == [1]
-    assert result.result_for_solid("echo_b").output_value() == [2, 3]
-    assert result.result_for_solid("echo_c").skipped  # all fanned in inputs skipped -> solid skips
+    result = destructure.execute_in_process()
+    assert result.output_for_node("echo_a") == [1]
+    assert result.output_for_node("echo_b") == [2, 3]
+
+    # all fanned in inputs skipped -> solid skips
+    assert DagsterEventType.STEP_SKIPPED in [
+        event.event_type for event in result.all_events if event.step_key == "echo_c"
+    ]
 
 
 def test_context_mapping_key():
     _observed = []
 
-    @solid
+    @op
     def observe_key(context, _dep=None):
         _observed.append(context.get_mapping_key())
 
-    @solid(output_defs=[DynamicOutputDefinition()])
+    @op(out=DynamicOut())
     def emit():
         yield DynamicOutput(1, mapping_key="key_1")
         yield DynamicOutput(2, mapping_key="key_2")
 
-    @pipeline
+    @job
     def test():
         observe_key()
         emit().map(observe_key)
 
-    result = execute_pipeline(test)
+    result = test.execute_in_process()
     assert result.success
     assert _observed == [None, "key_1", "key_2"]
 
     # test standalone doesn't throw as well
     _observed = []
-    observe_key(build_solid_context())
+    observe_key(build_op_context())
     assert _observed == [None]
 
 
@@ -240,7 +248,7 @@ def spawn():
     yield Output(len(objgraph.by_type("DangerNoodle")), output_name="refs")
 
 
-@job()
+@job
 def no_leaks_plz():
     spawn()
 
@@ -249,14 +257,17 @@ def test_dealloc_prev_outputs():
     # Ensure dynamic outputs can be used to chunk large data objects
     # by not holding any refs to previous outputs.
     # Things that will hold on to outputs:
-    # * in process execution / mem io manager
-    # * having hooks
+    # * mem io manager
+    # * having hooks - they get access to output objs
+    # * in process execution - output capture for execute_in_process
     with instance_for_test() as inst:
-        result = execute_pipeline(reconstructable(no_leaks_plz), instance=inst)
-        assert result.success
-
-        # there may be 1 still referenced by outer iteration frames
-        assert result.output_for_solid("spawn", "refs") <= 1
+        with execute_job(
+            reconstructable(no_leaks_plz),
+            instance=inst,
+        ) as result:
+            assert result.success
+            # there may be 1 still referenced by outer iteration frames
+            assert result.output_for_node("spawn", "refs") <= 1
 
 
 def test_collect_and_map():
