@@ -1,26 +1,25 @@
+import os
 import tempfile
 
 import pytest
-import os
 
 from dagster import (
-    build_input_context,
-    build_output_context,
-    Field,
     DagsterInstance,
     DagsterInvalidDefinitionError,
+    Field,
     IOManager,
     In,
     InputManager,
     MetadataEntry,
     PythonObjectDagsterType,
     RootInputManagerDefinition,
+    build_input_context,
+    build_output_context,
     input_manager,
     io_manager,
     job,
     op,
     resource,
-    input_manager,
 )
 from dagster._core.definitions.events import Failure, RetryRequested
 from dagster._core.errors import DagsterInvalidConfigError
@@ -785,20 +784,23 @@ def test_default_config_on_io_manager_invocation():
             self.storage_dict = {}
 
         def handle_output(self, context, obj):
-            assert context.resource_config
-            assert context.resource_config["foo"] == "yay"
+            assert context.config
+            assert context.config["bar"] == "nay"
 
         def load_input(self, context):
-            assert context.resource_config
-            assert context.resource_config["foo"] == "yay"
+            assert context.config
+            assert context.config["foo"] == "yay"
 
-    @io_manager(config_schema={"foo": Field(str, default_value="yay")})
+    @io_manager(
+        input_config_schema={"foo": Field(str, default_value="yay")},
+        output_config_schema={"bar": Field(str, default_value="nay")},
+    )
     def my_io_manager(_):
         return MyIOManager()
 
     manager = my_io_manager(None)
-    context = build_input_context(name="abc")
+    context = build_input_context()
     manager.load_input(context)
 
-    context = build_output_context(name="abc")
+    context = build_output_context()
     manager.handle_output(context, 5)

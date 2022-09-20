@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import update_wrapper
-from typing import cast, Dict, Any
+from typing import Any, Dict, cast
 
 import dagster._check as check
 from dagster._core.definitions.config import is_callable_valid_config_arg
@@ -59,7 +59,6 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
         )
-        print(input_config_schema)
         super(InputManagerDefinition, self).__init__(
             resource_fn=resource_fn,
             config_schema=config_schema,
@@ -157,7 +156,7 @@ class InputManagerWrapper(InputManager):
         self._load_fn = load_fn
 
     def load_input(self, context):
-        from dagster._config import process_config
+        from dagster._config.validate import process_config
 
         config_evr = process_config(self._input_config_schema, check.not_none(context.config))
         if not config_evr.success:
@@ -171,7 +170,6 @@ class InputManagerWrapper(InputManager):
         config_value = cast(Dict[str, Any], config_evr.value)
 
         # resolve config from context and from input config
-        print("load input called!!")
         context._set_config(config_value)
 
         # the @input_manager decorated function (self._load_fn) may return a direct value that

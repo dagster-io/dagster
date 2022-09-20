@@ -458,6 +458,9 @@ class OutputContext:
 
         return self.step_context.asset_partitions_time_window_for_output(self.name)
 
+    def _set_config(self, config: Any):
+        self._config = config
+
     def get_run_scoped_output_identifier(self) -> Sequence[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
         step output.
