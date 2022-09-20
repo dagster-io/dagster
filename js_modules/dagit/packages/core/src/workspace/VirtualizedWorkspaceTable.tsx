@@ -36,7 +36,7 @@ export const LoadingOrNone: React.FC<{queryResult: QueryResult<any, any>}> = ({q
   );
 };
 
-const JOB_QUERY_DELAY = 300;
+const JOB_QUERY_DELAY = 100;
 
 export const useDelayedRowQuery = <Q, V>(lazyQueryFn: LazyQueryExecFunction<Q, V>) => {
   React.useEffect(() => {
