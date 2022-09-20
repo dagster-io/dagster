@@ -8,12 +8,20 @@ import time
 
 import pytest
 
-from dagster import DagsterEventType, fs_io_manager, reconstructable, resource
+from dagster import (
+    DagsterEventType,
+    In,
+    execute_job,
+    fs_io_manager,
+    job,
+    op,
+    reconstructable,
+    resource,
+)
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import create_run_for_test, instance_for_test
-from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, solid
 from dagster._utils import ensure_dir, touch_file
 
 HELLO_SOLID = "HELLO SOLID"
@@ -27,25 +35,23 @@ def resource_a(_):
     return "A"
 
 
-@solid
+@op
 def spawn(_):
     return 1
 
 
-@solid(input_defs=[InputDefinition("num", int)], required_resource_keys={"a"})
+@op(ins={"num": In(int)}, required_resource_keys={"a"})
 def spew(_, num):
     print(HELLO_SOLID)  # pylint: disable=print-call
     return num
 
 
 def define_pipeline():
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "io_manager": fs_io_manager})]
-    )
-    def spew_pipeline():
+    @job(resource_defs={"a": resource_a, "io_manager": fs_io_manager})
+    def spew_job():
         spew(spew(spawn()))
 
-    return spew_pipeline
+    return spew_job
 
 
 def normalize_file_content(s):
@@ -58,14 +64,14 @@ def normalize_file_content(s):
 def test_compute_log_to_disk():
     with instance_for_test() as instance:
 
-        spew_pipeline = define_pipeline()
+        spew_job = define_pipeline()
         manager = instance.compute_log_manager
-        result = execute_pipeline(spew_pipeline, instance=instance)
+        result = spew_job.execute_in_process(instance=instance)
         assert result.success
 
         compute_steps = [
             event.step_key
-            for event in result.step_event_list
+            for event in result.all_events
             if event.event_type == DagsterEventType.STEP_START
         ]
         for step_key in compute_steps:
@@ -81,19 +87,14 @@ def test_compute_log_to_disk():
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
 def test_compute_log_to_disk_multiprocess():
-    spew_pipeline = reconstructable(define_pipeline)
     with instance_for_test() as instance:
         manager = instance.compute_log_manager
-        result = execute_pipeline(
-            spew_pipeline,
-            run_config={"execution": {"multiprocess": {}}},
-            instance=instance,
-        )
+        result = execute_job(reconstructable(define_pipeline), instance=instance)
         assert result.success
 
         compute_steps = [
             event.step_key
-            for event in result.step_event_list
+            for event in result.all_events
             if event.event_type == DagsterEventType.STEP_START
         ]
         for step_key in compute_steps:
@@ -111,12 +112,12 @@ def test_compute_log_to_disk_multiprocess():
 def test_compute_log_manager():
     with instance_for_test() as instance:
         manager = instance.compute_log_manager
-        spew_pipeline = define_pipeline()
-        result = execute_pipeline(spew_pipeline, instance=instance)
+        spew_job = define_pipeline()
+        result = spew_job.execute_in_process(instance=instance)
         assert result.success
         compute_steps = [
             event.step_key
-            for event in result.step_event_list
+            for event in result.all_events
             if event.event_type == DagsterEventType.STEP_START
         ]
         assert len(compute_steps) == 3
@@ -128,7 +129,7 @@ def test_compute_log_manager():
 
         stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
         cleaned_logs = stderr.data.replace("\x1b[34m", "").replace("\x1b[0m", "")
-        assert "dagster - DEBUG - spew_pipeline - " in cleaned_logs
+        assert "dagster - DEBUG - spew_job - " in cleaned_logs
 
         bad_logs = manager.read_logs_file("not_a_run_id", step_key, ComputeIOType.STDOUT)
         assert bad_logs.data is None
@@ -140,9 +141,9 @@ def test_compute_log_manager():
 )
 def test_compute_log_manager_subscriptions():
     with instance_for_test() as instance:
-        spew_pipeline = define_pipeline()
+        spew_job = define_pipeline()
         step_key = "spew"
-        result = execute_pipeline(spew_pipeline, instance=instance)
+        result = spew_job.execute_in_process(instance=instance)
         stdout_observable = instance.compute_log_manager.observable(
             result.run_id, step_key, ComputeIOType.STDOUT
         )
@@ -209,15 +210,14 @@ def gen_solid_name(length):
 def test_long_solid_names():
     solid_name = gen_solid_name(300)
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
-    def long_pipeline():
+    @job(resource_defs={"a": resource_a})
+    def long_job():
         spew.alias(name=solid_name)()
 
     with instance_for_test() as instance:
         manager = instance.compute_log_manager
 
-        result = execute_pipeline(
-            long_pipeline,
+        result = long_job.execute_in_process(
             instance=instance,
             run_config={"solids": {solid_name: {"inputs": {"num": 1}}}},
         )
@@ -225,7 +225,7 @@ def test_long_solid_names():
 
         compute_steps = [
             event.step_key
-            for event in result.step_event_list
+            for event in result.all_events
             if event.event_type == DagsterEventType.STEP_START
         ]
 

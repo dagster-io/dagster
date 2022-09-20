@@ -127,12 +127,12 @@ def _resolve_inputs(
         if len(nothing_input_defs) > 0:
             suggestion = (
                 "This may be because you attempted to provide a value for a nothing "
-                "dependency. Nothing dependencies are ignored when directly invoking solids."
+                "dependency. Nothing dependencies are ignored when directly invoking ops."
             )
         else:
             suggestion = (
                 "This may be because an argument was provided for the context parameter, "
-                "but no context parameter was defined for the solid."
+                "but no context parameter was defined for the op."
             )
 
         node_label = solid_def.node_type_str

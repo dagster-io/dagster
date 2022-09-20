@@ -577,6 +577,11 @@ class DagsterEvent(
     def is_step_restarted(self) -> bool:
         return self.event_type == DagsterEventType.STEP_RESTARTED
 
+    @public  # type: ignore
+    @property
+    def is_asset_materialization(self) -> bool:
+        return self.event_type == DagsterEventType.ASSET_MATERIALIZATION
+
     @property
     def is_pipeline_success(self) -> bool:
         return self.event_type == DagsterEventType.RUN_SUCCESS

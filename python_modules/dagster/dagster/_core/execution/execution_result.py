@@ -97,9 +97,14 @@ class ExecutionResult(ABC):
         # resolve handle of node that node_str is referring to
         target_handle = NodeHandle.from_string(node_str)
         target_node_def = self.job_def.graph.get_solid(target_handle).definition
-        origin_output_def, origin_handle = target_node_def.resolve_output_to_origin(
-            output_name, NodeHandle.from_string(node_str)
-        )
+        try:
+            origin_output_def, origin_handle = target_node_def.resolve_output_to_origin(
+                output_name, NodeHandle.from_string(node_str)
+            )
+        except KeyError:
+            raise DagsterInvariantViolationError(
+                f"Could not find output named {output_name} for node {node_str}."
+            )
 
         # retrieve output value from resolved handle
         return self._get_output_for_handle(check.not_none(origin_handle), origin_output_def.name)

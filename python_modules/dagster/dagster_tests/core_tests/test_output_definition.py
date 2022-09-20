@@ -1,14 +1,11 @@
-from dagster._legacy import OutputDefinition
+from dagster import Out
+from dagster._core.definitions.output import DEFAULT_IO_MANAGER_KEY
 
 
 def test_output_definition():
-    output_definiton_onlyreq = OutputDefinition(dagster_type=int, name="result", is_required=True)
-    assert output_definiton_onlyreq.optional is False
+    out_onlyreq = Out(is_required=True)
+    assert out_onlyreq.optional is False
 
-    output_definiton_none = OutputDefinition(dagster_type=int, name="result")
-    assert output_definiton_none.optional is False
-
-
-def test_manager_key_default_value():
-    output_def = OutputDefinition(io_manager_key=None)
-    assert output_def.io_manager_key == "io_manager"
+    out_none = Out()
+    assert out_none.optional is False
+    assert out_none.io_manager_key == DEFAULT_IO_MANAGER_KEY

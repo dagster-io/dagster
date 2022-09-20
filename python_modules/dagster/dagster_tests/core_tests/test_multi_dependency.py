@@ -4,48 +4,45 @@ from dagster import (
     Any,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
+    GraphDefinition,
+    In,
     Int,
     List,
     MultiDependencyDefinition,
     Nothing,
+    Out,
+    graph,
+    job,
+    op,
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.solid_definition import CompositeSolidDefinition
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    composite_solid,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import InputDefinition, OutputDefinition
 
 
 def test_simple_values():
-    @solid(input_defs=[InputDefinition("numbers", List[Int])])
+    @op(ins={"numbers": In(List[Int])})
     def sum_num(_context, numbers):
         # cant guarantee order
         assert set(numbers) == set([1, 2, 3])
         return sum(numbers)
 
-    @lambda_solid
+    @op
     def emit_1():
         return 1
 
-    @lambda_solid
+    @op
     def emit_2():
         return 2
 
-    @lambda_solid
+    @op
     def emit_3():
         return 3
 
-    result = execute_pipeline(
-        PipelineDefinition(
+    result = (
+        GraphDefinition(
             name="input_test",
-            solid_defs=[emit_1, emit_2, emit_3, sum_num],
+            node_defs=[emit_1, emit_2, emit_3, sum_num],
             dependencies={
                 "sum_num": {
                     "numbers": MultiDependencyDefinition(
@@ -58,42 +55,44 @@ def test_simple_values():
                 }
             },
         )
+        .to_job()
+        .execute_in_process()
     )
     assert result.success
-    assert result.result_for_solid("sum_num").output_value() == 6
+    assert result.output_for_node("sum_num") == 6
 
 
-@solid(input_defs=[InputDefinition("stuff", List[Any])])
+@op(ins={"stuff": In(List[Any])})
 def collect(_context, stuff):
     assert set(stuff) == set([1, None, "one"])
     return stuff
 
 
-@lambda_solid
+@op
 def emit_num():
     return 1
 
 
-@lambda_solid
+@op
 def emit_none():
     pass
 
 
-@lambda_solid
+@op
 def emit_str():
     return "one"
 
 
-@lambda_solid(output_def=OutputDefinition(Nothing))
+@op(out=Out(Nothing))
 def emit_nothing():
     pass
 
 
 def test_interleaved_values():
-    result = execute_pipeline(
-        PipelineDefinition(
+    result = (
+        GraphDefinition(
             name="input_test",
-            solid_defs=[emit_num, emit_none, emit_str, collect],
+            node_defs=[emit_num, emit_none, emit_str, collect],
             dependencies={
                 "collect": {
                     "stuff": MultiDependencyDefinition(
@@ -106,36 +105,38 @@ def test_interleaved_values():
                 }
             },
         )
+        .to_job()
+        .execute_in_process()
     )
     assert result.success
 
 
 def test_dsl():
-    @pipeline
+    @job
     def input_test():
         collect([emit_num(), emit_none(), emit_str()])
 
-    result = execute_pipeline(input_test)
+    result = input_test.execute_in_process()
 
     assert result.success
 
 
 def test_collect_one():
-    @lambda_solid
+    @op
     def collect_one(list_arg):
         assert list_arg == ["one"]
 
-    @pipeline
+    @job
     def multi_one():
         collect_one([emit_str()])
 
-    assert execute_pipeline(multi_one).success
+    assert multi_one.execute_in_process().success
 
 
 def test_fan_in_manual():
     # manually building up this guy
-    @composite_solid
-    def _target_composite_dsl(str_in, none_in):
+    @graph
+    def _target_graph_dsl(str_in, none_in):
         num = emit_num()
         return collect([num, str_in, none_in])
 
@@ -225,9 +226,9 @@ def test_fan_in_manual():
 
 
 def test_nothing_deps():
-    PipelineDefinition(
+    GraphDefinition(
         name="input_test",
-        solid_defs=[emit_num, emit_nothing, emit_str, collect],
+        node_defs=[emit_num, emit_nothing, emit_str, collect],
         dependencies={
             "collect": {
                 "stuff": MultiDependencyDefinition(
@@ -239,4 +240,4 @@ def test_nothing_deps():
                 )
             }
         },
-    )
+    ).to_job()

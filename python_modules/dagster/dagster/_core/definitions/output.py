@@ -541,6 +541,10 @@ class Out(
     def is_dynamic(self) -> bool:
         return False
 
+    @property
+    def optional(self) -> bool:
+        return not self.is_required
+
 
 class DynamicOut(Out):
     """

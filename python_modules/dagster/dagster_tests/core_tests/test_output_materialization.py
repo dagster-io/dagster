@@ -6,90 +6,97 @@ from dagster import (
     AssetMaterialization,
     DagsterEventType,
     DagsterInvalidConfigError,
+    GraphDefinition,
+    In,
     Int,
+    Out,
     Output,
     String,
     dagster_type_materializer,
+    op,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    solid,
-)
+from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, execute_pipeline
 from dagster._utils.test import get_temp_file_name, get_temp_file_names
 
 
 def single_int_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int))
+    @op(out=Out(Int))
     def return_one():
         return 1
 
-    return PipelineDefinition(name="single_int_output_pipeline", solid_defs=[return_one])
+    return GraphDefinition(name="single_int_output_pipeline", node_defs=[return_one]).to_job()
 
 
 def single_string_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(String))
+    @op(out=Out(String))
     def return_foo():
         return "foo"
 
-    return PipelineDefinition(name="single_string_output_pipeline", solid_defs=[return_foo])
+    return GraphDefinition(name="single_string_output_pipeline", node_defs=[return_foo]).to_job()
 
 
 def multiple_output_pipeline():
-    @solid(
-        output_defs=[
-            OutputDefinition(Int, "number"),
-            OutputDefinition(String, "string"),
-        ]
+    @op(
+        out={
+            "number": Out(
+                Int,
+            ),
+            "string": Out(
+                String,
+            ),
+        }
     )
     def return_one_and_foo(_context):
         yield Output(1, "number")
         yield Output("foo", "string")
 
-    return PipelineDefinition(name="multiple_output_pipeline", solid_defs=[return_one_and_foo])
+    return GraphDefinition(name="multiple_output_pipeline", node_defs=[return_one_and_foo]).to_job()
 
 
 def single_int_named_output_pipeline():
-    @solid(output_defs=[OutputDefinition(Int, name="named")])
+    @op(
+        out={
+            "named": Out(
+                Int,
+            )
+        }
+    )
     def return_named_one():
         return 1
 
-    return PipelineDefinition(
-        name="single_int_named_output_pipeline", solid_defs=[return_named_one]
-    )
+    return GraphDefinition(
+        name="single_int_named_output_pipeline", node_defs=[return_named_one]
+    ).to_job()
 
 
 def no_input_no_output_pipeline():
-    @solid(output_defs=[])
+    @op(out={})
     def take_nothing_return_nothing(_context):
         pass
 
-    return PipelineDefinition(
-        name="no_input_no_output_pipeline", solid_defs=[take_nothing_return_nothing]
-    )
+    return GraphDefinition(
+        name="no_input_no_output_pipeline", node_defs=[take_nothing_return_nothing]
+    ).to_job()
 
 
 def one_input_no_output_pipeline():
-    @solid(input_defs=[InputDefinition("dummy")], output_defs=[])
+    @op(ins={"dummy": In()}, out={})
     def take_input_return_nothing(_context, **_kwargs):
         pass
 
-    return PipelineDefinition(
-        name="one_input_no_output_pipeline", solid_defs=[take_input_return_nothing]
-    )
+    return GraphDefinition(
+        name="one_input_no_output_pipeline", node_defs=[take_input_return_nothing]
+    ).to_job()
 
 
 def test_basic_json_default_output_config_schema():
     env = ResolvedRunConfig.build(
         single_int_output_pipeline(),
-        {"solids": {"return_one": {"outputs": [{"result": {"json": {"path": "foo"}}}]}}},
+        {"ops": {"return_one": {"outputs": [{"result": {"json": {"path": "foo"}}}]}}},
     )
 
     assert env.solids["return_one"]
@@ -101,7 +108,7 @@ def test_basic_json_default_output_config_schema():
 def test_basic_json_named_output_config_schema():
     env = ResolvedRunConfig.build(
         single_int_named_output_pipeline(),
-        {"solids": {"return_named_one": {"outputs": [{"named": {"json": {"path": "foo"}}}]}}},
+        {"ops": {"return_named_one": {"outputs": [{"named": {"json": {"path": "foo"}}}]}}},
     )
 
     assert env.solids["return_named_one"]
@@ -114,27 +121,23 @@ def test_basic_json_misnamed_output_config_schema():
     with pytest.raises(DagsterInvalidConfigError) as exc_context:
         ResolvedRunConfig.build(
             single_int_named_output_pipeline(),
-            {
-                "solids": {
-                    "return_named_one": {"outputs": [{"wrong_name": {"json": {"path": "foo"}}}]}
-                }
-            },
+            {"ops": {"return_named_one": {"outputs": [{"wrong_name": {"json": {"path": "foo"}}}]}}},
         )
 
     assert len(exc_context.value.errors) == 1
     assert 'Error 1: Received unexpected config entry "wrong_name"' in exc_context.value.message
-    assert "at path root:solids:return_named_one:outputs[0]" in exc_context.value.message
+    assert "at path root:ops:return_named_one:outputs[0]" in exc_context.value.message
 
 
 def test_no_outputs_no_inputs_config_schema():
     assert ResolvedRunConfig.build(no_input_no_output_pipeline())
 
     with pytest.raises(DagsterInvalidConfigError) as exc_context:
-        ResolvedRunConfig.build(no_input_no_output_pipeline(), {"solids": {"return_one": {}}})
+        ResolvedRunConfig.build(no_input_no_output_pipeline(), {"ops": {"return_one": {}}})
 
     assert len(exc_context.value.errors) == 1
     assert (
-        'Error 1: Received unexpected config entry "return_one" at path root:solids'
+        'Error 1: Received unexpected config entry "return_one" at path root:ops'
         in exc_context.value.message
     )
 
@@ -142,14 +145,14 @@ def test_no_outputs_no_inputs_config_schema():
 def test_no_outputs_one_input_config_schema():
     assert ResolvedRunConfig.build(
         one_input_no_output_pipeline(),
-        {"solids": {"take_input_return_nothing": {"inputs": {"dummy": {"value": "value"}}}}},
+        {"ops": {"take_input_return_nothing": {"inputs": {"dummy": {"value": "value"}}}}},
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_context:
         ResolvedRunConfig.build(
             one_input_no_output_pipeline(),
             {
-                "solids": {
+                "ops": {
                     "take_input_return_nothing": {
                         "inputs": {"dummy": {"value": "value"}},
                         "outputs": {},
@@ -159,15 +162,14 @@ def test_no_outputs_one_input_config_schema():
         )
 
     assert len(exc_context.value.errors) == 1
-    exp_msg = 'Error 1: Received unexpected config entry "outputs" at path root:solids:take_input_return_nothing'
+    exp_msg = 'Error 1: Received unexpected config entry "outputs" at path root:ops:take_input_return_nothing'
     assert exp_msg in exc_context.value.message
 
 
 def test_basic_int_json_materialization():
     with get_temp_file_name() as filename:
-        result = execute_pipeline(
-            single_int_output_pipeline(),
-            {"solids": {"return_one": {"outputs": [{"result": {"json": {"path": filename}}}]}}},
+        result = single_int_output_pipeline().execute_in_process(
+            {"ops": {"return_one": {"outputs": [{"result": {"json": {"path": filename}}}]}}},
         )
 
         assert result.success
@@ -179,19 +181,13 @@ def test_basic_int_json_materialization():
 
 def test_basic_materialization_event():
     with get_temp_file_name() as filename:
-        result = execute_pipeline(
-            single_int_output_pipeline(),
-            {"solids": {"return_one": {"outputs": [{"result": {"json": {"path": filename}}}]}}},
+        result = single_int_output_pipeline().execute_in_process(
+            {"ops": {"return_one": {"outputs": [{"result": {"json": {"path": filename}}}]}}},
         )
 
         assert result.success
-        solid_result = result.result_for_solid("return_one")
-        step_events = solid_result.step_events_by_kind[StepKind.COMPUTE]
-        mat_event = list(
-            filter(
-                lambda de: de.event_type == DagsterEventType.ASSET_MATERIALIZATION,
-                step_events,
-            )
+        mat_event = result.filter_events(
+            lambda evt: evt.step_key == "return_one" and evt.is_asset_materialization
         )[0]
 
         mat = mat_event.event_specific_data.materialization
@@ -209,9 +205,8 @@ def test_basic_string_json_materialization():
     pipeline = single_string_output_pipeline()
 
     with get_temp_file_name() as filename:
-        result = execute_pipeline(
-            pipeline,
-            {"solids": {"return_foo": {"outputs": [{"result": {"json": {"path": filename}}}]}}},
+        result = pipeline.execute_in_process(
+            {"ops": {"return_foo": {"outputs": [{"result": {"json": {"path": filename}}}]}}},
         )
 
         assert result.success
@@ -227,10 +222,9 @@ def test_basic_int_and_string_json_materialization():
 
     with get_temp_file_names(2) as file_tuple:
         filename_one, filename_two = file_tuple  # pylint: disable=E0632
-        result = execute_pipeline(
-            pipeline,
+        result = pipeline.execute_in_process(
             {
-                "solids": {
+                "ops": {
                     "return_one_and_foo": {
                         "outputs": [
                             {"string": {"json": {"path": filename_one}}},
@@ -265,10 +259,9 @@ def test_basic_int_and_string_json_multiple_materialization():
         # False positive for unbalanced tuple unpacking
         # pylint: disable=E0632
         filename_one, filename_two, filename_three, filename_four = file_tuple
-        result = execute_pipeline(
-            pipeline,
+        result = pipeline.execute_in_process(
             {
-                "solids": {
+                "ops": {
                     "return_one_and_foo": {
                         "outputs": [
                             {"string": {"json": {"path": filename_one}}},
@@ -314,10 +307,9 @@ def test_basic_int_json_multiple_materializations():
 
     with get_temp_file_names(2) as file_tuple:
         filename_one, filename_two = file_tuple  # pylint: disable=E0632
-        result = execute_pipeline(
-            pipeline,
+        result = pipeline.execute_in_process(
             {
-                "solids": {
+                "ops": {
                     "return_one": {
                         "outputs": [
                             {"result": {"json": {"path": filename_one}}},
@@ -348,27 +340,19 @@ def yield_two_materializations(*_args, **_kwargs):
 def test_basic_yield_multiple_materializations():
     SomeDagsterType = create_any_type(name="SomeType", materializer=yield_two_materializations)
 
-    @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
+    @op(out=Out(SomeDagsterType))
     def return_one():
         return 1
 
-    pipeline_def = PipelineDefinition(name="single_int_output_pipeline", solid_defs=[return_one])
-    result = execute_pipeline(
-        pipeline_def,
-        run_config={"solids": {"return_one": {"outputs": [{"result": 2}]}}},
+    pipeline_def = GraphDefinition(
+        name="single_int_output_pipeline", node_defs=[return_one]
+    ).to_job()
+    result = pipeline_def.execute_in_process(
+        run_config={"ops": {"return_one": {"outputs": [{"result": 2}]}}},
     )
     assert result.success
 
-    event_types = [event.event_type_value for event in result.event_list]
-    assert 2 == (
-        sum(
-            [
-                True
-                for event_type in event_types
-                if event_type == DagsterEventType.ASSET_MATERIALIZATION.value
-            ]
-        )
-    )
+    assert len(result.filter_events(lambda evt: evt.is_asset_materialization)) == 2
 
 
 @dagster_type_materializer(Int)
@@ -379,16 +363,17 @@ def return_int(*_args, **_kwargs):
 def test_basic_bad_output_materialization():
     SomeDagsterType = create_any_type(name="SomeType", materializer=return_int)
 
-    @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
+    @op(out=Out(SomeDagsterType))
     def return_one():
         return 1
 
-    pipeline_def = PipelineDefinition(name="single_int_output_pipeline", solid_defs=[return_one])
+    pipeline_def = GraphDefinition(
+        name="single_int_output_pipeline", node_defs=[return_one]
+    ).to_job()
 
     with pytest.raises(
         DagsterInvariantViolationError, match="You must return an AssetMaterialization"
     ):
-        execute_pipeline(
-            pipeline_def,
-            run_config={"solids": {"return_one": {"outputs": [{"result": 2}]}}},
+        pipeline_def.execute_in_process(
+            run_config={"ops": {"return_one": {"outputs": [{"result": 2}]}}},
         )

@@ -437,6 +437,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
         run_config: Dict[str, object] = {}
         if self._solid_config:
             run_config["solids"] = {self._solid_def.name: {"config": self._solid_config}}
+            run_config["ops"] = run_config["solids"]
         run_config["resources"] = self._resources_config
         return run_config
 
