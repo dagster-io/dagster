@@ -10,10 +10,7 @@ import {
   Popover,
   Table,
   Tag,
-  Mono,
-  stringFromValue,
 } from '@dagster-io/ui';
-import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -112,12 +109,12 @@ export const BackfillTable = ({
       <Table>
         <thead>
           <tr>
-            <th style={{width: 120}}>Backfill Id</th>
+            <th style={{width: 120}}>Backfill ID</th>
             <th style={{width: 200}}>Created</th>
-            {showPartitionSet ? <th>Partition Set</th> : null}
+            {showPartitionSet ? <th>Partition set</th> : null}
             {allPartitions ? <th>Requested</th> : null}
-            <th style={{textAlign: 'right', width: 200}}>Backfill Status</th>
-            <th>Run Status</th>
+            <th style={{width: 140}}>Backfill status</th>
+            <th>Run status</th>
             <th style={{width: 80}} />
           </tr>
         </thead>
@@ -179,47 +176,13 @@ const BackfillRow = ({
     },
   ]);
 
-  const repoAddress = backfill.partitionSet
-    ? buildRepoAddress(
-        backfill.partitionSet.repositoryOrigin.repositoryName,
-        backfill.partitionSet.repositoryOrigin.repositoryLocationName,
-      )
-    : null;
-  const repo = useRepository(repoAddress);
-  const isJob = !!(
-    repo &&
-    backfill.partitionSet &&
-    isThisThingAJob(repo, backfill.partitionSet.pipelineName)
-  );
-
-  const partitionSetBackfillUrl = backfill.partitionSet
-    ? workspacePipelinePath({
-        repoName: backfill.partitionSet.repositoryOrigin.repositoryName,
-        repoLocation: backfill.partitionSet.repositoryOrigin.repositoryLocationName,
-        pipelineName: backfill.partitionSet.pipelineName,
-        path: `/partitions?${qs.stringify({
-          partitionSet: backfill.partitionSet.name,
-          q: [stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}])],
-        })}`,
-        isJob,
-      })
-    : null;
-
   const canCancelRuns = backfill.partitionStatuses.results.some(
     (r) => r.runStatus === RunStatus.QUEUED || r.runStatus === RunStatus.STARTED,
   );
 
   return (
     <tr>
-      <td style={{width: 120}}>
-        <Mono>
-          {partitionSetBackfillUrl ? (
-            <Link to={partitionSetBackfillUrl}>{backfill.backfillId}</Link>
-          ) : (
-            backfill.backfillId
-          )}
-        </Mono>
-      </td>
+      <td style={{width: 120}}>{backfill.backfillId}</td>
       <td style={{width: 240}}>
         {backfill.timestamp ? <TimestampDisplay timestamp={backfill.timestamp} /> : '-'}
       </td>
@@ -241,7 +204,7 @@ const BackfillRow = ({
           />
         </td>
       ) : null}
-      <td style={{textAlign: 'right', width: 200}}>
+      <td style={{width: 140}}>
         <BackfillStatus backfill={backfill} />
       </td>
       <td>
@@ -283,12 +246,12 @@ const BackfillRow = ({
                 />
               ) : null}
               <MenuItem
-                text="View Backfill Runs"
+                text="View backfill runs"
                 icon="settings_backup_restore"
                 onClick={() => history.push(runsUrl)}
               />
               <MenuItem
-                text="View Step Status"
+                text="View step status"
                 icon="view_list"
                 onClick={() => {
                   onShowStepStatus(backfill);
