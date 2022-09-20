@@ -2,9 +2,9 @@ from __future__ import unicode_literals
 
 import pytest
 
+from dagster import job
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._legacy import pipeline
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
 OLD_EXECUTION_PLAN_SNAPSHOT = """{
@@ -127,8 +127,8 @@ OLD_EXECUTION_PLAN_SNAPSHOT = """{
 }"""
 
 
-@pipeline
-def noop_pipeline():
+@job
+def noop_job():
     pass
 
 
@@ -138,7 +138,7 @@ def test_cant_load_old_snapshot():
         DagsterInvariantViolationError,
         match="Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots had enough information to fully reconstruct the ExecutionPlan",
     ):
-        ExecutionPlan.rebuild_from_snapshot("noop_pipeline", snapshot)
+        ExecutionPlan.rebuild_from_snapshot("noop_job", snapshot)
 
 
 PRE_CACHE_EXECUTION_PLAN_SNAPSHOT = """{
@@ -196,4 +196,4 @@ PRE_CACHE_EXECUTION_PLAN_SNAPSHOT = """{
 
 def test_rebuild_pre_cached_key_execution_plan_snapshot():
     snapshot = deserialize_json_to_dagster_namedtuple(PRE_CACHE_EXECUTION_PLAN_SNAPSHOT)
-    ExecutionPlan.rebuild_from_snapshot("noop_pipeline", snapshot)
+    ExecutionPlan.rebuild_from_snapshot("noop_job", snapshot)

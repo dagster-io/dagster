@@ -9,7 +9,6 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     DagsterInstance,
-    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DynamicOut,
     DynamicOutput,
@@ -19,15 +18,18 @@ from dagster import (
     MetadataEntry,
     Nothing,
     Out,
+    ReexecutionOptions,
     build_input_context,
     build_output_context,
+    execute_job,
     graph,
+    in_process_executor,
     job,
     op,
+    reconstructable,
     resource,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.context.output import get_output_context
@@ -37,21 +39,11 @@ from dagster._core.storage.io_manager import IOManager, io_manager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    composite_solid,
-    execute_pipeline,
-    pipeline,
-    reexecute_pipeline,
-    solid,
-)
 
 
 def test_io_manager_with_config():
-    @solid
-    def my_solid(_):
+    @op
+    def my_op():
         pass
 
     class MyIOManager(IOManager):
@@ -63,21 +55,21 @@ def test_io_manager_with_config():
             assert context.config["some_config"] == "some_value"
 
     @io_manager(output_config_schema={"some_config": str})
-    def configurable_io_manager(_):
+    def configurable_io_manager():
         return MyIOManager()
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": configurable_io_manager})])
-    def my_pipeline():
-        my_solid()
+    @job(resource_defs={"io_manager": configurable_io_manager})
+    def my_job():
+        my_op()
 
-    run_config = {"solids": {"my_solid": {"outputs": {"result": {"some_config": "some_value"}}}}}
-    result = execute_pipeline(my_pipeline, run_config=run_config)
+    run_config = {"solids": {"my_op": {"outputs": {"result": {"some_config": "some_value"}}}}}
+    result = my_job.execute_in_process(run_config=run_config)
     assert result.success
 
 
 def test_io_manager_with_optional_config():
-    @solid
-    def my_solid(_):
+    @op
+    def my_op():
         pass
 
     class MyIOManager(IOManager):
@@ -88,20 +80,20 @@ def test_io_manager_with_optional_config():
             pass
 
     @io_manager(output_config_schema={"some_config": Field(str, is_required=False)})
-    def configurable_io_manager(_):
+    def configurable_io_manager():
         return MyIOManager()
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": configurable_io_manager})])
-    def my_pipeline():
-        my_solid()
+    @job(resource_defs={"io_manager": configurable_io_manager})
+    def my_job():
+        my_op()
 
-    result = execute_pipeline(my_pipeline)
+    result = my_job.execute_in_process()
     assert result.success
 
 
 def test_io_manager_with_required_resource_keys():
-    @solid
-    def my_solid(_):
+    @op
+    def my_op():
         pass
 
     class MyIOManager(IOManager):
@@ -120,219 +112,260 @@ def test_io_manager_with_required_resource_keys():
         return MyIOManager(init_context.resources.foo_resource)
 
     @resource
-    def foo_resource(_):
+    def foo_resource():
         return "foo"
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "io_manager": io_manager_requires_resource,
-                    "foo_resource": foo_resource,
-                }
-            )
-        ]
+    @job(
+        resource_defs={
+            "io_manager": io_manager_requires_resource,
+            "foo_resource": foo_resource,
+        }
     )
-    def my_pipeline():
-        my_solid()
+    def my_job():
+        my_op()
 
-    result = execute_pipeline(my_pipeline)
+    result = my_job.execute_in_process()
     assert result.success
 
 
-def define_pipeline(manager, metadata_dict):
-    @solid(output_defs=[OutputDefinition(metadata=metadata_dict.get("solid_a"))])
-    def solid_a(_context):
+def define_job(manager, metadata_dict):
+    @op(out=Out(metadata=metadata_dict.get("op_a")))
+    def op_a(_context):
         return [1, 2, 3]
 
-    @solid(output_defs=[OutputDefinition(metadata=metadata_dict.get("solid_b"))])
-    def solid_b(_context, _df):
+    @op(out=Out(metadata=metadata_dict.get("op_b")))
+    def op_b(_context, _df):
         return 1
 
-    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"io_manager": manager})])
-    def my_pipeline():
-        solid_b(solid_a())
+    @job(resource_defs={"io_manager": manager}, executor_def=in_process_executor)
+    def my_job():
+        op_b(op_a())
 
-    return my_pipeline
+    return my_job
+
+
+def define_fs_io_manager_job():
+    return define_job(fs_io_manager, {})
 
 
 def test_result_output():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         default_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_pipeline(default_io_manager, {})
+        job_def = define_job(default_io_manager, {})
 
-        result = execute_pipeline(pipeline_def)
+        result = job_def.execute_in_process()
         assert result.success
 
         # test output_value
-        assert result.result_for_solid("solid_a").output_value() == [1, 2, 3]
-        assert result.result_for_solid("solid_b").output_value() == 1
+        assert result.output_for_node("op_a") == [1, 2, 3]
+        assert result.output_for_node("op_b") == 1
 
 
 def test_fs_io_manager_reexecution():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        default_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_pipeline(default_io_manager, {})
-        instance = DagsterInstance.ephemeral()
-
-        result = execute_pipeline(pipeline_def, instance=instance)
-        assert result.success
-
-        re_result = reexecute_pipeline(
-            pipeline_def,
-            result.run_id,
-            instance=instance,
-            step_selection=["solid_b"],
-        )
-
-        # re-execution should yield asset_store_operation events instead of intermediate events
-        loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, re_result.event_list))
-        assert len(loaded_input_events) == 1
-        assert loaded_input_events[0].event_specific_data.upstream_step_key == "solid_a"
+        with instance_for_test() as instance:
+            result = execute_job(
+                reconstructable(define_fs_io_manager_job),
+                instance,
+                run_config={"resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}}},
+            )
+            assert result.success
+            re_result = execute_job(
+                reconstructable(define_fs_io_manager_job),
+                instance,
+                run_config={"resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}}},
+                reexecution_options=ReexecutionOptions(
+                    parent_run_id=result.run_id, step_selection=["op_b"]
+                ),
+            )
+            assert re_result.success
+            loaded_input_events = re_result.filter_events(lambda evt: evt.is_loaded_input)
+            assert len(loaded_input_events) == 1
+            assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"
+            assert [
+                evt.step_key for evt in re_result.filter_events(lambda evt: evt.is_step_success)
+            ] == ["op_b"]
 
 
 def test_can_reexecute():
-    pipeline_def = define_pipeline(fs_io_manager, {})
-    plan = create_execution_plan(pipeline_def)
+    job_def = define_job(fs_io_manager, {})
+    plan = create_execution_plan(job_def)
     assert plan.artifacts_persisted
+
+
+def define_can_fail_job():
+    @op
+    def one():
+        return 1
+
+    @op(config_schema={"should_fail": bool})
+    def plus_two(context, i):
+        if context.op_config["should_fail"] is True:
+            raise Exception()
+        return i + 2
+
+    @op
+    def plus_three(i):
+        return i + 3
+
+    @job(executor_def=in_process_executor)
+    def my_job():
+        plus_three(plus_two(one()))
+
+    return my_job
 
 
 def test_reexecute_subset_of_subset():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        instance = DagsterInstance.ephemeral()
+        with instance_for_test() as instance:
+            result = execute_job(
+                reconstructable(define_can_fail_job),
+                instance,
+                run_config={
+                    "ops": {"plus_two": {"config": {"should_fail": True}}},
+                    "resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}},
+                },
+            )
+            assert not result.success
+            reexecution_options = ReexecutionOptions.from_failure(result.run_id, instance)
+            with execute_job(
+                reconstructable(define_can_fail_job),
+                instance,
+                run_config={
+                    "ops": {"plus_two": {"config": {"should_fail": False}}},
+                    "resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}},
+                },
+                reexecution_options=reexecution_options,
+            ) as first_re_result:
+                assert first_re_result.success
+                assert first_re_result.output_for_node("plus_two") == 3
+            with execute_job(
+                reconstructable(define_can_fail_job),
+                instance,
+                run_config={
+                    "ops": {"plus_two": {"config": {"should_fail": False}}},
+                    "resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}},
+                },
+                reexecution_options=ReexecutionOptions(
+                    first_re_result.run_id, step_selection=["plus_two*"]
+                ),
+            ) as second_re_result:
+                assert second_re_result.success
+                assert second_re_result.output_for_node("plus_two") == 3
 
-        my_fs_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
-
-        def my_pipeline_def(should_fail):
-            @solid
-            def one(_):
-                return 1
-
-            @solid
-            def plus_two(_, i):
-                if should_fail:
-                    raise Exception()
-                return i + 2
-
-            @solid
-            def plus_three(_, i):
-                return i + 3
-
-            @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_fs_io_manager})])
-            def my_pipeline():
-                plus_three(plus_two(one()))
-
-            return my_pipeline
-
-        first_result = execute_pipeline(
-            my_pipeline_def(should_fail=True), instance=instance, raise_on_error=False
-        )
-        assert not first_result.success
-
-        first_run_id = first_result.run_id
-
-        second_result = reexecute_pipeline(
-            my_pipeline_def(should_fail=False),
-            instance=instance,
-            parent_run_id=first_run_id,
-            step_selection=["plus_two*"],
-        )
-        assert second_result.success
-        assert second_result.result_for_solid("plus_two").output_value() == 3
-        second_run_id = second_result.run_id
-
-        # step_context._get_source_run_id should return first_run_id
-        third_result = reexecute_pipeline(
-            my_pipeline_def(should_fail=False),
-            instance=instance,
-            parent_run_id=second_run_id,
-            step_selection=["plus_two*"],
-        )
-        assert third_result.success
-        assert third_result.result_for_solid("plus_two").output_value() == 3
+            with execute_job(
+                reconstructable(define_can_fail_job),
+                instance,
+                run_config={
+                    "ops": {"plus_two": {"config": {"should_fail": False}}},
+                    "resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}},
+                },
+                reexecution_options=ReexecutionOptions(
+                    second_re_result.run_id, step_selection=["plus_two*"]
+                ),
+            ) as third_re_result:
+                assert third_re_result.success
+                assert third_re_result.output_for_node("plus_two") == 3
 
 
-def test_reexecute_subset_of_subset_with_composite():
-    @solid
-    def one(_):
+def define_composite_job():
+    @op
+    def one():
         return 1
 
-    @solid
-    def plus_two(_, i):
+    @op
+    def plus_two(i):
         return i + 2
 
-    @composite_solid
+    @graph
     def one_plus_two():
         return plus_two(one())
 
-    @solid
-    def plus_three(_, i):
+    @op
+    def plus_three(i):
         return i + 3
 
-    with tempfile.TemporaryDirectory() as tmpdir_path:
-        instance = DagsterInstance.ephemeral()
+    @job(executor_def=in_process_executor)
+    def my_job():
+        plus_three(one_plus_two())
 
-        my_fs_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
+    return my_job
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_fs_io_manager})])
-        def my_pipeline():
-            plus_three(one_plus_two())
 
-        first_result = execute_pipeline(my_pipeline, instance=instance)
-        assert first_result.success
-        first_run_id = first_result.run_id
+def test_reexecute_subset_of_subset_with_composite():
 
-        second_result = reexecute_pipeline(
-            my_pipeline,
-            instance=instance,
-            parent_run_id=first_run_id,
-            step_selection=["plus_three"],
+    with instance_for_test() as instance:
+        result = execute_job(reconstructable(define_composite_job), instance)
+        assert result.success
+
+        first_re_result = execute_job(
+            reconstructable(define_composite_job),
+            instance,
+            reexecution_options=ReexecutionOptions(result.run_id, step_selection=["plus_three"]),
         )
-        assert second_result.success
-        second_run_id = second_result.run_id
+        assert first_re_result.success
 
-        # step_context._get_source_run_id should return first_run_id
-        third_result = reexecute_pipeline(
-            my_pipeline,
-            instance=instance,
-            parent_run_id=second_run_id,
-            step_selection=["plus_three"],
+        second_re_result = execute_job(
+            reconstructable(define_composite_job),
+            instance,
+            reexecution_options=ReexecutionOptions(result.run_id, step_selection=["plus_three"]),
         )
-        assert third_result.success
+        assert second_re_result.success
+
+        third_re_result = execute_job(
+            reconstructable(define_composite_job),
+            instance,
+            reexecution_options=ReexecutionOptions(result.run_id, step_selection=["plus_three"]),
+        )
+        assert third_re_result.success
 
 
-def execute_pipeline_with_steps(
+def execute_job_with_steps(
     instance,
-    pipeline_def,
+    job_fn,
     step_keys_to_execute=None,
     run_id=None,
     parent_run_id=None,
     root_run_id=None,
+    run_config=None,
 ):
-    plan = create_execution_plan(pipeline_def, step_keys_to_execute=step_keys_to_execute)
+    recon_job = reconstructable(job_fn)
+    plan = create_execution_plan(
+        recon_job, step_keys_to_execute=step_keys_to_execute, run_config=run_config
+    )
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def,
+        pipeline_def=recon_job.get_definition(),
         run_id=run_id,
         # the backfill flow can inject run group info
         parent_run_id=parent_run_id,
         root_run_id=root_run_id,
+        run_config=run_config,
     )
-    return execute_plan(plan, InMemoryPipeline(pipeline_def), instance, pipeline_run)
+    return execute_plan(plan, recon_job, instance, pipeline_run, run_config=run_config)
+
+
+def define_metadata_job():
+    test_metadata_dict = {
+        "op_a": {"path": "a"},
+        "op_b": {"path": "b"},
+    }
+    return define_job(custom_path_fs_io_manager, test_metadata_dict)
 
 
 def test_step_subset_with_custom_paths():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        default_io_manager = custom_path_fs_io_manager.configured({"base_dir": tmpdir_path})
+        instance = DagsterInstance.ephemeral()
         # pass hardcoded file path via metadata
         test_metadata_dict = {
-            "solid_a": {"path": "a"},
-            "solid_b": {"path": "b"},
+            "op_a": {"path": "a"},
+            "op_b": {"path": "b"},
         }
 
-        pipeline_def = define_pipeline(default_io_manager, test_metadata_dict)
-
-        instance = DagsterInstance.ephemeral()
-        events = execute_pipeline_with_steps(instance, pipeline_def)
+        events = execute_job_with_steps(
+            instance,
+            define_metadata_job,
+            run_config={"resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}}},
+        )
         for evt in events:
             assert not evt.is_failure
 
@@ -340,32 +373,37 @@ def test_step_subset_with_custom_paths():
         # when a path is provided via io manager, it's able to run step subset using an execution
         # plan when the ascendant outputs were not previously created by dagster-controlled
         # computations
-        step_subset_events = execute_pipeline_with_steps(
-            instance, pipeline_def, step_keys_to_execute=["solid_b"], run_id=run_id
+        step_subset_events = execute_job_with_steps(
+            instance,
+            define_metadata_job,
+            step_keys_to_execute=["op_b"],
+            run_id=run_id,
+            run_config={"resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}}},
         )
         for evt in step_subset_events:
             assert not evt.is_failure
         # only the selected step subset was executed
-        assert set([evt.step_key for evt in step_subset_events]) == {"solid_b"}
+        assert set([evt.step_key for evt in step_subset_events]) == {"op_b"}
 
         # Asset Materialization events
         step_materialization_events = list(
             filter(lambda evt: evt.is_step_materialization, step_subset_events)
         )
         assert len(step_materialization_events) == 1
-        assert os.path.join(tmpdir_path, test_metadata_dict["solid_b"]["path"]) == (
+        assert os.path.join(tmpdir_path, test_metadata_dict["op_b"]["path"]) == (
             step_materialization_events[0]
             .event_specific_data.materialization.metadata_entries[0]
             .entry_data.path
         )
 
         # test reexecution via backfills (not via re-execution apis)
-        another_step_subset_events = execute_pipeline_with_steps(
+        another_step_subset_events = execute_job_with_steps(
             instance,
-            pipeline_def,
-            step_keys_to_execute=["solid_b"],
+            define_metadata_job,
+            step_keys_to_execute=["op_b"],
             parent_run_id=run_id,
             root_run_id=run_id,
+            run_config={"resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}}},
         )
         for evt in another_step_subset_events:
             assert not evt.is_failure
@@ -392,50 +430,49 @@ def test_multi_materialization():
             return keys in self.values
 
     @io_manager
-    def dummy_io_manager(_):
+    def dummy_io_manager():
         return DummyIOManager()
 
-    @solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager")])
-    def solid_a(_context):
+    @op(out=Out(io_manager_key="my_io_manager"))
+    def op_a(_context):
         return 1
 
-    @solid()
-    def solid_b(_context, a):
+    @op()
+    def op_b(_context, a):
         assert a == 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_io_manager": dummy_io_manager})])
-    def my_pipeline():
-        solid_b(solid_a())
+    @job(resource_defs={"my_io_manager": dummy_io_manager})
+    def my_job():
+        op_b(op_a())
 
-    result = execute_pipeline(my_pipeline)
+    result = my_job.execute_in_process()
     assert result.success
     # Asset Materialization events
-    step_materialization_events = list(
-        filter(lambda evt: evt.is_step_materialization, result.event_list)
-    )
+    step_materialization_events = result.filter_events(lambda evt: evt.is_step_materialization)
+
     assert len(step_materialization_events) == 2
 
 
 def test_different_io_managers():
-    @solid(
-        output_defs=[OutputDefinition(io_manager_key="my_io_manager")],
+    @op(
+        out=Out(io_manager_key="my_io_manager"),
     )
-    def solid_a(_context):
+    def op_a(_context):
         return 1
 
-    @solid()
-    def solid_b(_context, a):
+    @op()
+    def op_b(_context, a):
         assert a == 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_io_manager": mem_io_manager})])
-    def my_pipeline():
-        solid_b(solid_a())
+    @job(resource_defs={"my_io_manager": mem_io_manager})
+    def my_job():
+        op_b(op_a())
 
-    assert execute_pipeline(my_pipeline).success
+    assert my_job.execute_in_process().success
 
 
 @io_manager
-def my_io_manager(_):
+def my_io_manager():
     pass
 
 
@@ -443,47 +480,47 @@ def test_fan_in():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         default_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
 
-        @solid
-        def input_solid1(_):
+        @op
+        def input_op1():
             return 1
 
-        @solid
-        def input_solid2(_):
+        @op
+        def input_op2():
             return 2
 
-        @solid
-        def solid1(_, input1):
+        @op
+        def op1(input1):
             assert input1 == [1, 2]
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": default_io_manager})])
-        def my_pipeline():
-            solid1(input1=[input_solid1(), input_solid2()])
+        @job(resource_defs={"io_manager": default_io_manager})
+        def my_job():
+            op1(input1=[input_op1(), input_op2()])
 
-        execute_pipeline(my_pipeline)
+        my_job.execute_in_process()
 
 
 def test_fan_in_skip():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         default_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
 
-        @solid(output_defs=[OutputDefinition(name="skip", is_required=False)])
-        def skip(_):
+        @op(out={"skip": Out(is_required=False)})
+        def skip():
             return
             yield  # pylint: disable=unreachable
 
-        @solid
-        def one(_):
+        @op
+        def one():
             return 1
 
-        @solid
-        def receiver(_, input1):
+        @op
+        def receiver(input1):
             assert input1 == [1]
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": default_io_manager})])
-        def my_pipeline():
+        @job(resource_defs={"io_manager": default_io_manager})
+        def my_job():
             receiver(input1=[one(), skip()])
 
-        assert execute_pipeline(my_pipeline).success
+        assert my_job.execute_in_process().success
 
 
 def test_configured():
@@ -495,7 +532,7 @@ def test_configured():
         required_resource_keys={"r1", "r2"},
         version="123",
     )
-    def an_io_manager(_):
+    def an_io_manager():
         pass
 
     configured_io_manager = an_io_manager.configured({"base_dir": "/a/b/c"})
@@ -518,7 +555,7 @@ def test_mem_io_manager_execution():
 
 def test_io_manager_resources_on_context():
     @resource
-    def foo_resource(_):
+    def foo_resource():
         return "foo"
 
     @io_manager(required_resource_keys={"foo_resource"})
@@ -534,96 +571,70 @@ def test_io_manager_resources_on_context():
 
         return InternalIOManager()
 
-    @solid(
-        input_defs=[
-            InputDefinition("_manager_input", root_manager_key="io_manager_reqs_resources")
-        ],
-        output_defs=[
-            OutputDefinition(dagster_type=str, io_manager_key="io_manager_reqs_resources")
-        ],
+    @op(
+        ins={"_manager_input": In(root_manager_key="io_manager_reqs_resources")},
+        out=Out(dagster_type=str, io_manager_key="io_manager_reqs_resources"),
     )
-    def big_solid(_, _manager_input):
+    def big_op(_manager_input):
         return "manager_input"
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "io_manager_reqs_resources": io_manager_reqs_resources,
-                    "foo_resource": foo_resource,
-                }
-            )
-        ]
+    @job(
+        resource_defs={
+            "io_manager_reqs_resources": io_manager_reqs_resources,
+            "foo_resource": foo_resource,
+        }
     )
-    def basic_pipeline():
-        big_solid()
+    def basic_job():
+        big_op()
 
-    result = execute_pipeline(basic_pipeline)
+    result = basic_job.execute_in_process()
 
     assert result.success
 
 
 def test_mem_io_managers_result_for_solid():
-    @solid
-    def one(_):
+    @op
+    def one():
         return 1
 
-    @solid
-    def add_one(_, x):
+    @op
+    def add_one(x):
         return x + 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": mem_io_manager})])
-    def my_pipeline():
+    @job(resource_defs={"io_manager": mem_io_manager})
+    def my_job():
         add_one(one())
 
-    result = execute_pipeline(my_pipeline)
+    result = my_job.execute_in_process()
     assert result.success
-    assert result.result_for_solid("one").output_value() == 1
-    assert result.result_for_solid("add_one").output_value() == 2
-
-
-def test_mode_missing_io_manager():
-    @solid(output_defs=[OutputDefinition(io_manager_key="missing_io_manager")])
-    def my_solid(_):
-        return 1
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @pipeline
-        def _my_pipeline():
-            my_solid()
+    assert result.output_for_node("one") == 1
+    assert result.output_for_node("add_one") == 2
 
 
 def test_hardcoded_io_manager():
-    @solid
-    def basic_solid(_):
+    @op
+    def basic_op():
         return 5
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "io_manager": IOManagerDefinition.hardcoded_io_manager(InMemoryIOManager())
-                }
-            )
-        ]
+    @job(
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(InMemoryIOManager())}
     )
-    def basic_pipeline():
-        basic_solid()
+    def basic_job():
+        basic_op()
 
-    result = execute_pipeline(basic_pipeline)
+    result = basic_job.execute_in_process()
     assert result.success
-    assert result.output_for_solid("basic_solid") == 5
+    assert result.output_for_node("basic_op") == 5
 
 
 def test_get_output_context_with_resources():
-    @solid
-    def basic_solid():
+    @op
+    def basic_op():
         pass
 
-    @pipeline
-    def basic_pipeline():
-        basic_solid()
+    @job
+    def basic_job():
+        basic_op()
 
     with pytest.raises(
         CheckError,
@@ -632,10 +643,10 @@ def test_get_output_context_with_resources():
         "retrieved off of that.",
     ):
         get_output_context(
-            execution_plan=create_execution_plan(basic_pipeline),
-            pipeline_def=basic_pipeline,
-            resolved_run_config=ResolvedRunConfig.build(basic_pipeline),
-            step_output_handle=StepOutputHandle("basic_solid", "result"),
+            execution_plan=create_execution_plan(basic_job),
+            pipeline_def=basic_job,
+            resolved_run_config=ResolvedRunConfig.build(basic_job),
+            step_output_handle=StepOutputHandle("basic_op", "result"),
             run_id=None,
             log_manager=None,
             step_context=mock.MagicMock(),
@@ -654,20 +665,20 @@ def test_error_boundary_with_gen():
             raise ValueError("handle output error")
 
     @io_manager
-    def error_io_manager(_):
+    def error_io_manager():
         return ErrorIOManager()
 
-    @solid
-    def basic_solid():
+    @op
+    def basic_op():
         return 5
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": error_io_manager})])
-    def single_solid_pipeline():
-        basic_solid()
+    @job(resource_defs={"io_manager": error_io_manager})
+    def single_solid_job():
+        basic_op()
 
-    result = execute_pipeline(single_solid_pipeline, raise_on_error=False)
+    result = single_solid_job.execute_in_process(raise_on_error=False)
     step_failure = [
-        event for event in result.event_list if event.event_type_value == "STEP_FAILURE"
+        event for event in result.all_events if event.event_type_value == "STEP_FAILURE"
     ][0]
     assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
 
@@ -681,7 +692,7 @@ def test_handle_output_exception_raised():
             raise ValueError("handle output error")
 
     @io_manager
-    def error_io_manager(_):
+    def error_io_manager():
         return ErrorIOManager()
 
     @op

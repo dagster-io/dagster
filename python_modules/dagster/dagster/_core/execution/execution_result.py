@@ -39,7 +39,9 @@ class ExecutionResult(ABC):
     @property
     def success(self) -> bool:
         """bool: Whether execution was successful."""
-        return self.dagster_run.is_success
+        return self.dagster_run.is_success and not self.filter_events(
+            lambda evt: evt.is_step_failure or evt.is_run_failure
+        )
 
     @property
     def all_node_events(self) -> Sequence[DagsterEvent]:
@@ -162,6 +164,11 @@ class ExecutionResult(ABC):
 
     def get_step_success_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_success]
+
+    def get_asset_materialization_events(self) -> Sequence[DagsterEvent]:
+        return self.filter_events(
+            lambda event: event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        )
 
     def get_failed_step_keys(self) -> AbstractSet[str]:
         failure_events = self.filter_events(

@@ -1,7 +1,6 @@
 import pytest
 
-from dagster import asset
-from dagster._core.definitions.executor_definition import execute_in_process_executor
+from dagster import In, asset, define_asset_job, in_process_executor, job, op, repository
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     MAX_NUM,
@@ -12,37 +11,35 @@ from dagster._core.selector.subset_selector import (
     parse_solid_selection,
     parse_step_selection,
 )
-from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import AssetGroup, InputDefinition, lambda_solid, pipeline
 
 
-@lambda_solid
+@op
 def return_one():
     return 1
 
 
-@lambda_solid
+@op
 def return_two():
     return 2
 
 
-@lambda_solid(input_defs=[InputDefinition("num1"), InputDefinition("num2")])
+@op(ins={"num1": In(), "num2": In()})
 def add_nums(num1, num2):
     return num1 + num2
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@op(ins={"num": In()})
 def multiply_two(num):
     return num * 2
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@op(ins={"num": In()})
 def add_one(num):
     return num + 1
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
-def foo_pipeline():
+@job(executor_def=in_process_executor)
+def foo_job():
     """
     return_one ---> add_nums --> multiply_two --> add_one
     return_two --|
@@ -51,7 +48,7 @@ def foo_pipeline():
 
 
 def test_generate_dep_graph():
-    graph = generate_dep_graph(foo_pipeline)
+    graph = generate_dep_graph(foo_job)
     assert graph == {
         "upstream": {
             "return_one": set(),
@@ -71,7 +68,7 @@ def test_generate_dep_graph():
 
 
 def test_traverser():
-    graph = generate_dep_graph(foo_pipeline)
+    graph = generate_dep_graph(foo_job)
     traverser = Traverser(graph)
 
     assert traverser.fetch_upstream(item_name="return_one", depth=1) == set()
@@ -86,7 +83,7 @@ def test_traverser():
 
 
 def test_traverser_invalid():
-    graph = generate_dep_graph(foo_pipeline)
+    graph = generate_dep_graph(foo_job)
     traverser = Traverser(graph)
 
     assert traverser.fetch_upstream(item_name="some_solid", depth=1) == set()
@@ -105,15 +102,15 @@ def test_parse_clause_invalid():
 
 
 def test_parse_solid_selection_single():
-    solid_selection_single = parse_solid_selection(foo_pipeline, ["add_nums"])
+    solid_selection_single = parse_solid_selection(foo_job, ["add_nums"])
     assert len(solid_selection_single) == 1
     assert solid_selection_single == {"add_nums"}
 
-    solid_selection_star = parse_solid_selection(foo_pipeline, ["add_nums*"])
+    solid_selection_star = parse_solid_selection(foo_job, ["add_nums*"])
     assert len(solid_selection_star) == 3
     assert set(solid_selection_star) == {"add_nums", "multiply_two", "add_one"}
 
-    solid_selection_both = parse_solid_selection(foo_pipeline, ["*add_nums+"])
+    solid_selection_both = parse_solid_selection(foo_job, ["*add_nums+"])
     assert len(solid_selection_both) == 4
     assert set(solid_selection_both) == {
         "return_one",
@@ -124,9 +121,7 @@ def test_parse_solid_selection_single():
 
 
 def test_parse_solid_selection_multi():
-    solid_selection_multi_disjoint = parse_solid_selection(
-        foo_pipeline, ["return_one", "add_nums+"]
-    )
+    solid_selection_multi_disjoint = parse_solid_selection(foo_job, ["return_one", "add_nums+"])
     assert len(solid_selection_multi_disjoint) == 3
     assert set(solid_selection_multi_disjoint) == {
         "return_one",
@@ -134,9 +129,7 @@ def test_parse_solid_selection_multi():
         "multiply_two",
     }
 
-    solid_selection_multi_overlap = parse_solid_selection(
-        foo_pipeline, ["*add_nums", "return_one+"]
-    )
+    solid_selection_multi_overlap = parse_solid_selection(foo_job, ["*add_nums", "return_one+"])
     assert len(solid_selection_multi_overlap) == 3
     assert set(solid_selection_multi_overlap) == {
         "return_one",
@@ -146,18 +139,18 @@ def test_parse_solid_selection_multi():
 
     with pytest.raises(
         DagsterInvalidSubsetError,
-        match="No qualified solids to execute found for solid_selection",
+        match="No qualified ops to execute found for op_selection",
     ):
-        parse_solid_selection(foo_pipeline, ["*add_nums", "a"])
+        parse_solid_selection(foo_job, ["*add_nums", "a"])
 
 
 def test_parse_solid_selection_invalid():
 
     with pytest.raises(
         DagsterInvalidSubsetError,
-        match="No qualified solids to execute found for solid_selection",
+        match="No qualified ops to execute found for op_selection",
     ):
-        parse_solid_selection(foo_pipeline, ["some,solid"])
+        parse_solid_selection(foo_job, ["some,solid"])
 
 
 step_deps = {
@@ -272,6 +265,14 @@ def asset_2(my_asset):
     return my_asset
 
 
-asset_selection_job = AssetGroup([my_asset, asset_2]).build_job(
-    "asset_selection_job", executor_def=execute_in_process_executor
-)
+@repository
+def asset_house():
+    return [
+        my_asset,
+        asset_2,
+        define_asset_job("asset_selection_job", selection="*", executor_def=in_process_executor),
+    ]
+
+
+def get_asset_selection_job():
+    return asset_house.get_job("asset_selection_job")

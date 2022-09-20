@@ -260,7 +260,9 @@ class ReconstructablePipeline(
     ) -> "ReconstructablePipeline":
         # take a list of unresolved selection queries
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+        asset_selection = frozenset(
+            check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+        )
 
         check.invariant(
             not (solid_selection and asset_selection),

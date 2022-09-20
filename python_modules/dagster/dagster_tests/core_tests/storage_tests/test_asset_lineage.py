@@ -1,19 +1,10 @@
 import pytest
 
-from dagster import AssetKey, DynamicOutput, Output, io_manager
+from dagster import AssetKey, DynamicOut, DynamicOutput, In, Out, Output, io_manager, job, op
 from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.io_manager import IOManager
-from dagster._legacy import (
-    DynamicOutputDefinition,
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
 
 
 def n_asset_keys(path, n):
@@ -43,44 +34,41 @@ def test_io_manager_diamond_lineage():
     def my_io_manager(_):
         return MyIOManager()
 
-    @solid(
-        output_defs=[
-            OutputDefinition(name="outputA", io_manager_key="asset_io_manager"),
-            OutputDefinition(name="outputB", io_manager_key="asset_io_manager"),
-        ]
+    @op(
+        out={
+            "outputA": Out(io_manager_key="asset_io_manager"),
+            "outputB": Out(io_manager_key="asset_io_manager"),
+        }
     )
-    def solid_produce(_):
+    def op_produce(_):
         yield Output(None, "outputA")
         yield Output(None, "outputB")
 
-    @solid(output_defs=[OutputDefinition(name="outputT", io_manager_key="asset_io_manager")])
-    def solid_transform(_, _input):
+    @op(out={"outputT": Out(io_manager_key="asset_io_manager")})
+    def op_transform(_, _input):
         return None
 
-    @solid(output_defs=[OutputDefinition(name="outputC", io_manager_key="asset_io_manager")])
-    def solid_combine(_, _inputA, _inputB):
+    @op(out={"outputC": Out(io_manager_key="asset_io_manager")})
+    def op_combine(_, _inputA, _inputB):
         return Output(None, "outputC")
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_io_manager": my_io_manager})])
-    def my_pipeline():
-        a, b = solid_produce()
-        at = solid_transform.alias("a_transform")(a)
-        bt = solid_transform.alias("b_transform")(b)
-        solid_combine(at, bt)
+    @job(resource_defs={"asset_io_manager": my_io_manager})
+    def my_job():
+        a, b = op_produce()
+        at = op_transform.alias("a_transform")(a)
+        bt = op_transform.alias("b_transform")(b)
+        op_combine(at, bt)
 
-    result = execute_pipeline(my_pipeline)
-    events = result.step_event_list
-    materializations = [
-        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
-    ]
+    result = my_job.execute_in_process()
+    materializations = result.get_asset_materialization_events()
     assert len(materializations) == 5
 
-    check_materialization(materializations[0], AssetKey(["solid_produce", "outputA"]))
-    check_materialization(materializations[1], AssetKey(["solid_produce", "outputB"]))
+    check_materialization(materializations[0], AssetKey(["op_produce", "outputA"]))
+    check_materialization(materializations[1], AssetKey(["op_produce", "outputB"]))
     check_materialization(
         materializations[-1],
         AssetKey(
-            ["solid_combine", "outputC"],
+            ["op_combine", "outputC"],
         ),
         parent_assets=[
             AssetLineageInfo(AssetKey(["a_transform", "outputT"])),
@@ -105,20 +93,16 @@ def test_multiple_definition_fails():
     def my_io_manager(_):
         return MyIOManager()
 
-    @solid(
-        output_defs=[
-            OutputDefinition(asset_key=AssetKey("x"), io_manager_key="asset_io_manager"),
-        ]
-    )
-    def fail_solid(_):
+    @op(out=Out(asset_key=AssetKey("x"), io_manager_key="asset_io_manager"))
+    def fail_op(_):
         return 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_io_manager": my_io_manager})])
-    def my_pipeline():
-        fail_solid()
+    @job(resource_defs={"asset_io_manager": my_io_manager})
+    def my_job():
+        fail_op()
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline(my_pipeline)
+        my_job.execute_in_process()
 
 
 @pytest.mark.skip(reason="no longer supporting lineage feature")
@@ -129,16 +113,15 @@ def test_input_definition_multiple_partition_lineage():
 
     partition_entries = [MetadataEntry("partition count", value=123 * i * i) for i in range(3)]
 
-    @solid(
-        output_defs=[
-            OutputDefinition(
-                name="output1",
+    @op(
+        out={
+            "output1": Out(
                 asset_key=AssetKey("table1"),
                 asset_partitions=set([str(i) for i in range(3)]),
             )
-        ],
+        },
     )
-    def solid1(_):
+    def op1(_):
         return Output(
             None,
             "output1",
@@ -151,33 +134,29 @@ def test_input_definition_multiple_partition_lineage():
             ],
         )
 
-    @solid(
-        input_defs=[
-            # here, only take 1 of the asset keys specified by the output
-            InputDefinition(
-                name="_input1",
+    @op(
+        ins={
+            "_input1": In(
                 asset_key=AssetKey("table1"),
                 asset_partitions=set(["0"]),
             )
-        ],
-        output_defs=[OutputDefinition(name="output2", asset_key=lambda _: AssetKey("table2"))],
+        },
+        out={"output2": Out(asset_key=lambda _: AssetKey("table2"))},
     )
-    def solid2(_, _input1):
+    def op2(_, _input1):
         yield Output(
             7,
             "output2",
             metadata_entries=[entry2],
         )
 
-    @pipeline
-    def my_pipeline():
-        solid2(solid1())
+    @job
+    def my_job():
+        op2(op1())
 
-    result = execute_pipeline(my_pipeline)
-    events = result.step_event_list
-    materializations = [
-        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
-    ]
+    result = my_job.execute_in_process()
+    materializations = result.get_asset_materialization_events()
+
     assert len(materializations) == 4
 
     seen_partitions = set()
@@ -216,55 +195,51 @@ def test_mixed_asset_definition_lineage():
     def my_io_manager(_):
         return MyIOManager()
 
-    @solid(output_defs=[OutputDefinition(io_manager_key="asset_io_manager")])
-    def io_manager_solid(_):
+    @op(out=Out(io_manager_key="asset_io_manager"))
+    def io_manager_op(_):
         return 1
 
-    @solid(
-        output_defs=[OutputDefinition(asset_key=AssetKey(["output_def_table", "output_def_solid"]))]
-    )
-    def output_def_solid(_):
+    @op(out=Out(asset_key=AssetKey(["output_def_table", "output_def_op"])))
+    def output_def_op(_):
         return 1
 
-    @solid(
-        output_defs=[
-            OutputDefinition(name="a", asset_key=AssetKey(["output_def_table", "combine_solid"])),
-            OutputDefinition(name="b", io_manager_key="asset_io_manager"),
-        ]
+    @op(
+        out={
+            "a": Out(asset_key=AssetKey(["output_def_table", "combine_op"])),
+            "b": Out(io_manager_key="asset_io_manager"),
+        }
     )
-    def combine_solid(_, _a, _b):
+    def combine_op(_, _a, _b):
         yield Output(None, "a")
         yield Output(None, "b")
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_io_manager": my_io_manager})])
-    def my_pipeline():
-        a = io_manager_solid()
-        b = output_def_solid()
-        combine_solid(a, b)
+    @job(resource_defs={"asset_io_manager": my_io_manager})
+    def my_job():
+        a = io_manager_op()
+        b = output_def_op()
+        combine_op(a, b)
 
-    result = execute_pipeline(my_pipeline)
-    events = result.step_event_list
-    materializations = [
-        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
-    ]
+    result = my_job.execute_in_process()
+    materializations = result.get_asset_materialization_events()
+
     assert len(materializations) == 4
 
-    check_materialization(materializations[0], AssetKey(["io_manager_table", "io_manager_solid"]))
-    check_materialization(materializations[1], AssetKey(["output_def_table", "output_def_solid"]))
+    check_materialization(materializations[0], AssetKey(["io_manager_table", "io_manager_op"]))
+    check_materialization(materializations[1], AssetKey(["output_def_table", "output_def_op"]))
     check_materialization(
         materializations[2],
-        AssetKey(["output_def_table", "combine_solid"]),
+        AssetKey(["output_def_table", "combine_op"]),
         parent_assets=[
-            AssetLineageInfo(AssetKey(["io_manager_table", "io_manager_solid"])),
-            AssetLineageInfo(AssetKey(["output_def_table", "output_def_solid"])),
+            AssetLineageInfo(AssetKey(["io_manager_table", "io_manager_op"])),
+            AssetLineageInfo(AssetKey(["output_def_table", "output_def_op"])),
         ],
     )
     check_materialization(
         materializations[3],
-        AssetKey(["io_manager_table", "combine_solid"]),
+        AssetKey(["io_manager_table", "combine_op"]),
         parent_assets=[
-            AssetLineageInfo(AssetKey(["io_manager_table", "io_manager_solid"])),
-            AssetLineageInfo(AssetKey(["output_def_table", "output_def_solid"])),
+            AssetLineageInfo(AssetKey(["io_manager_table", "io_manager_op"])),
+            AssetLineageInfo(AssetKey(["output_def_table", "output_def_op"])),
         ],
     )
 
@@ -275,18 +250,12 @@ def test_dynamic_output_definition_single_partition_materialization():
     entry1 = MetadataEntry("nrows", value=123)
     entry2 = MetadataEntry("some value", value=3.21)
 
-    @solid(output_defs=[OutputDefinition(name="output1", asset_key=AssetKey("table1"))])
-    def solid1(_):
+    @op(out={"output1": Out(asset_key=AssetKey("table1"))})
+    def op1(_):
         return Output(None, "output1", metadata_entries=[entry1])
 
-    @solid(
-        output_defs=[
-            DynamicOutputDefinition(
-                name="output2", asset_key=lambda context: AssetKey(context.mapping_key)
-            )
-        ]
-    )
-    def solid2(_, _input1):
+    @op(out={"output2": DynamicOut(asset_key=lambda context: AssetKey(context.mapping_key))})
+    def op2(_, _input1):
         for i in range(4):
             yield DynamicOutput(
                 7,
@@ -295,19 +264,17 @@ def test_dynamic_output_definition_single_partition_materialization():
                 metadata_entries=[entry2],
             )
 
-    @solid
+    @op
     def do_nothing(_, _input1):
         pass
 
-    @pipeline
-    def my_pipeline():
-        solid2(solid1()).map(do_nothing)
+    @job
+    def my_job():
+        op2(op1()).map(do_nothing)
 
-    result = execute_pipeline(my_pipeline)
-    events = result.step_event_list
-    materializations = [
-        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
-    ]
+    result = my_job.execute_in_process()
+    materializations = result.get_asset_materialization_events()
+
     assert len(materializations) == 5
 
     check_materialization(materializations[0], AssetKey(["table1"]), metadata_entries=[entry1])

@@ -1,22 +1,22 @@
+from dagster import graph, op
 from dagster._core.snap import (
     CompositeSolidDefSnap,
     DependencyStructureIndex,
     build_composite_solid_def_snap,
 )
-from dagster._legacy import composite_solid, solid
 from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
 def test_noop_comp_solid_definition():
-    @solid
-    def noop_solid(_):
+    @op
+    def noop_op(_):
         pass
 
-    @composite_solid
-    def comp_solid():
-        noop_solid()
+    @graph
+    def comp_graph():
+        noop_op()
 
-    comp_solid_meta = build_composite_solid_def_snap(comp_solid)
+    comp_solid_meta = build_composite_solid_def_snap(comp_graph)
 
     assert isinstance(comp_solid_meta, CompositeSolidDefSnap)
     assert (
@@ -26,19 +26,19 @@ def test_noop_comp_solid_definition():
 
 
 def test_basic_comp_solid_definition():
-    @solid
+    @op
     def return_one(_):
         return 1
 
-    @solid
+    @op
     def take_one(_, one):
         return one
 
-    @composite_solid
-    def comp_solid():
+    @graph
+    def comp_graph():
         take_one(return_one())
 
-    comp_solid_meta = build_composite_solid_def_snap(comp_solid)
+    comp_solid_meta = build_composite_solid_def_snap(comp_graph)
 
     assert isinstance(comp_solid_meta, CompositeSolidDefSnap)
     assert (
@@ -54,19 +54,19 @@ def test_basic_comp_solid_definition():
 
 
 def test_complex_comp_solid_definition():
-    @solid
+    @op
     def return_one(_):
         return 1
 
-    @solid
+    @op
     def take_many(_, items):
         return items
 
-    @composite_solid
-    def comp_solid(this_number):
+    @graph
+    def comp_graph(this_number):
         take_many([return_one(), this_number, return_one.alias("return_one_also")()])
 
-    comp_solid_meta = build_composite_solid_def_snap(comp_solid)
+    comp_solid_meta = build_composite_solid_def_snap(comp_graph)
 
     assert isinstance(comp_solid_meta, CompositeSolidDefSnap)
     assert (

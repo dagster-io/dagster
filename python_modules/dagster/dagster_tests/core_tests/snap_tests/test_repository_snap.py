@@ -1,24 +1,23 @@
-from dagster import repository
+from dagster import job, op, repository
 from dagster._core.host_representation import (
     ExternalPipelineData,
     external_repository_data_from_def,
 )
 from dagster._core.snap import PipelineSnapshot
-from dagster._legacy import pipeline, solid
 
 
 def test_repository_snap_all_props():
-    @solid
-    def noop_solid(_):
+    @op
+    def noop_op(_):
         pass
 
-    @pipeline
-    def noop_pipeline():
-        noop_solid()
+    @job
+    def noop_job():
+        noop_op()
 
     @repository
     def noop_repo():
-        return [noop_pipeline]
+        return [noop_job]
 
     external_repo_data = external_repository_data_from_def(noop_repo)
 
@@ -28,7 +27,7 @@ def test_repository_snap_all_props():
 
     pipeline_snapshot = external_repo_data.external_pipeline_datas[0].pipeline_snapshot
     assert isinstance(pipeline_snapshot, PipelineSnapshot)
-    assert pipeline_snapshot.name == "noop_pipeline"
+    assert pipeline_snapshot.name == "noop_job"
     assert pipeline_snapshot.description is None
     assert pipeline_snapshot.tags == {}
 

@@ -155,6 +155,10 @@ class InputContext:
         return self._pipeline_name
 
     @property
+    def job_name(self) -> str:
+        return self.pipeline_name
+
+    @property
     def solid_def(self) -> "SolidDefinition":
         if self._solid_def is None:
             raise DagsterInvariantViolationError(

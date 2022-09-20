@@ -54,6 +54,7 @@ def core_execute_in_process(
             tags={**job_def.tags, **(run_tags or {})},
             run_id=run_id,
             asset_selection=asset_selection,
+            execution_plan=execution_plan,
         )
         run_id = pipeline_run.run_id
 

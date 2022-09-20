@@ -585,6 +585,10 @@ class DagsterEvent(
     def is_pipeline_failure(self) -> bool:
         return self.event_type == DagsterEventType.RUN_FAILURE
 
+    @property
+    def is_run_failure(self) -> bool:
+        return self.event_type == DagsterEventType.RUN_FAILURE
+
     @public  # type: ignore
     @property
     def is_failure(self) -> bool:
