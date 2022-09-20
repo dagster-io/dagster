@@ -95,7 +95,7 @@ class UnresolvedAssetJobDefinition(
     def run_request_for_partition(
         self,
         partition_key: str,
-        run_key: Optional[str],
+        run_key: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
     ) -> RunRequest:
