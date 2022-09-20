@@ -315,7 +315,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
         "interactively."
     ),
 )
-@click.argument("input_json", type=click.STRING)
+@click.argument("input_json", type=click.STRING, envvar="DAGSTER_EXECUTE_STEP_ARGS")
 def execute_step_command(input_json):
     with capture_interrupts():
 
