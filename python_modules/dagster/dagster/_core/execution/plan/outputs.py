@@ -190,8 +190,8 @@ class UnresolvedStepOutputHandle(
             ),
             output_name=check.str_param(output_name, "output_name"),
             # this could be a set of resolution keys to support multiple mapping operations
-            resolved_by_step_key=check.str_param(resolved_by_step_key, "resolved_by_step_key"),
-            resolved_by_output_name=check.str_param(
+            resolved_by_step_key=check.list_param(resolved_by_step_key, "resolved_by_step_key"),
+            resolved_by_output_name=check.list_param(
                 resolved_by_output_name, "resolved_by_output_name"
             ),
         )
