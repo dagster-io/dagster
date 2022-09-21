@@ -1,0 +1,118 @@
+---
+version: "3.8"
+
+services:
+  # This service runs dagit. It has no user code; instead it loads its
+  # jobs from the gRPC server running in the user_code service.
+  # Because our instance uses the QueuedRunCoordinator, any runs submitted from
+  # dagit will be put on a queue and later dequeued and launched by
+  # the dagster-daemon service.
+  dagit:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: dagit
+    image: "$REGISTRY_URL/deploy_ecs/dagit"
+    container_name: dagit
+    command: "dagit -h 0.0.0.0 -p 3000 -w workspace.yaml"
+    ports:
+      - "3000:3000"
+    environment:
+      DAGSTER_POSTGRES_DB: "postgres_db"
+      DAGSTER_POSTGRES_HOSTNAME: "postgresql"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_USER: "postgres_user"
+    depends_on:
+      - postgresql
+      - user_code
+    x-aws-role:
+      Statement:
+        - Effect: "Allow"
+          Action:
+            - "ecs:DescribeTasks"
+            - "ecs:StopTask"
+          Resource:
+            - "*"
+        - Effect: "Allow"
+          Action:
+            - "iam:PassRole"
+          Resource:
+            - "*"
+          Condition:
+            StringLike:
+              iam:PassedToService: "ecs-tasks.amazonaws.com"
+
+  # This service runs the dagster-daemon process, which is responsible for
+  # taking runs off of the queue and launching them, as well as creating
+  # runs from schedules or sensors.
+  daemon:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: dagster
+    image: "$REGISTRY_URL/deploy_ecs/daemon"
+    container_name: daemon
+    command: "dagster-daemon run"
+    environment:
+      DAGSTER_POSTGRES_HOSTNAME: "postgresql"
+      DAGSTER_POSTGRES_USER: "postgres_user"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_DB: "postgres_db"
+    depends_on:
+      - postgresql
+      - user_code
+    x-aws-role:
+      Statement:
+        - Effect: "Allow"
+          Action:
+            - "ec2:DescribeNetworkInterfaces"
+            - "ecs:DescribeTaskDefinition"
+            - "ecs:DescribeTasks"
+            - "ecs:ListAccountSettings"
+            - "ecs:RegisterTaskDefinition"
+            - "ecs:RunTask"
+            - "ecs:TagResource"
+            - "secretsmanager:DescribeSecret"
+            - "secretsmanager:ListSecrets"
+            - "secretsmanager:GetSecretValue"
+          Resource:
+            - "*"
+        - Effect: "Allow"
+          Action:
+            - "iam:PassRole"
+          Resource:
+            - "*"
+          Condition:
+            StringLike:
+              iam:PassedToService: "ecs-tasks.amazonaws.com"
+
+  # This service runs a gRPC server that serves information about your
+  # repository. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
+  # run launcher to use this same image when launching runs in a new container.
+  # Multiple containers like this can be deployed separately - each needs to
+  # run on its own port and have its own entry in the workspace.yaml file.
+  user_code:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: user_code
+    image: "$REGISTRY_URL/deploy_ecs/user_code"
+    container_name: user_code
+    command: "dagster api grpc -h 0.0.0.0 -p 4000 -f repo.py"
+    environment:
+      DAGSTER_POSTGRES_DB: "postgres_db"
+      DAGSTER_POSTGRES_HOSTNAME: "postgresql"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_USER: "postgres_user"
+      DAGSTER_CURRENT_IMAGE: "$REGISTRY_URL/deploy_ecs/user_code"
+
+  # This service runs the postgres DB used by dagster for run storage, schedule
+  # storage, and event log storage. In a real deployment, you might choose to
+  # remove this in favor of an RDS instance.
+  postgresql:
+    image: postgres:11
+    container_name: postgresql
+    environment:
+      POSTGRES_DB: "postgres_db"
+      POSTGRES_PASSWORD: "postgres_password"
+      POSTGRES_USER: "postgres_user"
