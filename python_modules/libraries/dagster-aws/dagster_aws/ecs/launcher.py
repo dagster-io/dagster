@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 import boto3
 from botocore.exceptions import ClientError
 
-from dagster import Array, Field, Noneable, Permissive, ScalarUnion, StringSource
+from dagster import Array, Enum, EnumValue, Field, Noneable, Permissive, ScalarUnion, StringSource
 from dagster import _check as check
 from dagster._core.events import EngineEventData, MetadataEntry
 from dagster._core.launcher.base import (
@@ -65,6 +65,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         task_role_arn: Optional[str] = None,
         log_group: Optional[str] = None,
         sidecar_container_definitions: Optional[List[Dict[str, Any]]] = None,
+        launch_type: Optional[str] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -122,6 +123,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.sidecar_container_definitions = check.opt_list_param(
             sidecar_container_definitions, "sidecar_container_definitions"
         )
+        self.launch_type = check.opt_str_param(launch_type, "launch_type", default="FARGATE")
 
         if not self.use_current_task_definition:
             check.invariant(
@@ -249,6 +251,21 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     " for the expected format."
                 ),
             ),
+            "launch_type": Field(
+                Enum(
+                    "EcsLaunchType",
+                    [
+                        EnumValue("FARGATE"),
+                        EnumValue("EC2"),
+                    ],
+                ),
+                is_required=False,
+                default_value="FARGATE",
+                description=(
+                    "What type of ECS infrastructure to launch the run task in. "
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html"
+                ),
+            ),
             **SHARED_ECS_SCHEMA,
         }
 
@@ -342,13 +359,19 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         # Run a task using the same network configuration as this processes's
         # task.
-        response = self.ecs.run_task(
+
+        run_task_params = dict(
             taskDefinition=task_config.task_definition,
             cluster=task_config.cluster,
             overrides=overrides,
-            networkConfiguration=task_config.network_configuration,
-            launchType="FARGATE",
+            launchType=task_config.launch_type,
         )
+
+        network_configuration = task_config.network_configuration
+        if network_configuration:
+            run_task_params["networkConfiguration"] = network_configuration
+
+        response = self.ecs.run_task(**run_task_params)
 
         tasks = response["tasks"]
 
@@ -514,7 +537,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 sidecars=self.sidecar_container_definitions,
             )
             if not self._reuse_task_definition(task_definition_config):
-                task_definition_dict = task_definition_config.task_definition_dict()
+                task_definition_dict = task_definition_config.task_definition_dict(self.launch_type)
                 # Register the task overridden task definition as a revision to the
                 # "dagster-run" family.
                 self.ecs.register_task_definition(**task_definition_dict)
@@ -525,6 +548,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 subnets=check.not_none(self.subnets),
                 security_groups=self.security_group_ids,
                 assign_public_ip=should_assign_public_ip(self.ec2, self.subnets),
+                launch_type=self.launch_type,
             )
 
     def _reuse_task_definition(
