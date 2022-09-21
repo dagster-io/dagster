@@ -42,6 +42,13 @@ def highest_protein_nabisco_cereal(nabisco_cereals, cereal_protein_fractions):
     return sorted_by_protein[-1]["name"]
 
 
+preexisting_assets = [
+    cereals,
+    nabisco_cereals,
+    cereal_protein_fractions,
+    highest_protein_nabisco_cereal,
+]
+
 # cereal_ratings_zip_start
 import urllib.request
 
@@ -56,6 +63,11 @@ def cereal_ratings_zip() -> None:
 
 # cereal_ratings_zip_end
 
+
+def cereal_ratings_zip_assets():
+    return [*preexisting_assets, cereal_ratings_zip]
+
+
 # cereal_ratings_csv_start
 import zipfile
 
@@ -68,13 +80,16 @@ def cereal_ratings_csv() -> None:
 
 # cereal_ratings_csv_end
 
+
+def cereal_ratings_csv_assets():
+    return [*preexisting_assets, cereal_ratings_zip, cereal_ratings_csv]
+
+
 # nabisco_cereal_ratings_start
 @asset(non_argument_deps={"cereal_ratings_csv"})
 def nabisco_cereal_ratings(nabisco_cereals):
     with open("cereal-ratings.csv", "r") as f:
-        cereal_ratings = {
-            row["name"]: row["rating"] for row in csv.DictReader(f.readlines())
-        }
+        cereal_ratings = {row["name"]: row["rating"] for row in csv.DictReader(f.readlines())}
 
     result = {}
     for nabisco_cereal in nabisco_cereals:
@@ -85,3 +100,7 @@ def nabisco_cereal_ratings(nabisco_cereals):
 
 
 # nabisco_cereal_ratings_end
+
+
+def nabisco_cereal_ratings_assets():
+    return [*preexisting_assets, cereal_ratings_zip, cereal_ratings_csv, nabisco_cereal_ratings]

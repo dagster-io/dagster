@@ -25,7 +25,7 @@ We'd like to augment our cereal assets with a dataset of cereal ratings from a c
 
 Let's start with `cereal_ratings_zip`. We'll add this to the same Python source file we used to store the complex asset graph in the previous section:
 
-```python file=/guides/dagster/asset_tutorial/non_argument_deps.py startafter=cereal_ratings_zip_start endbefore=cereal_ratings_zip_end
+```python file=/guides/dagster/asset_tutorial/non_argument_deps.py startafter=cereal_ratings_zip_start endbefore=cereal_ratings_zip_end function=cereal_ratings_zip_assets dagimage=images/asset-screenshots/guides/dagster/asset_tutorial/non_argument_deps/cereal_ratings_zip_assets.svg
 import urllib.request
 
 
@@ -46,7 +46,7 @@ The implementation downloads a zip file from the internet to our local filesyste
 
 Let's define an asset that contains the unzipped contents of our zip file:
 
-```python file=/guides/dagster/asset_tutorial/non_argument_deps.py startafter=cereal_ratings_csv_start endbefore=cereal_ratings_csv_end
+```python file=/guides/dagster/asset_tutorial/non_argument_deps.py startafter=cereal_ratings_csv_start endbefore=cereal_ratings_csv_end function=cereal_ratings_csv_assets dagimage=images/asset-screenshots/guides/dagster/asset_tutorial/non_argument_deps/cereal_ratings_csv_assets.svg
 import zipfile
 
 
@@ -66,7 +66,7 @@ However, in this case, we don't want a Python object for the upstream asset, we 
 
 Finally, let's define an asset that joins the cereal ratings data from `cereal_ratings_csv` with the cereals in our `nabisco_cereals` asset:
 
-```python file=/guides/dagster/asset_tutorial/non_argument_deps.py startafter=nabisco_cereal_ratings_start endbefore=nabisco_cereal_ratings_end
+```python file=/guides/dagster/asset_tutorial/non_argument_deps.py startafter=nabisco_cereal_ratings_start endbefore=nabisco_cereal_ratings_end function=nabisco_cereal_ratings_assets dagimage=images/asset-screenshots/guides/dagster/asset_tutorial/non_argument_deps/nabisco_cereal_ratings_assets.svg
 @asset(non_argument_deps={"cereal_ratings_csv"})
 def nabisco_cereal_ratings(nabisco_cereals):
     with open("cereal-ratings.csv", "r") as f:

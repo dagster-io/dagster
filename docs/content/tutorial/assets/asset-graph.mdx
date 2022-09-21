@@ -18,7 +18,7 @@ Why split up code into multiple assets? There are a few reasons:
 
 Having defined a dataset of cereals, we'll define a downstream asset that contains only the cereals that are manufactured by Nabisco.
 
-```python file=/guides/dagster/asset_tutorial/serial_asset_graph.py
+```python file=/guides/dagster/asset_tutorial/serial_asset_graph.py dagimage=images/asset-screenshots/guides/dagster/asset_tutorial/serial_asset_graph.svg
 import csv
 
 import requests
@@ -79,7 +79,7 @@ Here, we're interested in which of Nabisco's cereals has the most protein. We de
 - A `cereal_protein_fractions` asset, which records each cereal's protein content as a fraction of its total mass
 - A `highest_protein_nabisco_cereal`, which is the name of the Nabisco cereal that has the highest protein content
 
-```python file=/guides/dagster/asset_tutorial/complex_asset_graph.py
+```python file=/guides/dagster/asset_tutorial/complex_asset_graph.py dagimage=images/asset-screenshots/guides/dagster/asset_tutorial/complex_asset_graph.svg
 import csv
 
 import requests

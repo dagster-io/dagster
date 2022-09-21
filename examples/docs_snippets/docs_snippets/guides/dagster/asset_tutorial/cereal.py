@@ -22,6 +22,13 @@ def cereals():
 
 # end_asset_marker
 
+og_cereals = cereals
+
+
+def asset_marker():
+    return [og_cereals]
+
+
 # start_multiple_assets
 import csv
 import requests
