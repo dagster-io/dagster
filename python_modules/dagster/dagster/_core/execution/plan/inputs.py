@@ -32,7 +32,7 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen
 
-from .objects import TypeCheckData, StepKeyOutputNamePair
+from .objects import StepKeyOutputNamePair, TypeCheckData
 from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
 from .utils import build_resources_for_manager, solid_execution_error_boundary
 

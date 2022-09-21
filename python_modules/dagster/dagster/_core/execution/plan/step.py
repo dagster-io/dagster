@@ -21,8 +21,8 @@ from dagster._utils import merge_dicts
 
 from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle
 from .inputs import StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput
-from .outputs import StepOutput
 from .objects import StepKeyOutputNamePair
+from .outputs import StepOutput
 
 if TYPE_CHECKING:
     from dagster._core.definitions.dependency import Node, NodeHandle

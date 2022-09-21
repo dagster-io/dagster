@@ -11,7 +11,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._serdes import whitelist_for_serdes
 
 from .handle import UnresolvedStepHandle
-from .objects import TypeCheckData, StepKeyOutputNamePair
+from .objects import StepKeyOutputNamePair, TypeCheckData
 
 
 @whitelist_for_serdes
