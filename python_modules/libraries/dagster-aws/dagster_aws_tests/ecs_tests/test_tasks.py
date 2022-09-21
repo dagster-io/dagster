@@ -40,7 +40,7 @@ def test_create_dagster_task_definition_dict():
         ],
     )
 
-    assert task_config.task_definition_dict() == {
+    assert task_config.task_definition_dict("FARGATE") == {
         "family": "my_task",
         "requiresCompatibilities": ["FARGATE"],
         "networkMode": "awsvpc",
@@ -73,3 +73,5 @@ def test_create_dagster_task_definition_dict():
         "memory": "512",
         "taskRoleArn": "fake-task-role",
     }
+
+    assert task_config.task_definition_dict("EC2")["requiresCompatibilities"] == []
