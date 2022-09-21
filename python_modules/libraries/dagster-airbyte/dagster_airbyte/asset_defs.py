@@ -1,7 +1,7 @@
 import os
 import re
 from itertools import chain
-from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Set, cast
+from typing import Any, Callable, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Set, cast
 
 import yaml
 from dagster_airbyte.resources import AirbyteResource
@@ -12,9 +12,125 @@ from dagster import _check as check
 from dagster import with_resources
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionMetadata,
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import with_group
 from dagster._core.execution.context.init import build_init_resource_context
+
+
+def _build_airbyte_asset_defn_metadata(
+    connection_id: str,
+    destination_tables: List[str],
+    asset_key_prefix: Optional[List[str]] = None,
+    normalization_tables: Optional[Mapping[str, List[str]]] = None,
+    upstream_assets: Optional[FrozenSet[AssetKey]] = None,
+    group_name: Optional[str] = None,
+) -> AssetsDefinitionMetadata:
+
+    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+
+    # Generate a list of outputs, the set of destination tables plus any affiliated
+    # normalization tables
+    tables = list(
+        chain.from_iterable(
+            chain(
+                [destination_tables], normalization_tables.values() if normalization_tables else []
+            )
+        )
+    )
+    outputs = FrozenSet({AssetKey(asset_key_prefix + [table]) for table in tables})
+
+    internal_deps = {}
+
+    normalization_tables = (
+        {k: list(v) for k, v in normalization_tables.items()} if normalization_tables else {}
+    )
+
+    # If normalization tables are specified, we need to add a dependency from the destination table
+    # to the affilitated normalization table
+    if normalization_tables:
+        for base_table, derived_tables in normalization_tables.items():
+            for derived_table in derived_tables:
+                internal_deps[derived_table] = FrozenSet(
+                    {AssetKey(asset_key_prefix + [base_table])}
+                )
+
+    # All non-normalization tables depend on any user-provided upstream assets
+    for table in destination_tables:
+        internal_deps[table] = upstream_assets or FrozenSet()
+
+    first_asset_key = AssetKey(asset_key_prefix + [tables[0]])
+    return AssetsDefinitionMetadata(
+        input_keys=FrozenSet(),
+        output_keys=outputs,
+        asset_deps=internal_deps,
+        group_names_by_key={table: group_name for table in tables} if group_name else None,
+        metadata_by_key={
+            first_asset_key: {
+                "connection_id": connection_id,
+                "group_name": group_name,
+                "destination_tables": destination_tables,
+                "normalization_tables": normalization_tables,
+            }
+        },
+    )
+
+
+def _build_airbyte_assets_from_metadata(
+    assets_defn_meta: AssetsDefinitionMetadata,
+    asset_key_prefix: Optional[List[str]] = None,
+    upstream_assets: Optional[Set[AssetKey]] = None,
+) -> AssetsDefinition:
+
+    metadata = assets_defn_meta.metadata_by_key[assets_defn_meta.metadata_by_key.keys()[0]]
+    connection_id = metadata["connection_id"]
+    group_name = metadata["group_name"]
+    destination_tables = metadata["destination_tables"]
+    normalization_tables: Mapping[str, List[str]] = metadata[
+        "normalization_tables"
+    ]
+
+    outputs = {
+        table_asset_key.path[-1]: AssetOut(key=table_asset_key)
+        for table_asset_key in assets_defn_meta.output_keys
+    }
+
+    @multi_asset(
+        name=f"airbyte_sync_{connection_id[:5]}",
+        non_argument_deps=upstream_assets or set(),
+        outs=outputs,
+        internal_asset_deps=assets_defn_meta.asset_deps,
+        required_resource_keys={"airbyte"},
+        compute_kind="airbyte",
+        group_name=group_name,
+    )
+    def _assets(context):
+        ab_output = context.resources.airbyte.sync_and_poll(connection_id=connection_id)
+        for materialization in generate_materializations(ab_output, asset_key_prefix):
+            table_name = materialization.asset_key.path[-1]
+            if table_name in destination_tables:
+                yield Output(
+                    value=None,
+                    output_name=table_name,
+                    metadata={
+                        entry.label: entry.entry_data for entry in materialization.metadata_entries
+                    },
+                )
+                # Also materialize any normalization tables affiliated with this destination
+                # e.g. nested objects, lists etc
+                if normalization_tables:
+                    for dependent_table in normalization_tables.get(table_name, set()):
+                        yield Output(
+                            value=None,
+                            output_name=dependent_table,
+                        )
+            else:
+                yield materialization
+
+    return _assets
 
 
 @experimental
@@ -229,6 +345,95 @@ class AirbyteConnection(
         return tables
 
 
+class AirbyteInstanceLazyAssetsDefintion(CacheableAssetsDefinition):
+    def __init__(
+        self,
+        airbyte_resource_def: ResourceDefinition,
+        workspace_id: Optional[str],
+        key_prefix: List[str],
+        create_assets_for_normalization_tables: bool,
+        connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
+    ):
+        self._airbyte_resource_def = airbyte_resource_def
+        self._airbyte_instance: AirbyteResource = airbyte_resource_def(
+            build_init_resource_context()
+        )
+
+        self._workspace_id = workspace_id
+        self._key_prefix = key_prefix
+        self._create_assets_for_normalization_tables = create_assets_for_normalization_tables
+        self._connection_to_group_fn = connection_to_group_fn
+
+        super().__init__(unique_id="airbyte")
+
+    def generate_metadata(self) -> List[AssetsDefinitionMetadata]:
+
+        workspace_id = self._workspace_id
+        if not workspace_id:
+            workspaces = cast(
+                List[Dict[str, Any]],
+                check.not_none(
+                    self._airbyte_instance.make_request(endpoint="/workspaces/list", data={})
+                ).get("workspaces", []),
+            )
+
+            check.invariant(len(workspaces) <= 1, "Airbyte instance has more than one workspace")
+            check.invariant(len(workspaces) > 0, "Airbyte instance has no workspaces")
+
+            workspace_id = workspaces[0].get("workspaceId")
+
+        connections = cast(
+            List[Dict[str, Any]],
+            check.not_none(
+                self._airbyte_instance.make_request(
+                    endpoint="/connections/list", data={"workspaceId": workspace_id}
+                )
+            ).get("connections", []),
+        )
+
+        asset_defn_metas: List[AssetsDefinitionMetadata] = []
+        for connection_json in connections:
+            connection_id = cast(str, connection_json.get("connectionId"))
+
+            operations_json = cast(
+                Dict[str, Any],
+                check.not_none(
+                    self._airbyte_instance.make_request(
+                        endpoint="/operations/list",
+                        data={"connectionId": connection_id},
+                    )
+                ),
+            )
+            connection = AirbyteConnection.from_api_json(connection_json, operations_json)
+
+            table_mapping = connection.parse_stream_tables(
+                self._create_assets_for_normalization_tables
+            )
+
+            assets_for_connection = _build_airbyte_asset_defn_metadata(
+                connection_id=connection_id,
+                destination_tables=list(table_mapping.keys()),
+                normalization_tables=table_mapping,
+                asset_key_prefix=self._key_prefix,
+                group_name=self._connection_to_group_fn(connection_id)
+                if self._connection_to_group_fn
+                else None,
+            )
+
+            asset_defn_metas.append(assets_for_connection)
+
+        return asset_defn_metas
+
+    def generate_assets(self, metadata: List[AssetsDefinitionMetadata]) -> List[AssetsDefinition]:
+        return with_resources(
+            [
+                _build_airbyte_assets_from_metadata(meta, asset_key_prefix=self._key_prefix)
+                for meta in metadata
+            ],
+            {"airbyte": self._airbyte_resource_def},
+        )
+
+
 @experimental
 def load_assets_from_airbyte_instance(
     airbyte: ResourceDefinition,
@@ -236,7 +441,7 @@ def load_assets_from_airbyte_instance(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
-) -> List[AssetsDefinition]:
+) -> LazyAssetsDefinition:
     """
     Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
     about defined connections at initialization time, and will error on workspace load if the Airbyte
@@ -256,69 +461,16 @@ def load_assets_from_airbyte_instance(
             to a basic sanitization function.
     """
 
-    airbyte_instance: AirbyteResource = airbyte(build_init_resource_context())
-
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
-    if not workspace_id:
-        workspaces = cast(
-            List[Dict[str, Any]],
-            check.not_none(airbyte_instance.make_request(endpoint="/workspaces/list", data={})).get(
-                "workspaces", []
-            ),
-        )
-
-        check.invariant(len(workspaces) <= 1, "Airbyte instance has more than one workspace")
-        check.invariant(len(workspaces) > 0, "Airbyte instance has no workspaces")
-
-        workspace_id = workspaces[0].get("workspaceId")
-
-    connections = cast(
-        List[Dict[str, Any]],
-        check.not_none(
-            airbyte_instance.make_request(
-                endpoint="/connections/list", data={"workspaceId": workspace_id}
-            )
-        ).get("connections", []),
-    )
-
-    assets = []
-    for connection_json in connections:
-        connection_id = cast(str, connection_json.get("connectionId"))
-
-        operations_json = cast(
-            Dict[str, Any],
-            check.not_none(
-                airbyte_instance.make_request(
-                    endpoint="/operations/list",
-                    data={"connectionId": connection_id},
-                )
-            ),
-        )
-        connection = AirbyteConnection.from_api_json(connection_json, operations_json)
-
-        table_mapping = connection.parse_stream_tables(create_assets_for_normalization_tables)
-
-        assets_for_connection = build_airbyte_assets(
-            connection_id=connection_id,
-            destination_tables=list(table_mapping.keys()),
-            normalization_tables=table_mapping,
-            asset_key_prefix=key_prefix,
-        )
-
-        if connection_to_group_fn:
-            assets_for_connection = list(
-                with_group(assets_for_connection, connection_to_group_fn(connection.name))
-            )
-        assets.extend(assets_for_connection)
-
-    return list(
-        with_resources(
-            assets,
-            resource_defs={"airbyte": airbyte},
-        )
+    return AirbyteInstanceLazyAssetsDefintion(
+        airbyte,
+        workspace_id,
+        key_prefix,
+        create_assets_for_normalization_tables,
+        connection_to_group_fn,
     )
 
 
