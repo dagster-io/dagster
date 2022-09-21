@@ -89,7 +89,9 @@ def cereal_ratings_csv_assets():
 @asset(non_argument_deps={"cereal_ratings_csv"})
 def nabisco_cereal_ratings(nabisco_cereals):
     with open("cereal-ratings.csv", "r") as f:
-        cereal_ratings = {row["name"]: row["rating"] for row in csv.DictReader(f.readlines())}
+        cereal_ratings = {
+            row["name"]: row["rating"] for row in csv.DictReader(f.readlines())
+        }
 
     result = {}
     for nabisco_cereal in nabisco_cereals:
@@ -103,4 +105,9 @@ def nabisco_cereal_ratings(nabisco_cereals):
 
 
 def nabisco_cereal_ratings_assets():
-    return [*preexisting_assets, cereal_ratings_zip, cereal_ratings_csv, nabisco_cereal_ratings]
+    return [
+        *preexisting_assets,
+        cereal_ratings_zip,
+        cereal_ratings_csv,
+        nabisco_cereal_ratings,
+    ]
