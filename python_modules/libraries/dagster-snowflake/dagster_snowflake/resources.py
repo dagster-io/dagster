@@ -24,7 +24,7 @@ except ImportError:
 
 
 class SnowflakeConnection:
-    """A connection to Snowflake that can provide a Snowflake connection and execute queries. In
+    """A connection to Snowflake that can execute queries. In
     general this class should not be directly instantiated, but rather used as a resource in an op
     or asset via the :py:func:`snowflake_resource`.
     """
@@ -86,8 +86,7 @@ class SnowflakeConnection:
         """Gets a connection to Snowflake as a context manager.
 
         If using the execute_query, execute_queries, or load_table_from_local_parquet methods,
-        you do not need to create a
-        connection using this context manager.
+        you do not need to create a connection using this context manager.
 
         Args:
             raw_conn (bool): If using the sqlalchemy connector, you can set raw_conn to True to create a raw
@@ -230,7 +229,7 @@ class SnowflakeConnection:
 
     @public
     def load_table_from_local_parquet(self, src: str, table: str):
-        """Stores the content of a parquet file to a Snowflake table
+        """Stores the content of a parquet file to a Snowflake table.
 
         Args:
             src (str): the name of the file to store in Snowflake
