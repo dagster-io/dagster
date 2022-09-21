@@ -26,11 +26,12 @@ resource_defs = {
                 "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
             }
         ),
-        "snowflake": snowflake_resource.configured(
-            {
-                **snowflake_config,
-                "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
-            }
+        "snowflake": snowflake_resource(
+            database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
+            schema="HACKER_NEWS"
+            account=os.getenv('SNOWFLAKE_ACCOUNT'),
+            user=os.getenv('SNOWFLAKE_USER'),
+            password=os.getenv('SNOWFLAKE_PASSWORD'),
         ),
     },
     "production": {
@@ -40,8 +41,12 @@ resource_defs = {
                 "database": "PRODUCTION",
             }
         ),
-        "snowflake": snowflake_resource.configured(
-            {**snowflake_config, "database": "PRODUCTION"}
+        "snowflake": snowflake_resource(
+            database="PRODUCTION"
+            schema="HACKER_NEWS"
+            account=os.getenv('SNOWFLAKE_ACCOUNT'),
+            user=os.getenv('SNOWFLAKE_USER'),
+            password=os.getenv('SNOWFLAKE_PASSWORD'),
         ),
     },
 }

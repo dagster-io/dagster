@@ -154,12 +154,20 @@ class SnowflakeConnection:
 
         self.execute_queries(sql_queries)
 
+from dagster._core.definitions.resource_definition import typed_resource_ctor
+
+@typed_resource_ctor
+# TODO actually type
+# Natural extension would be to generate config schema from this function signature
+# (Good intern project)
+def snowflake_resource(**kwargs):
+    return configurable_snowflake_resource.configured(**kwargs)
 
 @resource(
     config_schema=define_snowflake_config(),
     description="This resource is for connecting to the Snowflake data warehouse",
 )
-def snowflake_resource(context):
+def configurable_snowflake_resource(context):
     """A resource for connecting to the Snowflake data warehouse.
 
     A simple example of loading data into Snowflake and subsequently querying that data is shown below:
