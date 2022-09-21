@@ -43,7 +43,7 @@ with open(SVG_FONT_DATA_FILE, "r", encoding="utf-8") as f:
     SVG_FONT_DATA = f.read()
 
 
-def _add_font_info_to_svg(svg_filepath: str) -> str:
+def _add_font_info_to_svg(svg_filepath: str):
     """
     Adds embedded Dagster font information to an SVG file downloaded from Dagit.
     """
@@ -128,12 +128,12 @@ def generate_svg_for_file(code_path: str, destination_path: str, snippet_fn: Opt
             dagit_process.wait()
 
 
-def parse_params(input: str) -> Dict[str, str]:
+def parse_params(param_str: str) -> Dict[str, str]:
     """
     Parses a set of params for a markdown code block, e.g. returns {"foo": "bar", "baz": "qux"} for
     ```python foo=bar baz=qux
     """
-    params = re.split("\s+", input)
+    params = re.split(r"\s+", param_str)
     return {param.split("=")[0]: param.split("=")[1] for param in params if len(param) > 0}
 
 
