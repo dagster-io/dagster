@@ -1,3 +1,4 @@
+import resource
 import types
 from abc import abstractmethod
 from functools import update_wrapper
@@ -66,11 +67,13 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
     ):
         def _resource_fn_wrapper(
             init_context,
-        ) -> Union[
-            Callable[["InitResourceContext"], "IOManagerWrapper"],
-            Callable[[], "IOManagerWrapper"],
-        ]:
-            io_manager = resource_fn(init_context)
+        ) -> Union[Callable[["InitResourceContext"], "IOManager"], Callable[[], "IOManager"],]:
+            from dagster._core.decorator_utils import get_function_params
+
+            if len(get_function_params(resource_fn)) > 0:
+                io_manager = resource_fn(init_context)
+            else:
+                io_manager = resource_fn()
 
             if input_config_schema:
                 original_load_input = io_manager.load_input
@@ -230,11 +233,17 @@ class IOManager(InputManager, OutputManager):
 
 def reconcile_default_config(config_schema: CoercableToConfigSchema, config: Any):
     from dagster._config.validate import process_config
+    from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 
     if config_schema is None:
         return {}
 
-    input_config_evr = process_config(config_schema, config if config is not None else {})
+    input_config_evr = process_config(
+        config_schema.config_type
+        if isinstance(config_schema, IDefinitionConfigSchema)
+        else config_schema,
+        config if config is not None else {},
+    )
     if not input_config_evr.success:
         raise DagsterInvalidConfigError(
             f"Error in config for input/output context:",
