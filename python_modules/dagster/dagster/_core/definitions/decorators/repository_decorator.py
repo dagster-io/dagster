@@ -49,7 +49,7 @@ class _Repository:
 
     def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
         from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
-        from dagster._core.definitions.assets import LazyAssetsDefinition
+        from dagster._core.definitions.assets_lazy import LazyAssetsDefinition
 
         check.callable_param(fn, "fn")
 

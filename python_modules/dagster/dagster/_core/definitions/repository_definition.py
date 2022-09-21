@@ -674,7 +674,7 @@ class CachingRepositoryData(RepositoryData):
                 definitions.
         """
         from dagster._core.definitions import AssetGroup, AssetsDefinition
-        from dagster._core.definitions.assets import LazyAssetsDefinition
+        from dagster._core.definitions.assets_lazy import LazyAssetsDefinition
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         coerced_graphs: Dict[str, JobDefinition] = {}
