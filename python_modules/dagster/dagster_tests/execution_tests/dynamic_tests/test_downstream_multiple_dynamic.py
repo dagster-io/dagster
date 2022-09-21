@@ -53,8 +53,14 @@ def add_two(base):
     return base + 2
 
 @op
-def collector(context, inputs):
+def collect_two_and_sum(context, input_1, input_2):
+    context.log.info(f"collector got inputs {input_1} and {input_2}")
+    return sum([*input_1, *input_2])
+
+@op
+def collect_and_sum(context, inputs):
     context.log.info(f"collector got inputs {inputs}")
+    return sum(inputs)
 
 @job
 def multiple_upstream_dynamic():
@@ -74,6 +80,27 @@ def zip_outputs_from_same_op():
     bases, exps = yield_two_outs()
     bases.map(compute_exponent, zip_with=[exps])
 
+@job
+def with_collect():
+    bases = base_upstream()
+    multipliers = multiplier_upstream()
+    subtractors = subtract_upstream()
+    res = bases.map(multiply_and_subtract, zip_with=[multipliers, subtractors])
+    collect_and_sum(res.collect())
+
+
+@job
+def collect_two_dynamic_outputs():
+    bases = base_upstream()
+    multipliers = multiplier_upstream()
+    collect_two_and_sum(bases.collect(), multipliers.collect())
+
+@job
+def basic_example():
+    bases = base_upstream()
+    added = bases.map(add_two)
+    collect_and_sum(added.collect())
+
 def test_multiple_upstream():
     result = multiple_upstream_dynamic.execute_in_process()
     assert list(result.output_for_node("upstream_combiner").values()) == [0, 1, 4, 9, 16]
@@ -87,11 +114,27 @@ def test_zip_outputs_from_same_op():
     result = zip_outputs_from_same_op.execute_in_process()
     assert list(result.output_for_node("compute_exponent").values()) == [0, 1, 8, 81, 1024]
 
+def test_with_collect():
+    result = with_collect.execute_in_process()
+    assert result.output_for_node("collect_and_sum") == 20
+
+def test_basic():
+    result = basic_example.execute_in_process()
+
+def test_collect_multi():
+    result = collect_two_dynamic_outputs.execute_in_process()
+    assert result.output_for_node("collect_two_and_sum") == 20
+
 
 def notes():
     """
         Notes:
         - is zip_with is a bit weird because the list has to be in the order of the params to the function? no way to pass like kwargs
             - could switch to a dict and pass as kwargs in composition.map
+
+        - should maybe rename resolve_step_key_output_name_mapping to something simpler
+            - resolve_step_key_output_name_pairs - not shorter but not misleading as to datatype (it's not actually a dict)
+
+        - make sure putting whitelist_for_serdes on the StepKeyOutputNamePair is ok
 
     """

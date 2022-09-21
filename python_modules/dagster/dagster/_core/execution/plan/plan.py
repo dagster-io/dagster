@@ -405,6 +405,7 @@ class _PlanBuilder:
                         resolved_output_def.name,
                         step.resolved_by_step_key,
                         step.resolved_by_output_name,
+                        step.resolved_step_key_output_name_mapping,
                     )
                 else:
                     check.failed(f"Unexpected step type {step}")
@@ -549,6 +550,7 @@ def get_step_input_source(
         solid_output_handle = dependency_structure.get_dynamic_fan_in_dep(input_handle)
         step_output_handle = plan_builder.get_output_handle(solid_output_handle)
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
+            # for p in zip(step_output_handle.resolved_by_step_key, step_output_handle.resolved_by_output_name):
             return FromDynamicCollect(
                 source=FromUnresolvedStepOutput(
                     unresolved_step_output_handle=step_output_handle,
@@ -1450,8 +1452,7 @@ def _compute_step_maps(step_dict, step_dict_by_key, step_handles_to_execute, kno
                         f'Unresolved ExecutionStep "{step.key}" is resolved by "{key}" '
                         "which is not part of the current step selection"
                     )
-
-            resolvable_map[step.resolved_by_step_keys].append(step.handle)
+            resolvable_map[frozenset(step.resolved_by_step_keys)].append(step.handle)
         else:
             check.invariant(
                 step.key in executable_map, "Expect all steps to be executable or resolvable"

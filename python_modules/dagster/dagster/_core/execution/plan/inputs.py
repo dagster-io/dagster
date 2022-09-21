@@ -32,7 +32,7 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen
 
-from .objects import TypeCheckData
+from .objects import TypeCheckData, StepKeyOutputNamePair
 from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
 from .utils import build_resources_for_manager, solid_execution_error_boundary
 
@@ -919,6 +919,12 @@ class FromPendingDynamicStepOutput(
     def resolved_by_output_name(self) -> str:
         return self.step_output_handle.output_name
 
+    @property
+    def resolved_step_key_output_name_mapping(self) -> Sequence[StepKeyOutputNamePair]:
+        pair = StepKeyOutputNamePair(self.resolved_by_step_key, self.resolved_by_output_name)
+
+        return [pair]
+
     def resolve(self, mapping_key) -> FromStepOutput:
         check.str_param(mapping_key, "mapping_key")
         return FromStepOutput(
@@ -984,6 +990,10 @@ class FromUnresolvedStepOutput(
     def resolved_by_output_name(self) -> str:
         return self.unresolved_step_output_handle.resolved_by_output_name
 
+    @property
+    def resolved_step_key_output_name_mapping(self) -> Sequence[StepKeyOutputNamePair]:
+        return self.unresolved_step_output_handle.resolved_step_key_output_name_mapping
+
     def resolve(self, mapping_key: str) -> FromStepOutput:
         check.str_param(mapping_key, "mapping_key")
         return FromStepOutput(
@@ -1026,6 +1036,10 @@ class FromDynamicCollect(
             ),
             input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
+
+    @property
+    def resolved_step_key_output_name_mapping(self) -> Sequence[StepKeyOutputNamePair]:
+        return self.source.resolved_step_key_output_name_mapping
 
     @property
     def resolved_by_step_key(self) -> str:
@@ -1089,6 +1103,10 @@ class UnresolvedCollectStepInput(NamedTuple):
     @property
     def resolved_by_output_name(self) -> str:
         return self.source.resolved_by_output_name
+
+    @property
+    def resolved_step_key_output_name_mapping(self) -> Sequence[StepKeyOutputNamePair]:
+        return self.source.resolved_step_key_output_name_mapping
 
     def resolve(self, mapping_keys: List[str]) -> StepInput:
         return StepInput(

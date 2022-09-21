@@ -11,7 +11,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._serdes import whitelist_for_serdes
 
 from .handle import UnresolvedStepHandle
-from .objects import TypeCheckData
+from .objects import TypeCheckData, StepKeyOutputNamePair
 
 
 @whitelist_for_serdes
@@ -166,8 +166,9 @@ class UnresolvedStepOutputHandle(
         [
             ("unresolved_step_handle", UnresolvedStepHandle),
             ("output_name", str),
-            ("resolved_by_step_key", str),
-            ("resolved_by_output_name", str),
+            ("resolved_by_step_key", List[str]),
+            ("resolved_by_output_name", List[str]),
+            ("resolved_step_key_output_name_mapping", List[StepKeyOutputNamePair])
         ],
     )
 ):
@@ -180,8 +181,9 @@ class UnresolvedStepOutputHandle(
         cls,
         unresolved_step_handle: UnresolvedStepHandle,
         output_name: str,
-        resolved_by_step_key: str,
-        resolved_by_output_name: str,
+        resolved_by_step_key: List[str],
+        resolved_by_output_name: List[str],
+        resolved_step_key_output_name_mapping: List[StepKeyOutputNamePair],
     ):
         return super(UnresolvedStepOutputHandle, cls).__new__(
             cls,
@@ -194,6 +196,7 @@ class UnresolvedStepOutputHandle(
             resolved_by_output_name=check.list_param(
                 resolved_by_output_name, "resolved_by_output_name"
             ),
+            resolved_step_key_output_name_mapping=check.list_param(resolved_step_key_output_name_mapping, "resolved_step_key_output_name_mapping")
         )
 
     def resolve(self, map_key) -> StepOutputHandle:

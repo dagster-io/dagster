@@ -22,6 +22,7 @@ from dagster._utils import merge_dicts
 from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle
 from .inputs import StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput
 from .outputs import StepOutput
+from .objects import StepKeyOutputNamePair
 
 if TYPE_CHECKING:
     from dagster._core.definitions.dependency import Node, NodeHandle
@@ -207,25 +208,7 @@ class ExecutionStep(
 
         return None
 
-class StepKeyOutputNamePair(
-    NamedTuple(
-        "_StepKeyOutputNamePair",
-        [
-            ("step_key", str),
-            ("output_name", str)
-        ]
-    )
-):
-    def __new__(
-        cls,
-        step_key: str,
-        output_name: str,
-    ):
-        return super(StepKeyOutputNamePair, cls). __new__(
-            cls,
-            step_key=check.str_param(step_key, "step_key"),
-            output_name=check.str_param(output_name, "output_name")
-        )
+
 
 
 class UnresolvedMappedExecutionStep(
@@ -318,7 +301,7 @@ class UnresolvedMappedExecutionStep(
         return deps
 
     @property
-    def resolved_step_key_output_mapping(self) -> Dict[str, str]:
+    def resolved_step_key_output_name_mapping(self) -> Sequence[StepKeyOutputNamePair]:
         pairs = []
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedMappedStepInput):
@@ -336,25 +319,25 @@ class UnresolvedMappedExecutionStep(
     @property
     def resolved_by_output_name(self) -> str:
         # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
-        keys = set()
+        keys = []
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedMappedStepInput):
-                keys.add(inp.resolved_by_output_name)
+                keys.append(inp.resolved_by_output_name)
 
         # check.invariant(
         #     len(keys) == 1, "Unresolved step expects one and only one dynamic output name"
         # )
 
-        return list(keys)
+        return keys
 
     @property
-    def resolved_by_step_keys(self) -> FrozenSet[str]:
-        keys = set()
+    def resolved_by_step_keys(self) -> Sequence[str]:
+        keys = []
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedMappedStepInput):
-                keys.add(inp.resolved_by_step_key)
+                keys.append(inp.resolved_by_step_key)
 
-        return frozenset(keys)
+        return keys
 
     def resolve(self, mappings: Dict[str, Dict[str, List[str]]]) -> List[ExecutionStep]:
         check.invariant(
@@ -362,25 +345,24 @@ class UnresolvedMappedExecutionStep(
             "resolving with mappings that do not contain all required step keys",
         )
         execution_steps = []
-        step_key_output_pairs = self.resolved_step_key_output_mapping
+        step_key_output_pairs = self.resolved_step_key_output_name_mapping
 
-        if len(step_key_output_pairs) > 1:
-            # zip the dynamic outputs into groups
+        # zip the dynamic outputs into groups (this can certainly be optimized)
 
-            # ensure all upstream ops returned the same number of outputs
-            mappings_lists = [mappings[p.step_key][p.output_name] for p in step_key_output_pairs]
-            if not all(len(mappings_lists[0])== len(i) for i in mappings_lists):
-                # replace with real exception
-                raise Exception("All upstream ops must return an equal number of outputs to use zip")
+        # ensure all upstream ops returned the same number of outputs
+        mappings_lists = [mappings[p.step_key][p.output_name] for p in step_key_output_pairs]
+        if not all(len(mappings_lists[0])== len(i) for i in mappings_lists):
+            # replace with real exception
+            raise Exception("All upstream ops must return an equal number of outputs to use zip")
 
-            output_groups: List[Dict[str, Dict[str, str]]] = []
-            for i in range(len(mappings_lists[0])):
-                group = {}
-                for p in step_key_output_pairs:
-                    step_key_group = group.get(p.step_key, {})
-                    step_key_group[p.output_name] = mappings[p.step_key][p.output_name][i]
-                    group[p.step_key] = step_key_group
-                output_groups.append(group)
+        output_groups: List[Dict[str, Dict[str, str]]] = []
+        for i in range(len(mappings_lists[0])):
+            group = {}
+            for p in step_key_output_pairs:
+                step_key_group = group.get(p.step_key, {})
+                step_key_group[p.output_name] = mappings[p.step_key][p.output_name][i]
+                group[p.step_key] = step_key_group
+            output_groups.append(group)
 
 
         for group in output_groups:
@@ -500,12 +482,15 @@ class UnresolvedCollectExecutionStep(
 
     @property
     def resolved_by_step_keys(self) -> FrozenSet[str]:
-        keys = set()
+        keys = []
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedCollectStepInput):
-                keys.add(inp.resolved_by_step_key)
+                if isinstance(inp.resolved_by_step_key, list):
+                    keys.extend(inp.resolved_by_step_key)
+                else:
+                    keys.append(inp.resolved_by_step_key)
 
-        return frozenset(keys)
+        return keys
 
     def resolve(self, mappings: Dict[str, Dict[str, List[str]]]) -> ExecutionStep:
         check.invariant(
@@ -518,9 +503,26 @@ class UnresolvedCollectExecutionStep(
             if isinstance(inp, StepInput):
                 resolved_inputs.append(inp)
             else:
+                # this is super hacky. what we really need is a way to pass the combined mapping keys from
+                # the map step down to this resolve. Instead i'm just recreating them from the mappings
+                # dict, which is prone to error
+
+                zipped_mappings = []
+                step_key_output_pairs = inp.resolved_step_key_output_name_mapping
+                mappings_lists = [mappings[p.step_key][p.output_name] for p in step_key_output_pairs]
+
+                for i in range(len(mappings_lists[0])):
+                    zipped_mappings.append([])
+                    for p in step_key_output_pairs:
+                        zipped_mapping_i = zipped_mappings[i]
+                        zipped_mapping_i.append(mappings[p.step_key][p.output_name][i])
+                        zipped_mappings[i] = zipped_mapping_i
+
+                zipped_mapping_keys = [",".join(zip_group) for zip_group in zipped_mappings]
+
                 resolved_inputs.append(
-                    inp.resolve(mappings[inp.resolved_by_step_key][inp.resolved_by_output_name])
-                )
+                        inp.resolve(zipped_mapping_keys)
+                    )
 
         return ExecutionStep(
             handle=self.handle,
