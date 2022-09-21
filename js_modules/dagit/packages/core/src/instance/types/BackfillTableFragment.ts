@@ -38,6 +38,11 @@ export interface BackfillTableFragment_partitionStatuses {
   results: BackfillTableFragment_partitionStatuses_results[];
 }
 
+export interface BackfillTableFragment_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface BackfillTableFragment_error_causes {
   __typename: "PythonError";
   message: string;
@@ -62,5 +67,6 @@ export interface BackfillTableFragment {
   partitionSetName: string;
   partitionSet: BackfillTableFragment_partitionSet | null;
   partitionStatuses: BackfillTableFragment_partitionStatuses;
+  assetSelection: BackfillTableFragment_assetSelection[] | null;
   error: BackfillTableFragment_error | null;
 }
