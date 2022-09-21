@@ -340,7 +340,9 @@ const Experimental = () => {
 
 const Pre = ({children, ...props}) => {
   // Retrieve the DAG image to display next to the code block, if any
-  const dagImage = React.Children.toArray(children)[0]['props']['dagimage'];
+  const childrenArr = React.Children.toArray(children);
+  const preComponent = childrenArr.length > 0 ? childrenArr[0] : null;
+  const dagImage = preComponent ? preComponent['props']['dagimage'] : null;
 
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);

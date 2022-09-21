@@ -1,4 +1,4 @@
-// import animate from 'amator';
+import animate from 'amator';
 import React from 'react';
 
 const MAX_WIDTH = 500;
@@ -294,26 +294,26 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     this.setState({x, y, scale: nextScale});
   }
 
-  public smoothZoom(_to: {x: number; y: number; scale: number}) {
-    const _from = {scale: this.state.scale, x: this.state.x, y: this.state.y};
+  public smoothZoom(to: {x: number; y: number; scale: number}) {
+    const from = {scale: this.state.scale, x: this.state.x, y: this.state.y};
 
     if (this._animation) {
       this._animation.cancel();
     }
 
-    // this._animation = animate(from, to, {
-    //   step: (v: any) => {
-    //     this.setState({
-    //       x: v.x,
-    //       y: v.y,
-    //       scale: v.scale,
-    //     });
-    //   },
-    //   done: () => {
-    //     this.setState(to);
-    //     this._animation = null;
-    //   },
-    // });
+    this._animation = animate(from, to, {
+      step: (v: any) => {
+        this.setState({
+          x: v.x,
+          y: v.y,
+          scale: v.scale,
+        });
+      },
+      done: () => {
+        this.setState(to);
+        this._animation = null;
+      },
+    });
   }
 
   public getMaxZoom() {
