@@ -110,7 +110,7 @@ export const BackfillTable = ({
           <tr>
             <th style={{width: 120}}>Backfill ID</th>
             <th style={{width: 200}}>Created</th>
-            {showBackfillTarget ? <th>Backfill Target</th> : null}
+            {showBackfillTarget ? <th>Backfill target</th> : null}
             {allPartitions ? <th>Requested</th> : null}
             <th style={{width: 140}}>Backfill status</th>
             <th>Run status</th>
