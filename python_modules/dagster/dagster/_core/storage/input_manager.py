@@ -156,21 +156,9 @@ class InputManagerWrapper(InputManager):
         self._load_fn = load_fn
 
     def load_input(self, context):
-        from dagster._config.validate import process_config
+        from dagster._core.storage.io_manager import update_context_config
 
-        config_evr = process_config(self._input_config_schema, check.not_none(context.config))
-        if not config_evr.success:
-            # TODO update message
-            raise DagsterInvalidConfigError(
-                f"Error in config for IO Manager",
-                config_evr.errors,
-                run_config,
-            )
-
-        config_value = cast(Dict[str, Any], config_evr.value)
-
-        # resolve config from context and from input config
-        context._set_config(config_value)
+        update_context_config(context, self._input_config_schema)
 
         # the @input_manager decorated function (self._load_fn) may return a direct value that
         # should be used or an instance of an InputManager. So we call self._load_fn and see if the

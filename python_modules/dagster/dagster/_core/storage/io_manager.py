@@ -12,6 +12,7 @@ from typing import (
     cast,
     overload,
 )
+import types
 
 from typing_extensions import TypeAlias
 
@@ -115,7 +116,12 @@ class IOManager(InputManager, OutputManager):
         return self.get_output_asset_partitions(upstream_output_context)
 
 
-def _update_context_config(config_schema, context):
+def update_context_config(context, config_schema):
+    from dagster._core.execution.context.input import InputContext
+    from dagster._core.execution.context.output import OutputContext
+
+    check.inst_param(context, "context", (InputContext, OutputContext))
+
     from dagster._config.validate import process_config
 
     if config_schema is None:
@@ -135,24 +141,24 @@ def _update_context_config(config_schema, context):
     context._set_config(cast(Dict[str, Any], input_config_evr.value))
 
 
-class _IOManagerWrapper(IOManager):
-    def __init__(
-        self,
-        io_manager: IOManager,
-        input_config_schema: CoercableToConfigSchema = None,
-        output_config_schema: CoercableToConfigSchema = None,
-    ):
-        self._io_manager = io_manager
-        self._input_config_schema = input_config_schema
-        self._output_config_schema = output_config_schema
+# class _IOManagerWrapper(IOManager):
+#     def __init__(
+#         self,
+#         io_manager: IOManager,
+#         input_config_schema: CoercableToConfigSchema = None,
+#         output_config_schema: CoercableToConfigSchema = None,
+#     ):
+#         self._io_manager = io_manager
+#         self._input_config_schema = input_config_schema
+#         self._output_config_schema = output_config_schema
 
-    def load_input(self, context: "InputContext") -> Any:
-        _update_context_config(self._input_config_schema, context)
-        return self._io_manager.load_input(context)
+#     def load_input(self, context: "InputContext") -> Any:
+#         update_context_config(self._input_config_schema, context)
+#         return self._io_manager.load_input(context)
 
-    def handle_output(self, context: "OutputContext", obj: Any) -> None:
-        _update_context_config(self._output_config_schema, context)
-        self._io_manager.handle_output(context, obj)
+#     def handle_output(self, context: "OutputContext", obj: Any) -> None:
+#         update_context_config(self._output_config_schema, context)
+#         self._io_manager.handle_output(context, obj)
 
 
 class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):
@@ -185,7 +191,65 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         ]:
             io_manager = resource_fn(init_context)
 
-            return _IOManagerWrapper(io_manager, input_config_schema, output_config_schema)
+            # def load_input(context: "InputContext") -> Any:
+            #     update_context_config(input_config_schema, context)
+            #     return io_manager.load_input(context)
+
+            # def handle_output(context: "OutputContext", obj: Any) -> None:
+            #     update_context_config(output_config_schema, context)
+            #     return io_manager.handle_output(context, obj)
+
+            # print(io_manager.__class__)
+
+            # io_manager_subclass = type(
+            #     'IOManagerWrapper',
+            #     (io_manager.__class__,),
+            #     {load_input: load_input, handle_output: handle_output},
+            # )
+
+            print(io_manager.__class__)
+
+            # second pass
+
+            # class _IOManagerWrapper(io_manager.__class__):
+            #     def __init__(
+            #         self,
+            #         io_manager: IOManager,
+            #         input_config_schema: CoercableToConfigSchema = None,
+            #         output_config_schema: CoercableToConfigSchema = None,
+            #     ):
+            #         self._io_manager = io_manager
+            #         self._input_config_schema = input_config_schema
+            #         self._output_config_schema = output_config_schema
+
+            #     def load_input(self, context: "InputContext") -> Any:
+            #         update_context_config(context, self._input_config_schema)
+            #         return self._io_manager.load_input(context)
+
+            #     def handle_output(self, context: "OutputContext", obj: Any) -> None:
+            #         update_context_config(context, self._output_config_schema)
+            #         self._io_manager.handle_output(context, obj)
+
+            # return _IOManagerWrapper(io_manager, input_config_schema, output_config_schema)
+
+            # third pass
+
+            original_load_input = io_manager.load_input
+            original_handle_output = io_manager.handle_output
+
+            # at least isolate this to any classes that have default config
+            def _load_input(self, context: "InputContext") -> Any:
+                update_context_config(context, input_config_schema)
+                return original_load_input(context)
+
+            def _handle_output(self, context: "OutputContext", obj: Any) -> None:
+                update_context_config(context, output_config_schema)
+                return original_handle_output(context, obj)
+
+            io_manager.load_input = types.MethodType(_load_input, io_manager)
+            io_manager.handle_output = types.MethodType(_handle_output, io_manager)
+
+            return io_manager
 
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
