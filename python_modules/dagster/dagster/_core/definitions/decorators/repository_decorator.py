@@ -49,6 +49,7 @@ class _Repository:
 
     def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
         from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
+        from dagster._core.definitions.assets import LazyAssetsDefinition
 
         check.callable_param(fn, "fn")
 
@@ -70,6 +71,7 @@ class _Repository:
                     or isinstance(definition, GraphDefinition)
                     or isinstance(definition, AssetGroup)
                     or isinstance(definition, AssetsDefinition)
+                    or isinstance(definition, LazyAssetsDefinition)
                     or isinstance(definition, SourceAsset)
                     or isinstance(definition, UnresolvedAssetJobDefinition)
                 ):

@@ -674,6 +674,7 @@ class CachingRepositoryData(RepositoryData):
                 definitions.
         """
         from dagster._core.definitions import AssetGroup, AssetsDefinition
+        from dagster._core.definitions.assets import LazyAssetsDefinition
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         coerced_graphs: Dict[str, JobDefinition] = {}
@@ -756,6 +757,20 @@ class CachingRepositoryData(RepositoryData):
 
                 asset_keys.update(definition.keys)
                 assets_defs.append(definition)
+            elif isinstance(definition, LazyAssetsDefinition):
+                # fetch metadata from instance db, then generate assets defs
+                from dagster import DagsterInstance
+
+                # TODO: DagsterInstance.get() is not the right way of doing this, we should
+                # pass in an instance reference somewhere
+                loaded_defs = definition.get_definitions(DagsterInstance.get())
+                for assets_def in loaded_defs:
+                    for key in assets_def.keys:
+                        if key in asset_keys:
+                            raise DagsterInvalidDefinitionError(f"Duplicate asset key: {key}")
+
+                    asset_keys.update(assets_def.keys)
+                    assets_defs.append(assets_def)
             elif isinstance(definition, SourceAsset):
                 source_assets.append(definition)
             else:

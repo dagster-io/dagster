@@ -934,3 +934,55 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
         f"ops: {unmapped_leaf_nodes}. This behavior is not currently supported because these ops "
         "are not required for the creation of the associated asset(s).",
     )
+
+
+from dagster._serdes import whitelist_for_serdes
+from typing import NamedTuple, List, Mapping
+
+
+@whitelist_for_serdes
+class AssetsDefinitionMetadata(
+    NamedTuple(
+        "_PipelineSnapshot",
+        [
+            ("keys_by_input_name", Mapping[str, AssetKey]),
+            ("keys_by_output_name", Mapping[str, AssetKey]),
+            ("asset_deps", Optional[Mapping[AssetKey, AbstractSet[AssetKey]]]),
+            ("group_names_by_key", Optional[Mapping[AssetKey, str]]),
+            ("metadata_by_key", Optional[Mapping[AssetKey, MetadataUserInput]]),
+        ],
+    )
+):
+    pass
+
+
+class LazyAssetsDefinition:
+    def __init__(self, unique_id: str):
+        self._unique_id = unique_id
+
+    @property
+    def unique_id(self) -> str:
+        return self._unique_id
+
+    def get_definitions(self, instance) -> List[AssetsDefinition]:
+        from dagster._core.storage.runs.sql_run_storage import SnapshotType
+
+        metadata = instance.run_storage._get_snapshot(self._unique_id)
+        # no record exists yet
+        if metadata is None:
+            metadata = self.generate_metadata()
+            print("NOT FOUND", metadata)
+            instance.run_storage._add_snapshot(
+                snapshot_id=self.unique_id,
+                snapshot_obj=metadata,
+                snapshot_type=SnapshotType.PIPELINE,
+            )
+        else:
+            print("FOUND", metadata)
+        return self.generate_assets(metadata)
+
+    def generate_metadata(self) -> AssetsDefinitionMetadata:
+        raise NotImplementedError()
+
+    def generate_assets(self, metadata: AssetsDefinitionMetadata) -> List[AssetsDefinition]:
+        raise NotImplementedError()
