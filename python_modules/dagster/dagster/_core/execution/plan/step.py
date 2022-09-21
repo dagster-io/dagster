@@ -319,12 +319,12 @@ class UnresolvedMappedExecutionStep(
 
     @property
     def resolved_step_key_output_mapping(self) -> Dict[str, str]:
-        pairs = set()
+        pairs = []
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedMappedStepInput):
-                pairs.add(StepKeyOutputNamePair(step_key=inp.resolved_by_step_key, output_name=inp.resolved_by_output_name))
+                pairs.append(StepKeyOutputNamePair(step_key=inp.resolved_by_step_key, output_name=inp.resolved_by_output_name))
 
-        return frozenset(pairs)
+        return pairs
 
     @property
     def resolved_by_step_key(self) -> str:
@@ -377,7 +377,9 @@ class UnresolvedMappedExecutionStep(
             for i in range(len(mappings_lists[0])):
                 group = {}
                 for p in step_key_output_pairs:
-                    group[p.step_key] = {p.output_name: mappings[p.step_key][p.output_name][i]}
+                    step_key_group = group.get(p.step_key, {})
+                    step_key_group[p.output_name] = mappings[p.step_key][p.output_name][i]
+                    group[p.step_key] = step_key_group
                 output_groups.append(group)
 
 
