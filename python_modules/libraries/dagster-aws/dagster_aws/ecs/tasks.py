@@ -59,10 +59,10 @@ class DagsterEcsTaskDefinitionConfig(
             sidecars=sidecars,
         )
 
-    def task_definition_dict(self):
+    def task_definition_dict(self, launch_type):
         kwargs = dict(
             family=self.family,
-            requiresCompatibilities=["FARGATE"],
+            requiresCompatibilities=["FARGATE"] if launch_type == "FARGATE" else [],
             networkMode="awsvpc",
             containerDefinitions=[
                 merge_dicts(
@@ -104,6 +104,7 @@ class DagsterEcsTaskConfig(
             ("subnets", List[str]),
             ("security_groups", Optional[List[str]]),
             ("assign_public_ip", bool),
+            ("launch_type", str),
         ],
     )
 ):
@@ -114,8 +115,12 @@ class DagsterEcsTaskConfig(
         return {
             "awsvpcConfiguration": {
                 "subnets": self.subnets,
-                "assignPublicIp": self.assign_public_ip,
                 "securityGroups": self.security_groups or [],
+                **(
+                    {"assignPublicIp": self.assign_public_ip}
+                    if self.launch_type == "FARGATE"
+                    else {}
+                ),
             }
         }
 
@@ -315,4 +320,5 @@ def get_task_config_from_current_task(
         subnets=subnets,
         security_groups=security_groups,
         assign_public_ip="ENABLED" if public_ip else "DISABLED",
+        launch_type=task.get("launchType", "FARGATE"),
     )

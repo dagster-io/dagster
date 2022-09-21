@@ -269,7 +269,7 @@ def test_reuse_task_definition(instance, ecs):
     assert not instance.run_launcher._reuse_task_definition(brand_new_task_definition_config)
 
     # Once it's registered, it is re-used
-    ecs.register_task_definition(**brand_new_task_definition_config.task_definition_dict())
+    ecs.register_task_definition(**brand_new_task_definition_config.task_definition_dict("FARGATE"))
     assert instance.run_launcher._reuse_task_definition(brand_new_task_definition_config)
 
     # Changed image fails

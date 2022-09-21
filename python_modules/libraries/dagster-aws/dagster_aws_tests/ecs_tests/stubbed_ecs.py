@@ -369,6 +369,9 @@ class StubbedEcs:
                     "memory": task_definition["memory"],
                 }
 
+                if "launchType" in kwargs:
+                    task["launchType"] = kwargs["launchType"]
+
                 if vpc_configuration:
                     for subnet in vpc_configuration["subnets"]:
                         ec2 = boto3.resource("ec2", region_name=self.client.meta.region_name)
