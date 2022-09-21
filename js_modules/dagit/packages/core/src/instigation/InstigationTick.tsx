@@ -4,7 +4,6 @@ import {
   Button,
   ButtonLink,
   Colors,
-  DialogBody,
   DialogFooter,
   Dialog,
   Group,
@@ -52,7 +51,7 @@ export const TickTag: React.FC<{
             style={{width: '90vw'}}
             title="Launched runs"
           >
-            <DialogBody>{open && <RunList runIds={tick.runIds} />}</DialogBody>
+            <RunList runIds={tick.runIds} />
             <DialogFooter>
               <Button intent="primary" onClick={() => setOpen(false)}>
                 OK
@@ -122,9 +121,7 @@ export const TickTag: React.FC<{
   }
 };
 
-export const RunList: React.FC<{
-  runIds: string[];
-}> = ({runIds}) => {
+export const RunList: React.FC<{runIds: string[]}> = ({runIds}) => {
   const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
     LAUNCHED_RUN_LIST_QUERY,
     {
@@ -137,22 +134,29 @@ export const RunList: React.FC<{
   );
 
   if (loading || !data) {
-    return <Spinner purpose="section" />;
+    return (
+      <Box padding={32}>
+        <Spinner purpose="section" />
+      </Box>
+    );
   }
 
   if (data.pipelineRunsOrError.__typename !== 'Runs') {
     return (
-      <NonIdealState
-        icon="error"
-        title="Query Error"
-        description={data.pipelineRunsOrError.message}
-      />
+      <Box padding={32}>
+        <NonIdealState
+          icon="error"
+          title="An error occurred"
+          description={data.pipelineRunsOrError.message}
+        />
+      </Box>
     );
   }
+
   return (
-    <div>
+    <Box padding={{bottom: 8}}>
       <RunTable runs={data.pipelineRunsOrError.results} />
-    </div>
+    </Box>
   );
 };
 
