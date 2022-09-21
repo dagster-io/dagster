@@ -9,6 +9,7 @@ import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
 
 import {GraphRoot} from './GraphRoot';
+import {WorkspaceAssetsRoot} from './WorkspaceAssetsRoot';
 import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceJobsRoot} from './WorkspaceJobsRoot';
 import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
@@ -79,6 +80,11 @@ const RepoRouteContainer = () => {
 
   return (
     <Switch>
+      {flagNewWorkspace ? (
+        <Route path="/workspace/:repoPath/assets" exact>
+          <WorkspaceAssetsRoot repoAddress={addressForPath} />
+        </Route>
+      ) : null}
       {flagNewWorkspace ? (
         <Route path="/workspace/:repoPath/jobs" exact>
           <WorkspaceJobsRoot repoAddress={addressForPath} />
