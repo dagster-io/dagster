@@ -79,7 +79,7 @@ def _setup_snippet_file(code_path: str, snippet_fn: Optional[str]):
 from dagster import repository
 @repository
 def demo_repo():
-return {snippet_fn}()
+    return {snippet_fn}()
 """
 
         temp_code_file = os.path.join(temp_dir, "code.py")
