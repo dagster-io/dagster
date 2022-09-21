@@ -1,3 +1,4 @@
+import types
 from abc import abstractmethod
 from functools import update_wrapper
 from typing import (
@@ -12,7 +13,6 @@ from typing import (
     cast,
     overload,
 )
-import types
 
 from typing_extensions import TypeAlias
 
@@ -40,6 +40,118 @@ IOManagerFunction: TypeAlias = Union[
     Callable[["InitResourceContext"], "IOManager"],
     Callable[[], "IOManager"],
 ]
+
+
+class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):
+    """Definition of an IO manager resource.
+
+    IOManagers are used to store op outputs and load them as inputs to downstream ops.
+
+    An IOManagerDefinition is a :py:class:`ResourceDefinition` whose `resource_fn` returns an
+    :py:class:`IOManager`.
+
+    The easiest way to create an IOManagerDefnition is with the :py:func:`@io_manager <io_manager>`
+    decorator.
+    """
+
+    def __init__(
+        self,
+        resource_fn: IOManagerFunction,
+        config_schema: CoercableToConfigSchema = None,
+        description: Optional[str] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
+        version: Optional[str] = None,
+        input_config_schema: CoercableToConfigSchema = None,
+        output_config_schema: CoercableToConfigSchema = None,
+    ):
+        def _resource_fn_wrapper(
+            init_context,
+        ) -> Union[
+            Callable[["InitResourceContext"], "IOManagerWrapper"],
+            Callable[[], "IOManagerWrapper"],
+        ]:
+            io_manager = resource_fn(init_context)
+
+            if input_config_schema:
+                original_load_input = io_manager.load_input
+
+                def _load_input(self, context: "InputContext") -> Any:
+                    configured_context = context.copy_for_configured(input_config_schema)
+                    return original_load_input(configured_context)
+
+                io_manager.load_input = types.MethodType(_load_input, io_manager)
+
+            if output_config_schema:
+                original_handle_output = io_manager.handle_output
+
+                def _handle_output(self, context: "OutputContext", obj: Any) -> None:
+                    configured_context = context.copy_for_configured(output_config_schema)
+                    return original_handle_output(configured_context, obj)
+
+                io_manager.handle_output = types.MethodType(_handle_output, io_manager)
+
+            return io_manager
+
+        self._input_config_schema = convert_user_facing_definition_config_schema(
+            input_config_schema
+        )
+        # Unlike other configurable objects, whose config schemas default to Any, output_config_schema
+        # defaults to None. This the because IOManager input / output config shares config
+        # namespace with dagster type loaders and materializers. The absence of provided
+        # output_config_schema means that we should fall back to using the materializer that
+        # corresponds to the output dagster type.
+        self._output_config_schema = (
+            convert_user_facing_definition_config_schema(output_config_schema)
+            if output_config_schema is not None
+            else None
+        )
+        super(IOManagerDefinition, self).__init__(
+            resource_fn=_resource_fn_wrapper,
+            config_schema=config_schema,
+            description=description,
+            required_resource_keys=required_resource_keys,
+            version=version,
+        )
+
+    @property
+    def input_config_schema(self) -> Optional[IDefinitionConfigSchema]:
+        return self._input_config_schema
+
+    @property
+    def output_config_schema(self) -> Optional[IDefinitionConfigSchema]:
+        return self._output_config_schema
+
+    def copy_for_configured(
+        self,
+        description: Optional[str],
+        config_schema: CoercableToConfigSchema,
+        _,
+    ) -> "IOManagerDefinition":
+        return IOManagerDefinition(
+            config_schema=config_schema,
+            description=description or self.description,
+            resource_fn=self.resource_fn,
+            required_resource_keys=self.required_resource_keys,
+            input_config_schema=self.input_config_schema,
+            output_config_schema=self.output_config_schema,
+        )
+
+    @public  # type: ignore
+    @staticmethod
+    def hardcoded_io_manager(
+        value: "IOManager", description: Optional[str] = None
+    ) -> "IOManagerDefinition":
+        """A helper function that creates an ``IOManagerDefinition`` with a hardcoded IOManager.
+
+        Args:
+            value (IOManager): A hardcoded IO Manager which helps mock the definition.
+            description ([Optional[str]]): The description of the IO Manager. Defaults to None.
+
+        Returns:
+            [IOManagerDefinition]: A hardcoded resource.
+        """
+        check.inst_param(value, "value", IOManager)
+        return IOManagerDefinition(resource_fn=lambda _init_context: value, description=description)
 
 
 class IOManager(InputManager, OutputManager):
@@ -116,201 +228,21 @@ class IOManager(InputManager, OutputManager):
         return self.get_output_asset_partitions(upstream_output_context)
 
 
-def update_context_config(context, config_schema):
-    from dagster._core.execution.context.input import InputContext
-    from dagster._core.execution.context.output import OutputContext
-
-    check.inst_param(context, "context", (InputContext, OutputContext))
-
+def reconcile_default_config(config_schema: CoercableToConfigSchema, config: Any):
     from dagster._config.validate import process_config
 
     if config_schema is None:
-        return
+        return {}
 
-    input_config_evr = process_config(
-        config_schema, context.config if context.config is not None else {}
-    )
+    input_config_evr = process_config(config_schema, config if config is not None else {})
     if not input_config_evr.success:
-        # TODO update message
         raise DagsterInvalidConfigError(
-            f"Error in config for IO Manager",
+            f"Error in config for input/output context:",
             config_evr.errors,
             run_config,
         )
 
-    context._set_config(cast(Dict[str, Any], input_config_evr.value))
-
-
-# class _IOManagerWrapper(IOManager):
-#     def __init__(
-#         self,
-#         io_manager: IOManager,
-#         input_config_schema: CoercableToConfigSchema = None,
-#         output_config_schema: CoercableToConfigSchema = None,
-#     ):
-#         self._io_manager = io_manager
-#         self._input_config_schema = input_config_schema
-#         self._output_config_schema = output_config_schema
-
-#     def load_input(self, context: "InputContext") -> Any:
-#         update_context_config(self._input_config_schema, context)
-#         return self._io_manager.load_input(context)
-
-#     def handle_output(self, context: "OutputContext", obj: Any) -> None:
-#         update_context_config(self._output_config_schema, context)
-#         self._io_manager.handle_output(context, obj)
-
-
-class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):
-    """Definition of an IO manager resource.
-
-    IOManagers are used to store op outputs and load them as inputs to downstream ops.
-
-    An IOManagerDefinition is a :py:class:`ResourceDefinition` whose `resource_fn` returns an
-    :py:class:`IOManager`.
-
-    The easiest way to create an IOManagerDefnition is with the :py:func:`@io_manager <io_manager>`
-    decorator.
-    """
-
-    def __init__(
-        self,
-        resource_fn: IOManagerFunction,
-        config_schema: CoercableToConfigSchema = None,
-        description: Optional[str] = None,
-        required_resource_keys: Optional[AbstractSet[str]] = None,
-        version: Optional[str] = None,
-        input_config_schema: CoercableToConfigSchema = None,
-        output_config_schema: CoercableToConfigSchema = None,
-    ):
-        def _resource_fn_wrapper(
-            init_context,
-        ) -> Union[
-            Callable[["InitResourceContext"], "IOManagerWrapper"],
-            Callable[[], "IOManagerWrapper"],
-        ]:
-            io_manager = resource_fn(init_context)
-
-            # def load_input(context: "InputContext") -> Any:
-            #     update_context_config(input_config_schema, context)
-            #     return io_manager.load_input(context)
-
-            # def handle_output(context: "OutputContext", obj: Any) -> None:
-            #     update_context_config(output_config_schema, context)
-            #     return io_manager.handle_output(context, obj)
-
-            # print(io_manager.__class__)
-
-            # io_manager_subclass = type(
-            #     'IOManagerWrapper',
-            #     (io_manager.__class__,),
-            #     {load_input: load_input, handle_output: handle_output},
-            # )
-
-            print(io_manager.__class__)
-
-            # second pass
-
-            # class _IOManagerWrapper(io_manager.__class__):
-            #     def __init__(
-            #         self,
-            #         io_manager: IOManager,
-            #         input_config_schema: CoercableToConfigSchema = None,
-            #         output_config_schema: CoercableToConfigSchema = None,
-            #     ):
-            #         self._io_manager = io_manager
-            #         self._input_config_schema = input_config_schema
-            #         self._output_config_schema = output_config_schema
-
-            #     def load_input(self, context: "InputContext") -> Any:
-            #         update_context_config(context, self._input_config_schema)
-            #         return self._io_manager.load_input(context)
-
-            #     def handle_output(self, context: "OutputContext", obj: Any) -> None:
-            #         update_context_config(context, self._output_config_schema)
-            #         self._io_manager.handle_output(context, obj)
-
-            # return _IOManagerWrapper(io_manager, input_config_schema, output_config_schema)
-
-            # third pass
-
-            original_load_input = io_manager.load_input
-            original_handle_output = io_manager.handle_output
-
-            # at least isolate this to any classes that have default config
-            def _load_input(self, context: "InputContext") -> Any:
-                update_context_config(context, input_config_schema)
-                return original_load_input(context)
-
-            def _handle_output(self, context: "OutputContext", obj: Any) -> None:
-                update_context_config(context, output_config_schema)
-                return original_handle_output(context, obj)
-
-            io_manager.load_input = types.MethodType(_load_input, io_manager)
-            io_manager.handle_output = types.MethodType(_handle_output, io_manager)
-
-            return io_manager
-
-        self._input_config_schema = convert_user_facing_definition_config_schema(
-            input_config_schema
-        )
-        # Unlike other configurable objects, whose config schemas default to Any, output_config_schema
-        # defaults to None. This the because IOManager input / output config shares config
-        # namespace with dagster type loaders and materializers. The absence of provided
-        # output_config_schema means that we should fall back to using the materializer that
-        # corresponds to the output dagster type.
-        self._output_config_schema = (
-            convert_user_facing_definition_config_schema(output_config_schema)
-            if output_config_schema is not None
-            else None
-        )
-        super(IOManagerDefinition, self).__init__(
-            resource_fn=_resource_fn_wrapper,
-            config_schema=config_schema,
-            description=description,
-            required_resource_keys=required_resource_keys,
-            version=version,
-        )
-
-    @property
-    def input_config_schema(self) -> Optional[IDefinitionConfigSchema]:
-        return self._input_config_schema
-
-    @property
-    def output_config_schema(self) -> Optional[IDefinitionConfigSchema]:
-        return self._output_config_schema
-
-    def copy_for_configured(
-        self,
-        description: Optional[str],
-        config_schema: CoercableToConfigSchema,
-        _,
-    ) -> "IOManagerDefinition":
-        return IOManagerDefinition(
-            config_schema=config_schema,
-            description=description or self.description,
-            resource_fn=self.resource_fn,
-            required_resource_keys=self.required_resource_keys,
-            input_config_schema=self.input_config_schema,
-            output_config_schema=self.output_config_schema,
-        )
-
-    @public  # type: ignore
-    @staticmethod
-    def hardcoded_io_manager(
-        value: "IOManager", description: Optional[str] = None
-    ) -> "IOManagerDefinition":
-        """A helper function that creates an ``IOManagerDefinition`` with a hardcoded IOManager.
-
-        Args:
-            value (IOManager): A hardcoded IO Manager which helps mock the definition.
-            description ([Optional[str]]): The description of the IO Manager. Defaults to None.
-
-        Returns:
-            [IOManagerDefinition]: A hardcoded resource.
-        """
-        check.inst_param(value, "value", IOManager)
-        return IOManagerDefinition(resource_fn=lambda _init_context: value, description=description)
+    return cast(Dict[str, Any], input_config_evr.value)
 
 
 @overload

@@ -125,6 +125,7 @@ class OutputContext:
         asset_info: Optional[AssetOutputInfo] = None,
         warn_on_step_context_use: bool = False,
         partition_key: Optional[str] = None,
+        # When adding new args, update copy_for_configured method below
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -458,9 +459,6 @@ class OutputContext:
 
         return self.step_context.asset_partitions_time_window_for_output(self.name)
 
-    def _set_config(self, config: Any):
-        self._config = config
-
     def get_run_scoped_output_identifier(self) -> Sequence[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
         step output.
@@ -686,6 +684,28 @@ class OutputContext:
         result = self._metadata_entries
         self._metadata_entries = []
         return result or []
+
+    def copy_for_configured(self, config_schema: Any) -> "OutputContext":
+        from dagster._core.storage.io_manager import reconcile_default_config
+
+        return OutputContext(
+            step_key=self._step_key,
+            name=self._name,
+            pipeline_name=self._pipeline_name,
+            run_id=self._run_id,
+            metadata=self._metadata,
+            mapping_key=self._mapping_key,
+            config=reconcile_default_config(config_schema, self._config),
+            dagster_type=self._dagster_type,
+            log_manager=self._log,
+            resource_config=self._resource_config,
+            resources=self._resources,
+            step_context=self._step_context,
+            op_def=self._op_def,
+            asset_info=self._asset_info,
+            warn_on_step_context_use=self._warn_on_step_context_use,
+            partition_key=self._partition_key,
+        )
 
 
 def get_output_context(
