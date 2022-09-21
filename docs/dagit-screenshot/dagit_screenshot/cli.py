@@ -92,11 +92,10 @@ def main():
     dagit_screenshot(obj={})
 
 
-@dagit_screenshot.command(help="Reads a screenshot spec and captures a screenshot")
-@click.option(
-    "--target",
-    "-t",
+@dagit_screenshot.command(
+    help="Reads a given markdown file and generates asset graph SVGs for code snippets."
 )
+@click.option("--target", "-t", help="Path to markdown file to process.")
 @click.pass_context
-def svg(ctx, target: str) -> None:
+def svg(target: str) -> None:
     _svg(target)
