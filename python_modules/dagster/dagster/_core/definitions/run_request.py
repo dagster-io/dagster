@@ -72,7 +72,7 @@ class RunRequest(
 
     def __new__(
         cls,
-        run_key: Optional[str],
+        run_key: Optional[str] = None,
         run_config: Optional[Mapping[str, Any]] = None,
         tags: Optional[Mapping[str, str]] = None,
         job_name: Optional[str] = None,
