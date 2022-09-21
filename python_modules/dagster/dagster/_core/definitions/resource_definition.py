@@ -391,3 +391,32 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
         resource_fn=lambda init_context: init_context.resource_config,
         config_schema=kwargs or Any,  # type: ignore
     )
+
+class TypedResourceProxy(ResourceDefinition):
+    def __init__(self, underlying_resource: ResourceDefinition, typed_ctor):
+        super().__init__(
+            resource_fn=underlying_resource.resource_fn,
+            config_schema=underlying_resource.config_schema,
+            description=underlying_resource.description,
+            required_resource_keys=underlying_resource.required_resource_keys,
+            version=underlying_resource.version,
+        )
+        self.underlying_resource = underlying_resource
+        self.typed_ctor = typed_ctor
+
+    def __call__(self, *args, **kwargs):
+        return self.typed_ctor(*args, **kwargs)
+
+    # to do testing of the underlying resource would either have to do this OR
+    # resource.underlying_resource(...)
+    def execute_in_process(self, *args, **kwargs):
+        return self.underlying_resource(*args, **kwargs)
+
+def typed_resource_ctor(underlying_resource):
+    def _wrap(fn):
+        return TypedResourceProxy(
+            underlying_resource,
+            fn
+        )
+
+    return _wrap
