@@ -148,11 +148,18 @@ class TimeWindowPartitionsDefinition(
         return partition_def_str
 
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
-        start = self.start_time_for_partition_key(partition_key)
-        return next(iter(self._iterate_time_windows(start)))
+        partition_key_dt = pendulum.instance(
+            datetime.strptime(partition_key, self.fmt), tz=self.timezone
+        )
+        return next(iter(self._iterate_time_windows(partition_key_dt)))
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
-        return pendulum.instance(datetime.strptime(partition_key, self.fmt), tz=self.timezone)
+        partition_key_dt = pendulum.instance(
+            datetime.strptime(partition_key, self.fmt), tz=self.timezone
+        )
+        # the datetime format might not include granular components, so we need to recover them
+        # we make the assumption that the parsed partition key is <= the start datetime
+        return next(iter(self._iterate_time_windows(partition_key_dt))).start
 
     def end_time_for_partition_key(self, partition_key: str) -> datetime:
         return self.time_window_for_partition_key(partition_key).end
