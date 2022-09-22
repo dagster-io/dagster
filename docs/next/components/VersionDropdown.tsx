@@ -11,14 +11,16 @@ function getLibraryVersion(coreVersion) {
   return parseInt(major) < 1 ? coreVersion : ['0', 16 + parseInt(minor), patch].join('.');
 }
 
+function getLibraryVersionText(coreVersion) {
+  const libraryVersion = coreVersion === 'master' ? 'master' : getLibraryVersion(coreVersion);
+  return libraryVersion === 'master' || coreVersion === libraryVersion
+    ? ''
+    : `/ ${libraryVersion} (libs)`;
+}
+
 export default function VersionDropdown() {
   const {latestVersion, version: currentVersion, versions, asPath} = useVersion();
-  const libraryVersion = currentVersion === 'master' ? 'master' : getLibraryVersion(currentVersion);
-  const libraryVersionText =
-    libraryVersion === 'master' || currentVersion === libraryVersion
-      ? ''
-      : `/ ${libraryVersion} (libs)`;
-
+  const libraryVersionText = getLibraryVersionText(currentVersion);
   return (
     <div className="z-20 relative inline-flex text-left w-full">
       <div className="relative block text-left w-full">
@@ -72,12 +74,16 @@ export default function VersionDropdown() {
                       <span className="text-sm font-medium leading-5 text-gray-900">
                         {currentVersion}
                       </span>
-                      . You can select a different version below.
+                      . You can select a different version below. Note that prior to 1.0, all
+                      Dagster packages shared the same version. After 1.0, separate version tracks
+                      were adopted for mature Dagster packages and less mature integration
+                      libraries.
                     </p>
                   </div>
 
                   <div className="py-1">
                     {versions.map((version) => {
+                      const libraryVersionText = getLibraryVersionText(version);
                       return (
                         <Link key={version} href={asPath} version={version}>
                           <Menu.Item>
@@ -87,7 +93,7 @@ export default function VersionDropdown() {
                                   active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                                 } flex cursor-pointer justify-between w-full px-4 py-2 text-sm leading-5 text-left`}
                               >
-                                {version}
+                                {version} {libraryVersionText}
                               </a>
                             )}
                           </Menu.Item>
