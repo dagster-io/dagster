@@ -4,6 +4,9 @@ import React from 'react';
 const MAX_WIDTH = 500;
 const MAX_HOVER_WIDTH = (MAX_WIDTH / 40.0) * 40.5;
 
+// Tweaked version of the website component
+// See https://github.com/dagster-io/dagster-website/blob/master/components/RenderedDAG.tsx
+
 export const RenderedDAG: React.FC<{
   svgSrc: string;
   isAssetGraph?: boolean;
@@ -39,8 +42,8 @@ export const RenderedDAG: React.FC<{
         style={{
           lineHeight: 1.1,
           position: 'absolute',
-          bottom: 0, // 20
-          top: 0, // 20
+          bottom: 0,
+          top: 0,
           right: 0,
           paddingLeft: focus ? 0 : hover ? 5 : 15,
           width: focus ? '100%' : '40.5%',
@@ -365,10 +368,6 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   }
 }
 
-/*
-  BG: Not using styled-components here because I need a `ref` to an actual DOM element.
-  Styled-component with a ref returns a React component we need to findDOMNode to use.
-  */
 const SVGViewportStyles: React.CSSProperties = {
   width: '100%',
   height: '100%',

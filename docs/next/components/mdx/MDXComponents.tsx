@@ -338,7 +338,7 @@ const Experimental = () => {
   );
 };
 
-const Pre = ({children, ...props}) => {
+const Pre: React.FC<React.HTMLProps<HTMLPreElement>> = ({children, ...props}) => {
   // Retrieve the DAG image to display next to the code block, if any
   const childrenArr = React.Children.toArray(children);
   const preComponent = childrenArr.length > 0 ? childrenArr[0] : null;
@@ -406,11 +406,7 @@ const Pre = ({children, ...props}) => {
             </span>
           </div>
         </Transition>
-        <pre
-          ref={preRef}
-          style={{height: '100%', marginBottom: 0, marginTop: 0}}
-          {...(props as any)}
-        >
+        <pre ref={preRef} style={{height: '100%', marginBottom: 0, marginTop: 0}} {...props}>
           {children}
         </pre>
       </div>
