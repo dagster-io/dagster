@@ -1,6 +1,3 @@
-import resource
-import resource
-import types
 from abc import abstractmethod
 from functools import update_wrapper
 from typing import (
@@ -15,6 +12,7 @@ from typing import (
     cast,
     overload,
 )
+import inspect
 
 from typing_extensions import TypeAlias
 
@@ -87,45 +85,46 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             from dagster._core.execution.context.input import TestingInputContext
             from dagster._core.execution.context.output import TestingOutputContext
 
-            print("num times called")
-
             if len(get_function_params(resource_fn)) > 0:
                 io_manager = resource_fn(init_context)
             else:
                 io_manager = resource_fn()
 
-            if input_config_schema:
-                original_load_input = io_manager.load_input
+            class IOManagerWrapper(io_manager.__class__):
+                def __init__(self, io_manager, input_config_schema, output_config_schema):
+                    self._io_manager = io_manager
+                    self._input_config_schema = input_config_schema
+                    self._output_config_schema = output_config_schema
 
-                def _load_input(_, context: "InputContext") -> Any:
+                def __getattr__(self, attr):
+                    return getattr(self._io_manager, attr)
+
+                def load_input(self, context: "InputContext") -> Any:
                     if isinstance(context, TestingInputContext):
                         context.apply_default_config(self._input_config_schema)
-                    yield from original_load_input(context)
+                    return self._io_manager.load_input(context)
 
-                io_manager.load_input = types.MethodType(_load_input, io_manager)
+                def handle_output(self, context, obj):
+                    # handle_output could be a generator function
+                    if not inspect.isgeneratorfunction(self._io_manager.handle_output):
 
-            if output_config_schema:
-                original_handle_output = io_manager.handle_output
-                output_config_schema = self._output_config_schema
-                print(original_handle_output)
+                        def _gen_fn():
+                            gen_output = self._io_manager.handle_output(context, obj)
+                            for event in context.consume_events():
+                                yield event
+                            if gen_output:
+                                yield gen_output
 
-                def _wrapper(func):
-                    def inner(self, context: "OutputContext", obj: Any) -> Any:
-                        if isinstance(context, TestingOutputContext):
-                            context.apply_default_config(output_config_schema)
-                        func(context, obj)
+                        handle_output_gen = _gen_fn()
 
-                    return inner
+                    else:
+                        handle_output_gen = self._io_manager.handle_output(context, obj)
 
-                # def _handle_output(_, context: "OutputContext", obj: Any) -> None:
-                #     original_handle_output(context, obj)
+                    yield from handle_output_gen
 
-                # io_manager.handle_output = types.MethodType(_handle_output, io_manager)
-                io_manager.handle_output = types.MethodType(
-                    _wrapper(io_manager.handle_output, io_manager)
-                )
-
-            return io_manager
+            return IOManagerWrapper(
+                io_manager, self._input_config_schema, self._output_config_schema
+            )
 
         super(IOManagerDefinition, self).__init__(
             resource_fn=_resource_fn_wrapper,

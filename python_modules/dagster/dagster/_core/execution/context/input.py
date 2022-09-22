@@ -456,7 +456,6 @@ class InputContext:
         return self._observations
 
     def consume_metadata_entries(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
-        print("consume_metadata_entries", self._metadata_entries)
         result = self._metadata_entries
         self._metadata_entries = []
         return result

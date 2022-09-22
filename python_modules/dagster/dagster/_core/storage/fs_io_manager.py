@@ -129,11 +129,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         """
         check.inst_param(context, "context", OutputContext)
 
-        print("where am i?!")
-
         filepath = self._get_path(context)
-
-        print("wtf")
 
         if context.dagster_type.typing_type == type(None):
             check.invariant(
@@ -170,7 +166,6 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                     "https://docs.dagster.io/deployment/executors#overview"
                 ) from e
 
-        print("output path", os.path.abspath(filepath))
         context.add_output_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
     def load_input(self, context):
