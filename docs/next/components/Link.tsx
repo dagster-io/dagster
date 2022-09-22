@@ -7,7 +7,7 @@ import {normalizeVersionPath, useVersion} from '../util/useVersion';
 
 interface LinkProps {
   href: string;
-  children: JSX.Element;
+  children: React.ReactNode;
   version?: string;
   passHref?: boolean;
 }
