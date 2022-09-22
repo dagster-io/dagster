@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Button, Caption, Colors, Icon, Menu, Popover, Tag, Tooltip} from '@dagster-io/ui';
+import {Box, Button, Caption, Colors, Icon, Menu, Popover, Tooltip} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -16,58 +16,27 @@ import {humanCronString} from '../schedules/humanCronString';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
-import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
-import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 
-import {LoadingOrNone, RepoRow, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext';
-import {repoAddressAsString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 import {SingleScheduleQuery, SingleScheduleQueryVariables} from './types/SingleScheduleQuery';
 import {workspacePathFromAddress} from './workspacePath';
 
-type Repository = {
-  repoAddress: RepoAddress;
-  schedules: string[];
-};
+type Schedule = {name: string};
 
 interface Props {
-  repos: Repository[];
+  repoAddress: RepoAddress;
+  schedules: Schedule[];
 }
 
-type RowType =
-  | {type: 'header'; repoAddress: RepoAddress; scheduleCount: number}
-  | {type: 'schedule'; repoAddress: RepoAddress; name: string};
-
-const SCHEDULES_EXPANSION_STATE_STORAGE_KEY = 'schedules-virtualized-expansion-state';
-
-export const VirtualizedScheduleTable: React.FC<Props> = ({repos}) => {
+export const VirtualizedScheduleTable: React.FC<Props> = ({repoAddress, schedules}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const {expandedKeys, onToggle} = useRepoExpansionState(SCHEDULES_EXPANSION_STATE_STORAGE_KEY);
-
-  const flattened: RowType[] = React.useMemo(() => {
-    const flat: RowType[] = [];
-    repos.forEach(({repoAddress, schedules}) => {
-      flat.push({type: 'header', repoAddress, scheduleCount: schedules.length});
-      const repoKey = repoAddressAsString(repoAddress);
-      if (expandedKeys.includes(repoKey)) {
-        schedules.forEach((name) => {
-          flat.push({type: 'schedule', repoAddress, name});
-        });
-      }
-    });
-    return flat;
-  }, [repos, expandedKeys]);
-
-  const duplicateRepoNames = findDuplicateRepoNames(repos.map(({repoAddress}) => repoAddress.name));
 
   const rowVirtualizer = useVirtualizer({
-    count: flattened.length,
+    count: schedules.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (ii: number) => {
-      const row = flattened[ii];
-      return row?.type === 'header' ? 32 : 64;
-    },
+    estimateSize: () => 64,
     overscan: 10,
   });
 
@@ -97,32 +66,12 @@ export const VirtualizedScheduleTable: React.FC<Props> = ({repos}) => {
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const row: RowType = flattened[index];
-              const type = row!.type;
-              return type === 'header' ? (
-                <RepoRow
-                  repoAddress={row.repoAddress}
-                  key={key}
-                  height={size}
-                  start={start}
-                  onToggle={onToggle}
-                  showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-                  rightElement={
-                    <Tooltip
-                      content={
-                        row.scheduleCount === 1 ? '1 schedule' : `${row.scheduleCount} schedules`
-                      }
-                      placement="top"
-                    >
-                      <Tag intent="primary">{row.scheduleCount}</Tag>
-                    </Tooltip>
-                  }
-                />
-              ) : (
+              const row: Schedule = schedules[index];
+              return (
                 <ScheduleRow
                   key={key}
                   name={row.name}
-                  repoAddress={row.repoAddress}
+                  repoAddress={repoAddress}
                   height={size}
                   start={start}
                 />

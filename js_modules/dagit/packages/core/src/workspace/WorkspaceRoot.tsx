@@ -21,6 +21,7 @@ import {repoAddressFromPath} from './repoAddressFromPath';
 const RepoRouteContainer = () => {
   const {repoPath} = useParams<{repoPath: string}>();
   const workspaceState = React.useContext(WorkspaceContext);
+  const {flagNewWorkspace} = useFeatureFlags();
   const addressForPath = repoAddressFromPath(repoPath);
 
   // A RepoAddress could not be created for this path, which means it's invalid.
@@ -78,6 +79,21 @@ const RepoRouteContainer = () => {
 
   return (
     <Switch>
+      {flagNewWorkspace ? (
+        <Route path="/workspace/:repoPath/jobs" exact>
+          <WorkspaceJobsRoot repoAddress={addressForPath} />
+        </Route>
+      ) : null}
+      {flagNewWorkspace ? (
+        <Route path="/workspace/:repoPath/schedules" exact>
+          <WorkspaceSchedulesRoot repoAddress={addressForPath} />
+        </Route>
+      ) : null}
+      {flagNewWorkspace ? (
+        <Route path="/workspace/:repoPath/sensors" exact>
+          <WorkspaceSensorsRoot repoAddress={addressForPath} />
+        </Route>
+      ) : null}
       <Route path="/workspace/:repoPath/graphs/(/?.*)">
         <GraphRoot repoAddress={addressForPath} />
       </Route>
@@ -115,28 +131,12 @@ const RepoRouteContainer = () => {
 };
 
 export const WorkspaceRoot = () => {
-  const {flagNewWorkspace} = useFeatureFlags();
   return (
     <MainContent>
       <Switch>
         <Route path="/workspace" exact>
           <WorkspaceOverviewRoot />
         </Route>
-        {flagNewWorkspace ? (
-          <Route path="/workspace/jobs" exact>
-            <WorkspaceJobsRoot />
-          </Route>
-        ) : null}
-        {flagNewWorkspace ? (
-          <Route path="/workspace/schedules" exact>
-            <WorkspaceSchedulesRoot />
-          </Route>
-        ) : null}
-        {flagNewWorkspace ? (
-          <Route path="/workspace/sensors" exact>
-            <WorkspaceSensorsRoot />
-          </Route>
-        ) : null}
         <Route path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}>
           <WorkspacePipelineRoot />
         </Route>
