@@ -70,14 +70,17 @@ export default function VersionDropdown() {
                 >
                   <div className="px-4 py-3">
                     <p className="text-sm leading-5">
-                      You are currently viewing the docs for Dagster{' '}
+                      You&apos;re currently viewing the docs for Dagster{' '}
                       <span className="text-sm font-medium leading-5 text-gray-900">
                         {currentVersion}
                       </span>
-                      . You can select a different version below. Note that prior to 1.0, all
-                      Dagster packages shared the same version. After 1.0, separate version tracks
-                      were adopted for mature Dagster packages and less mature integration
-                      libraries.
+                      . Select a different version below. Note that prior to 1.0, all Dagster
+                      packages shared the same version. After 1.0, we adopted separate version
+                      tracks to differentiate less mature integration libraries.{' '}
+                      <Link href="/getting-started/releases#dagster-integration-libraries">
+                        <span className="hover:underline cursor-pointer">Learn more</span>
+                      </Link>
+                      .
                     </p>
                   </div>
 
