@@ -338,12 +338,20 @@ const Experimental = () => {
   );
 };
 
+// next-mdx converts code blocks to <code> elements wrapped in <pre> elements.
+// We need to access the props of the code element to see if we should render an asset
+// graph DAG; so we turn the <pre> tag into a styling no-op and create a new <pre> tag
+// around the <code> tag once we have access to the <code> tag's props.
 const Pre: React.FC<React.HTMLProps<HTMLPreElement>> = ({children, ...props}) => {
-  // Retrieve the DAG image to display next to the code block, if any
-  const childrenArr = React.Children.toArray(children);
-  const preComponent = childrenArr.length > 0 ? childrenArr[0] : null;
-  const dagImage = preComponent ? preComponent['props']['dagimage'] : null;
+  const updatedProps = {...props, className: 'noop'};
+  return <pre {...updatedProps}>{children}</pre>;
+};
 
+interface CodeProps extends React.HTMLProps<HTMLPreElement> {
+  dagimage?: string;
+}
+
+const Code: React.FC<CodeProps> = ({children, dagimage, ...props}) => {
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
 
@@ -406,11 +414,15 @@ const Pre: React.FC<React.HTMLProps<HTMLPreElement>> = ({children, ...props}) =>
             </span>
           </div>
         </Transition>
-        <pre ref={preRef} style={{height: '100%', marginBottom: 0, marginTop: 0}} {...props}>
-          {children}
+        <pre
+          className={props.className}
+          ref={preRef}
+          style={{height: '100%', marginBottom: 0, marginTop: 0}}
+        >
+          <code {...props}>{children}</code>
         </pre>
       </div>
-      {dagImage && (
+      {dagimage && (
         <RenderedDAG
           svgSrc="/images/asset-screenshots/my_assets.svg"
           isAssetGraph
@@ -613,6 +625,7 @@ export default {
       <img {...(props as any)} />
     </span>
   ),
+  code: Code,
   pre: Pre,
   PyObject,
   Link,
