@@ -34,7 +34,7 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["dagster_celery_tests*"]),
         entry_points={"console_scripts": ["dagster-celery = dagster_celery.cli:main"]},
         install_requires=[
-            f"dagster{pin}",
+            "dagster==1.0.10",
             "celery>=4.3.0",
             "click>=5.0,<9.0",
         ],
