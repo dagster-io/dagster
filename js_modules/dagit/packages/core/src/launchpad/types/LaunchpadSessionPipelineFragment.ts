@@ -39,6 +39,7 @@ export interface LaunchpadSessionPipelineFragment {
   __typename: "Pipeline";
   id: string;
   isJob: boolean;
+  isAssetJob: boolean;
   name: string;
   presets: LaunchpadSessionPipelineFragment_presets[];
   tags: LaunchpadSessionPipelineFragment_tags[];
