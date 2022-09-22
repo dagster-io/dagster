@@ -21,6 +21,7 @@ export const WorkspaceTabs = <TData extends Record<string, any>>(props: Props<TD
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
+        <TabLink id="assets" title="Assets" to={workspacePathFromAddress(repoAddress, '/assets')} />
         <TabLink id="jobs" title="Jobs" to={workspacePathFromAddress(repoAddress, '/jobs')} />
         <TabLink
           id="schedules"
