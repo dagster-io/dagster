@@ -6,9 +6,11 @@ import pytest
 
 from dagster import (
     DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
+    PartitionKeyRange,
     StaticPartitionsDefinition,
 )
 from dagster._check import CheckError
@@ -17,6 +19,7 @@ from dagster._core.definitions.partition import (
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
 )
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
 
@@ -781,3 +784,17 @@ def test_partitions_def_to_string():
     dynamic_fn = lambda _current_time: ["a_partition"]
     dynamic = DynamicPartitionsDefinition(dynamic_fn)
     assert str(dynamic) == "'a_partition'"
+
+
+def test_static_partition_keys_in_range():
+    partitions = StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
+    assert partitions.get_partition_keys_in_range(PartitionKeyRange(start="foo", end="baz")) == [
+        "foo",
+        "bar",
+        "baz",
+    ]
+
+    with pytest.raises(DagsterInvalidInvocationError):
+        partitions.get_partition_keys_in_range(
+            PartitionKeyRange(start="foo", end="nonexistent_key")
+        )
