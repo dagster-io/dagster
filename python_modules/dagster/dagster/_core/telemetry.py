@@ -340,7 +340,7 @@ def _get_instance_telemetry_enabled(instance):
 
 def get_or_set_instance_id():
     instance_id = _get_telemetry_instance_id()
-    if instance_id == None:
+    if instance_id is None:
         instance_id = _set_telemetry_instance_id()
     return instance_id
 

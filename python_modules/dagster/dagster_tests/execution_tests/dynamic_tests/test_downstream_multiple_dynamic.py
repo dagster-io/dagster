@@ -118,12 +118,12 @@ def test_with_collect():
     result = with_collect.execute_in_process()
     assert result.output_for_node("collect_and_sum") == 20
 
-def test_basic():
-    result = basic_example.execute_in_process()
+# def test_basic():
+#     result = basic_example.execute_in_process()
 
-def test_collect_multi():
-    result = collect_two_dynamic_outputs.execute_in_process()
-    assert result.output_for_node("collect_two_and_sum") == 20
+# def test_collect_multi():
+#     result = collect_two_dynamic_outputs.execute_in_process()
+#     assert result.output_for_node("collect_two_and_sum") == 20
 
 
 def notes():
@@ -136,5 +136,7 @@ def notes():
             - resolve_step_key_output_name_pairs - not shorter but not misleading as to datatype (it's not actually a dict)
 
         - make sure putting whitelist_for_serdes on the StepKeyOutputNamePair is ok
+
+        - check for inconsistencies between use of resolution_sources (property) and get_resolution_sources() (function)
 
     """

@@ -208,7 +208,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def check_run_worker_health(self, run: PipelineRun):
         container = self._get_container(run)
-        if container == None:
+        if container is None:
             return CheckRunHealthResult(WorkerStatus.NOT_FOUND)
         if container.status == "running":
             return CheckRunHealthResult(WorkerStatus.RUNNING)

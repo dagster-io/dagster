@@ -186,7 +186,7 @@ class ReconstructablePipeline(
             )
 
         check.invariant(
-            self.asset_selection == None, "Asset selection cannot be provided with a pipeline"
+            self.asset_selection is None, "Asset selection cannot be provided with a pipeline"
         )
         return (
             self.repository.get_definition().get_pipeline(self.pipeline_name)

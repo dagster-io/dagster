@@ -69,6 +69,23 @@ export interface WorkspaceSensorsQuery_workspaceOrError_PythonError {
 
 export type WorkspaceSensorsQuery_workspaceOrError = WorkspaceSensorsQuery_workspaceOrError_Workspace | WorkspaceSensorsQuery_workspaceOrError_PythonError;
 
+export interface WorkspaceSensorsQuery_unloadableInstigationStatesOrError_PythonError {
+  __typename: "PythonError";
+}
+
+export interface WorkspaceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results {
+  __typename: "InstigationState";
+  id: string;
+}
+
+export interface WorkspaceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates {
+  __typename: "InstigationStates";
+  results: WorkspaceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results[];
+}
+
+export type WorkspaceSensorsQuery_unloadableInstigationStatesOrError = WorkspaceSensorsQuery_unloadableInstigationStatesOrError_PythonError | WorkspaceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates;
+
 export interface WorkspaceSensorsQuery {
   workspaceOrError: WorkspaceSensorsQuery_workspaceOrError;
+  unloadableInstigationStatesOrError: WorkspaceSensorsQuery_unloadableInstigationStatesOrError;
 }

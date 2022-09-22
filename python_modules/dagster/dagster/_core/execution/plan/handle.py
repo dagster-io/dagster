@@ -1,9 +1,10 @@
 import re
-from typing import NamedTuple, Optional, Union, cast
+from typing import List, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils import frozenlist
 
 
 @whitelist_for_serdes
@@ -39,20 +40,38 @@ class StepHandle(NamedTuple("_StepHandle", [("solid_handle", NodeHandle), ("key"
 
 
 @whitelist_for_serdes
-class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle", NodeHandle)])):
+class UnresolvedStepHandle(
+    NamedTuple(
+        "_UnresolvedStepHandle",
+        [
+            ("solid_handle", NodeHandle),
+            ("partial_keys", frozenlist),
+        ],
+    ),
+):
     """A reference to an UnresolvedMappedExecutionStep in an execution"""
 
-    def __new__(cls, solid_handle: NodeHandle):
+    def __new__(
+        cls,
+        solid_handle: NodeHandle,
+        partial_keys: Optional[Sequence[str]] = None,
+    ):
         return super(UnresolvedStepHandle, cls).__new__(
             cls,
             solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
+            partial_keys=frozenlist(check.opt_sequence_param(partial_keys, "partial_keys")),
         )
 
     def to_key(self):
-        return f"{self.solid_handle.to_string()}[?]"
+        # prototype note: should we have "?" repeated
+        keys = [*self.partial_keys, "?"]
+        return f"{self.solid_handle.to_string()}[{','.join(keys)}]"
 
     def resolve(self, map_key) -> "ResolvedFromDynamicStepHandle":
-        return ResolvedFromDynamicStepHandle(self.solid_handle, map_key)
+        return ResolvedFromDynamicStepHandle(self.solid_handle, [*self.partial_keys, map_key])
+
+    def partial_resolve(self, map_key):
+        return UnresolvedStepHandle(self.solid_handle, partial_keys=[*self.partial_keys, map_key])
 
 
 @whitelist_for_serdes
@@ -68,7 +87,14 @@ class ResolvedFromDynamicStepHandle(
     completed successfully.
     """
 
-    def __new__(cls, solid_handle: NodeHandle, mapping_key: str, key: Optional[str] = None):
+    def __new__(
+        cls,
+        solid_handle: NodeHandle,
+        mapping_key: Union[str, List[str]],
+        key: Optional[str] = None,
+    ):
+        if isinstance(mapping_key, list):
+            mapping_key = ",".join(mapping_key)
         return super(ResolvedFromDynamicStepHandle, cls).__new__(
             cls,
             solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),

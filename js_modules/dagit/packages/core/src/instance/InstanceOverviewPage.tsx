@@ -5,7 +5,6 @@ import * as React from 'react';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {
   failedStatuses,
   inProgressStatuses,
@@ -167,9 +166,7 @@ export const InstanceOverviewPage = () => {
         (r) =>
           r.repository.name === repoAddress.name &&
           r.repositoryLocation.name === repoAddress.location,
-      ) &&
-      name.toLocaleLowerCase().includes(searchToLower) &&
-      !isHiddenAssetGroupJob(name);
+      ) && name.toLocaleLowerCase().includes(searchToLower);
 
     const {failed, inProgress, queued, succeeded, neverRan} = bucketed;
     return {

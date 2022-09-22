@@ -88,7 +88,7 @@ class TestComposites(NonLaunchableGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context, SOLID_ID_QUERY, {"selector": selector, "id": "bonkahog"}
         )
-        assert result.data["pipelineOrError"]["solidHandle"] == None
+        assert result.data["pipelineOrError"]["solidHandle"] is None
 
     def test_recurse_composites_depends(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "composites_pipeline")

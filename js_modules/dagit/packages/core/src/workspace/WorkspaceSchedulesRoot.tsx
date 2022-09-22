@@ -1,17 +1,31 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Heading, NonIdealState, PageHeader, Spinner, TextInput} from '@dagster-io/ui';
+import {
+  Alert,
+  Box,
+  Button,
+  Colors,
+  Dialog,
+  DialogFooter,
+  Heading,
+  NonIdealState,
+  PageHeader,
+  Spinner,
+  TextInput,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useTrackPageView} from '../app/analytics';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {HeaderCell} from '../ui/VirtualizedTable';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
+import {UnloadableSchedules} from '../instigation/Unloadable';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceTabs} from './WorkspaceTabs';
 import {buildRepoAddress} from './buildRepoAddress';
 import {RepoAddress} from './types';
+import {UnloadableSchedulesQuery} from './types/UnloadableSchedulesQuery';
 import {WorkspaceSchedulesQuery} from './types/WorkspaceSchedulesQuery';
 
 export const WorkspaceSchedulesRoot = () => {
@@ -81,30 +95,7 @@ export const WorkspaceSchedulesRoot = () => {
       );
     }
 
-    return (
-      <>
-        <Box
-          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '76px 28% 30% 10% 20% 10%',
-            height: '32px',
-            fontSize: '12px',
-            color: Colors.Gray600,
-          }}
-        >
-          <HeaderCell />
-          <HeaderCell>Schedule name</HeaderCell>
-          <HeaderCell>Schedule</HeaderCell>
-          <HeaderCell>Last tick</HeaderCell>
-          <HeaderCell>Last run</HeaderCell>
-          <HeaderCell>Actions</HeaderCell>
-        </Box>
-        <div style={{overflow: 'hidden'}}>
-          <VirtualizedScheduleTable repos={filteredBySearch} />
-        </div>
-      </>
-    );
+    return <VirtualizedScheduleTable repos={filteredBySearch} />;
   };
 
   return (
@@ -128,10 +119,87 @@ export const WorkspaceSchedulesRoot = () => {
           <Spinner purpose="page" />
         </Box>
       ) : (
-        content()
+        <>
+          {data?.unloadableInstigationStatesOrError.__typename === 'InstigationStates' ? (
+            <UnloadableSchedulesAlert
+              count={data.unloadableInstigationStatesOrError.results.length}
+            />
+          ) : null}
+          {content()}
+        </>
       )}
     </Box>
   );
+};
+
+const UnloadableSchedulesAlert: React.FC<{
+  count: number;
+}> = ({count}) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  if (!count) {
+    return null;
+  }
+
+  const title = count === 1 ? '1 unloadable schedule' : `${count} unloadable schedules`;
+
+  return (
+    <>
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+      >
+        <Alert
+          intent="warning"
+          title={title}
+          description={
+            <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
+              <div>
+                Schedules were previously started but now cannot be loaded. They may be part of a
+                different workspace or from a schedule or repository that no longer exists in code.
+                You can turn them off, but you cannot turn them back on.
+              </div>
+              <Button onClick={() => setIsOpen(true)}>
+                {count === 1 ? 'View unloadable schedule' : 'View unloadable schedules'}
+              </Button>
+            </Box>
+          }
+        />
+      </Box>
+      <Dialog
+        isOpen={isOpen}
+        title="Unloadable schedules"
+        style={{width: '90vw', maxWidth: '1200px'}}
+      >
+        <Box padding={{bottom: 8}}>
+          <UnloadableScheduleDialog />
+        </Box>
+        <DialogFooter>
+          <Button intent="primary" onClick={() => setIsOpen(false)}>
+            Done
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </>
+  );
+};
+
+const UnloadableScheduleDialog: React.FC = () => {
+  const {data} = useQuery<UnloadableSchedulesQuery>(UNLOADABLE_SCHEDULES_QUERY);
+  if (!data) {
+    return <Spinner purpose="section" />;
+  }
+
+  if (data?.unloadableInstigationStatesOrError.__typename === 'InstigationStates') {
+    return (
+      <UnloadableSchedules
+        scheduleStates={data.unloadableInstigationStatesOrError.results}
+        showSubheading={false}
+      />
+    );
+  }
+
+  return <PythonErrorInfo error={data?.unloadableInstigationStatesOrError} />;
 };
 
 type RepoBucket = {
@@ -198,7 +266,31 @@ const WORKSPACE_SCHEDULES_QUERY = gql`
       }
       ...PythonErrorFragment
     }
+    unloadableInstigationStatesOrError(instigationType: SCHEDULE) {
+      ... on InstigationStates {
+        results {
+          id
+        }
+      }
+    }
   }
 
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+const UNLOADABLE_SCHEDULES_QUERY = gql`
+  query UnloadableSchedulesQuery {
+    unloadableInstigationStatesOrError(instigationType: SCHEDULE) {
+      ... on InstigationStates {
+        results {
+          id
+          ...InstigationStateFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  ${INSTIGATION_STATE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

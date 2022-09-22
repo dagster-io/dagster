@@ -941,6 +941,8 @@ class DependencyStructure:
             self._dynamic_fan_out_index[input_handle.solid_name] = output_handle
             return
 
+        # gating
+        #
         # if self._dynamic_fan_out_index[input_handle.solid_name] != output_handle:
         #     raise DagsterInvalidDefinitionError(
         #         f"{input_handle.solid.describe_node()} cannot be downstream of more than one dynamic output. "
@@ -963,6 +965,9 @@ class DependencyStructure:
         self._collect_index[input_handle.solid_name].add(output_handle)
 
         # if the output is already fanned out
+        #
+        # gating
+        #
         # if self._dynamic_fan_out_index.get(output_handle.solid_name):
         #     raise DagsterInvalidDefinitionError(
         #         f"{input_handle.solid.describe_node()} cannot be downstream of more than one dynamic output. "

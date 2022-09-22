@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional, Union
+from typing import List, NamedTuple, Optional, Union, Any
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -166,9 +166,9 @@ class UnresolvedStepOutputHandle(
         [
             ("unresolved_step_handle", UnresolvedStepHandle),
             ("output_name", str),
-            ("resolved_by_step_key", List[str]),
-            ("resolved_by_output_name", List[str]),
-            ("resolved_step_key_output_name_mapping", List[StepKeyOutputNamePair])
+            ("resolution_sources", List[Any]) # TODO - real type here
+            # ("resolved_by_step_key", str),
+            # ("resolved_by_output_name", str),
         ],
     )
 ):
@@ -181,9 +181,9 @@ class UnresolvedStepOutputHandle(
         cls,
         unresolved_step_handle: UnresolvedStepHandle,
         output_name: str,
-        resolved_by_step_key: List[str],
-        resolved_by_output_name: List[str],
-        resolved_step_key_output_name_mapping: List[StepKeyOutputNamePair],
+        resolution_sources,
+        # resolved_by_step_key: str,
+        # resolved_by_output_name: str,
     ):
         return super(UnresolvedStepOutputHandle, cls).__new__(
             cls,
@@ -191,20 +191,38 @@ class UnresolvedStepOutputHandle(
                 unresolved_step_handle, "unresolved_step_handle", UnresolvedStepHandle
             ),
             output_name=check.str_param(output_name, "output_name"),
-            # this could be a set of resolution keys to support multiple mapping operations
-            resolved_by_step_key=check.list_param(resolved_by_step_key, "resolved_by_step_key"),
-            resolved_by_output_name=check.list_param(
-                resolved_by_output_name, "resolved_by_output_name"
-            ),
-            resolved_step_key_output_name_mapping=check.list_param(resolved_step_key_output_name_mapping, "resolved_step_key_output_name_mapping")
+            resolution_sources=resolution_sources,
+            # resolved_by_step_key=check.str_param(resolved_by_step_key, "resolved_by_step_key"),
+            # resolved_by_output_name=check.str_param(
+            #     resolved_by_output_name, "resolved_by_output_name"
+            # ),
         )
 
-    def resolve(self, map_key) -> StepOutputHandle:
-        """Return a resolved StepOutputHandle"""
-        return StepOutputHandle(
-            self.unresolved_step_handle.resolve(map_key).to_key(), self.output_name
-        )
+    def resolve(self, map_key) -> Union[StepOutputHandle, "UnresolvedStepOutputHandle"]:
+        """
+        Return either a fully resolved StepOutputHandle or a partially resolved UnresolvedStepOutputHandle
+        """
+        from .inputs import FromStepOutput
+
+        outputs = []
+        for source in self.resolution_sources:
+            new_source = source.resolve(map_key)
+            if isinstance(new_source, FromStepOutput):
+                outputs.append(StepOutputHandle(
+                    self.unresolved_step_handle.resolve(map_key).to_key(),
+                    self.output_name,
+                ))
+            else:
+                outputs.append(UnresolvedStepOutputHandle(
+                    self.unresolved_step_handle.partial_resolve(map_key),
+                    self.output_name,
+                    new_source,
+                ))
+        return outputs
 
     def get_step_output_handle_with_placeholder(self) -> StepOutputHandle:
         """Return a StepOutputHandle with a unresolved step key as a placeholder"""
         return StepOutputHandle(self.unresolved_step_handle.to_key(), self.output_name)
+
+    def get_resolving_handles(self) -> List[Any]: # TODO - type annotation
+        return [h for s in self.resolution_sources for h in s.get_resolving_handles()]
