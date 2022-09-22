@@ -4,28 +4,29 @@
 
 ### New
 
-- Run status sensors can now monitor all runs in a Dagster Instance, rather than just runs from jobs within a single repository. You can enable this behavior by setting `monitor_all_repositories=True` in the run status sensor decorator.
-- The `run_key` argument on `RunRequest` and `run_request_for_partition` is now optional.
-- [dagster-databricks] A new “verbose_logs” config option on the databricks_pyspark_step_launcher makes it possible to silence non-critical logs from your external steps, which can be helpful for long-running, or highly parallel operations (thanks @zyd14!)
-- [dagit] It is now possible to delete a run in Dagit directly from the run page. The option is available in the dropdown menu on the top right of the page.
-- [dagit] The run timeline on the Workspace Overview page in Dagit now includes ad hoc asset materialization runs.
+* Run status sensors can now monitor all runs in a Dagster Instance, rather than just runs from jobs within a single repository. You can enable this behavior by setting `monitor_all_repositories=True` in the run status sensor decorator.
+* The `run_key` argument on `RunRequest` and `run_request_for_partition` is now optional.
+* [dagster-databricks] A new “verbose_logs” config option on the databricks_pyspark_step_launcher makes it possible to silence non-critical logs from your external steps, which can be helpful for long-running, or highly parallel operations (thanks @zyd14!)
+* [dagit] It is now possible to delete a run in Dagit directly from the run page. The option is available in the dropdown menu on the top right of the page.
+* [dagit] The run timeline on the Workspace Overview page in Dagit now includes ad hoc asset materialization runs.
 
 ### Bugfixes
 
-- Fixed a set of bugs in `multi_asset_sensor` where the cursor would fail to update, and materializations would be returned out of order for `latest_materialization_records_by_partition`.
-- Fix a bug that caused failures in runs with time-partitioned asset dependencies when the PartitionsDefinition had an offset that wasn’t included in the date format. E.g. a daily-partitioned asset with an hour offset, whose date format was `%Y-%m-%d`.
-- An issue causing code loaded by file path to import repeatedly has been resolved.
-- To align with best practices, singleton comparisons throughout the codebase have been converted from (e.g.) `foo == None` to `foo is None` (thanks @chrisRedwine!).
-- [dagit] In backfill jobs, the “Partition Set” column would sometimes show an internal `__ASSET_JOB` name, rather than a comprehensible set of asset keys. This has been fixed.
-- [dagit] It is now possible to collapse all Asset Observation rows on the AssetDetails page.
-- [dagster-dbt] Fixed issue that would cause an error when loading assets from dbt projects in which a source had a “*” character in its name (e.g. BigQuery sharded tables)
-- [dagster-k8s] Fixed an issue where the `k8s_job_op` would sometimes fail if the Kubernetes job that it creates takes a long time to create a pod.
-- Fixed an issue where links to the compute logs for a run would sometimes fail to load.
-- [dagster-k8s] The `k8s_job_executor` now uses environment variables in place of CLI arguments to avoid limits on argument size with large dynamic jobs.
+* Fixed a set of bugs in `multi_asset_sensor` where the cursor would fail to update, and materializations would be returned out of order for `latest_materialization_records_by_partition`.
+* Fixed a bug that caused failures in runs with time-partitioned asset dependencies when the PartitionsDefinition had an offset that wasn’t included in the date format. E.g. a daily-partitioned asset with an hour offset, whose date format was `%Y-%m-%d`.
+* An issue causing code loaded by file path to import repeatedly has been resolved.
+* To align with best practices, singleton comparisons throughout the codebase have been converted from (e.g.) `foo == None` to `foo is None` (thanks @chrisRedwine!).
+* [dagit] In backfill jobs, the “Partition Set” column would sometimes show an internal `__ASSET_JOB` name, rather than a comprehensible set of asset keys. This has been fixed.
+* [dagit] It is now possible to collapse all Asset Observation rows on the AssetDetails page.
+* [dagster-dbt] Fixed issue that would cause an error when loading assets from dbt projects in which a source had a “*” character in its name (e.g. BigQuery sharded tables)
+* [dagster-k8s] Fixed an issue where the `k8s_job_op` would sometimes fail if the Kubernetes job that it creates takes a long time to create a pod.
+* Fixed an issue where links to the compute logs for a run would sometimes fail to load.
+* [dagster-k8s] The `k8s_job_executor` now uses environment variables in place of CLI arguments to avoid limits on argument size with large dynamic jobs.
 
 ### Documentation
 
-- Graph-backed assets can now be subsetted. You can use this feature following the documentation [here](https://docs.dagster.io/concepts/assets/graph-backed-assets).
+* Docs added to explain subsetting graph-backed assets. You can use this feature following the documentation [here](https://docs.dagster.io/concepts/assets/graph-backed-assets).
+* UI updated to reflect separate version schemes for mature core Dagster packages and less mature integration libraries
 
 # 1.0.9 (core) / 0.16.9 (libraries)
 
