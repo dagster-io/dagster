@@ -6,8 +6,18 @@ import {useVersion} from '../util/useVersion';
 
 import Link from './Link';
 
+function getLibraryVersion(coreVersion) {
+  const [major, minor, patch] = coreVersion.split('.');
+  return parseInt(major) < 1 ? coreVersion : ['0', 16 + parseInt(minor), patch].join('.');
+}
+
 export default function VersionDropdown() {
   const {latestVersion, version: currentVersion, versions, asPath} = useVersion();
+  const libraryVersion = currentVersion === 'master' ? 'master' : getLibraryVersion(currentVersion);
+  const libraryVersionText =
+    libraryVersion === 'master' || currentVersion === libraryVersion
+      ? ''
+      : `/ ${libraryVersion} (libs)`;
 
   return (
     <div className="z-20 relative inline-flex text-left w-full">
@@ -16,13 +26,16 @@ export default function VersionDropdown() {
           {({open}) => (
             <>
               <div>
-                <Menu.Button className="group w-24 lg:w-32 rounded-full px-2 lg:px-4 lg:py-2 text-gray-400 border border-gray-300 hover:bg-white transition-colors duration-200">
+                <Menu.Button className="group rounded-full px-2 lg:px-4 lg:py-2 text-gray-400 border border-gray-300 hover:bg-white transition-colors duration-200">
                   <span className="flex w-full justify-between items-center">
                     <span className="flex min-w-0 items-center justify-between space-x-3">
-                      <span className="flex-1 min-w-0">
-                        <span className="text-gray-900 dark:text-gray-300 text-xs lg:text-sm truncate">
-                          {currentVersion} {currentVersion === latestVersion && '(latest)'}
+                      <span className="flex-1 min-w-0 text-gray-900 dark:text-gray-300 text-xs lg:text-sm truncate space-x-1">
+                        <span>
+                          {currentVersion} {libraryVersionText}
                         </span>
+                        {currentVersion === latestVersion ? (
+                          <span className="bg-lavender rounded-full px-2 py-1">latest</span>
+                        ) : null}
                       </span>
                     </span>
                     {/* Heroicon name: selector */}
