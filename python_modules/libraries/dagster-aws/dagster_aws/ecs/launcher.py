@@ -333,6 +333,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         )
         command = args.get_command_args()
 
+        command = ["dagster", "api", "execute_run", "FOOBAFOOBAFOO"]
+
         task_config = self._task_config(run, image, container_context)
 
         # Set cpu or memory overrides

@@ -54,6 +54,7 @@ def api_cli():
 )
 @click.argument("input_json", type=click.STRING)
 def execute_run_command(input_json):
+    print("I AM AT THE BEGINNING OF THE EXECUTE RUN COMMAND HELLO")
     with capture_interrupts():
         args = deserialize_as(input_json, ExecuteRunArgs)
 
