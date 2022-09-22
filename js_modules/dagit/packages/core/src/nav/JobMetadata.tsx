@@ -67,11 +67,11 @@ export function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string
 interface Props {
   pipelineName: string;
   repoAddress: RepoAddress;
-  metadata: JobMetadata;
 }
 
 export const JobMetadata: React.FC<Props> = (props) => {
-  const {metadata, pipelineName, repoAddress} = props;
+  const {pipelineName, repoAddress} = props;
+  const metadata = useJobNavMetadata(repoAddress, pipelineName);
 
   return (
     <>
