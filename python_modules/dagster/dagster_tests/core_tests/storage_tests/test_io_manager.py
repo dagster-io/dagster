@@ -982,3 +982,30 @@ def test_nothing_output_something_input():
 
     assert my_io_manager.handle_output_calls == 2
     assert my_io_manager.handle_input_calls == 1
+
+def test_default_config_on_io_manager_invocation():
+    class MyIOManager(IOManager):
+        def __init__(self):
+            self.storage_dict = {}
+
+        def handle_output(self, context, obj):
+            assert context.config
+            assert context.config["bar"] == "nay"
+
+        def load_input(self, context):
+            assert context.config
+            assert context.config["foo"] == "yay"
+
+    @io_manager(
+        input_config_schema={"foo": Field(str, default_value="yay")},
+        output_config_schema={"bar": Field(str, default_value="nay")},
+    )
+    def my_io_manager(_):
+        return MyIOManager()
+
+    manager = my_io_manager(None)
+    context = build_input_context()
+    manager.load_input(context)
+
+    context = build_output_context()
+    manager.handle_output(context, 5)

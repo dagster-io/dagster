@@ -20,6 +20,7 @@ from dagster import (
     job,
     op,
     resource,
+    root_input_manager,
 )
 from dagster._core.definitions.events import Failure, RetryRequested
 from dagster._core.errors import DagsterInvalidConfigError
@@ -776,31 +777,3 @@ def test_default_config_populated_on_input_manager_invocation():
 
     result = manager.load_input(context)
     assert result == 1
-
-
-def test_default_config_on_io_manager_invocation():
-    class MyIOManager(IOManager):
-        def __init__(self):
-            self.storage_dict = {}
-
-        def handle_output(self, context, obj):
-            assert context.config
-            assert context.config["bar"] == "nay"
-
-        def load_input(self, context):
-            assert context.config
-            assert context.config["foo"] == "yay"
-
-    @io_manager(
-        input_config_schema={"foo": Field(str, default_value="yay")},
-        output_config_schema={"bar": Field(str, default_value="nay")},
-    )
-    def my_io_manager(_):
-        return MyIOManager()
-
-    manager = my_io_manager(None)
-    context = build_input_context()
-    manager.load_input(context)
-
-    context = build_output_context()
-    manager.handle_output(context, 5)

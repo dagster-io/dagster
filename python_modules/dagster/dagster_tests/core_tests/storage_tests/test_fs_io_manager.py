@@ -67,6 +67,7 @@ def test_fs_io_manager():
             assert pickle.load(read_obj) == [1, 2, 3]
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.event_list))
+        print(loaded_input_events)
         input_metadata_entry_a = loaded_input_events[0].event_specific_data.metadata_entries[0]
         assert input_metadata_entry_a.label == "path"
         assert input_metadata_entry_a.value == MetadataValue.path(filepath_a)

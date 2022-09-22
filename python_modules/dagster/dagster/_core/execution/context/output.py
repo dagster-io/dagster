@@ -125,7 +125,6 @@ class OutputContext:
         asset_info: Optional[AssetOutputInfo] = None,
         warn_on_step_context_use: bool = False,
         partition_key: Optional[str] = None,
-        # When adding new args, update copy_for_configured method below
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -685,28 +684,6 @@ class OutputContext:
         self._metadata_entries = []
         return result or []
 
-    def copy_for_configured(self, config_schema: Any) -> "OutputContext":
-        from dagster._core.storage.io_manager import reconcile_default_config
-
-        return OutputContext(
-            step_key=self._step_key,
-            name=self._name,
-            pipeline_name=self._pipeline_name,
-            run_id=self._run_id,
-            metadata=self._metadata,
-            mapping_key=self._mapping_key,
-            config=reconcile_default_config(config_schema, self._config),
-            dagster_type=self._dagster_type,
-            log_manager=self._log,
-            resource_config=self._resource_config,
-            resources=self._resources,
-            step_context=self._step_context,
-            op_def=self._op_def,
-            asset_info=self._asset_info,
-            warn_on_step_context_use=self._warn_on_step_context_use,
-            partition_key=self._partition_key,
-        )
-
 
 def get_output_context(
     execution_plan: "ExecutionPlan",
@@ -794,6 +771,13 @@ def step_output_version(
     )
 
 
+class TestingOutputContext(OutputContext):
+    def apply_default_config(self, config_schema: Any) -> None:
+        from dagster._core.storage.io_manager import reconcile_default_config
+
+        self._config = reconcile_default_config(config_schema, self._config)
+
+
 def build_output_context(
     step_key: Optional[str] = None,
     name: Optional[str] = None,
@@ -862,7 +846,7 @@ def build_output_context(
     asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
 
-    return OutputContext(
+    return TestingOutputContext(
         step_key=step_key,
         name=name,
         pipeline_name=None,

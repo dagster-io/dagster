@@ -156,7 +156,10 @@ class InputManagerWrapper(InputManager):
         self._load_fn = load_fn
 
     def load_input(self, context):
-        context = context.copy_for_configured(self._input_config_schema)
+        from dagster._core.execution.context.input import TestingInputContext
+
+        if isinstance(context, TestingInputContext):
+            context.apply_default_config(self._input_config_schema)
 
         # the @input_manager decorated function (self._load_fn) may return a direct value that
         # should be used or an instance of an InputManager. So we call self._load_fn and see if the

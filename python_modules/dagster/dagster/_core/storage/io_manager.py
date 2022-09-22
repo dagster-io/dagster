@@ -1,4 +1,5 @@
 import resource
+import resource
 import types
 from abc import abstractmethod
 from functools import update_wrapper
@@ -65,36 +66,6 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         input_config_schema: CoercableToConfigSchema = None,
         output_config_schema: CoercableToConfigSchema = None,
     ):
-        def _resource_fn_wrapper(
-            init_context,
-        ) -> Union[Callable[["InitResourceContext"], "IOManager"], Callable[[], "IOManager"],]:
-            from dagster._core.decorator_utils import get_function_params
-
-            if len(get_function_params(resource_fn)) > 0:
-                io_manager = resource_fn(init_context)
-            else:
-                io_manager = resource_fn()
-
-            if input_config_schema:
-                original_load_input = io_manager.load_input
-
-                def _load_input(self, context: "InputContext") -> Any:
-                    configured_context = context.copy_for_configured(input_config_schema)
-                    return original_load_input(configured_context)
-
-                io_manager.load_input = types.MethodType(_load_input, io_manager)
-
-            if output_config_schema:
-                original_handle_output = io_manager.handle_output
-
-                def _handle_output(self, context: "OutputContext", obj: Any) -> None:
-                    configured_context = context.copy_for_configured(output_config_schema)
-                    return original_handle_output(configured_context, obj)
-
-                io_manager.handle_output = types.MethodType(_handle_output, io_manager)
-
-            return io_manager
-
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
         )
@@ -108,6 +79,54 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             if output_config_schema is not None
             else None
         )
+
+        def _resource_fn_wrapper(
+            init_context,
+        ) -> Union[Callable[["InitResourceContext"], "IOManager"], Callable[[], "IOManager"],]:
+            from dagster._core.decorator_utils import get_function_params
+            from dagster._core.execution.context.input import TestingInputContext
+            from dagster._core.execution.context.output import TestingOutputContext
+
+            print("num times called")
+
+            if len(get_function_params(resource_fn)) > 0:
+                io_manager = resource_fn(init_context)
+            else:
+                io_manager = resource_fn()
+
+            if input_config_schema:
+                original_load_input = io_manager.load_input
+
+                def _load_input(_, context: "InputContext") -> Any:
+                    if isinstance(context, TestingInputContext):
+                        context.apply_default_config(self._input_config_schema)
+                    yield from original_load_input(context)
+
+                io_manager.load_input = types.MethodType(_load_input, io_manager)
+
+            if output_config_schema:
+                original_handle_output = io_manager.handle_output
+                output_config_schema = self._output_config_schema
+                print(original_handle_output)
+
+                def _wrapper(func):
+                    def inner(self, context: "OutputContext", obj: Any) -> Any:
+                        if isinstance(context, TestingOutputContext):
+                            context.apply_default_config(output_config_schema)
+                        func(context, obj)
+
+                    return inner
+
+                # def _handle_output(_, context: "OutputContext", obj: Any) -> None:
+                #     original_handle_output(context, obj)
+
+                # io_manager.handle_output = types.MethodType(_handle_output, io_manager)
+                io_manager.handle_output = types.MethodType(
+                    _wrapper(io_manager.handle_output, io_manager)
+                )
+
+            return io_manager
+
         super(IOManagerDefinition, self).__init__(
             resource_fn=_resource_fn_wrapper,
             config_schema=config_schema,

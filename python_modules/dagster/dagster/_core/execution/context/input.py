@@ -73,7 +73,6 @@ class InputContext:
         resources: Optional[Union["Resources", Dict[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
-        # When adding new args, update copy_for_configured method below
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -430,23 +429,6 @@ class InputContext:
             if self._step_context:
                 self._events.append(DagsterEvent.asset_observation(self._step_context, observation))
 
-    def copy_for_configured(self, config_schema: Any) -> "InputContext":
-        from dagster._core.storage.io_manager import reconcile_default_config
-
-        return InputContext(
-            name=self._name,
-            pipeline_name=self._pipeline_name,
-            solid_def=self._solid_def,
-            config=reconcile_default_config(config_schema, self._config),
-            metadata=self._metadata,
-            upstream_output=self._upstream_output,
-            dagster_type=self._dagster_type,
-            log_manager=self._log,
-            resource_config=self._resource_config,
-            resources=self._resources,
-            step_context=self._step_context,
-        )
-
     def get_observations(
         self,
     ) -> List[AssetObservation]:
@@ -474,9 +456,17 @@ class InputContext:
         return self._observations
 
     def consume_metadata_entries(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+        print("consume_metadata_entries", self._metadata_entries)
         result = self._metadata_entries
         self._metadata_entries = []
         return result
+
+
+class TestingInputContext(InputContext):
+    def apply_default_config(self, config_schema: Any) -> None:
+        from dagster._core.storage.io_manager import reconcile_default_config
+
+        self._config = reconcile_default_config(config_schema, self._config)
 
 
 def build_input_context(
@@ -538,7 +528,7 @@ def build_input_context(
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
 
-    return InputContext(
+    return TestingInputContext(
         name=name,
         pipeline_name=None,
         config=config,
