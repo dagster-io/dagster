@@ -10,6 +10,7 @@ from typing import (
     Generic,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -17,15 +18,14 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    NamedTuple,
 )
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector import parse_solid_selection
+from dagster._serdes import whitelist_for_serdes
 from dagster._utils import merge_dicts
-from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
@@ -1358,7 +1358,7 @@ class UnresolvedRepositoryDefinition:
         if context is not None:
             instance = DagsterInstance.from_ref(context.instance_ref)
         else:
-            instance = DagsterInstance.get()
+            instance = None
 
         resolved_definitions = []
         for definition in self.repository_definitions:

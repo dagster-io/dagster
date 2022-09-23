@@ -28,11 +28,12 @@ from .events import AssetKey
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.repository_definition import RepositoryLoadContext
+
     from .asset_group import AssetGroup
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
-    from dagster._core.definitions.repository_definition import RepositoryLoadContext
 
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
@@ -86,15 +87,13 @@ class ReconstructableRepository(
         )
 
     def with_context(self, context: "RepositoryLoadContext") -> "ReconstructableRepository":
-        print(context)
-        print("--------------------")
         return ReconstructableRepository(
             pointer=self.pointer,
             container_image=self.container_image,
             executable_path=self.executable_path,
             entry_point=self.entry_point,
             container_context=self.container_context,
-            repository_load_context=self.repository_load_context,
+            repository_load_context=context,
         )
 
     def get_definition(self):
@@ -187,7 +186,7 @@ class ReconstructablePipeline(
             asset_selection=asset_selection,
         )
 
-    def with_context(self, context) -> "ReconstructablePipeline":
+    def with_context(self, context: "RepositoryLoadContext") -> "ReconstructablePipeline":
         return ReconstructablePipeline(
             repository=self.repository.with_context(context),
             pipeline_name=self.pipeline_name,

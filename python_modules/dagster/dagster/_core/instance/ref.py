@@ -1,9 +1,10 @@
 import os
-from typing import Dict, NamedTuple, Optional, Sequence
+from typing import Dict, Mapping, NamedTuple, Optional, Sequence
 
 import yaml
 
 import dagster._check as check
+from dagster._core.utils import frozendict
 from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
@@ -151,7 +152,7 @@ class InstanceRef(
             ("scheduler_data", Optional[ConfigurableClassData]),
             ("run_coordinator_data", Optional[ConfigurableClassData]),
             ("run_launcher_data", Optional[ConfigurableClassData]),
-            ("settings", Dict[str, object]),
+            ("settings", Mapping[str, object]),
             # Required for backwards compatibility, but going forward will be unused by new versions
             # of DagsterInstance, which instead will instead grab the constituent storages from the
             # unified `storage_data`, if it is populated.
@@ -200,7 +201,7 @@ class InstanceRef(
             run_launcher_data=check.opt_inst_param(
                 run_launcher_data, "run_launcher_data", ConfigurableClassData
             ),
-            settings=check.opt_dict_param(settings, "settings", key_type=str),
+            settings=frozendict(check.opt_dict_param(settings, "settings", key_type=str)),
             run_storage_data=check.inst_param(
                 run_storage_data, "run_storage_data", ConfigurableClassData
             ),
@@ -377,7 +378,9 @@ class InstanceRef(
             "retention",
             "sensors",
         }
-        settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
+        settings = {
+            key: yaml.dump(config_value.get(key)) for key in settings_keys if config_value.get(key)
+        }
 
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,
@@ -399,7 +402,7 @@ class InstanceRef(
             if v is None:
                 return None
             if k == "settings":
-                return v
+                return {key: yaml.dump(val) for key, val in v.items()}
             return ConfigurableClassData(*v)
 
         return InstanceRef(**{k: value_for_ref_item(k, v) for k, v in instance_ref_dict.items()})

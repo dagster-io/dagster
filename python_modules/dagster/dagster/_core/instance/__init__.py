@@ -471,7 +471,9 @@ class DagsterInstance:
             scheduler=instance_ref.scheduler,
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
-            settings=instance_ref.settings,
+            settings={
+                k: yaml.load(v, Loader=yaml.SafeLoader) for k, v in instance_ref.settings.items()
+            },
             ref=instance_ref,
             **kwargs,
         )

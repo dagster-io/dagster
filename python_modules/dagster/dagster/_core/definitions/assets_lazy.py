@@ -57,25 +57,24 @@ class LazyAssetsDefinition:
         return self._unique_id
 
     def get_definitions(self, instance) -> List[AssetsDefinition]:
-        from dagster import DagsterInstance
         from dagster._core.storage.runs.sql_run_storage import SnapshotType
 
-        # attempt to get cached metadata
-        if instance is None:
-            instance = DagsterInstance.get()
-        # pylint: disable=protected-access
-        metadata = instance.run_storage._get_snapshot(self._unique_id)
+        metadata = None
+        if instance is not None:
+            # pylint: disable=protected-access
+            metadata = instance.run_storage._get_snapshot(self._unique_id)
 
-        # no record exists yet
+        # no record exists yet or no access to instance
         if metadata is None:
             metadata = self.generate_metadata()
-            # cache this generated metadata
+            # cache this generated metadata if possible
             # pylint: disable=protected-access
-            instance.run_storage._add_snapshot(
-                snapshot_id=self.unique_id,
-                snapshot_obj=metadata,
-                snapshot_type=SnapshotType.PIPELINE,
-            )
+            if instance is not None:
+                instance.run_storage._add_snapshot(
+                    snapshot_id=self.unique_id,
+                    snapshot_obj=metadata,
+                    snapshot_type=SnapshotType.PIPELINE,
+                )
         return self.generate_assets(metadata)
 
     def generate_metadata(self) -> AssetsDefinitionMetadata:
