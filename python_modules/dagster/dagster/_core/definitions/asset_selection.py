@@ -2,6 +2,7 @@ import operator
 from abc import ABC
 from functools import reduce
 from typing import AbstractSet, FrozenSet, Optional, Sequence, Union
+from xml.etree.ElementInclude import include
 
 import dagster._check as check
 from dagster._annotations import public
@@ -67,31 +68,49 @@ class AssetSelection(ABC):
         return GroupsAssetSelection(*group_strs)
 
     @public  # type: ignore
-    def downstream(self, depth: Optional[int] = None) -> "DownstreamAssetSelection":
+    def downstream(
+        self, depth: Optional[int] = None, include_self: Optional[bool] = True
+    ) -> "DownstreamAssetSelection":
         """
         Returns a selection that includes all assets that are downstream of any of the assets in
-        this selection, as well as all the assets in this selection.
+        this selection, selecting the assets in this selection by default. Iterates through each
+        asset in this selection and returns the union of all downstream assets.
 
         depth (Optional[int]): If provided, then only include assets to the given depth. A depth
             of 2 means all assets that are children or grandchildren of the assets in this
             selection.
+        include_self (bool): If True, then include the assets in this selection in the result.
+            If the include_self flag is False and an asset selection contains dependent assets,
+            for example upstream asset A and downstream asset B, Dagster will combine the downstream
+            of asset A and asset B into a selection. This example would return asset B and the
+            downstreams of asset B.
         """
         check.opt_int_param(depth, "depth")
-        return DownstreamAssetSelection(self, depth=depth)
+        check.opt_bool_param(include_self, "include_self")
+        return DownstreamAssetSelection(self, depth=depth, include_self=include_self)
 
     @public  # type: ignore
-    def upstream(self, depth: Optional[int] = None) -> "UpstreamAssetSelection":
+    def upstream(
+        self, depth: Optional[int] = None, include_self: Optional[bool] = True
+    ) -> "UpstreamAssetSelection":
         """
         Returns a selection that includes all assets that are upstream of any of the assets in
-        this selection, as well as all the assets in this selection.
+        this selection, selecting the assets in this selection by default. Iterates through each
+        asset in this selection and returns the union of all downstream assets.
 
         Args:
             depth (Optional[int]): If provided, then only include assets to the given depth. A depth
                 of 2 means all assets that are parents or grandparents of the assets in this
                 selection.
+            include_self (bool): If True, then include the assets in this selection in the result.
+                If the include_self flag is False and an asset selection contains dependent assets,
+                for example upstream asset A and downstream asset B, Dagster will combine the upstreams
+                of asset A and asset B into a selection. This example would return asset A and the
+                upstreams of asset A.
         """
         check.opt_int_param(depth, "depth")
-        return UpstreamAssetSelection(self, depth=depth)
+        check.opt_bool_param(include_self, "include_self")
+        return UpstreamAssetSelection(self, depth=depth, include_self=include_self)
 
     def __or__(self, other: "AssetSelection") -> "OrAssetSelection":
         check.inst_param(other, "other", AssetSelection)
@@ -118,9 +137,16 @@ class AndAssetSelection(AssetSelection):
 
 
 class DownstreamAssetSelection(AssetSelection):
-    def __init__(self, child: AssetSelection, *, depth: Optional[int] = None):
-        self.children = (child,)
+    def __init__(
+        self,
+        child: AssetSelection,
+        *,
+        depth: Optional[int] = None,
+        include_self: Optional[bool] = True,
+    ):
+        self.selection = (child,)
         self.depth = depth
+        self.include_self = include_self
 
 
 class GroupsAssetSelection(AssetSelection):
@@ -139,9 +165,16 @@ class OrAssetSelection(AssetSelection):
 
 
 class UpstreamAssetSelection(AssetSelection):
-    def __init__(self, child: AssetSelection, *, depth: Optional[int] = None):
-        self.children = (child,)
+    def __init__(
+        self,
+        child: AssetSelection,
+        *,
+        depth: Optional[int] = None,
+        include_self: Optional[bool] = True,
+    ):
+        self.selection = (child,)
         self.depth = depth
+        self.include_self = include_self
 
 
 # ########################
@@ -180,18 +213,18 @@ class Resolver:
             child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 & child_2
         elif isinstance(node, DownstreamAssetSelection):
-            child = self._resolve(node.children[0])
+            selection = self._resolve(node.selection[0])
             return reduce(
                 operator.or_,
                 [
-                    {asset_name}
+                    ({asset_name} if node.include_self else set())
                     | fetch_connected(
                         item=asset_name,
                         graph=self.asset_dep_graph,
                         direction="downstream",
                         depth=node.depth,
                     )
-                    for asset_name in child
+                    for asset_name in selection
                 ],
             )
         elif isinstance(node, GroupsAssetSelection):
@@ -221,18 +254,18 @@ class Resolver:
             child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 | child_2
         elif isinstance(node, UpstreamAssetSelection):
-            child = self._resolve(node.children[0])
+            selection = self._resolve(node.selection[0])
             return reduce(
                 operator.or_,
                 [
-                    {asset_name}
+                    ({asset_name} if node.include_self else set())
                     | fetch_connected(
                         item=asset_name,
                         graph=self.asset_dep_graph,
                         direction="upstream",
                         depth=node.depth,
                     )
-                    for asset_name in child
+                    for asset_name in selection
                 ],
             )
         else:

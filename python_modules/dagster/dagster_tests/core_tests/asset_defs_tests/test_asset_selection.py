@@ -122,3 +122,27 @@ def test_select_source_asset_keys():
         match="these keys are supplied by SourceAsset objects, not AssetsDefinition objects",
     ):
         selection.resolve([a])
+
+
+def test_downstream_include_self(all_assets):
+    selection = AssetSelection.keys("candace").downstream(include_self=False)
+    assert selection.resolve(all_assets) == _asset_keys_of({danny, edgar, fiona, george})
+
+    selection = AssetSelection.groups("gentlemen").downstream(include_self=False)
+    assert selection.resolve(all_assets) == _asset_keys_of({edgar, fiona, george})
+
+    selection = AssetSelection.groups("ladies").downstream(include_self=False)
+    assert selection.resolve(all_assets) == _asset_keys_of(
+        {candace, fiona, george, danny, bob, edgar}
+    )
+
+
+def test_upstream_include_self(all_assets):
+    selection = AssetSelection.keys("george").upstream(include_self=False)
+    assert selection.resolve(all_assets) == _asset_keys_of({danny, fiona, alice, bob, candace})
+
+    selection = AssetSelection.groups("gentlemen").upstream(include_self=False)
+    assert selection.resolve(all_assets) == _asset_keys_of({danny, fiona, alice, bob, candace})
+
+    selection = AssetSelection.groups("ladies").upstream(include_self=False)
+    assert selection.resolve(all_assets) == _asset_keys_of({candace, danny, alice})
