@@ -2,7 +2,6 @@ import operator
 from abc import ABC
 from functools import reduce
 from typing import AbstractSet, FrozenSet, Optional, Sequence, Union
-from xml.etree.ElementInclude import include
 
 import dagster._check as check
 from dagster._annotations import public

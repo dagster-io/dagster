@@ -24,8 +24,8 @@ from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
@@ -1090,9 +1090,11 @@ def build_multi_asset_sensor_context(
     error.
 
     Args:
-    # TODO update docstring
-        asset_keys (Sequence[AssetKey]): The list of asset keys monitored by the sensor
         repository_def (RepositoryDefinition): The repository definition that the sensor belongs to.
+        asset_keys (Optional[Sequence[AssetKey]]): The list of asset keys monitored by the sensor.
+            If not provided, asset_selection argument must be provided.
+        asset_selection (Optional[AssetSelection]): The asset selection monitored by the sensor.
+            If not provided, asset_keys argument must be provided.
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
         cursor (Optional[str]): A string cursor to provide to the evaluation of the sensor. Must be
             a dictionary of asset key strings to ints that has been converted to a json string

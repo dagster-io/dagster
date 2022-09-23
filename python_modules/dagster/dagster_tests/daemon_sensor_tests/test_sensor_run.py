@@ -225,6 +225,11 @@ def asset_b():
     return 2
 
 
+@asset
+def asset_c(asset_b):  # pylint: disable=unused-argument
+    return 3
+
+
 @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def asset_a_and_b_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
@@ -247,6 +252,12 @@ def backlog_sensor(context):
     if len(asset_events) == 2:
         context.advance_cursor({AssetKey("asset_a"): asset_events[-1]})
         return RunRequest(run_key=f"{context.cursor}", run_config={})
+
+
+@multi_asset_sensor(asset_selection=AssetSelection.keys("asset_c").upstream(include_self=False))
+def asset_selection_sensor(context):
+    assert context.asset_keys == [AssetKey("asset_b")]
+    assert context.latest_materialization_records_by_key().keys() == {AssetKey("asset_b")}
 
 
 hourly_partitions_def_2022 = HourlyPartitionsDefinition(start_date="2022-08-01-00:00")
@@ -347,7 +358,7 @@ def large_sensor(_context):
 
 
 @sensor(job=asset_job)
-def asset_selection_sensor(_context):
+def run_request_asset_selection_sensor(_context):
     yield RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
 
 
@@ -507,11 +518,12 @@ def the_repo():
         cross_repo_job_sensor,
         instance_sensor,
         load_assets_from_current_module(),
-        asset_selection_sensor,
+        run_request_asset_selection_sensor,
         weekly_asset_job,
         multi_asset_sensor_hourly_to_weekly,
         multi_asset_sensor_hourly_to_hourly,
         partitioned_asset_selection_sensor,
+        asset_selection_sensor,
     ]
 
 
@@ -1471,13 +1483,13 @@ def test_cursor_sensor(executor, instance, workspace, external_repo):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_asset_selection_sensor(executor, instance, workspace, external_repo):
+def test_run_request_asset_selection_sensor(executor, instance, workspace, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
     with pendulum.test(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("asset_selection_sensor")
+        external_sensor = external_repo.get_external_sensor("run_request_asset_selection_sensor")
         external_origin_id = external_sensor.get_external_origin_id()
         instance.start_sensor(external_sensor)
 
@@ -1747,6 +1759,30 @@ def test_multi_asset_sensor(executor, instance, workspace, external_repo):
         assert run.run_config == {}
         assert run.tags
         assert run.tags.get("dagster/sensor_name") == "asset_a_and_b_sensor"
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_asset_selection_sensor(executor, instance, workspace, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        asset_selection_sensor = external_repo.get_external_sensor("asset_selection_sensor")
+        instance.start_sensor(asset_selection_sensor)
+
+        evaluate_sensors(instance, workspace, executor)
+
+        ticks = instance.get_ticks(
+            asset_selection_sensor.get_external_origin_id(), asset_selection_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            asset_selection_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())

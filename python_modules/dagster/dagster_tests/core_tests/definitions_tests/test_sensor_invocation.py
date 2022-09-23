@@ -8,6 +8,7 @@ from dagster import (
     AssetIn,
     AssetKey,
     AssetOut,
+    AssetSelection,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
@@ -32,8 +33,8 @@ from dagster import (
     run_failure_sensor,
     run_status_sensor,
     sensor,
-    AssetSelection,
 )
+from dagster._check import CheckError
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -750,3 +751,54 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
         list(after_cursor_partitions_asset_sensor(ctx))
         materialize([august_asset], partition_key="2022-08-05", instance=instance)
         list(after_cursor_partitions_asset_sensor(ctx))
+
+
+def test_asset_keys_or_selection_mandatory():
+    with pytest.raises(CheckError, match="Must provide asset_keys or asset_selection"):
+
+        @multi_asset_sensor()
+        def asset_selection_sensor(context):
+            pass
+
+
+def test_build_multi_asset_sensor_context_asset_selection():
+    from dagster_tests.core_tests.asset_defs_tests.test_asset_selection import (
+        alice,
+        bob,
+        candace,
+        danny,
+        edgar,
+        fiona,
+        george,
+    )
+
+    @multi_asset_sensor(
+        asset_selection=AssetSelection.groups("ladies").upstream(depth=1, include_self=False)
+    )
+    def asset_selection_sensor(context):
+        assert context.asset_keys == [candace.key, danny.key, alice.key]
+
+    @repository
+    def my_repo():
+        return [alice, bob, candace, danny, edgar, fiona, george, asset_selection_sensor]
+
+    with instance_for_test() as instance:
+        ctx = build_multi_asset_sensor_context(
+            asset_selection=AssetSelection.groups("ladies").upstream(depth=1, include_self=False),
+            instance=instance,
+            repository_def=my_repo,
+        )
+        asset_selection_sensor(ctx)
+
+
+def test_asset_selection_or_asset_keys_mandatory_on_context():
+    @repository
+    def my_repo():
+        return []
+
+    with instance_for_test() as instance:
+        with pytest.raises(CheckError, match="Must provide asset_keys or asset_selection"):
+            build_multi_asset_sensor_context(
+                instance=instance,
+                repository_def=my_repo,
+            )
