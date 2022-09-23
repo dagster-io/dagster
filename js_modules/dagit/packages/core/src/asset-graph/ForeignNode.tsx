@@ -1,15 +1,19 @@
 import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
+import { ReconcileBadge } from './AssetNode';
 
 import {displayNameForAssetKey} from './Utils';
 
 export const ForeignNode: React.FC<{
   assetKey: {path: string[]};
   backgroundColor?: string;
-}> = React.memo(({assetKey, backgroundColor}) => (
+  reconcile?: boolean;
+}> = React.memo(({assetKey, backgroundColor, reconcile}) => (
   <ForeignNodeLink style={{backgroundColor}}>
     <span className="label">{displayNameForAssetKey(assetKey)}</span>
+    {reconcile ? <ReconcileBadge>R</ReconcileBadge> : null}
+    <ReconcileBadge>R</ReconcileBadge>
     <Icon name="open_in_new" color={Colors.Gray500} />
   </ForeignNodeLink>
 ));

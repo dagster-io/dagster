@@ -77,6 +77,7 @@ export const AssetNode: React.FC<{
             <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
               <ComputeStatusNotice computeStatus={computeStatus} />
             </div>
+            {definition.reconcile ? <ReconcileBadge>R</ReconcileBadge> : null}
           </Name>
           {definition.description && !inAssetCatalog && (
             <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
@@ -221,6 +222,7 @@ export const ASSET_NODE_FRAGMENT = gql`
     assetKey {
       path
     }
+    reconcile
   }
 `;
 
@@ -299,6 +301,15 @@ const Description = styled.div`
   text-overflow: ellipsis;
   border-top: 1px solid ${BoxColors.Divider};
   font-size: 12px;
+`;
+
+export const ReconcileBadge = styled.div`
+  /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
+  padding: 2px 5px;
+  background: ${Colors.Green200};
+  font-family: ${FontFamily.monospace};
+  border-radius: 5px;
+  font-weight: 600;
 `;
 
 const Stats = styled.div`

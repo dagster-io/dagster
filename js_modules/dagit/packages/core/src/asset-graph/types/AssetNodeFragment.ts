@@ -21,4 +21,5 @@ export interface AssetNodeFragment {
   description: string | null;
   computeKind: string | null;
   assetKey: AssetNodeFragment_assetKey;
+  reconcile: boolean | null;
 }

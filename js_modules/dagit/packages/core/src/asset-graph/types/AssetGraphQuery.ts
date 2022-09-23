@@ -50,6 +50,7 @@ export interface AssetGraphQuery_assetNodes {
   description: string | null;
   computeKind: string | null;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
+  reconcile: boolean | null;
 }
 
 export interface AssetGraphQuery {

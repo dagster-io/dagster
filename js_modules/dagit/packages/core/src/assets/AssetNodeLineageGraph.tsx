@@ -100,7 +100,10 @@ export const AssetNodeLineageGraph: React.FC<{
                 }}
               >
                 {!graphNode || !graphNode.definition.opNames.length ? (
-                  <ForeignNode assetKey={{path}} />
+                  <ForeignNode
+                    assetKey={{path}}
+                    reconcile={graphNode.definition.reconcile || false}
+                  />
                 ) : scale < MINIMAL_SCALE ? (
                   <AssetNodeMinimal
                     definition={graphNode.definition}
