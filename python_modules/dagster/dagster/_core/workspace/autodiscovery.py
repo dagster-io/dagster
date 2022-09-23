@@ -52,7 +52,11 @@ def loadable_targets_from_python_package(
 
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
-    loadable_repos = _loadable_targets_of_type(module, RepositoryDefinition)
+    from dagster._core.definitions.repository_definition import UnresolvedRepositoryDefinition
+
+    loadable_repos = _loadable_targets_of_type(
+        module, (RepositoryDefinition, UnresolvedRepositoryDefinition)
+    )
     if loadable_repos:
         return loadable_repos
 

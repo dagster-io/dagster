@@ -17,6 +17,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    NamedTuple,
 )
 
 import dagster._check as check
@@ -24,6 +25,7 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector import parse_solid_selection
 from dagster._utils import merge_dicts
+from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
@@ -57,6 +59,11 @@ RepositoryLevelDefinition = TypeVar(
     ScheduleDefinition,
     SensorDefinition,
 )
+
+
+@whitelist_for_serdes
+class RepositoryLoadContext(NamedTuple("_RepositoryLoadContext", [("instance_ref", Any)])):
+    pass
 
 
 class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
@@ -674,7 +681,6 @@ class CachingRepositoryData(RepositoryData):
                 definitions.
         """
         from dagster._core.definitions import AssetGroup, AssetsDefinition
-        from dagster._core.definitions.assets_lazy import LazyAssetsDefinition
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         coerced_graphs: Dict[str, JobDefinition] = {}
@@ -757,20 +763,6 @@ class CachingRepositoryData(RepositoryData):
 
                 asset_keys.update(definition.keys)
                 assets_defs.append(definition)
-            elif isinstance(definition, LazyAssetsDefinition):
-                # fetch metadata from instance db, then generate assets defs
-                from dagster import DagsterInstance
-
-                # TODO: DagsterInstance.get() is not the right way of doing this, we should
-                # pass in an instance reference somewhere
-                loaded_defs = definition.get_definitions(DagsterInstance.get())
-                for assets_def in loaded_defs:
-                    for key in assets_def.keys:
-                        if key in asset_keys:
-                            raise DagsterInvalidDefinitionError(f"Duplicate asset key: {key}")
-
-                    asset_keys.update(assets_def.keys)
-                    assets_defs.append(assets_def)
             elif isinstance(definition, SourceAsset):
                 source_assets.append(definition)
             else:
@@ -1223,7 +1215,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.get_pipeline(name)
 
-    def get_all_pipelines(self, refresh_external_assets: bool = False) -> List[PipelineDefinition]:
+    def get_all_pipelines(self) -> List[PipelineDefinition]:
         """Return all pipelines/jobs in the repository as a list.
 
         Note that this will construct any pipeline/job in the lazily evaluated dictionary that
@@ -1232,9 +1224,7 @@ class RepositoryDefinition:
         Returns:
             List[PipelineDefinition]: All pipelines/jobs in the repository.
         """
-        return self._repository_data.get_all_pipelines(
-            refresh_external_assets=refresh_external_assets
-        )
+        return self._repository_data.get_all_pipelines()
 
     @public  # type: ignore
     def has_job(self, name: str) -> bool:
@@ -1347,11 +1337,45 @@ class RepositoryDefinition:
 
 
 class UnresolvedRepositoryDefinition:
-    def __init__(self, fn):
-        self._fn = fn
+    def __init__(
+        self,
+        name: str,
+        repository_definitions: List[Any],
+        description: Optional[str] = None,
+        default_logger_defs: Optional[List[LoggerDefinition]] = None,
+        default_executor_def: Optional[List[ExecutorDefinition]] = None,
+    ):
+        self.name = name
+        self.repository_definitions = repository_definitions
+        self.description = description
+        self.default_logger_defs = default_logger_defs
+        self.default_executor_def = default_executor_def
 
-    def resolve(self, context) -> RepositoryDefinition:
-        return self._fn(context)
+    def resolve(self, context: Optional[RepositoryLoadContext]) -> RepositoryDefinition:
+        from dagster import DagsterInstance
+        from dagster._core.definitions.assets_lazy import LazyAssetsDefinition
+
+        if context is not None:
+            instance = DagsterInstance.from_ref(context.instance_ref)
+        else:
+            instance = DagsterInstance.get()
+
+        resolved_definitions = []
+        for definition in self.repository_definitions:
+            if isinstance(definition, LazyAssetsDefinition):
+                resolved_definitions.extend(definition.get_definitions(instance))
+            else:
+                resolved_definitions.append(definition)
+
+        repository_data = CachingRepositoryData.from_list(
+            resolved_definitions,
+            default_executor_def=self.default_executor_def,
+            default_logger_defs=self.default_logger_defs,
+        )
+
+        return RepositoryDefinition(
+            self.name, repository_data=repository_data, description=self.description
+        )
 
 
 def _process_and_validate_target(

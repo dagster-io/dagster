@@ -65,6 +65,7 @@ class _Repository:
         if isinstance(repository_definitions, list):
             repository_definitions = list(_flatten(repository_definitions))
             bad_definitions = []
+            has_unresolved = False
             for i, definition in enumerate(repository_definitions):
                 if not (
                     isinstance(definition, PipelineDefinition)
@@ -79,6 +80,8 @@ class _Repository:
                     or isinstance(definition, UnresolvedAssetJobDefinition)
                 ):
                     bad_definitions.append((i, type(definition)))
+                if isinstance(definition, LazyAssetsDefinition):
+                    has_unresolved = True
             if bad_definitions:
                 bad_definitions_str = ", ".join(
                     [
@@ -92,6 +95,14 @@ class _Repository:
                     "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, "
                     "AssetsDefinition, or SourceAsset."
                     f"Got {bad_definitions_str}."
+                )
+            if has_unresolved:
+                return UnresolvedRepositoryDefinition(
+                    self.name,
+                    repository_definitions=repository_definitions,
+                    description=self.description,
+                    default_executor_def=self.default_executor_def,
+                    default_logger_defs=self.default_logger_defs,
                 )
             repository_data = CachingRepositoryData.from_list(
                 repository_definitions,

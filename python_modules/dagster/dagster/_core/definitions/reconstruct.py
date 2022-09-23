@@ -32,16 +32,12 @@ if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
+    from dagster._core.definitions.repository_definition import RepositoryLoadContext
 
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
     check.str_param(pipeline_name, "pipeline_name")
     return "__repository__{pipeline_name}".format(pipeline_name=pipeline_name)
-
-
-@whitelist_for_serdes
-class RepositoryLoadContext(NamedTuple("_RepositoryLoadContext", [("instance_ref", Any)])):
-    pass
 
 
 @whitelist_for_serdes
@@ -54,7 +50,7 @@ class ReconstructableRepository(
             ("executable_path", Optional[str]),
             ("entry_point", List[str]),
             ("container_context", Optional[Dict[str, Any]]),
-            ("repository_load_context", Optional[RepositoryLoadContext]),
+            ("repository_load_context", Optional["RepositoryLoadContext"]),
         ],
     )
 ):
@@ -67,6 +63,8 @@ class ReconstructableRepository(
         container_context=None,
         repository_load_context=None,
     ):
+        from dagster._core.definitions.repository_definition import RepositoryLoadContext
+
         return super(ReconstructableRepository, cls).__new__(
             cls,
             pointer=check.inst_param(pointer, "pointer", CodePointer),
@@ -83,11 +81,13 @@ class ReconstructableRepository(
                 else None
             ),
             repository_load_context=check.opt_inst_param(
-                repository_load_context, "repository_load_context", of_type=RepositoryLoadContext
+                repository_load_context, "repository_load_context", RepositoryLoadContext
             ),
         )
 
-    def with_context(self, context: RepositoryLoadContext) -> "ReconstructableRepository":
+    def with_context(self, context: "RepositoryLoadContext") -> "ReconstructableRepository":
+        print(context)
+        print("--------------------")
         return ReconstructableRepository(
             pointer=self.pointer,
             container_image=self.container_image,
@@ -189,8 +189,7 @@ class ReconstructablePipeline(
 
     def with_context(self, context) -> "ReconstructablePipeline":
         return ReconstructablePipeline(
-            repository,
-            self.repository.with_context(context),
+            repository=self.repository.with_context(context),
             pipeline_name=self.pipeline_name,
             solid_selection_str=self.solid_selection_str,
             asset_selection=self.asset_selection,
@@ -592,10 +591,17 @@ def _check_is_loadable(definition):
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
-    from .repository_definition import RepositoryDefinition
+    from .repository_definition import RepositoryDefinition, UnresolvedRepositoryDefinition
 
     if not isinstance(
-        definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
+        definition,
+        (
+            PipelineDefinition,
+            RepositoryDefinition,
+            UnresolvedRepositoryDefinition,
+            GraphDefinition,
+            AssetGroup,
+        ),
     ):
         raise DagsterInvariantViolationError(
             (
@@ -629,10 +635,17 @@ def def_from_pointer(
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
-    from .repository_definition import RepositoryDefinition
+    from .repository_definition import RepositoryDefinition, UnresolvedRepositoryDefinition
 
     if isinstance(
-        target, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
+        target,
+        (
+            PipelineDefinition,
+            RepositoryDefinition,
+            UnresolvedRepositoryDefinition,
+            GraphDefinition,
+            AssetGroup,
+        ),
     ) or not callable(target):
         return _check_is_loadable(target)
 
@@ -678,7 +691,7 @@ def repository_def_from_target_def(target: object) -> None:
 
 
 def repository_def_from_target_def(
-    target: object, repository_load_context=None
+    target: object, repository_load_context: Optional["RepositoryLoadContext"] = None
 ) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions import AssetGroup
 
@@ -704,16 +717,16 @@ def repository_def_from_target_def(
     elif isinstance(target, RepositoryDefinition):
         return target
     elif isinstance(target, UnresolvedRepositoryDefinition):
-        return target(repository_load_context)
+        return target.resolve(repository_load_context)
     else:
         return None
 
 
 def repository_def_from_pointer(
-    pointer: CodePointer, repository_load_context: RepositoryLoadContext = None
+    pointer: CodePointer, repository_load_context: Optional["RepositoryLoadContext"] = None
 ) -> "RepositoryDefinition":
     target = def_from_pointer(pointer)
-    repo_def = repository_def_from_target_def(target)
+    repo_def = repository_def_from_target_def(target, repository_load_context)
     if not repo_def:
         raise DagsterInvariantViolationError(
             "CodePointer ({str}) must resolve to a "

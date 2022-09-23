@@ -80,6 +80,8 @@ def core_execute_run(
     instance: DagsterInstance,
     resume_from_failure: bool = False,
 ) -> Generator[DagsterEvent, None, None]:
+    from dagster._core.definitions.repository_definition import RepositoryLoadContext
+
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -87,7 +89,7 @@ def core_execute_run(
     # TODO? recon_pipeline = diff recon pipeline
     # try to load the pipeline definition early
     try:
-        recon_pipeline = recon_pipeline.with_context(instance)
+        recon_pipeline = recon_pipeline.with_context(instance.get_ref())
         recon_pipeline.get_definition()
     except Exception:
         yield instance.report_engine_event(
