@@ -91,6 +91,15 @@ def repo():
     ]
 ```
 
+<Note>
+  The <code>with_resources</code> function returns a copy of each asset, bound
+  to the provided resources. Attempting to load a module containing an asset
+  redefined via <code>with_resources</code> in the outermost scope along with
+  the original asset may result in a "asset is defined multiple times" error. In
+  this case, you may need to place your <code>with_resource</code> call within a
+  repository definition.
+</Note>
+
 When defining asset jobs (using <PyObject object="define_asset_job" />), you don't need to provide resources to the job directly. The job will make use of the resources provided to the assets.
 
 ---
