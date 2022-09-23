@@ -40,6 +40,11 @@ def get_ephemeral_repository_name(pipeline_name: str) -> str:
 
 
 @whitelist_for_serdes
+class RepositoryLoadContext(NamedTuple("_RepositoryLoadContext", [("instance_ref", Any)])):
+    pass
+
+
+@whitelist_for_serdes
 class ReconstructableRepository(
     NamedTuple(
         "_ReconstructableRepository",
@@ -49,6 +54,7 @@ class ReconstructableRepository(
             ("executable_path", Optional[str]),
             ("entry_point", List[str]),
             ("container_context", Optional[Dict[str, Any]]),
+            ("repository_load_context", Optional[RepositoryLoadContext]),
         ],
     )
 ):
@@ -59,6 +65,7 @@ class ReconstructableRepository(
         executable_path=None,
         entry_point=None,
         container_context=None,
+        repository_load_context=None,
     ):
         return super(ReconstructableRepository, cls).__new__(
             cls,
@@ -75,10 +82,23 @@ class ReconstructableRepository(
                 if container_context != None
                 else None
             ),
+            repository_load_context=check.opt_inst_param(
+                repository_load_context, "repository_load_context", of_type=RepositoryLoadContext
+            ),
+        )
+
+    def with_context(self, context: RepositoryLoadContext) -> "ReconstructableRepository":
+        return ReconstructableRepository(
+            pointer=self.pointer,
+            container_image=self.container_image,
+            executable_path=self.executable_path,
+            entry_point=self.entry_point,
+            container_context=self.container_context,
+            repository_load_context=self.repository_load_context,
         )
 
     def get_definition(self):
-        return repository_def_from_pointer(self.pointer)
+        return repository_def_from_pointer(self.pointer, self.repository_load_context)
 
     def get_reconstructable_pipeline(self, name):
         return ReconstructablePipeline(self, name)
@@ -165,6 +185,15 @@ class ReconstructablePipeline(
             solid_selection_str=check.opt_str_param(solid_selection_str, "solid_selection_str"),
             solids_to_execute=solids_to_execute,
             asset_selection=asset_selection,
+        )
+
+    def with_context(self, context) -> "ReconstructablePipeline":
+        return ReconstructablePipeline(
+            repository,
+            self.repository.with_context(context),
+            pipeline_name=self.pipeline_name,
+            solid_selection_str=self.solid_selection_str,
+            asset_selection=self.asset_selection,
         )
 
     @property
@@ -648,12 +677,18 @@ def repository_def_from_target_def(target: object) -> None:
     ...
 
 
-def repository_def_from_target_def(target: object) -> Optional["RepositoryDefinition"]:
+def repository_def_from_target_def(
+    target: object, repository_load_context=None
+) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions import AssetGroup
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
-    from .repository_definition import CachingRepositoryData, RepositoryDefinition
+    from .repository_definition import (
+        CachingRepositoryData,
+        RepositoryDefinition,
+        UnresolvedRepositoryDefinition,
+    )
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, (PipelineDefinition, GraphDefinition)):
@@ -668,11 +703,15 @@ def repository_def_from_target_def(target: object) -> Optional["RepositoryDefini
         )
     elif isinstance(target, RepositoryDefinition):
         return target
+    elif isinstance(target, UnresolvedRepositoryDefinition):
+        return target(repository_load_context)
     else:
         return None
 
 
-def repository_def_from_pointer(pointer: CodePointer) -> "RepositoryDefinition":
+def repository_def_from_pointer(
+    pointer: CodePointer, repository_load_context: RepositoryLoadContext = None
+) -> "RepositoryDefinition":
     target = def_from_pointer(pointer)
     repo_def = repository_def_from_target_def(target)
     if not repo_def:
