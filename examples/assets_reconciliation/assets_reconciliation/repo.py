@@ -11,7 +11,7 @@ from .lib import (
 
 
 
-@source_asset("sp500_prices")
+@source_asset
 def sp500_prices():
     return datetime.datetime.now()
 
