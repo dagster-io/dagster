@@ -82,8 +82,9 @@ def execute_run_iterator(
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
-    print("INTHEITERATOR")
-    print("ASLKDJAS:LKJD:LASKJD:LKASJ:")
+    from dagster._core.definitions.repository_definition import RepositoryLoadContext
+
+    pipeline = pipeline.with_context(RepositoryLoadContext(instance.get_ref()))
 
     if pipeline_run.status == PipelineRunStatus.CANCELED:
         # This can happen if the run was force-terminated while it was starting
@@ -278,10 +279,8 @@ def execute_run(
     )
     event_list = list(_execute_run_iterable)
 
-    pipeline_def = pipeline.get_definition()
-
     return PipelineExecutionResult(
-        pipeline.get_definition(),
+        pipeline_def,
         pipeline_run.run_id,
         event_list,
         lambda: scoped_pipeline_context(
