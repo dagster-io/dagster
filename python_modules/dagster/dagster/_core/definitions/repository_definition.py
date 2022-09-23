@@ -1346,6 +1346,14 @@ class RepositoryDefinition:
         return self
 
 
+class UnresolvedRepositoryDefinition:
+    def __init__(self, fn):
+        self._fn = fn
+
+    def resolve(self, context) -> RepositoryDefinition:
+        return self._fn(context)
+
+
 def _process_and_validate_target(
     schedule_or_sensor_def: Union[SensorDefinition, ScheduleDefinition],
     coerced_graphs: Dict[str, JobDefinition],
