@@ -1,16 +1,16 @@
-from dagster import pipeline, repository, solid
+from dagster import job, op, repository
 
 
-@solid
+@op
 def hello(_):
     return 1
 
 
-@pipeline
+@job
 def my_pipeline():
     hello()
 
 
 @repository
 def {{EXAMPLE_NAME}}():
-    return [my_pipeline]
+    return [my_job]
