@@ -12,7 +12,7 @@ from .lib import (
 
 
 @source_asset
-def sp500_prices():
+def sp500_prices(context):
     return datetime.datetime.now()
 
 @asset(
@@ -24,6 +24,7 @@ def sp500_prices():
         ),
     },
     metadata={"owner": "alice@example.com"},
+    reconcile=True,
 )
 def sp500_bollinger_bands(context, sp500_prices):
     """Bollinger bands for the S&amp;P 500 stock prices."""
@@ -34,7 +35,7 @@ def sp500_bollinger_bands(context, sp500_prices):
 
 
 @repository
-def assets_reconciliation():
+def repo():
     return [
         sp500_prices,
         sp500_bollinger_bands

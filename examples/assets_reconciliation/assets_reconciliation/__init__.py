@@ -1,1 +1,1 @@
-from .repo import repository
+from .repo import repo
