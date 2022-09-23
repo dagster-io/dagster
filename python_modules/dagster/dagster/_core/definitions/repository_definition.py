@@ -1176,6 +1176,9 @@ class RepositoryDefinition:
     def description(self) -> Optional[str]:
         return self._description
 
+    def refresh_external_data(self):
+        """Refreshes external asset metadata"""
+
     def load_all_definitions(self):
         # force load of all lazy constructed code artifacts
         self._repository_data.load_all_definitions()
@@ -1217,7 +1220,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.get_pipeline(name)
 
-    def get_all_pipelines(self) -> List[PipelineDefinition]:
+    def get_all_pipelines(self, refresh_external_assets: bool = False) -> List[PipelineDefinition]:
         """Return all pipelines/jobs in the repository as a list.
 
         Note that this will construct any pipeline/job in the lazily evaluated dictionary that
@@ -1226,7 +1229,9 @@ class RepositoryDefinition:
         Returns:
             List[PipelineDefinition]: All pipelines/jobs in the repository.
         """
-        return self._repository_data.get_all_pipelines()
+        return self._repository_data.get_all_pipelines(
+            refresh_external_assets=refresh_external_assets
+        )
 
     @public  # type: ignore
     def has_job(self, name: str) -> bool:

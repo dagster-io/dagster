@@ -82,8 +82,10 @@ def core_execute_run(
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
+    # TODO? recon_pipeline = diff recon pipeline
     # try to load the pipeline definition early
     try:
+        recon_pipeline = recon_pipeline.with_context(instance)
         recon_pipeline.get_definition()
     except Exception:
         yield instance.report_engine_event(
