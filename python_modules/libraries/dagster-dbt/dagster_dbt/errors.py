@@ -44,7 +44,7 @@ class DagsterDbtCliRuntimeError(DagsterDbtError, ABC):
             warnings.warn(
                 "`raw_output` is a deprecated argument to DagsterDbtCliRuntimeError and will be discarded"
             )
-        metadata_entries = [MetadataEntry("Parsed CLI Messages", value="\n".join(messages))]
+        metadata_entries = [MetadataEntry("Parsed CLI Messages", value="\n".join(messages or ""))]
         super().__init__(description, metadata_entries)
 
 
