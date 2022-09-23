@@ -15,6 +15,7 @@ from ..repository_definition import (
     CachingRepositoryData,
     RepositoryData,
     RepositoryDefinition,
+    UnresolvedRepositoryDefinition,
 )
 from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
@@ -47,7 +48,9 @@ class _Repository:
             default_logger_defs, "default_logger_defs", key_type=str, value_type=LoggerDefinition
         )
 
-    def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
+    def __call__(
+        self, fn: Callable[[], Any]
+    ) -> Union[RepositoryDefinition, UnresolvedRepositoryDefinition]:
         from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
         from dagster._core.definitions.assets_lazy import LazyAssetsDefinition
 
