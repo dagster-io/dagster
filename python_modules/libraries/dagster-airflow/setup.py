@@ -40,6 +40,10 @@ if __name__ == "__main__":
             # https://issues.apache.org/jira/browse/AIRFLOW-6854
             'typing_extensions; python_version>="3.8"',
         ],
+        project_urls={
+            # airflow will embed a link this in the providers page UI
+            "project-url/documentation": "https://docs.dagster.io",
+        },
         extras_require={
             "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
             "test": [
@@ -59,5 +63,14 @@ if __name__ == "__main__":
                 "markupsafe<=2.0.1",
             ],
         },
-        entry_points={"console_scripts": ["dagster-airflow = dagster_airflow.cli:main"]},
+        entry_points={
+            "console_scripts": ["dagster-airflow = dagster_airflow.cli:main"],
+            # airflow 1.0/2.0 plugin format
+            "airflow.plugins": ["dagster_airflow = dagster_airflow:DagsterAirflowPlugin"],
+            # airflow 2.0 provider format
+            "apache_airflow_provider": [
+                "provider_info=dagster_airflow.__init__:get_provider_info"
+            ]
+        },
+
     )
