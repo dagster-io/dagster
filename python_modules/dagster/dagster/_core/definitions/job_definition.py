@@ -175,7 +175,7 @@ class JobDefinition(PipelineDefinition):
         if partitions_def:
             check.invariant(
                 not isinstance(config, ConfigMapping),
-                "Can't supply a ConfigMappi/ng for 'config' when 'partitions_def' is supplied.",
+                "Can't supply a ConfigMapping for 'config' when 'partitions_def' is supplied.",
             )
 
             if isinstance(config, PartitionedConfig):

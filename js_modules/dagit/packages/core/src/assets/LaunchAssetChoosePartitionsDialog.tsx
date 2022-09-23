@@ -89,7 +89,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   assetJobName,
   upstreamAssetKeys,
 }) => {
-  const data = usePartitionHealthData(assets.map((a) => a.assetKey));
+  const data = usePartitionHealthData(
+    assets.filter((a) => !!a.partitionDefinition).map((a) => a.assetKey),
+  );
   const upstreamData = usePartitionHealthData(upstreamAssetKeys);
 
   const allKeys = data[0] ? data[0].keys : [];
@@ -283,15 +285,18 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           flex={{direction: 'column', gap: 8}}
           style={{marginTop: 16, overflowY: 'auto', overflowX: 'visible', maxHeight: '50vh'}}
         >
-          {assets.slice(0, previewCount).map((a) => (
-            <PartitionHealthSummary
-              assetKey={a.assetKey}
-              showAssetKey
-              key={displayNameForAssetKey(a.assetKey)}
-              data={data}
-              selected={selected}
-            />
-          ))}
+          {assets
+            .filter((a) => !!a.partitionDefinition)
+            .slice(0, previewCount)
+            .map((a) => (
+              <PartitionHealthSummary
+                assetKey={a.assetKey}
+                showAssetKey
+                key={displayNameForAssetKey(a.assetKey)}
+                data={data}
+                selected={selected}
+              />
+            ))}
           {previewCount < assets.length ? (
             <Box margin={{vertical: 8}}>
               <ButtonLink onClick={() => setPreviewCount(assets.length)}>
@@ -325,7 +330,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
         </Button>
-        <Button intent="primary" onClick={onLaunch}>
+        <Button
+          intent="primary"
+          onClick={onLaunch}
+          disabled={selected.length === 0}
+          loading={launching}
+        >
           {launching
             ? 'Launching...'
             : selected.length !== 1
