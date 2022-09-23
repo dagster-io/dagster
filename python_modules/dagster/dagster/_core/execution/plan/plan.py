@@ -1171,8 +1171,8 @@ class ExecutionPlan(
 def _update_from_resolved_dynamic_outputs(
     step_dict: Dict[StepHandleUnion, IExecutionStep],
     step_dict_by_key: Dict[str, IExecutionStep],
-    executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
-    resolvable_map: Dict[FrozenSet[str], List[UnresolvedStepHandle]],
+    executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]], # step key to step handle
+    resolvable_map: Dict[FrozenSet[str], List[UnresolvedStepHandle]], # frozen set of keys required to resolve in order to resolve the stuff in the list
     step_handles_to_execute: List[StepHandleUnion],
     dynamic_mappings: Dict[str, Dict[str, List[str]]],
 ) -> None:

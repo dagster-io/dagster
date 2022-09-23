@@ -68,9 +68,11 @@ class UnresolvedStepHandle(
         return f"{self.solid_handle.to_string()}[{','.join(keys)}]"
 
     def resolve(self, map_key) -> "ResolvedFromDynamicStepHandle":
+        # map_key 
         return ResolvedFromDynamicStepHandle(self.solid_handle, [*self.partial_keys, map_key])
 
     def partial_resolve(self, map_key):
+        # map_key array or single
         return UnresolvedStepHandle(self.solid_handle, partial_keys=[*self.partial_keys, map_key])
 
 

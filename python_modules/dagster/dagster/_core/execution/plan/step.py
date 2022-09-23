@@ -22,8 +22,7 @@ from dagster._utils import merge_dicts
 
 from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle
 from .inputs import StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput
-from .objects import StepKeyOutputNamePair
-from .outputs import StepOutput
+from .outputs import StepOutput, create_mapping_groups
 
 if TYPE_CHECKING:
     from dagster._core.definitions.dependency import Node, NodeHandle
@@ -362,28 +361,16 @@ class UnresolvedMappedExecutionStep(
         unresolved_steps = []
         handles = self.get_resolving_handles()
 
-        # zip the dynamic outputs into groups (this can certainly be optimized)
+        # here we create groups that combine one output from each of the dynamic ops to pass
+        # as a set of inputs into the mapped op
+        # the groups can be created by zipping values or doing permutations
+        mapping_groups = create_mapping_groups(handles, mappings, zip_groups=True)
 
-        # ensure all upstream ops returned the same number of outputs
-        mappings_lists = [mappings[h.step_key][h.output_name] for h in handles]
-        if not all(len(mappings_lists[0])== len(i) for i in mappings_lists):
-            # TODO - replace with real exception
-            raise Exception("All upstream ops must return an equal number of outputs to use zip")
-
-        output_groups: List[Dict[str, Dict[str, str]]] = []
-        for i in range(len(mappings_lists[0])):
-            group = {}
-            for h in handles:
-                step_key_group = group.get(h.step_key, {})
-                step_key_group[h.output_name] = mappings[h.step_key][h.output_name][i]
-                group[h.step_key] = step_key_group
-            output_groups.append(group)
-
-
-        for group in output_groups:
+        for _, group in mapping_groups:
             group_mapped_key = ",".join([group[h.step_key][h.output_name] for h in handles])
+            # TODO - check that indexing to [0] is ok here
             resolved_inputs = [_resolved_input(inp, group[inp.get_resolving_handles()[0].step_key][inp.get_resolving_handles()[0].output_name]) for inp in self.step_inputs]
-             # guard against any([]) => true
+            # guard against any([]) => true
             check.invariant(len(resolved_inputs) > 0, "there must some resolved inputs")
             keys = [*self.partially_resolved_by_keys, group_mapped_key]
             if any(isinstance(inp, UnresolvedMappedStepInput) for inp in resolved_inputs):
@@ -417,8 +404,7 @@ def _resolved_input(
 ):
     if isinstance(step_input, StepInput):
         return step_input
-
-    return step_input.resolve(map_key)
+    return step_input.resolve(map_key=map_key)
 
 
 class UnresolvedCollectExecutionStep(
@@ -549,6 +535,8 @@ class UnresolvedCollectExecutionStep(
 
                 # zipped_mapping_keys = [",".join(zip_group) for zip_group in zipped_mappings]
 
+
+                # this is where we want the new input to have the correct mapping keys (ie dynamic outputs zipped together)
                 new_inp = inp.resolve(mappings)
                 if isinstance(new_inp, UnresolvedCollectStepInput):
                     unresolved = True

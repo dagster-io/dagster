@@ -118,12 +118,12 @@ def test_with_collect():
     result = with_collect.execute_in_process()
     assert result.output_for_node("collect_and_sum") == 20
 
-# def test_basic():
-#     result = basic_example.execute_in_process()
+def test_basic():
+    result = basic_example.execute_in_process()
 
-# def test_collect_multi():
-#     result = collect_two_dynamic_outputs.execute_in_process()
-#     assert result.output_for_node("collect_two_and_sum") == 20
+def test_collect_multi():
+    result = collect_two_dynamic_outputs.execute_in_process()
+    assert result.output_for_node("collect_two_and_sum") == 20
 
 
 def notes():
