@@ -11,7 +11,9 @@ import {SensorRoot} from '../sensors/SensorRoot';
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceAssetsRoot} from './WorkspaceAssetsRoot';
 import {WorkspaceContext} from './WorkspaceContext';
+import {WorkspaceGraphsRoot} from './WorkspaceGraphsRoot';
 import {WorkspaceJobsRoot} from './WorkspaceJobsRoot';
+import {WorkspaceOpsRoot} from './WorkspaceOpsRoot';
 import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
 import {WorkspaceRepoRoot} from './WorkspaceRepoRoot';
@@ -98,6 +100,16 @@ const RepoRouteContainer = () => {
       {flagNewWorkspace ? (
         <Route path="/workspace/:repoPath/sensors" exact>
           <WorkspaceSensorsRoot repoAddress={addressForPath} />
+        </Route>
+      ) : null}
+      {flagNewWorkspace ? (
+        <Route path="/workspace/:repoPath/graphs" exact>
+          <WorkspaceGraphsRoot repoAddress={addressForPath} />
+        </Route>
+      ) : null}
+      {flagNewWorkspace ? (
+        <Route path="/workspace/:repoPath/ops/:name?" exact>
+          <WorkspaceOpsRoot repoAddress={addressForPath} />
         </Route>
       ) : null}
       <Route path="/workspace/:repoPath/graphs/(/?.*)">
