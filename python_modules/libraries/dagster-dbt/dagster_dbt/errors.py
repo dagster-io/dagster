@@ -1,5 +1,6 @@
+import warnings
 from abc import ABC
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 from dagster import Failure, MetadataEntry
 from dagster import _check as check
@@ -31,38 +32,43 @@ class DagsterDbtCliRuntimeError(DagsterDbtError, ABC):
     def __init__(
         self,
         description: str,
-        logs: Sequence[Mapping[str, Any]],
-        raw_output: str,
-        messages: Sequence[str],
+        logs: Optional[Sequence[Mapping[str, Any]]] = None,
+        raw_output: Optional[str] = None,
+        messages: Optional[Sequence[str]] = None,
     ):
-        metadata_entries = [
-            MetadataEntry(
-                "Parsed CLI Output (JSON)",
-                value={"logs": logs},
-            ),
-            MetadataEntry(
-                "Parsed CLI Messages",
-                value="\n".join(messages),
-            ),
-            MetadataEntry(
-                "Raw CLI Output",
-                value=raw_output,
-            ),
-        ]
+        if logs is not None:
+            warnings.warn(
+                "`logs` is a deprecated argument to DagsterDbtCliRuntimeError and will be discarded"
+            )
+        if raw_output is not None:
+            warnings.warn(
+                "`raw_output` is a deprecated argument to DagsterDbtCliRuntimeError and will be discarded"
+            )
+        metadata_entries = [MetadataEntry("Parsed CLI Messages", value="\n".join(messages))]
         super().__init__(description, metadata_entries)
 
 
 class DagsterDbtCliHandledRuntimeError(DagsterDbtCliRuntimeError):
     """Represents a model error reported by the dbt CLI at runtime (return code 1)."""
 
-    def __init__(self, logs: Sequence[Mapping[str, Any]], raw_output: str, messages: Sequence[str]):
+    def __init__(
+        self,
+        logs: Optional[Sequence[Mapping[str, Any]]] = None,
+        raw_output: Optional[str] = None,
+        messages: Optional[Sequence[str]] = None,
+    ):
         super().__init__("Handled error in the dbt CLI (return code 1)", logs, raw_output, messages)
 
 
 class DagsterDbtCliFatalRuntimeError(DagsterDbtCliRuntimeError):
     """Represents a fatal error in the dbt CLI (return code 2)."""
 
-    def __init__(self, logs: Sequence[Mapping[str, Any]], raw_output: str, messages: Sequence[str]):
+    def __init__(
+        self,
+        logs: Optional[Sequence[Mapping[str, Any]]] = None,
+        raw_output: Optional[str] = None,
+        messages: Optional[Sequence[str]] = None,
+    ):
         super().__init__(
             "Fatal error in the dbt CLI (return code 2): " + " ".join(messages),
             logs,
