@@ -57,9 +57,12 @@ class LazyAssetsDefinition:
         return self._unique_id
 
     def get_definitions(self, instance) -> List[AssetsDefinition]:
+        from dagster import DagsterInstance
         from dagster._core.storage.runs.sql_run_storage import SnapshotType
 
         # attempt to get cached metadata
+        if instance is None:
+            instance = DagsterInstance.get()
         # pylint: disable=protected-access
         metadata = instance.run_storage._get_snapshot(self._unique_id)
 
