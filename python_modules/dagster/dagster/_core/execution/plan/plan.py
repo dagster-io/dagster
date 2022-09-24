@@ -11,6 +11,8 @@ from typing import (
     Set,
     Union,
     cast,
+    Mapping,
+    Any,
 )
 
 import dagster._check as check
@@ -611,6 +613,7 @@ class ExecutionPlan(
             ("artifacts_persisted", bool),
             ("step_dict_by_key", Dict[str, IExecutionStep]),
             ("executor_name", Optional[str]),
+            ("repository_metadata", Optional[Mapping[str, Any]]),
         ],
     )
 ):
@@ -624,6 +627,7 @@ class ExecutionPlan(
         artifacts_persisted: bool = False,
         step_dict_by_key: Optional[Dict[str, IExecutionStep]] = None,
         executor_name: Optional[str] = None,
+        repository_metadata: Optional[Mapping[str, Any]] = None,
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
@@ -659,6 +663,9 @@ class ExecutionPlan(
                 ),
             ),
             executor_name=check.opt_str_param(executor_name, "executor_name"),
+            repository_metadata=check.opt_mapping_param(
+                repository_metadata, "repository_metadata", key_type=str
+            ),
         )
 
     @property
@@ -844,6 +851,7 @@ class ExecutionPlan(
                 executable_map,
             ),
             executor_name=self.executor_name,
+            repository_metadata=self.repository_metadata,
         )
 
     def get_version_for_step_output_handle(

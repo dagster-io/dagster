@@ -124,9 +124,9 @@ def create_context_creation_data(
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
 ) -> "ContextCreationData":
-    from dagster._core.definitions.repository_definition import RepositoryLoadContext
+    from dagster._core.definitions.repository_definition import RepositoryMetadata
 
-    pipeline = pipeline.with_context(RepositoryLoadContext(instance_ref=instance.get_ref()))
+    pipeline = pipeline.with_repository_metadata(pipeline_run.repository_metadata)
 
     pipeline_def = pipeline.get_definition()
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=pipeline_run.mode)

@@ -28,7 +28,7 @@ from .events import AssetKey
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.repository_definition import RepositoryLoadContext
+    from dagster._core.definitions.repository_definition import RepositoryMetadata
 
     from .asset_group import AssetGroup
     from .graph_definition import GraphDefinition
@@ -51,7 +51,7 @@ class ReconstructableRepository(
             ("executable_path", Optional[str]),
             ("entry_point", List[str]),
             ("container_context", Optional[Dict[str, Any]]),
-            ("repository_load_context", Optional["RepositoryLoadContext"]),
+            ("repository_metadata", Optional["RepositoryMetadata"]),
         ],
     )
 ):
@@ -62,9 +62,9 @@ class ReconstructableRepository(
         executable_path=None,
         entry_point=None,
         container_context=None,
-        repository_load_context=None,
+        repository_metadata=None,
     ):
-        from dagster._core.definitions.repository_definition import RepositoryLoadContext
+        from dagster._core.definitions.repository_definition import RepositoryMetadata
 
         return super(ReconstructableRepository, cls).__new__(
             cls,
@@ -81,23 +81,25 @@ class ReconstructableRepository(
                 if container_context != None
                 else None
             ),
-            repository_load_context=check.opt_inst_param(
-                repository_load_context, "repository_load_context", RepositoryLoadContext
+            repository_metadata=check.opt_inst_param(
+                repository_metadata, "repository_metadata", RepositoryMetadata
             ),
         )
 
-    def with_context(self, context: "RepositoryLoadContext") -> "ReconstructableRepository":
+    def with_repository_metadata(
+        self, metadata: "RepositoryMetadata"
+    ) -> "ReconstructableRepository":
         return ReconstructableRepository(
             pointer=self.pointer,
             container_image=self.container_image,
             executable_path=self.executable_path,
             entry_point=self.entry_point,
             container_context=self.container_context,
-            repository_load_context=context,
+            repository_metadata=metadata,
         )
 
     def get_definition(self):
-        return repository_def_from_pointer(self.pointer, self.repository_load_context)
+        return repository_def_from_pointer(self.pointer, self.repository_metadata)
 
     def get_reconstructable_pipeline(self, name):
         return ReconstructablePipeline(self, name)
@@ -186,9 +188,9 @@ class ReconstructablePipeline(
             asset_selection=asset_selection,
         )
 
-    def with_context(self, context: "RepositoryLoadContext") -> "ReconstructablePipeline":
+    def with_repository_metadata(self, metadata: "RepositoryMetadata") -> "ReconstructablePipeline":
         return ReconstructablePipeline(
-            repository=self.repository.with_context(context),
+            repository=self.repository.with_repository_metadata(metadata),
             pipeline_name=self.pipeline_name,
             solid_selection_str=self.solid_selection_str,
             asset_selection=self.asset_selection,
@@ -679,18 +681,21 @@ def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
 @overload
 # NOTE: mypy can't handle these overloads but pyright can
 def repository_def_from_target_def(  # type: ignore
-    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"]
+    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"],
+    repository_metadata: Optional["RepositoryMetadata"] = None,
 ) -> "RepositoryDefinition":
     ...
 
 
 @overload
-def repository_def_from_target_def(target: object) -> None:
+def repository_def_from_target_def(
+    target: object, repository_metadata: Optional["RepositoryMetadata"] = None
+) -> None:
     ...
 
 
 def repository_def_from_target_def(
-    target: object, repository_load_context: Optional["RepositoryLoadContext"] = None
+    target: object, repository_metadata: Optional["RepositoryMetadata"] = None
 ) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions import AssetGroup
 
@@ -716,16 +721,16 @@ def repository_def_from_target_def(
     elif isinstance(target, RepositoryDefinition):
         return target
     elif isinstance(target, UnresolvedRepositoryDefinition):
-        return target.resolve(repository_load_context)
+        return target.resolve(repository_metadata)
     else:
         return None
 
 
 def repository_def_from_pointer(
-    pointer: CodePointer, repository_load_context: Optional["RepositoryLoadContext"] = None
+    pointer: CodePointer, repository_metadata: Optional["RepositoryMetadata"] = None
 ) -> "RepositoryDefinition":
     target = def_from_pointer(pointer)
-    repo_def = repository_def_from_target_def(target, repository_load_context)
+    repo_def = repository_def_from_target_def(target, repository_metadata)
     if not repo_def:
         raise DagsterInvariantViolationError(
             "CodePointer ({str}) must resolve to a "

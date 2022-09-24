@@ -471,9 +471,7 @@ class DagsterInstance:
             scheduler=instance_ref.scheduler,
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
-            settings={
-                k: yaml.load(v, Loader=yaml.SafeLoader) for k, v in instance_ref.settings.items()
-            },
+            settings=instance_ref.settings,
             ref=instance_ref,
             **kwargs,
         )
@@ -960,6 +958,9 @@ class DagsterInstance:
             execution_plan_snapshot_id=execution_plan_snapshot_id,
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
+            repository_metadata=execution_plan_snapshot.repository_metadata
+            if execution_plan_snapshot
+            else None,
         )
 
     def _ensure_persisted_pipeline_snapshot(self, pipeline_snapshot, parent_pipeline_snapshot):
@@ -1189,6 +1190,7 @@ class DagsterInstance:
             asset_selection=parent_run.asset_selection,
             external_pipeline_origin=external_pipeline.get_external_origin(),
             pipeline_code_origin=external_pipeline.get_python_origin(),
+            repository_metadata=external_execution_plan.repository_metadata,
         )
 
     def register_managed_run(

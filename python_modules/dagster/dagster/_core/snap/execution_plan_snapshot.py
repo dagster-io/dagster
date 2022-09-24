@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, Mapping, Any
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
@@ -18,6 +18,7 @@ from dagster._core.execution.plan.step import (
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
+from dagster._core.definitions.repository_definition import RepositoryMetadata
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -44,6 +45,7 @@ class ExecutionPlanSnapshot(
             ("initial_known_state", Optional[KnownExecutionState]),
             ("snapshot_version", Optional[int]),
             ("executor_name", Optional[str]),
+            ("repository_metadata", Optional[RepositoryMetadata]),
         ],
     )
 ):
@@ -55,6 +57,7 @@ class ExecutionPlanSnapshot(
     #   can be used to track breaking changes to snapshot execution format if needed)
     # added step_output_versions
     # removed step_output_versions
+    # added repository_metadata
     def __new__(
         cls,
         steps: List["ExecutionStepSnap"],
@@ -64,6 +67,7 @@ class ExecutionPlanSnapshot(
         initial_known_state: Optional[KnownExecutionState] = None,
         snapshot_version: Optional[int] = None,
         executor_name: Optional[str] = None,
+        repository_metadata: Optional[Mapping[str, Any]] = None,
     ):
         return super(ExecutionPlanSnapshot, cls).__new__(
             cls,
@@ -80,6 +84,9 @@ class ExecutionPlanSnapshot(
             ),
             snapshot_version=check.opt_int_param(snapshot_version, "snapshot_version"),
             executor_name=check.opt_str_param(executor_name, "executor_name"),
+            repository_metadata=check.opt_inst_param(
+                repository_metadata, "repository_metadata", RepositoryMetadata
+            ),
         )
 
     @property
@@ -300,4 +307,5 @@ def snapshot_from_execution_plan(
         initial_known_state=execution_plan.known_state,
         snapshot_version=CURRENT_SNAPSHOT_VERSION,
         executor_name=execution_plan.executor_name,
+        repository_metadata=execution_plan.repository_metadata,
     )
