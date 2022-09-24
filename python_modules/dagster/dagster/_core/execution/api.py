@@ -82,9 +82,11 @@ def execute_run_iterator(
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
-    from dagster._core.definitions.repository_definition import RepositoryLoadContext
+    from dagster._core.definitions.repository_definition import RepositoryMetadata
 
-    pipeline = pipeline.with_context(RepositoryLoadContext(instance.get_ref()))
+    pipeline = pipeline.with_repository_metadata(
+        pipeline_run.repository_metadata,
+    )
 
     if pipeline_run.status == PipelineRunStatus.CANCELED:
         # This can happen if the run was force-terminated while it was starting
@@ -1003,7 +1005,7 @@ def create_execution_plan(
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 
-    return ExecutionPlan.build(
+    plan = ExecutionPlan.build(
         pipeline,
         resolved_run_config,
         step_keys_to_execute=step_keys_to_execute,
@@ -1011,6 +1013,11 @@ def create_execution_plan(
         instance_ref=instance_ref,
         tags=tags,
     )
+
+    if isinstance(pipeline, ReconstructablePipeline):
+        repository_def = pipeline.repository.get_definition()
+        plan = plan._replace(repository_metadata=repository_def.repository_metadata)
+    return plan
 
 
 def pipeline_execution_iterator(

@@ -22,7 +22,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import merge_dicts
+from dagster._utils import merge_dicts, frozendict
 
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
@@ -35,6 +35,7 @@ from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 from .source_asset import SourceAsset
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from .assets_lazy import AssetsDefinitionMetadata
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -59,8 +60,26 @@ RepositoryLevelDefinition = TypeVar(
 
 
 @whitelist_for_serdes
-class RepositoryLoadContext(NamedTuple("_RepositoryLoadContext", [("instance_ref", Any)])):
-    pass
+class RepositoryMetadata(
+    NamedTuple(
+        "_RepositoryMetadata",
+        [
+            ("cached_metadata_by_key", Mapping[str, AssetsDefinitionMetadata]),
+        ],
+    )
+):
+    def __new__(cls, cached_metadata_by_key: Mapping[str, AssetsDefinitionMetadata]):
+        return super(RepositoryMetadata, cls).__new__(
+            cls,
+            cached_metadata_by_key=frozendict(
+                check.mapping_param(
+                    cached_metadata_by_key,
+                    "cached_metadata_by_key",
+                    key_type=str,
+                    value_type=AssetsDefinitionMetadata,
+                )
+            ),
+        )
 
 
 class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
@@ -1153,10 +1172,18 @@ class RepositoryDefinition:
         *,
         repository_data,
         description=None,
+        repository_metadata=None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
         self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
+        self._repository_metadata = check.inst_param(
+            repository_metadata, "repository_metadata", RepositoryMetadata
+        )
+
+    @property
+    def repository_metadata(self) -> RepositoryMetadata:
+        return self._repository_metadata
 
     @public  # type: ignore
     @property
@@ -1315,7 +1342,7 @@ class UnresolvedRepositoryDefinition:
     def __init__(
         self,
         name: str,
-        repository_definitions: List[Any],
+        repository_definitions: List[RepositoryLevelDefinition],
         description: Optional[str] = None,
         default_logger_defs: Optional[List[LoggerDefinition]] = None,
         default_executor_def: Optional[List[ExecutorDefinition]] = None,
@@ -1326,19 +1353,24 @@ class UnresolvedRepositoryDefinition:
         self.default_logger_defs = default_logger_defs
         self.default_executor_def = default_executor_def
 
-    def resolve(self, context: Optional[RepositoryLoadContext]) -> RepositoryDefinition:
+    def resolve(self, repository_metadata: Optional[RepositoryMetadata]) -> RepositoryDefinition:
         from dagster import DagsterInstance
         from dagster._core.definitions.assets_lazy import LazyAssetsDefinition
 
-        if context is not None:
-            instance = DagsterInstance.from_ref(context.instance_ref)
-        else:
-            instance = None
+        # this is metadata from the host process that can help generate definitions
+        metadata_by_key = (
+            dict(repository_metadata.cached_metadata_by_key) if repository_metadata else {}
+        )
 
         resolved_definitions = []
         for definition in self.repository_definitions:
             if isinstance(definition, LazyAssetsDefinition):
-                resolved_definitions.extend(definition.get_definitions(instance))
+                unique_id = definition.unique_id
+                if unique_id not in metadata_by_key:
+                    # don't have helper metadata, must regenerate it
+                    metadata_by_key[unique_id] = definition.get_metadata()
+                # now we are guaranteed to have metadata available, so use it to get definitions
+                resolved_definitions.extend(definition.get_definitions(metadata_by_key[unique_id]))
             else:
                 resolved_definitions.append(definition)
 
@@ -1349,7 +1381,10 @@ class UnresolvedRepositoryDefinition:
         )
 
         return RepositoryDefinition(
-            self.name, repository_data=repository_data, description=self.description
+            self.name,
+            repository_data=repository_data,
+            description=self.description,
+            repository_metadata=RepositoryMetadata(cached_metadata_by_key=metadata_by_key),
         )
 
 
