@@ -1,17 +1,22 @@
+from typing import Sequence
+
 from dagster import AssetKey, AssetsDefinition, In, Nothing, asset, define_asset_job, op, repository
-from dagster._core.definitions.assets_lazy import AssetsDefinitionMetadata, LazyAssetsDefinition
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionMetadata,
+    CacheableAssetsDefinition,
+)
 from dagster._core.test_utils import instance_for_test
 from dagster._serdes.utils import hash_str
 
 
-class SomeLazyAsset(LazyAssetsDefinition):
+class SomeLazyAsset(CacheableAssetsDefinition):
     def __init__(self, connection_id: str, config: str):
         self.connection_id = connection_id
         self.config = config
         self.generated_metadata = 0
-        super().__init__(self, unique_id=hash_str(f"{connection_id}{config}"))
+        super().__init__(unique_id=hash_str(f"{connection_id}{config}"))
 
-    def generate_metadata(self) -> AssetsDefinitionMetadata:
+    def get_metadata(self) -> Sequence[AssetsDefinitionMetadata]:
         self.generated_metadata += 1  # for testing
 
         # pretend this is an external API
@@ -21,12 +26,17 @@ class SomeLazyAsset(LazyAssetsDefinition):
         }
         output_keys_for_connection_id = {"conn1": {AssetKey("dA")}, "conn2": {AssetKey("dB")}}
 
-        return AssetsDefinitionMetadata(
-            input_keys=input_keys_for_connection_id[self.connection_id],
-            output_keys=output_keys_for_connection_id[self.connection_id],
-        )
+        return [
+            AssetsDefinitionMetadata(
+                input_keys=input_keys_for_connection_id[self.connection_id],
+                output_keys=output_keys_for_connection_id[self.connection_id],
+            )
+        ]
 
-    def generate_assets(self, metadata: AssetsDefinitionMetadata):
+    def get_definitions(
+        self, metadata: Sequence[AssetsDefinitionMetadata]
+    ) -> Sequence[AssetsDefinition]:
+        metadata = metadata[0]
         keys_by_input_name = {"_".join(ak.path): ak for ak in metadata.input_keys}
 
         @op(name=self._unique_id, ins={name: In(Nothing) for name in keys_by_input_name.keys()})

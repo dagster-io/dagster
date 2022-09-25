@@ -11,8 +11,6 @@ from typing import (
     Set,
     Union,
     cast,
-    Mapping,
-    Any,
 )
 
 import dagster._check as check
@@ -31,6 +29,7 @@ from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.executor_definition import ExecutorRequirement
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.repository_definition import RepositoryMetadata
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
@@ -613,7 +612,7 @@ class ExecutionPlan(
             ("artifacts_persisted", bool),
             ("step_dict_by_key", Dict[str, IExecutionStep]),
             ("executor_name", Optional[str]),
-            ("repository_metadata", Optional[Mapping[str, Any]]),
+            ("repository_metadata", Optional[RepositoryMetadata]),
         ],
     )
 ):
@@ -627,7 +626,7 @@ class ExecutionPlan(
         artifacts_persisted: bool = False,
         step_dict_by_key: Optional[Dict[str, IExecutionStep]] = None,
         executor_name: Optional[str] = None,
-        repository_metadata: Optional[Mapping[str, Any]] = None,
+        repository_metadata: Optional[RepositoryMetadata] = None,
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
@@ -663,8 +662,8 @@ class ExecutionPlan(
                 ),
             ),
             executor_name=check.opt_str_param(executor_name, "executor_name"),
-            repository_metadata=check.opt_mapping_param(
-                repository_metadata, "repository_metadata", key_type=str
+            repository_metadata=check.opt_inst_param(
+                repository_metadata, "repository_metadata", RepositoryMetadata
             ),
         )
 

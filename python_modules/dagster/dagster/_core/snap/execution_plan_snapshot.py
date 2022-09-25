@@ -1,7 +1,8 @@
-from typing import Dict, List, NamedTuple, Optional, Mapping, Any
+from typing import Dict, List, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
+from dagster._core.definitions.repository_definition import RepositoryMetadata
 from dagster._core.execution.plan.inputs import (
     StepInput,
     StepInputSourceUnion,
@@ -18,7 +19,6 @@ from dagster._core.execution.plan.step import (
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
-from dagster._core.definitions.repository_definition import RepositoryMetadata
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -67,7 +67,7 @@ class ExecutionPlanSnapshot(
         initial_known_state: Optional[KnownExecutionState] = None,
         snapshot_version: Optional[int] = None,
         executor_name: Optional[str] = None,
-        repository_metadata: Optional[Mapping[str, Any]] = None,
+        repository_metadata: Optional[RepositoryMetadata] = None,
     ):
         return super(ExecutionPlanSnapshot, cls).__new__(
             cls,

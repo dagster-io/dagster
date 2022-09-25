@@ -1190,7 +1190,6 @@ class DagsterInstance:
             asset_selection=parent_run.asset_selection,
             external_pipeline_origin=external_pipeline.get_external_origin(),
             pipeline_code_origin=external_pipeline.get_python_origin(),
-            repository_metadata=external_execution_plan.repository_metadata,
         )
 
     def register_managed_run(

@@ -13,9 +13,9 @@ from ..pipeline_definition import PipelineDefinition
 from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
     CachingRepositoryData,
+    PendingRepositoryDefinition,
     RepositoryData,
     RepositoryDefinition,
-    UnresolvedRepositoryDefinition,
 )
 from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
@@ -50,9 +50,9 @@ class _Repository:
 
     def __call__(
         self, fn: Callable[[], Any]
-    ) -> Union[RepositoryDefinition, UnresolvedRepositoryDefinition]:
+    ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
-        from dagster._core.definitions.assets_lazy import LazyAssetsDefinition
+        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
         check.callable_param(fn, "fn")
 
@@ -75,12 +75,12 @@ class _Repository:
                     or isinstance(definition, GraphDefinition)
                     or isinstance(definition, AssetGroup)
                     or isinstance(definition, AssetsDefinition)
-                    or isinstance(definition, LazyAssetsDefinition)
+                    or isinstance(definition, CacheableAssetsDefinition)
                     or isinstance(definition, SourceAsset)
                     or isinstance(definition, UnresolvedAssetJobDefinition)
                 ):
                     bad_definitions.append((i, type(definition)))
-                if isinstance(definition, LazyAssetsDefinition):
+                if isinstance(definition, CacheableAssetsDefinition):
                     has_unresolved = True
             if bad_definitions:
                 bad_definitions_str = ", ".join(
@@ -97,7 +97,7 @@ class _Repository:
                     f"Got {bad_definitions_str}."
                 )
             if has_unresolved:
-                return UnresolvedRepositoryDefinition(
+                return PendingRepositoryDefinition(
                     self.name,
                     repository_definitions=repository_definitions,
                     description=self.description,
@@ -168,7 +168,7 @@ def repository(
     description: Optional[str] = None,
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-) -> Union[RepositoryDefinition, _Repository]:
+) -> Union[RepositoryDefinition, PendingRepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 
     The decorated function should take no arguments and its return value should one of:

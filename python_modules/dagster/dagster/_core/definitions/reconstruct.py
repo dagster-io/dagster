@@ -87,7 +87,7 @@ class ReconstructableRepository(
         )
 
     def with_repository_metadata(
-        self, metadata: "RepositoryMetadata"
+        self, metadata: Optional["RepositoryMetadata"]
     ) -> "ReconstructableRepository":
         return ReconstructableRepository(
             pointer=self.pointer,
@@ -189,7 +189,9 @@ class ReconstructablePipeline(
             asset_selection=asset_selection,
         )
 
-    def with_repository_metadata(self, metadata: "RepositoryMetadata") -> "ReconstructablePipeline":
+    def with_repository_metadata(
+        self, metadata: Optional["RepositoryMetadata"]
+    ) -> "ReconstructablePipeline":
         return ReconstructablePipeline(
             repository=self.repository.with_repository_metadata(metadata),
             pipeline_name=self.pipeline_name,
@@ -600,14 +602,14 @@ def _check_is_loadable(definition):
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
-    from .repository_definition import RepositoryDefinition, UnresolvedRepositoryDefinition
+    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
     if not isinstance(
         definition,
         (
             PipelineDefinition,
             RepositoryDefinition,
-            UnresolvedRepositoryDefinition,
+            PendingRepositoryDefinition,
             GraphDefinition,
             AssetGroup,
         ),
@@ -644,14 +646,14 @@ def def_from_pointer(
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
-    from .repository_definition import RepositoryDefinition, UnresolvedRepositoryDefinition
+    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
     if isinstance(
         target,
         (
             PipelineDefinition,
             RepositoryDefinition,
-            UnresolvedRepositoryDefinition,
+            PendingRepositoryDefinition,
             GraphDefinition,
             AssetGroup,
         ),
@@ -711,8 +713,8 @@ def repository_def_from_target_def(
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import (
         CachingRepositoryData,
+        PendingRepositoryDefinition,
         RepositoryDefinition,
-        UnresolvedRepositoryDefinition,
     )
 
     # special case - we can wrap a single pipeline in a repository
@@ -728,7 +730,7 @@ def repository_def_from_target_def(
         )
     elif isinstance(target, RepositoryDefinition):
         return target
-    elif isinstance(target, UnresolvedRepositoryDefinition):
+    elif isinstance(target, PendingRepositoryDefinition):
         return target.resolve(repository_metadata)
     else:
         return None

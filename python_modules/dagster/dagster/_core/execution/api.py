@@ -82,11 +82,6 @@ def execute_run_iterator(
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
-    from dagster._core.definitions.repository_definition import RepositoryMetadata
-
-    pipeline = pipeline.with_repository_metadata(
-        pipeline_run.repository_metadata,
-    )
 
     if pipeline_run.status == PipelineRunStatus.CANCELED:
         # This can happen if the run was force-terminated while it was starting
