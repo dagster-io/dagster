@@ -25,8 +25,9 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import merge_dicts, frozendict
+from dagster._utils import frozendict, frozenlist, merge_dicts
 
+from .cacheable_assets import AssetsDefinitionMetadata
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
@@ -38,11 +39,11 @@ from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 from .source_asset import SourceAsset
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from .assets_lazy import AssetsDefinitionMetadata
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetGroup, AssetsDefinition
+    from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
     "pipelines",
@@ -61,26 +62,40 @@ RepositoryLevelDefinition = TypeVar(
     SensorDefinition,
 )
 
+RepositoryDefinitionType = Union[
+    PipelineDefinition,
+    PartitionSetDefinition,
+    ScheduleDefinition,
+    SensorDefinition,
+    "AssetGroup",
+    GraphDefinition,
+    UnresolvedAssetJobDefinition,
+    "AssetsDefinition",
+]
+
 
 @whitelist_for_serdes
 class RepositoryMetadata(
     NamedTuple(
         "_RepositoryMetadata",
         [
-            ("cached_metadata_by_key", Mapping[str, AssetsDefinitionMetadata]),
+            ("cached_metadata_by_key", Mapping[str, Sequence[AssetsDefinitionMetadata]]),
         ],
     )
 ):
-    def __new__(cls, cached_metadata_by_key: Mapping[str, AssetsDefinitionMetadata]):
+    def __new__(cls, cached_metadata_by_key: Mapping[str, Sequence[AssetsDefinitionMetadata]]):
         return super(RepositoryMetadata, cls).__new__(
             cls,
             cached_metadata_by_key=frozendict(
-                check.mapping_param(
-                    cached_metadata_by_key,
-                    "cached_metadata_by_key",
-                    key_type=str,
-                    value_type=AssetsDefinitionMetadata,
-                )
+                {
+                    k: frozenlist(v)
+                    for k, v in check.mapping_param(
+                        cached_metadata_by_key,
+                        "cached_metadata_by_key",
+                        key_type=str,
+                        value_type=list,
+                    ).items()
+                }
             ),
         )
 
@@ -678,17 +693,7 @@ class CachingRepositoryData(RepositoryData):
     @classmethod
     def from_list(
         cls,
-        repository_definitions: List[
-            Union[
-                PipelineDefinition,
-                PartitionSetDefinition,
-                ScheduleDefinition,
-                SensorDefinition,
-                "AssetGroup",
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-            ]
-        ],
+        repository_definitions: Sequence[RepositoryDefinitionType],
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     ) -> "CachingRepositoryData":
@@ -1363,33 +1368,34 @@ class RepositoryDefinition:
         return self
 
 
-class UnresolvedRepositoryDefinition:
+class PendingRepositoryDefinition:
     def __init__(
         self,
         name: str,
-        repository_definitions: List[RepositoryLevelDefinition],
+        repository_definitions: Sequence[
+            Union[RepositoryDefinitionType, "CacheableAssetsDefinition"]
+        ],
         description: Optional[str] = None,
-        default_logger_defs: Optional[List[LoggerDefinition]] = None,
-        default_executor_def: Optional[List[ExecutorDefinition]] = None,
+        default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+        default_executor_def: Optional[ExecutorDefinition] = None,
     ):
-        self.name = name
-        self.repository_definitions = repository_definitions
-        self.description = description
-        self.default_logger_defs = default_logger_defs
-        self.default_executor_def = default_executor_def
+        self._name = name
+        self._repository_definitions = repository_definitions
+        self._description = description
+        self._default_logger_defs = default_logger_defs
+        self._default_executor_def = default_executor_def
 
     def resolve(self, repository_metadata: Optional[RepositoryMetadata]) -> RepositoryDefinition:
-        from dagster import DagsterInstance
-        from dagster._core.definitions.assets_lazy import LazyAssetsDefinition
+        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
         # this is metadata from the host process that can help generate definitions
         metadata_by_key = (
             dict(repository_metadata.cached_metadata_by_key) if repository_metadata else {}
         )
 
-        resolved_definitions = []
-        for definition in self.repository_definitions:
-            if isinstance(definition, LazyAssetsDefinition):
+        resolved_definitions: List[RepositoryDefinitionType] = []
+        for definition in self._repository_definitions:
+            if isinstance(definition, CacheableAssetsDefinition):
                 unique_id = definition.unique_id
                 if unique_id not in metadata_by_key:
                     # don't have helper metadata, must regenerate it
@@ -1401,14 +1407,14 @@ class UnresolvedRepositoryDefinition:
 
         repository_data = CachingRepositoryData.from_list(
             resolved_definitions,
-            default_executor_def=self.default_executor_def,
-            default_logger_defs=self.default_logger_defs,
+            default_executor_def=self._default_executor_def,
+            default_logger_defs=self._default_logger_defs,
         )
 
         return RepositoryDefinition(
-            self.name,
+            self._name,
             repository_data=repository_data,
-            description=self.description,
+            description=self._description,
             repository_metadata=RepositoryMetadata(cached_metadata_by_key=metadata_by_key),
         )
 

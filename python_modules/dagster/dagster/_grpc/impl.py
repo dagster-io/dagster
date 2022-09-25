@@ -80,8 +80,6 @@ def core_execute_run(
     instance: DagsterInstance,
     resume_from_failure: bool = False,
 ) -> Generator[DagsterEvent, None, None]:
-    from dagster._core.definitions.repository_definition import RepositoryMetadata
-
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)

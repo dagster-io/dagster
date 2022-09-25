@@ -43,8 +43,8 @@ from .tags import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.origin import ExternalPipelineOrigin
     from dagster._core.definitions.repository_definition import RepositoryMetadata
+    from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
 
 class DagsterRunStatusSerializer(EnumSerializer):

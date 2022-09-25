@@ -1,6 +1,6 @@
 import inspect
 from types import ModuleType
-from typing import Callable, List, NamedTuple, Optional, Sequence, Type
+from typing import Callable, List, NamedTuple, Optional, Sequence, Tuple, Type, Union
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -52,10 +52,10 @@ def loadable_targets_from_python_package(
 
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
-    from dagster._core.definitions.repository_definition import UnresolvedRepositoryDefinition
+    from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 
     loadable_repos = _loadable_targets_of_type(
-        module, (RepositoryDefinition, UnresolvedRepositoryDefinition)
+        module, (RepositoryDefinition, PendingRepositoryDefinition)
     )
     if loadable_repos:
         return loadable_repos
@@ -127,7 +127,9 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     )
 
 
-def _loadable_targets_of_type(module: ModuleType, klass: Type) -> Sequence[LoadableTarget]:
+def _loadable_targets_of_type(
+    module: ModuleType, klass: Union[Type, Tuple[Type, ...]]
+) -> Sequence[LoadableTarget]:
     loadable_targets = []
     for name, value in inspect.getmembers(module):
         if isinstance(value, klass):
