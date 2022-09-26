@@ -5,6 +5,7 @@ import * as React from 'react';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {
   failedStatuses,
   inProgressStatuses,
@@ -213,6 +214,18 @@ export const InstanceOverviewPage = () => {
     return new Set(jobKeys);
   }, [filteredJobs]);
 
+  const filteredJobsMinusHiddenAssetGroupJobs = React.useMemo(() => {
+    const filterHiddenAssetGroupJobs = ({name}: JobItem) => !isHiddenAssetGroupJob(name);
+    const {failed, inProgress, queued, succeeded, neverRan} = filteredJobs;
+    return {
+      failed: failed.filter(filterHiddenAssetGroupJobs),
+      inProgress: inProgress.filter(filterHiddenAssetGroupJobs),
+      queued: queued.filter(filterHiddenAssetGroupJobs),
+      succeeded: succeeded.filter(filterHiddenAssetGroupJobs),
+      neverRan: neverRan.filter(filterHiddenAssetGroupJobs),
+    };
+  }, [filteredJobs]);
+
   const filteredJobsWithRuns = React.useMemo(() => {
     const appendRuns = (jobItem: JobItem) => {
       const {name, repoAddress} = jobItem;
@@ -221,7 +234,7 @@ export const InstanceOverviewPage = () => {
       return {...jobItem, runs: [...matchingRuns].reverse()};
     };
 
-    const {failed, inProgress, queued, succeeded, neverRan} = filteredJobs;
+    const {failed, inProgress, queued, succeeded, neverRan} = filteredJobsMinusHiddenAssetGroupJobs;
     return {
       failed: failed.map(appendRuns),
       inProgress: inProgress.map(appendRuns),
@@ -229,7 +242,7 @@ export const InstanceOverviewPage = () => {
       succeeded: succeeded.map(appendRuns),
       neverRan: neverRan.map(appendRuns),
     };
-  }, [lastTenRunsFlattened, filteredJobs]);
+  }, [lastTenRunsFlattened, filteredJobsMinusHiddenAssetGroupJobs]);
 
   if (!data || Object.keys(data).length === 0) {
     return (

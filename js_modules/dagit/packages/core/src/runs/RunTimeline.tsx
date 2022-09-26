@@ -25,9 +25,10 @@ import {RepoAddress} from '../workspace/types';
 
 import {RepoSectionHeader, SECTION_HEADER_HEIGHT} from './RepoSectionHeader';
 import {RunStatusDot} from './RunStatusDots';
-import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';
+import {failedStatuses, inProgressStatuses, successStatuses} from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
 import {batchRunsForTimeline, RunBatch} from './batchRunsForTimeline';
+import {mergeStatusToBackground} from './mergeStatusToBackground';
 
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 42;
@@ -387,46 +388,6 @@ const NowMarker = styled.div`
   user-select: none;
 `;
 
-const mergeStatusToColor = (runs: TimelineRun[]) => {
-  let anyInProgress = false;
-  let anyQueued = false;
-  let anyFailed = false;
-  let anySucceeded = false;
-  let anyScheduled = false;
-
-  runs.forEach(({status}) => {
-    if (status === 'SCHEDULED') {
-      anyScheduled = true;
-    } else if (queuedStatuses.has(status)) {
-      anyQueued = true;
-    } else if (inProgressStatuses.has(status)) {
-      anyInProgress = true;
-    } else if (failedStatuses.has(status)) {
-      anyFailed = true;
-    } else if (successStatuses.has(status)) {
-      anySucceeded = true;
-    }
-  });
-
-  if (anyQueued) {
-    return Colors.Blue200;
-  }
-  if (anyInProgress) {
-    return Colors.Blue500;
-  }
-  if (anyFailed) {
-    return Colors.Red500;
-  }
-  if (anySucceeded) {
-    return Colors.Green500;
-  }
-  if (anyScheduled) {
-    return Colors.Blue200;
-  }
-
-  return Colors.Gray500;
-};
-
 const MIN_CHUNK_WIDTH = 2;
 const MIN_WIDTH_FOR_MULTIPLE = 16;
 
@@ -481,7 +442,7 @@ const RunTimelineRow = ({
           return (
             <RunChunk
               key={batch.runs[0].id}
-              $color={mergeStatusToColor(batch.runs)}
+              $background={mergeStatusToBackground(batch.runs)}
               $multiple={runCount > 1}
               style={{
                 left: `${left}px`,
@@ -568,13 +529,13 @@ const RunChunks = styled.div`
 `;
 
 interface ChunkProps {
-  $color: string;
+  $background: string;
   $multiple: boolean;
 }
 
 const RunChunk = styled.div<ChunkProps>`
   align-items: center;
-  background-color: ${({$color}) => $color};
+  background: ${({$background}) => $background};
   border-radius: 2px;
   height: ${ROW_HEIGHT - 4}px;
   position: absolute;
@@ -594,7 +555,8 @@ const BatchCount = styled.div`
   color: ${Colors.White};
   cursor: default;
   font-family: ${FontFamily.monospace};
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 600;
   user-select: none;
 `;
 

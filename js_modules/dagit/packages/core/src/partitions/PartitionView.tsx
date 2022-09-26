@@ -371,7 +371,7 @@ const JobBackfills = ({
             <BackfillTable
               backfills={backfills}
               refetch={refetch}
-              showPartitionSet={false}
+              showBackfillTarget={false}
               allPartitions={partitionNames}
             />
             <CursorPaginationControls {...paginationProps} />

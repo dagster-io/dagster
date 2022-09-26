@@ -110,7 +110,7 @@ def test_graphql_get(instance, test_client: TestClient):  # pylint: disable=unus
 def test_graphql_invalid_json(instance, test_client: TestClient):  # pylint: disable=unused-argument
     # base case
     response = test_client.post(
-        "/graphql", data='{"query": "foo}', headers={"Content-Type": "application/json"}
+        "/graphql", content='{"query": "foo}', headers={"Content-Type": "application/json"}
     )
 
     print(str(response.text))
@@ -162,7 +162,7 @@ def test_graphql_post(test_client: TestClient):
     # application/graphql
     response = test_client.post(
         "/graphql",
-        data="{__typename}",
+        content="{__typename}",
         headers={"Content-type": "application/graphql"},
     )
     assert response.status_code == 200, response.text

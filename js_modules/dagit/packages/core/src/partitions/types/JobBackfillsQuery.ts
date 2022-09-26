@@ -42,6 +42,11 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_pa
   results: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionStatuses_results[];
 }
 
+export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_causes {
   __typename: "PythonError";
   message: string;
@@ -66,6 +71,7 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills {
   partitionSetName: string;
   partitionSet: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionSet | null;
   partitionStatuses: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionStatuses;
+  assetSelection: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_assetSelection[] | null;
   error: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error | null;
 }
 
