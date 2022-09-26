@@ -53,7 +53,7 @@ def _build_airbyte_asset_defn_metadata(
             )
         )
     )
-    outputs = FrozenSet({AssetKey(asset_key_prefix + [table]) for table in tables})
+    outputs = frozenset({AssetKey(asset_key_prefix + [table]) for table in tables})
 
     internal_deps = {}
 
@@ -66,17 +66,17 @@ def _build_airbyte_asset_defn_metadata(
     if normalization_tables:
         for base_table, derived_tables in normalization_tables.items():
             for derived_table in derived_tables:
-                internal_deps[derived_table] = FrozenSet(
+                internal_deps[derived_table] = frozenset(
                     {AssetKey(asset_key_prefix + [base_table])}
                 )
 
     # All non-normalization tables depend on any user-provided upstream assets
     for table in destination_tables:
-        internal_deps[table] = upstream_assets or FrozenSet()
+        internal_deps[table] = upstream_assets or frozenset()
 
     first_asset_key = AssetKey(asset_key_prefix + [tables[0]])
     return AssetsDefinitionMetadata(
-        input_keys=FrozenSet(),
+        input_keys=frozenset(),
         output_keys=outputs,
         asset_deps=internal_deps,
         group_names_by_key={table: group_name for table in tables} if group_name else None,
