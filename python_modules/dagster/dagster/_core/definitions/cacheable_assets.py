@@ -40,7 +40,6 @@ class AssetsDefinitionCacheableData(
         can_subset: bool = False,
         extra_metadata: Optional[Mapping[Any, Any]] = None,
     ):
-<<<<<<< HEAD
 
         keys_by_input_name = check.opt_nullable_mapping_param(
             keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
@@ -67,20 +66,6 @@ class AssetsDefinitionCacheableData(
         except TypeError:
             check.failed("Value for `extra_metadata` is not JSON serializable.")
 
-=======
-        #     asset_deps = check.opt_nullable_dict_param(
-        #         asset_deps, "asset_deps", key_type=AssetKey, value_type=set
-        #     )
-        group_names_by_key = check.opt_nullable_dict_param(
-            group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
-        )
-        # metadata_by_key = check.opt_nullable_dict_param(
-        #     metadata_by_key,
-        #     "metadata_by_key",
-        #     key_type=AssetKey,
-        #     value_type=MetadataUserInput,
-        # )
->>>>>>> 29cdf2aac1 (fix 3)
         return super().__new__(
             cls,
             keys_by_input_name=frozendict(keys_by_input_name) if keys_by_input_name else None,
