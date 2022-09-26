@@ -496,5 +496,7 @@ class StubbedEcs:
             "1024": [str(i) for i in range(2048, 8192 + 1, 1024)],
             "2048": [str(i) for i in range(4096, 16384 + 1, 1024)],
             "4096": [str(i) for i in range(8192, 30720 + 1, 1024)],
+            "8192": [str(i) for i in range(16384, 61440 + 1, 4096)],
+            "16384": [str(i) for i in range(32768, 122880 + 1, 8192)],
         }
         return bool(memory in constraints.get(cpu, []))

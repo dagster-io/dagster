@@ -215,3 +215,56 @@ export const BucketByRepo = () => {
     </Group>
   );
 };
+
+export const CandyStriping = () => {
+  const twoHoursAgo = React.useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
+  const now = React.useMemo(() => Date.now(), []);
+
+  const jobs: TimelineJob[] = React.useMemo(() => {
+    const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
+    const repoAddress = makeRepoAddress();
+    return [
+      {
+        key: jobKey,
+        jobName: jobKey,
+        jobType: 'job',
+        path: `/${jobKey}`,
+        repoAddress,
+        runs: [
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.SUCCESS,
+            startTime: twoHoursAgo + 20 * 60 * 1000,
+            endTime: twoHoursAgo + 95 * 60 * 1000,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.SUCCESS,
+            startTime: twoHoursAgo + 90 * 60 * 1000,
+            endTime: twoHoursAgo + 110 * 60 * 1000,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.FAILURE,
+            startTime: twoHoursAgo + 60 * 60 * 1000,
+            endTime: now,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.SUCCESS,
+            startTime: twoHoursAgo + 60 * 60 * 1000,
+            endTime: now,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.STARTED,
+            startTime: twoHoursAgo + 60 * 60 * 1000,
+            endTime: now,
+          },
+        ],
+      },
+    ];
+  }, [twoHoursAgo, now]);
+
+  return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
+};

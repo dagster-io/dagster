@@ -61,6 +61,7 @@ export interface LaunchpadRootQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
   id: string;
   isJob: boolean;
+  isAssetJob: boolean;
   name: string;
   presets: LaunchpadRootQuery_pipelineOrError_Pipeline_presets[];
   tags: LaunchpadRootQuery_pipelineOrError_Pipeline_tags[];
