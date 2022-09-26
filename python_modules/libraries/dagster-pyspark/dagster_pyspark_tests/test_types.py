@@ -21,11 +21,11 @@ dataframe_parametrize_argvalues = [
     pytest.param("parquet", spark.read.load, True, pyspark_resource, id="other_parquet"),
     pytest.param("json", spark.read.load, True, pyspark_resource, id="other_json"),
     pytest.param("csv", spark.read.csv, False, lazy_pyspark_resource, id="csv"),
-    pytest.param("parquet", spark.read.parquet, False, lazy_pyspark_resource, id="parquet"),
-    pytest.param("json", spark.read.json, False, lazy_pyspark_resource, id="json"),
-    pytest.param("csv", spark.read.load, True, lazy_pyspark_resource, id="other_csv"),
-    pytest.param("parquet", spark.read.load, True, lazy_pyspark_resource, id="other_parquet"),
-    pytest.param("json", spark.read.load, True, lazy_pyspark_resource, id="other_json"),
+    pytest.param("parquet", spark.read.parquet, False, lazy_pyspark_resource, id="lazy_parquet"),
+    pytest.param("json", spark.read.json, False, lazy_pyspark_resource, id="lazy_json"),
+    pytest.param("csv", spark.read.load, True, lazy_pyspark_resource, id="lazy_other_csv_lazy"),
+    pytest.param("parquet", spark.read.load, True, lazy_pyspark_resource, id="lazy_other_parquet"),
+    pytest.param("json", spark.read.load, True, lazy_pyspark_resource, id="lazy_other_json"),
 ]
 
 
