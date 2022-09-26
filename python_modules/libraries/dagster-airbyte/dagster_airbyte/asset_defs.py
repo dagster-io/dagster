@@ -1,7 +1,19 @@
 import os
 import re
 from itertools import chain
-from typing import Any, Callable, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Set, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    cast,
+)
 
 import yaml
 from dagster_airbyte.resources import AirbyteResource
@@ -89,9 +101,7 @@ def _build_airbyte_assets_from_metadata(
     connection_id = metadata["connection_id"]
     group_name = metadata["group_name"]
     destination_tables = metadata["destination_tables"]
-    normalization_tables: Mapping[str, List[str]] = metadata[
-        "normalization_tables"
-    ]
+    normalization_tables: Mapping[str, List[str]] = metadata["normalization_tables"]
 
     outputs = {
         table_asset_key.path[-1]: AssetOut(key=table_asset_key)
@@ -345,7 +355,7 @@ class AirbyteConnection(
         return tables
 
 
-class AirbyteInstanceLazyAssetsDefintion(CacheableAssetsDefinition):
+class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
     def __init__(
         self,
         airbyte_resource_def: ResourceDefinition,
@@ -366,7 +376,7 @@ class AirbyteInstanceLazyAssetsDefintion(CacheableAssetsDefinition):
 
         super().__init__(unique_id="airbyte")
 
-    def generate_metadata(self) -> List[AssetsDefinitionMetadata]:
+    def get_metadata(self) -> Sequence[AssetsDefinitionMetadata]:
 
         workspace_id = self._workspace_id
         if not workspace_id:
@@ -424,7 +434,9 @@ class AirbyteInstanceLazyAssetsDefintion(CacheableAssetsDefinition):
 
         return asset_defn_metas
 
-    def generate_assets(self, metadata: List[AssetsDefinitionMetadata]) -> List[AssetsDefinition]:
+    def get_definitions(
+        self, metadata: Sequence[AssetsDefinitionMetadata]
+    ) -> Sequence[AssetsDefinition]:
         return with_resources(
             [
                 _build_airbyte_assets_from_metadata(meta, asset_key_prefix=self._key_prefix)
@@ -441,7 +453,7 @@ def load_assets_from_airbyte_instance(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
-) -> LazyAssetsDefinition:
+) -> CacheableAssetsDefinition:
     """
     Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
     about defined connections at initialization time, and will error on workspace load if the Airbyte
@@ -465,7 +477,7 @@ def load_assets_from_airbyte_instance(
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
-    return AirbyteInstanceLazyAssetsDefintion(
+    return AirbyteInstanceCacheableAssetsDefintion(
         airbyte,
         workspace_id,
         key_prefix,
