@@ -481,7 +481,7 @@ def test_partition_keys_in_range():
         )
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj): # pylint: disable=unused-argument
+        def handle_output(self, context, obj):  # pylint: disable=unused-argument
             if context.asset_key == AssetKey("upstream"):
                 assert context.has_asset_partitions
                 assert context.asset_partition_keys == ["2022-09-11"]
