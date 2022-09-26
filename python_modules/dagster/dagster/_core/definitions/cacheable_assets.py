@@ -1,4 +1,4 @@
-from typing import AbstractSet, Dict, Mapping, NamedTuple, Optional, FrozenSet, Sequence
+from typing import AbstractSet, Dict, FrozenSet, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.assets import AssetsDefinition
