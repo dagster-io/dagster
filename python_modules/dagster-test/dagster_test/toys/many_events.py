@@ -22,7 +22,7 @@ raw_files = [
     "raw_file_fans",
     "raw_file_event_admins",
     "raw_file_group_admins",
-]
+] + ["raw_file_test_" + str(i) for i in range(0, 10000)]
 
 
 def create_raw_file_op(name):
@@ -59,7 +59,7 @@ raw_tables = [
     "raw_fans",
     "raw_event_admins",
     "raw_group_admins",
-]
+] + ["raw_test_" + str(i) for i in range(0, 10000)]
 
 
 def create_raw_file_ops():
@@ -110,7 +110,7 @@ def many_materializations_and_passing_expectations(_context):
         "fans",
         "event_admins",
         "group_admins",
-    ]
+    ] + ["test_" + str(i) for i in range(0, 10000)]
 
     for table in tables:
         yield AssetMaterialization(

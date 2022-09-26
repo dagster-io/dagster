@@ -166,7 +166,6 @@ const useLogsProviderWithSubscription = (runId: string) => {
       if (!queue.current.length) {
         return;
       }
-      console.log('in throttledSetNodes');
       const queuedLogs = [...queue.current];
       queue.current = [];
       const queuedMessages = queuedLogs.flatMap((log) => log.messages);
@@ -175,12 +174,14 @@ const useLogsProviderWithSubscription = (runId: string) => {
       const cursor = lastLog.cursor;
 
       dispatch({type: 'append', queued: queuedMessages, hasMore, cursor});
-      const nextPipelineStatus = pipelineStatusFromMessages(queuedMessages);
 
       // If we're still loading past events, don't sync to the cache -- event chunks could
       // give us `status` values that don't match the actual state of the run.
-      if (nextPipelineStatus && !hasMore) {
-        syncPipelineStatusToApolloCache(nextPipelineStatus);
+      if (!hasMore) {
+        const nextPipelineStatus = pipelineStatusFromMessages(queuedMessages);
+        if (nextPipelineStatus) {
+          syncPipelineStatusToApolloCache(nextPipelineStatus);
+        }
       }
     }, BATCH_INTERVAL);
   }, [syncPipelineStatusToApolloCache]);

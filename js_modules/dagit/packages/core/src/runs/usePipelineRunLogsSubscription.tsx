@@ -38,9 +38,7 @@ export function usePipelineRunLogsSubscriptionWorker({runId}: any, onLogs: any) 
       rootServerURI,
     });
     worker.addEventListener('message', (event) => {
-      try {
-        onLogs(JSON.parse(arrayBufferToString(event.data)));
-      } catch (_) {}
+      onLogs(JSON.parse(arrayBufferToString(event.data)));
     });
     return () => {
       worker.postMessage({
