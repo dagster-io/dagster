@@ -79,7 +79,9 @@ def _build_airbyte_asset_defn_metadata(
         input_keys=frozenset(),
         output_keys=outputs,
         asset_deps=internal_deps,
-        group_names_by_key={table: group_name for table in tables} if group_name else None,
+        group_names_by_key={AssetKey(asset_key_prefix + [table]): group_name for table in tables}
+        if group_name
+        else None,
         metadata_by_key={
             first_asset_key: {
                 "connection_id": connection_id,
@@ -427,7 +429,7 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
                 destination_tables=list(table_mapping.keys()),
                 normalization_tables=table_mapping,
                 asset_key_prefix=self._key_prefix,
-                group_name=self._connection_to_group_fn(connection_id)
+                group_name=self._connection_to_group_fn(connection.name)
                 if self._connection_to_group_fn
                 else None,
             )
