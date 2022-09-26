@@ -1,8 +1,10 @@
-from dagster_pyspark.resources import pyspark_resource
+from dagster_pyspark.resources import pyspark_resource, lazy_pyspark_resource
 
 from dagster import job, multiprocess_executor, op, reconstructable
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline
+
+from pyspark.sql import SparkSession
 
 
 def assert_pipeline_runs_with_resource(resource_def):
@@ -22,14 +24,44 @@ def assert_pipeline_runs_with_resource(resource_def):
     assert called["yup"]
 
 
+def assert_pipeline_runs_with_lazy_resource(resource_def):
+    called = {}
+
+    @op(required_resource_keys={"some_name"})
+    def a_op(context):
+        assert context.resources.some_name._spark_session is None
+        assert isinstance(context.resources.some_name.spark_session, SparkSession)
+        assert isinstance(context.resources.some_name._spark_session, SparkSession)
+        called["yup"] = True
+
+    @job(resource_defs={"some_name": resource_def})
+    def with_a_resource():
+        a_op()
+
+    result = with_a_resource.execute_in_process()
+
+    assert result.success
+    assert called["yup"]
+
+
 def test_pyspark_resource():
     pyspark_resource.configured({"spark_conf": {"spark": {"executor": {"memory": "1024MB"}}}})
     assert_pipeline_runs_with_resource(pyspark_resource)
 
 
+def test_lazy_pyspark_resource():
+    lazy_pyspark_resource.configured({"spark_conf": {"spark": {"executor": {"memory": "1024MB"}}}})
+    assert_pipeline_runs_with_lazy_resource(lazy_pyspark_resource)
+
+
 def test_pyspark_resource_escape_hatch():
     pyspark_resource.configured({"spark_conf": {"spark.executor.memory": "1024MB"}})
     assert_pipeline_runs_with_resource(pyspark_resource)
+
+
+def test_lazy_pyspark_resource_escape_hatch():
+    lazy_pyspark_resource.configured({"spark_conf": {"spark.executor.memory": "1024MB"}})
+    assert_pipeline_runs_with_lazy_resource(lazy_pyspark_resource)
 
 
 @op(required_resource_keys={"pyspark"})
