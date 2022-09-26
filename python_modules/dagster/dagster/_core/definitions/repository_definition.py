@@ -702,8 +702,8 @@ class CachingRepositoryData(RepositoryData):
         repository_definitions: Sequence[RepositoryDefinitionType],
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+        managed_stacks: Optional[List["ManagedStackAssetsDefinition"]] = None,
     ) -> "CachingRepositoryData":
-        from dagster._experimental.managed_stacks import ManagedStackAssetsDefinition
 
         """Static constructor.
 
@@ -723,11 +723,8 @@ class CachingRepositoryData(RepositoryData):
         assets_defs: List[AssetsDefinition] = []
         asset_keys: Set[AssetKey] = set()
         source_assets: List[SourceAsset] = []
-        managed_stacks: List[ManagedStackAssetsDefinition] = []
         combined_asset_group = None
         for definition in repository_definitions:
-            if isinstance(definition, ManagedStackAssetsDefinition):
-                managed_stacks.append(definition)
             if isinstance(definition, PipelineDefinition):
                 if (
                     definition.name in pipelines_or_jobs
@@ -884,7 +881,7 @@ class CachingRepositoryData(RepositoryData):
             sensors=sensors,
             source_assets_by_key=source_assets_by_key,
             assets_defs_by_key=assets_defs_by_key,
-            managed_stacks=managed_stacks,
+            managed_stacks=managed_stacks or [],
         )
 
     def get_pipeline_names(self) -> List[str]:
@@ -1374,14 +1371,18 @@ class PendingRepositoryDefinition:
 
     def resolve(self, repository_metadata: Optional[RepositoryMetadata]) -> RepositoryDefinition:
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+        from dagster._experimental.managed_stacks import ManagedStackAssetsDefinition
 
         # this is metadata from the host process that can help generate definitions
         metadata_by_key = (
             dict(repository_metadata.cached_metadata_by_key) if repository_metadata else {}
         )
 
+        managed_stacks: List[ManagedStackAssetsDefinition] = []
         resolved_definitions: List[RepositoryDefinitionType] = []
         for definition in self._repository_definitions:
+            if isinstance(definition, ManagedStackAssetsDefinition):
+                managed_stacks.append(definition)
             if isinstance(definition, CacheableAssetsDefinition):
                 unique_id = definition.unique_id
                 if unique_id not in metadata_by_key:
@@ -1396,6 +1397,7 @@ class PendingRepositoryDefinition:
             resolved_definitions,
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
+            managed_stacks=managed_stacks,
         )
 
         return RepositoryDefinition(
