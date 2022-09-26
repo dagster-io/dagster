@@ -69,19 +69,16 @@ const initialState: State = {
   isLoading: true,
 };
 
-export const useComputeLogs = (runId: string, stepKey?: string) => {
+export const useComputeLogs = (runId: string, stepKey: string) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
   useSubscription<ComputeLogsSubscription, ComputeLogsSubscriptionVariables>(
     COMPUTE_LOGS_SUBSCRIPTION,
     {
       fetchPolicy: 'no-cache',
-      variables: {runId, stepKey: stepKey!, ioType: ComputeIOType.STDOUT, cursor: null},
-      skip: !stepKey,
+      variables: {runId, stepKey, ioType: ComputeIOType.STDOUT, cursor: null},
       onSubscriptionData: ({subscriptionData}) => {
-        if (stepKey) {
-          dispatch({type: 'stdout', stepKey, log: subscriptionData.data?.computeLogs || null});
-        }
+        dispatch({type: 'stdout', stepKey, log: subscriptionData.data?.computeLogs || null});
       },
     },
   );
@@ -90,12 +87,9 @@ export const useComputeLogs = (runId: string, stepKey?: string) => {
     COMPUTE_LOGS_SUBSCRIPTION,
     {
       fetchPolicy: 'no-cache',
-      variables: {runId, stepKey: stepKey!, ioType: ComputeIOType.STDERR, cursor: null},
-      skip: !stepKey,
+      variables: {runId, stepKey, ioType: ComputeIOType.STDERR, cursor: null},
       onSubscriptionData: ({subscriptionData}) => {
-        if (stepKey) {
-          dispatch({type: 'stderr', stepKey, log: subscriptionData.data?.computeLogs || null});
-        }
+        dispatch({type: 'stderr', stepKey, log: subscriptionData.data?.computeLogs || null});
       },
     },
   );

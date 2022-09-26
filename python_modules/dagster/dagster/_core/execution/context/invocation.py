@@ -609,7 +609,6 @@ def build_op_context(
 ) -> OpExecutionContext:
     """Builds op execution context from provided parameters.
 
-    ``op`` is currently built on top of `solid`, and thus this function creates a `SolidExecutionContext`.
     ``build_op_context`` can be used as either a function or context manager. If there is a
     provided resource that is a context manager, then ``build_op_context`` must be used as a
     context manager. This function can be used to provide the context argument when directly
@@ -621,7 +620,8 @@ def build_op_context(
         config (Optional[Any]): The op config to provide to the context.
         instance (Optional[DagsterInstance]): The dagster instance configured for the context.
             Defaults to DagsterInstance.ephemeral().
-        mapping_key (Optional[str]): A key representing the mapping key from an upstream dynamic output. Can be accessed using ``context.get_mapping_key()``.
+        mapping_key (Optional[str]): A key representing the mapping key from an upstream dynamic
+            output. Can be accessed using ``context.get_mapping_key()``.
         partition_key (Optional[str]): String value representing partition key to execute with.
 
     Examples:

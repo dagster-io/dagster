@@ -549,6 +549,18 @@ def team_a_data_update_failure_sensor():
     send_slack_alert()
 ```
 
+You can also monitor every job in your Dagster instance by specifying `monitor_all_repositories=True` on the sensor decorator. Note that `monitor_all_repositories` cannot be used along with jobs specified via `monitored_jobs`.
+
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_instance_sensor endbefore=end_instance_sensor
+@run_status_sensor(
+    monitor_all_repositories=True,
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def instance_sensor():
+    # when any job in the Dagster instance succeeds, this sensor will trigger
+    send_slack_alert()
+```
+
 ## Testing run status sensors
 
 As with other sensors, you can directly invoke run status sensors. However, the `context` provided via <PyObject object="run_status_sensor" /> and <PyObject object="run_failure_sensor" /> contain objects that are typically only available during run time. Below you'll find code snippets that demonstrate how to build the context so that you can directly invoke your function in unit tests. Feel free to copy the following into your unit tests.

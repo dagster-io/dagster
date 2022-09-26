@@ -21,14 +21,15 @@ import {InstigationStateFragment} from './types/InstigationStateFragment';
 
 export const UnloadableSensors: React.FC<{
   sensorStates: InstigationStateFragment[];
-}> = ({sensorStates}) => {
+  showSubheading?: boolean;
+}> = ({sensorStates, showSubheading = true}) => {
   if (!sensorStates.length) {
     return null;
   }
   return (
     <>
-      <Box padding={{top: 16, horizontal: 24}}>
-        <Subheading>Unloadable sensors</Subheading>
+      <Box padding={{vertical: 16, horizontal: 20}}>
+        {showSubheading ? <Subheading>Unloadable sensors</Subheading> : null}
         <UnloadableSensorInfo />
       </Box>
       <Table>
@@ -52,14 +53,15 @@ export const UnloadableSensors: React.FC<{
 
 export const UnloadableSchedules: React.FC<{
   scheduleStates: InstigationStateFragment[];
-}> = ({scheduleStates}) => {
+  showSubheading?: boolean;
+}> = ({scheduleStates, showSubheading = true}) => {
   if (!scheduleStates.length) {
     return null;
   }
   return (
     <>
-      <Box padding={{top: 16, horizontal: 24}}>
-        <Subheading>Unloadable schedules</Subheading>
+      <Box padding={{vertical: 16, horizontal: 20}}>
+        {showSubheading ? <Subheading>Unloadable schedules</Subheading> : null}
         <UnloadableScheduleInfo />
       </Box>
       <Table>
@@ -84,43 +86,39 @@ export const UnloadableSchedules: React.FC<{
 };
 
 const UnloadableSensorInfo = () => (
-  <Box margin={{vertical: 20}}>
-    <Alert
-      intent="warning"
-      title={
-        <div>
-          Note: You can turn off any of the following sensors, but you cannot turn them back on.{' '}
-        </div>
-      }
-      description={
-        <div>
-          The following sensors were previously started but now cannot be loaded. They may be part
-          of a different workspace or from a sensor or repository that no longer exists in code. You
-          can turn them off, but you cannot turn them back on since they can’t be loaded.
-        </div>
-      }
-    />
-  </Box>
+  <Alert
+    intent="warning"
+    title={
+      <div>
+        Note: You can turn off any of the following sensors, but you cannot turn them back on.{' '}
+      </div>
+    }
+    description={
+      <div>
+        The following sensors were previously started but now cannot be loaded. They may be part of
+        a different workspace or from a sensor or repository that no longer exists in code. You can
+        turn them off, but you cannot turn them back on since they can’t be loaded.
+      </div>
+    }
+  />
 );
 
 const UnloadableScheduleInfo = () => (
-  <Box margin={{vertical: 20}}>
-    <Alert
-      intent="warning"
-      title={
-        <div>
-          Note: You can turn off any of the following schedules, but you cannot turn them back on.
-        </div>
-      }
-      description={
-        <div>
-          The following schedules were previously started but now cannot be loaded. They may be part
-          of a different workspace or from a schedule or repository that no longer exists in code.
-          You can turn them off, but you cannot turn them back on since they can’t be loaded.
-        </div>
-      }
-    />
-  </Box>
+  <Alert
+    intent="warning"
+    title={
+      <div>
+        Note: You can turn off any of the following schedules, but you cannot turn them back on.
+      </div>
+    }
+    description={
+      <div>
+        The following schedules were previously started but now cannot be loaded. They may be part
+        of a different workspace or from a schedule or repository that no longer exists in code. You
+        can turn them off, but you cannot turn them back on since they can’t be loaded.
+      </div>
+    }
+  />
 );
 
 const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {

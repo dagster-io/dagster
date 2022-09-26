@@ -214,7 +214,7 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GraphenePipeline(pipeline, self._batch_loader)
             for pipeline in sorted(
-                self._repository.get_all_external_pipelines(), key=lambda pipeline: pipeline.name
+                self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
             )
         ]
 
@@ -222,7 +222,7 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GrapheneJob(pipeline, self._batch_loader)
             for pipeline in sorted(
-                self._repository.get_all_external_pipelines(), key=lambda pipeline: pipeline.name
+                self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
             )
             if pipeline.is_job
         ]

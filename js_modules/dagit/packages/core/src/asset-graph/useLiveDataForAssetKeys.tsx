@@ -34,6 +34,21 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
   };
 }
 
+export const ASSET_LATEST_INFO_FRAGMENT = gql`
+  fragment AssetLatestInfoFragment on AssetLatestInfo {
+    assetKey {
+      path
+    }
+    computeStatus
+    unstartedRunIds
+    inProgressRunIds
+    latestRun {
+      status
+      id
+    }
+  }
+`;
+
 const ASSETS_GRAPH_LIVE_QUERY = gql`
   query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
@@ -41,17 +56,10 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
       ...AssetNodeLiveFragment
     }
     assetsLatestInfo(assetKeys: $assetKeys) {
-      assetKey {
-        path
-      }
-      computeStatus
-      unstartedRunIds
-      inProgressRunIds
-      latestRun {
-        status
-        id
-      }
+      ...AssetLatestInfoFragment
     }
   }
+
   ${ASSET_NODE_LIVE_FRAGMENT}
+  ${ASSET_LATEST_INFO_FRAGMENT}
 `;

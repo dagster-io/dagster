@@ -84,7 +84,7 @@ def dbt_rpc_server(
 
     proc.terminate()  # clean up after ourself
     proc.wait(timeout=0.2)
-    if proc.poll() == None:  # still running
+    if proc.poll() is None:  # still running
         proc.kill()
     all_subprocs.remove(proc)
 

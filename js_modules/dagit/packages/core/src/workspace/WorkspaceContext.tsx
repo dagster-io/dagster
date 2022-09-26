@@ -79,12 +79,7 @@ const ROOT_WORKSPACE_QUERY = gql`
                   id
                   name
                   isJob
-                  graphName
                   pipelineSnapshotId
-                  modes {
-                    id
-                    name
-                  }
                 }
                 schedules {
                   id

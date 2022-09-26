@@ -1,5 +1,7 @@
 import inspect
 import json
+import warnings
+from collections import OrderedDict
 from contextlib import ExitStack
 from enum import Enum
 from typing import (
@@ -25,6 +27,7 @@ from dagster._annotations import experimental, public
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -405,7 +408,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             Mapping[str, EventLogRecord]:
                 Mapping of AssetKey to a mapping of partitions to EventLogRecords where the
                 EventLogRecord is the most recent materialization event for the partition.
-                Filters for materializations in partitions after the cursor.
+                Filters for materializations in partitions after the cursor. The mapping
+                preserves the order that the materializations occurred.
 
         Example:
             .. code-block:: python
@@ -434,7 +438,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         partitions_def = self._partitions_def_by_asset_key.get(asset_key)
 
-        materialization_by_partition: Dict[str, EventLogRecord] = {}
+        # Retain ordering of materializations
+        materialization_by_partition: Dict[str, EventLogRecord] = OrderedDict()
         if not isinstance(partitions_def, PartitionsDefinition):
             raise DagsterInvariantViolationError(
                 "Cannot get latest materialization by partition for assets with no partitions"
@@ -455,13 +460,17 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                     asset_partitions=partitions_to_fetch,
                     after_cursor=cursor,
                 ),
+                ascending=True,
             )
             for materialization in partition_materializations:
-                # Only update if no previous materialization for this partition exists,
-                # to ensure we return the most recent materialization for each partition.
                 partition = _get_partition_key_from_event_log_record(materialization)
 
-                if isinstance(partition, str) and partition not in materialization_by_partition:
+                if isinstance(partition, str):
+                    if partition in materialization_by_partition:
+                        # Remove partition to ensure materialization_by_partition preserves
+                        # the order of materializations
+                        materialization_by_partition.pop(partition)
+                    # Add partition and materialization to the end of the OrderedDict
                     materialization_by_partition[partition] = materialization
 
         return materialization_by_partition
@@ -504,6 +513,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         """
 
         check.inst_param(asset_key, "asset_key", AssetKey)
+
+        if partitions is not None:
+            check.list_param(partitions, "partitions", of_type=str)
+            if len(partitions) == 0:
+                raise DagsterInvalidInvocationError("Must provide at least one partition in list")
 
         materialization_count_by_partition = self.instance.get_materialization_count_by_partition(
             [asset_key]
@@ -564,7 +578,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         to_asset = self._get_asset(to_asset_key)
         from_asset = self._get_asset(from_asset_key)
 
-        if not isinstance(to_asset.partitions_def, PartitionsDefinition):
+        to_partitions_def = to_asset.partitions_def
+
+        if not isinstance(to_partitions_def, PartitionsDefinition):
             raise DagsterInvalidInvocationError(
                 f"Asset key {to_asset_key} is not partitioned. Cannot get partition keys."
             )
@@ -577,21 +593,29 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         downstream_partition_key_range = (
             partition_mapping.get_downstream_partitions_for_partition_range(
                 PartitionKeyRange(partition_key, partition_key),
-                downstream_partitions_def=to_asset.partitions_def,
+                downstream_partitions_def=to_partitions_def,
                 upstream_partitions_def=from_asset.partitions_def,
             )
         )
 
-        partition_keys = to_asset.partitions_def.get_partition_keys()
+        partition_keys = to_partitions_def.get_partition_keys()
         if (
             downstream_partition_key_range.start not in partition_keys
             or downstream_partition_key_range.end not in partition_keys
         ):
-            raise DagsterInvalidInvocationError(
-                f"Mapped partition key {partition_key} to downstream partition key range "
-                f"[{downstream_partition_key_range.start}...{downstream_partition_key_range.end}] "
-                "which is not a valid range in the downstream partitions definition."
-            )
+            error_msg = f"""Mapped partition key {partition_key} to downstream partition key range
+            [{downstream_partition_key_range.start}...{downstream_partition_key_range.end}] which
+            is not a valid range in the downstream partitions definition."""
+
+            if not isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
+                raise DagsterInvalidInvocationError(error_msg)
+            else:
+                warnings.warn(error_msg)
+
+        if isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
+            return to_partitions_def.get_partition_keys_in_range(downstream_partition_key_range)  # type: ignore[attr-defined]
+
+        # Not a time-window partition definition
         downstream_partitions = partition_keys[
             partition_keys.index(downstream_partition_key_range.start) : partition_keys.index(
                 downstream_partition_key_range.end
@@ -612,15 +636,18 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 will only fetch events more recent that the EventLogRecord. If None is provided, the cursor for the AssetKey will not be updated.
         """
         cursor_dict = json.loads(self.cursor) if self.cursor else {}
-        check.dict_param(cursor_dict, "cursor_dict", key_type=AssetKey)
+        check.dict_param(cursor_dict, "cursor_dict", key_type=str)
 
-        update_dict = {
-            str(k): (_get_partition_key_from_event_log_record(v), v.storage_id)
-            if v
-            else cursor_dict.get(str(k))
-            for k, v in materialization_records_by_key.items()
-        }
-        cursor_str = json.dumps(update_dict)
+        # Use default values from cursor dictionary if not provided in materialization_records_by_key
+        cursor_dict.update(
+            {
+                str(k): (_get_partition_key_from_event_log_record(v), v.storage_id)
+                if v
+                else cursor_dict.get(str(k))
+                for k, v in materialization_records_by_key.items()
+            }
+        )
+        cursor_str = json.dumps(cursor_dict)
         self._cursor = check.opt_str_param(cursor_str, "cursor")
         self.cursor_has_been_updated = True
 
@@ -634,6 +661,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     @property
     def assets_defs_by_key(self) -> Mapping[AssetKey, AssetsDefinition]:
         return self._assets_by_key
+
+    @public  # type: ignore
+    @property
+    def asset_keys(self) -> Sequence[AssetKey]:
+        return self._asset_keys
 
 
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
@@ -1251,7 +1283,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     return
 
                 # because the materialization_fn can yield results (see _wrapped_fn in multi_asset_sensor decorator),
-                # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) == True.
+                # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) to be True.
                 # So keep track to see if we actually return any values and should update the cursor
                 runs_yielded = False
                 if inspect.isgenerator(result) or isinstance(result, list):

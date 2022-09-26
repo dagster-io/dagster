@@ -222,3 +222,25 @@ def cross_repo_success_job_sensor(context):
             }
         },
     )
+
+
+@run_status_sensor(
+    monitor_all_repositories=True,
+    request_job=status_job,
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def instance_success_sensor(context):
+    # to avoid an infinite loop on the success of status_job
+    if context.dagster_run.pipeline_name != status_job.name:
+        return RunRequest(
+            run_key=None,
+            run_config={
+                "ops": {
+                    "status_printer": {
+                        "config": {
+                            "message": f"{context.dagster_run.pipeline_name} job succeeded!!!"
+                        }
+                    }
+                }
+            },
+        )

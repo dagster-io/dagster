@@ -1,11 +1,11 @@
+# isort: skip_file
 # pylint: disable=unused-variable
 
 
 def scope_dbt_cloud_job():
     # start_dbt_cloud_job
-    from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
-
     from dagster import job
+    from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
 
     # configure an operation to run the specific job
     run_dbt_nightly_sync = dbt_cloud_run_op.configured(

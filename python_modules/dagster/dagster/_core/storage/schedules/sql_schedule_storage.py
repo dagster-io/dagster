@@ -308,7 +308,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 db.or_(
                     JobTickTable.c.selector_id == selector_id,
                     db.and_(
-                        JobTickTable.c.selector_id == None,
+                        JobTickTable.c.selector_id.is_(None),
                         JobTickTable.c.job_origin_id == origin_id,
                     ),
                 )
@@ -392,7 +392,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 db.or_(
                     JobTickTable.c.selector_id == selector_id,
                     db.and_(
-                        JobTickTable.c.selector_id == None,
+                        JobTickTable.c.selector_id.is_(None),
                         JobTickTable.c.job_origin_id == origin_id,
                     ),
                 )

@@ -450,26 +450,20 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
 
 
 @schedule_cli.command(name="wipe", help="Delete the schedule history and turn off all schedules.")
-@repository_target_argument
-def schedule_wipe_command(**kwargs):
-    return execute_wipe_command(kwargs, click.echo)
+def schedule_wipe_command():
+    return execute_wipe_command(click.echo)
 
 
-def execute_wipe_command(cli_args, print_fn):
+def execute_wipe_command(print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(
-            instance, version=dagster_version, kwargs=cli_args
-        ) as external_repo:
-            check_repo_and_scheduler(external_repo, instance)
-
-            confirmation = click.prompt(
-                "Are you sure you want to turn off all schedules and delete all schedule history? Type DELETE"
-            )
-            if confirmation == "DELETE":
-                instance.wipe_all_schedules()
-                print_fn("Turned off all schedules and deleted all schedule history")
-            else:
-                print_fn("Exiting without turning off schedules or deleting schedule history")
+        confirmation = click.prompt(
+            "Are you sure you want to turn off all schedules and delete all schedule history? Type DELETE"
+        )
+        if confirmation == "DELETE":
+            instance.wipe_all_schedules()
+            print_fn("Turned off all schedules and deleted all schedule history")
+        else:
+            print_fn("Exiting without turning off schedules or deleting schedule history")
 
 
 @schedule_cli.command(name="debug", help="Debug information about the scheduler.")

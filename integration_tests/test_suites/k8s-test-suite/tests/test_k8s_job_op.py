@@ -44,6 +44,8 @@ def test_k8s_job_op(namespace, cluster_provider):
         second_op(first_op())
 
     execute_result = my_full_job.execute_in_process()
+    assert execute_result.success
+
     run_id = execute_result.dagster_run.run_id
     job_name = get_k8s_job_name(run_id, first_op.name)
     assert "HI" in _get_pod_logs(cluster_provider, job_name, namespace)
@@ -53,7 +55,34 @@ def test_k8s_job_op(namespace, cluster_provider):
 
 
 @pytest.mark.default
-def test_k8s_job_op_with_timeout(namespace, cluster_provider):
+def test_k8s_job_op_with_timeout_success(namespace, cluster_provider):
+    first_op = k8s_job_op.configured(
+        {
+            "image": "busybox",
+            "command": ["/bin/sh", "-c"],
+            "args": ["echo HI"],
+            "namespace": namespace,
+            "load_incluster_config": False,
+            "kubeconfig_file": cluster_provider.kubeconfig_file,
+            "timeout": 600,
+        },
+        name="first_op",
+    )
+
+    @job
+    def my_full_job():
+        first_op()
+
+    execute_result = my_full_job.execute_in_process()
+    assert execute_result.success
+
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, first_op.name)
+    assert "HI" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+
+@pytest.mark.default
+def test_k8s_job_op_with_timeout_fail(namespace, cluster_provider):
     timeout_op = k8s_job_op.configured(
         {
             "image": "busybox",

@@ -1,5 +1,69 @@
 # Changelog
 
+# 1.0.10 (core) / 0.16.10 (libraries)
+
+### New
+
+* Run status sensors can now monitor all runs in a Dagster Instance, rather than just runs from jobs within a single repository. You can enable this behavior by setting `monitor_all_repositories=True` in the run status sensor decorator.
+* The `run_key` argument on `RunRequest` and `run_request_for_partition` is now optional.
+* [dagster-databricks] A new “verbose_logs” config option on the databricks_pyspark_step_launcher makes it possible to silence non-critical logs from your external steps, which can be helpful for long-running, or highly parallel operations (thanks @zyd14!)
+* [dagit] It is now possible to delete a run in Dagit directly from the run page. The option is available in the dropdown menu on the top right of the page.
+* [dagit] The run timeline on the Workspace Overview page in Dagit now includes ad hoc asset materialization runs.
+
+### Bugfixes
+
+* Fixed a set of bugs in `multi_asset_sensor` where the cursor would fail to update, and materializations would be returned out of order for `latest_materialization_records_by_partition`.
+* Fixed a bug that caused failures in runs with time-partitioned asset dependencies when the PartitionsDefinition had an offset that wasn’t included in the date format. E.g. a daily-partitioned asset with an hour offset, whose date format was `%Y-%m-%d`.
+* An issue causing code loaded by file path to import repeatedly has been resolved.
+* To align with best practices, singleton comparisons throughout the codebase have been converted from (e.g.) `foo == None` to `foo is None` (thanks @chrisRedwine!).
+* [dagit] In backfill jobs, the “Partition Set” column would sometimes show an internal `__ASSET_JOB` name, rather than a comprehensible set of asset keys. This has been fixed.
+* [dagit] It is now possible to collapse all Asset Observation rows on the AssetDetails page.
+* [dagster-dbt] Fixed issue that would cause an error when loading assets from dbt projects in which a source had a “*” character in its name (e.g. BigQuery sharded tables)
+* [dagster-k8s] Fixed an issue where the `k8s_job_op` would sometimes fail if the Kubernetes job that it creates takes a long time to create a pod.
+* Fixed an issue where links to the compute logs for a run would sometimes fail to load.
+* [dagster-k8s] The `k8s_job_executor` now uses environment variables in place of CLI arguments to avoid limits on argument size with large dynamic jobs.
+
+### Documentation
+
+* Docs added to explain subsetting graph-backed assets. You can use this feature following the documentation [here](https://docs.dagster.io/concepts/assets/graph-backed-assets).
+* UI updated to reflect separate version schemes for mature core Dagster packages and less mature integration libraries
+
+# 1.0.9 (core) / 0.16.9 (libraries)
+
+### New
+
+* The `multi_asset_sensor` (experimental) now has improved capabilities to monitor asset partitions via a `latest_materialization_records_by_partition` method.
+* Performance improvements for the Partitions page in Dagit.
+
+### Bugfixes
+
+* Fixed a bug that caused the op_config argument of `dagstermill.get_context` to be ignored
+* Fixed a bug that caused errors when loading the asset details page for assets with time window partitions definitions
+* Fixed a bug where assets sometimes didn’t appear in the Asset Catalog while in Folder view.
+* [dagit] Opening the asset lineage tab no longer scrolls the page header off screen in some scenarios
+* [dagit] The asset lineage tab no longer attempts to materialize source assets included in the upstream / downstream views.
+* [dagit] The Instance page Run Timeline no longer commingles runs with the same job name in different repositories
+* [dagit] Emitting materializations with JSON metadata that cannot be parsed as JSON no longer crashes the run details page
+* [dagit] Viewing the assets related to a run no longer shows the same assets multiple times in some scenarios
+* [dagster-k8s] Fixed a bug with timeouts causing errors in `k8s_job_op`
+* [dagster-docker] Fixed a bug with Op retries causing errors with the `docker_executor`
+
+### Community Contributions
+
+* [dagster-aws] Thanks @Vivanov98 for adding the `list_objects` method to `S3FakeSession`!
+
+### Experimental
+* [dagster-airbyte] Added an experimental function to automatically generate Airbyte assets from project YAML files. For more information, see the [dagster-airbyte docs](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte).
+* [dagster-airbyte] Added the forward_logs option to `AirbyteResource`, allowing users to disble forwarding of Airbyte logs to the compute log, which can be expensive for long-running syncs.
+* [dagster-airbyte] Added the ability to generate Airbyte assets for [basic normalization](https://docs.airbyte.com/understanding-airbyte/basic-normalization/#nesting) tables generated as part of a sync.
+
+### Documentation
+
+* [dagster-dbt] Added a new guide focused on the dbt Cloud integration.
+* Fixed a bug that was hiding display of some public methods in the API docs.
+* Added documentation for [managing full deployments in Dagster Cloud](https://docs.dagster.io/dagster-cloud/developing-testing/managing-deployments), including a [reference for deployment configuration options](https://docs.dagster.io/dagster-cloud/developing-testing/deployment-settings-reference).
+
+
 # 1.0.8 (core) / 0.16.8 (libraries)
 
 ### New

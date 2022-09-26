@@ -18,10 +18,11 @@ import {AssetKey} from '../assets/types';
 
 const MAX_ASSET_TAGS = 3;
 
-export const RunAssetKeyTags: React.FC<{
+export const AssetKeyTagCollection: React.FC<{
   assetKeys: AssetKey[] | null;
+  modalTitle?: string;
   clickableTags?: boolean;
-}> = React.memo(({assetKeys, clickableTags}) => {
+}> = React.memo(({assetKeys, clickableTags, modalTitle = 'Assets in Run'}) => {
   const [showMore, setShowMore] = React.useState(false);
 
   if (!assetKeys || !assetKeys.length) {
@@ -50,7 +51,7 @@ export const RunAssetKeyTags: React.FC<{
           </ButtonLink>
         )}
         <Dialog
-          title="Assets in Run"
+          title={modalTitle}
           onClose={() => setShowMore(false)}
           style={{minWidth: '400px', maxWidth: '80vw', maxHeight: '70vh'}}
           isOpen={showMore}

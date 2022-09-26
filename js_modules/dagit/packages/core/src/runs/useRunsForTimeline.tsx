@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {InstigationStatus, RunsFilter, RunStatus} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -40,8 +41,8 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
 
   const {unterminated, terminated, workspaceOrError} = data || previousData || {};
 
-  const runsByJob = React.useMemo(() => {
-    const map: {[jobName: string]: TimelineRun[]} = {};
+  const runsByJobKey = React.useMemo(() => {
+    const map: {[jobKey: string]: TimelineRun[]} = {};
     const now = Date.now();
 
     // fetch all the runs in the given range
@@ -50,6 +51,9 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
       ...(terminated?.__typename === 'Runs' ? terminated.results : []),
     ].forEach((run) => {
       if (!run.startTime) {
+        return;
+      }
+      if (!run.repositoryOrigin) {
         return;
       }
 
@@ -65,8 +69,16 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
         return;
       }
 
-      map[run.pipelineName] = [
-        ...(map[run.pipelineName] || []),
+      const runJobKey = makeJobKey(
+        {
+          name: run.repositoryOrigin.repositoryName,
+          location: run.repositoryOrigin.repositoryLocationName,
+        },
+        run.pipelineName,
+      );
+
+      map[runJobKey] = [
+        ...(map[runJobKey] || []),
         {
           id: run.id,
           status: run.status,
@@ -100,8 +112,6 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
         );
 
         for (const pipeline of repository.pipelines) {
-          const jobKey = makeJobKey(repoAddress, pipeline.name);
-
           const schedules = (repository.schedules || []).filter(
             (schedule) => schedule.pipelineName === pipeline.name,
           );
@@ -123,11 +133,16 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
             }
           }
 
-          const jobRuns = runsByJob[pipeline.name] || [];
+          const isAdHoc = isHiddenAssetGroupJob(pipeline.name);
+          const jobKey = makeJobKey(repoAddress, pipeline.name);
+          const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
+
+          const jobRuns = runsByJobKey[jobKey] || [];
           if (jobTicks.length || jobRuns.length) {
             jobs.push({
               key: jobKey,
-              jobName: pipeline.name,
+              jobName,
+              jobType: isAdHoc ? 'asset' : 'job',
               repoAddress,
               path: workspacePipelinePath({
                 repoName: repoAddress.name,
@@ -136,7 +151,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
                 isJob: pipeline.isJob,
               }),
               runs: [...jobRuns, ...jobTicks],
-            });
+            } as TimelineJob);
           }
         }
       }
@@ -148,7 +163,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
     }, {} as {[jobKey: string]: number});
 
     return jobs.sort((a, b) => earliest[a.key] - earliest[b.key]);
-  }, [workspaceOrError, runsByJob, start, end]);
+  }, [workspaceOrError, runsByJobKey, start, end]);
 
   return {
     jobs: jobsWithRuns,
@@ -166,6 +181,11 @@ const RUN_TIMELINE_QUERY = gql`
         results {
           id
           pipelineName
+          repositoryOrigin {
+            id
+            repositoryName
+            repositoryLocationName
+          }
           ...RunTimeFragment
         }
       }
@@ -175,6 +195,11 @@ const RUN_TIMELINE_QUERY = gql`
         results {
           id
           pipelineName
+          repositoryOrigin {
+            id
+            repositoryName
+            repositoryLocationName
+          }
           ...RunTimeFragment
         }
       }

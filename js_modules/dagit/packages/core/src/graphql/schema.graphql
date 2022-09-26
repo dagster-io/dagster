@@ -1704,6 +1704,7 @@ type PartitionBackfill {
   numRequested: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]!
+  assetSelection: [AssetKey!]
   partitionSetName: String!
   timestamp: Float!
   partitionSet: PartitionSet

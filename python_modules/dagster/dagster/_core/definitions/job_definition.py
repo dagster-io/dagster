@@ -567,9 +567,25 @@ class JobDefinition(PipelineDefinition):
     def run_request_for_partition(
         self,
         partition_key: str,
-        run_key: Optional[str],
+        run_key: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
     ) -> RunRequest:
+        """
+        Creates a RunRequest object for a run that processes the given partition.
+
+        Args:
+            partition_key: The key of the partition to request a run for.
+            run_key (Optional[str]): A string key to identify this launched run. For sensors, ensures that
+                only one run is created per run key across all sensor evaluations.  For schedules,
+                ensures that one run is created per tick, across failure recoveries. Passing in a `None`
+                value means that a run will always be launched per evaluation.
+            tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
+                to the launched run.
+
+        Returns:
+            RunRequest: an object that requests a run to process the given partition.
+        """
         partition_set = self.get_partition_set_def()
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
@@ -583,7 +599,11 @@ class JobDefinition(PipelineDefinition):
         )
 
         return RunRequest(
-            run_key=run_key, run_config=run_config, tags=run_request_tags, job_name=self.name
+            run_key=run_key,
+            run_config=run_config,
+            tags=run_request_tags,
+            job_name=self.name,
+            asset_selection=asset_selection,
         )
 
     @public

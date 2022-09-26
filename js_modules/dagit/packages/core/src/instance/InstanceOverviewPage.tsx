@@ -167,9 +167,7 @@ export const InstanceOverviewPage = () => {
         (r) =>
           r.repository.name === repoAddress.name &&
           r.repositoryLocation.name === repoAddress.location,
-      ) &&
-      name.toLocaleLowerCase().includes(searchToLower) &&
-      !isHiddenAssetGroupJob(name);
+      ) && name.toLocaleLowerCase().includes(searchToLower);
 
     const {failed, inProgress, queued, succeeded, neverRan} = bucketed;
     return {
@@ -216,6 +214,18 @@ export const InstanceOverviewPage = () => {
     return new Set(jobKeys);
   }, [filteredJobs]);
 
+  const filteredJobsMinusHiddenAssetGroupJobs = React.useMemo(() => {
+    const filterHiddenAssetGroupJobs = ({name}: JobItem) => !isHiddenAssetGroupJob(name);
+    const {failed, inProgress, queued, succeeded, neverRan} = filteredJobs;
+    return {
+      failed: failed.filter(filterHiddenAssetGroupJobs),
+      inProgress: inProgress.filter(filterHiddenAssetGroupJobs),
+      queued: queued.filter(filterHiddenAssetGroupJobs),
+      succeeded: succeeded.filter(filterHiddenAssetGroupJobs),
+      neverRan: neverRan.filter(filterHiddenAssetGroupJobs),
+    };
+  }, [filteredJobs]);
+
   const filteredJobsWithRuns = React.useMemo(() => {
     const appendRuns = (jobItem: JobItem) => {
       const {name, repoAddress} = jobItem;
@@ -224,7 +234,7 @@ export const InstanceOverviewPage = () => {
       return {...jobItem, runs: [...matchingRuns].reverse()};
     };
 
-    const {failed, inProgress, queued, succeeded, neverRan} = filteredJobs;
+    const {failed, inProgress, queued, succeeded, neverRan} = filteredJobsMinusHiddenAssetGroupJobs;
     return {
       failed: failed.map(appendRuns),
       inProgress: inProgress.map(appendRuns),
@@ -232,7 +242,7 @@ export const InstanceOverviewPage = () => {
       succeeded: succeeded.map(appendRuns),
       neverRan: neverRan.map(appendRuns),
     };
-  }, [lastTenRunsFlattened, filteredJobs]);
+  }, [lastTenRunsFlattened, filteredJobsMinusHiddenAssetGroupJobs]);
 
   if (!data || Object.keys(data).length === 0) {
     return (
@@ -343,14 +353,9 @@ const OVERVIEW_JOB_FRAGMENT = gql`
     isJob
     runs(limit: 1) {
       id
-      mode
       runId
       status
       ...RunTimeFragment
-    }
-    modes {
-      id
-      name
     }
   }
 

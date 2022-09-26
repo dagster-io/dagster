@@ -958,7 +958,7 @@ class SqlEventLogStorage(EventLogStorage):
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
             query = query.where(
                 db.or_(
-                    AssetKeyTable.c.wipe_timestamp == None,
+                    AssetKeyTable.c.wipe_timestamp.is_(None),
                     AssetKeyTable.c.last_materialization_timestamp > AssetKeyTable.c.wipe_timestamp,
                 )
             )

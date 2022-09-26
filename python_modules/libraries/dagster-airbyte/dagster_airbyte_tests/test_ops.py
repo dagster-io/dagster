@@ -1,3 +1,4 @@
+import pytest
 import responses
 from dagster_airbyte import AirbyteOutput, airbyte_resource, airbyte_sync_op
 
@@ -6,12 +7,18 @@ from dagster import job, op
 DEFAULT_CONNECTION_ID = "02087b3c-2037-4db9-ae7b-4a8e45dc20b1"
 
 
-def test_airbyte_sync_op():
+@pytest.mark.parametrize(
+    "forward_logs",
+    [True, False],
+)
+def test_airbyte_sync_op(forward_logs):
 
     ab_host = "some_host"
     ab_port = "8000"
     ab_url = f"http://{ab_host}:{ab_port}/api/v1"
-    ab_resource = airbyte_resource.configured({"host": ab_host, "port": ab_port})
+    ab_resource = airbyte_resource.configured(
+        {"host": ab_host, "port": ab_port, "forward_logs": forward_logs}
+    )
 
     @op
     def foo_op():
@@ -38,8 +45,23 @@ def test_airbyte_sync_op():
 
         rsps.add(rsps.POST, f"{ab_url}/connections/get", json={"name": "some_connection"})
         rsps.add(rsps.POST, f"{ab_url}/connections/sync", json={"job": {"id": 1}})
-        rsps.add(rsps.POST, f"{ab_url}/jobs/get", json={"job": {"id": 1, "status": "running"}})
-        rsps.add(rsps.POST, f"{ab_url}/jobs/get", json={"job": {"id": 1, "status": "succeeded"}})
+
+        if forward_logs:
+            rsps.add(rsps.POST, f"{ab_url}/jobs/get", json={"job": {"id": 1, "status": "running"}})
+            rsps.add(
+                rsps.POST, f"{ab_url}/jobs/get", json={"job": {"id": 1, "status": "succeeded"}}
+            )
+        else:
+            rsps.add(
+                rsps.POST,
+                f"{ab_url}/jobs/list",
+                json={"jobs": [{"job": {"id": 1, "status": "running"}}]},
+            )
+            rsps.add(
+                rsps.POST,
+                f"{ab_url}/jobs/list",
+                json={"jobs": [{"job": {"id": 1, "status": "succeeded"}}]},
+            )
 
         result = airbyte_sync_job.execute_in_process()
         assert result.output_for_node("airbyte_sync_op") == AirbyteOutput(
