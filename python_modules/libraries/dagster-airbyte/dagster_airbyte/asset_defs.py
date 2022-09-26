@@ -66,13 +66,13 @@ def _build_airbyte_asset_defn_metadata(
     if normalization_tables:
         for base_table, derived_tables in normalization_tables.items():
             for derived_table in derived_tables:
-                internal_deps[derived_table] = frozenset(
+                internal_deps[AssetKey(asset_key_prefix + [derived_table])] = frozenset(
                     {AssetKey(asset_key_prefix + [base_table])}
                 )
 
     # All non-normalization tables depend on any user-provided upstream assets
     for table in destination_tables:
-        internal_deps[table] = upstream_assets or frozenset()
+        internal_deps[AssetKey(asset_key_prefix + [table])] = upstream_assets or frozenset()
 
     first_asset_key = AssetKey(asset_key_prefix + [tables[0]])
     return AssetsDefinitionMetadata(
@@ -97,7 +97,7 @@ def _build_airbyte_assets_from_metadata(
     upstream_assets: Optional[Set[AssetKey]] = None,
 ) -> AssetsDefinition:
 
-    metadata = assets_defn_meta.metadata_by_key[assets_defn_meta.metadata_by_key.keys()[0]]
+    metadata = assets_defn_meta.metadata_by_key[list(assets_defn_meta.metadata_by_key.keys())[0]]
     connection_id = metadata["connection_id"]
     group_name = metadata["group_name"]
     destination_tables = metadata["destination_tables"]
@@ -108,11 +108,13 @@ def _build_airbyte_assets_from_metadata(
         for table_asset_key in assets_defn_meta.output_keys
     }
 
+    asset_deps = {k.path[-1]: set(v) for k, v in assets_defn_meta.asset_deps.items()}
+
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
         non_argument_deps=upstream_assets or set(),
         outs=outputs,
-        internal_asset_deps=assets_defn_meta.asset_deps,
+        internal_asset_deps=asset_deps,
         required_resource_keys={"airbyte"},
         compute_kind="airbyte",
         group_name=group_name,
