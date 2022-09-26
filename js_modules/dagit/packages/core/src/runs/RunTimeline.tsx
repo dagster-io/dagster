@@ -1,14 +1,5 @@
-import {
-  Box,
-  Colors,
-  Popover,
-  Mono,
-  FontFamily,
-  Tooltip,
-  Tag,
-  NonIdealState,
-  Icon,
-} from '@dagster-io/ui';
+import {Box, Colors, Popover, Mono, FontFamily, Tooltip, Tag, Icon, Spinner} from '@dagster-io/ui';
+import moment from 'moment-timezone';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -31,9 +22,11 @@ import {batchRunsForTimeline, RunBatch} from './batchRunsForTimeline';
 import {mergeStatusToBackground} from './mergeStatusToBackground';
 
 const ROW_HEIGHT = 32;
-const TIME_HEADER_HEIGHT = 42;
+const TIME_HEADER_HEIGHT = 32;
+const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
 const EMPTY_STATE_HEIGHT = 140;
 const LABEL_WIDTH = 320;
+const MIN_DATE_WIDTH_PCT = 10;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
 
@@ -54,6 +47,7 @@ export type TimelineJob = {
 };
 
 interface Props {
+  loading?: boolean;
   bucketByRepo?: boolean;
   jobs: TimelineJob[];
   range: [number, number];
@@ -62,7 +56,7 @@ interface Props {
 const EXPANSION_STATE_STORAGE_KEY = 'timeline-expansion-state';
 
 export const RunTimeline = (props: Props) => {
-  const {bucketByRepo = false, jobs, range} = props;
+  const {loading = false, bucketByRepo = false, jobs, range} = props;
   const [width, setWidth] = React.useState<number | null>(null);
   const {expandedKeys, onToggle} = useRepoExpansionState(EXPANSION_STATE_STORAGE_KEY);
 
@@ -80,29 +74,45 @@ export const RunTimeline = (props: Props) => {
     }
   }, []);
 
-  if (!width || !jobs.length) {
+  if (!width) {
     return (
-      <Timeline $height={TIME_HEADER_HEIGHT + EMPTY_STATE_HEIGHT} ref={containerRef}>
-        {width ? <NoRunsTimeline /> : null}
+      <Timeline $height={DATE_TIME_HEIGHT + EMPTY_STATE_HEIGHT} ref={containerRef}>
+        <div />
       </Timeline>
     );
   }
 
+  const now = Date.now();
+  const [_, end] = range;
+  const includesTicks = now <= end;
+
   if (!bucketByRepo) {
-    const height = ROW_HEIGHT * (jobs.length || 1);
+    const height = ROW_HEIGHT * jobs.length;
     return (
-      <Timeline $height={TIME_HEADER_HEIGHT + height} ref={containerRef}>
+      <Timeline $height={DATE_TIME_HEIGHT + height} ref={containerRef}>
+        <Box
+          padding={{left: 24}}
+          flex={{direction: 'column', justifyContent: 'center'}}
+          style={{fontSize: '16px', height: DATE_TIME_HEIGHT}}
+          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+        >
+          Jobs
+        </Box>
         <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
         <div>
-          {jobs.map((job, ii) => (
-            <RunTimelineRow
-              key={job.key}
-              job={job}
-              top={ii * ROW_HEIGHT + TIME_HEADER_HEIGHT}
-              range={range}
-              width={width}
-            />
-          ))}
+          {jobs.length ? (
+            jobs.map((job, ii) => (
+              <RunTimelineRow
+                key={job.key}
+                job={job}
+                top={ii * ROW_HEIGHT + DATE_TIME_HEIGHT}
+                range={range}
+                width={width}
+              />
+            ))
+          ) : (
+            <RunsEmptyOrLoading loading={loading} includesTicks={includesTicks} />
+          )}
         </div>
       </Timeline>
     );
@@ -119,7 +129,7 @@ export const RunTimeline = (props: Props) => {
     a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()),
   );
 
-  let nextTop = TIME_HEADER_HEIGHT;
+  let nextTop = DATE_TIME_HEIGHT;
   const expandedRepos = repoOrder.filter((repoKey) => expandedKeys.includes(repoKey));
   const expandedJobCount = expandedRepos.reduce(
     (accum, repoKey) => accum + buckets[repoKey].length,
@@ -131,28 +141,40 @@ export const RunTimeline = (props: Props) => {
   );
 
   return (
-    <Timeline $height={TIME_HEADER_HEIGHT + height} ref={containerRef}>
+    <Timeline $height={DATE_TIME_HEIGHT + height} ref={containerRef}>
+      <Box
+        padding={{left: 24}}
+        flex={{direction: 'column', justifyContent: 'center'}}
+        style={{fontSize: '16px', height: DATE_TIME_HEIGHT}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+      >
+        Jobs
+      </Box>
       <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
-      {repoOrder.map((repoKey) => {
-        const name = repoAddressFromPath(repoKey)?.name;
-        const jobs = buckets[repoKey];
-        const top = nextTop;
-        const expanded = expandedKeys.includes(repoKey);
-        nextTop = top + SECTION_HEADER_HEIGHT + (expanded ? jobs.length * ROW_HEIGHT : 0);
-        return (
-          <TimelineSection
-            expanded={expanded}
-            range={range}
-            top={top}
-            key={repoKey}
-            repoKey={repoKey}
-            isDuplicateRepoName={!!(name && duplicateRepoNames.has(name))}
-            jobs={buckets[repoKey]}
-            onToggle={onToggle}
-            width={width}
-          />
-        );
-      })}
+      {repoOrder.length ? (
+        repoOrder.map((repoKey) => {
+          const name = repoAddressFromPath(repoKey)?.name;
+          const jobs = buckets[repoKey];
+          const top = nextTop;
+          const expanded = expandedKeys.includes(repoKey);
+          nextTop = top + SECTION_HEADER_HEIGHT + (expanded ? jobs.length * ROW_HEIGHT : 0);
+          return (
+            <TimelineSection
+              expanded={expanded}
+              range={range}
+              top={top}
+              key={repoKey}
+              repoKey={repoKey}
+              isDuplicateRepoName={!!(name && duplicateRepoNames.has(name))}
+              jobs={buckets[repoKey]}
+              onToggle={onToggle}
+              width={width}
+            />
+          );
+        })
+      ) : (
+        <RunsEmptyOrLoading loading={loading} includesTicks={includesTicks} />
+      )}
     </Timeline>
   );
 };
@@ -267,6 +289,13 @@ const SectionHeaderContainer = styled.div<{$top: number}>`
   ${({$top}) => `transform: translateY(${$top}px);`}
 `;
 
+type DateMarker = {
+  key: string;
+  label: React.ReactNode;
+  left: number;
+  width: number;
+};
+
 type TimeMarker = {
   key: string;
   label: React.ReactNode;
@@ -283,7 +312,56 @@ const TimeDividers = (props: TimeDividersProps) => {
   const {interval, range, height} = props;
   const [start, end] = range;
   const locale = navigator.language;
-  const [timezone] = React.useContext(TimezoneContext);
+  const [tz] = React.useContext(TimezoneContext);
+  const timeZone = tz === 'Automatic' ? browserTimezone() : tz;
+
+  const dateFormat = React.useMemo(() => {
+    return new Intl.DateTimeFormat(locale, {
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone,
+    });
+  }, [locale, timeZone]);
+
+  const timeFormat = React.useMemo(() => {
+    return new Intl.DateTimeFormat(locale, {
+      hour: 'numeric',
+      timeZone,
+    });
+  }, [locale, timeZone]);
+
+  const dateMarkers: DateMarker[] = React.useMemo(() => {
+    const totalTime = end - start;
+    const startAtTimezone = moment.tz(start, timeZone);
+
+    const dayBoundaries = [];
+    const cursor = startAtTimezone.startOf('day');
+
+    while (cursor.valueOf() < end) {
+      const dayStart = cursor.valueOf();
+      cursor.add(1, 'day');
+      const dayEnd = cursor.valueOf();
+      dayBoundaries.push({dayStart, dayEnd});
+    }
+
+    return dayBoundaries.map(({dayStart, dayEnd}) => {
+      const date = new Date(dayStart);
+      const startLeftMsec = dayStart - start;
+      const dayLength = dayEnd - dayStart; // This can vary with DST
+      const endRight = startLeftMsec + dayLength;
+
+      const left = Math.max(0, (startLeftMsec / totalTime) * 100);
+      const right = Math.min(100, (endRight / totalTime) * 100);
+
+      return {
+        label: dateFormat.format(date),
+        key: date.toString(),
+        left,
+        width: right - left,
+      };
+    });
+  }, [dateFormat, end, start, timeZone]);
 
   const timeMarkers: TimeMarker[] = React.useMemo(() => {
     const totalTime = end - start;
@@ -294,10 +372,7 @@ const TimeDividers = (props: TimeDividersProps) => {
       .map((_, ii) => {
         const time = firstMarker + ii * interval;
         const date = new Date(time);
-        const label = date.toLocaleString(locale, {
-          hour: '2-digit',
-          timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
-        });
+        const label = timeFormat.format(date).replace(' ', '');
         return {
           label,
           key: date.toString(),
@@ -305,7 +380,7 @@ const TimeDividers = (props: TimeDividersProps) => {
         };
       })
       .filter((marker) => marker.left > 0);
-  }, [end, start, interval, locale, timezone]);
+  }, [end, start, interval, timeFormat]);
 
   const now = Date.now();
   const nowLeft = `${(((now - start) / (end - start)) * 100).toPrecision(3)}%`;
@@ -313,10 +388,25 @@ const TimeDividers = (props: TimeDividersProps) => {
   return (
     <DividerContainer style={{height: `${height}px`}}>
       <DividerLabels>
+        {dateMarkers.map((marker) => (
+          <DateLabel
+            key={marker.key}
+            style={{
+              left: `${marker.left.toPrecision(3)}%`,
+              width: `${marker.width.toPrecision(3)}%`,
+            }}
+          >
+            {marker.width > MIN_DATE_WIDTH_PCT ? (
+              <Box flex={{justifyContent: 'center'}}>{marker.label}</Box>
+            ) : null}
+          </DateLabel>
+        ))}
+      </DividerLabels>
+      <DividerLabels>
         {timeMarkers.map((marker) => (
-          <DividerLabel key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}}>
+          <TimeLabel key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}}>
             {marker.label}
-          </DividerLabel>
+          </TimeLabel>
         ))}
       </DividerLabels>
       <DividerLines>
@@ -341,21 +431,33 @@ const DividerContainer = styled.div`
   left: ${LABEL_WIDTH}px;
   right: 0;
   font-family: ${FontFamily.monospace};
-  color: ${Colors.Gray400};
+  color: ${Colors.Gray800};
 `;
 
 const DividerLabels = styled.div`
   display: flex;
   align-items: center;
+  box-shadow: inset 1px 0 0 ${Colors.KeylineGray}, inset 0 1px 0 ${Colors.KeylineGray},
+    inset -1px 0 0 ${Colors.KeylineGray};
   height: ${TIME_HEADER_HEIGHT}px;
   position: relative;
   user-select: none;
+  font-size: 12px;
   width: 100%;
+  overflow: hidden;
 `;
 
-const DividerLabel = styled.div`
+const DateLabel = styled.div`
   position: absolute;
-  transform: translateX(-50%);
+  padding: 8px 0;
+  box-shadow: inset 1px 0 0 ${Colors.KeylineGray};
+  white-space: nowrap;
+`;
+
+const TimeLabel = styled.div`
+  position: absolute;
+  padding: 8px;
+  box-shadow: inset 1px 0 0 ${Colors.KeylineGray};
   white-space: nowrap;
 `;
 
@@ -470,15 +572,36 @@ const RunTimelineRow = ({
   );
 };
 
-const NoRunsTimeline = () => (
-  <Box padding={48}>
-    <NonIdealState
-      icon="schedule"
-      title="No runs found"
-      description="No runs or upcoming runs found for this time window"
-    />
-  </Box>
-);
+const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
+  const {loading, includesTicks} = props;
+
+  const content = () => {
+    if (loading) {
+      return (
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <Spinner purpose="body-text" />
+          {includesTicks ? 'Loading runs and scheduled ticks' : 'Loading runs'}
+        </Box>
+      );
+    }
+
+    if (includesTicks) {
+      return <span>No runs or scheduled ticks in this time period.</span>;
+    }
+
+    return <span>No runs in this time period.</span>;
+  };
+
+  return (
+    <Box
+      padding={{vertical: 24}}
+      flex={{direction: 'row', justifyContent: 'center'}}
+      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+    >
+      {content()}
+    </Box>
+  );
+};
 
 const Timeline = styled.div<{$height: number}>`
   ${({$height}) => `height: ${$height}px;`}
