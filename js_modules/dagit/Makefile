@@ -1,5 +1,5 @@
 dev_webapp:
-	REACT_APP_BACKEND_ORIGIN="http://127.0.0.1:3000" yarn start
+	REACT_APP_BACKEND_ORIGIN="http://127.0.0.1:3333" yarn start
 
 generate-graphql:
 	yarn workspace @dagster-io/dagit-core generate-graphql
