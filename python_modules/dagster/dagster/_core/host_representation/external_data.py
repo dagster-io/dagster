@@ -866,8 +866,6 @@ def external_repository_data_from_def(
 ) -> ExternalRepositoryData:
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
-    repository_def.refresh_external_data()
-
     pipelines = repository_def.get_all_pipelines()
     if defer_snapshots:
         pipeline_datas = None
