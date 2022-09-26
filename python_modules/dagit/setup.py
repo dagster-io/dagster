@@ -53,7 +53,10 @@ if __name__ == "__main__":
             "starlette",
             "uvicorn[standard]",
         ],
-        extras_require={"notebook": ["nbconvert"]},  # notebooks support
+        extras_require={
+            "notebook": ["nbconvert"],  # notebooks support
+            "test": ["starlette[full]"],  # TestClient deps in full
+        },
         entry_points={
             "console_scripts": ["dagit = dagit.cli:main", "dagit-debug = dagit.debug:main"]
         },
