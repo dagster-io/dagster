@@ -5,7 +5,7 @@ from typing import List, NamedTuple, Optional, OrderedDict, Tuple, Union
 
 import click
 
-from dagster._core.definitions.assets_lazy import LazyAssetsDefinition
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
 
 class ManagedStackError(enum.Enum):
@@ -177,7 +177,7 @@ class ManagedStackDiff(
 ManagedStackCheckResult = Union[ManagedStackDiff, ManagedStackError]
 
 
-class ManagedStackAssetsDefinition(LazyAssetsDefinition):
+class ManagedStackAssetsDefinition(CacheableAssetsDefinition):
     def __init__(self, unique_id: str):
         super().__init__(unique_id)
 
