@@ -9,7 +9,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event as ThreadingEventType
 from time import sleep
-from typing import NamedTuple
+from typing import List, NamedTuple, cast
 
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -57,10 +57,14 @@ from .impl import (
     start_run_in_subprocess,
 )
 from .types import (
+    ApplyStackChangesRequest,
+    ApplyStackChangesResult,
     CanCancelExecutionRequest,
     CanCancelExecutionResult,
     CancelExecutionRequest,
     CancelExecutionResult,
+    CheckStackSyncRequest,
+    CheckStackSyncResult,
     ExecuteExternalPipelineArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
@@ -619,6 +623,90 @@ class DagsterApiServer(DagsterApiServicer):
                     )
                 )
             )
+
+    def CheckStackSync(self, request, _context):
+        from dagster._experimental.managed_stacks import (
+            ManagedStackAssetsDefinition,
+            ManagedStackDiff,
+        )
+
+        serializable_error_info = None
+        response = ""
+        try:
+            check_stack_sync_request = cast(
+                CheckStackSyncRequest,
+                check.inst(
+                    deserialize_json_to_dagster_namedtuple(
+                        request.serialized_check_stack_sync_request
+                    ),
+                    CheckStackSyncRequest,
+                ),
+            )
+            recon_repo = self._recon_repository_from_origin(
+                check_stack_sync_request.repository_origin
+            )
+            definition = recon_repo.get_definition()
+            for stack in cast(
+                List[ManagedStackAssetsDefinition],
+                definition._repository_data._managed_stacks,
+            ):
+                result = stack.check()
+                if isinstance(result, ManagedStackDiff):
+                    response += "\n" + str(result)
+                else:
+                    response += "\n" + str(result)
+        except:
+            serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
+
+        return api_pb2.CheckStackSyncResult(
+            serialized_check_stack_sync_result=serialize_dagster_namedtuple(
+                CheckStackSyncResult(
+                    response=response, serializable_error_info=serializable_error_info
+                )
+            )
+        )
+
+    def ApplyStackChanges(self, request, _context):
+        from dagster._experimental.managed_stacks import (
+            ManagedStackAssetsDefinition,
+            ManagedStackDiff,
+        )
+
+        serializable_error_info = None
+        response = ""
+        try:
+            apply_stack_changes_request = cast(
+                ApplyStackChangesRequest,
+                check.inst(
+                    deserialize_json_to_dagster_namedtuple(
+                        request.serialized_apply_stack_changes_request
+                    ),
+                    ApplyStackChangesRequest,
+                ),
+            )
+            recon_repo = self._recon_repository_from_origin(
+                apply_stack_changes_request.repository_origin
+            )
+            definition = recon_repo.get_definition()
+            for stack in cast(
+                List[ManagedStackAssetsDefinition],
+                definition._repository_data._managed_stacks,
+            ):
+                result = stack.apply()
+                if isinstance(result, ManagedStackDiff):
+                    response += "\n" + str(result)
+                else:
+                    response += "\n" + str(result)
+        except:
+            serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
+
+        return api_pb2.ApplyStackChangesResult(
+            serialized_apply_stack_changes_result=serialize_dagster_namedtuple(
+                ApplyStackChangesResult(
+                    response=response, serializable_error_info=serializable_error_info
+                )
+            )
+        )
 
     def CancelExecution(self, request, _context):
         success = False

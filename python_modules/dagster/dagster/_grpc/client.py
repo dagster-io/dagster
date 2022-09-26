@@ -3,7 +3,7 @@ import subprocess
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Iterator, Optional, cast
 
 import grpc
 from grpc_health.v1 import health_pb2
@@ -16,14 +16,18 @@ from dagster._core.events import EngineEventData
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import serialize_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .__generated__ import DagsterApiStub, api_pb2
 from .server import GrpcServerProcess
 from .types import (
+    ApplyStackChangesRequest,
+    ApplyStackChangesResult,
     CanCancelExecutionRequest,
     CancelExecutionRequest,
+    CheckStackSyncRequest,
+    CheckStackSyncResult,
     ExecuteExternalPipelineArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
@@ -349,6 +353,34 @@ class DagsterGrpcClient:
     def shutdown_server(self, timeout=15):
         res = self._query("ShutdownServer", api_pb2.Empty, timeout=timeout)
         return res.serialized_shutdown_server_result
+
+    def check_stack_sync(self, check_stack_sync: CheckStackSyncRequest) -> CheckStackSyncResult:
+        check.inst_param(check_stack_sync, "check_stack_sync", CheckStackSyncRequest)
+        res = self._query(
+            "CheckStackSync",
+            api_pb2.CheckStackSyncRequest,
+            serialized_check_stack_sync_request=serialize_dagster_namedtuple(check_stack_sync),
+        )
+        return cast(
+            CheckStackSyncResult,
+            deserialize_json_to_dagster_namedtuple(res.serialized_check_stack_sync_result),
+        )
+
+    def apply_stack_changes(
+        self, apply_stack_changes: ApplyStackChangesRequest
+    ) -> ApplyStackChangesResult:
+        check.inst_param(apply_stack_changes, "apply_stack_changes", ApplyStackChangesRequest)
+        res = self._query(
+            "ApplyStackChanges",
+            api_pb2.ApplyStackChangesRequest,
+            serialized_apply_stack_changes_request=serialize_dagster_namedtuple(
+                apply_stack_changes
+            ),
+        )
+        return cast(
+            ApplyStackChangesResult,
+            deserialize_json_to_dagster_namedtuple(res.serialized_apply_stack_changes_result),
+        )
 
     def cancel_execution(self, cancel_execution_request):
         check.inst_param(

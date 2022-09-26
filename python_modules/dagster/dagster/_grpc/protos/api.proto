@@ -24,6 +24,8 @@ service DagsterApi {
   rpc ExternalSensorExecution (ExternalSensorExecutionRequest) returns (stream StreamingChunkEvent) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
+  rpc CheckStackSync (CheckStackSyncRequest) returns (CheckStackSyncResult) {}
+  rpc ApplyStackChanges (ApplyStackChangesRequest) returns (ApplyStackChangesResult) {}
   rpc CanCancelExecution (CanCancelExecutionRequest) returns (CanCancelExecutionReply) {}
   rpc StartRun (StartRunRequest) returns (StartRunReply) {}
   rpc GetCurrentImage (Empty) returns (GetCurrentImageReply) {}
@@ -149,6 +151,22 @@ message CancelExecutionRequest {
 
 message CancelExecutionReply {
   string serialized_cancel_execution_result = 1;
+}
+
+message CheckStackSyncRequest {
+  string serialized_check_stack_sync_request = 1;
+}
+
+message CheckStackSyncResult {
+  string serialized_check_stack_sync_result = 1;
+}
+
+message ApplyStackChangesRequest {
+  string serialized_apply_stack_changes_request = 1;
+}
+
+message ApplyStackChangesResult {
+  string serialized_apply_stack_changes_result = 1;
 }
 
 message CanCancelExecutionRequest {

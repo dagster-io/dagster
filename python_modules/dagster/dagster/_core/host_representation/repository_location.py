@@ -52,7 +52,11 @@ from dagster._grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster._grpc.types import GetCurrentImageResult
+from dagster._grpc.types import (
+    ApplyStackChangesRequest,
+    CheckStackSyncRequest,
+    GetCurrentImageResult,
+)
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils import merge_dicts
@@ -151,6 +155,14 @@ class RepositoryLocation(AbstractContextManager):
         """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
         access to the underlying PipelineDefinition. Callsites should likely use
         `get_external_pipeline` instead."""
+
+    @abstractmethod
+    def check_stack_sync(self, origin):
+        pass
+
+    @abstractmethod
+    def apply_stack_changes(self, origin):
+        pass
 
     @abstractmethod
     def get_external_partition_config(
@@ -650,6 +662,12 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     @property
     def use_ssl(self) -> bool:
         return self._use_ssl
+
+    def check_stack_sync(self, origin):
+        return self.client.check_stack_sync(CheckStackSyncRequest(origin))
+
+    def apply_stack_changes(self, origin):
+        return self.client.apply_stack_changes(ApplyStackChangesRequest(origin))
 
     def _reload_current_image(self) -> Optional[str]:
         return deserialize_as(

@@ -117,6 +117,16 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.CancelExecutionRequest.SerializeToString,
             response_deserializer=api__pb2.CancelExecutionReply.FromString,
         )
+        self.CheckStackSync = channel.unary_unary(
+            "/api.DagsterApi/CheckStackSync",
+            request_serializer=api__pb2.CheckStackSyncRequest.SerializeToString,
+            response_deserializer=api__pb2.CheckStackSyncResult.FromString,
+        )
+        self.ApplyStackChanges = channel.unary_unary(
+            "/api.DagsterApi/ApplyStackChanges",
+            request_serializer=api__pb2.ApplyStackChangesRequest.SerializeToString,
+            response_deserializer=api__pb2.ApplyStackChangesResult.FromString,
+        )
         self.CanCancelExecution = channel.unary_unary(
             "/api.DagsterApi/CanCancelExecution",
             request_serializer=api__pb2.CanCancelExecutionRequest.SerializeToString,
@@ -251,6 +261,18 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
+    def CheckStackSync(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def ApplyStackChanges(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
     def CanCancelExecution(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -366,6 +388,16 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.CancelExecution,
             request_deserializer=api__pb2.CancelExecutionRequest.FromString,
             response_serializer=api__pb2.CancelExecutionReply.SerializeToString,
+        ),
+        "CheckStackSync": grpc.unary_unary_rpc_method_handler(
+            servicer.CheckStackSync,
+            request_deserializer=api__pb2.CheckStackSyncRequest.FromString,
+            response_serializer=api__pb2.CheckStackSyncResult.SerializeToString,
+        ),
+        "ApplyStackChanges": grpc.unary_unary_rpc_method_handler(
+            servicer.ApplyStackChanges,
+            request_deserializer=api__pb2.ApplyStackChangesRequest.FromString,
+            response_serializer=api__pb2.ApplyStackChangesResult.SerializeToString,
         ),
         "CanCancelExecution": grpc.unary_unary_rpc_method_handler(
             servicer.CanCancelExecution,
@@ -932,6 +964,64 @@ class DagsterApi(object):
             "/api.DagsterApi/CancelExecution",
             api__pb2.CancelExecutionRequest.SerializeToString,
             api__pb2.CancelExecutionReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def CheckStackSync(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/CheckStackSync",
+            api__pb2.CheckStackSyncRequest.SerializeToString,
+            api__pb2.CheckStackSyncResult.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ApplyStackChanges(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/ApplyStackChanges",
+            api__pb2.ApplyStackChangesRequest.SerializeToString,
+            api__pb2.ApplyStackChangesResult.FromString,
             options,
             channel_credentials,
             insecure,

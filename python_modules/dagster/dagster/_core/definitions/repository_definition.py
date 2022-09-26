@@ -476,6 +476,11 @@ class RepositoryData(ABC):
 T = TypeVar("T")
 Resolvable = Callable[[], T]
 
+import typing
+
+if typing.TYPE_CHECKING:
+    from dagster._experimental.managed_stacks import ManagedStackAssetsDefinition
+
 
 class CachingRepositoryData(RepositoryData):
     """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
@@ -494,6 +499,7 @@ class CachingRepositoryData(RepositoryData):
         sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
         source_assets_by_key: Mapping[AssetKey, SourceAsset],
         assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
+        managed_stacks: List["ManagedStackAssetsDefinition"],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -545,6 +551,8 @@ class CachingRepositoryData(RepositoryData):
         check.mapping_param(
             assets_defs_by_key, "assets_defs_by_key", key_type=AssetKey, value_type=AssetsDefinition
         )
+
+        self._managed_stacks = managed_stacks
 
         self._pipelines = _CacheingDefinitionIndex(
             PipelineDefinition,
@@ -695,6 +703,8 @@ class CachingRepositoryData(RepositoryData):
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     ) -> "CachingRepositoryData":
+        from dagster._experimental.managed_stacks import ManagedStackAssetsDefinition
+
         """Static constructor.
 
         Args:
@@ -713,8 +723,11 @@ class CachingRepositoryData(RepositoryData):
         assets_defs: List[AssetsDefinition] = []
         asset_keys: Set[AssetKey] = set()
         source_assets: List[SourceAsset] = []
+        managed_stacks: List[ManagedStackAssetsDefinition] = []
         combined_asset_group = None
         for definition in repository_definitions:
+            if isinstance(definition, ManagedStackAssetsDefinition):
+                managed_stacks.append(definition)
             if isinstance(definition, PipelineDefinition):
                 if (
                     definition.name in pipelines_or_jobs
@@ -871,6 +884,7 @@ class CachingRepositoryData(RepositoryData):
             sensors=sensors,
             source_assets_by_key=source_assets_by_key,
             assets_defs_by_key=assets_defs_by_key,
+            managed_stacks=managed_stacks,
         )
 
     def get_pipeline_names(self) -> List[str]:

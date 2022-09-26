@@ -585,6 +585,82 @@ class ShutdownServerResult(
 
 
 @whitelist_for_serdes
+class CheckStackSyncRequest(
+    NamedTuple(
+        "_CheckStackSyncRequest",
+        [
+            ("repository_origin", ExternalRepositoryOrigin),
+        ],
+    )
+):
+    def __new__(cls, repository_origin: str):
+        return super(CheckStackSyncRequest, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, "repository_origin", ExternalRepositoryOrigin
+            ),
+        )
+
+
+@whitelist_for_serdes
+class CheckStackSyncResult(
+    NamedTuple(
+        "_CheckStackSyncResult",
+        [
+            ("response", str),
+            ("serializable_error_info", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(cls, response: str, serializable_error_info: Optional[SerializableErrorInfo]):
+        return super(CheckStackSyncResult, cls).__new__(
+            cls,
+            response=check.str_param(response, "response"),
+            serializable_error_info=check.opt_inst_param(
+                serializable_error_info, "serializable_error_info", SerializableErrorInfo
+            ),
+        )
+
+
+@whitelist_for_serdes
+class ApplyStackChangesRequest(
+    NamedTuple(
+        "_ApplyStackChangesRequest",
+        [
+            ("repository_origin", ExternalRepositoryOrigin),
+        ],
+    )
+):
+    def __new__(cls, repository_origin: str):
+        return super(ApplyStackChangesRequest, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, "repository_origin", ExternalRepositoryOrigin
+            ),
+        )
+
+
+@whitelist_for_serdes
+class ApplyStackChangesResult(
+    NamedTuple(
+        "_ApplyStackChangesResult",
+        [
+            ("response", str),
+            ("serializable_error_info", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(cls, response: str, serializable_error_info: Optional[SerializableErrorInfo]):
+        return super(ApplyStackChangesResult, cls).__new__(
+            cls,
+            response=check.str_param(response, "response"),
+            serializable_error_info=check.opt_inst_param(
+                serializable_error_info, "serializable_error_info", SerializableErrorInfo
+            ),
+        )
+
+
+@whitelist_for_serdes
 class CancelExecutionRequest(NamedTuple("_CancelExecutionRequest", [("run_id", str)])):
     def __new__(cls, run_id: str):
         return super(CancelExecutionRequest, cls).__new__(
