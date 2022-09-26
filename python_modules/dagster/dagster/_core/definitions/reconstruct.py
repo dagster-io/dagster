@@ -89,14 +89,7 @@ class ReconstructableRepository(
     def with_repository_metadata(
         self, metadata: Optional["RepositoryMetadata"]
     ) -> "ReconstructableRepository":
-        return ReconstructableRepository(
-            pointer=self.pointer,
-            container_image=self.container_image,
-            executable_path=self.executable_path,
-            entry_point=self.entry_point,
-            container_context=self.container_context,
-            repository_metadata=metadata,
-        )
+        return self._replace(repository_metadata=metadata)
 
     @lru_cache(maxsize=1)
     def get_definition(self):
@@ -192,12 +185,7 @@ class ReconstructablePipeline(
     def with_repository_metadata(
         self, metadata: Optional["RepositoryMetadata"]
     ) -> "ReconstructablePipeline":
-        return ReconstructablePipeline(
-            repository=self.repository.with_repository_metadata(metadata),
-            pipeline_name=self.pipeline_name,
-            solid_selection_str=self.solid_selection_str,
-            asset_selection=self.asset_selection,
-        )
+        return self._replace(repository=self.repository.with_repository_metadata(metadata))
 
     @property
     def solid_selection(self) -> Optional[List[str]]:

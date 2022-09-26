@@ -1183,12 +1183,12 @@ class RepositoryDefinition:
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
         self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
-        self._repository_metadata = check.inst_param(
+        self._repository_metadata = check.opt_inst_param(
             repository_metadata, "repository_metadata", RepositoryMetadata
         )
 
     @property
-    def repository_metadata(self) -> RepositoryMetadata:
+    def repository_metadata(self) -> Optional[RepositoryMetadata]:
         return self._repository_metadata
 
     @public  # type: ignore
