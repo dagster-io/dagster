@@ -70,7 +70,7 @@ class DagsterDbtCliFatalRuntimeError(DagsterDbtCliRuntimeError):
         messages: Optional[Sequence[str]] = None,
     ):
         super().__init__(
-            "Fatal error in the dbt CLI (return code 2): " + " ".join(messages),
+            "Fatal error in the dbt CLI (return code 2): " + " ".join(messages or []),
             logs,
             raw_output,
             messages,
