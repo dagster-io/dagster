@@ -39,27 +39,28 @@ def _get_parent_updates(
     context,
     current_asset: AssetKey,
     parent_assets: Set[AssetKey],
-    cursor: Mapping[str, int],
+    cursor_timestamp: float,
     will_materialize_list: Sequence[AssetKey],
     source_asset_keys: Sequence[AssetKey],
     parent_in_progress_stops_materialization: bool = False,
 ) -> Mapping[AssetKey, Tuple[bool, Optional[int]]]:
     """The bulk of the logic in the sensor is in this function. At the end of the function we return a
     dictionary that maps each asset to a Tuple. The Tuple contains a boolean, indicating if the asset
-    has materialized or will materialize, and an optional integer indicating the cursor value the
-    asset should have if the cursor gets updated (if the value is None, the cursor should remain the
-    same for the asset).
+    has materialized or will materialize, and a float representing the timestamp the parent asset
+    would update the cursor too if it is the most recent materialization of a parent asset. In some cases
+    we set the timestamp to 0.0 so that the timestamps of other parent materializations will take precedent.
+
     Here's how we get there:
 
     We want to get the materialization information for all of the parents of an asset to determine
-    if we want to materialize the asset in this sensor tick. We also need to construct the cursor
-    dictionary for the asset so that we don't process the same materialization events for the parent
+    if we want to materialize the asset in this sensor tick. We also need determine the new cursor
+    value for the asset so that we don't process the same materialization events for the parent
     assets again.
 
     We iterate through each parent of the asset and determine its materialization info. The parent
     asset's materialization status can be one of three options:
-    1. The parent has materialized since the last time the child was materialized (determined by the
-        cursor).
+    1. The parent has materialized since the last time the child was materialized (determined by comparing
+        the timestamp of the parent materialization to the cursor_timestamp).
     2. The parent will be materialized as part of the materialization that will be kicked off by the
         sensor.
     3. The parent has not been materialized and will not be materialized by the sensor.
@@ -86,7 +87,10 @@ def _get_parent_updates(
         if p in will_materialize_list:
             # if the parent will be materialized by this sensor, then we can also
             # materialize the child
-            parent_asset_event_records[p] = (True, None)
+            parent_asset_event_records[p] = (
+                True,
+                0.0,
+            )  # TODO - could set the cursor to the current time?
         elif p in source_asset_keys:
             # if the parent is a source asset, we assume it has always been updated
             # this will be replaced if we introduce a versioning schema for source assets
@@ -94,7 +98,7 @@ def _get_parent_updates(
             # TODO - figure out if we need to fetch materialization records here (ie if the source asset is
             # just a normal asset in another repo)
             # TODO - figure out what the cursor should update to
-            parent_asset_event_records[p] = (True, None)
+            parent_asset_event_records[p] = (True, 0.0)
         else:
             if parent_in_progress_stops_materialization:
                 # if the parent is currently being materialized, then we don't want to materialize the child
@@ -123,7 +127,7 @@ def _get_parent_updates(
                         # we don't want to materialize the child asset because one of its parents is
                         # being materialized. We'll materialize the asset on the next tick when the
                         # parent is up to date
-                        parent_asset_event_records = {pp: (False, None) for pp in parent_assets}
+                        parent_asset_event_records = {pp: (False, 0.0) for pp in parent_assets}
 
                         return parent_asset_event_records
 
@@ -132,14 +136,13 @@ def _get_parent_updates(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
                     asset_key=p,
-                    after_cursor=cursor.get(str(p)),
                 ),
                 ascending=False,
                 limit=1,
             )
             print(f"materialization record {event_records}")
 
-            if event_records:
+            if event_records and event_records[0].event_log_entry.timestamp > cursor_timestamp:
                 # if the run for this ^ materialization also materialized the downstream asset, we don't consider
                 # the parent asset "updated" (but we do want to update the cursor)
                 other_materialized_assets = context.instance.get_records_for_run(
@@ -151,14 +154,20 @@ def _get_parent_updates(
                     for event in other_materialized_assets.records
                 ]
                 if current_asset in other_materialized_assets:
-                    parent_asset_event_records[p] = (False, event_records[0].storage_id)
+                    parent_asset_event_records[p] = (
+                        False,
+                        event_records[0].event_log_entry.timestamp,
+                    )
                 else:
                     # current asset was not updated along with the parent asset, so we consider the
                     # parent asset updated
-                    parent_asset_event_records[p] = (True, event_records[0].storage_id)
+                    parent_asset_event_records[p] = (
+                        True,
+                        event_records[0].event_log_entry.timestamp,
+                    )
             else:
                 # the parent has not been materialized and will not be materialized by the sensor
-                parent_asset_event_records[p] = (False, None)
+                parent_asset_event_records[p] = (False, 0.0)
 
     return parent_asset_event_records
 
@@ -175,9 +184,12 @@ def _make_sensor(
     """Creates the sensor that will monitor the parents of all provided assets and determine
     which assets should be materialized (ie their parents have been updated).
 
-    The cursor for this sensor is a dictionary mapping stringified AssetKeys to dictionaries. The
-    dictionary for an asset is a mapping of the stringified AssetKeys of its parents to the storage id (int)
-    of the latest materialization that has resulted in the child asset materializing
+    The cursor for this sensor is a dictionary mapping stringified AssetKeys to a timestamp (float). For each
+    asset we keep track of the timestamp of the most recent materialization of a parent asset. For example
+    if asset X has parents A, B, and C where A was materialized at time 1, B at time 2 and C at time 3. When
+    the sensor runs, the cursor for X will be set to 3. This way, the next time the sensor runs, we can ignore
+    the materializations prior to time 3. If asset A materialized again at time 4, we would know that this materialization
+    has not been incorporated into the child asset yet.
     """
 
     def sensor_fn(context):
@@ -189,11 +201,9 @@ def _make_sensor(
             source_assets=source_asset_defs_by_key.values(),
         )
 
-        cursor_dict: Dict[str, Dict[str, int]] = (
-            json.loads(context.cursor) if context.cursor else {}
-        )
+        cursor_dict: Dict[str, float] = json.loads(context.cursor) if context.cursor else {}
         should_materialize: List[AssetKey] = []
-        cursor_update_dict: Dict[str, Dict[str, int]] = {}
+        cursor_update_dict: Dict[str, float] = {}
 
         # sort the assets topologically so that we process them in order
         toposort_assets = list(toposort.toposort(upstream))
@@ -205,13 +215,13 @@ def _make_sensor(
         # determine which assets should materialize based on the materialization status of their
         # parents
         for a in toposort_assets:
-            a_cursor = cursor_dict.get(str(a), {})
-            cursor_update_dict[str(a)] = {}
+            a_cursor = cursor_dict.get(str(a), 0.0)
+            cursor_update_dict[str(a)] = a_cursor
             parent_update_records = _get_parent_updates(
                 context,
                 current_asset=a,
                 parent_assets=upstream[a],
-                cursor=a_cursor,
+                cursor_timestamp=a_cursor,
                 will_materialize_list=should_materialize,
                 source_asset_keys=list(source_asset_defs_by_key.keys()),
                 parent_in_progress_stops_materialization=parent_in_progress_stops_materialization,
@@ -225,13 +235,9 @@ def _make_sensor(
                 ]
             ):
                 should_materialize.append(a)
-                for p, (_, cursor_value) in parent_update_records.items():
-                    cursor_update_dict[str(a)][str(p)] = (
-                        cursor_value if cursor_value else a_cursor.get(str(p))
-                    )
-            else:
-                # if the asset shouldn't be materialized, then keep the cursor the same
-                cursor_update_dict[str(a)] = cursor_dict.get(str(a), {})
+                cursor_update_dict[str(a)] = max(
+                    [cursor_val for _, cursor_val in parent_update_records.values()]
+                )
 
         if len(should_materialize) > 0:
             context.update_cursor(json.dumps(cursor_update_dict))
