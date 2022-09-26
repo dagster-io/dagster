@@ -321,6 +321,15 @@ class InputContext:
 
     @public  # type: ignore
     @property
+    def asset_partition_keys(self) -> Sequence[str]:
+        """The partition keys for input asset.
+
+        Raises an error if the input asset has no partitioning.
+        """
+        return self.asset_partitions_def.get_partition_keys_in_range(self.asset_partition_key_range)
+
+    @public  # type: ignore
+    @property
     def asset_partitions_time_window(self) -> TimeWindow:
         """The time window for the partitions of the input asset.
 
