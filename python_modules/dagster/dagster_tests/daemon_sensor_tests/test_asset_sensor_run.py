@@ -1,25 +1,35 @@
+import warnings
+
 import pendulum
 import pytest
 
-from dagster import AssetKey, materialize
+from dagster import AssetKey, ExperimentalWarning, materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_sensor_run import (
     e,
     evaluate_sensors,
+    f,
     get_sensor_executors,
     h,
     instance_with_sensors,
+    sleeper,
     validate_tick,
     wait_for_all_runs_to_finish,
+    wait_for_all_runs_to_start,
     x,
     z,
 )
 
+# Tests for the OR sensor
+# TODO - fix the comments for the OR tests to reflect what they actually test
+
+warnings.filterwarnings("ignore", category=ExperimentalWarning)
+
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_simple_parent_sensor(executor):
+def test_simple_parent_sensor_OR(executor):
     """Asset graph:
         x
         |
@@ -37,7 +47,7 @@ def test_simple_parent_sensor(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            y_sensor = external_repo.get_external_sensor("just_y")
+            y_sensor = external_repo.get_external_sensor("just_y_OR")
             instance.start_sensor(y_sensor)
 
             evaluate_sensors(instance, workspace, executor)
@@ -102,13 +112,13 @@ def test_simple_parent_sensor(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_two_parents_parent_sensor(executor):
+def test_two_parents_parent_sensor_OR(executor):
     """Asset graph:
         x   z
         \   /
           d
     Sensor for d
-    Tests that materializing x does nothing, then materialize z and see that d gets materialized
+    Tests that materializing x materializes d
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -120,7 +130,545 @@ def test_two_parents_parent_sensor(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            d_sensor = external_repo.get_external_sensor("just_d")
+            # to load up prior materializations so that the eventual materialization of d works
+            materialize([x, z], instance=instance)
+            d_sensor = external_repo.get_external_sensor("just_d_OR")
+            instance.start_sensor(d_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(d_sensor.get_external_origin_id(), d_sensor.selector_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                d_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            materialize([x], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should start a materialization
+            ticks = instance.get_ticks(d_sensor.get_external_origin_id(), d_sensor.selector_id)
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                d_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            materialize([z], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should fire
+            ticks = instance.get_ticks(d_sensor.get_external_origin_id(), d_sensor.selector_id)
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                d_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            wait_for_all_runs_to_finish(instance)
+            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
+            assert len(run_request_runs) == 3
+            assert all([r.asset_selection == {AssetKey("d")} for r in run_request_runs])
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_two_downstream_sensor_OR(executor):
+    """Asset graph:
+        x   z   e
+        \   /\  /
+          d    f
+    Sensor for d and f
+    Tests that materializing x only materializes d, materializing e only materializes f, and materializing
+    z materializes d and f
+    """
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="asset_sensor_repo") as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            # make sure all parents have prior materializations so that the materializations of d and
+            # d can succeed
+            materialize([x, z, e], instance=instance)
+
+            d_and_f_sensor = external_repo.get_external_sensor("d_and_f_OR")
+            instance.start_sensor(d_and_f_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(
+                d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                d_and_f_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            materialize([x], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should not start a materialize
+            ticks = instance.get_ticks(
+                d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
+            )
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                d_and_f_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            materialize([e], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should not start a materialize
+            ticks = instance.get_ticks(
+                d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
+            )
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                d_and_f_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            materialize([z], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should materialize
+            ticks = instance.get_ticks(
+                d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
+            )
+            assert len(ticks) == 4
+            validate_tick(
+                ticks[0],
+                d_and_f_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            wait_for_all_runs_to_finish(instance)
+            run_request = instance.get_runs(limit=1)[0]
+            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.asset_selection == {AssetKey("f"), AssetKey("d")}
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_layered_sensor_OR(executor):
+    """Asset graph:
+        x       z       e
+        \       /\      /
+            d       f
+            \       /
+                g
+    Sensor for d, f, and g
+    Tests that materializing x, z, and e causes a materialization of d and f, which causes a materialization of g
+    """
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="asset_sensor_repo") as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            # make sure all parents have prior materializations so that the materializations in this
+            # test can succeed
+            materialize([x, z, e, f], instance=instance)
+            the_sensor = external_repo.get_external_sensor("d_and_f_and_g_OR")
+            instance.start_sensor(the_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            materialize([x], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should materialize
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            wait_for_all_runs_to_finish(instance)
+            run_request = instance.get_runs(limit=1)[0]
+            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.asset_selection == {AssetKey("g"), AssetKey("d")}
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_layered_sensor_no_materialize_OR(executor):
+    """Asset graph:
+        x       z       e
+        \       /\      /
+            d       f
+            \       /
+                g
+    Sensor for g
+    Tests that materializing x, z, and e does not cause a materialization of g
+    """
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="asset_sensor_repo") as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            the_sensor = external_repo.get_external_sensor("just_g_OR")
+            instance.start_sensor(the_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            materialize([x, z, e], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should not materialize
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_lots_of_materializations_sensor_OR(executor):
+    """Asset graph:
+        x
+        |
+        y
+    Sensor for y
+    Tests that materializing x a few times then starting the sensor results in only one materialization
+        of y
+    """
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="asset_sensor_repo") as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            for _ in range(5):
+                materialize([x], instance=instance)
+                wait_for_all_runs_to_finish(instance)
+
+            y_sensor = external_repo.get_external_sensor("just_y_OR")
+            instance.start_sensor(y_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                y_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            wait_for_all_runs_to_finish(instance)
+            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
+            assert len(run_request_runs) == 1
+            assert run_request_runs[0].asset_selection == {AssetKey("y")}
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should materialize
+            ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                y_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_two_graph_sensor_OR(executor):
+    """Asset graph:
+        x   h
+        |   |
+        y   i
+    Sensor for y and i
+    Tests that materializing x results in a materialization of y, materializing h results in a
+        materialization of i
+    """
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="asset_sensor_repo") as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            the_sensor = external_repo.get_external_sensor("y_and_i_OR")
+            instance.start_sensor(the_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            materialize([x], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should materialize
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            wait_for_all_runs_to_finish(instance)
+            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
+            assert len(run_request_runs) == 1
+            assert run_request_runs[0].asset_selection == {AssetKey("y")}
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            materialize([h], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should materialize
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            wait_for_all_runs_to_finish(instance)
+            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
+            assert len(run_request_runs) == 2
+            assert [r.asset_selection for r in run_request_runs] == [
+                {AssetKey("i")},
+                {AssetKey("y")},
+            ]
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+
+# Tests for the AND sensor
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_simple_parent_sensor_AND(executor):
+    """Asset graph:
+        x
+        |
+        y
+    Sensor for y
+    Tests that materializing x results in a materialization of y
+    """
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="asset_sensor_repo") as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            y_sensor = external_repo.get_external_sensor("just_y_AND")
+            instance.start_sensor(y_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                y_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            materialize([x], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should materialize
+            ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                y_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            wait_for_all_runs_to_finish(instance)
+            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
+            assert len(run_request_runs) == 1
+            assert run_request_runs[0].asset_selection == {AssetKey("y")}
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            materialize([x], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            # sensor should materialize
+            ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                y_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            wait_for_all_runs_to_finish(instance)
+            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
+            assert len(run_request_runs) == 2
+            assert all([r.asset_selection == {AssetKey("y")} for r in run_request_runs])
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_two_parents_parent_sensor_AND(executor):
+    """Asset graph:
+        x   z
+        \   /
+          d
+    Sensor for d
+    Tests that materializing x materializes d since this is an OR sensor
+    """
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="asset_sensor_repo") as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            d_sensor = external_repo.get_external_sensor("just_d_AND")
             instance.start_sensor(d_sensor)
 
             evaluate_sensors(instance, workspace, executor)
@@ -180,7 +728,7 @@ def test_two_parents_parent_sensor(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_two_downstream_sensor(executor):
+def test_two_downstream_sensor_AND(executor):
     """Asset graph:
         x   z   e
         \   /\  /
@@ -198,7 +746,7 @@ def test_two_downstream_sensor(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            d_and_f_sensor = external_repo.get_external_sensor("d_and_f")
+            d_and_f_sensor = external_repo.get_external_sensor("d_and_f_AND")
             instance.start_sensor(d_and_f_sensor)
 
             evaluate_sensors(instance, workspace, executor)
@@ -266,7 +814,7 @@ def test_two_downstream_sensor(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_layered_sensor(executor):
+def test_layered_sensor_AND(executor):
     """Asset graph:
         x       z       e
         \       /\      /
@@ -286,7 +834,7 @@ def test_layered_sensor(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            the_sensor = external_repo.get_external_sensor("d_and_f_and_g")
+            the_sensor = external_repo.get_external_sensor("d_and_f_and_g_AND")
             instance.start_sensor(the_sensor)
 
             evaluate_sensors(instance, workspace, executor)
@@ -331,7 +879,7 @@ def test_layered_sensor(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_layered_sensor_no_materialize(executor):
+def test_layered_sensor_no_materialize_AND(executor):
     """Asset graph:
         x       z       e
         \       /\      /
@@ -351,7 +899,7 @@ def test_layered_sensor_no_materialize(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            the_sensor = external_repo.get_external_sensor("just_g")
+            the_sensor = external_repo.get_external_sensor("just_g_AND")
             instance.start_sensor(the_sensor)
 
             evaluate_sensors(instance, workspace, executor)
@@ -385,7 +933,7 @@ def test_layered_sensor_no_materialize(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_lots_of_materializations_sensor(executor):
+def test_lots_of_materializations_sensor_AND(executor):
     """Asset graph:
         x
         |
@@ -408,7 +956,7 @@ def test_lots_of_materializations_sensor(executor):
                 materialize([x], instance=instance)
                 wait_for_all_runs_to_finish(instance)
 
-            y_sensor = external_repo.get_external_sensor("just_y")
+            y_sensor = external_repo.get_external_sensor("just_y_AND")
             instance.start_sensor(y_sensor)
 
             evaluate_sensors(instance, workspace, executor)
@@ -444,7 +992,7 @@ def test_lots_of_materializations_sensor(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_many_materializations_for_one_parent_sensor(executor):
+def test_many_materializations_for_one_parent_sensor_AND(executor):
     """Asset graph:
         x    z
         |\   /
@@ -463,7 +1011,7 @@ def test_many_materializations_for_one_parent_sensor(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            the_sensor = external_repo.get_external_sensor("y_and_d")
+            the_sensor = external_repo.get_external_sensor("y_and_d_AND")
             instance.start_sensor(the_sensor)
 
             evaluate_sensors(instance, workspace, executor)
@@ -550,7 +1098,7 @@ def test_many_materializations_for_one_parent_sensor(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_two_graph_sensor(executor):
+def test_two_graph_sensor_AND(executor):
     """Asset graph:
         x   h
         |   |
@@ -569,7 +1117,7 @@ def test_two_graph_sensor(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            the_sensor = external_repo.get_external_sensor("y_and_i")
+            the_sensor = external_repo.get_external_sensor("y_and_i_AND")
             instance.start_sensor(the_sensor)
 
             evaluate_sensors(instance, workspace, executor)
@@ -637,7 +1185,7 @@ def test_two_graph_sensor(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_source_asset_sensor(executor):
+def test_source_asset_sensor_AND(executor):
     """Asset graph:
         the_source
             |
@@ -655,7 +1203,7 @@ def test_source_asset_sensor(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            the_sensor = external_repo.get_external_sensor("downstream_of_source_sensor")
+            the_sensor = external_repo.get_external_sensor("downstream_of_source_sensor_AND")
             instance.start_sensor(the_sensor)
 
             evaluate_sensors(instance, workspace, executor)
@@ -684,16 +1232,80 @@ def test_source_asset_sensor(executor):
             assert len(ticks) == 2
             # TODO - this currently fails because of the cursor updating problem (we don't know what to
             # update the cursor to for source assets)
+            # validate_tick(
+            #     ticks[0],
+            #     the_sensor,
+            #     freeze_datetime,
+            #     TickStatus.SUCCESS,
+            # )
+
+            # wait_for_all_runs_to_finish(instance)
+            # run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
+            # assert len(run_request_runs) == 2
+            # assert run_request_runs[0].asset_selection == {AssetKey("downstream_of_source")}
+
+            # freeze_datetime = freeze_datetime.add(seconds=60)
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_parent_in_progress_stops_materialization(executor):
+    """Asset graph:
+        sleeper    x
+            \      /
+        waits_on_sleep
+    Sensor for waits_on_sleep
+    Tests that setting parent_in_progress_stops_materialization=True will cause the sensor to not
+    materialize waits_on_sleep if one of it's parents is materializing
+    """
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="asset_sensor_repo") as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            the_sensor = external_repo.get_external_sensor("in_progress_condition_sensor")
+            instance.start_sensor(the_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+            materialize([x], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+            materialize([sleeper], instance=instance)
+            wait_for_all_runs_to_start(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                the_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(instance, workspace, executor)
+            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            assert len(ticks) == 3
             validate_tick(
                 ticks[0],
                 the_sensor,
                 freeze_datetime,
                 TickStatus.SUCCESS,
             )
-
-            wait_for_all_runs_to_finish(instance)
-            run_request_runs = [r for r in instance.get_runs() if r.pipeline_name == "__ASSET_JOB"]
-            assert len(run_request_runs) == 2
-            assert run_request_runs[0].asset_selection == {AssetKey("downstream_of_source")}
-
-            freeze_datetime = freeze_datetime.add(seconds=60)

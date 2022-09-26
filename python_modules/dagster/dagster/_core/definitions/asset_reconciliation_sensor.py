@@ -42,6 +42,7 @@ def _get_parent_updates(
     cursor: Mapping[str, int],
     will_materialize_list: Sequence[AssetKey],
     source_asset_keys: Sequence[AssetKey],
+    parent_in_progress_stops_materialization: bool = False,
 ) -> Mapping[AssetKey, Tuple[bool, Optional[int]]]:
     """The bulk of the logic in the sensor is in this function. At the end of the function we return a
     dictionary that maps each asset to a Tuple. The Tuple contains a boolean, indicating if the asset
@@ -66,13 +67,14 @@ def _get_parent_updates(
     In cases 1 and 2 we indicate that the parent has been updated by setting its value in
     parent_asset_event_records to True. For case 3 we set it's value to False.
 
-    There is a final condition we want to check for. If any of the parents is currently being materialized
-    we want to wait to materialize the asset until the parent materialization is complete so that the
-    asset can have the most up to date data. So, for each parent asset we check if it has a planned asset
-    materialization event that is newer than the latest complete materialization. If this is the case, we
-    don't want the asset to materialize. So we set parent_asset_event_records to False for all
-    parents (so that if the sensor is set to materialize if any of the parents are updated, the sensor will
-    still choose to not materialize the asset) and immediately return.
+    If parent_in_progress_stops_materialization=True, there is a final condition we want to check for.
+    If any of the parents is currently being materialized we want to wait to materialize the asset
+    until the parent materialization is complete so that the asset can have the most up to date data.
+    So, for each parent asset we check if it has a planned asset materialization event that is newer
+    than the latest complete materialization. If this is the case, we don't want the asset to materialize.
+    So we set parent_asset_event_records to False for all parents (so that if the sensor is set to
+    materialize if any of the parents are updated, the sensor will still choose to not materialize
+    the asset) and immediately return.
     """
     from dagster._core.events import DagsterEventType
     from dagster._core.storage.event_log.base import EventRecordsFilter
@@ -89,36 +91,41 @@ def _get_parent_updates(
             # if the parent is a source asset, we assume it has always been updated
             # this will be replaced if we introduce a versioning schema for source assets
             print("parent is a source asset")
+            # TODO - figure out if we need to fetch materialization records here (ie if the source asset is
+            # just a normal asset in another repo)
             # TODO - figure out what the cursor should update to
             parent_asset_event_records[p] = (True, None)
         else:
-            # TODO - bring this back in later once we decide what to do
-            # # if the parent is currently being materialized, then we don't want to materialize the child
+            if parent_in_progress_stops_materialization:
+                # if the parent is currently being materialized, then we don't want to materialize the child
 
-            # # get the most recent planned materialization
-            # materialization_planned_event_records = context.instance.get_event_records(
-            #     EventRecordsFilter(
-            #         event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-            #         asset_key=p,
-            #     ),
-            #     ascending=False,
-            #     limit=1,
-            # )
-            # print(f"will materialize record {materialization_planned_event_records}")
+                # get the most recent planned materialization
+                materialization_planned_event_records = context.instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                        asset_key=p,
+                    ),
+                    ascending=False,
+                    limit=1,
+                )
+                print(f"will materialize record {materialization_planned_event_records}")
 
+                if materialization_planned_event_records:
+                    in_progress = context.instance.get_runs(
+                        filters=RunsFilter(
+                            run_ids=[
+                                materialization_planned_event_records[0].event_log_entry.run_id
+                            ],
+                            statuses=IN_PROGRESS_RUN_STATUSES,
+                        )
+                    )
+                    if in_progress:
+                        # we don't want to materialize the child asset because one of its parents is
+                        # being materialized. We'll materialize the asset on the next tick when the
+                        # parent is up to date
+                        parent_asset_event_records = {pp: (False, None) for pp in parent_assets}
 
-            # if materialization_planned_event_records and context.instance.get_runs(
-            #     filters=RunsFilter(
-            #         run_ids=[materialization_planned_event_records[0].event_log_entry.run_id],
-            #         statuses=IN_PROGRESS_RUN_STATUSES,
-            #     )
-            # ):
-            #     # we don't want to materialize the child asset because one of its parents is
-            #     # being materialized. We'll materialize the asset on the next tick when the
-            #     # parent is up to date
-            #     parent_asset_event_records = {pp: (False, None) for pp in parent_assets}
-
-            #     return parent_asset_event_records
+                        return parent_asset_event_records
 
             # the parent is not currently being materialized, so check if there is has a completed materialization
             event_records = context.instance.get_event_records(
@@ -135,11 +142,14 @@ def _get_parent_updates(
             if event_records:
                 # if the run for this ^ materialization also materialized the downstream asset, we don't consider
                 # the parent asset "updated" (but we do want to update the cursor)
-                other_materialized_assets = context.get_records_for_run(
+                other_materialized_assets = context.instance.get_records_for_run(
                     run_id=event_records[0].event_log_entry.run_id,
-                    of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
                 )
-                other_materialized_assets = [event.event_log_entry.event_specific_data.asset_key for event in other_materialized_assets]
+                other_materialized_assets = [
+                    event.event_log_entry.dagster_event.event_specific_data.asset_key
+                    for event in other_materialized_assets.records
+                ]
                 if current_asset in other_materialized_assets:
                     parent_asset_event_records[p] = (False, event_records[0].storage_id)
                 else:
@@ -156,6 +166,8 @@ def _get_parent_updates(
 def _make_sensor(
     selection: AssetSelection,
     name: str,
+    and_condition: bool = True,  # TODO better name for this parameter
+    parent_in_progress_stops_materialization: bool = False,  # TODO - better name for this parameter
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
@@ -194,6 +206,7 @@ def _make_sensor(
         # parents
         for a in toposort_assets:
             a_cursor = cursor_dict.get(str(a), {})
+            cursor_update_dict[str(a)] = {}
             parent_update_records = _get_parent_updates(
                 context,
                 current_asset=a,
@@ -201,17 +214,21 @@ def _make_sensor(
                 cursor=a_cursor,
                 will_materialize_list=should_materialize,
                 source_asset_keys=list(source_asset_defs_by_key.keys()),
+                parent_in_progress_stops_materialization=parent_in_progress_stops_materialization,
             )
 
-            if any(
+            condition = all if and_condition else any
+            if condition(
                 [
                     materialization_status
                     for materialization_status, _ in parent_update_records.values()
                 ]
-            ):  # TODO should we allow the user to specify all() vs any() here?
+            ):
                 should_materialize.append(a)
                 for p, (_, cursor_value) in parent_update_records.items():
-                    cursor_update_dict[str(a)][str(p)] = cursor_value if cursor_value else a_cursor.get(str(p))
+                    cursor_update_dict[str(a)][str(p)] = (
+                        cursor_value if cursor_value else a_cursor.get(str(p))
+                    )
             else:
                 # if the asset shouldn't be materialized, then keep the cursor the same
                 cursor_update_dict[str(a)] = cursor_dict.get(str(a), {})
@@ -236,13 +253,17 @@ def _make_sensor(
 def build_asset_reconciliation_sensor(
     selection: AssetSelection,
     name: str,
+    and_condition: bool = True,  # TODO better name for this parameter
+    parent_in_progress_stops_materialization: bool = False,  # TODO - better name for this parameter
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> MultiAssetSensorDefinition:
     """Constructs a sensor that will monitor the parents of the provided assets and materialize an asset
-    when all of its parents have been materialized. This will keep the monitored assets up to date with the
-    latest data available to them.
+    based on the materialization of its parents. This will keep the monitored assets up to date with the
+    latest data available to them. The sensor defaults to materializing a child asset when all of
+    its parents have materialized, but it can be set to materialize the child asset when any of its
+    parents have materialized.
 
     Example:
     If you have the following asset graph
@@ -279,8 +300,14 @@ def build_asset_reconciliation_sensor(
     Args:
         selection (AssetSelection): The group of assets you want to monitor
         name (str): The name to give the sensor.
+        and_condition (bool): If True (the default) the sensor will only materialize an asset when
+            all of its parents have materialized. If False, the sensor will materialize an asset when
+            any of its parents have materialized.
+        parent_in_progress_stops_materialization (bool): If True, the sensor will not materialize an
+            asset there is an in-progress run that will materialize any of the asset's parents. Defaults to
+            False.
         minimum_interval_seconds (Optional[int]): The minimum amount of time that should elapse between sensor invocations.
-        description (Optional[str]): A description for the sensor
+        description (Optional[str]): A description for the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
 
@@ -288,4 +315,12 @@ def build_asset_reconciliation_sensor(
         the provided assets should be materialized
     """
     check_valid_name(name)
-    return _make_sensor(selection, name, minimum_interval_seconds, description, default_status)
+    return _make_sensor(
+        selection=selection,
+        name=name,
+        and_condition=and_condition,
+        parent_in_progress_stops_materialization=parent_in_progress_stops_materialization,
+        minimum_interval_seconds=minimum_interval_seconds,
+        description=description,
+        default_status=default_status,
+    )

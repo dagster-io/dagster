@@ -618,6 +618,19 @@ def downstream_of_source(the_source):
     return the_source + 4
 
 
+@asset
+def sleeper():
+    from time import sleep
+
+    sleep(30)
+    return 1
+
+
+@asset
+def waits_on_sleep(sleeper, x):
+    return sleeper + x
+
+
 @repository
 def asset_sensor_repo():
     return [
@@ -630,21 +643,61 @@ def asset_sensor_repo():
         g,
         h,
         i,
+        sleeper,
+        waits_on_sleep,
         source_asset,
         downstream_of_source,
-        build_asset_reconciliation_sensor(selection=AssetSelection.assets(y), name="just_y"),
-        build_asset_reconciliation_sensor(selection=AssetSelection.assets(d), name="just_d"),
-        build_asset_reconciliation_sensor(selection=AssetSelection.assets(d, f), name="d_and_f"),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(d, f, g), name="d_and_f_and_g"
+            selection=AssetSelection.assets(y), name="just_y_OR", and_condition=False
         ),
-        build_asset_reconciliation_sensor(selection=AssetSelection.assets(y, d), name="y_and_d"),
-        build_asset_reconciliation_sensor(selection=AssetSelection.assets(y, i), name="y_and_i"),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(d), name="just_d_OR", and_condition=False
+        ),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(d, f), name="d_and_f_OR", and_condition=False
+        ),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(d, f, g), name="d_and_f_and_g_OR", and_condition=False
+        ),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(y, d), name="y_and_d_OR", and_condition=False
+        ),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(y, i), name="y_and_i_OR", and_condition=False
+        ),
         build_asset_reconciliation_sensor(
             selection=AssetSelection.assets(downstream_of_source),
-            name="downstream_of_source_sensor",
+            name="downstream_of_source_sensor_OR",
+            and_condition=False,
         ),
-        build_asset_reconciliation_sensor(selection=AssetSelection.assets(g), name="just_g"),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(g), name="just_g_OR", and_condition=False
+        ),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(y), name="just_y_AND"),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(d), name="just_d_AND"),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(d, f), name="d_and_f_AND"
+        ),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(d, f, g), name="d_and_f_and_g_AND"
+        ),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(y, d), name="y_and_d_AND"
+        ),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(y, i), name="y_and_i_AND"
+        ),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(downstream_of_source),
+            name="downstream_of_source_sensor_AND",
+        ),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(g), name="just_g_AND"),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(waits_on_sleep),
+            name="in_progress_condition_sensor",
+            parent_in_progress_stops_materialization=True,
+            and_condition=False,
+        ),
     ]
 
 
