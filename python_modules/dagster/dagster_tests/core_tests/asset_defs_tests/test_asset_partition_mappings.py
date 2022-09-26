@@ -474,14 +474,14 @@ def test_partition_keys_in_range():
         assert context.asset_partition_keys_for_output("result") == ["2022-09-11"]
 
     @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2022-09-11"))
-    def downstream(context, upstream):
+    def downstream(context, upstream):  # pylint: disable=unused-argument
         assert (
             context.asset_partition_keys_for_input("upstream")
             == daily_partition_keys_for_week_2022_09_11
         )
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj): # pylint: disable=unused-argument
             if context.asset_key == AssetKey("upstream"):
                 assert context.has_asset_partitions
                 assert context.asset_partition_keys == ["2022-09-11"]
