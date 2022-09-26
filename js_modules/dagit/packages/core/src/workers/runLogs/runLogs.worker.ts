@@ -23,13 +23,12 @@ self.addEventListener('message', ({data}: {data: Message | SHUTDOWN}) => {
             postMessage: (data: any) => {
               // Transfer data using ArrayBuffer to keep main thread buttery smooth
               const buffer = stringToArrayBuffer(JSON.stringify(data));
-              console.log('postMessage', data, buffer);
               // "When an ArrayBuffer is transferred between threads, the
               // memory resource that it points to is literally moved between
               // contexts in a fast and efficient zero-copy operation."
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore https://developer.mozilla.org/en-US/docs/Glossary/Transferable_objects
-              // self.postMessage(buffer, [buffer]);
+              self.postMessage(buffer, [buffer]);
             },
           });
           break;
