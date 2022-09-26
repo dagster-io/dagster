@@ -1415,3 +1415,14 @@ def test_not_implemented():
 
     with pytest.raises(CheckError, match="desc argument must be a string"):
         check.not_implemented(None)  # type: ignore
+
+
+def test_valid_group_name():
+    assert check.valid_group_name("valid_name")
+    assert check.valid_group_name(None)
+
+    with pytest.raises(CheckError):
+        check.valid_group_name("")
+
+    with pytest.raises(CheckError):
+        check.valid_group_name("   ")

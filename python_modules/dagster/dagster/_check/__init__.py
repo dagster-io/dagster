@@ -1492,6 +1492,15 @@ def not_implemented(desc: str) -> NoReturn:
     raise NotImplementedCheckError(f"Not implemented: {desc}")
 
 
+def valid_group_name(group_name: Optional[str]) -> bool:
+    if isinstance(group_name, str) and group_name.strip() == "":
+        raise CheckError(
+            "group_name cannot be an empty string. Consider "
+            "giving it a non-empty name or keep it None to use 'default' group name"
+        )
+    return True
+
+
 # ###################################################################################################
 # ##### ERRORS / UTILITY
 # ###################################################################################################

@@ -286,6 +286,8 @@ class _Asset:
             if asset_in.partition_mapping
         }
 
+        check.invalid_group_name(self.group_name)
+
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
