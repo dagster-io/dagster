@@ -142,15 +142,7 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
 
 Multi-asset sensors, which can trigger job executions based on multiple asset materialization event streams, can be handled using the <PyObject object="multi_asset_sensor" decorator/> decorator.
 
-In the body of the sensor, you have access to the materialization event records for each asset via the `context`. The context provides methods for fetching the materialization event records, as well as methods to handle partitioned materializations:
-
-| Method                                                                                                      | Description                                                                                                                                                                                                          |
-| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_key" />      | Returns a dictionary mapping the `AssetKey` for each monitored asset to the most recent materialization record. If there is no materialization event, the mapped value will be `None`.                               |
-| <PyObject object="MultiAssetSensorEvaluationContext" method="materialization_records_for_key"/>             | Returns a list of materialization event records for a specified `AssetKey`.                                                                                                                                          |
-| <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_partition"/> | Returns a dictionary mapping the partition keys of a specified `AssetKey` to the most recent materialization record. Will only return a partition key in the mapping if a materialization exists for that partition. |
-| <PyObject object="MultiAssetSensorEvaluationContext" method="all_partitions_materialized"/>                 | Given an asset key and a list of partition keys for the asset, returns `True` if all partitions are materialized, otherwise returns `False`. Will search through all materializations (ignoring the cursor).         |
-| <PyObject object="MultiAssetSensorEvaluationContext" method="get_downstream_partition_keys"/>               | Given an upstream asset key, downstream asset key, and a partition in the upstream asset, returns a list of the corresponding partitions in the downstream asset.                                                    |
+In the body of the sensor, you have access to the materialization event records for each asset via the `context`. The context object provides methods for fetching the materialization event records, as well as methods to handle partitioned materializations. For a full list of context methods available, view the [API reference here](/\_apidocs/schedules-sensors#dagster.MultiAssetSensorEvaluationContext).
 
 #### Triggering a run after monitored assets are materialized
 
@@ -199,51 +191,57 @@ def every_fifth_asset_c_sensor(context):
         return SkipReason(f"asset_c only materialized {len(asset_events)} times.")
 ```
 
-#### Triggering a partitioned run after an upstream partition is materialized
+#### Triggering a partitioned run after upstream partitions are materialized
 
-The <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_partition"/> method fetches the latest materialization records by partition for a given asset. Using this method, you can trigger downstream partitioned runs when the corresponding partitions of upstream assets are materialized:
+The <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_partition"/> method fetches the latest materialization records by partition for a given asset. Using this method, you can trigger downstream partitioned runs when the corresponding partitions of upstream assets are materialized.
 
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_daily_asset_to_daily_asset endbefore=end_daily_asset_to_daily_asset
-downstream_daily_job = define_asset_job(
-    "downstream_daily_job",
-    AssetSelection.keys("downstream_daily_asset"),
-    partitions_def=daily_partitions_def,
-)
+The following example monitors two upstream daily-partitioned assets, kicking off materializations of the corresponding partition in the downstream daily-partitioned asset. Whenever a partition is replaced in `upstream_daily_1` and the same partition has previously been materialized in `upstream_daily_2` (and vice versa), the sensor yields a run request for the downstream asset.
 
-
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_daily_partitioned_asset_with_two_upstreams endbefore=end_daily_partitioned_asset_with_two_upstreams
 @multi_asset_sensor(
-    asset_keys=[AssetKey("upstream_daily_asset")], job=downstream_daily_job
+    asset_keys=[AssetKey("upstream_daily_1"), AssetKey("upstream_daily_2")],
+    job=downstream_daily_job,
 )
-def trigger_daily_asset_from_daily_asset(context):
-    # Get all partitioned materializations after the cursor
-    materializations_by_partition = context.latest_materialization_records_by_partition(
-        AssetKey("upstream_daily_asset")
-    )
+def trigger_daily_asset_if_all_upstream_partitions_materialized(context):
+    run_requests = []
 
-    for partition, materialization in materializations_by_partition.items():
-        downstream_partitions = context.get_downstream_partition_keys(
+    def evaluate_latest_partitions(asset_key):
+        # For each asset, get the latest materialization record for each partition.
+        other_asset_keys = [
+            other_key for other_key in context.asset_keys if other_key != asset_key
+        ]
+        for (
             partition,
-            from_asset_key=AssetKey("upstream_daily_asset"),
-            to_asset_key=AssetKey("downstream_daily_asset"),
-        )
-        if downstream_partitions:  # Check that a downstream daily partition exists
-            # Upstream daily partition can only map to at most one downstream daily partition
-            yield downstream_daily_job.run_request_for_partition(
-                downstream_partitions[0], run_key=None
-            )
-            context.advance_cursor({AssetKey("upstream_daily_asset"): materialization})
+            materialization,
+        ) in context.latest_materialization_records_by_partition(asset_key).items():
+            # Check that the partition is materialized in the other asset. If so,
+            # yield a run request for the downstream partition.
+            if all(
+                [
+                    context.all_partitions_materialized(other_key, [partition])
+                    for other_key in other_asset_keys
+                ]
+            ):
+                run_requests.append(
+                    downstream_daily_job.run_request_for_partition(partition)
+                )
+            context.advance_cursor({asset_key: materialization})
+
+    for asset_key in context.asset_keys:
+        evaluate_latest_partitions(asset_key)
+
+    return run_requests
 ```
 
-The <PyObject object="MultiAssetSensorEvaluationContext" method="get_downstream_partition_keys"/> accepts a partition key from the upstream asset and uses the existing <PyObject object="PartitionMapping"/> object on the downstream asset to fetch the corresponding partitions in the downstream asset.
+If the <PyObject object="PartitionsDefinition"/> of the monitored assets differs from the triggered asset, you can use the <PyObject object="MultiAssetSensorEvaluationContext" method="get_downstream_partition_keys"/> method to map a partition key from one asset to another. This method accepts a partition key from the upstream asset and uses the existing <PyObject object="PartitionMapping"/> object on the downstream asset to fetch the corresponding partitions in the downstream asset.
 
 If a partition mapping is not defined, Dagster will use the default partition mapping, which is the <PyObject object="TimeWindowPartitionMapping"/> for time window partitions definitions and the <PyObject object="IdentityPartitionMapping"/> for other partitions definitions. The <PyObject object="TimeWindowPartitionMapping"/> will map an upstream partition to the downstream partitions that overlap with it.
 
-#### Additional examples
-
-The examples section at the bottom of the page explores additional use cases for triggering materializations by partition:
-
-- [Updating a weekly asset partition when upstream daily partitions are materialized](#updating-a-weekly-asset-partition-when-upstream-daily-partitions-are-materialized)
-- [Materializing a daily asset partition if both upstream daily partitions are materialized](#materializing-a-daily-asset-partition-if-both-upstream-daily-partitions-are-materialized)
+<Note>
+  Looking for more? The examples section features another{" "}
+  <a href="#monitoring-daily-assets-to-materialize-a-weekly-asset">example</a>{" "}
+  of updating a weekly asset when upstream daily assets are materialized.
+</Note>
 
 ## Idempotence and Cursors
 
@@ -761,9 +759,7 @@ def uses_db_connection():
 
 If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>. For more in-depth usage, check out the [Initializing Resources Outside of Execution](/concepts/resources#initializing-resources-outside-of-execution) section.
 
-### Monitoring asset partitions with sensors
-
-#### Updating a weekly asset partition when upstream daily partitions are materialized
+### Monitoring daily assets to materialize a weekly asset
 
 The following code example monitors an upstream daily-partitioned asset, kicking off materializations of a downstream weekly-partitioned asset whenever a daily partition is materialized and all daily partitions in the week have existing materializations. Every time a daily partition is replaced, the weekly partition will materialize.
 
@@ -777,6 +773,7 @@ all existing materializations.
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_daily_asset_to_weekly_asset endbefore=end_daily_asset_to_weekly_asset
 @multi_asset_sensor(asset_keys=[AssetKey("upstream_daily_asset")], job=weekly_asset_job)
 def trigger_weekly_asset_from_daily_asset(context):
+    run_requests = []
     materializations_by_partition = context.latest_materialization_records_by_partition(
         AssetKey("upstream_daily_asset")
     )
@@ -799,49 +796,14 @@ def trigger_weekly_asset_from_daily_asset(context):
             if context.all_partitions_materialized(
                 AssetKey("upstream_daily_asset"), daily_partitions_in_week
             ):
-                yield weekly_asset_job.run_request_for_partition(
-                    weekly_partitions[0], run_key=None
+                run_requests.append(
+                    weekly_asset_job.run_request_for_partition(weekly_partitions[0])
                 )
                 # Advance the cursor so we only check event log records past the cursor
                 context.advance_cursor(
                     {AssetKey("upstream_daily_asset"): materialization}
                 )
-```
-
-#### Materializing a daily asset partition if both upstream daily partitions are materialized
-
-The following example monitors two upstream daily-partitioned assets, kicking off a run in the downstream daily-partitioned asset if any upstream daily partition is replaced and the other upstream daily partition has an existing materialization.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_daily_partitioned_asset_with_two_upstreams endbefore=end_daily_partitioned_asset_with_two_upstreams
-@multi_asset_sensor(
-    asset_keys=[AssetKey("upstream_daily_1"), AssetKey("upstream_daily_2")],
-    job=downstream_daily_job,
-)
-def trigger_daily_asset_if_all_upstream_partitions_materialized(context):
-    def evaluate_latest_partitions(asset_key):
-        # For each asset, get the latest materialization record for each partition.
-        other_asset_keys = [
-            other_key for other_key in context.asset_keys if other_key != asset_key
-        ]
-        for (
-            partition,
-            materialization,
-        ) in context.latest_materialization_records_by_partition(asset_key).items():
-            # Check that the partition is materialized in the other asset. If so,
-            # yield a run request for the downstream partition.
-            if all(
-                [
-                    context.all_partitions_materialized(other_key, [partition])
-                    for other_key in other_asset_keys
-                ]
-            ):
-                yield downstream_daily_job.run_request_for_partition(
-                    partition, run_key=None
-                )
-            context.advance_cursor({asset_key: materialization})
-
-    for asset_key in context.asset_keys:
-        yield from evaluate_latest_partitions(asset_key)
+    return run_requests
 ```
 
 ## See it in action
