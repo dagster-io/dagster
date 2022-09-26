@@ -101,7 +101,7 @@ def test_parse_clause():
 
 
 def test_parse_clause_invalid():
-    assert parse_clause("1+some_solid") == None
+    assert parse_clause("1+some_solid") is None
 
 
 def test_parse_solid_selection_single():

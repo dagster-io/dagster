@@ -195,6 +195,7 @@ const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
   fragment LaunchpadSessionPipelineFragment on Pipeline {
     id
     isJob
+    isAssetJob
     ...ConfigEditorGeneratorPipelineFragment
     modes {
       id

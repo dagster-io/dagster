@@ -82,7 +82,7 @@ export const PartitionGraphSet: React.FC<{
       <div style={{flex: 1}}>
         <PartitionGraph
           isJob={isJob}
-          title="Execution Time by Partition"
+          title="Execution time by partition"
           yLabel="Execution time (secs)"
           partitionNames={partitionNames}
           jobDataByPartition={jobDurationData}
@@ -92,7 +92,7 @@ export const PartitionGraphSet: React.FC<{
 
         <PartitionGraph
           isJob={isJob}
-          title="Materialization Count by Partition"
+          title="Materialization count by partition"
           yLabel="Number of materializations"
           partitionNames={partitionNames}
           jobDataByPartition={jobMaterializationData}
@@ -101,7 +101,7 @@ export const PartitionGraphSet: React.FC<{
         />
         <PartitionGraph
           isJob={isJob}
-          title="Expectation Successes by Partition"
+          title="Expectation successes by partition"
           yLabel="Number of successes"
           partitionNames={partitionNames}
           jobDataByPartition={jobExpectationSuccessData}
@@ -110,7 +110,7 @@ export const PartitionGraphSet: React.FC<{
         />
         <PartitionGraph
           isJob={isJob}
-          title="Expectation Failures by Partition"
+          title="Expectation failures by partition"
           yLabel="Number of failures"
           partitionNames={partitionNames}
           jobDataByPartition={jobExpectationFailureData}
@@ -119,7 +119,7 @@ export const PartitionGraphSet: React.FC<{
         />
         <PartitionGraph
           isJob={isJob}
-          title="Expectation Rate by Partition"
+          title="Expectation rate by partition"
           yLabel="Rate of success"
           partitionNames={partitionNames}
           jobDataByPartition={jobExpectationRateData}

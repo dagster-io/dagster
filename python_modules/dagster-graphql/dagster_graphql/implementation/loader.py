@@ -67,7 +67,7 @@ class RepositoryScopedBatchLoader:
 
         if data_type == RepositoryDataType.JOB_RUNS:
             job_names = [x.name for x in self._repository.get_all_external_jobs()]
-            if self._instance.supports_bucket_queries:
+            if self._instance.supports_bucket_queries and len(job_names) > 1:
                 records = self._instance.get_run_records(
                     filters=RunsFilter(
                         tags={
@@ -99,7 +99,7 @@ class RepositoryScopedBatchLoader:
             schedule_names = [
                 schedule.name for schedule in self._repository.get_external_schedules()
             ]
-            if self._instance.supports_bucket_queries:
+            if self._instance.supports_bucket_queries and len(schedule_names) > 1:
                 records = self._instance.get_run_records(
                     filters=RunsFilter(
                         tags={
@@ -133,7 +133,7 @@ class RepositoryScopedBatchLoader:
 
         elif data_type == RepositoryDataType.SENSOR_RUNS:
             sensor_names = [sensor.name for sensor in self._repository.get_external_sensors()]
-            if self._instance.supports_bucket_queries:
+            if self._instance.supports_bucket_queries and len(sensor_names) > 1:
                 records = self._instance.get_run_records(
                     filters=RunsFilter(
                         tags={

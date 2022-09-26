@@ -17,7 +17,6 @@ import styled from 'styled-components/macro';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
-import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {AssetGroupSelector} from '../types/globalTypes';
@@ -39,6 +38,7 @@ import {
   AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes,
 } from './types/AssetCatalogTableQuery';
 import {AssetTableFragment} from './types/AssetTableFragment';
+import {useAssetSearch} from './useAssetSearch';
 import {AssetViewType, useAssetView} from './useAssetView';
 
 const PAGE_SIZE = 50;
@@ -110,14 +110,12 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     .trim();
 
   const {assets, query, error} = useAllAssets(groupSelector);
+  const pathMatches = useAssetSearch(searchPath, assets || []);
+
   const filtered = React.useMemo(
     () =>
-      (assets || []).filter((a) => {
-        const groupMatch = !searchGroup || isEqual(buildAssetGroupSelector(a), searchGroup);
-        const pathMatch = !searchPath || tokenForAssetKey(a.key).toLowerCase().includes(searchPath);
-        return groupMatch && pathMatch;
-      }),
-    [assets, searchPath, searchGroup],
+      pathMatches.filter((a) => !searchGroup || isEqual(buildAssetGroupSelector(a), searchGroup)),
+    [pathMatches, searchGroup],
   );
 
   const {displayPathForAsset, displayed, nextCursor, prevCursor} =

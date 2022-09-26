@@ -13,9 +13,9 @@ export const AssetLink: React.FC<{
   const linkUrl = url ? url : assetDetailsPathForKey({path});
 
   return (
-    <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
+    <Box flex={{direction: 'row', alignItems: 'flex-start', display: 'inline-flex'}}>
       {icon ? (
-        <Box margin={{right: 8}}>
+        <Box margin={{right: 8, top: 1}}>
           <Icon name={icon} color={Colors.Gray400} />
         </Box>
       ) : null}

@@ -89,6 +89,10 @@
             "path": "/concepts/assets/asset-observations"
           },
           {
+            "title": "Graph-Backed Assets",
+            "path": "/concepts/assets/graph-backed-assets"
+          },
+          {
             "title": "Multi-Assets",
             "path": "/concepts/assets/multi-assets"
           }
@@ -480,7 +484,7 @@
         "path": "/integrations/dbt"
       },
       {
-        "title": "dbt",
+        "title": "dbt Cloud",
         "path": "/integrations/dbt_cloud"
       },
       {

@@ -78,7 +78,7 @@ export const SchedulesTable: React.FC<{
   );
 };
 
-const errorDisplay = (status: InstigationStatus, runningScheduleCount: number) => {
+export const errorDisplay = (status: InstigationStatus, runningScheduleCount: number) => {
   if (status === InstigationStatus.STOPPED && runningScheduleCount === 0) {
     return null;
   } else if (status === InstigationStatus.RUNNING && runningScheduleCount === 1) {

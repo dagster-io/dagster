@@ -21,7 +21,7 @@ def test_preset_yaml_roundtrip():
 
 def test_empty_preset():
     empty_preset = PresetDefinition("empty")
-    assert empty_preset.run_config == None
+    assert empty_preset.run_config is None
     assert empty_preset.get_environment_yaml() == "{}\n"
 
 

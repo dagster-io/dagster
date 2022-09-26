@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {InstigationStatus, RunsFilter, RunStatus} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -111,8 +112,6 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
         );
 
         for (const pipeline of repository.pipelines) {
-          const jobKey = makeJobKey(repoAddress, pipeline.name);
-
           const schedules = (repository.schedules || []).filter(
             (schedule) => schedule.pipelineName === pipeline.name,
           );
@@ -134,11 +133,16 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
             }
           }
 
+          const isAdHoc = isHiddenAssetGroupJob(pipeline.name);
+          const jobKey = makeJobKey(repoAddress, pipeline.name);
+          const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
+
           const jobRuns = runsByJobKey[jobKey] || [];
           if (jobTicks.length || jobRuns.length) {
             jobs.push({
               key: jobKey,
-              jobName: pipeline.name,
+              jobName,
+              jobType: isAdHoc ? 'asset' : 'job',
               repoAddress,
               path: workspacePipelinePath({
                 repoName: repoAddress.name,
@@ -147,7 +151,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
                 isJob: pipeline.isJob,
               }),
               runs: [...jobRuns, ...jobTicks],
-            });
+            } as TimelineJob);
           }
         }
       }

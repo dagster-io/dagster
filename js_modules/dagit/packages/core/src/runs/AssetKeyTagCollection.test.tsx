@@ -4,9 +4,9 @@ import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
 
-import {RunAssetKeyTags} from './RunAssetKeyTags';
+import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 
-describe('RunAssetKeyTags', () => {
+describe('AssetKeyTagCollection', () => {
   const makeKeys = (count: number) => {
     return Array(count)
       .fill(null)
@@ -17,7 +17,7 @@ describe('RunAssetKeyTags', () => {
     await act(async () => {
       render(
         <TestProvider>
-          <RunAssetKeyTags assetKeys={makeKeys(3)} clickableTags />
+          <AssetKeyTagCollection assetKeys={makeKeys(3)} clickableTags />
         </TestProvider>,
       );
     });
@@ -32,7 +32,7 @@ describe('RunAssetKeyTags', () => {
     await act(async () => {
       render(
         <TestProvider>
-          <RunAssetKeyTags assetKeys={makeKeys(5)} clickableTags />
+          <AssetKeyTagCollection assetKeys={makeKeys(5)} clickableTags />
         </TestProvider>,
       );
     });

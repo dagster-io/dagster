@@ -619,7 +619,7 @@ def test_resource_no_version():
     def no_version_resource(_):
         pass
 
-    assert no_version_resource.version == None
+    assert no_version_resource.version is None
 
 
 def test_resource_passed_version():

@@ -18,18 +18,11 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs {
   __typename: "Run";
   id: string;
-  mode: string;
   runId: string;
   status: RunStatus;
   startTime: number | null;
   endTime: number | null;
   updateTime: number | null;
-}
-
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes {
-  __typename: "Mode";
-  id: string;
-  name: string;
 }
 
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines {
@@ -38,7 +31,6 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   name: string;
   isJob: boolean;
   runs: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs[];
-  modes: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes[];
 }
 
 export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_location {

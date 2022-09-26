@@ -639,7 +639,7 @@ def test_start_schedule_with_default_status(graphql_context):
 
 class TestSchedulePermissions(ReadonlyGraphQLContextTestMatrix):
     def test_start_schedule_failure(self, graphql_context):
-        assert graphql_context.read_only == True
+        assert graphql_context.read_only is True
 
         schedule_selector = infer_schedule_selector(
             graphql_context, "no_config_pipeline_hourly_schedule"

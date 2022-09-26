@@ -1,3 +1,4 @@
+import pytest
 import responses
 from dagster_fivetran import FivetranOutput, fivetran_resource, fivetran_resync_op, fivetran_sync_op
 from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH
@@ -79,7 +80,26 @@ def test_fivetran_sync_op():
         )
 
 
-def test_fivetran_resync_op():
+@pytest.mark.parametrize(
+    "resync_params,endpoint,expected_assets",
+    [
+        (
+            None,
+            "/resync",
+            [
+                AssetKey(["fivetran", "xyz1", "abc1"]),
+                AssetKey(["fivetran", "xyz1", "abc2"]),
+                AssetKey(["fivetran", "abc", "xyz"]),
+            ],
+        ),
+        (
+            {"xyz1": ["abc1", "abc2"]},
+            "/schemas/tables/resync",
+            [AssetKey(["fivetran", "xyz1", "abc1"]), AssetKey(["fivetran", "xyz1", "abc2"])],
+        ),
+    ],
+)
+def test_fivetran_resync_op(resync_params, endpoint, expected_assets):
 
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
@@ -96,7 +116,7 @@ def test_fivetran_resync_op():
                 "fivetran_resync_op": {
                     "config": {
                         "connector_id": DEFAULT_CONNECTOR_ID,
-                        "resync_parameters": {"xyz1": ["abc1", "abc2"]},
+                        "resync_parameters": resync_params,
                         "poll_interval": 0.1,
                         "poll_timeout": 10,
                     }
@@ -109,9 +129,7 @@ def test_fivetran_resync_op():
 
     with responses.RequestsMock() as rsps:
         rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
-        rsps.add(
-            rsps.POST, f"{api_prefix}/schemas/tables/resync", json=get_sample_resync_response()
-        )
+        rsps.add(rsps.POST, api_prefix + endpoint, json=get_sample_resync_response())
         # connector schema
         rsps.add(
             rsps.GET, f"{api_prefix}/schemas", json=get_complex_sample_connector_schema_config()
@@ -134,13 +152,8 @@ def test_fivetran_resync_op():
             for event in result.events_for_node("fivetran_resync_op")
             if event.event_type_value == "ASSET_MATERIALIZATION"
         ]
-        assert len(asset_materializations) == 2
+        assert len(asset_materializations) == len(expected_assets)
         asset_keys = set(
             mat.event_specific_data.materialization.asset_key for mat in asset_materializations
         )
-        assert asset_keys == set(
-            [
-                AssetKey(["fivetran", "xyz1", "abc1"]),
-                AssetKey(["fivetran", "xyz1", "abc2"]),
-            ]
-        )
+        assert asset_keys == set(expected_assets)
