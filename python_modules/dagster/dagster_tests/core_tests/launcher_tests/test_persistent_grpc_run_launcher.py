@@ -78,6 +78,92 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
         server_process.wait()
 
 
+def test_run_from_pending_repository():
+    with instance_for_test() as instance:
+        loadable_target_origin = LoadableTargetOrigin(
+            executable_path=sys.executable,
+            attribute="pending",
+            python_file=file_relative_path(__file__, "pending_repository.py"),
+        )
+        server_process = GrpcServerProcess(
+            loadable_target_origin=loadable_target_origin, max_workers=4
+        )
+        with server_process.create_ephemeral_client():  # Shuts down when leaves context
+            with WorkspaceProcessContext(
+                instance,
+                GrpcServerTarget(
+                    host="localhost",
+                    socket=server_process.socket,
+                    port=server_process.port,
+                    location_name="test2",
+                ),
+            ) as workspace_process_context:
+                num_called = int(
+                    instance.run_storage.kvs_get({"num_called"}).get("num_called", "0")
+                )
+                workspace = workspace_process_context.create_request_context()
+
+                repo_location = workspace.get_repository_location("test2")
+                external_pipeline = repo_location.get_repository("pending").get_full_external_job(
+                    "my_cool_asset_job"
+                )
+                external_execution_plan = repo_location.get_external_execution_plan(
+                    external_pipeline=external_pipeline,
+                    run_config={},
+                    mode="default",
+                    step_keys_to_execute=None,
+                    known_state=None,
+                )
+                num_called = int(
+                    instance.run_storage.kvs_get({"num_called"}).get("num_called", "0")
+                )
+                pipeline_run = instance.create_run(
+                    pipeline_name="my_cool_asset_job",
+                    run_id="xyzabc",
+                    run_config=None,
+                    mode="default",
+                    solids_to_execute=None,
+                    step_keys_to_execute=None,
+                    status=None,
+                    tags=None,
+                    root_run_id=None,
+                    parent_run_id=None,
+                    pipeline_snapshot=external_pipeline.pipeline_snapshot,
+                    execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+                    parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+                    external_pipeline_origin=external_pipeline.get_external_origin(),
+                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                )
+
+                run_id = pipeline_run.run_id
+
+                assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+
+                instance.launch_run(run_id=run_id, workspace=workspace)
+
+        # Server process now receives shutdown event, run has not finished yet
+        pipeline_run = instance.get_run_by_id(run_id)
+        assert not pipeline_run.is_finished
+        assert server_process.server_process.poll() is None
+
+        # Server should wait until run finishes, then shutdown
+        pipeline_run = poll_for_finished_run(instance, run_id)
+        assert pipeline_run.status == PipelineRunStatus.SUCCESS
+
+        start_time = time.time()
+        while server_process.server_process.poll() is None:
+            time.sleep(0.05)
+            # Verify server process cleans up eventually
+            assert time.time() - start_time < 5
+
+        server_process.wait()
+
+        # should only have had to get the metadata once for each cacheable asset def
+        num_called = instance.run_storage.kvs_get({"num_called_a", "num_called_b"})
+        assert num_called.get("num_called_a") == "1"
+        assert num_called.get("num_called_b") == "1"
+
+
 def test_terminate_after_shutdown():
     with instance_for_test() as instance:
         with WorkspaceProcessContext(

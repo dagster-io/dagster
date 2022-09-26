@@ -1203,9 +1203,6 @@ class RepositoryDefinition:
     def description(self) -> Optional[str]:
         return self._description
 
-    def refresh_external_data(self):
-        """Refreshes external asset metadata"""
-
     def load_all_definitions(self):
         # force load of all lazy constructed code artifacts
         self._repository_data.load_all_definitions()
