@@ -278,7 +278,7 @@ def execute_run(
     event_list = list(_execute_run_iterable)
 
     return PipelineExecutionResult(
-        pipeline_def,
+        pipeline.get_definition(),
         pipeline_run.run_id,
         event_list,
         lambda: scoped_pipeline_context(
