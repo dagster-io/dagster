@@ -68,7 +68,7 @@ class ManagedStackDiff(
         """
         Adds a modification entry to the diff.
         """
-        return self._replace(modifications=self.modifications + [(name,)])
+        return self._replace(modifications=self.modifications + [(name, old_value, new_value)])
 
     def with_nested(self, name: str, nested: "ManagedStackDiff") -> "ManagedStackDiff":
         """
