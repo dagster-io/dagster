@@ -220,6 +220,17 @@ class frozendict(dict):
         return hash(tuple(sorted(self.items())))
 
 
+class recursive_frozendict(frozendict):
+    def __hash__(self):
+        ret = []
+        for k, v in sorted(self.items()):
+            if isinstance(v, dict):
+                ret.append((k, recursive_frozendict(v)))
+            else:
+                ret.append((k, v))
+        return hash(tuple(ret))
+
+
 class frozenlist(list):
     def __readonly__(self, *args, **kwargs):
         raise RuntimeError("Cannot modify ReadOnlyList")

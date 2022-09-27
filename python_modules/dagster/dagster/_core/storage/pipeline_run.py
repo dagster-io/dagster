@@ -223,7 +223,7 @@ def pipeline_run_from_storage(
     reexecution_config=None,  # pylint: disable=unused-argument
     external_pipeline_origin=None,
     pipeline_code_origin=None,
-    repository_metadata=None,
+    has_repository_metadata=None,
     **kwargs,
 ):
 
@@ -308,7 +308,7 @@ def pipeline_run_from_storage(
         execution_plan_snapshot_id=execution_plan_snapshot_id,
         external_pipeline_origin=external_pipeline_origin,
         pipeline_code_origin=pipeline_code_origin,
-        repository_metadata=repository_metadata,
+        has_repository_metadata=has_repository_metadata,
     )
 
 
@@ -332,7 +332,7 @@ class PipelineRun(
             ("execution_plan_snapshot_id", Optional[str]),
             ("external_pipeline_origin", Optional["ExternalPipelineOrigin"]),
             ("pipeline_code_origin", Optional[PipelinePythonOrigin]),
-            ("repository_metadata", Optional["RepositoryMetadata"]),
+            ("has_repository_metadata", bool),
         ],
     )
 ):
@@ -358,10 +358,8 @@ class PipelineRun(
         execution_plan_snapshot_id: Optional[str] = None,
         external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
         pipeline_code_origin: Optional[PipelinePythonOrigin] = None,
-        repository_metadata: Optional["RepositoryMetadata"] = None,
+        has_repository_metadata: Optional[bool] = None,
     ):
-        from dagster._core.definitions.repository_definition import RepositoryMetadata
-
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
             or (root_run_id is None and parent_run_id is None),
@@ -426,8 +424,8 @@ class PipelineRun(
             pipeline_code_origin=check.opt_inst_param(
                 pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin
             ),
-            repository_metadata=check.opt_inst_param(
-                repository_metadata, "repository_metadata", RepositoryMetadata
+            has_repository_metadata=check.opt_bool_param(
+                has_repository_metadata, "has_repository_metadata", default=False
             ),
         )
 

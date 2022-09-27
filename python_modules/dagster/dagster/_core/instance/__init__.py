@@ -958,9 +958,8 @@ class DagsterInstance:
             execution_plan_snapshot_id=execution_plan_snapshot_id,
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
-            repository_metadata=execution_plan_snapshot.repository_metadata
-            if execution_plan_snapshot
-            else None,
+            has_repository_metadata=execution_plan_snapshot is not None
+            and execution_plan_snapshot.repository_metadata is not None,
         )
 
     def _ensure_persisted_pipeline_snapshot(self, pipeline_snapshot, parent_pipeline_snapshot):

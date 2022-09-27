@@ -1,20 +1,39 @@
-from dagster import AssetKey, DagsterInstance, asset, define_asset_job, repository
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    DagsterInstance,
+    In,
+    MetadataValue,
+    Nothing,
+    asset,
+    define_asset_job,
+    op,
+    repository,
+)
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionMetadata,
     CacheableAssetsDefinition,
 )
 
 
+@op(ins={"inp": In(Nothing)})
+def my_op():
+    return 1
+
+
 class MyAssets(CacheableAssetsDefinition):
     def get_definitions(self, metadata):
-        def _asset_from_metadata(md):
-            @asset(name=list(md.output_keys)[0].path[-1], non_argument_deps=md.input_keys)
-            def _asset():
-                return 1
-
-            return _asset
-
-        return [_asset_from_metadata(md) for md in (metadata or [])]
+        return [
+            AssetsDefinition.from_op(
+                my_op,
+                keys_by_input_name=md.keys_by_input_name,
+                keys_by_output_name=md.keys_by_output_name,
+                key_prefix=md.key_prefix,
+                group_name=md.group_name,
+                metadata_by_output_name=md.metadata_by_output_name,
+            )
+            for md in (metadata or [])
+        ]
 
     def get_metadata(self):
         # used for tracking how many times we've executed this function
@@ -25,8 +44,21 @@ class MyAssets(CacheableAssetsDefinition):
 
         return [
             AssetsDefinitionMetadata(
-                input_keys={AssetKey(f"upstream_{self.unique_id}")},
-                output_keys={AssetKey(f"foo_{self.unique_id}")},
+                keys_by_input_name={"inp": AssetKey(f"upstream_{self.unique_id}")},
+                keys_by_output_name={"result": AssetKey(f"foo_{self.unique_id}")},
+                internal_asset_deps={"result": {AssetKey(f"upstream_{self.unique_id}")}},
+                group_name="some_group",
+                metadata_by_output_name={
+                    "result": {
+                        "a": 1,
+                        "b": "foo",
+                        "c": 1.75,
+                        "d": MetadataValue.md("### something \n```\na\n```"),
+                        "e": {"foo": "bar", "baz": 1},
+                    },
+                },
+                can_subset=False,
+                extra_metadata={"foo": None, "bar": {"hi": 1.75, "x": ["y", {"z": "w"}, 2]}},
             )
         ]
 
