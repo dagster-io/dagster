@@ -26,7 +26,11 @@ const initialPostMessage = (_data: any): void => {
 };
 let postMessage = initialPostMessage;
 
+const start = performance.now();
+console.log('start', start);
+
 function initialize(data: INITIALIZE) {
+  console.log('initialize');
   postMessage = data.postMessage;
   data
     .getApolloClient()
@@ -42,6 +46,7 @@ function initialize(data: INITIALIZE) {
           console.error('PipelineRunLogsSubscriptionFailure', logs);
           return;
         }
+        console.log('got data', performance.now() - start);
         postMessage(logs);
       },
       error(error: any) {

@@ -129,6 +129,10 @@ export const LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT = gql`
   ${LOGS_ROW_UNSTRUCTURED_FRAGMENT}
 `;
 
+const start = window.performance.now();
+console.log('start', start);
+let done: any = null;
+
 class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedProps> {
   list = React.createRef<List>();
 
@@ -318,6 +322,12 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
 
   render() {
     const {filteredNodes, height, loading, width} = this.props;
+    if (!loading && !done) {
+      done = true;
+      requestAnimationFrame(() => {
+        console.log('done', performance.now() - start);
+      });
+    }
     return (
       <div>
         {loading ? (

@@ -192,8 +192,6 @@ const useLogsProviderWithSubscription = (runId: string) => {
     ? usePipelineRunLogsSubscriptionWorker
     : usePipelineRunLogsSubscription;
 
-  console.log({useHook});
-
   useHook(
     {runId, cursor},
     React.useCallback(
