@@ -8,6 +8,7 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     fetch_connected,
+    fetch_sinks,
     generate_asset_dep_graph,
     generate_asset_name_to_definition_map,
 )
@@ -111,6 +112,16 @@ class AssetSelection(ABC):
         check.opt_bool_param(include_self, "include_self")
         return UpstreamAssetSelection(self, depth=depth, include_self=include_self)
 
+    @public  # type: ignore
+    def sinks(self) -> "SinkAssetSelection":
+        """
+        Given an asset selection, returns a new asset selection that contains all of the sink
+        assets within the original asset selection.
+
+        A sink asset is an asset that has no downstream dependencies within the asset selection.
+        The sink asset can have downstream dependencies outside of the asset selection."""
+        return SinkAssetSelection(self)
+
     def __or__(self, other: "AssetSelection") -> "OrAssetSelection":
         check.inst_param(other, "other", AssetSelection)
         return OrAssetSelection(self, other)
@@ -118,6 +129,10 @@ class AssetSelection(ABC):
     def __and__(self, other: "AssetSelection") -> "AndAssetSelection":
         check.inst_param(other, "other", AssetSelection)
         return AndAssetSelection(self, other)
+
+    def __sub__(self, other: "AssetSelection") -> "SubAssetSelection":
+        check.inst_param(other, "other", AssetSelection)
+        return SubAssetSelection(self, other)
 
     def resolve(
         self, all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]
@@ -135,6 +150,19 @@ class AndAssetSelection(AssetSelection):
         self.children = (child_1, child_2)
 
 
+class SubAssetSelection(AssetSelection):
+    def __init__(self, child_1: AssetSelection, child_2: AssetSelection):
+        self.children = (child_1, child_2)
+
+
+class SinkAssetSelection(AssetSelection):
+    def __init__(
+        self,
+        child: AssetSelection,
+    ):
+        self.children = (child,)
+
+
 class DownstreamAssetSelection(AssetSelection):
     def __init__(
         self,
@@ -143,7 +171,7 @@ class DownstreamAssetSelection(AssetSelection):
         depth: Optional[int] = None,
         include_self: Optional[bool] = True,
     ):
-        self.selection = (child,)
+        self.children = (child,)
         self.depth = depth
         self.include_self = include_self
 
@@ -171,7 +199,7 @@ class UpstreamAssetSelection(AssetSelection):
         depth: Optional[int] = None,
         include_self: Optional[bool] = True,
     ):
-        self.selection = (child,)
+        self.children = (child,)
         self.depth = depth
         self.include_self = include_self
 
@@ -211,8 +239,14 @@ class Resolver:
         elif isinstance(node, AndAssetSelection):
             child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 & child_2
+        elif isinstance(node, SubAssetSelection):
+            child_1, child_2 = [self._resolve(child) for child in node.children]
+            return child_1 - child_2
+        elif isinstance(node, SinkAssetSelection):
+            selection = self._resolve(node.children[0])
+            return fetch_sinks(self.asset_dep_graph, selection)
         elif isinstance(node, DownstreamAssetSelection):
-            selection = self._resolve(node.selection[0])
+            selection = self._resolve(node.children[0])
             return reduce(
                 operator.or_,
                 [
@@ -253,7 +287,7 @@ class Resolver:
             child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 | child_2
         elif isinstance(node, UpstreamAssetSelection):
-            selection = self._resolve(node.selection[0])
+            selection = self._resolve(node.children[0])
             return reduce(
                 operator.or_,
                 [

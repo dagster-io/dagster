@@ -104,6 +104,32 @@ def test_asset_selection_or(all_assets):
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob, candace})
 
 
+def test_asset_selection_subtraction(all_assets):
+    sel = AssetSelection.keys("alice", "bob") - AssetSelection.keys("bob", "candace")
+    assert sel.resolve(all_assets) == _asset_keys_of({alice})
+
+    sel = AssetSelection.groups("ladies") - AssetSelection.groups("gentlemen")
+    assert sel.resolve(all_assets) == _asset_keys_of({alice, candace, fiona})
+
+    sel = (AssetSelection.groups("ladies") | AssetSelection.keys("bob")) - AssetSelection.groups(
+        "ladies"
+    )
+    assert sel.resolve(all_assets) == _asset_keys_of({bob})
+
+
+def test_asset_selection_sinks(all_assets):
+    sel = AssetSelection.keys("alice", "bob").sinks()
+    assert sel.resolve(all_assets) == _asset_keys_of({bob})
+
+    sel = AssetSelection.all().sinks()
+    assert sel.resolve(all_assets) == _asset_keys_of({edgar, george})
+
+    sel = AssetSelection.groups("ladies").sinks()
+    # fiona is a sink because it has no downstream dependencies within the "ladies" group
+    # candace is not a sink because it is an upstream dependency of fiona
+    assert sel.resolve(all_assets) == _asset_keys_of({fiona})
+
+
 def test_asset_selection_upstream(all_assets):
     sel_depth_inf = AssetSelection.keys("george").upstream()
     assert sel_depth_inf.resolve(all_assets) == _asset_keys_of(
