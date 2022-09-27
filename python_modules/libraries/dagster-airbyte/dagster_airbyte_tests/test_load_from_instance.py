@@ -53,16 +53,17 @@ def test_load_from_instance(use_normalization_tables, connection_to_group_fn):
         status=200,
     )
     if connection_to_group_fn:
-        ab_assets = load_assets_from_airbyte_instance(
+        ab_cacheable_assets = load_assets_from_airbyte_instance(
             ab_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
         )
     else:
-        ab_assets = load_assets_from_airbyte_instance(
+        ab_cacheable_assets = load_assets_from_airbyte_instance(
             ab_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
         )
+    ab_assets = ab_cacheable_assets.get_definitions(ab_cacheable_assets.get_metadata())
 
     tables = {"dagster_releases", "dagster_tags", "dagster_teams"} | (
         {"dagster_releases_assets", "dagster_releases_author", "dagster_tags_commit"}

@@ -2,11 +2,9 @@ import os
 import re
 from itertools import chain
 from typing import (
-    AbstractSet,
     Any,
     Callable,
     Dict,
-    FrozenSet,
     Iterable,
     List,
     Mapping,
@@ -39,7 +37,7 @@ def _build_airbyte_asset_defn_metadata(
     connection_id: str,
     destination_tables: List[str],
     asset_key_prefix: Optional[List[str]] = None,
-    normalization_tables: Optional[Mapping[str, List[str]]] = None,
+    normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     upstream_assets: Optional[Iterable[AssetKey]] = None,
     group_name: Optional[str] = None,
 ) -> AssetsDefinitionMetadata:
@@ -72,7 +70,7 @@ def _build_airbyte_asset_defn_metadata(
 
     # All non-normalization tables depend on any user-provided upstream assets
     for table in destination_tables:
-        internal_deps[table] = upstream_assets or set()
+        internal_deps[table] = set(upstream_assets or [])
 
     return AssetsDefinitionMetadata(
         keys_by_input_name={asset_key.path[-1]: asset_key for asset_key in upstream_assets}
@@ -96,18 +94,18 @@ def _build_airbyte_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionMetadata,
 ) -> AssetsDefinition:
 
-    connection_id = assets_defn_meta.extra_metadata["connection_id"]
-    group_name = assets_defn_meta.extra_metadata["group_name"]
-    destination_tables = assets_defn_meta.extra_metadata["destination_tables"]
-    normalization_tables: Mapping[str, List[str]] = assets_defn_meta.extra_metadata[
-        "normalization_tables"
-    ]
+    connection_id = cast(str, assets_defn_meta.extra_metadata["connection_id"])
+    group_name = cast(Optional[str], assets_defn_meta.extra_metadata["group_name"])
+    destination_tables = cast(List[str], assets_defn_meta.extra_metadata["destination_tables"])
+    normalization_tables = cast(
+        Mapping[str, List[str]], assets_defn_meta.extra_metadata["normalization_tables"]
+    )
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
-        non_argument_deps=set(assets_defn_meta.keys_by_input_name.values()),
-        outs={k: AssetOut(key=v) for k, v in assets_defn_meta.keys_by_output_name.items()},
-        internal_asset_deps=assets_defn_meta.internal_asset_deps,
+        non_argument_deps=set((assets_defn_meta.keys_by_input_name or {}).values()),
+        outs={k: AssetOut(key=v) for k, v in (assets_defn_meta.keys_by_output_name or {}).items()},
+        internal_asset_deps={k: set(v) for k, v in assets_defn_meta.internal_asset_deps.items()},
         required_resource_keys={"airbyte"},
         compute_kind="airbyte",
         group_name=group_name,
