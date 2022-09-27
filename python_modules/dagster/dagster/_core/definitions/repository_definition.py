@@ -6,10 +6,12 @@ from typing import (
     Any,
     Callable,
     Dict,
+    FrozenSet,
     Generic,
     List,
     Mapping,
     Optional,
+    Sequence,
     Set,
     Type,
     TypeVar,
@@ -20,6 +22,7 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.selector import parse_solid_selection
 from dagster._utils import merge_dicts
 
 from .events import AssetKey
@@ -1294,6 +1297,28 @@ class RepositoryDefinition:
     @property
     def _assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._repository_data.get_assets_defs_by_key()
+
+    def get_maybe_subset_job_def(
+        self,
+        job_name: str,
+        op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solids_to_execute: Optional[FrozenSet[str]] = None,
+    ):
+        # named job forward expecting pipeline distinction to be removed soon
+        defn = self.get_pipeline(job_name)
+        if isinstance(defn, JobDefinition):
+            return defn.get_job_def_for_subset_selection(op_selection, asset_selection)
+
+        check.invariant(
+            asset_selection is None,
+            f"Asset selection cannot be provided with a pipeline {asset_selection}",
+        )
+        # pipelines use post-resolved selection, should be removed soon
+        if op_selection and solids_to_execute is None:
+            solids_to_execute = parse_solid_selection(defn, op_selection)
+
+        return defn.get_pipeline_subset_def(solids_to_execute)
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.
