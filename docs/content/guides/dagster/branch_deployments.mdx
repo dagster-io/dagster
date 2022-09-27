@@ -29,7 +29,7 @@ Here’s an overview of the main concepts we’ll be using:
 
 <Note>
   This guide is an extension of the{" "}
-  <a href="/guides/dagster/local-to-production-tutorial">
+  <a href="/guides/dagster/transitioning-data-pipelines-from-development-to-production">
     Transitioning Data Pipelines from Development to Production
   </a>{" "}
   guide, illustrating a workflow for staging deployments. We’ll use the examples
@@ -164,7 +164,7 @@ def repo():
     }
 
     def get_current_env():
-        is_branch_depl = os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT")
+        is_branch_depl = os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
         assert is_branch_depl != None  # env var must be set
         return "branch" if is_branch_depl else "prod"
 
@@ -254,7 +254,7 @@ def repo():
         ),
         *(
             branch_deployment_jobs
-            if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT")
+            if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
             else []
         ),
     ]
@@ -338,7 +338,7 @@ def repo():
         ),
         *(
             branch_deployment_jobs
-            if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT")
+            if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
             else []
         ),
     ]

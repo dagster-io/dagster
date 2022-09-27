@@ -189,7 +189,7 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
         )
         external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
     else:
-        external_pipeline = external_repo.get_full_external_pipeline(
+        external_pipeline = external_repo.get_full_external_job(
             external_partition_set.pipeline_name
         )
     for partition_data in result.partition_data:

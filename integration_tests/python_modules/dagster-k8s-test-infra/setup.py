@@ -17,6 +17,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=["dagster", "docker", "boto3"],
+        install_requires=["dagster", "docker", "dagster-aws"],
         zip_safe=False,
     )

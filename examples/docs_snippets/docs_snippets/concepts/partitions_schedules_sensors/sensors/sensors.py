@@ -345,3 +345,16 @@ def team_a_data_update_failure_sensor():
 
 
 # end_cross_repo_run_status_sensor
+
+
+# start_instance_sensor
+@run_status_sensor(
+    monitor_all_repositories=True,
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def instance_sensor():
+    # when any job in the Dagster instance succeeds, this sensor will trigger
+    send_slack_alert()
+
+
+# end_instance_sensor

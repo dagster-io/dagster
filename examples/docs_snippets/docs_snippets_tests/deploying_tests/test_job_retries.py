@@ -20,5 +20,5 @@ def test_instance(docs_snippets_folder):
         os.path.join(docs_snippets_folder, "deploying", "dagster_instance")
     )
 
-    assert ref.settings["run_retries"]["enabled"] == True
+    assert ref.settings["run_retries"]["enabled"] is True
     assert ref.settings["run_retries"]["max_retries"] == 3

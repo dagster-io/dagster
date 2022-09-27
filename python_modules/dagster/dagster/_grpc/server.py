@@ -7,9 +7,10 @@ import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from multiprocessing.synchronize import Event as MPEvent
 from threading import Event as ThreadingEventType
 from time import sleep
-from typing import NamedTuple
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -18,23 +19,18 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructableRepository
+from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.external_data import (
     ExternalRepositoryErrorData,
+    external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from dagster._core.host_representation.origin import (
-    ExternalPipelineOrigin,
-    ExternalRepositoryOrigin,
-)
+from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-    whitelist_for_serdes,
-)
+from dagster._serdes import deserialize_as, serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster._serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
 from dagster._utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -88,14 +84,21 @@ class CouldNotBindGrpcServerToAddress(Exception):
 
 
 class LoadedRepositories:
-    def __init__(self, loadable_target_origin, entry_point, container_image=None):
+    def __init__(
+        self,
+        loadable_target_origin: Optional[LoadableTargetOrigin],
+        entry_point: List[str],
+        container_image: Optional[str] = None,
+    ):
         self._loadable_target_origin = loadable_target_origin
 
-        self._code_pointers_by_repo_name = {}
-        self._recon_repos_by_name = {}
-        self._loadable_repository_symbols = []
+        self._code_pointers_by_repo_name: Dict[str, CodePointer] = {}
+        self._recon_repos_by_name: Dict[str, ReconstructableRepository] = {}
+        self._repo_defs_by_name: Dict[str, RepositoryDefinition] = {}
+        self._loadable_repository_symbols: List[LoadableRepositorySymbol] = []
 
         if not loadable_target_origin:
+            # empty workspace
             return
 
         loadable_targets = get_loadable_targets(
@@ -121,6 +124,7 @@ class LoadedRepositories:
 
             self._code_pointers_by_repo_name[repo_def.name] = pointer
             self._recon_repos_by_name[repo_def.name] = recon_repo
+            self._repo_defs_by_name[repo_def.name] = repo_def
             self._loadable_repository_symbols.append(
                 LoadableRepositorySymbol(
                     attribute=loadable_target.attribute,
@@ -136,12 +140,13 @@ class LoadedRepositories:
     def code_pointers_by_repo_name(self):
         return self._code_pointers_by_repo_name
 
-    def get_recon_repo(self, name: str) -> ReconstructableRepository:
+    @property
+    def definitions_by_name(self) -> Dict[str, RepositoryDefinition]:
+        return self._repo_defs_by_name
 
-        if name not in self._recon_repos_by_name:
-            raise Exception(f'Could not find a repository called "{name}"')
-
-        return self._recon_repos_by_name[name]
+    @property
+    def reconstructables_by_name(self) -> Dict[str, ReconstructableRepository]:
+        return self._recon_repos_by_name
 
 
 def _get_code_pointer(loadable_target_origin, loadable_repository_symbol):
@@ -171,15 +176,15 @@ class DagsterApiServer(DagsterApiServicer):
     # the target passed in here instead of passing in a target in the argument.
     def __init__(
         self,
-        server_termination_event,
-        loadable_target_origin=None,
-        heartbeat=False,
-        heartbeat_timeout=30,
-        lazy_load_user_code=False,
-        fixed_server_id=None,
-        entry_point=None,
-        container_image=None,
-        container_context=None,
+        server_termination_event: ThreadingEventType,
+        loadable_target_origin: Optional[LoadableTargetOrigin] = None,
+        heartbeat: bool = False,
+        heartbeat_timeout: int = 30,
+        lazy_load_user_code: bool = False,
+        fixed_server_id: Optional[str] = None,
+        entry_point: Optional[List[str]] = None,
+        container_image: Optional[str] = None,
+        container_context: Optional[dict] = None,
     ):
         super(DagsterApiServer, self).__init__()
 
@@ -205,11 +210,9 @@ class DagsterApiServer(DagsterApiServicer):
         # termination event once all current executions have finished, which will stop the server)
         self._shutdown_once_executions_finish_event = threading.Event()
 
-        # Dict[str, (multiprocessing.Process, DagsterInstance)]
-        self._executions = {}
-        # Dict[str, multiprocessing.Event]
-        self._termination_events = {}
-        self._termination_times = {}
+        self._executions: Dict[str, Tuple[multiprocessing.Process, DagsterInstance]] = {}
+        self._termination_events: Dict[str, MPEvent] = {}
+        self._termination_times: Dict[str, float] = {}
         self._execution_lock = threading.Lock()
 
         self._serializable_load_error = None
@@ -224,7 +227,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._container_context = check.opt_dict_param(container_context, "container_context")
 
         try:
-            self._loaded_repositories = LoadedRepositories(
+            self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
                 self._entry_point,
                 self._container_image,
@@ -237,7 +240,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         self.__last_heartbeat_time = time.time()
         if heartbeat:
-            self.__heartbeat_thread = threading.Thread(
+            self.__heartbeat_thread: Optional[threading.Thread] = threading.Thread(
                 target=self._heartbeat_thread,
                 args=(heartbeat_timeout,),
                 name="grpc-server-heartbeat",
@@ -313,17 +316,16 @@ class DagsterApiServer(DagsterApiServicer):
         if run_id in self._termination_times:
             del self._termination_times[run_id]
 
-    def _recon_repository_from_origin(
-        self, external_repository_origin: ExternalRepositoryOrigin
-    ) -> ReconstructableRepository:
-        # could assert against external_repository_origin.repository_location_origin
-        return self._loaded_repositories.get_recon_repo(external_repository_origin.repository_name)
-
-    def _recon_pipeline_from_origin(self, external_pipeline_origin: ExternalPipelineOrigin):
-        recon_repo = self._recon_repository_from_origin(
-            external_pipeline_origin.external_repository_origin
-        )
-        return recon_repo.get_reconstructable_pipeline(external_pipeline_origin.pipeline_name)
+    def _get_repo_for_origin(
+        self,
+        external_repo_origin: ExternalRepositoryOrigin,
+    ) -> RepositoryDefinition:
+        loaded_repos = check.not_none(self._loaded_repositories)
+        if external_repo_origin.repository_name not in loaded_repos.definitions_by_name:
+            raise Exception(
+                f'Could not find a repository called "{external_repo_origin.repository_name}"'
+            )
+        return loaded_repos.definitions_by_name[external_repo_origin.repository_name]
 
     def Ping(self, request, _context):
         echo = request.echo
@@ -344,14 +346,17 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.GetServerIdReply(server_id=self._server_id)
 
     def ExecutionPlanSnapshot(self, request, _context):
-        execution_plan_args = deserialize_json_to_dagster_namedtuple(
-            request.serialized_execution_plan_snapshot_args
+        execution_plan_args = deserialize_as(
+            request.serialized_execution_plan_snapshot_args,
+            ExecutionPlanSnapshotArgs,
         )
 
-        check.inst_param(execution_plan_args, "execution_plan_args", ExecutionPlanSnapshotArgs)
-        recon_pipeline = self._recon_pipeline_from_origin(execution_plan_args.pipeline_origin)
         execution_plan_snapshot_or_error = get_external_execution_plan_snapshot(
-            recon_pipeline, execution_plan_args
+            self._get_repo_for_origin(
+                execution_plan_args.pipeline_origin.external_repository_origin
+            ),
+            execution_plan_args.pipeline_origin.pipeline_name,
+            execution_plan_args,
         )
         return api_pb2.ExecutionPlanSnapshotReply(
             serialized_execution_plan_snapshot=serialize_dagster_namedtuple(
@@ -383,18 +388,14 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def ExternalPartitionNames(self, request, _context):
-        partition_names_args = deserialize_json_to_dagster_namedtuple(
-            request.serialized_partition_names_args
+        partition_names_args = deserialize_as(
+            request.serialized_partition_names_args,
+            PartitionNamesArgs,
         )
-
-        check.inst_param(partition_names_args, "partition_names_args", PartitionNamesArgs)
-
-        recon_repo = self._recon_repository_from_origin(partition_names_args.repository_origin)
-
         return api_pb2.ExternalPartitionNamesReply(
             serialized_external_partition_names_or_external_partition_execution_error=serialize_dagster_namedtuple(
                 get_partition_names(
-                    recon_repo,
+                    self._get_repo_for_origin(partition_names_args.repository_origin),
                     partition_names_args.partition_set_name,
                 )
             )
@@ -406,20 +407,14 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))
 
     def ExternalPartitionSetExecutionParams(self, request, _context):
-        args = deserialize_json_to_dagster_namedtuple(
-            request.serialized_partition_set_execution_param_args
-        )
-
-        check.inst_param(
-            args,
-            "args",
+        args = deserialize_as(
+            request.serialized_partition_set_execution_param_args,
             PartitionSetExecutionParamArgs,
         )
 
-        recon_repo = self._recon_repository_from_origin(args.repository_origin)
         serialized_data = serialize_dagster_namedtuple(
             get_partition_set_execution_param_data(
-                recon_repo=recon_repo,
+                self._get_repo_for_origin(args.repository_origin),
                 partition_set_name=args.partition_set_name,
                 partition_names=args.partition_names,
             )
@@ -428,48 +423,44 @@ class DagsterApiServer(DagsterApiServicer):
         yield from self._split_serialized_data_into_chunk_events(serialized_data)
 
     def ExternalPartitionConfig(self, request, _context):
-        args = deserialize_json_to_dagster_namedtuple(request.serialized_partition_args)
-
-        check.inst_param(args, "args", PartitionArgs)
-
-        recon_repo = self._recon_repository_from_origin(args.repository_origin)
+        args = deserialize_as(request.serialized_partition_args, PartitionArgs)
 
         return api_pb2.ExternalPartitionConfigReply(
             serialized_external_partition_config_or_external_partition_execution_error=serialize_dagster_namedtuple(
-                get_partition_config(recon_repo, args.partition_set_name, args.partition_name)
+                get_partition_config(
+                    self._get_repo_for_origin(args.repository_origin),
+                    args.partition_set_name,
+                    args.partition_name,
+                )
             )
         )
 
     def ExternalPartitionTags(self, request, _context):
-        partition_args = deserialize_json_to_dagster_namedtuple(request.serialized_partition_args)
-
-        check.inst_param(partition_args, "partition_args", PartitionArgs)
-
-        recon_repo = self._recon_repository_from_origin(partition_args.repository_origin)
+        partition_args = deserialize_as(request.serialized_partition_args, PartitionArgs)
 
         return api_pb2.ExternalPartitionTagsReply(
             serialized_external_partition_tags_or_external_partition_execution_error=serialize_dagster_namedtuple(
                 get_partition_tags(
-                    recon_repo, partition_args.partition_set_name, partition_args.partition_name
+                    self._get_repo_for_origin(partition_args.repository_origin),
+                    partition_args.partition_set_name,
+                    partition_args.partition_name,
                 )
             )
         )
 
     def ExternalPipelineSubsetSnapshot(self, request, _context):
-        pipeline_subset_snapshot_args = deserialize_json_to_dagster_namedtuple(
-            request.serialized_pipeline_subset_snapshot_args
-        )
-
-        check.inst_param(
-            pipeline_subset_snapshot_args,
-            "pipeline_subset_snapshot_args",
+        pipeline_subset_snapshot_args = deserialize_as(
+            request.serialized_pipeline_subset_snapshot_args,
             PipelineSubsetSnapshotArgs,
         )
 
         return api_pb2.ExternalPipelineSubsetSnapshotReply(
             serialized_external_pipeline_subset_result=serialize_dagster_namedtuple(
                 get_external_pipeline_subset_result(
-                    self._recon_pipeline_from_origin(pipeline_subset_snapshot_args.pipeline_origin),
+                    self._get_repo_for_origin(
+                        pipeline_subset_snapshot_args.pipeline_origin.external_repository_origin
+                    ),
+                    pipeline_subset_snapshot_args.pipeline_origin.pipeline_name,
                     pipeline_subset_snapshot_args.solid_selection,
                     pipeline_subset_snapshot_args.asset_selection,
                 )
@@ -478,14 +469,16 @@ class DagsterApiServer(DagsterApiServicer):
 
     def _get_serialized_external_repository_data(self, request):
         try:
-            repository_origin = deserialize_json_to_dagster_namedtuple(
-                request.serialized_repository_python_origin
+            repository_origin = deserialize_as(
+                request.serialized_repository_python_origin,
+                ExternalRepositoryOrigin,
             )
 
-            check.inst_param(repository_origin, "repository_origin", ExternalRepositoryOrigin)
-            recon_repo = self._recon_repository_from_origin(repository_origin)
             return serialize_dagster_namedtuple(
-                external_repository_data_from_def(recon_repo.get_definition())
+                external_repository_data_from_def(
+                    self._get_repo_for_origin(repository_origin),
+                    defer_snapshots=request.defer_snapshots,
+                )
             )
         except Exception:
             return serialize_dagster_namedtuple(
@@ -497,6 +490,23 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.ExternalRepositoryReply(
             serialized_external_repository_data=serialized_external_repository_data,
         )
+
+    def ExternalJob(self, request, _context):
+        try:
+            repository_origin = deserialize_as(
+                request.serialized_repository_origin,
+                ExternalRepositoryOrigin,
+            )
+
+            job_def = self._get_repo_for_origin(repository_origin).get_pipeline(request.job_name)
+            ser_job_data = serialize_dagster_namedtuple(external_pipeline_data_from_def(job_def))
+            return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
+        except Exception:
+            return api_pb2.ExternalJobReply(
+                serialized_error=serialize_dagster_namedtuple(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
 
     def StreamingExternalRepository(self, request, _context):
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
@@ -534,20 +544,13 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
     def ExternalScheduleExecution(self, request, _context):
-        args = deserialize_json_to_dagster_namedtuple(
-            request.serialized_external_schedule_execution_args
-        )
-
-        check.inst_param(
-            args,
-            "args",
+        args = deserialize_as(
+            request.serialized_external_schedule_execution_args,
             ExternalScheduleExecutionArgs,
         )
-
-        recon_repo = self._recon_repository_from_origin(args.repository_origin)
         serialized_schedule_data = serialize_dagster_namedtuple(
             get_external_schedule_execution(
-                recon_repo,
+                self._get_repo_for_origin(args.repository_origin),
                 args.instance_ref,
                 args.schedule_name,
                 args.scheduled_execution_timestamp,
@@ -558,16 +561,14 @@ class DagsterApiServer(DagsterApiServicer):
         yield from self._split_serialized_data_into_chunk_events(serialized_schedule_data)
 
     def ExternalSensorExecution(self, request, _context):
-        args = deserialize_json_to_dagster_namedtuple(
-            request.serialized_external_sensor_execution_args
+        args = deserialize_as(
+            request.serialized_external_sensor_execution_args,
+            SensorExecutionArgs,
         )
 
-        check.inst_param(args, "args", SensorExecutionArgs)
-
-        recon_repo = self._recon_repository_from_origin(args.repository_origin)
         serialized_sensor_data = serialize_dagster_namedtuple(
             get_external_sensor_execution(
-                recon_repo,
+                self._get_repo_for_origin(args.repository_origin),
                 args.instance_ref,
                 args.sensor_name,
                 args.last_completion_time,
@@ -603,8 +604,8 @@ class DagsterApiServer(DagsterApiServicer):
         message = None
         serializable_error_info = None
         try:
-            cancel_execution_request = check.inst(
-                deserialize_json_to_dagster_namedtuple(request.serialized_cancel_execution_request),
+            cancel_execution_request = deserialize_as(
+                request.serialized_cancel_execution_request,
                 CancelExecutionRequest,
             )
             with self._execution_lock:
@@ -627,8 +628,8 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def CanCancelExecution(self, request, _context):
-        can_cancel_execution_request = check.inst(
-            deserialize_json_to_dagster_namedtuple(request.serialized_can_cancel_execution_request),
+        can_cancel_execution_request = deserialize_as(
+            request.serialized_can_cancel_execution_request,
             CanCancelExecutionRequest,
         )
         with self._execution_lock:
@@ -656,13 +657,18 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
         try:
-            execute_external_pipeline_args = check.inst(
-                deserialize_json_to_dagster_namedtuple(request.serialized_execute_run_args),
+            execute_external_pipeline_args = deserialize_as(
+                request.serialized_execute_run_args,
                 ExecuteExternalPipelineArgs,
             )
             run_id = execute_external_pipeline_args.pipeline_run_id
-            recon_pipeline = self._recon_pipeline_from_origin(
-                execute_external_pipeline_args.pipeline_origin
+
+            # reconstructable required for handing execution off to subprocess
+            recon_repo = check.not_none(self._loaded_repositories).reconstructables_by_name[
+                execute_external_pipeline_args.pipeline_origin.external_repository_origin.repository_name
+            ]
+            recon_pipeline = recon_repo.get_reconstructable_pipeline(
+                execute_external_pipeline_args.pipeline_origin.pipeline_name
             )
 
         except:
@@ -970,7 +976,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
 
         if timeout > 0 and (time.time() - start_time > timeout):
             raise Exception(
-                f"Timed out waiting for gRPC server to start with arguments: \"{' '.join(subprocess_args)}\". Most recent connection error: {str(last_error)}"
+                f"Timed out waiting for gRPC server to start after {timeout}s with arguments: \"{' '.join(subprocess_args)}\". Most recent connection error: {str(last_error)}"
             )
 
         if server_process.poll() != None:

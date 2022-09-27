@@ -1,3 +1,4 @@
+# isort: skip_file
 # pylint: disable=unused-variable
 
 
@@ -79,6 +80,17 @@ def scope_downstream_asset():
         return my_dbt_model.where(foo="bar")
 
     # end_downstream_asset
+
+
+def scope_upstream_asset():
+    from dagster import asset
+
+    # start_upstream_asset
+    @asset(key_prefix="jaffle_shop")
+    def orders():
+        return ...
+
+    # end_upstream_asset
 
 
 def scope_input_manager():

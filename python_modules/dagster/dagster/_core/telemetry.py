@@ -340,7 +340,7 @@ def _get_instance_telemetry_enabled(instance):
 
 def get_or_set_instance_id():
     instance_id = _get_telemetry_instance_id()
-    if instance_id == None:
+    if instance_id is None:
         instance_id = _set_telemetry_instance_id()
     return instance_id
 
@@ -395,7 +395,7 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
 
         pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
         repo_hash = hash_name(external_repo.name)
-        num_pipelines_in_repo = len(external_repo.get_all_external_pipelines())
+        num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
         num_schedules_in_repo = len(external_repo.get_external_schedules())
         num_sensors_in_repo = len(external_repo.get_external_sensors())
 

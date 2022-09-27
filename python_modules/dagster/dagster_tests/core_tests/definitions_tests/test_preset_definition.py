@@ -81,16 +81,16 @@ def test_presets():
     assert execute_pipeline(pipe, preset="passing").success
 
     assert execute_pipeline(pipe, preset="passing_direct_dict").success
-    assert execute_pipeline(pipe, preset="failing_1", raise_on_error=False).success == False
+    assert execute_pipeline(pipe, preset="failing_1", raise_on_error=False).success is False
 
-    assert execute_pipeline(pipe, preset="failing_2", raise_on_error=False).success == False
+    assert execute_pipeline(pipe, preset="failing_2", raise_on_error=False).success is False
 
     with pytest.raises(DagsterInvariantViolationError, match="Could not find preset"):
         execute_pipeline(pipe, preset="not_failing", raise_on_error=False)
 
     assert (
         execute_pipeline(pipe, preset="passing_overide_to_fail", raise_on_error=False).success
-        == False
+        is False
     )
 
     assert execute_pipeline(

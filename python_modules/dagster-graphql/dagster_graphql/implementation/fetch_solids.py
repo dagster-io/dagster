@@ -24,7 +24,7 @@ def get_used_solid_map(repo):
     inv_by_def_name = defaultdict(list)
     definitions = []
 
-    for external_pipeline in repo.get_all_external_pipelines():
+    for external_pipeline in repo.get_all_external_jobs():
         for handle in build_solid_handles(external_pipeline).values():
             definition = handle.solid.get_solid_definition()
             if definition.name not in inv_by_def_name:
@@ -67,7 +67,7 @@ def get_graph_or_error(graphene_info, graph_selector):
 
     repository = repo_loc.get_repository(graph_selector.repository_name)
 
-    for external_pipeline in repository.get_all_external_pipelines():
+    for external_pipeline in repository.get_all_external_jobs():
         # first check for graphs
         if external_pipeline.get_graph_name() == graph_selector.graph_name:
             return GrapheneGraph(external_pipeline)

@@ -193,4 +193,4 @@ def test_post_process_config():
         "mau": "mau",
     }
     assert post_process_config(noneable_permissive_config_type, {"args": {}}).value["args"] == {}
-    assert post_process_config(noneable_permissive_config_type, None).value["args"] == None
+    assert post_process_config(noneable_permissive_config_type, None).value["args"] is None

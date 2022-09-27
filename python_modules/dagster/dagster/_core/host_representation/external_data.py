@@ -48,29 +48,28 @@ class ExternalRepositoryData(
         "_ExternalRepositoryData",
         [
             ("name", str),
-            ("external_pipeline_datas", Sequence["ExternalPipelineData"]),
             ("external_schedule_datas", Sequence["ExternalScheduleData"]),
             ("external_partition_set_datas", Sequence["ExternalPartitionSetData"]),
             ("external_sensor_datas", Sequence["ExternalSensorData"]),
             ("external_asset_graph_data", Sequence["ExternalAssetNode"]),
+            ("external_pipeline_datas", Optional[Sequence["ExternalPipelineData"]]),
+            ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
         ],
     )
 ):
     def __new__(
         cls,
         name: str,
-        external_pipeline_datas: Sequence["ExternalPipelineData"],
         external_schedule_datas: Sequence["ExternalScheduleData"],
         external_partition_set_datas: Sequence["ExternalPartitionSetData"],
         external_sensor_datas: Optional[Sequence["ExternalSensorData"]] = None,
         external_asset_graph_data: Optional[Sequence["ExternalAssetNode"]] = None,
+        external_pipeline_datas: Optional[Sequence["ExternalPipelineData"]] = None,
+        external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            external_pipeline_datas=check.sequence_param(
-                external_pipeline_datas, "external_pipeline_datas", of_type=ExternalPipelineData
-            ),
             external_schedule_datas=check.sequence_param(
                 external_schedule_datas, "external_schedule_datas", of_type=ExternalScheduleData
             ),
@@ -89,10 +88,31 @@ class ExternalRepositoryData(
                 "external_asset_graph_dats",
                 of_type=ExternalAssetNode,
             ),
+            external_pipeline_datas=check.opt_nullable_sequence_param(
+                external_pipeline_datas, "external_pipeline_datas", of_type=ExternalPipelineData
+            ),
+            external_job_refs=check.opt_nullable_sequence_param(
+                external_job_refs, "external_job_refs", of_type=ExternalJobRef
+            ),
         )
+
+    def has_pipeline_data(self):
+        return self.external_pipeline_datas is not None
+
+    def get_external_pipeline_datas(self) -> Sequence["ExternalPipelineData"]:
+        if self.external_pipeline_datas is None:
+            check.failed("Snapshots were deferred, external_pipeline_data not loaded")
+        return self.external_pipeline_datas
+
+    def get_external_job_refs(self) -> Sequence["ExternalJobRef"]:
+        if self.external_job_refs is None:
+            check.failed("Snapshots were not deferred, external_job_refs not loaded")
+        return self.external_job_refs
 
     def get_pipeline_snapshot(self, name):
         check.str_param(name, "name")
+        if self.external_pipeline_datas is None:
+            check.failed("Snapshots were deferred, external_pipeline_data not loaded")
 
         for external_pipeline_data in self.external_pipeline_datas:
             if external_pipeline_data.name == name:
@@ -102,6 +122,8 @@ class ExternalRepositoryData(
 
     def get_external_pipeline_data(self, name):
         check.str_param(name, "name")
+        if self.external_pipeline_datas is None:
+            check.failed("Snapshots were deferred, external_pipeline_data not loaded")
 
         for external_pipeline_data in self.external_pipeline_datas:
             if external_pipeline_data.name == name:
@@ -198,6 +220,39 @@ class ExternalPipelineData(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
             is_job=check.bool_param(is_job, "is_job"),
+        )
+
+
+@whitelist_for_serdes
+class ExternalJobRef(
+    NamedTuple(
+        "_ExternalJobRef",
+        [
+            ("name", str),
+            ("snapshot_id", str),
+            ("active_presets", Sequence["ExternalPresetData"]),
+            ("parent_snapshot_id", Optional[str]),
+            ("is_legacy_pipeline", bool),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        name: str,
+        snapshot_id: str,
+        active_presets: Sequence["ExternalPresetData"],
+        parent_snapshot_id: Optional[str],
+        is_legacy_pipeline: bool = False,
+    ):
+        return super(ExternalJobRef, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            snapshot_id=check.str_param(snapshot_id, "snapshot_id"),
+            active_presets=check.list_param(
+                active_presets, "active_presets", of_type=ExternalPresetData
+            ),
+            parent_snapshot_id=check.opt_str_param(parent_snapshot_id, "parent_snapshot_id"),
+            is_legacy_pipeline=check.bool_param(is_legacy_pipeline, "is_legacy"),
         )
 
 
@@ -807,16 +862,26 @@ class ExternalAssetNode(
 
 def external_repository_data_from_def(
     repository_def: RepositoryDefinition,
+    defer_snapshots: bool = False,
 ) -> ExternalRepositoryData:
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
     pipelines = repository_def.get_all_pipelines()
-    return ExternalRepositoryData(
-        name=repository_def.name,
-        external_pipeline_datas=sorted(
+    if defer_snapshots:
+        pipeline_datas = None
+        job_refs = sorted(
+            list(map(external_job_ref_from_def, pipelines)),
+            key=lambda pd: pd.name,
+        )
+    else:
+        pipeline_datas = sorted(
             list(map(external_pipeline_data_from_def, pipelines)),
             key=lambda pd: pd.name,
-        ),
+        )
+        job_refs = None
+
+    return ExternalRepositoryData(
+        name=repository_def.name,
         external_schedule_datas=sorted(
             list(map(external_schedule_data_from_def, repository_def.schedule_defs)),
             key=lambda sd: sd.name,
@@ -832,6 +897,8 @@ def external_repository_data_from_def(
         external_asset_graph_data=external_asset_graph_from_defs(
             pipelines, source_assets_by_key=repository_def.source_assets_by_key
         ),
+        external_pipeline_datas=pipeline_datas,
+        external_job_refs=job_refs,
     )
 
 
@@ -977,12 +1044,11 @@ def external_asset_graph_from_defs(
                 or node_def.name,
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
-                op_description=node_def.description,
+                op_description=node_def.description or output_def.description,
                 node_definition_name=node_def.name,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
-                output_description=output_def.description,
                 metadata_entries=asset_metadata_entries,
                 # assets defined by Out(asset_key="k") do not have any group
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
@@ -1005,6 +1071,27 @@ def external_pipeline_data_from_def(pipeline_def: PipelineDefinition) -> Externa
             key=lambda pd: pd.name,
         ),
         is_job=isinstance(pipeline_def, JobDefinition),
+    )
+
+
+def external_job_ref_from_def(pipeline_def: PipelineDefinition) -> ExternalJobRef:
+    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+
+    parent = pipeline_def.parent_pipeline_def
+    if parent:
+        parent_snapshot_id = parent.get_pipeline_snapshot_id()
+    else:
+        parent_snapshot_id = None
+
+    return ExternalJobRef(
+        name=pipeline_def.name,
+        snapshot_id=pipeline_def.get_pipeline_snapshot_id(),
+        parent_snapshot_id=parent_snapshot_id,
+        active_presets=sorted(
+            list(map(external_preset_data_from_def, pipeline_def.preset_defs)),
+            key=lambda pd: pd.name,
+        ),
+        is_legacy_pipeline=not isinstance(pipeline_def, JobDefinition),
     )
 
 

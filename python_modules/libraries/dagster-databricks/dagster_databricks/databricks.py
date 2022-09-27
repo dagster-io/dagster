@@ -1,6 +1,8 @@
 import base64
 import time
 
+import dagster_databricks
+import dagster_pyspark
 import requests.exceptions
 from databricks_api import DatabricksAPI
 
@@ -180,10 +182,15 @@ class DatabricksJobRunner:
                 for x in libraries
                 if "pypi" in x
             }
-            for library in ["dagster", "dagster-databricks", "dagster-pyspark"]:
-                if library not in python_libraries:
+
+            for library_name, library in [
+                ("dagster", dagster),
+                ("dagster-databricks", dagster_databricks),
+                ("dagster-pyspark", dagster_pyspark),
+            ]:
+                if library_name not in python_libraries:
                     libraries.append(
-                        {"pypi": {"package": "{}=={}".format(library, dagster.__version__)}}
+                        {"pypi": {"package": "{}=={}".format(library_name, library.__version__)}}
                     )
 
         # Only one task should be able to be chosen really; make sure of that here.
@@ -251,9 +258,14 @@ class DatabricksJobRunner:
                 time.sleep(waiter_delay)
         log.warn("Could not retrieve cluster logs!")
 
-    def wait_for_run_to_complete(self, log, databricks_run_id):
+    def wait_for_run_to_complete(self, log, databricks_run_id, verbose_logs=True):
         return wait_for_run_to_complete(
-            self.client, log, databricks_run_id, self.poll_interval_sec, self.max_wait_time_sec
+            self.client,
+            log,
+            databricks_run_id,
+            self.poll_interval_sec,
+            self.max_wait_time_sec,
+            verbose_logs,
         )
 
 
@@ -263,6 +275,7 @@ def poll_run_state(
     start_poll_time: float,
     databricks_run_id: int,
     max_wait_time_sec: float,
+    verbose_logs: bool = True,
 ):
     run_state = client.get_run_state(databricks_run_id)
     if run_state.has_terminated():
@@ -278,7 +291,8 @@ def poll_run_state(
             log.error(error_message)
             raise DatabricksError(error_message)
     else:
-        log.debug("Run %s in state %s" % (databricks_run_id, run_state))
+        if verbose_logs:
+            log.debug("Run %s in state %s" % (databricks_run_id, run_state))
     if time.time() - start_poll_time > max_wait_time_sec:
         raise DatabricksError(
             "Job run {} took more than {}s to complete; failing".format(
@@ -288,12 +302,14 @@ def poll_run_state(
     return False
 
 
-def wait_for_run_to_complete(client, log, databricks_run_id, poll_interval_sec, max_wait_time_sec):
+def wait_for_run_to_complete(
+    client, log, databricks_run_id, poll_interval_sec, max_wait_time_sec, verbose_logs=True
+):
     """Wait for a Databricks run to complete."""
     check.int_param(databricks_run_id, "databricks_run_id")
     log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
     start = time.time()
     while True:
-        if poll_run_state(client, log, start, databricks_run_id, max_wait_time_sec):
+        if poll_run_state(client, log, start, databricks_run_id, max_wait_time_sec, verbose_logs):
             return
         time.sleep(poll_interval_sec)

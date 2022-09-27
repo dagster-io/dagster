@@ -35,7 +35,7 @@ export const AssetEventsTable: React.FC<{
   hasLineage: boolean;
   groups: AssetEventGroup[];
   focused?: AssetEventGroup;
-  setFocused?: (timestamp: AssetEventGroup) => void;
+  setFocused?: (timestamp: AssetEventGroup | undefined) => void;
 }> = ({hasPartitions, hasLineage, groups, focused, setFocused}) => {
   return (
     <Table>
@@ -58,7 +58,7 @@ export const AssetEventsTable: React.FC<{
                 if (e.target instanceof HTMLElement && e.target.closest('a')) {
                   return;
                 }
-                setFocused?.(group);
+                setFocused?.(focused !== group ? group : undefined);
               }}
             >
               <EventGroupRow

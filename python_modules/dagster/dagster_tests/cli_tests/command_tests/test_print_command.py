@@ -64,33 +64,3 @@ def test_print_command_baz():
             ],
         )
         assert res.exit_code == 0, res.stdout
-
-
-def test_job_command_only_selects_job():
-    job_kwargs = {
-        "workspace": None,
-        "pipeline_or_job": "my_job",
-        "python_file": file_relative_path(__file__, "repo_pipeline_and_job.py"),
-        "module_name": None,
-        "attribute": "my_repo",
-    }
-    pipeline_kwargs = job_kwargs.copy()
-    pipeline_kwargs["pipeline_or_job"] = "my_pipeline"
-
-    with instance_for_test() as instance:
-        execute_print_command(
-            instance=instance,
-            verbose=False,
-            cli_args=job_kwargs,
-            print_fn=no_print,
-            using_job_op_graph_apis=True,
-        )
-
-        with pytest.raises(Exception, match="not found in repository"):
-            execute_print_command(
-                instance,
-                verbose=False,
-                cli_args=pipeline_kwargs,
-                print_fn=no_print,
-                using_job_op_graph_apis=True,
-            )

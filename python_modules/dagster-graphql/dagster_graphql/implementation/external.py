@@ -11,23 +11,23 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from .utils import UserFacingGraphQLError, capture_error
 
 
-def get_full_external_pipeline_or_raise(graphene_info, selector):
+def get_full_external_job_or_raise(graphene_info, selector):
     from ..schema.errors import GraphenePipelineNotFoundError
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
 
-    if not graphene_info.context.has_external_pipeline(selector):
+    if not graphene_info.context.has_external_job(selector):
         raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
 
-    return graphene_info.context.get_full_external_pipeline(selector)
+    return graphene_info.context.get_full_external_job(selector)
 
 
 def get_external_pipeline_or_raise(graphene_info, selector):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
 
-    full_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
+    full_pipeline = get_full_external_job_or_raise(graphene_info, selector)
 
     if selector.solid_selection is None and selector.asset_selection is None:
         return full_pipeline
@@ -55,7 +55,7 @@ def get_subset_external_pipeline(context, selector):
                     if error_info.cause
                     else "",
                 ),
-                pipeline=GraphenePipeline(context.get_full_external_pipeline(selector)),
+                pipeline=GraphenePipeline(context.get_full_external_job(selector)),
             )
         )
 

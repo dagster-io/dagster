@@ -19,14 +19,11 @@ from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
-def test_image_on_pipeline():
+def test_image_on_pipeline(aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "networks": ["container:test-postgres-db-docker"],
         "container_kwargs": {
             "auto_remove": True,
@@ -90,7 +87,7 @@ def test_image_on_pipeline():
             assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
 
 
-def test_container_context_on_pipeline():
+def test_container_context_on_pipeline(aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {}
@@ -128,10 +125,7 @@ def test_container_context_on_pipeline():
             docker_image,
             container_context={
                 "docker": {
-                    "env_vars": [
-                        "AWS_ACCESS_KEY_ID",
-                        "AWS_SECRET_ACCESS_KEY",
-                    ],
+                    "env_vars": aws_env,
                     "networks": ["container:test-postgres-db-docker"],
                     "container_kwargs": {
                         "auto_remove": True,
@@ -167,14 +161,11 @@ def test_container_context_on_pipeline():
             assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
 
 
-def test_recovery():
+def test_recovery(aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "networks": ["container:test-postgres-db-docker"],
         "container_kwargs": {
             "auto_remove": True,

@@ -17,7 +17,6 @@ import styled from 'styled-components/macro';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
-import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {AssetGroupSelector} from '../types/globalTypes';
@@ -39,6 +38,7 @@ import {
   AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes,
 } from './types/AssetCatalogTableQuery';
 import {AssetTableFragment} from './types/AssetTableFragment';
+import {useAssetSearch} from './useAssetSearch';
 import {AssetViewType, useAssetView} from './useAssetView';
 
 const PAGE_SIZE = 50;
@@ -110,14 +110,12 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     .trim();
 
   const {assets, query, error} = useAllAssets(groupSelector);
+  const pathMatches = useAssetSearch(searchPath, assets || []);
+
   const filtered = React.useMemo(
     () =>
-      (assets || []).filter((a) => {
-        const groupMatch = !searchGroup || isEqual(buildAssetGroupSelector(a), searchGroup);
-        const pathMatch = !searchPath || tokenForAssetKey(a.key).toLowerCase().includes(searchPath);
-        return groupMatch && pathMatch;
-      }),
-    [assets, searchPath, searchGroup],
+      pathMatches.filter((a) => !searchGroup || isEqual(buildAssetGroupSelector(a), searchGroup)),
+    [pathMatches, searchGroup],
   );
 
   const {displayPathForAsset, displayed, nextCursor, prevCursor} =
@@ -357,12 +355,20 @@ function buildFlatProps(assets: Asset[], prefixPath: string[], cursor: string | 
 }
 
 function buildNamespaceProps(assets: Asset[], prefixPath: string[], cursor: string | undefined) {
+  // Return all assets from the next PAGE_SIZE namespaces - the AssetTable component will later
+  // group them by namespace
+
   const namespaceForAsset = (asset: Asset) => {
     return asset.key.path.slice(prefixPath.length, prefixPath.length + 1);
   };
 
+  // Only consider assets that start with the prefix path
+  const assetsWithPathPrefix = assets.filter((asset) =>
+    asset.key.path.join(',').startsWith(prefixPath.join(',')),
+  );
+
   const namespaces = Array.from(
-    new Set(assets.map((asset) => JSON.stringify(namespaceForAsset(asset)))),
+    new Set(assetsWithPathPrefix.map((asset) => JSON.stringify(namespaceForAsset(asset)))),
   )
     .map((x) => JSON.parse(x))
     .sort();
@@ -379,21 +385,22 @@ function buildNamespaceProps(assets: Asset[], prefixPath: string[], cursor: stri
     };
   }
 
+  const namespaceSlice = namespaces.slice(cursorIndex, cursorIndex + PAGE_SIZE);
+
   const prevPageIndex = Math.max(0, cursorIndex - PAGE_SIZE);
   const prevCursor = cursorIndex !== 0 ? cursorValue(namespaces[prevPageIndex]) : undefined;
   const nextPageIndex = cursorIndex + PAGE_SIZE;
   const nextCursor =
     namespaces.length > nextPageIndex ? cursorValue(namespaces[nextPageIndex]) : undefined;
-  const displayed = filterAssetsByNamespace(
-    assets,
-    namespaces.map((ns) => [...prefixPath, ...ns]),
-  ).slice(cursorIndex, cursorIndex + PAGE_SIZE);
 
   return {
     nextCursor,
     prevCursor,
     displayPathForAsset: namespaceForAsset,
-    displayed,
+    displayed: filterAssetsByNamespace(
+      assetsWithPathPrefix,
+      namespaceSlice.map((ns) => [...prefixPath, ...ns]),
+    ),
   };
 }
 

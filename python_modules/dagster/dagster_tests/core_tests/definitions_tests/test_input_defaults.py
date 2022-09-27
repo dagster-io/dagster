@@ -19,7 +19,7 @@ def test_none():
         return x
 
     result = execute_solid(none_x)
-    assert result.output_value() == None
+    assert result.output_value() is None
 
 
 def test_none_infer():
@@ -28,7 +28,7 @@ def test_none_infer():
         return x
 
     result = execute_solid(none_x)
-    assert result.output_value() == None
+    assert result.output_value() is None
 
 
 def test_int():
@@ -78,8 +78,8 @@ def bad_default(x):
 
 def test_mismatch():
     result = execute_solid(bad_default, raise_on_error=False)
-    assert result.success == False
-    assert result.input_events_during_compute[0].step_input_data.type_check_data.success == False
+    assert result.success is False
+    assert result.input_events_during_compute[0].step_input_data.type_check_data.success is False
 
 
 def test_env_precedence():
@@ -88,7 +88,7 @@ def test_env_precedence():
         run_config={"solids": {"bad_default": {"inputs": {"x": 1}}}},
         raise_on_error=False,
     )
-    assert result.success == True
+    assert result.success is True
     assert result.output_value() == 1
 
 
