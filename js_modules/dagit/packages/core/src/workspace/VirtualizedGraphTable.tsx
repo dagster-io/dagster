@@ -113,11 +113,28 @@ const GraphRow = (props: GraphRowProps) => {
     <Row $height={height} $start={start}>
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <RowCell>
-          <Box flex={{direction: 'column', gap: 4}}>
-            <span style={{fontWeight: 500}}>
+          <Box flex={{direction: 'column'}}>
+            <div style={{whiteSpace: 'nowrap', fontWeight: 500}}>
               <Link to={workspacePathFromAddress(repoAddress, path)}>{name}</Link>
-            </span>
-            {displayedDescription ? <Caption>{displayedDescription}</Caption> : null}
+            </div>
+            {displayedDescription ? (
+              <div
+                style={{
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                <Caption
+                  style={{
+                    color: Colors.Gray500,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {displayedDescription}
+                </Caption>
+              </div>
+            ) : null}
           </Box>
         </RowCell>
       </RowGrid>

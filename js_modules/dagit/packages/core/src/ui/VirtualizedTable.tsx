@@ -14,8 +14,8 @@ export const HeaderCell: React.FC = ({children}) => (
 
 export const RowCell: React.FC = ({children}) => (
   <Box
-    padding={{horizontal: 24}}
-    flex={{direction: 'column', justifyContent: 'center'}}
+    padding={{horizontal: 24, vertical: 12}}
+    flex={{direction: 'column', justifyContent: 'flex-start'}}
     style={{color: Colors.Gray500, overflow: 'hidden'}}
     border={{side: 'right', width: 1, color: Colors.KeylineGray}}
   >
