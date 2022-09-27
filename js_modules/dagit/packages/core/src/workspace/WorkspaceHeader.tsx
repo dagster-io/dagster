@@ -1,6 +1,8 @@
-import {PageHeader, Box, Heading, Colors} from '@dagster-io/ui';
+import {PageHeader, Box, Heading, Colors, Button, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+
+import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 
 import {WorkspaceTabs} from './WorkspaceTabs';
 import {repoAddressAsString} from './repoAddressAsString';
@@ -24,6 +26,21 @@ export const WorkspaceHeader: React.FC<{repoAddress: RepoAddress; tab: string}> 
         </Box>
       }
       tabs={<WorkspaceTabs repoAddress={repoAddress} tab={tab} />}
+      right={
+        <ReloadRepositoryLocationButton location={repoAddress.location}>
+          {({tryReload, reloading}) => {
+            return (
+              <Button
+                onClick={() => tryReload()}
+                loading={reloading}
+                icon={<Icon name="refresh" />}
+              >
+                Reload repository location
+              </Button>
+            );
+          }}
+        </ReloadRepositoryLocationButton>
+      }
     />
   );
 };
