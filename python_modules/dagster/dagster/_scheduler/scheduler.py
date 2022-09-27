@@ -115,8 +115,8 @@ def execute_scheduler_iteration_loop(
 
 
 def launch_scheduled_runs(
-    instance,
-    workspace,
+    instance: DagsterInstance,
+    workspace: IWorkspace,
     logger,
     end_datetime_utc,
     max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
@@ -140,6 +140,7 @@ def launch_scheduled_runs(
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SCHEDULE)
 
     schedules = {}
+    error_locations = set()
     for location_entry in workspace_snapshot.values():
         repo_location = location_entry.repository_location
         if repo_location:
@@ -150,10 +151,12 @@ def launch_scheduled_runs(
                         all_schedule_states.get(selector_id)
                     ).is_running:
                         schedules[selector_id] = schedule
-        elif location_entry.load_error and log_verbose_checks:
-            logger.warning(
-                f"Could not load location {location_entry.origin.location_name} to check for schedules due to the following error: {location_entry.load_error}"
-            )
+        elif location_entry.load_error:
+            if log_verbose_checks:
+                logger.warning(
+                    f"Could not load location {location_entry.origin.location_name} to check for schedules due to the following error: {location_entry.load_error}"
+                )
+            error_locations.add(location_entry.origin.location_name)
 
     # Remove any schedule states that were previously created with AUTOMATICALLY_RUNNING
     # and can no longer be found in the workspace (so that if they are later added
@@ -165,9 +168,16 @@ def launch_scheduled_runs(
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
     }
     for state in states_to_delete:
-        instance.schedule_storage.delete_instigator_state(
-            state.instigator_origin_id, state.selector_id
+        location_name = (
+            state.origin.external_repository_origin.repository_location_origin.location_name
         )
+        # don't clean up auto running state if its location is an error state
+        if location_name not in error_locations:
+            logger.info(
+                f"Removing state for automatically running schedule {state.instigator_name} "
+                f"that is no longer present in {location_name}."
+            )
+            instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
     if log_verbose_checks:
         unloadable_schedule_states = {
@@ -193,9 +203,9 @@ def launch_scheduled_runs(
                     f"{repo_location_name} that can no longer be found in the workspace. You can "
                     "turn off this schedule in the Dagit UI from the Status tab."
                 )
-            elif not workspace_snapshot[
-                repo_location_origin.location_name
-            ].repository_location.has_repository(repo_name):
+            elif not check.not_none(  # checked in case above
+                workspace_snapshot[repo_location_origin.location_name].repository_location
+            ).has_repository(repo_name):
                 logger.warning(
                     f"Could not find repository {repo_name} in location {repo_location_name} to "
                     + f"run schedule {schedule_name}. If this repository no longer exists, you can "
@@ -323,7 +333,7 @@ def launch_scheduled_runs_for_schedule(
 
     if not tick_times:
         if log_verbose_checks:
-            logger.info(f"No new runs for {schedule_name}")
+            logger.info(f"No new tick times to evaluate for {schedule_name}")
         return
 
     if not external_schedule.partition_set_name and len(tick_times) > 1:
