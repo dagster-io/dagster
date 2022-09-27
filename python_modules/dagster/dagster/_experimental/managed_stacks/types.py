@@ -12,49 +12,74 @@ class ManagedStackError(enum.Enum):
     CANNOT_CONNECT = "cannot_connect"
 
 
-class ManagedStackDiffSort(enum.Enum):
-    BY_TYPE = "by_type"
-    BY_KEY = "by_key"
+def _sanitize(key: str, value: str):
+    """
+    Rudamentary sanitization of values so we can avoid printing passwords
+    to the console.
+    """
+    if "password" in key.lower() or "token" in key.lower():
+        return "**********"
+    return value
 
 
 class ManagedStackDiff(
     NamedTuple(
         "_ManagedStackDiff",
         [
-            ("additions", List[str]),
-            ("deletions", List[str]),
-            ("modifications", List[str]),
+            ("additions", List[Tuple[str, str]]),
+            ("deletions", List[Tuple[str, str]]),
+            ("modifications", List[Tuple[str, str, str]]),
             ("nested", OrderedDict[str, "ManagedStackDiff"]),
-            ("sort", ManagedStackDiffSort),
         ],
     )
 ):
+    """
+    Utility class representing the diff between configured and deployed managed stack. Can be rendered to a
+    color-coded, user-friendly string.
+    """
+
     def __new__(
         cls,
-        additions: Optional[List[str]] = None,
-        deletions: Optional[List[str]] = None,
-        modifications: Optional[List[str]] = None,
-        sort: Optional[ManagedStackDiffSort] = ManagedStackDiffSort.BY_TYPE,
+        additions: Optional[List[Tuple[str, str]]] = None,
+        deletions: Optional[List[Tuple[str, str]]] = None,
+        modifications: Optional[List[Tuple[str, str, str]]] = None,
     ):
         return super().__new__(
-            cls, additions or [], deletions or [], modifications or [], OrderedDict({}), sort
+            cls,
+            additions or [],
+            deletions or [],
+            modifications or [],
+            OrderedDict({}),
         )
 
     def add(self, name: str, value: str) -> "ManagedStackDiff":
-        return self._replace(additions=self.additions + [f"{name}: {value}"])
+        """
+        Adds an addition entry to the diff.
+        """
+        return self._replace(additions=self.additions + [(name, value)])
 
     def delete(self, name: str, value: str) -> "ManagedStackDiff":
-        return self._replace(deletions=self.deletions + [f"{name}: {value}"])
+        """
+        Adds a deletion entry to the diff.
+        """
+        return self._replace(deletions=self.deletions + [(name, value)])
 
     def modify(self, name: str, old_value: str, new_value: str) -> "ManagedStackDiff":
-        return self._replace(
-            modifications=self.modifications + [f"{name}: {old_value} -> {new_value}"]
-        )
+        """
+        Adds a modification entry to the diff.
+        """
+        return self._replace(modifications=self.modifications + [(name,)])
 
     def with_nested(self, name: str, nested: "ManagedStackDiff") -> "ManagedStackDiff":
+        """
+        Adds the nested diff as a child of the current diff.
+        """
         return self._replace(nested=OrderedDict(list(self.nested.items()) + [(name, nested)]))
 
     def join(self, other: "ManagedStackDiff") -> "ManagedStackDiff":
+        """
+        Combines two diff objects into a single diff object.
+        """
         return self._replace(
             additions=self.additions + other.additions,
             deletions=self.deletions + other.deletions,
@@ -62,118 +87,84 @@ class ManagedStackDiff(
             nested=OrderedDict(list(self.nested.items()) + list(other.nested.items())),
         )
 
+    def is_empty(self):
+        """
+        Returns whether the diff is a no-op.
+        """
+        return (
+            len(self.additions) == 0
+            and len(self.deletions) == 0
+            and len(self.modifications) == 0
+            and all(nested_diff.is_empty() for nested_diff in self.nested.values())
+        )
+
     def __str__(self):
-        additions_str = "\n".join(self.display_additions())
-        deletions_str = "\n".join(self.display_deletions())
-        modifications_str = "\n".join(self.display_modifications())
+        my_additions, my_deletions, my_modifications = self.get_diff_display_entries()
+        additions_str = "\n".join(my_additions)
+        deletions_str = "\n".join(my_deletions)
+        modifications_str = "\n".join(my_modifications)
         return f"{additions_str}\n{deletions_str}\n{modifications_str}"
 
-    def display_additions(self, indent: int = 0):
+    def get_diff_display_entries(self, indent: int = 0) -> Tuple[List[str], List[str], List[str]]:
+        """
+        Returns a tuple of additions, deletions, and modification entries associated with this diff object.
+        """
+
+        # Get top-level additions/deletions/modifications
         my_additions = [
-            click.style(f"{' ' * indent}+ {addition}", fg="green") for addition in self.additions
+            click.style(f"{' ' * indent}+ {k}: {_sanitize(k, v)}", fg="green")
+            for k, v in self.additions
         ]
-
-        if self.sort == ManagedStackDiffSort.BY_TYPE:
-            nested_additions = {
-                key: nested.display_additions(indent + 2) for key, nested in self.nested.items()
-            }
-            nested_additions = list(
-                itertools.chain.from_iterable(
-                    [
-                        [f"{' ' * indent}+ {key}:"] + addition
-                        for key, addition in nested_additions.items()
-                        if addition
-                    ]
-                )
-            )
-            return my_additions + nested_additions
-        else:
-            return my_additions
-
-    def display_deletions(self, indent: int = 0):
         my_deletions = [
-            click.style(f"{' ' * indent}- {deletion}", fg="red") for deletion in self.deletions
+            click.style(f"{' ' * indent}- {k}: {_sanitize(k, v)}", fg="red")
+            for k, v in self.deletions
         ]
-
-        if self.sort == ManagedStackDiffSort.BY_TYPE:
-            nested_deletions = {
-                key: nested.display_deletions(indent + 2) for key, nested in self.nested.items()
-            }
-            nested_deletions = list(
-                itertools.chain.from_iterable(
-                    [
-                        [f"{' ' * indent}- {key}:"] + deletion
-                        for key, deletion in nested_deletions.items()
-                        if deletion
-                    ]
-                )
-            )
-            return my_deletions + nested_deletions
-        else:
-            return my_deletions
-
-    def style(self, changes: Tuple[List, List, List], text: str) -> str:
-        if len(changes[1]) == 0 and len(changes[2]) == 0:
-            return click.style(f"+ {text}:", fg="green")
-        elif len(changes[0]) == 0 and len(changes[2]) == 0:
-            return click.style(f"- {text}:", fg="red")
-        return click.style(f"~ {text}:", fg="yellow")
-
-    def display_modifications(self, indent: int = 0):
         my_modifications = [
-            click.style(f"{' ' * indent}~ {modification}", fg="yellow")
-            for modification in self.modifications
+            click.style(
+                f"{' ' * indent}~ {k}: {_sanitize(k, old_v)} -> {_sanitize(k, new_v)}", fg="yellow"
+            )
+            for k, old_v, new_v in self.modifications
         ]
 
-        if self.sort == ManagedStackDiffSort.BY_TYPE:
-            nested_modifications = {
-                key: nested.display_modifications(indent + 2) for key, nested in self.nested.items()
-            }
-            nested_modifications = list(
-                itertools.chain.from_iterable(
-                    [
-                        [f"{' ' * indent}~ {key}:"] + modification
-                        for key, modification in nested_modifications.items()
-                        if modification
-                    ]
-                )
-            )
-            return my_modifications + nested_modifications
-        else:
-            nested_modifications = {
-                key: (
-                    nested.display_additions(indent + 2),
-                    nested.display_deletions(indent + 2),
-                    nested.display_modifications(indent + 2),
-                )
-                for key, nested in self.nested.items()
-            }
-            nested_modifications = list(
-                itertools.chain.from_iterable(
-                    [
-                        [f"{' ' * indent}{self.style(modification, key)}"]
-                        + modification[0]
-                        + modification[1]
-                        + modification[2]
-                        for key, modification in nested_modifications.items()
-                        if modification[0] or modification[1] or modification[2]
-                    ]
-                )
-            )
-            return my_modifications + nested_modifications
+        # Get entries for each nested diff
+        for key, nested_diff in self.nested.items():
+            (
+                nested_additions,
+                nested_deletions,
+                nested_modifications,
+            ) = nested_diff.get_diff_display_entries(indent + 2)
 
-    # additions = self.additions
-    #     if nested.additions:
-    #         additions += [f" + {name}:"] + [f"  {line}" for line in nested.additions]
-    #     deletions = self.deletions
-    #     if nested.deletions:
-    #         deletions += [f" - {name}:"] + [f"  {line}" for line in nested.deletions]
-    #     modifications = self.modifications
-    #     if nested.modifications:
-    #         modifications += [f" ~ {name}:"] + [f"  {line}" for line in nested.modifications]
-    #     return self._replace(additions=additions, deletions=deletions, modifications=modifications)
+            # If there are no changes, skip this nested diff
+            if (
+                len(nested_additions) == 0
+                and len(nested_deletions) == 0
+                and len(nested_modifications) == 0
+            ):
+                continue
+            elif len(nested_deletions) == 0 and len(nested_modifications) == 0:
+                # If there are only additions, display the nested entry as an addition
+                my_additions += [
+                    click.style(f"{' ' * indent}+ {key}:", fg="green")
+                ] + nested_additions
+            elif len(nested_additions) == 0 and len(nested_modifications) == 0:
+                # If there are only deletions, display the nested entry as a deletion
+                my_deletions += [
+                    click.style(f"{' ' * indent}- {key}:", fg="red")
+                ] + nested_deletions
+            else:
+                # If there are only modifications, display the nested entry as a modification
+                my_modifications += [
+                    click.style(f"{' ' * indent}~ {key}:", fg="yellow")
+                ] + nested_modifications
+
+        return (my_additions, my_deletions, my_modifications)
 
 
+"""
+Union type representing the status of a managed stack - can either
+return the (potentially empty) diff between the configured and deployed
+stack, or an error.
+"""
 ManagedStackCheckResult = Union[ManagedStackDiff, ManagedStackError]
 
 
@@ -189,7 +180,7 @@ class ManagedStackAssetsDefinition(CacheableAssetsDefinition):
         raise NotImplementedError()
 
     @abstractmethod
-    def apply(self):
+    def apply(self) -> ManagedStackCheckResult:
         """
         Reconciles the managed stack with the external resource.
         """
