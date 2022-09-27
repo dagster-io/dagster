@@ -1,10 +1,9 @@
-from dagster_pyspark.resources import pyspark_resource, lazy_pyspark_resource
+from dagster_pyspark.resources import lazy_pyspark_resource, pyspark_resource
+from pyspark.sql import SparkSession
 
 from dagster import job, multiprocess_executor, op, reconstructable
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline
-
-from pyspark.sql import SparkSession
 
 
 def assert_pipeline_runs_with_resource(resource_def):
@@ -29,9 +28,9 @@ def assert_pipeline_runs_with_lazy_resource(resource_def):
 
     @op(required_resource_keys={"some_name"})
     def a_op(context):
-        assert context.resources.some_name._spark_session is None
+        assert context.resources.some_name._spark_session is None  # pylint: disable=unused-argument
         assert isinstance(context.resources.some_name.spark_session, SparkSession)
-        assert isinstance(context.resources.some_name._spark_session, SparkSession)
+        assert isinstance(context.resources.some_name._spark_session, SparkSession)  # pylint: disable=unused-argument
         called["yup"] = True
 
     @job(resource_defs={"some_name": resource_def})

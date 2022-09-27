@@ -2,7 +2,7 @@ import shutil
 
 import pytest
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
-from dagster_pyspark import pyspark_resource, lazy_pyspark_resource
+from dagster_pyspark import lazy_pyspark_resource, pyspark_resource
 from pyspark.sql import Row, SparkSession
 
 from dagster import file_relative_path
