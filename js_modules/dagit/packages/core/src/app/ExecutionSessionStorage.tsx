@@ -252,5 +252,5 @@ export const useInitialDataForMode = (
     }
 
     return {};
-  }, [isJob, partitionSetsForMode, presets]);
+  }, [isAssetJob, isJob, partitionSetsForMode, presets]);
 };
