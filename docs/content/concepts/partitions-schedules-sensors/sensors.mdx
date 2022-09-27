@@ -203,34 +203,31 @@ The following example monitors two upstream daily-partitioned assets, kicking of
     job=downstream_daily_job,
 )
 def trigger_daily_asset_if_all_upstream_partitions_materialized(context):
-    run_requests = []
+    run_requests_by_partition = {}
 
-    def evaluate_latest_partitions(asset_key):
-        # For each asset, get the latest materialization record for each partition.
-        other_asset_keys = [
-            other_key for other_key in context.asset_keys if other_key != asset_key
-        ]
+    for asset_key in context.asset_keys:
         for (
             partition,
             materialization,
         ) in context.latest_materialization_records_by_partition(asset_key).items():
-            # Check that the partition is materialized in the other asset. If so,
-            # yield a run request for the downstream partition.
-            if all(
-                [
-                    context.all_partitions_materialized(other_key, [partition])
-                    for other_key in other_asset_keys
-                ]
-            ):
-                run_requests.append(
-                    downstream_daily_job.run_request_for_partition(partition)
+            # Check that the partition is materialized in the other asset
+            if (
+                all(
+                    [
+                        context.all_partitions_materialized(other_key, [partition])
+                        for other_key in context.asset_keys
+                        if other_key != asset_key
+                    ]
                 )
+                and partition not in run_requests_by_partition
+            ):
+                # Yield a run request for the partition if a run request does not already exist
+                run_requests_by_partition[
+                    partition
+                ] = downstream_daily_job.run_request_for_partition(partition)
             context.advance_cursor({asset_key: materialization})
 
-    for asset_key in context.asset_keys:
-        evaluate_latest_partitions(asset_key)
-
-    return run_requests
+    return list(run_requests_by_partition.values())
 ```
 
 If the <PyObject object="PartitionsDefinition"/> of the monitored assets differs from the triggered asset, you can use the <PyObject object="MultiAssetSensorEvaluationContext" method="get_downstream_partition_keys"/> method to map a partition key from one asset to another. This method accepts a partition key from the upstream asset and uses the existing <PyObject object="PartitionMapping"/> object on the downstream asset to fetch the corresponding partitions in the downstream asset.
