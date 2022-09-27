@@ -222,7 +222,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         )
-        command = args.get_command_args()
+        command = ["/bin/bash", "-c", " ".join(args.get_command_args())]
 
         # Set cpu or memory overrides
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html

@@ -83,7 +83,8 @@ def test_default_launcher(
     assert len(overrides) == 1
     override = overrides[0]
     assert override["name"] == "run"
-    assert "execute_run" in override["command"]
+    assert ["/bin/bash", "-c"] == override["command"][:2]
+    assert 'dagster api execute_run {"__class__": "ExecuteRunArgs",' in override["command"][2]
     assert run.run_id in str(override["command"])
 
     # And we log
@@ -295,7 +296,8 @@ def test_launching_custom_task_definition(
         assert len(overrides) == 1
         override = overrides[0]
         assert override["name"] == container_name
-        assert "execute_run" in override["command"]
+        assert ["/bin/bash", "-c"] == override["command"][:2]
+        assert 'dagster api execute_run {"__class__": "ExecuteRunArgs",' in override["command"][2]
         assert run.run_id in str(override["command"])
 
 
