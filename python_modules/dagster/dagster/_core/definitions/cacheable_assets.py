@@ -1,23 +1,26 @@
-from typing import AbstractSet, Dict, FrozenSet, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
+import dagster._seven as seven
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozendict
 
 
 @whitelist_for_serdes
 class AssetsDefinitionMetadata(
     NamedTuple(
-        "_PipelineSnapshot",
+        "_AssetsDefinitionMetadata",
         [
-            ("input_keys", FrozenSet[AssetKey]),
-            ("output_keys", FrozenSet[AssetKey]),
-            ("asset_deps", Optional[Mapping[AssetKey, FrozenSet[AssetKey]]]),
-            ("group_names_by_key", Optional[Mapping[AssetKey, str]]),
-            ("metadata_by_key", Optional[Mapping[AssetKey, MetadataUserInput]]),
+            ("keys_by_input_name", Optional[Mapping[str, AssetKey]]),
+            ("keys_by_output_name", Optional[Mapping[str, AssetKey]]),
+            ("internal_asset_deps", Optional[Mapping[str, AbstractSet[AssetKey]]]),
+            ("group_name", Optional[str]),
+            ("metadata_by_output_name", Optional[Mapping[str, MetadataUserInput]]),
+            ("key_prefix", Optional[CoercibleToAssetKeyPrefix]),
+            ("can_subset", bool),
+            ("extra_metadata", Optional[Mapping[Any, Any]]),
         ],
     )
 ):
@@ -27,34 +30,50 @@ class AssetsDefinitionMetadata(
 
     def __new__(
         cls,
-        input_keys: AbstractSet[AssetKey],
-        output_keys: AbstractSet[AssetKey],
-        asset_deps: Optional[Dict[AssetKey, AbstractSet[AssetKey]]] = None,
-        group_names_by_key: Optional[Dict[AssetKey, str]] = None,
-        metadata_by_key: Optional[Dict[AssetKey, MetadataUserInput]] = None,
+        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
+        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        internal_asset_deps: Optional[Mapping[str, AbstractSet[AssetKey]]] = None,
+        group_name: Optional[str] = None,
+        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+        can_subset: bool = False,
+        extra_metadata: Optional[Mapping[Any, Any]] = None,
     ):
-        asset_deps = check.opt_nullable_dict_param(
-            asset_deps, "asset_deps", key_type=AssetKey, value_type=set
-        )
-        group_names_by_key = check.opt_nullable_dict_param(
-            group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
-        )
-        metadata_by_key = check.opt_nullable_dict_param(
-            metadata_by_key,
-            "metadata_by_key",
-            key_type=AssetKey,
-            value_type=MetadataUserInput,
-        )
+
+        extra_metadata = check.opt_nullable_mapping_param(extra_metadata, "extra_metadata")
+        try:
+            # check that the value is JSON serializable
+            seven.dumps(extra_metadata)
+        except TypeError:
+            check.failed("Value for `extra_metadata` is not JSON serializable.")
+
         return super().__new__(
             cls,
-            input_keys=frozenset(check.set_param(input_keys, "input_keys", of_type=AssetKey)),
-            output_keys=frozenset(check.set_param(output_keys, "output_keys", of_type=AssetKey)),
-            asset_deps=frozendict({k: frozenset(v) for k, v in asset_deps.items()})
-            if asset_deps
-            else None,
-            group_names_by_key=frozendict(group_names_by_key) if group_names_by_key else None,
-            metadata_by_key=frozendict(metadata_by_key) if metadata_by_key else None,
+            keys_by_input_name=check.opt_nullable_mapping_param(
+                keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
+            ),
+            keys_by_output_name=check.opt_nullable_mapping_param(
+                keys_by_output_name, "keys_by_output_name", key_type=str, value_type=AssetKey
+            ),
+            internal_asset_deps=check.opt_nullable_mapping_param(
+                internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
+            ),
+            group_name=check.opt_str_param(group_name, "group_name"),
+            metadata_by_output_name=check.opt_nullable_mapping_param(
+                metadata_by_output_name, "metadata_by_output_name", key_type=str, value_type=dict
+            ),
+            key_prefix=check.opt_inst_param(key_prefix, "key_prefix", (str, list)),
+            can_subset=check.opt_bool_param(can_subset, "can_subset", default=False),
+            extra_metadata=extra_metadata,
         )
+
+    def __hash__(self):
+        """Some of the values of this NamedTuple may be recursive dictionaries which are not
+        hashable. Instead, we serialize this as a namedtuple and hash that string.
+        """
+        from dagster._serdes import serialize_dagster_namedtuple
+
+        return hash(serialize_dagster_namedtuple(self))
 
 
 class CacheableAssetsDefinition:

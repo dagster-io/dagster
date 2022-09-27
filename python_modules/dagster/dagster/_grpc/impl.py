@@ -85,9 +85,13 @@ def core_execute_run(
     # try to load the pipeline definition early
     try:
         # add in cached metadata to load repository more efficiently
-        recon_pipeline = recon_pipeline.with_repository_metadata(
-            pipeline_run.repository_metadata,
-        )
+        if pipeline_run.has_repository_metadata:
+            execution_plan_snapshot = instance.get_execution_plan_snapshot(
+                pipeline_run.execution_plan_snapshot_id
+            )
+            recon_pipeline = recon_pipeline.with_repository_metadata(
+                execution_plan_snapshot.repository_metadata,
+            )
         recon_pipeline.get_definition()
     except Exception:
         yield instance.report_engine_event(
