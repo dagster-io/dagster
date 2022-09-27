@@ -39,12 +39,13 @@ function initialize(data: INITIALIZE) {
       next({data}: {data: PipelineRunLogsSubscription}) {
         const logs = data?.pipelineRunLogs;
         if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
+          console.error('PipelineRunLogsSubscriptionFailure', logs);
           return;
         }
         postMessage(logs);
       },
       error(error: any) {
-        console.error({error});
+        console.error(error);
       },
     });
 }

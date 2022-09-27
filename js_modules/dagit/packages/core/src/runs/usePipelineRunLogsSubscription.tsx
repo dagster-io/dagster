@@ -37,8 +37,17 @@ export function usePipelineRunLogsSubscriptionWorker({runId}: any, onLogs: any) 
       staticPathRoot,
       rootServerURI,
     });
+    let chunks: string[] = [];
     worker.addEventListener('message', (event) => {
-      onLogs(JSON.parse(arrayBufferToString(event.data)));
+      if (event.data === 'startChunk') {
+        chunks = [];
+      } else if (event.data === 'endChunk') {
+        const result = JSON.parse(chunks.join(''));
+        chunks = [];
+        onLogs(result);
+      } else {
+        chunks.push(arrayBufferToString(event.data));
+      }
     });
     return () => {
       worker.postMessage({

@@ -1,25 +1,24 @@
 // https://developer.chrome.com/blog/how-to-convert-arraybuffer-to-and-from-string/
 
 export function arrayBufferToString(buf: ArrayBuffer): string {
-  let binary = '';
-  const bytes = new Uint16Array(buf);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    const char = String.fromCharCode(bytes[i]);
-    if (char !== '\x00') {
-      binary += char;
-    }
-  }
-  return binary;
+  return String.fromCharCode.apply(null, new Uint16Array(buf) as any);
 }
 
-export function stringToArrayBuffer(str: string): ArrayBuffer {
-  const buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
-  const bufView = new Uint16Array(buf);
+// Chunk the data into 16kb bytes to avoid hitting max argument errors when converting back to a string
+// with String.fromCharCode.apply
+const MAX_BUFFER_SIZE = 16000;
+export function stringToArrayBuffers(str: string): ArrayBuffer[] {
+  const buffers: ArrayBuffer[] = [];
+  let buf = new ArrayBuffer(0);
+  let view = new Uint16Array(buf);
   for (let i = 0, strLen = str.length; i < strLen; i++) {
-    if (str[i] !== '\x00') {
-      bufView[i] = str.charCodeAt(i);
+    const index = i % MAX_BUFFER_SIZE;
+    if (index === 0) {
+      buf = new ArrayBuffer(Math.min(MAX_BUFFER_SIZE, str.length - i) * 2); // 2 bytes for each char\
+      view = new Uint16Array(buf);
+      buffers.push(buf);
     }
+    view[index] = str.charCodeAt(i);
   }
-  return buf;
+  return buffers;
 }

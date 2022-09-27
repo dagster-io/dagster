@@ -10,7 +10,7 @@ self.addEventListener('message', ({data}: {data: Message | SHUTDOWN}) => {
     __webpack_public_path__ = data.staticPathRoot;
   }
   Promise.all([import('../util'), import('./apolloClient'), import('./runLogs')]).then(
-    ([{stringToArrayBuffer}, {setup, getApolloClient, stop}, {onMainThreadMessage}]) => {
+    ([{stringToArrayBuffers}, {setup, getApolloClient, stop}, {onMainThreadMessage}]) => {
       switch (data.type) {
         case 'SHUTDOWN':
           stop();
@@ -22,13 +22,17 @@ self.addEventListener('message', ({data}: {data: Message | SHUTDOWN}) => {
             getApolloClient,
             postMessage: (data: any) => {
               // Transfer data using ArrayBuffer to keep main thread buttery smooth
-              const buffer = stringToArrayBuffer(JSON.stringify(data));
+              const buffers = stringToArrayBuffers(JSON.stringify(data));
               // "When an ArrayBuffer is transferred between threads, the
               // memory resource that it points to is literally moved between
               // contexts in a fast and efficient zero-copy operation."
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore https://developer.mozilla.org/en-US/docs/Glossary/Transferable_objects
-              self.postMessage(buffer, [buffer]);
+              self.postMessage('startChunk');
+              buffers.forEach((buffer) => {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore https://developer.mozilla.org/en-US/docs/Glossary/Transferable_objects
+                self.postMessage(buffer, [buffer]);
+              });
+              self.postMessage('endChunk');
             },
           });
           break;
