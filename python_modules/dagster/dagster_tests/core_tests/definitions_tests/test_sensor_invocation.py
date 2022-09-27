@@ -32,6 +32,10 @@ from dagster import (
     run_failure_sensor,
     run_status_sensor,
     sensor,
+    Output,
+    BoolMetadataValue,
+    DagsterEventType,
+    EventRecordsFilter,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
@@ -744,3 +748,49 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
         list(after_cursor_partitions_asset_sensor(ctx))
         materialize([august_asset], partition_key="2022-08-05", instance=instance)
         list(after_cursor_partitions_asset_sensor(ctx))
+
+
+def test_execute_in_process_result_in_build_multi_asset_sensor_context():
+    evaluated = False
+
+    @asset
+    def my_asset():
+        return Output(1, metadata={"evaluated": evaluated})
+
+    @multi_asset_sensor(asset_keys=[my_asset.key])
+    def my_sensor(context):
+        if not evaluated:
+            assert context.latest_materialization_records_by_key()[my_asset.key] == None
+        else:
+            # Test that materialization exists
+            assert context.latest_materialization_records_by_key()[
+                my_asset.key
+            ].event_log_entry.dagster_event.step_materialization_data.materialization.metadata_entries[
+                0
+            ].entry_data == BoolMetadataValue(
+                value=True
+            )
+
+    @repository
+    def my_repo():
+        return [my_asset, my_sensor]
+
+    with instance_for_test() as instance:
+        result = materialize([my_asset], instance=instance)
+        records = list(
+            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
+        )[0]
+        assert records.event_log_entry.run_id == result.run_id
+
+        ctx = build_multi_asset_sensor_context(
+            [my_asset.key],
+            instance=instance,
+            set_cursor_after_result=result,
+            repository_def=my_repo,
+        )
+        assert ctx._get_cursor(my_asset.key)[1] == records.storage_id
+        list(my_sensor(ctx))
+        evaluated = True
+
+        materialize([my_asset], instance=instance)
+        list(my_sensor(ctx))
