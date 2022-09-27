@@ -94,18 +94,19 @@ def _build_airbyte_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionMetadata,
 ) -> AssetsDefinition:
 
-    connection_id = cast(str, assets_defn_meta.extra_metadata["connection_id"])
-    group_name = cast(Optional[str], assets_defn_meta.extra_metadata["group_name"])
-    destination_tables = cast(List[str], assets_defn_meta.extra_metadata["destination_tables"])
-    normalization_tables = cast(
-        Mapping[str, List[str]], assets_defn_meta.extra_metadata["normalization_tables"]
-    )
+    metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
+    connection_id = cast(str, metadata["connection_id"])
+    group_name = cast(Optional[str], metadata["group_name"])
+    destination_tables = cast(List[str], metadata["destination_tables"])
+    normalization_tables = cast(Mapping[str, List[str]], metadata["normalization_tables"])
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
         non_argument_deps=set((assets_defn_meta.keys_by_input_name or {}).values()),
         outs={k: AssetOut(key=v) for k, v in (assets_defn_meta.keys_by_output_name or {}).items()},
-        internal_asset_deps={k: set(v) for k, v in assets_defn_meta.internal_asset_deps.items()},
+        internal_asset_deps={
+            k: set(v) for k, v in (assets_defn_meta.internal_asset_deps or {}).items()
+        },
         required_resource_keys={"airbyte"},
         compute_kind="airbyte",
         group_name=group_name,
