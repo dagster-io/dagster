@@ -533,9 +533,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self._host = check.str_param(host, "host")
             self._use_ssl = False
 
-        self._watch_thread_shutdown_event = None
-        self._watch_thread = None
-
         self._heartbeat_shutdown_event = None
         self._heartbeat_thread = None
 
@@ -662,17 +659,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self._heartbeat_shutdown_event.set()
             self._heartbeat_shutdown_event = None
 
-        if self._watch_thread_shutdown_event:
-            self._watch_thread_shutdown_event.set()
-            self._watch_thread_shutdown_event = None
-
         if self._heartbeat_thread:
             self._heartbeat_thread.join()
             self._heartbeat_thread = None
-
-        if self._watch_thread:
-            self._watch_thread.join()
-            self._watch_thread = None
 
     @property
     def is_reload_supported(self) -> bool:
