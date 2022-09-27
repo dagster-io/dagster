@@ -155,12 +155,10 @@ def test_downstream_include_self(all_assets):
     assert selection.resolve(all_assets) == _asset_keys_of({danny, edgar, fiona, george})
 
     selection = AssetSelection.groups("gentlemen").downstream(include_self=False)
-    assert selection.resolve(all_assets) == _asset_keys_of({edgar, fiona, george})
+    assert selection.resolve(all_assets) == _asset_keys_of({fiona})
 
     selection = AssetSelection.groups("ladies").downstream(include_self=False)
-    assert selection.resolve(all_assets) == _asset_keys_of(
-        {candace, fiona, george, danny, bob, edgar}
-    )
+    assert selection.resolve(all_assets) == _asset_keys_of({george, danny, bob, edgar})
 
 
 def test_upstream_include_self(all_assets):
@@ -168,7 +166,7 @@ def test_upstream_include_self(all_assets):
     assert selection.resolve(all_assets) == _asset_keys_of({danny, fiona, alice, bob, candace})
 
     selection = AssetSelection.groups("gentlemen").upstream(include_self=False)
-    assert selection.resolve(all_assets) == _asset_keys_of({danny, fiona, alice, bob, candace})
+    assert selection.resolve(all_assets) == _asset_keys_of({fiona, alice, candace})
 
     selection = AssetSelection.groups("ladies").upstream(include_self=False)
-    assert selection.resolve(all_assets) == _asset_keys_of({candace, danny, alice})
+    assert selection.resolve(all_assets) == _asset_keys_of({danny})

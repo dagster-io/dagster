@@ -80,10 +80,8 @@ class AssetSelection(ABC):
             of 2 means all assets that are children or grandchildren of the assets in this
             selection.
         include_self (bool): If True, then include the assets in this selection in the result.
-            If the include_self flag is False and an asset selection contains dependent assets,
-            for example upstream asset A and downstream asset B, Dagster will combine the downstream
-            of asset A and asset B into a selection. This example would return asset B and the
-            downstreams of asset B.
+            If the include_self flag is False, return each downstream asset that is not part of the
+            original selection.
         """
         check.opt_int_param(depth, "depth")
         check.opt_bool_param(include_self, "include_self")
@@ -103,10 +101,8 @@ class AssetSelection(ABC):
                 of 2 means all assets that are parents or grandparents of the assets in this
                 selection.
             include_self (bool): If True, then include the assets in this selection in the result.
-                If the include_self flag is False and an asset selection contains dependent assets,
-                for example upstream asset A and downstream asset B, Dagster will combine the upstreams
-                of asset A and asset B into a selection. This example would return asset A and the
-                upstreams of asset A.
+                If the include_self flag is False, return each upstream asset that is not part of the
+                original selection.
         """
         check.opt_int_param(depth, "depth")
         check.opt_bool_param(include_self, "include_self")
@@ -247,18 +243,21 @@ class Resolver:
             return fetch_sinks(self.asset_dep_graph, selection)
         elif isinstance(node, DownstreamAssetSelection):
             selection = self._resolve(node.children[0])
-            return reduce(
-                operator.or_,
-                [
-                    ({asset_name} if node.include_self else set())
-                    | fetch_connected(
-                        item=asset_name,
-                        graph=self.asset_dep_graph,
-                        direction="downstream",
-                        depth=node.depth,
-                    )
-                    for asset_name in selection
-                ],
+            return operator.sub(
+                reduce(
+                    operator.or_,
+                    [
+                        {asset_name}
+                        | fetch_connected(
+                            item=asset_name,
+                            graph=self.asset_dep_graph,
+                            direction="downstream",
+                            depth=node.depth,
+                        )
+                        for asset_name in selection
+                    ],
+                ),
+                selection if not node.include_self else set(),
             )
         elif isinstance(node, GroupsAssetSelection):
             return reduce(
@@ -288,18 +287,21 @@ class Resolver:
             return child_1 | child_2
         elif isinstance(node, UpstreamAssetSelection):
             selection = self._resolve(node.children[0])
-            return reduce(
-                operator.or_,
-                [
-                    ({asset_name} if node.include_self else set())
-                    | fetch_connected(
-                        item=asset_name,
-                        graph=self.asset_dep_graph,
-                        direction="upstream",
-                        depth=node.depth,
-                    )
-                    for asset_name in selection
-                ],
+            return operator.sub(
+                reduce(
+                    operator.or_,
+                    [
+                        {asset_name}
+                        | fetch_connected(
+                            item=asset_name,
+                            graph=self.asset_dep_graph,
+                            direction="upstream",
+                            depth=node.depth,
+                        )
+                        for asset_name in selection
+                    ],
+                ),
+                selection if not node.include_self else set(),
             )
         else:
             check.failed(f"Unknown node type: {type(node)}")

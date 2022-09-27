@@ -35,11 +35,7 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    DagsterInvalidSubsetError,
-)
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import SensorExecutionContext
 
@@ -757,7 +753,7 @@ def test_asset_keys_or_selection_mandatory():
     with pytest.raises(CheckError, match="Must provide asset_keys or asset_selection"):
 
         @multi_asset_sensor()
-        def asset_selection_sensor(context):
+        def asset_selection_sensor(context):  # pylint: disable=unused-argument
             pass
 
 
