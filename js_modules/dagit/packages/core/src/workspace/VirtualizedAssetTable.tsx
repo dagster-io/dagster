@@ -251,7 +251,19 @@ export const GroupNameRow: React.FC<{
   onToggle: (groupName: string) => void;
 }> = ({repoAddress, groupName, assetCount, expanded, height, start, onToggle}) => {
   return (
-    <Row $height={height} $start={start}>
+    <ClickableRow
+      $height={height}
+      $start={start}
+      onClick={() => onToggle(groupName)}
+      $open={expanded}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          onToggle(groupName);
+        }
+      }}
+    >
       <Box
         background={Colors.Gray50}
         flex={{direction: 'row', alignItems: 'center', gap: 8, justifyContent: 'space-between'}}
@@ -280,28 +292,16 @@ export const GroupNameRow: React.FC<{
           )}
         </Box>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          <Tag intent="primary">{assetCount === 1 ? '1 asset' : `${assetCount} assets`}</Tag>
-          <ExpandButton onClick={() => onToggle(groupName)} $open={expanded}>
-            <Icon name="arrow_drop_down" size={20} />
-          </ExpandButton>
+          <Tag>{assetCount === 1 ? '1 asset' : `${assetCount} assets`}</Tag>
+          <Icon name="arrow_drop_down" size={20} />
         </Box>
       </Box>
-    </Row>
+    </ClickableRow>
   );
 };
 
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: 40% 30% 20% 10%;
-  height: 100%;
-`;
-
-const ExpandButton = styled.button<{$open: boolean}>`
-  background: none;
-  border: 0;
+const ClickableRow = styled(Row)<{$open: boolean}>`
   cursor: pointer;
-  padding: 8px;
-  margin: -8px;
 
   :focus,
   :active {
@@ -312,6 +312,12 @@ const ExpandButton = styled.button<{$open: boolean}>`
     transition: transform 100ms linear;
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }
+`;
+
+const RowGrid = styled(Box)`
+  display: grid;
+  grid-template-columns: 40% 30% 20% 10%;
+  height: 100%;
 `;
 
 const SINGLE_ASSET_QUERY = gql`
