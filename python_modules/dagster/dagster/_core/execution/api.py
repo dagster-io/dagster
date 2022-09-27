@@ -20,6 +20,7 @@ from dagster._core.definitions import IPipeline, JobDefinition, PipelineDefiniti
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructablePipeline
+from dagster._core.definitions.repository_definition import RepositoryMetadata
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
@@ -982,6 +983,7 @@ def create_execution_plan(
     known_state: Optional[KnownExecutionState] = None,
     instance_ref: Optional[InstanceRef] = None,
     tags: Optional[Dict[str, str]] = None,
+    repository_metadata: Optional[RepositoryMetadata] = None,
 ) -> ExecutionPlan:
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
@@ -997,6 +999,9 @@ def create_execution_plan(
         KnownExecutionState,
         default=KnownExecutionState(),
     )
+    repository_metadata = check.opt_inst_param(
+        repository_metadata, "repository_metadata", RepositoryMetadata
+    )
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 
@@ -1009,9 +1014,8 @@ def create_execution_plan(
         tags=tags,
     )
 
-    if isinstance(pipeline, ReconstructablePipeline):
-        repository_def = pipeline.repository.get_definition()
-        plan = plan._replace(repository_metadata=repository_def.repository_metadata)
+    if repository_metadata is not None:
+        return plan._replace(repository_metadata=repository_metadata)
     return plan
 
 

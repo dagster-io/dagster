@@ -415,6 +415,7 @@ def get_external_execution_plan_snapshot(
                 step_keys_to_execute=args.step_keys_to_execute,
                 known_state=args.known_state,
                 instance_ref=args.instance_ref,
+                repository_metadata=repo_def.repository_metadata,
             ),
             args.pipeline_snapshot_id,
         )
