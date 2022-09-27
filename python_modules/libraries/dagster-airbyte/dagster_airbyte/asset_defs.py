@@ -2,10 +2,12 @@ import os
 import re
 from itertools import chain
 from typing import (
+    AbstractSet,
     Any,
     Callable,
     Dict,
     FrozenSet,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -38,7 +40,7 @@ def _build_airbyte_asset_defn_metadata(
     destination_tables: List[str],
     asset_key_prefix: Optional[List[str]] = None,
     normalization_tables: Optional[Mapping[str, List[str]]] = None,
-    upstream_assets: Optional[FrozenSet[AssetKey]] = None,
+    upstream_assets: Optional[Iterable[AssetKey]] = None,
     group_name: Optional[str] = None,
 ) -> AssetsDefinitionMetadata:
 
@@ -53,9 +55,9 @@ def _build_airbyte_asset_defn_metadata(
             )
         )
     )
-    outputs = frozenset({AssetKey(asset_key_prefix + [table]) for table in tables})
+    outputs = {table: AssetKey(asset_key_prefix + [table]) for table in tables}
 
-    internal_deps = {}
+    internal_deps: Dict[str, Set[AssetKey]] = {}
 
     normalization_tables = (
         {k: list(v) for k, v in normalization_tables.items()} if normalization_tables else {}
@@ -66,64 +68,53 @@ def _build_airbyte_asset_defn_metadata(
     if normalization_tables:
         for base_table, derived_tables in normalization_tables.items():
             for derived_table in derived_tables:
-                internal_deps[AssetKey(asset_key_prefix + [derived_table])] = frozenset(
-                    {AssetKey(asset_key_prefix + [base_table])}
-                )
+                internal_deps[derived_table] = {AssetKey(asset_key_prefix + [base_table])}
 
     # All non-normalization tables depend on any user-provided upstream assets
     for table in destination_tables:
-        internal_deps[AssetKey(asset_key_prefix + [table])] = upstream_assets or frozenset()
+        internal_deps[table] = upstream_assets or set()
 
-    first_asset_key = AssetKey(asset_key_prefix + [tables[0]])
     return AssetsDefinitionMetadata(
-        input_keys=frozenset(),
-        output_keys=outputs,
-        asset_deps=internal_deps,
-        group_names_by_key={AssetKey(asset_key_prefix + [table]): group_name for table in tables}
-        if group_name
-        else None,
-        metadata_by_key={
-            first_asset_key: {
-                "connection_id": connection_id,
-                "group_name": group_name,
-                "destination_tables": destination_tables,
-                "normalization_tables": normalization_tables,
-            }
+        keys_by_input_name={asset_key.path[-1]: asset_key for asset_key in upstream_assets}
+        if upstream_assets
+        else {},
+        keys_by_output_name=outputs,
+        internal_asset_deps=internal_deps,
+        group_name=group_name,
+        key_prefix=asset_key_prefix,
+        can_subset=False,
+        extra_metadata={
+            "connection_id": connection_id,
+            "group_name": group_name,
+            "destination_tables": destination_tables,
+            "normalization_tables": normalization_tables,
         },
     )
 
 
 def _build_airbyte_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionMetadata,
-    asset_key_prefix: Optional[List[str]] = None,
-    upstream_assets: Optional[Set[AssetKey]] = None,
 ) -> AssetsDefinition:
 
-    metadata = assets_defn_meta.metadata_by_key[list(assets_defn_meta.metadata_by_key.keys())[0]]
-    connection_id = metadata["connection_id"]
-    group_name = metadata["group_name"]
-    destination_tables = metadata["destination_tables"]
-    normalization_tables: Mapping[str, List[str]] = metadata["normalization_tables"]
-
-    outputs = {
-        table_asset_key.path[-1]: AssetOut(key=table_asset_key)
-        for table_asset_key in assets_defn_meta.output_keys
-    }
-
-    asset_deps = {k.path[-1]: set(v) for k, v in assets_defn_meta.asset_deps.items()}
+    connection_id = assets_defn_meta.extra_metadata["connection_id"]
+    group_name = assets_defn_meta.extra_metadata["group_name"]
+    destination_tables = assets_defn_meta.extra_metadata["destination_tables"]
+    normalization_tables: Mapping[str, List[str]] = assets_defn_meta.extra_metadata[
+        "normalization_tables"
+    ]
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
-        non_argument_deps=upstream_assets or set(),
-        outs=outputs,
-        internal_asset_deps=asset_deps,
+        non_argument_deps=set(assets_defn_meta.keys_by_input_name.values()),
+        outs={k: AssetOut(key=v) for k, v in assets_defn_meta.keys_by_output_name.items()},
+        internal_asset_deps=assets_defn_meta.internal_asset_deps,
         required_resource_keys={"airbyte"},
         compute_kind="airbyte",
         group_name=group_name,
     )
     def _assets(context):
         ab_output = context.resources.airbyte.sync_and_poll(connection_id=connection_id)
-        for materialization in generate_materializations(ab_output, asset_key_prefix):
+        for materialization in generate_materializations(ab_output, assets_defn_meta.key_prefix):
             table_name = materialization.asset_key.path[-1]
             if table_name in destination_tables:
                 yield Output(
@@ -442,10 +433,7 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
         self, metadata: Sequence[AssetsDefinitionMetadata]
     ) -> Sequence[AssetsDefinition]:
         return with_resources(
-            [
-                _build_airbyte_assets_from_metadata(meta, asset_key_prefix=self._key_prefix)
-                for meta in metadata
-            ],
+            [_build_airbyte_assets_from_metadata(meta) for meta in metadata],
             {"airbyte": self._airbyte_resource_def},
         )
 
