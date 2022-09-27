@@ -71,6 +71,7 @@ RepositoryDefinitionType = Union[
     GraphDefinition,
     UnresolvedAssetJobDefinition,
     "AssetsDefinition",
+    SourceAsset,
 ]
 
 
@@ -1369,41 +1370,44 @@ class PendingRepositoryDefinition:
     def __init__(
         self,
         name: str,
-        repository_definitions: Sequence[
-            Union[RepositoryDefinitionType, "CacheableAssetsDefinition"]
-        ],
+        repository_definitions: Sequence[RepositoryDefinitionType],
+        cacheable_definitions: Sequence["CacheableAssetsDefinition"],
         description: Optional[str] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
     ):
         self._name = name
         self._repository_definitions = repository_definitions
+        self._cacheable_definitions = cacheable_definitions
         self._description = description
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
 
     def resolve(self, repository_metadata: Optional[RepositoryMetadata]) -> RepositoryDefinition:
-        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-
-        # this is metadata from the host process that can help generate definitions
-        metadata_by_key = (
-            dict(repository_metadata.cached_metadata_by_key) if repository_metadata else {}
-        )
+        if repository_metadata is None:
+            # must generate metadata from scratch
+            repository_metadata = RepositoryMetadata(
+                cached_metadata_by_key={
+                    defn.unique_id: defn.get_metadata() for defn in self._cacheable_definitions
+                }
+            )
 
         resolved_definitions: List[RepositoryDefinitionType] = []
-        for definition in self._repository_definitions:
-            if isinstance(definition, CacheableAssetsDefinition):
-                unique_id = definition.unique_id
-                if unique_id not in metadata_by_key:
-                    # don't have helper metadata, must regenerate it
-                    metadata_by_key[unique_id] = definition.get_metadata()
-                # now we are guaranteed to have metadata available, so use it to get definitions
-                resolved_definitions.extend(definition.get_definitions(metadata_by_key[unique_id]))
-            else:
-                resolved_definitions.append(definition)
+        for defn in self._cacheable_definitions:
+            # should always have metadata for each cached defn at this point
+            check.invariant(
+                defn.unique_id in repository_metadata.cached_metadata_by_key,
+                f"No metadata found for CacheableAssetsDefinition with unique_id {defn.unique_id}.",
+            )
+            # use the emtadata to generate definitions
+            resolved_definitions.extend(
+                defn.get_definitions(
+                    metadata=repository_metadata.cached_metadata_by_key[defn.unique_id]
+                )
+            )
 
         repository_data = CachingRepositoryData.from_list(
-            resolved_definitions,
+            [*self._repository_definitions, *resolved_definitions],
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
         )
@@ -1412,7 +1416,7 @@ class PendingRepositoryDefinition:
             self._name,
             repository_data=repository_data,
             description=self._description,
-            repository_metadata=RepositoryMetadata(cached_metadata_by_key=metadata_by_key),
+            repository_metadata=repository_metadata,
         )
 
 

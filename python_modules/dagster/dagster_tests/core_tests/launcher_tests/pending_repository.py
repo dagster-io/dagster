@@ -16,13 +16,12 @@ from dagster._core.definitions.cacheable_assets import (
 )
 
 
-@op(ins={"inp": In(Nothing)})
-def my_op():
-    return 1
-
-
 class MyAssets(CacheableAssetsDefinition):
     def get_definitions(self, metadata):
+        @op(name=f"my_op_{self.unique_id}", ins={"inp": In(Nothing)})
+        def my_op():
+            return 1
+
         return [
             AssetsDefinition.from_op(
                 my_op,

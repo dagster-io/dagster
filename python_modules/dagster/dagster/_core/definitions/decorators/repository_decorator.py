@@ -63,10 +63,10 @@ class _Repository:
 
         repository_data: Union[CachingRepositoryData, RepositoryData]
         if isinstance(repository_definitions, list):
-            repository_definitions = list(_flatten(repository_definitions))
-            bad_definitions = []
-            has_unresolved = False
-            for i, definition in enumerate(repository_definitions):
+            bad_defns = []
+            repository_defns = []
+            cacheable_defns = []
+            for i, definition in enumerate(_flatten(repository_definitions)):
                 if not (
                     isinstance(definition, PipelineDefinition)
                     or isinstance(definition, PartitionSetDefinition)
@@ -79,14 +79,17 @@ class _Repository:
                     or isinstance(definition, SourceAsset)
                     or isinstance(definition, UnresolvedAssetJobDefinition)
                 ):
-                    bad_definitions.append((i, type(definition)))
-                if isinstance(definition, CacheableAssetsDefinition):
-                    has_unresolved = True
-            if bad_definitions:
+                    bad_defns.append((i, type(definition)))
+                elif isinstance(definition, CacheableAssetsDefinition):
+                    cacheable_defns.append(definition)
+                else:
+                    repository_defns.append(definition)
+
+            if bad_defns:
                 bad_definitions_str = ", ".join(
                     [
                         "value of type {type_} at index {i}".format(type_=type_, i=i)
-                        for i, type_ in bad_definitions
+                        for i, type_ in bad_defns
                     ]
                 )
                 raise DagsterInvalidDefinitionError(
@@ -96,16 +99,17 @@ class _Repository:
                     "AssetsDefinition, or SourceAsset."
                     f"Got {bad_definitions_str}."
                 )
-            if has_unresolved:
+            if cacheable_defns:
                 return PendingRepositoryDefinition(
                     self.name,
-                    repository_definitions=repository_definitions,
+                    repository_definitions=repository_defns,
+                    cacheable_definitions=cacheable_defns,
                     description=self.description,
                     default_executor_def=self.default_executor_def,
                     default_logger_defs=self.default_logger_defs,
                 )
             repository_data = CachingRepositoryData.from_list(
-                repository_definitions,
+                repository_defns,
                 default_executor_def=self.default_executor_def,
                 default_logger_defs=self.default_logger_defs,
             )
