@@ -2110,7 +2110,7 @@ def my_job():
 
 ### Major Changes
 
-- The job, op, and graph APIs now represent the stable core of the system, and replace pipelines, solids, composite solids, modes, and presets as Dagster’s core abstractions. All of Dagster’s documentation - tutorials, examples, table of contents - is in terms of these new core APIs. Pipelines, modes, presets, solids, and composite solids are still supported, but are now considered “Legacy APIs”. We will maintain backcompatibility with the legacy APIs for some time, however, we believe the new APIs represent an elegant foundation for Dagster going forward. As time goes on, we will be adding new features that only apply to the new core. All in all, the new APIs provide increased clarity - they unify related concepts, make testing more lightweight, and simplify operational workflows in Dagit. For comprehensive instructions on how to transition to the new APIs, refer to the [migration guide](https://docs.dagster.io/guides/dagster/graph_job_op).
+- The job, op, and graph APIs now represent the stable core of the system, and replace pipelines, solids, composite solids, modes, and presets as Dagster’s core abstractions. All of Dagster’s documentation - tutorials, examples, table of contents - is in terms of these new core APIs. Pipelines, modes, presets, solids, and composite solids are still supported, but are now considered “Legacy APIs”. We will maintain backcompatibility with the legacy APIs for some time, however, we believe the new APIs represent an elegant foundation for Dagster going forward. As time goes on, we will be adding new features that only apply to the new core. All in all, the new APIs provide increased clarity - they unify related concepts, make testing more lightweight, and simplify operational workflows in Dagit. For comprehensive instructions on how to transition to the new APIs, refer to the [migration guide](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op).
 - Dagit has received a complete makeover. This includes a refresh to the color palette and general design patterns, as well as functional changes that make common Dagit workflows more elegant. These changes are designed to go hand in hand with the new set of core APIs to represent a stable core for the system going forward.
 - You no longer have to pass a context object around to do basic logging. Many updates have been made to our logging system to make it more compatible with the python logging module. You can now capture logs produced by standard python loggers, set a global python log level, and set python log handlers that will be applied to every log message emitted from the Dagster framework. Check out the docs [here](https://docs.dagster.io/concepts/logging/python-logging)!
 - The Dagit “playground” has been re-named into the Dagit “launchpad”. This reflects a vision of the tool closer to how our users actually interact with it - not just a testing/development tool, but also as a first-class starting point for many one-off workflows.
@@ -2594,7 +2594,7 @@ def my_root_manager(_):
 
 ### Documentation
 
-- Added a guide to migrating from the existing Pipeline, Mode, Preset, and Solid APIs to the new experimental Graph, Job, and Op APIs. Check out the guide [here](https://docs.dagster.io/guides/dagster/graph_job_op)!
+- Added a guide to migrating from the existing Pipeline, Mode, Preset, and Solid APIs to the new experimental Graph, Job, and Op APIs. Check out the guide [here](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op)!
 
 # 0.12.1
 
@@ -2758,7 +2758,7 @@ def my_root_manager(_):
 
 ### Documentation
 
-- Added docs section on testing hooks. https://docs.dagster.io/master/concepts/solids-pipelines/solid-hooks#experimental-testing-hooks
+- Added docs section on testing hooks. https://docs.dagster.io/0.11.16/concepts/solids-pipelines/solid-hooks#experimental-testing-hooks
 
 # 0.11.14
 
@@ -2783,8 +2783,8 @@ def my_root_manager(_):
 
 ### Documentation
 
-- Added section on testing resources ([link](https://docs.dagster.io/master/concepts/modes-resources#experimental-testing-resource-initialization)).
-- Revamped IO manager testing section to use `build_input_context` and `build_output_context` APIs ([link](https://docs.dagster.io/master/concepts/io-management/io-managers#testing-an-io-manager)).
+- Added section on testing resources ([link](https://docs.dagster.io/0.11.16/concepts/modes-resources#experimental-testing-resource-initialization)).
+- Revamped IO manager testing section to use `build_input_context` and `build_output_context` APIs ([link](https://docs.dagster.io/0.11.16/concepts/io-management/io-managers#testing-an-io-manager)).
 
 # 0.11.13
 
@@ -3625,7 +3625,7 @@ load_from:
 
 **Documentation**
 
-- Added an example of how to trigger a Dagster pipeline in GraphQL at https://docs.dagster.io/examples/trigger_pipeline.
+- Added an example of how to trigger a Dagster pipeline in GraphQL at https://github.com/dagster-io/dagster/tree/0.10.6/examples/trigger_pipeline.
 - Added better documentation for customizing sensor intervals at https://docs.dagster.io/overview/schedules-sensors/sensors.
 
 ## 0.10.5
@@ -3746,7 +3746,7 @@ This changes the interval at which the daemon checks for sensors which haven't r
 
 **Documentation**
 
-- Added new [troubleshooting guide](https://docs.dagster.io/troubleshooting) for problems encountered while using the `QueuedRunCoordinator` to limit run concurrency.
+- Added new [troubleshooting guide](https://legacy-docs.dagster.io/troubleshooting) for problems encountered while using the `QueuedRunCoordinator` to limit run concurrency.
 - Added documentation for the sensor command-line interface.
 
 ## 0.10.0 "The Edge of Glory"
@@ -4383,7 +4383,7 @@ opt_in:
 - Added step-level run history for partitioned schedules on the schedule view
 - Added great_expectations integration, through the `dagster_ge` library. Example usage is under a new example, called `ge_example`, and documentation for the library can be found under the libraries section of the api docs.
 - `PythonObjectDagsterType` can now take a tuple of types as well as a single type, more closely mirroring `isinstance` and allowing Union types to be represented in Dagster.
-- The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the [configuration documentation](https://docs.dagster.io/overview/configuration).
+- The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the [configuration documentation](https://legacy-docs.dagster.io/overview/configuration/configured).
 - Updated Helm chart to include auto-generated user code configmap in user code deployment by default
 
 **Bugfixes**
