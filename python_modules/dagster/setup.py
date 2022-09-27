@@ -84,6 +84,7 @@ if __name__ == "__main__":
         extras_require={
             "docker": ["docker"],
             "test": [
+                "buildkite-test-collector",
                 "coverage==5.3",
                 "docker",
                 "grpcio-tools>=1.32.0,<1.44.0",  # related to above grpcio pins
