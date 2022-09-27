@@ -51,6 +51,7 @@ from .utils import check_valid_name
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.events.log import EventLogEntry
+    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.storage.event_log.base import EventLogRecord
 
 
@@ -1482,6 +1483,34 @@ def build_sensor_context(
     )
 
 
+def get_cursor_from_latest_materializations(
+    asset_keys: Sequence[AssetKey], instance: DagsterInstance
+) -> str:
+    from dagster._core.events import DagsterEventType
+    from dagster._core.storage.event_log.base import EventRecordsFilter
+
+    cursor_dict: Dict[str, Tuple[Optional[str], int]] = {}
+
+    for asset_key in asset_keys:
+        materializations = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+            ),
+            limit=1,
+        )
+        if materializations:
+            last_materialization = list(materializations)[-1]
+
+            cursor_dict[str(asset_key)] = (
+                _get_partition_key_from_event_log_record(last_materialization),
+                last_materialization.storage_id,
+            )
+
+    cursor_str = json.dumps(cursor_dict)
+    return cursor_str
+
+
 @experimental
 def build_multi_asset_sensor_context(
     repository_def: "RepositoryDefinition",
@@ -1490,8 +1519,9 @@ def build_multi_asset_sensor_context(
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
+    set_cursor_to_latest_materializations: bool = False,
 ) -> MultiAssetSensorEvaluationContext:
-    """Builds multi asset sensor execution context using the provided parameters.
+    """Builds multi asset sensor execution context for testing purposes using the provided parameters.
 
     This function can be used to provide a context to the invocation of a multi asset sensor definition. If
     provided, the dagster instance must be persistent; DagsterInstance.ephemeral() will result in an
@@ -1518,18 +1548,33 @@ def build_multi_asset_sensor_context(
 
     """
     from dagster._core.definitions import RepositoryDefinition
+    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
-
     check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
     if asset_selection:
         asset_selection = check.inst_param(asset_selection, "asset_selection", AssetSelection)
     else:  # asset keys provided
         asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
         asset_selection = AssetSelection.keys(*asset_keys)
+
+    check.bool_param(set_cursor_to_latest_materializations, "set_cursor_to_latest_materializations")
+
+    if set_cursor_to_latest_materializations:
+        if cursor:
+            raise DagsterInvalidInvocationError(
+                "Cannot provide both cursor and set_cursor_to_latest_materializations objects. Dagster will override "
+                "the provided cursor based on the set_cursor_to_latest_materializations object."
+            )
+        if not instance:
+            raise DagsterInvalidInvocationError(
+                "Cannot provide set_cursor_to_latest_materializations object without a Dagster instance."
+            )
+
+        cursor = get_cursor_from_latest_materializations(asset_keys, instance)
 
     return MultiAssetSensorEvaluationContext(
         instance_ref=None,
