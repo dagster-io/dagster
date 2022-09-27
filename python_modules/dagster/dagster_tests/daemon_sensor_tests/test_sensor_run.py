@@ -4,6 +4,7 @@ import sys
 import tempfile
 import time
 from contextlib import ExitStack, contextmanager
+import warnings
 
 import pendulum
 import pytest
@@ -21,7 +22,6 @@ from dagster import (
     JobSelector,
     Output,
     RepositorySelector,
-    SourceAsset,
     WeeklyPartitionsDefinition,
     asset,
     build_asset_reconciliation_sensor,
@@ -33,7 +33,11 @@ from dagster import (
     multi_asset_sensor,
     repository,
     run_failure_sensor,
+    ExperimentalWarning
 )
+
+warnings.filterwarnings("ignore", category=ExperimentalWarning)
+
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
@@ -610,14 +614,6 @@ def the_manager():
     return MyIOManager()
 
 
-source_asset = SourceAsset(key=AssetKey("the_source"), io_manager_def=the_manager)
-
-
-@asset
-def downstream_of_source(the_source):
-    return the_source + 4
-
-
 @asset
 def sleeper():
     from time import sleep
@@ -645,57 +641,46 @@ def asset_sensor_repo():
         i,
         sleeper,
         waits_on_sleep,
-        source_asset,
-        downstream_of_source,
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(y), name="just_y_OR", and_condition=False
+            selection=AssetSelection.assets(y), name="just_y_OR", and_condition=False, wait_for_in_progress_runs=False
         ),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(d), name="just_d_OR", and_condition=False
+            selection=AssetSelection.assets(d), name="just_d_OR", and_condition=False, wait_for_in_progress_runs=False
         ),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(d, f), name="d_and_f_OR", and_condition=False
+            selection=AssetSelection.assets(d, f), name="d_and_f_OR", and_condition=False, wait_for_in_progress_runs=False
         ),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(d, f, g), name="d_and_f_and_g_OR", and_condition=False
+            selection=AssetSelection.assets(d, f, g), name="d_and_f_and_g_OR", and_condition=False, wait_for_in_progress_runs=False
         ),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(y, d), name="y_and_d_OR", and_condition=False
+            selection=AssetSelection.assets(y, d), name="y_and_d_OR", and_condition=False, wait_for_in_progress_runs=False
         ),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(y, i), name="y_and_i_OR", and_condition=False
+            selection=AssetSelection.assets(y, i), name="y_and_i_OR", and_condition=False, wait_for_in_progress_runs=False
         ),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(downstream_of_source),
-            name="downstream_of_source_sensor_OR",
-            and_condition=False,
+            selection=AssetSelection.assets(g), name="just_g_OR", and_condition=False, wait_for_in_progress_runs=False
+        ),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(y), name="just_y_AND", wait_for_in_progress_runs=False),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(d), name="just_d_AND", wait_for_in_progress_runs=False),
+        build_asset_reconciliation_sensor(
+            selection=AssetSelection.assets(d, f), name="d_and_f_AND", wait_for_in_progress_runs=False
         ),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(g), name="just_g_OR", and_condition=False
-        ),
-        build_asset_reconciliation_sensor(selection=AssetSelection.assets(y), name="just_y_AND"),
-        build_asset_reconciliation_sensor(selection=AssetSelection.assets(d), name="just_d_AND"),
-        build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(d, f), name="d_and_f_AND"
+            selection=AssetSelection.assets(d, f, g), name="d_and_f_and_g_AND", wait_for_in_progress_runs=False
         ),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(d, f, g), name="d_and_f_and_g_AND"
+            selection=AssetSelection.assets(y, d), name="y_and_d_AND", wait_for_in_progress_runs=False
         ),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(y, d), name="y_and_d_AND"
+            selection=AssetSelection.assets(y, i), name="y_and_i_AND", wait_for_in_progress_runs=False
         ),
-        build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(y, i), name="y_and_i_AND"
-        ),
-        build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(downstream_of_source),
-            name="downstream_of_source_sensor_AND",
-        ),
-        build_asset_reconciliation_sensor(selection=AssetSelection.assets(g), name="just_g_AND"),
+        build_asset_reconciliation_sensor(selection=AssetSelection.assets(g), name="just_g_AND", wait_for_in_progress_runs=False),
         build_asset_reconciliation_sensor(
             selection=AssetSelection.assets(waits_on_sleep),
             name="in_progress_condition_sensor",
-            parent_in_progress_stops_materialization=True,
+            wait_for_in_progress_runs=True,
             and_condition=False,
         ),
     ]
