@@ -179,6 +179,68 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
 
 
+def test_successful_run_from_pending(
+    instance, pending_workspace
+):  # pylint: disable=redefined-outer-name
+
+    repo_location = pending_workspace.get_repository_location("test2")
+    external_pipeline = repo_location.get_repository("pending").get_full_external_job(
+        "my_cool_asset_job"
+    )
+    external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline=external_pipeline,
+        run_config={},
+        mode="default",
+        step_keys_to_execute=None,
+        known_state=None,
+    )
+
+    num_called = instance.run_storage.kvs_get({"num_called_a", "num_called_b"})
+    assert num_called.get("num_called_a") == "1"
+    assert num_called.get("num_called_b") == "1"
+
+    created_pipeline_run = instance.create_run(
+        pipeline_name="my_cool_asset_job",
+        run_id="xyzabc",
+        run_config=None,
+        mode="default",
+        solids_to_execute=None,
+        step_keys_to_execute=None,
+        status=None,
+        tags=None,
+        root_run_id=None,
+        parent_run_id=None,
+        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )
+
+    run_id = created_pipeline_run.run_id
+
+    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+
+    instance.launch_run(run_id=run_id, workspace=pending_workspace)
+
+    stored_pipeline_run = instance.get_run_by_id(run_id)
+    assert created_pipeline_run.run_id == stored_pipeline_run.run_id
+    assert (
+        created_pipeline_run.execution_plan_snapshot_id
+        == stored_pipeline_run.execution_plan_snapshot_id
+    )
+    assert (
+        created_pipeline_run.has_repository_metadata and stored_pipeline_run.has_repository_metadata
+    )
+
+    finished_pipeline_run = poll_for_finished_run(instance, run_id)
+    assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+
+    num_called = instance.run_storage.kvs_get({"num_called_a", "num_called_b"})
+    assert num_called.get("num_called_a") == "1"
+    assert num_called.get("num_called_b") == "1"
+
+
 def test_invalid_instance_run():
     with tempfile.TemporaryDirectory() as temp_dir:
         correct_run_storage_dir = os.path.join(temp_dir, "history", "")

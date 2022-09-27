@@ -114,9 +114,11 @@ def test_run_from_pending_repository():
                     step_keys_to_execute=None,
                     known_state=None,
                 )
-                num_called = int(
-                    instance.run_storage.kvs_get({"num_called"}).get("num_called", "0")
-                )
+
+                num_called = instance.run_storage.kvs_get({"num_called_a", "num_called_b"})
+                assert num_called.get("num_called_a") == "1"
+                assert num_called.get("num_called_b") == "1"
+
                 pipeline_run = instance.create_run(
                     pipeline_name="my_cool_asset_job",
                     run_id="xyzabc",

@@ -1383,6 +1383,10 @@ class PendingRepositoryDefinition:
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
 
+    @property
+    def name(self) -> str:
+        return self._name
+
     def resolve(self, repository_metadata: Optional[RepositoryMetadata]) -> RepositoryDefinition:
         if repository_metadata is None:
             # must generate metadata from scratch
