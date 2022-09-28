@@ -4,4 +4,4 @@ select
     order_date,
     status
 
-from raw_jaffle_shop_orders
+from {{ source('raw_data', 'orders') }}

@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: raw_data
+    tables:
+      - name: orders
+      - name: customers

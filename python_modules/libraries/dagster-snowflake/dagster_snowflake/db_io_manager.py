@@ -84,17 +84,25 @@ class DbIOManager(IOManager):
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
         table_slice = self._get_table_slice(context, context)
-        self._db_client.delete_table_slice(context, table_slice)
 
-        obj_type = type(obj)
-        check.invariant(
-            obj_type in self._handlers_by_type,
-            f"DbIOManager does not have a handler for type '{obj_type}'. Has handlers "
-            f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
-        )
-        handler_metadata = (
-            self._handlers_by_type[obj_type].handle_output(context, table_slice, obj) or {}
-        )
+        if obj is not None:
+            obj_type = type(obj)
+            check.invariant(
+                obj_type in self._handlers_by_type,
+                f"DbIOManager does not have a handler for type '{obj_type}'. Has handlers "
+                f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
+            )
+            self._db_client.delete_table_slice(context, table_slice)
+            handler_metadata = (
+                self._handlers_by_type[obj_type].handle_output(context, table_slice, obj) or {}
+            )
+        else:
+            # check.invariant(
+            #     context.dagster_type.is_nothing,
+            #     "Unexpected 'None' output value. If a 'None' value is intentional, set the output type to None.",
+            # )
+            # if obj is None, assume that I/O was handled in the op body
+            handler_metadata = {}
 
         context.add_output_metadata(
             {**handler_metadata, "Query": self._db_client.get_select_statement(table_slice)}
