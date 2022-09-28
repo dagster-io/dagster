@@ -29,8 +29,6 @@ Sensors allow you to instigate runs based on any external state change.
 | <PyObject object="RunStatusSensorContext" />              | The context object passed to a run status sensor evaluation.                                                                                                                                                                                                                                                                                                            |
 | <PyObject object="build_run_status_sensor_context" />     | A function that constructs an instance of <PyObject object="RunStatusSensorContext" />. This is intended to be used to test a run status sensor.                                                                                                                                                                                                                        |
 
-                                                                                                                                                                                    |
-
 ## Overview
 
 Sensors are definitions in Dagster that allow you to instigate runs based on some external state change. For example, you can:
@@ -144,23 +142,7 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
 
 Multi-asset sensors, which can trigger job executions based on multiple asset materialization event streams, can be handled using the <PyObject object="multi_asset_sensor" decorator/> decorator.
 
-In the body of the sensor, you have access to the materialization event records for each asset via the `context`. The context provides two methods for fetching the materialization event records:
-
-- <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="latest_materialization_records_by_key"
-  />
-  :
-
-Returns a dictionary mapping the `AssetKey` for each monitored asset to the most recent materialization record. If there is no materialization event, the mapped value will be `None`
-
-- <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="materialization_records_for_key"
-  />
-  :
-
-Returns a list of materialization event records for a specified `AssetKey`.
+In the body of the sensor, you have access to the materialization event records for each asset via the context. <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_key" /> returns a dictionary mapping the `AssetKey` for each monitored asset to the most recent materialization record. If there is no materialization event, the mapped value will be `None`. <PyObject object="MultiAssetSensorEvaluationContext" method="materialization_records_for_key" /> returns a list of materialization event records for a specified `AssetKey`. Both methods only return materializations after the latest cursor.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
 @multi_asset_sensor(
@@ -170,39 +152,35 @@ Returns a list of materialization event records for a specified `AssetKey`.
 def asset_a_and_b_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
-        logger_str = (
-            f"Assets {asset_events[AssetKey('asset_a')].event_log_entry.dagster_event.asset_key.path} "
-            f"and {asset_events[AssetKey('asset_b')].event_log_entry.dagster_event.asset_key.path} materialized"
-        )
         context.advance_all_cursors()
-        return RunRequest(
-            run_key=f"{context.cursor}",
-            run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
-        )
+        return RunRequest()
 ```
 
-Note the `context.advance_all_cursors` call near the end of the sensor. The cursor helps keep track of which materialization events have been processed by the sensor so that the next time the sensor runs, only newer events are fetched. Since `multi_asset_sensor`s provide increased flexibility to determine what conditions should result in `RunRequest`s, the sensor must manually update the cursor if a `RunRequest` is returned.
+Note the `context.advance_all_cursors` call near the end of the sensor. The cursor helps keep track of which materialization events have been processed by the sensor so that the next time the sensor runs, only newer events are fetched. Since `multi_asset_sensor`s provide flexibility to determine what conditions should result in `RunRequest`s, the sensor must manually update the cursor if a <PyObject object="RunRequest" /> is returned.
 
-You can also return a `SkipReason` to document why the sensor didn't launch a run.
+You can also return a <PyObject object="SkipReason" /> to document why the sensor didn't launch a run.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_w_skip_reason endbefore=end_multi_asset_sensor_w_skip_reason
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_c")],
+    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     job=my_job,
 )
-def every_fifth_asset_c_sensor(context):
-    # this sensor will return a run request every fifth materialization of asset_c
-    asset_events = context.materialization_records_for_key(
-        asset_key=AssetKey("asset_c"), limit=5
-    )
-    if len(asset_events) == 5:
-        context.advance_cursor({AssetKey("asset_c"): asset_events[-1]})
-        return RunRequest(run_key=f"{context.cursor}")
-    else:
-        # you can optionally return a SkipReason
-        # we don't update the cursor here since we want to keep fetching the same events until we
-        # fetch 5 events
-        return SkipReason(f"asset_c only materialized {len(asset_events)} times.")
+def asset_a_and_b_sensor_with_skip_reason(context):
+    asset_events = context.latest_materialization_records_by_key()
+    if all(asset_events.values()):
+        context.advance_all_cursors()
+        return RunRequest()
+    elif any(asset_events.values()):
+        materialized_asset_key_strs = [
+            key.to_user_string() for key, value in asset_events.items() if value
+        ]
+        not_materialized_asset_key_strs = [
+            key.to_user_string() for key, value in asset_events.items() if not value
+        ]
+        return SkipReason(
+            f"Observed materializations for {materialized_asset_key_strs}, "
+            f"but not for {not_materialized_asset_key_strs}"
+        )
 ```
 
 ## Idempotence and Cursors
