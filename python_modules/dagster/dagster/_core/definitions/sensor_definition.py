@@ -50,8 +50,8 @@ from .utils import check_valid_name
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.storage.event_log.base import EventLogRecord
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster._core.storage.event_log.base import EventLogRecord
 
 
 @whitelist_for_serdes
@@ -1151,7 +1151,7 @@ def build_multi_asset_sensor_context(
     if set_cursor_after_result:
         if cursor:
             raise DagsterInvalidInvocationError(
-                "Cannot provide cursor and set_cursor_after_result objects. Dagster will override "
+                "Cannot provide both cursor and set_cursor_after_result objects. Dagster will override "
                 "the provided cursor based on the set_cursor_after_result object."
             )
         if not instance:

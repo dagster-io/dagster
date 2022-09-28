@@ -8,10 +8,14 @@ from dagster import (
     AssetIn,
     AssetKey,
     AssetOut,
+    BoolMetadataValue,
+    DagsterEventType,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
     DailyPartitionsDefinition,
+    EventRecordsFilter,
+    Output,
     PartitionKeyRange,
     PartitionMapping,
     PartitionsDefinition,
@@ -32,10 +36,6 @@ from dagster import (
     run_failure_sensor,
     run_status_sensor,
     sensor,
-    Output,
-    BoolMetadataValue,
-    DagsterEventType,
-    EventRecordsFilter,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
@@ -794,3 +794,73 @@ def test_execute_in_process_result_in_build_multi_asset_sensor_context():
 
         materialize([my_asset], instance=instance)
         list(my_sensor(ctx))
+
+
+def test_build_multi_asset_context_multiple_execute_in_process():
+    @asset
+    def my_asset():
+        return 1
+
+    @asset
+    def my_asset_2():
+        return 1
+
+    @repository
+    def my_repo():
+        return [my_asset, my_asset_2]
+
+    with instance_for_test() as instance:
+        materialize([my_asset], instance=instance)
+        result = materialize([my_asset_2], instance=instance)
+
+        records = sorted(
+            list(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+            ),
+            key=lambda x: x.storage_id,
+        )
+        assert len(records) == 2
+
+        my_asset_cursor = records[0].storage_id
+        my_asset_2_cursor = records[1].storage_id
+
+        ctx = build_multi_asset_sensor_context(
+            [my_asset.key, my_asset_2.key],
+            instance=instance,
+            set_cursor_after_result=result,
+            repository_def=my_repo,
+        )
+        assert ctx._get_cursor(my_asset.key)[1] == my_asset_cursor
+        assert ctx._get_cursor(my_asset_2.key)[1] == my_asset_2_cursor
+
+
+def test_error_exec_in_process_to_build_multi_asset_sensor_context():
+    @asset
+    def my_asset():
+        return 1
+
+    @repository
+    def my_repo():
+        return [my_asset]
+
+    with pytest.raises(DagsterInvalidInvocationError, match="Dagster instance"):
+        with instance_for_test() as instance:
+            result = materialize([my_asset], instance=instance)
+            build_multi_asset_sensor_context(
+                [my_asset.key], repository_def=my_repo, set_cursor_after_result=result
+            )
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Cannot provide both cursor and set_cursor_after_result",
+    ):
+        with instance_for_test() as instance:
+            result = materialize([my_asset], instance=instance)
+            build_multi_asset_sensor_context(
+                [my_asset.key],
+                repository_def=my_repo,
+                set_cursor_after_result=result,
+                cursor="alskdjalsjk",
+            )
