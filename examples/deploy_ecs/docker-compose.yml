@@ -8,6 +8,7 @@ services:
   # dagit will be put on a queue and later dequeued and launched by
   # the dagster-daemon service.
   dagit:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -46,6 +47,7 @@ services:
   # taking runs off of the queue and launching them, as well as creating
   # runs from schedules or sensors.
   daemon:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -92,6 +94,7 @@ services:
   # Multiple containers like this can be deployed separately - each needs to
   # run on its own port and have its own entry in the workspace.yaml file.
   user_code:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./Dockerfile
