@@ -249,44 +249,44 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   };
 
   const gantt = (metadata: IRunMetadataDict) => {
-    if (!run) {
-      return <GanttChartLoadingState runId={runId} />;
-    }
+    // if (!run) {
+    return <GanttChartLoadingState runId={runId} />;
+    // }
 
-    if (run.status === 'QUEUED') {
-      return <QueuedState run={run} />;
-    }
+    // if (run.status === 'QUEUED') {
+    //   return <QueuedState run={run} />;
+    // }
 
-    if (run.executionPlan && runtimeGraph) {
-      return (
-        <GanttChart
-          options={{
-            mode: GanttChartMode.WATERFALL_TIMED,
-          }}
-          toolbarActions={
-            <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-              <FirstOrSecondPanelToggle axis="vertical" container={splitPanelContainer} />
-              <RunActionButtons
-                run={run}
-                onLaunch={onLaunch}
-                graph={runtimeGraph}
-                metadata={metadata}
-                selection={{query: selectionQuery, keys: selectionStepKeys}}
-              />
-            </Box>
-          }
-          runId={runId}
-          graph={runtimeGraph}
-          metadata={metadata}
-          selection={{query: selectionQuery, keys: selectionStepKeys}}
-          onClickStep={onClickStep}
-          onSetSelection={onSetSelectionQuery}
-          focusedTime={logsFilter.focusedTime}
-        />
-      );
-    }
+    // if (run.executionPlan && runtimeGraph) {
+    //   return (
+    //     <GanttChart
+    //       options={{
+    //         mode: GanttChartMode.WATERFALL_TIMED,
+    //       }}
+    //       toolbarActions={
+    //         <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+    //           <FirstOrSecondPanelToggle axis="vertical" container={splitPanelContainer} />
+    //           <RunActionButtons
+    //             run={run}
+    //             onLaunch={onLaunch}
+    //             graph={runtimeGraph}
+    //             metadata={metadata}
+    //             selection={{query: selectionQuery, keys: selectionStepKeys}}
+    //           />
+    //         </Box>
+    //       }
+    //       runId={runId}
+    //       graph={runtimeGraph}
+    //       metadata={metadata}
+    //       selection={{query: selectionQuery, keys: selectionStepKeys}}
+    //       onClickStep={onClickStep}
+    //       onSetSelection={onSetSelectionQuery}
+    //       focusedTime={logsFilter.focusedTime}
+    //     />
+    //   );
+    // }
 
-    return <NonIdealState icon="error" title="Unable to build execution plan" />;
+    // return <NonIdealState icon="error" title="Unable to build execution plan" />;
   };
 
   return (

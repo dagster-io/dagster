@@ -123,6 +123,9 @@ def delete_pipeline_run(graphene_info, run_id):
     return GrapheneDeletePipelineRunSuccess(run_id)
 
 
+_handled_events = 0
+
+
 def get_pipeline_run_observable(graphene_info, run_id, cursor=None):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.pipelines.subscription import (
@@ -152,6 +155,7 @@ def get_pipeline_run_observable(graphene_info, run_id, cursor=None):
     run = record.pipeline_run
 
     def _handle_events(payload):
+        print("_handle_events", ++_handled_events)
         events, loading_past, cursor = payload
         return GraphenePipelineRunLogsSubscriptionSuccess(
             run=GrapheneRun(record),
