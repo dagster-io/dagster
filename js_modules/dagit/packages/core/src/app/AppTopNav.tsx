@@ -1,6 +1,6 @@
 import {Box, Colors, Icon, IconWrapper, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
@@ -49,7 +49,7 @@ export const AppTopNav: React.FC<Props> = ({
             shortcutLabel="⌥2"
             shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
           >
-            <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink">
+            <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
               Assets
             </TopNavLink>
           </ShortcutHandler>
@@ -58,7 +58,18 @@ export const AppTopNav: React.FC<Props> = ({
             shortcutLabel="⌥3"
             shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
           >
-            <TopNavLink to="/instance" data-cy="AppTopNav_StatusLink">
+            <TopNavLink
+              to="/instance"
+              data-cy="AppTopNav_StatusLink"
+              isActive={(_, location) => {
+                const {pathname} = location;
+                return (
+                  pathname.startsWith('/instance') &&
+                  !pathname.startsWith('/instance/runs') &&
+                  !pathname.startsWith('/instance/assets')
+                );
+              }}
+            >
               <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                 Status
                 {showStatusWarningIcon ? <InstanceWarningIcon /> : null}
@@ -180,14 +191,20 @@ const DaggyTooltip = styled(Tooltip)`
   }
 `;
 
-export const TopNavLink = styled(Link)`
-  color: ${Colors.Gray200};
+export const TopNavLink = styled(NavLink)`
+  color: ${Colors.Gray400};
   font-weight: 600;
   transition: color 50ms linear;
   padding: 24px 0;
+  text-decoration: none;
 
-  :hover,
-  :active {
+  :hover {
+    color: ${Colors.Gray300};
+    text-decoration: none;
+  }
+
+  :active,
+  &.active {
     color: ${Colors.White};
     text-decoration: none;
   }
