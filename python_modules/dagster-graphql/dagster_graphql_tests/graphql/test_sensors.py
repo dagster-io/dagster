@@ -513,7 +513,7 @@ def _create_tick(graphql_context):
                 logger,
                 workspace,
                 threadpool_executor=SingleThreadPoolExecutor(),
-                debug_futures=futures,
+                sensor_tick_futures=futures,
             )
         )
         wait_for_futures(futures)
