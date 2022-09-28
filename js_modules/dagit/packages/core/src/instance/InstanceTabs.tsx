@@ -28,13 +28,17 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
-        <TabLink id="overview" title="Overview" to="/instance/overview" />
+        {flagNewWorkspace ? null : (
+          <TabLink id="overview" title="Overview" to="/instance/overview" />
+        )}
         {flagNewWorkspace ? (
           <TabLink id="code-locations" title="Code locations" to="/instance/code-locations" />
         ) : null}
         <TabLink id="health" title={healthTitle} to="/instance/health" />
-        <TabLink id="schedules" title="Schedules" to="/instance/schedules" />
-        <TabLink id="sensors" title="Sensors" to="/instance/sensors" />
+        {flagNewWorkspace ? null : (
+          <TabLink id="schedules" title="Schedules" to="/instance/schedules" />
+        )}
+        {flagNewWorkspace ? null : <TabLink id="sensors" title="Sensors" to="/instance/sensors" />}
         {flagNewWorkspace ? null : (
           <TabLink id="backfills" title="Backfills" to="/instance/backfills" />
         )}
