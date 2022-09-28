@@ -3,6 +3,7 @@ from unittest import mock
 from dagster import (
     AssetKey,
     DagsterInstance,
+    RunRequest,
     asset,
     build_multi_asset_sensor_context,
     build_sensor_context,
@@ -19,7 +20,7 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert im
 )
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
     asset_a_and_b_sensor,
-    every_fifth_asset_c_sensor,
+    asset_a_and_b_sensor_with_skip_reason,
     log_file_job,
     my_directory_sensor,
     my_s3_sensor,
@@ -121,15 +122,7 @@ def test_asset_sensors():
         instance=instance,
         repository_def=my_repo,
     )
-    assert list(asset_a_and_b_sensor(ctx))[0].run_config == {
-        "ops": {
-            "logger_op": {
-                "config": {
-                    "logger_str": "Assets ['asset_a'] and ['asset_b'] materialized"
-                }
-            }
-        }
-    }
+    assert isinstance(list(asset_a_and_b_sensor(ctx))[0], RunRequest)
 
     for _ in range(5):
         materialize([asset_c], instance=instance)
@@ -139,4 +132,4 @@ def test_asset_sensors():
         instance=instance,
         repository_def=my_repo,
     )
-    assert list(every_fifth_asset_c_sensor(ctx))[0].run_config == {}
+    assert list(asset_a_and_b_sensor_with_skip_reason(ctx))[0].run_config == {}
