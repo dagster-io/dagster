@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -12,8 +12,8 @@ class PipelineSelector(
             ("location_name", str),
             ("repository_name", str),
             ("pipeline_name", str),
-            ("solid_selection", Optional[List[str]]),
-            ("asset_selection", Optional[List[AssetKey]]),
+            ("solid_selection", Optional[Sequence[str]]),
+            ("asset_selection", Optional[Sequence[AssetKey]]),
         ],
     )
 ):
@@ -26,16 +26,18 @@ class PipelineSelector(
         location_name: str,
         repository_name: str,
         pipeline_name: str,
-        solid_selection: Optional[List[str]],
-        asset_selection: Optional[List[AssetKey]] = None,
+        solid_selection: Optional[Sequence[str]],
+        asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
         return super(PipelineSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.str_param(repository_name, "repository_name"),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
-            asset_selection=check.opt_nullable_list_param(
+            solid_selection=check.opt_nullable_sequence_param(
+                solid_selection, "solid_selection", str
+            ),
+            asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", AssetKey
             ),
         )

@@ -12,7 +12,7 @@ from dagster._core.launcher import CheckRunHealthResult, RunLauncher, WorkerStat
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import (
     create_run_for_test,
-    create_test_daemon_workspace,
+    create_test_daemon_workspace_context,
     environ,
     instance_for_test,
 )
@@ -85,7 +85,7 @@ def instance():
 
 @pytest.fixture
 def workspace(instance):
-    with create_test_daemon_workspace(
+    with create_test_daemon_workspace_context(
         workspace_load_target=EmptyWorkspaceTarget(), instance=instance
     ) as workspace:
         yield workspace

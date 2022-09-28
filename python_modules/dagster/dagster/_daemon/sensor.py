@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import sys
@@ -6,7 +7,7 @@ import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
-from typing import Dict, NamedTuple, Optional, Sequence
+from typing import Dict, Generator, List, NamedTuple, Optional, Sequence, Union
 
 import pendulum
 
@@ -17,7 +18,9 @@ from dagster._core.definitions.sensor_definition import DefaultSensorStatus, Sen
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
 from dagster._core.host_representation import PipelineSelector
-from dagster._core.host_representation.external import ExternalSensor
+from dagster._core.host_representation.external import ExternalPipeline, ExternalSensor
+from dagster._core.host_representation.external_data import ExternalTargetData
+from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -30,15 +33,15 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
-from dagster._core.workspace.context import IWorkspace
+from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils import merge_dicts
-from dagster._utils.error import serializable_error_info_from_exc_info
-
-from .workspace import BaseDaemonWorkspace
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 MIN_INTERVAL_LOOP_TIME = 5
 
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
+
+TDaemonGenerator = Generator[Union[None, SerializableErrorInfo], None, None]
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -46,7 +49,13 @@ class DagsterSensorDaemonError(DagsterError):
 
 
 class SkippedSensorRun(
-    NamedTuple("SkippedSensorRun", [("run_key", Optional[str]), ("existing_run", PipelineRun)])
+    NamedTuple(
+        "SkippedSensorRun",
+        [
+            ("run_key", Optional[str]),
+            ("existing_run", PipelineRun),
+        ],
+    )
 ):
     """Placeholder for runs that are skipped during the run_key idempotence check"""
 
@@ -194,27 +203,25 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-RELOAD_WORKSPACE = 60
+VERBOSE_LOGS_INTERVAL = 60
 
 
 def execute_sensor_iteration_loop(
-    instance: DagsterInstance,
-    workspace: BaseDaemonWorkspace,
+    workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     until=None,
-):
+) -> TDaemonGenerator:
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
     """
-    workspace_loaded_time = pendulum.now("UTC").timestamp()
 
     sensor_state_lock = threading.Lock()
     sensor_tick_futures: Dict[str, Future] = {}
     with ExitStack() as stack:
-        settings = instance.get_settings("sensors")
+        settings = workspace_process_context.instance.get_settings("sensors")
         if settings.get("use_threads"):
             threadpool_executor = stack.enter_context(
                 ThreadPoolExecutor(
@@ -225,57 +232,56 @@ def execute_sensor_iteration_loop(
         else:
             threadpool_executor = None
 
-        workspace_iteration = 0
-        start_time = pendulum.now("UTC").timestamp()
+        last_verbose_time = None
         while True:
             start_time = pendulum.now("UTC").timestamp()
             if until and start_time >= until:
                 # provide a way of organically ending the loop to support test environment
                 break
 
-            if start_time - workspace_loaded_time > RELOAD_WORKSPACE:
-                workspace.cleanup(
-                    cleanup_locations=False
-                )  # rely on GC to clean locations once no thread is using them anymore
-                workspace_loaded_time = pendulum.now("UTC").timestamp()
-                workspace_iteration = 0
-
+            # occasionally enable verbose logging (doing it always would be too much)
+            verbose_logs_iteration = (
+                last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
+            )
             yield from execute_sensor_iteration(
-                instance,
+                workspace_process_context,
                 logger,
-                workspace.get_workspace_copy_for_iteration(),
                 threadpool_executor=threadpool_executor,
                 sensor_tick_futures=sensor_tick_futures,
                 sensor_state_lock=sensor_state_lock,
-                log_verbose_checks=(workspace_iteration == 0),
+                log_verbose_checks=verbose_logs_iteration,
             )
+            end_time = pendulum.now("UTC").timestamp()
 
-            loop_duration = pendulum.now("UTC").timestamp() - start_time
+            if verbose_logs_iteration:
+                last_verbose_time = end_time
+
+            loop_duration = end_time - start_time
             sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
             time.sleep(sleep_time)
-            yield
-            workspace_iteration += 1
+            yield None
 
 
 def execute_sensor_iteration(
-    instance: DagsterInstance,
+    workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    workspace: IWorkspace,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     sensor_tick_futures: Optional[Dict[str, Future]] = None,
     sensor_state_lock: Optional[threading.Lock] = None,
     log_verbose_checks: bool = True,
     debug_crash_flags=None,
 ):
-    check.inst_param(workspace, "workspace", IWorkspace)
-    check.inst_param(instance, "instance", DagsterInstance)
+
+    instance = workspace_process_context.instance
 
     if not sensor_state_lock:
         sensor_state_lock = threading.Lock()
 
     workspace_snapshot = {
         location_entry.origin.location_name: location_entry
-        for location_entry in workspace.get_workspace_snapshot().values()
+        for location_entry in workspace_process_context.create_request_context()
+        .get_workspace_snapshot()
+        .values()
     }
 
     all_sensor_states = {
@@ -375,9 +381,8 @@ def execute_sensor_iteration(
 
             future = threadpool_executor.submit(
                 _process_tick,
+                workspace_process_context,
                 logger,
-                instance,
-                workspace,
                 external_sensor,
                 sensor_state,
                 sensor_state_lock,
@@ -391,9 +396,8 @@ def execute_sensor_iteration(
             # evaluate the sensors in a loop, synchronously, yielding to allow the sensor daemon to
             # heartbeat
             yield from _process_tick_generator(
+                workspace_process_context,
                 logger,
-                instance,
-                workspace,
                 external_sensor,
                 sensor_state,
                 sensor_state_lock,
@@ -403,12 +407,11 @@ def execute_sensor_iteration(
 
 
 def _process_tick(
-    logger,
-    instance,
-    workspace,
-    external_sensor,
-    sensor_state,
-    sensor_state_lock,
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
+    external_sensor: ExternalSensor,
+    sensor_state: InstigatorState,
+    sensor_state_lock: threading.Lock,
     sensor_debug_crash_flags,
     tick_retention_settings,
 ):
@@ -416,9 +419,8 @@ def _process_tick(
     # heartbeat to keep the daemon alive
     list(
         _process_tick_generator(
+            workspace_process_context,
             logger,
-            instance,
-            workspace,
             external_sensor,
             sensor_state,
             sensor_state_lock,
@@ -429,15 +431,15 @@ def _process_tick(
 
 
 def _process_tick_generator(
-    logger,
-    instance: DagsterInstance,
-    workspace,
-    external_sensor,
-    sensor_state,
-    sensor_state_lock,
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
+    external_sensor: ExternalSensor,
+    sensor_state: InstigatorState,
+    sensor_state_lock: threading.Lock,
     sensor_debug_crash_flags,
     tick_retention_settings,
 ):
+    instance = workspace_process_context.instance
     error_info = None
     with sensor_state_lock:
         # acquire the lock to avoid a race condition where we're updating the recently touched
@@ -472,9 +474,8 @@ def _process_tick_generator(
         ) as tick_context:
             _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
             yield from _evaluate_sensor(
+                workspace_process_context,
                 tick_context,
-                instance,
-                workspace,
                 external_sensor,
                 sensor_state,
                 sensor_debug_crash_flags,
@@ -489,8 +490,20 @@ def _process_tick_generator(
     yield error_info
 
 
-def _mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now):
-    instigator_data = sensor_state.instigator_data
+def _sensor_instigator_data(state: InstigatorState) -> Optional[SensorInstigatorData]:
+    instigator_data = state.instigator_data
+    if instigator_data and not isinstance(instigator_data, SensorInstigatorData):
+        check.failed(f"Expected SensorInstigatorData, got {instigator_data}")
+    return instigator_data
+
+
+def _mark_sensor_state_for_tick(
+    instance: DagsterInstance,
+    external_sensor: ExternalSensor,
+    sensor_state: InstigatorState,
+    now: datetime.datetime,
+):
+    instigator_data = _sensor_instigator_data(sensor_state)
     instance.update_instigator_state(
         sensor_state.with_data(
             SensorInstigatorData(
@@ -507,28 +520,30 @@ def _mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now):
 
 
 def _evaluate_sensor(
-    context,
-    instance,
-    workspace,
-    external_sensor,
-    state,
+    workspace_process_context: IWorkspaceProcessContext,
+    context: SensorLaunchContext,
+    external_sensor: ExternalSensor,
+    state: InstigatorState,
     sensor_debug_crash_flags=None,
 ):
+    instance = workspace_process_context.instance
     context.logger.info(f"Checking for new runs for sensor: {external_sensor.name}")
 
     sensor_origin = external_sensor.get_external_origin()
     repository_handle = external_sensor.handle.repository_handle
-    repo_location = workspace.get_repository_location(
+    repo_location = workspace_process_context.create_request_context().get_repository_location(
         sensor_origin.external_repository_origin.repository_location_origin.location_name
     )
+
+    instigator_data = _sensor_instigator_data(state)
 
     sensor_runtime_data = repo_location.get_external_sensor_execution_data(
         instance,
         repository_handle,
         external_sensor.name,
-        state.instigator_data.last_tick_timestamp if state.instigator_data else None,
-        state.instigator_data.last_run_key if state.instigator_data else None,
-        state.instigator_data.cursor if state.instigator_data else None,
+        instigator_data.last_tick_timestamp if instigator_data else None,
+        instigator_data.last_run_key if instigator_data else None,
+        instigator_data.cursor if instigator_data else None,
     )
 
     yield
@@ -537,7 +552,7 @@ def _evaluate_sensor(
     if not sensor_runtime_data.run_requests:
         if sensor_runtime_data.pipeline_run_reactions:
             for pipeline_run_reaction in sensor_runtime_data.pipeline_run_reactions:
-                origin_run_id = pipeline_run_reaction.pipeline_run.run_id
+                origin_run_id = check.not_none(pipeline_run_reaction.pipeline_run).run_id
                 if pipeline_run_reaction.error:
                     context.logger.error(
                         f"Got a reaction request for run {origin_run_id} but execution errorred: {pipeline_run_reaction.error}"
@@ -557,7 +572,7 @@ def _evaluate_sensor(
                     status = (
                         pipeline_run_reaction.run_status.value
                         if pipeline_run_reaction.run_status
-                        else pipeline_run_reaction.pipeline_run.status.value
+                        else check.not_none(pipeline_run_reaction.pipeline_run).status.value
                     )
                     # log to the original pipeline run
                     message = (
@@ -597,7 +612,7 @@ def _evaluate_sensor(
     )
 
     for run_request in sensor_runtime_data.run_requests:
-        target_data = external_sensor.get_target_data(run_request.job_name)
+        target_data: ExternalTargetData = external_sensor.get_target_data(run_request.job_name)
 
         pipeline_selector = PipelineSelector(
             location_name=repo_location.name,
@@ -631,7 +646,7 @@ def _evaluate_sensor(
             context.logger.info(
                 "Launching run for {sensor_name}".format(sensor_name=external_sensor.name)
             )
-            instance.submit_run(run.run_id, workspace)
+            instance.submit_run(run.run_id, workspace_process_context.create_request_context())
             context.logger.info(
                 "Completed launch of run {run_id} for {sensor_name}".format(
                     run_id=run.run_id, sensor_name=external_sensor.name
@@ -664,22 +679,20 @@ def _evaluate_sensor(
     yield
 
 
-def _is_under_min_interval(state, external_sensor):
-    if not state.instigator_data:
+def _is_under_min_interval(state: InstigatorState, external_sensor: ExternalSensor) -> bool:
+    instigator_data = _sensor_instigator_data(state)
+    if not instigator_data:
         return False
 
-    if (
-        not state.instigator_data.last_tick_start_timestamp
-        and not state.instigator_data.last_tick_timestamp
-    ):
+    if not instigator_data.last_tick_start_timestamp and not instigator_data.last_tick_timestamp:
         return False
 
     if not external_sensor.min_interval_seconds:
         return False
 
     elapsed = pendulum.now("UTC").timestamp() - max(
-        state.instigator_data.last_tick_timestamp or 0,
-        state.instigator_data.last_tick_start_timestamp or 0,
+        instigator_data.last_tick_timestamp or 0,
+        instigator_data.last_tick_start_timestamp or 0,
     )
     return elapsed < external_sensor.min_interval_seconds
 
@@ -699,7 +712,7 @@ def _fetch_existing_runs(
     runs_with_run_keys = instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_keys}))
 
     # filter down to runs with run_key that match the sensor name and its namespace (repository)
-    valid_runs = []
+    valid_runs: List[PipelineRun] = []
     for run in runs_with_run_keys:
         # if the run doesn't have a set origin, just match on sensor name
         if (
@@ -725,13 +738,13 @@ def _fetch_existing_runs(
 
 
 def _get_or_create_sensor_run(
-    context,
+    context: SensorLaunchContext,
     instance: DagsterInstance,
-    repo_location,
-    external_sensor,
-    external_pipeline,
-    run_request,
-    target_data,
+    repo_location: RepositoryLocation,
+    external_sensor: ExternalSensor,
+    external_pipeline: ExternalPipeline,
+    run_request: RunRequest,
+    target_data: ExternalTargetData,
     existing_runs_by_key: Dict[str, PipelineRun],
 ):
 
@@ -762,7 +775,12 @@ def _get_or_create_sensor_run(
 
 
 def _create_sensor_run(
-    instance, repo_location, external_sensor, external_pipeline, run_request, target_data
+    instance: DagsterInstance,
+    repo_location: RepositoryLocation,
+    external_sensor: ExternalSensor,
+    external_pipeline: ExternalPipeline,
+    run_request: RunRequest,
+    target_data: ExternalTargetData,
 ):
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 

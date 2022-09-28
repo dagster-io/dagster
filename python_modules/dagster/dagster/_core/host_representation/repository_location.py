@@ -23,7 +23,7 @@ from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import ExternalPipelineSubsetResult
@@ -33,7 +33,11 @@ from dagster._core.host_representation.external import (
     ExternalPipeline,
     ExternalRepository,
 )
-from dagster._core.host_representation.external_data import ExternalPartitionNamesData
+from dagster._core.host_representation.external_data import (
+    ExternalPartitionNamesData,
+    ExternalScheduleExecutionErrorData,
+    ExternalSensorExecutionErrorData,
+)
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.handle import PipelineHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
@@ -68,9 +72,7 @@ if TYPE_CHECKING:
         ExternalPartitionExecutionErrorData,
         ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
-        ExternalScheduleExecutionErrorData,
     )
-    from dagster._core.host_representation.external_data import ExternalSensorExecutionErrorData
 
 
 class RepositoryLocation(AbstractContextManager):
@@ -187,7 +189,7 @@ class RepositoryLocation(AbstractContextManager):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time,
-    ) -> Union["ScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
+    ) -> "ScheduleExecutionData":
         pass
 
     @abstractmethod
@@ -199,7 +201,7 @@ class RepositoryLocation(AbstractContextManager):
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
-    ) -> Union["SensorExecutionData", "ExternalSensorExecutionErrorData"]:
+    ) -> "SensorExecutionData":
         pass
 
     @abstractmethod
@@ -445,13 +447,13 @@ class InProcessRepositoryLocation(RepositoryLocation):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time,
-    ) -> Union["ScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
+    ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
         check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
 
-        return get_external_schedule_execution(
+        result = get_external_schedule_execution(
             self._get_repo_def(repository_handle.repository_name),
             instance_ref=instance.get_ref(),
             schedule_name=schedule_name,
@@ -462,6 +464,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
             if scheduled_execution_time
             else None,
         )
+        if isinstance(result, ExternalScheduleExecutionErrorData):
+            raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+        return result
 
     def get_external_sensor_execution_data(
         self,
@@ -471,8 +477,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
-    ) -> Union["SensorExecutionData", "ExternalSensorExecutionErrorData"]:
-        return get_external_sensor_execution(
+    ) -> "SensorExecutionData":
+        result = get_external_sensor_execution(
             self._get_repo_def(repository_handle.repository_name),
             instance.get_ref(),
             name,
@@ -480,6 +486,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
             last_run_key,
             cursor,
         )
+        if isinstance(result, ExternalSensorExecutionErrorData):
+            raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+        return result
 
     def get_external_partition_set_execution_param_data(
         self,

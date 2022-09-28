@@ -41,14 +41,14 @@ def test_simple_parent_sensor(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
             y_sensor = external_repo.get_external_sensor("just_y_AND")
             instance.start_sensor(y_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
             assert len(ticks) == 1
@@ -65,7 +65,7 @@ def test_simple_parent_sensor(executor):
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
             assert len(ticks) == 2
@@ -88,7 +88,7 @@ def test_simple_parent_sensor(executor):
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
             assert len(ticks) == 3
@@ -120,14 +120,14 @@ def test_two_parents_AND_sensor(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
             d_sensor = external_repo.get_external_sensor("just_d_AND")
             instance.start_sensor(d_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(d_sensor.get_external_origin_id(), d_sensor.selector_id)
             assert len(ticks) == 1
@@ -144,7 +144,7 @@ def test_two_parents_AND_sensor(executor):
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(d_sensor.get_external_origin_id(), d_sensor.selector_id)
             assert len(ticks) == 2
@@ -162,7 +162,7 @@ def test_two_parents_AND_sensor(executor):
             materialize([z], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(d_sensor.get_external_origin_id(), d_sensor.selector_id)
             assert len(ticks) == 3
@@ -194,7 +194,7 @@ def test_two_parents_OR_sensor(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -203,7 +203,7 @@ def test_two_parents_OR_sensor(executor):
             d_sensor = external_repo.get_external_sensor("just_d_OR")
             instance.start_sensor(d_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(d_sensor.get_external_origin_id(), d_sensor.selector_id)
             assert len(ticks) == 1
@@ -220,7 +220,7 @@ def test_two_parents_OR_sensor(executor):
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(d_sensor.get_external_origin_id(), d_sensor.selector_id)
             assert len(ticks) == 2
@@ -242,7 +242,7 @@ def test_two_parents_OR_sensor(executor):
             materialize([z], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(d_sensor.get_external_origin_id(), d_sensor.selector_id)
             assert len(ticks) == 3
@@ -274,14 +274,14 @@ def test_two_downstream_AND_sensor(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
             d_and_f_sensor = external_repo.get_external_sensor("d_and_f_AND")
             instance.start_sensor(d_and_f_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(
                 d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
@@ -300,7 +300,7 @@ def test_two_downstream_AND_sensor(executor):
             materialize([x, e], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(
                 d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
@@ -320,7 +320,7 @@ def test_two_downstream_AND_sensor(executor):
             materialize([z], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(
                 d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
@@ -355,7 +355,7 @@ def test_two_downstream_OR_sensor(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -366,7 +366,7 @@ def test_two_downstream_OR_sensor(executor):
             d_and_f_sensor = external_repo.get_external_sensor("d_and_f_OR")
             instance.start_sensor(d_and_f_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(
                 d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
@@ -385,7 +385,7 @@ def test_two_downstream_OR_sensor(executor):
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(
                 d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
@@ -410,7 +410,7 @@ def test_two_downstream_OR_sensor(executor):
             materialize([e], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(
                 d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
@@ -435,7 +435,7 @@ def test_two_downstream_OR_sensor(executor):
             materialize([z], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(
                 d_and_f_sensor.get_external_origin_id(), d_and_f_sensor.selector_id
@@ -471,14 +471,14 @@ def test_layered_sensor(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
             the_sensor = external_repo.get_external_sensor("d_and_f_and_g_AND")
             instance.start_sensor(the_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 1
@@ -495,7 +495,7 @@ def test_layered_sensor(executor):
             materialize([x, z, e], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 2
@@ -529,14 +529,14 @@ def test_layered_AND_sensor_no_materialize(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
             the_sensor = external_repo.get_external_sensor("just_g_AND")
             instance.start_sensor(the_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 1
@@ -553,7 +553,7 @@ def test_layered_AND_sensor_no_materialize(executor):
             materialize([x, z, e], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 2
@@ -582,14 +582,14 @@ def test_layered_OR_sensor_no_materialize(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
             the_sensor = external_repo.get_external_sensor("just_g_OR")
             instance.start_sensor(the_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 1
@@ -606,7 +606,7 @@ def test_layered_OR_sensor_no_materialize(executor):
             materialize([x, z, e], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 2
@@ -634,7 +634,7 @@ def test_lots_of_materializations_sensor(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -645,7 +645,7 @@ def test_lots_of_materializations_sensor(executor):
             y_sensor = external_repo.get_external_sensor("just_y_AND")
             instance.start_sensor(y_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
             assert len(ticks) == 1
@@ -664,7 +664,7 @@ def test_lots_of_materializations_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
             assert len(ticks) == 2
@@ -692,14 +692,14 @@ def test_many_materializations_for_one_parent_sensor(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
             the_sensor = external_repo.get_external_sensor("y_and_d_AND")
             instance.start_sensor(the_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 1
@@ -716,7 +716,7 @@ def test_many_materializations_for_one_parent_sensor(executor):
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 2
@@ -739,7 +739,7 @@ def test_many_materializations_for_one_parent_sensor(executor):
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 3
@@ -762,7 +762,7 @@ def test_many_materializations_for_one_parent_sensor(executor):
             materialize([z], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 4
@@ -795,14 +795,14 @@ def test_two_graph_sensor(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
             the_sensor = external_repo.get_external_sensor("y_and_i_AND")
             instance.start_sensor(the_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 1
@@ -819,7 +819,7 @@ def test_two_graph_sensor(executor):
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 2
@@ -842,7 +842,7 @@ def test_two_graph_sensor(executor):
             materialize([h], instance=instance)
             wait_for_all_runs_to_finish(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 3
@@ -875,14 +875,14 @@ def test_parent_in_progress_stops_materialization(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
             the_sensor = external_repo.get_external_sensor("in_progress_condition_sensor")
             instance.start_sensor(the_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 1
@@ -906,7 +906,7 @@ def test_parent_in_progress_stops_materialization(executor):
             sleeper_materialize_thread.start()
             wait_for_all_runs_to_start(instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 2
             validate_tick(
@@ -920,7 +920,7 @@ def test_parent_in_progress_stops_materialization(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
             ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 3
             validate_tick(
@@ -951,14 +951,14 @@ def test_materialization_of_parent_and_child(executor):
     )
     with instance_with_sensors(attribute="asset_sensor_repo") as (
         instance,
-        workspace,
+        workspace_ctx,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
             y_sensor = external_repo.get_external_sensor("just_y_AND")
             instance.start_sensor(y_sensor)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
             assert len(ticks) == 1
@@ -973,7 +973,7 @@ def test_materialization_of_parent_and_child(executor):
         with pendulum.test(freeze_datetime):
             materialize([x, y], instance=instance)
 
-            evaluate_sensors(instance, workspace, executor)
+            evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
             assert len(ticks) == 2

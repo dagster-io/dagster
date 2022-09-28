@@ -2,18 +2,19 @@ import logging
 import sys
 import time
 import uuid
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections import deque
 from contextlib import AbstractContextManager
 from threading import Event
-from typing import Callable, ContextManager, Tuple
+from typing import Generator, Generic, TypeVar, Union
 
 import pendulum
 
 from dagster import DagsterInstance
 from dagster import _check as check
+from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
-from dagster._core.workspace.context import IWorkspace
+from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._daemon.monitoring import execute_monitoring_iteration
 from dagster._daemon.sensor import execute_sensor_iteration_loop
@@ -35,7 +36,12 @@ def get_telemetry_daemon_session_id() -> str:
     return _telemetry_daemon_session_id
 
 
-class DagsterDaemon(AbstractContextManager):
+TDaemonGenerator = Generator[Union[None, SerializableErrorInfo], None, None]
+
+TContext = TypeVar("TContext", bound=IWorkspaceProcessContext)
+
+
+class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
     def __init__(self):
         self._logger = get_default_daemon_logger(type(self).__name__)
 
@@ -49,7 +55,7 @@ class DagsterDaemon(AbstractContextManager):
 
     @classmethod
     @abstractmethod
-    def daemon_type(cls):
+    def daemon_type(cls) -> str:
         """
         returns: str
         """
@@ -59,56 +65,52 @@ class DagsterDaemon(AbstractContextManager):
 
     def run_daemon_loop(
         self,
+        workspace_process_context: TContext,
         daemon_uuid: str,
         daemon_shutdown_event: Event,
-        context_fn: Callable[[str], ContextManager[Tuple[DagsterInstance, IWorkspace]]],
         heartbeat_interval_seconds: int,
         error_interval_seconds: int,
     ):
         from dagster._core.telemetry_upload import uploading_logging_thread
 
-        # Each loop runs in its own thread with its own instance and IWorkspace
-        with context_fn(self.daemon_type()) as (instance, workspace):
-            with uploading_logging_thread():
-                check.inst_param(workspace, "workspace", IWorkspace)
+        with uploading_logging_thread():
+            daemon_generator = self.core_loop(workspace_process_context)
 
-                daemon_generator = self.core_loop(instance, workspace)
-
-                try:
-                    while not daemon_shutdown_event.is_set():
+            try:
+                while not daemon_shutdown_event.is_set():
+                    try:
+                        result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
+                        if result:
+                            self._errors.appendleft((result, pendulum.now("UTC")))
+                    except StopIteration:
+                        self._logger.error(
+                            "Daemon loop finished without raising an error - daemon loops should run forever until they are interrupted."
+                        )
+                        break
+                    except Exception:
+                        error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                        self._logger.error(
+                            "Caught error, daemon loop will restart:\n%s", error_info
+                        )
+                        self._errors.appendleft((error_info, pendulum.now("UTC")))
+                        daemon_generator.close()
+                        daemon_generator = self.core_loop(workspace_process_context)
+                    finally:
                         try:
-                            result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
-                            if result:
-                                self._errors.appendleft((result, pendulum.now("UTC")))
-                        except StopIteration:
-                            self._logger.error(
-                                "Daemon loop finished without raising an error - daemon loops should run forever until they are interrupted."
+                            self._check_add_heartbeat(
+                                workspace_process_context.instance,
+                                daemon_uuid,
+                                heartbeat_interval_seconds,
+                                error_interval_seconds,
                             )
-                            break
                         except Exception:
-                            error_info = serializable_error_info_from_exc_info(sys.exc_info())
                             self._logger.error(
-                                "Caught error, daemon loop will restart:\n%s", error_info
+                                "Failed to add heartbeat: \n%s",
+                                serializable_error_info_from_exc_info(sys.exc_info()),
                             )
-                            self._errors.appendleft((error_info, pendulum.now("UTC")))
-                            daemon_generator.close()
-                            daemon_generator = self.core_loop(instance, workspace)
-                        finally:
-                            try:
-                                self._check_add_heartbeat(
-                                    instance,
-                                    daemon_uuid,
-                                    heartbeat_interval_seconds,
-                                    error_interval_seconds,
-                                )
-                            except Exception:
-                                self._logger.error(
-                                    "Failed to add heartbeat: \n%s",
-                                    serializable_error_info_from_exc_info(sys.exc_info()),
-                                )
-                finally:
-                    # cleanup the generator if it was stopped part-way through
-                    daemon_generator.close()
+            finally:
+                # cleanup the generator if it was stopped part-way through
+                daemon_generator.close()
 
     def _check_add_heartbeat(
         self,
@@ -177,7 +179,10 @@ class DagsterDaemon(AbstractContextManager):
             self._last_log_time = curr_time
 
     @abstractmethod
-    def core_loop(self, instance, workspace):
+    def core_loop(
+        self,
+        workspace_process_context: TContext,
+    ) -> TDaemonGenerator:
         """
         Execute the daemon loop, which should be a generator function that never finishes.
         Should periodically yield so that the controller can check for heartbeats. Yields can be either NoneType or a SerializableErrorInfo.
@@ -186,30 +191,31 @@ class DagsterDaemon(AbstractContextManager):
         """
 
 
-class IntervalDaemon(DagsterDaemon):
+class IntervalDaemon(DagsterDaemon[TContext], ABC):
     def __init__(self, interval_seconds):
         self.interval_seconds = check.numeric_param(interval_seconds, "interval_seconds")
         super().__init__()
 
-    def core_loop(self, instance, workspace):
+    def core_loop(
+        self,
+        workspace_process_context: TContext,
+    ) -> TDaemonGenerator:
         while True:
             start_time = time.time()
-            # Clear out the workspace locations after each iteration
-            workspace.cleanup(cleanup_locations=True)
             try:
-                yield from self.run_iteration(instance, workspace)
+                yield from self.run_iteration(workspace_process_context)
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
                 self._logger.error("Caught error:\n%s", error_info)
                 yield error_info
             while time.time() - start_time < self.interval_seconds:
-                yield
+                yield None
                 time.sleep(0.5)
-            yield
+            yield None
 
     @abstractmethod
-    def run_iteration(self, instance, workspace):
-        pass
+    def run_iteration(self, workspace_process_context: TContext) -> TDaemonGenerator:
+        ...
 
 
 class SchedulerDaemon(DagsterDaemon):
@@ -217,13 +223,19 @@ class SchedulerDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "SCHEDULER"
 
-    def core_loop(self, instance, workspace):
+    def core_loop(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+    ) -> TDaemonGenerator:
+        scheduler = workspace_process_context.instance.scheduler
+        if not isinstance(scheduler, DagsterDaemonScheduler):
+            check.failed(f"Expected DagsterDaemonScheduler, got {scheduler}")
+
         yield from execute_scheduler_iteration_loop(
-            instance,
-            workspace,
+            workspace_process_context,
             self._logger,
-            instance.scheduler.max_catchup_runs,
-            instance.scheduler.max_tick_retries,
+            scheduler.max_catchup_runs,
+            scheduler.max_tick_retries,
         )
 
 
@@ -232,10 +244,12 @@ class SensorDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "SENSOR"
 
-    def core_loop(self, instance, workspace):
+    def core_loop(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+    ) -> TDaemonGenerator:
         yield from execute_sensor_iteration_loop(
-            instance,
-            workspace,
+            workspace_process_context,
             self._logger,
         )
 
@@ -245,8 +259,11 @@ class BackfillDaemon(IntervalDaemon):
     def daemon_type(cls):
         return "BACKFILL"
 
-    def run_iteration(self, instance, workspace):
-        yield from execute_backfill_iteration(instance, workspace, self._logger)
+    def run_iteration(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+    ) -> TDaemonGenerator:
+        yield from execute_backfill_iteration(workspace_process_context, self._logger)
 
 
 class MonitoringDaemon(IntervalDaemon):
@@ -254,5 +271,8 @@ class MonitoringDaemon(IntervalDaemon):
     def daemon_type(cls):
         return "MONITORING"
 
-    def run_iteration(self, instance, workspace):
-        yield from execute_monitoring_iteration(instance, workspace, self._logger)
+    def run_iteration(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+    ) -> TDaemonGenerator:
+        yield from execute_monitoring_iteration(workspace_process_context, self._logger)
