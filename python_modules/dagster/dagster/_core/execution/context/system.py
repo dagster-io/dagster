@@ -564,6 +564,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             step_context=self,
             resource_config=resource_config,
             resources=resources,
+            asset_key=self.pipeline_def.asset_layer.asset_key_for_input(
+                node_handle=self.solid_handle, input_name=name
+            ),
         )
 
     def for_hook(self, hook_def: HookDefinition) -> "HookContext":
