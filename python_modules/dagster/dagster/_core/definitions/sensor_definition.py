@@ -1072,25 +1072,19 @@ def build_sensor_context(
     )
 
 
-def get_cursor_after_result(
-    asset_keys: Sequence[AssetKey], result: "ExecuteInProcessResult", instance: DagsterInstance
+def get_cursor_from_latest_materializations(
+    asset_keys: Sequence[AssetKey], instance: DagsterInstance
 ) -> str:
     from dagster._core.events import DagsterEventType
     from dagster._core.storage.event_log.base import EventRecordsFilter
 
-    records = instance.get_records_for_run(result.run_id).records
-    if not records:
-        raise DagsterInvalidInvocationError("No records found for run {result.run_id}")
-
     cursor_dict: Dict[str, Tuple[Optional[str], int]] = {}
 
-    before_cursor = records[-1].storage_id
     for asset_key in asset_keys:
         materializations = instance.get_event_records(
             EventRecordsFilter(
                 DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
-                before_cursor=before_cursor + 1,
             ),
             limit=1,
         )
@@ -1113,7 +1107,7 @@ def build_multi_asset_sensor_context(
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
-    set_cursor_after_result: Optional["ExecuteInProcessResult"] = None,
+    set_cursor_to_latest_materializations: bool = False,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context for testing purposes using the provided parameters.
 
@@ -1146,19 +1140,19 @@ def build_multi_asset_sensor_context(
     check.opt_str_param(repository_name, "repository_name")
     check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
-    check.opt_inst_param(set_cursor_after_result, "set_cursor_after_result", ExecuteInProcessResult)
+    check.bool_param(set_cursor_to_latest_materializations, "set_cursor_to_latest_materializations")
 
-    if set_cursor_after_result:
+    if set_cursor_to_latest_materializations:
         if cursor:
             raise DagsterInvalidInvocationError(
-                "Cannot provide both cursor and set_cursor_after_result objects. Dagster will override "
-                "the provided cursor based on the set_cursor_after_result object."
+                "Cannot provide both cursor and set_cursor_to_latest_materializations objects. Dagster will override "
+                "the provided cursor based on the set_cursor_to_latest_materializations object."
             )
         if not instance:
             raise DagsterInvalidInvocationError(
-                "Cannot provide set_cursor_after_result object without a Dagster instance."
+                "Cannot provide set_cursor_to_latest_materializations object without a Dagster instance."
             )
-        cursor = cursor or get_cursor_after_result(asset_keys, set_cursor_after_result, instance)
+        cursor = get_cursor_from_latest_materializations(asset_keys, instance)
 
     return MultiAssetSensorEvaluationContext(
         instance_ref=None,

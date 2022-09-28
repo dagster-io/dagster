@@ -785,7 +785,7 @@ def test_execute_in_process_result_in_build_multi_asset_sensor_context():
         ctx = build_multi_asset_sensor_context(
             [my_asset.key],
             instance=instance,
-            set_cursor_after_result=result,
+            set_cursor_to_latest_materializations=True,
             repository_def=my_repo,
         )
         assert ctx._get_cursor(my_asset.key)[1] == records.storage_id
@@ -811,7 +811,7 @@ def test_build_multi_asset_context_multiple_execute_in_process():
 
     with instance_for_test() as instance:
         materialize([my_asset], instance=instance)
-        result = materialize([my_asset_2], instance=instance)
+        materialize([my_asset_2], instance=instance)
 
         records = sorted(
             list(
@@ -829,7 +829,7 @@ def test_build_multi_asset_context_multiple_execute_in_process():
         ctx = build_multi_asset_sensor_context(
             [my_asset.key, my_asset_2.key],
             instance=instance,
-            set_cursor_after_result=result,
+            set_cursor_to_latest_materializations=True,
             repository_def=my_repo,
         )
         assert ctx._get_cursor(my_asset.key)[1] == my_asset_cursor
@@ -847,20 +847,20 @@ def test_error_exec_in_process_to_build_multi_asset_sensor_context():
 
     with pytest.raises(DagsterInvalidInvocationError, match="Dagster instance"):
         with instance_for_test() as instance:
-            result = materialize([my_asset], instance=instance)
+            materialize([my_asset], instance=instance)
             build_multi_asset_sensor_context(
-                [my_asset.key], repository_def=my_repo, set_cursor_after_result=result
+                [my_asset.key], repository_def=my_repo, set_cursor_to_latest_materializations=True
             )
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Cannot provide both cursor and set_cursor_after_result",
+        match="Cannot provide both cursor and set_cursor_to_latest_materializations",
     ):
         with instance_for_test() as instance:
-            result = materialize([my_asset], instance=instance)
+            materialize([my_asset], instance=instance)
             build_multi_asset_sensor_context(
                 [my_asset.key],
                 repository_def=my_repo,
-                set_cursor_after_result=result,
+                set_cursor_to_latest_materializations=True,
                 cursor="alskdjalsjk",
             )
