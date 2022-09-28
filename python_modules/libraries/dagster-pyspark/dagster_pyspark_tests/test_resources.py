@@ -28,9 +28,13 @@ def assert_pipeline_runs_with_lazy_resource(resource_def):
 
     @op(required_resource_keys={"some_name"})
     def a_op(context):
-        assert context.resources.some_name._spark_session is None  # pylint: disable=protected-access
+        assert (
+            context.resources.some_name._spark_session is None
+        )  # pylint: disable=protected-access
         assert isinstance(context.resources.some_name.spark_session, SparkSession)
-        assert isinstance(context.resources.some_name._spark_session, SparkSession)  # pylint: disable=protected-access
+        assert isinstance(
+            context.resources.some_name._spark_session, SparkSession
+        )  # pylint: disable=protected-access
         called["yup"] = True
 
     @job(resource_defs={"some_name": resource_def})
