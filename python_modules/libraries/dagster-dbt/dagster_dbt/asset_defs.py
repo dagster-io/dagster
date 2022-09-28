@@ -350,6 +350,7 @@ def _dbt_nodes_to_assets(
                 description=_get_node_description(node_info),
                 metadata=_get_node_metadata(node_info),
                 is_required=False,
+                dagster_type=Nothing,
             ),
         )
 
