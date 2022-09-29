@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
