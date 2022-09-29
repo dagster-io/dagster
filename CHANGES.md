@@ -1,5 +1,33 @@
 # Changelog
 
+# 1.0.11 (core) / 0.16.11 (libraries)
+
+### New
+
+* `RepositoryDefinition` now exposes a `load_asset_value` method, which accepts an asset key and invokes the asset’s I/O manager’s `load_input` function to load the asset as a Python object. This can be used in notebooks to do exploratory data analysis on assets.
+* [dagit] On the Instance Overview page, batched runs in the run timeline view will now proportionally reflect the status of the runs in the batch instead of reducing all run statuses to a single color.
+* [dagster-dbt] [dagster-snowflake] You can now use the Snowflake IO manager with dbt assets, which allows them to be loaded from Snowflake into Pandas DataFrames in downstream steps.
+* Methods to fetch a list of partition keys from an input/output `PartitionKeyRange` now exist on the op execution context and input/output context.
+* The dagster package’s pin of the alembic package is now much less restrictive.
+
+### Bugfixes
+
+* The sensor daemon when using threads will no longer evaluate the next tick for a sensor if the previous one is still in flight. This resolves a memory leak in the daemon process.
+* The scheduler will no longer remove tracked state for automatically running schedules when they are absent due to a workspace load error.
+* The way user code severs manage repository definitions has been changed to more efficiently serve requests.
+* The `@multi_asset` decorator now respects its `config_schema` parameter.
+* [dagit] Config supplied to `define_asset_job` is now prefilled in the modal that pops up when you click the Materialize button on an asset job page, so you can quickly adjust the defaults.
+* [dagster-dbt] Previously, `DagsterDbtCliError`s produced from the dagster-dbt library would contain large serialized objects representing the raw unparsed logs from the relevant cli command. Now, these messages will contain only the parsed version of these messages.
+* Fixed an issue where the `deploy_ecs` example didn’t work when built and deployed on an M1 Mac.
+
+### Community Contributions
+
+* The `resync_parameters` configuration on the `fivetran_resync_op` is now optional, enabling triggering historical re*syncs for connectors. Thanks @dwallace0723!
+
+### Documentation
+
+* Improved API documentation for the Snowflake resource.
+
 # 1.0.10 (core) / 0.16.10 (libraries)
 
 ### New
