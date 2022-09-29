@@ -1,22 +1,28 @@
-import type {Message} from './runLogs';
+import type {MessageType as RunMessageType} from './runLogs';
 
-type SHUTDOWN = {
+type WorkerMessageType = ShutdownMessageType;
+
+type ShutdownMessageType = {
   type: 'SHUTDOWN';
   staticPathRoot?: undefined;
 };
 
-self.addEventListener('message', ({data}: {data: Message | SHUTDOWN}) => {
+self.addEventListener('message', ({data}: {data: WorkerMessageType | RunMessageType}) => {
   if (data.staticPathRoot) {
     __webpack_public_path__ = data.staticPathRoot;
   }
   Promise.all([import('../util'), import('./apolloClient'), import('./runLogs')]).then(
-    ([{stringToArrayBuffers}, {setup, getApolloClient, stop}, {onMainThreadMessage}]) => {
+    ([
+      {stringToArrayBuffers},
+      {startApolloClient, getApolloClient, stopApolloClient},
+      {onMainThreadMessage},
+    ]) => {
       switch (data.type) {
         case 'SHUTDOWN':
-          stop();
+          stopApolloClient();
           break;
         case 'INITIALIZE':
-          setup(data);
+          startApolloClient(data);
           onMainThreadMessage({
             ...data,
             getApolloClient,

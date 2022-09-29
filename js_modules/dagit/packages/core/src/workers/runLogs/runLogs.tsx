@@ -3,8 +3,8 @@ import {ApolloClient} from '@apollo/client';
 import {PIPELINE_RUN_LOGS_SUBSCRIPTION} from '../../runs/PipelineRunLogsSubscription';
 import {PipelineRunLogsSubscription} from '../../runs/types/PipelineRunLogsSubscription';
 
-export type Message = INITIALIZE;
-type INITIALIZE = {
+export type MessageType = InitializeType;
+type InitializeType = {
   type: 'INITIALIZE';
   runId: string;
   postMessage: (data: any) => void;
@@ -13,7 +13,7 @@ type INITIALIZE = {
   rootServerURI: string;
 };
 
-export function onMainThreadMessage(data: Message) {
+export function onMainThreadMessage(data: MessageType) {
   switch (data.type) {
     case 'INITIALIZE':
       initialize(data); // subscribes to the data using data argument
@@ -26,7 +26,7 @@ const initialPostMessage = (_data: any): void => {
 };
 let postMessage = initialPostMessage;
 
-function initialize(data: INITIALIZE) {
+function initialize(data: MessageType) {
   postMessage = data.postMessage;
   data
     .getApolloClient()

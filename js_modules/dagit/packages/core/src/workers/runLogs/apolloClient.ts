@@ -6,7 +6,14 @@ import {createAppCache} from '../../app/AppCache';
 
 let apolloClient: ApolloClient<any> | undefined = undefined;
 
-export function setup(data: any) {
+type SetupDataType = {
+  type: 'INITIALIZE';
+  runId: string;
+  staticPathRoot: string;
+  rootServerURI: string;
+};
+
+export function startApolloClient(data: SetupDataType) {
   if (apolloClient) {
     throw new Error('Apollo client already setup');
   }
@@ -28,7 +35,7 @@ export function getApolloClient() {
   return apolloClient;
 }
 
-export function stop() {
+export function stopApolloClient() {
   if (apolloClient) {
     apolloClient.stop();
     apolloClient = undefined;
