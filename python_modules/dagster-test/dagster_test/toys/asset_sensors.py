@@ -4,12 +4,10 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
-    IOManager,
     RunRequest,
     SkipReason,
     asset,
     build_asset_reconciliation_sensor,
-    io_manager,
     job,
     multi_asset,
     multi_asset_sensor,
@@ -157,19 +155,6 @@ def runs_long():
 @asset
 def waits(runs_long):
     return runs_long + 1
-
-
-class MyIOManager(IOManager):
-    def handle_output(self, context, obj):
-        pass
-
-    def load_input(self, context):
-        return 5
-
-
-@io_manager
-def the_manager():
-    return MyIOManager()
 
 
 def get_asset_sensors_repo():

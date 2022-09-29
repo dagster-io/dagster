@@ -8,6 +8,7 @@ from dagster import AssetKey, materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
+from .test_run_status_sensors import instance_with_sensors
 from .test_sensor_run import (
     d,
     e,
@@ -15,7 +16,6 @@ from .test_sensor_run import (
     f,
     get_sensor_executors,
     h,
-    instance_with_sensors,
     sleeper,
     validate_tick,
     wait_for_all_runs_to_finish,
@@ -67,7 +67,6 @@ def test_simple_parent_sensor(executor):
 
             evaluate_sensors(instance, workspace, executor)
 
-            # sensor should materialize
             ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
             assert len(ticks) == 2
             validate_tick(
@@ -91,7 +90,6 @@ def test_simple_parent_sensor(executor):
 
             evaluate_sensors(instance, workspace, executor)
 
-            # sensor should materialize
             ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
             assert len(ticks) == 3
             validate_tick(

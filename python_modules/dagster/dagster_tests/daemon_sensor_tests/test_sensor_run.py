@@ -19,7 +19,6 @@ from dagster import (
     ExperimentalWarning,
     Field,
     HourlyPartitionsDefinition,
-    IOManager,
     JobSelector,
     Output,
     RepositorySelector,
@@ -28,7 +27,6 @@ from dagster import (
     build_asset_reconciliation_sensor,
     define_asset_job,
     graph,
-    io_manager,
     load_assets_from_current_module,
     materialize,
     multi_asset_sensor,
@@ -601,19 +599,6 @@ def i(h):
     return h + 1
 
 
-class MyIOManager(IOManager):
-    def handle_output(self, context, obj):
-        pass
-
-    def load_input(self, context):
-        return 5
-
-
-@io_manager
-def the_manager():
-    return MyIOManager()
-
-
 @asset
 def sleeper():
     from time import sleep
@@ -732,36 +717,6 @@ def asset_sensor_repo():
             wait_for_all_upstream=False,
         ),
     ]
-
-
-@contextmanager
-def instance_with_sensors(overrides=None, attribute="the_repo"):
-    with instance_for_test(overrides) as instance:
-        with create_test_daemon_workspace(
-            workspace_load_target(attribute), instance=instance
-        ) as workspace:
-            yield (
-                instance,
-                workspace,
-                next(
-                    iter(workspace.get_workspace_snapshot().values())
-                ).repository_location.get_repository(attribute),
-            )
-
-
-@contextmanager
-def instance_with_multiple_repos_with_sensors(overrides=None):
-    with instance_for_test(overrides) as instance:
-        with create_test_daemon_workspace(
-            workspace_load_target(None), instance=instance
-        ) as workspace:
-            yield (
-                instance,
-                workspace,
-                next(
-                    iter(workspace.get_workspace_snapshot().values())
-                ).repository_location.get_repositories(),
-            )
 
 
 def get_sensor_executors():
