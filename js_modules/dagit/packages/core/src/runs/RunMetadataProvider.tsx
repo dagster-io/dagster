@@ -1,7 +1,5 @@
-import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {StepEventStatus} from '../types/globalTypes';
 
 import {LogsProviderLogs} from './LogsProvider';
@@ -334,32 +332,3 @@ export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = ({logs, 
   );
   return <>{children(metadata)}</>;
 };
-
-export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
-  fragment RunMetadataProviderMessageFragment on DagsterRunEvent {
-    __typename
-    ... on MessageEvent {
-      message
-      timestamp
-      stepKey
-    }
-    ... on MarkerEvent {
-      markerStart
-      markerEnd
-    }
-    ... on ObjectStoreOperationEvent {
-      operationResult {
-        op
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-      }
-    }
-    ... on LogsCapturedEvent {
-      logKey
-      stepKeys
-      pid
-    }
-  }
-  ${METADATA_ENTRY_FRAGMENT}
-`;

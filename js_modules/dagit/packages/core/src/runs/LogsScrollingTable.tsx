@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Colors, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -6,12 +5,7 @@ import {CellMeasurer, CellMeasurerCache, List, ListRowProps, ScrollParams} from 
 import styled from 'styled-components/macro';
 
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
-import {
-  LOGS_ROW_STRUCTURED_FRAGMENT,
-  LOGS_ROW_UNSTRUCTURED_FRAGMENT,
-  Structured,
-  Unstructured,
-} from './LogsRow';
+import {Structured, Unstructured} from './LogsRow';
 import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
@@ -117,17 +111,6 @@ export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) =>
     </ColumnWidthsProvider>
   );
 };
-
-export const LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT = gql`
-  fragment LogsScrollingTableMessageFragment on DagsterRunEvent {
-    __typename
-    ...LogsRowStructuredFragment
-    ...LogsRowUnstructuredFragment
-  }
-
-  ${LOGS_ROW_STRUCTURED_FRAGMENT}
-  ${LOGS_ROW_UNSTRUCTURED_FRAGMENT}
-`;
 
 class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedProps> {
   list = React.createRef<List>();

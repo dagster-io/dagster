@@ -3,9 +3,8 @@ import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {setHighlightedGanttChartTime} from '../gantt/GanttChart';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {LogLevel} from '../types/globalTypes';
 
 import {CellTruncationProvider} from './CellTruncationProvider';
@@ -87,109 +86,6 @@ export class Structured extends React.Component<StructuredProps, StructuredState
   }
 }
 
-export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
-  fragment LogsRowStructuredFragment on DagsterRunEvent {
-    __typename
-    ... on MessageEvent {
-      message
-      eventType
-      timestamp
-      level
-      stepKey
-    }
-    ... on DisplayableEvent {
-      label
-      description
-      metadataEntries {
-        ...MetadataEntryFragment
-      }
-    }
-    ... on MarkerEvent {
-      markerStart
-      markerEnd
-    }
-    ... on ErrorEvent {
-      error {
-        ...PythonErrorFragment
-      }
-    }
-    ... on MaterializationEvent {
-      assetKey {
-        path
-      }
-    }
-    ... on ObservationEvent {
-      assetKey {
-        path
-      }
-    }
-    ... on ExecutionStepFailureEvent {
-      errorSource
-      failureMetadata {
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-      }
-    }
-    ... on ExecutionStepInputEvent {
-      inputName
-      typeCheck {
-        label
-        description
-        success
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-      }
-    }
-    ... on ExecutionStepOutputEvent {
-      outputName
-      typeCheck {
-        label
-        description
-        success
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-      }
-    }
-    ... on StepExpectationResultEvent {
-      expectationResult {
-        success
-        label
-        description
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-      }
-    }
-    ... on ObjectStoreOperationEvent {
-      operationResult {
-        op
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-      }
-    }
-    ... on HandledOutputEvent {
-      outputName
-      managerKey
-    }
-    ... on LoadedInputEvent {
-      inputName
-      managerKey
-      upstreamOutputName
-      upstreamStepKey
-    }
-    ... on LogsCapturedEvent {
-      logKey
-      stepKeys
-    }
-  }
-  ${METADATA_ENTRY_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
 const StructuredMemoizedContent: React.FC<{
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
@@ -248,18 +144,6 @@ export class Unstructured extends React.Component<UnstructuredProps> {
     );
   }
 }
-
-export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
-  fragment LogsRowUnstructuredFragment on DagsterRunEvent {
-    __typename
-    ... on MessageEvent {
-      message
-      timestamp
-      level
-      stepKey
-    }
-  }
-`;
 
 const UnstructuredMemoizedContent: React.FC<{
   node: LogsRowUnstructuredFragment;

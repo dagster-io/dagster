@@ -14,10 +14,7 @@ import {PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionS
 import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
 import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
 import {RunLogsQuery, RunLogsQueryVariables} from './types/RunLogsQuery';
-import {
-  usePipelineRunLogsSubscription,
-  usePipelineRunLogsSubscriptionWorker,
-} from './usePipelineRunLogsSubscription';
+import {usePipelineRunLogsSubscriptionWorker} from './usePipelineRunLogsSubscription';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';
@@ -188,13 +185,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
   const {nodes, counts, cursor, loading} = state;
 
-  const useHook = new URLSearchParams(window.location.search).get('worker')
-    ? usePipelineRunLogsSubscriptionWorker
-    : usePipelineRunLogsSubscription;
-
-  console.log({useHook});
-
-  useHook(
+  usePipelineRunLogsSubscriptionWorker(
     {runId, cursor},
     React.useCallback(
       (logs: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess) => {

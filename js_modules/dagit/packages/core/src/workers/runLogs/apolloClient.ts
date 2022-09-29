@@ -1,6 +1,8 @@
-import {ApolloClient, InMemoryCache} from '@apollo/client';
+import {ApolloClient} from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
+
+import {createAppCache} from '../../app/AppCache';
 
 let apolloClient: ApolloClient<any> | undefined = undefined;
 
@@ -14,7 +16,7 @@ export function setup(data: any) {
   });
 
   apolloClient = new ApolloClient({
-    cache: new InMemoryCache(),
+    cache: createAppCache(),
     link: new WebSocketLink(websocketClient),
   });
 }
