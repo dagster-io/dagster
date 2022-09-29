@@ -51,7 +51,12 @@ export const InstanceRoot = () => {
         <Route path="/instance/:tab">
           <InstanceStatusRoot />
         </Route>
-        <Route path="*" render={() => <Redirect to="/instance/overview" />} />
+        <Route
+          path="*"
+          render={() => (
+            <Redirect to={flagNewWorkspace ? '/instance/code-locations' : '/instance/overview'} />
+          )}
+        />
       </Switch>
     </MainContent>
   );

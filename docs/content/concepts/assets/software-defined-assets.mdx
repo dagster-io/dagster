@@ -368,11 +368,9 @@ Jobs that target assets can materialize a fixed selection of assets each time th
 
 ---
 
----
-
 ## Grouping assets
 
-To help keep your assets tidy, you can organize them into groups. Grouping assets by project, concept, and so on simplifies [keeping track of them in Dagit](#viewing-asset-groups-in-dagit).
+To help keep your assets tidy, you can organize them into groups. Grouping assets by project, concept, and so on simplifies [keeping track of them in Dagit](#viewing-asset-groups-in-dagit). Each asset is assigned to a single group, which by default is called "default".
 
 - [Assigning assets to groups](#assigning-assets-to-groups)
 - [Viewing asset groups in Dagit](#viewing-asset-groups-in-dagit)
@@ -381,10 +379,20 @@ To help keep your assets tidy, you can organize them into groups. Grouping asset
 
 In Dagster, there are two ways to assign assets to groups:
 
-- [By using the group_name argument when calling `load_assets_from_package_module`](#from-assets-in-a-sub-module) (**recommended**)
 - [By specifying a group name on an individual asset](#on-individual-assets)
+- [By using the group_name argument when calling `load_assets_from_package_module`](#from-assets-in-a-sub-module) (**recommended**)
 
 By default, assets that aren't assigned to a group will be placed in a group named `default`. Use Dagit to [view these assets](#viewing-asset-groups-in-dagit).
+
+#### On individual assets
+
+Assets can also be given groups on an individual basis by specifying an argument when creating the asset:
+
+```python file=/concepts/assets/asset_group_argument.py startafter=start_example endbefore=end_example
+@asset(group_name="cereal_assets")
+def nabisco_cereals():
+    return [1, 2, 3]
+```
 
 #### From assets in a sub-module
 
@@ -399,23 +407,7 @@ cereal_assets = load_assets_from_package_module(
 )
 ```
 
-#### On individual assets
-
-Assets can also be given groups on an individual basis by specifying an argument when creating the asset:
-
-```python file=/concepts/assets/asset_group_argument.py startafter=start_example endbefore=end_example
-@asset(group_name="cereal_assets")
-def nabisco_cereals():
-    return [1, 2, 3]
-```
-
-#### To multiple groups
-
-**Assets can only be assigned to one group at a time**. Attempting to place a grouped asset in a second group will result in an error:
-
-```bash
-Group name already exists on assets [list_of_asset_keys]
-```
+If any of the assets in the module already has a `group_name` explicitly set on it, you'll encounter a `Group name already exists on assets` error.
 
 ### Viewing asset groups in Dagit
 
@@ -492,6 +484,28 @@ def test_uses_context():
     context = build_op_context(resources={"foo": "bar"})
     result = uses_context(context)
     assert result == "bar"
+```
+
+---
+
+## Loading asset values outside of Dagster runs
+
+It's sometimes useful to load an asset as a Python object outside of a Dagster run, e.g. if you want to do exploratory data analysis on it inside a Jupyter notebook. For this, you can use <PyObject object="RepositoryDefinition" method="load_asset_value" />:
+
+```python file=/concepts/assets/load_asset_values.py startafter=single_asset_start_marker endbefore=single_asset_end_marker dedent=4
+@repository
+def repo():
+    return [load_assets_from_current_module()]
+
+asset1_value = repo.load_asset_value(AssetKey("asset1"))
+```
+
+If you want to load the values of multiple assets, it's more efficient to use <PyObject object="RepositoryDefinition" method="load_asset_value" />, which avoids spinning up resources separately for each asset:
+
+```python file=/concepts/assets/load_asset_values.py startafter=multiple_asset_start_marker endbefore=multiple_asset_end_marker dedent=4
+with repo.get_asset_value_loader() as loader:
+    asset1_value = loader.load_asset_value(AssetKey("asset1"))
+    asset2_value = loader.load_asset_value(AssetKey("asset2"))
 ```
 
 ---

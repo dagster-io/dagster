@@ -41,6 +41,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerTarget, ModuleTarget
 from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.workspace import DaemonIterationWorkspace
 from dagster._grpc.client import EphemeralDagsterGrpcClient
 from dagster._grpc.server import open_server_process
 from dagster._legacy import daily_schedule, hourly_schedule, pipeline, solid
@@ -48,6 +49,7 @@ from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster._seven import wait_for_process
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils import find_free_port
+from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 from .conftest import loadable_target_origin, workspace_load_target
@@ -2204,6 +2206,29 @@ def test_status_in_code_schedule(instance):
 
             assert "2019-02-28" in runs_by_partition
             assert "2019-03-01" in runs_by_partition
+
+        # Now try with an error workspace - the job state should not be deleted
+        # since its associated with an errored out location
+        with pendulum.test(freeze_datetime):
+            error = SerializableErrorInfo("error", [], "error")
+            snap = workspace.get_workspace_snapshot()
+            snap["test_location"] = snap["test_location"]._replace(
+                repository_location=None,
+                load_error=error,
+            )
+            error_workspace = DaemonIterationWorkspace(snap)
+
+            list(
+                launch_scheduled_runs(
+                    instance,
+                    error_workspace,
+                    logger(),
+                    pendulum.now("UTC"),
+                )
+            )
+            ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
+            assert len(ticks) == 3
+            assert len(instance.all_instigator_state()) == 1
 
     # Now try with an empty workspace - ticks are still there, but the job state is deleted
     # once it's no longer present in the workspace
