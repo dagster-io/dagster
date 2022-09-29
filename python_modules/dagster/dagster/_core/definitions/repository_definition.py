@@ -25,7 +25,7 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozendict, frozenlist, merge_dicts
+from dagster._utils import frozendict, frozenlist, merge_dicts, make_readonly_value
 
 from .cacheable_assets import AssetsDefinitionMetadata
 from .events import AssetKey
@@ -62,16 +62,16 @@ RepositoryLevelDefinition = TypeVar(
     SensorDefinition,
 )
 
-RepositoryDefinitionType = Union[
-    PipelineDefinition,
-    PartitionSetDefinition,
-    ScheduleDefinition,
-    SensorDefinition,
+RepositoryListDefinition = Union[
+    "AssetsDefinition",
     "AssetGroup",
     GraphDefinition,
-    UnresolvedAssetJobDefinition,
-    "AssetsDefinition",
+    PartitionSetDefinition,
+    PipelineDefinition,
+    ScheduleDefinition,
+    SensorDefinition,
     SourceAsset,
+    UnresolvedAssetJobDefinition,
 ]
 
 
@@ -87,16 +87,13 @@ class RepositoryMetadata(
     def __new__(cls, cached_metadata_by_key: Mapping[str, Sequence[AssetsDefinitionMetadata]]):
         return super(RepositoryMetadata, cls).__new__(
             cls,
-            cached_metadata_by_key=frozendict(
-                {
-                    k: frozenlist(v)
-                    for k, v in check.mapping_param(
-                        cached_metadata_by_key,
-                        "cached_metadata_by_key",
-                        key_type=str,
-                        value_type=list,
-                    ).items()
-                }
+            cached_metadata_by_key=make_readonly_value(
+                check.mapping_param(
+                    cached_metadata_by_key,
+                    "cached_metadata_by_key",
+                    key_type=str,
+                    value_type=list,
+                )
             ),
         )
 
@@ -694,7 +691,7 @@ class CachingRepositoryData(RepositoryData):
     @classmethod
     def from_list(
         cls,
-        repository_definitions: Sequence[RepositoryDefinitionType],
+        repository_definitions: Sequence[RepositoryListDefinition],
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     ) -> "CachingRepositoryData":
@@ -1370,7 +1367,7 @@ class PendingRepositoryDefinition:
     def __init__(
         self,
         name: str,
-        repository_definitions: Sequence[RepositoryDefinitionType],
+        repository_definitions: Sequence[RepositoryListDefinition],
         cacheable_definitions: Sequence["CacheableAssetsDefinition"],
         description: Optional[str] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
@@ -1388,6 +1385,7 @@ class PendingRepositoryDefinition:
         return self._name
 
     def resolve(self, repository_metadata: Optional[RepositoryMetadata]) -> RepositoryDefinition:
+        print("yyyyyyyyyyyyyyyy", repository_metadata)
         if repository_metadata is None:
             # must generate metadata from scratch
             repository_metadata = RepositoryMetadata(
@@ -1395,8 +1393,9 @@ class PendingRepositoryDefinition:
                     defn.unique_id: defn.get_metadata() for defn in self._cacheable_definitions
                 }
             )
+        print("hi")
 
-        resolved_definitions: List[RepositoryDefinitionType] = []
+        resolved_definitions: List[RepositoryListDefinition] = []
         for defn in self._cacheable_definitions:
             # should always have metadata for each cached defn at this point
             check.invariant(
@@ -1415,6 +1414,7 @@ class PendingRepositoryDefinition:
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
         )
+        print("hello")
 
         return RepositoryDefinition(
             self._name,

@@ -150,6 +150,8 @@ def test_run_from_pending_repository():
 
         # Server should wait until run finishes, then shutdown
         pipeline_run = poll_for_finished_run(instance, run_id)
+        for a in instance.all_logs(pipeline_run.run_id):
+            print(a)
         assert pipeline_run.status == PipelineRunStatus.SUCCESS
 
         start_time = time.time()

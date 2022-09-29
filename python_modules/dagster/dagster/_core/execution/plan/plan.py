@@ -1151,6 +1151,7 @@ class ExecutionPlan(
             execution_plan_snapshot.initial_known_state or KnownExecutionState(),
             execution_plan_snapshot.artifacts_persisted,
             executor_name=execution_plan_snapshot.executor_name,
+            repository_metadata=execution_plan_snapshot.repository_metadata,
         )
 
 

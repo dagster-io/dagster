@@ -18,6 +18,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, lambda_solid
+from dagster._core.execution.api import create_execution_plan
 
 
 def define_inty_pipeline(using_file_system=False):
@@ -256,3 +257,98 @@ def test_using_file_system_for_subplan_invalid_step():
             instance,
             pipeline_run=pipeline_run,
         )
+
+
+from dagster import (
+    repository,
+    AssetsDefinition,
+    op,
+    AssetKey,
+    define_asset_job,
+    asset,
+    file_relative_path,
+)
+
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.repository_definition import AssetsDefinitionMetadata
+import sys
+
+
+class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
+    _metadata = AssetsDefinitionMetadata(keys_by_output_name={"result": AssetKey("foo")})
+
+    def get_metadata(self):
+        # used for tracking how many times this function gets called over an execution
+        instance = DagsterInstance.get()
+        kvs_key = "num_called"
+        num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
+        instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
+        return [self._metadata]
+
+    def get_definitions(self, metadata):
+        assert len(metadata) == 1
+        assert metadata == [self._metadata]
+
+        @op
+        def _op():
+            return 1
+
+        return [
+            AssetsDefinition.from_op(_op, keys_by_output_name=md.keys_by_output_name)
+            for md in metadata
+        ]
+
+
+@asset
+def bar(foo):
+    return foo + 1
+
+
+@repository
+def pending_repo():
+    return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
+
+
+def test_using_repository_data():
+    records = []
+
+    def event_callback(record):
+        assert isinstance(record, EventLogEntry)
+        records.append(record)
+
+    from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+    from dagster._core.code_pointer import CodePointer
+    from dagster._core.definitions.reconstruct import (
+        ReconstructablePipeline,
+        ReconstructableRepository,
+    )
+
+    with instance_for_test() as instance:
+        repository_def = pending_repo.resolve(repository_metadata=None)
+        pipeline_def = repository_def.get_job("all_asset_job")
+        repository_metadata = repository_def.repository_metadata
+
+        recon_repo = ReconstructableRepository.for_file(
+            file_relative_path(__file__, "test_external_execution_plan.py"), fn_name="pending_repo"
+        )
+        recon_pipeline = ReconstructablePipeline(
+            repository=recon_repo, pipeline_name="all_asset_job"
+        ).with_repository_metadata(repository_metadata)
+
+        # while create_execution_plan does support a repository_metadata argument, we cannot rely
+        # on this being supplied by the caller in (e.g.) custom executors. In these cases, we rely
+        # on the fact that the recon_pipeline will have been given repository metadata
+        execution_plan = create_execution_plan(recon_pipeline)
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def,
+            execution_plan=execution_plan,
+        )
+
+        execute_plan(
+            execution_plan=execution_plan,
+            pipeline=recon_pipeline,
+            pipeline_run=pipeline_run,
+            instance=instance,
+        )
+
+        assert instance.run_storage.kvs_get({"num_called"}).get("num_called") == "1"

@@ -161,7 +161,9 @@ def execute_run_iterator(
                 asset_selection=pipeline_run.asset_selection,
             )
 
+    print(pipeline_run)
     execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
+    print(execution_plan)
 
     return iter(
         ExecuteRunWithPlanIterable(
@@ -952,26 +954,32 @@ def _get_execution_plan_from_run(
     pipeline: IPipeline, pipeline_run: PipelineRun, instance: DagsterInstance
 ) -> ExecutionPlan:
 
-    if (
-        # need to rebuild execution plan so it matches the subsetted graph
-        pipeline.solids_to_execute is None
-        and pipeline.asset_selection is None
-        and pipeline_run.execution_plan_snapshot_id
-    ):
+    execution_plan_snapshot = None
+    if pipeline_run.execution_plan_snapshot_id:
         execution_plan_snapshot = instance.get_execution_plan_snapshot(
             pipeline_run.execution_plan_snapshot_id
         )
-        if execution_plan_snapshot.can_reconstruct_plan:
-            return ExecutionPlan.rebuild_from_snapshot(
-                pipeline_run.pipeline_name,
-                execution_plan_snapshot,
-            )
+
+    if (
+        pipeline.solids_to_execute is None
+        and pipeline.asset_selection is None
+        and execution_plan_snapshot
+        and execution_plan_snapshot.can_reconstruct_plan
+    ):
+        return ExecutionPlan.rebuild_from_snapshot(
+            pipeline_run.pipeline_name,
+            execution_plan_snapshot,
+        )
+    # need to rebuild execution plan so it matches the subsetted graph
     return create_execution_plan(
         pipeline,
         run_config=pipeline_run.run_config,
         mode=pipeline_run.mode,
         step_keys_to_execute=pipeline_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
+        repository_metadata=execution_plan_snapshot.repository_metadata
+        if execution_plan_snapshot
+        else None,
     )
 
 
@@ -985,8 +993,14 @@ def create_execution_plan(
     tags: Optional[Dict[str, str]] = None,
     repository_metadata: Optional[RepositoryMetadata] = None,
 ) -> ExecutionPlan:
+
     pipeline = _check_pipeline(pipeline)
+    if isinstance(pipeline, ReconstructablePipeline):
+        pipeline = pipeline.with_repository_metadata(repository_metadata)
+
+    print("RES3.1")
     pipeline_def = pipeline.get_definition()
+    print("RES3.2")
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
@@ -1005,6 +1019,7 @@ def create_execution_plan(
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 
+    print("RES3.3")
     plan = ExecutionPlan.build(
         pipeline,
         resolved_run_config,
@@ -1013,9 +1028,12 @@ def create_execution_plan(
         instance_ref=instance_ref,
         tags=tags,
     )
+    print("RES3.4")
 
     if repository_metadata is not None:
         return plan._replace(repository_metadata=repository_metadata)
+    elif isinstance(pipeline, ReconstructablePipeline):
+        return plan._replace(repository_metadata=pipeline.repository.repository_metadata)
     return plan
 
 
@@ -1130,6 +1148,8 @@ class ExecuteRunWithPlanIterable:
         with capture_interrupts():
             yield from self.execution_context_manager.prepare_context()
             self.pipeline_context = self.execution_context_manager.get_context()
+            print("xxxxxxxxxxxx")
+            print(self.pipeline_context)
             generator_closed = False
             try:
                 if self.pipeline_context:  # False if we had a pipeline init failure
@@ -1266,6 +1286,7 @@ def _resolve_reexecute_step_selection(
         pipeline = pipeline.subset_for_execution(parent_pipeline_run.solid_selection, None)
 
     state = KnownExecutionState.build_for_reexecution(instance, parent_pipeline_run)
+    # TODO:RMD
 
     parent_plan = create_execution_plan(
         pipeline,

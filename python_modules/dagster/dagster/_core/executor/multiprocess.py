@@ -45,6 +45,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         recon_pipeline,
         retry_mode,
         known_state,
+        # TODO:RMD
     ):
         self.run_config = run_config
         self.pipeline_run = pipeline_run
@@ -65,6 +66,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 mode=self.pipeline_run.mode,
                 step_keys_to_execute=[self.step_key],
                 known_state=self.known_state,
+                # TODO:RMD
             )
 
             log_manager = create_context_free_log_manager(instance, self.pipeline_run)
@@ -313,6 +315,7 @@ def execute_step_out_of_process(
         recon_pipeline=pipeline,
         retry_mode=retries,
         known_state=known_state,
+        # TODO:RMD
     )
 
     yield DagsterEvent.step_worker_starting(
