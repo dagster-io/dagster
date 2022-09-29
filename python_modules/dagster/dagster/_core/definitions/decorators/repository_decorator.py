@@ -61,13 +61,15 @@ class _Repository:
 
         repository_definitions = fn()
 
-        repository_data: Union[CachingRepositoryData, RepositoryData]
+        repository_data: Optional[Union[CachingRepositoryData, RepositoryData]]
         if isinstance(repository_definitions, list):
             bad_defns = []
             repository_defns = []
-            cacheable_defns = []
+            defer_repository_data = False
             for i, definition in enumerate(_flatten(repository_definitions)):
-                if not (
+                if isinstance(definition, CacheableAssetsDefinition):
+                    defer_repository_data = True
+                elif not (
                     isinstance(definition, PipelineDefinition)
                     or isinstance(definition, PartitionSetDefinition)
                     or isinstance(definition, ScheduleDefinition)
@@ -75,13 +77,10 @@ class _Repository:
                     or isinstance(definition, GraphDefinition)
                     or isinstance(definition, AssetGroup)
                     or isinstance(definition, AssetsDefinition)
-                    or isinstance(definition, CacheableAssetsDefinition)
                     or isinstance(definition, SourceAsset)
                     or isinstance(definition, UnresolvedAssetJobDefinition)
                 ):
                     bad_defns.append((i, type(definition)))
-                elif isinstance(definition, CacheableAssetsDefinition):
-                    cacheable_defns.append(definition)
                 else:
                     repository_defns.append(definition)
 
@@ -99,19 +98,15 @@ class _Repository:
                     "AssetsDefinition, or SourceAsset."
                     f"Got {bad_definitions_str}."
                 )
-            if cacheable_defns:
-                return PendingRepositoryDefinition(
-                    self.name,
-                    repository_definitions=repository_defns,
-                    cacheable_definitions=cacheable_defns,
-                    description=self.description,
+
+            repository_data = (
+                None
+                if defer_repository_data
+                else CachingRepositoryData.from_list(
+                    repository_defns,
                     default_executor_def=self.default_executor_def,
                     default_logger_defs=self.default_logger_defs,
                 )
-            repository_data = CachingRepositoryData.from_list(
-                repository_defns,
-                default_executor_def=self.default_executor_def,
-                default_logger_defs=self.default_logger_defs,
             )
 
         elif isinstance(repository_definitions, dict):
@@ -139,14 +134,23 @@ class _Repository:
                 "details and examples".format(type_=type(repository_definitions)),
             )
 
-        repository_def = RepositoryDefinition(
-            name=self.name,
-            description=self.description,
-            repository_data=repository_data,
-        )
+        if repository_data is None:
+            return PendingRepositoryDefinition(
+                self.name,
+                repository_definitions=repository_definitions,
+                description=self.description,
+                default_executor_def=self.default_executor_def,
+                default_logger_defs=self.default_logger_defs,
+            )
+        else:
+            repository_def = RepositoryDefinition(
+                name=self.name,
+                description=self.description,
+                repository_data=repository_data,
+            )
 
-        update_wrapper(repository_def, fn)
-        return repository_def
+            update_wrapper(repository_def, fn)
+            return repository_def
 
 
 @overload

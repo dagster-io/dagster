@@ -1367,15 +1367,17 @@ class PendingRepositoryDefinition:
     def __init__(
         self,
         name: str,
-        repository_definitions: Sequence[RepositoryListDefinition],
-        cacheable_definitions: Sequence["CacheableAssetsDefinition"],
+        repository_definitions: Any,
         description: Optional[str] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
     ):
+        self._repository_definitions = check.list_param(
+            repository_definitions,
+            "repository_definition",
+            additional_message="PendingRepositoryDefinition supports only list-based repository data at this time.",
+        )
         self._name = name
-        self._repository_definitions = repository_definitions
-        self._cacheable_definitions = cacheable_definitions
         self._description = description
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
@@ -1385,30 +1387,37 @@ class PendingRepositoryDefinition:
         return self._name
 
     def resolve(self, repository_metadata: Optional[RepositoryMetadata]) -> RepositoryDefinition:
+        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+
         if repository_metadata is None:
             # must generate metadata from scratch
             repository_metadata = RepositoryMetadata(
                 cached_metadata_by_key={
-                    defn.unique_id: defn.get_metadata() for defn in self._cacheable_definitions
+                    defn.unique_id: defn.get_metadata()
+                    for defn in self._repository_definitions
+                    if isinstance(defn, CacheableAssetsDefinition)
                 }
             )
 
         resolved_definitions: List[RepositoryListDefinition] = []
-        for defn in self._cacheable_definitions:
-            # should always have metadata for each cached defn at this point
-            check.invariant(
-                defn.unique_id in repository_metadata.cached_metadata_by_key,
-                f"No metadata found for CacheableAssetsDefinition with unique_id {defn.unique_id}.",
-            )
-            # use the emtadata to generate definitions
-            resolved_definitions.extend(
-                defn.get_definitions(
-                    metadata=repository_metadata.cached_metadata_by_key[defn.unique_id]
+        for defn in self._repository_definitions:
+            if isinstance(defn, CacheableAssetsDefinition):
+                # should always have metadata for each cached defn at this point
+                check.invariant(
+                    defn.unique_id in repository_metadata.cached_metadata_by_key,
+                    f"No metadata found for CacheableAssetsDefinition with unique_id {defn.unique_id}.",
                 )
-            )
+                # use the emtadata to generate definitions
+                resolved_definitions.extend(
+                    defn.get_definitions(
+                        metadata=repository_metadata.cached_metadata_by_key[defn.unique_id]
+                    )
+                )
+            else:
+                resolved_definitions.append(defn)
 
         repository_data = CachingRepositoryData.from_list(
-            [*self._repository_definitions, *resolved_definitions],
+            resolved_definitions,
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
         )
