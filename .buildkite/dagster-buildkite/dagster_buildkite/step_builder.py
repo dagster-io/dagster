@@ -72,15 +72,21 @@ class CommandStepBuilder:
         # for a volume with a matching name on the host machine
         settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock", "/tmp:/tmp"]
         settings["network"] = "kind"
+
+        # Pass through all BUILDKITE* envvars so our test analytics are properly tagged
+        buildkite_envvars = [env for env in list(os.environ.keys) if env.startswith("BUILDKITE")]
+
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary
         # path they return will be nested under /tmp.
         # https://github.com/pytest-dev/pytest/blob/501637547ecefa584db3793f71f1863da5ffc25f/src/_pytest/tmpdir.py#L116-L117
-        settings["environment"] = [
-            "BUILDKITE",
-            "PYTEST_DEBUG_TEMPROOT=/tmp",
-            "BUILDKITE_ANALYTICS_TOKEN",
-        ] + (env or [])
+        settings["environment"] = (
+            [
+                "PYTEST_DEBUG_TEMPROOT=/tmp",
+            ]
+            + buildkite_envvars
+            + (env or [])
+        )
         ecr_settings = {
             "login": True,
             "no-include-email": True,
