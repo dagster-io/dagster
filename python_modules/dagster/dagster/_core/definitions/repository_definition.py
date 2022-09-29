@@ -23,12 +23,13 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.instance import DagsterInstance
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import make_readonly_value, merge_dicts
 
 from .cacheable_assets import AssetsDefinitionMetadata
-from .events import AssetKey
+from .events import AssetKey, CoercibleToAssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .job_definition import JobDefinition
@@ -44,6 +45,7 @@ from .utils import check_valid_name
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetGroup, AssetsDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+    from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
     "pipelines",
@@ -1356,6 +1358,57 @@ class RepositoryDefinition:
             solids_to_execute = parse_solid_selection(defn, op_selection)
 
         return defn.get_pipeline_subset_def(solids_to_execute)
+
+    @public
+    def load_asset_value(
+        self,
+        asset_key: CoercibleToAssetKey,
+        python_type: Optional[Type] = None,
+        instance: Optional[DagsterInstance] = None,
+    ) -> object:
+        """
+        Loads the contents of an asset as a Python object.
+
+        Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
+
+        If you want to load the values of multiple assets, it's more efficient to use
+        `get_asset_value_loader`, which avoids spinning up resources separately for each asset.
+
+        Args:
+            asset_key (Union[AssetKey, Sequence[str], str]): The key of the asset to load.
+            python_type (Optional[Type]): The python type to load the asset as. This is what will
+                be returned inside `load_input` by `context.dagster_type.typing_type`.
+
+        Returns:
+            The contents of an asset as a Python object.
+        """
+        from dagster._core.storage.asset_value_loader import AssetValueLoader
+
+        with AssetValueLoader(self._assets_defs_by_key, instance=instance) as loader:
+            return loader.load_asset_value(asset_key, python_type=python_type)
+
+    @public
+    def get_asset_value_loader(
+        self, instance: Optional[DagsterInstance] = None
+    ) -> "AssetValueLoader":
+        """
+        Returns an object that can load the contents of assets as Python objects.
+
+        Invokes `load_input` on the :py:class:`IOManager` associated with the assets. Avoids
+        spinning up resources separately for each asset.
+
+        Usage:
+
+            .. code-block:: python
+
+                with my_repo.get_asset_value_loader() as loader:
+                    asset1 = loader.load_asset_value()
+                    asset1 = loader.load_asset_value()
+
+        """
+        from dagster._core.storage.asset_value_loader import AssetValueLoader
+
+        return AssetValueLoader(self._assets_defs_by_key, instance=instance)
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.

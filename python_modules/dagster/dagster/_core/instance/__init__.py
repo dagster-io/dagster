@@ -97,7 +97,12 @@ if TYPE_CHECKING:
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler
-    from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick, TickStatus
+    from dagster._core.scheduler.instigation import (
+        InstigatorState,
+        InstigatorTick,
+        TickData,
+        TickStatus,
+    )
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.event_log import EventLogStorage
@@ -1982,11 +1987,11 @@ class DagsterInstance:
             origin_id, selector_id, before=before, after=after, limit=limit, statuses=statuses
         )
 
-    def create_tick(self, tick_data):
-        return self._schedule_storage.create_tick(tick_data)
+    def create_tick(self, tick_data: "TickData") -> "InstigatorTick":
+        return check.not_none(self._schedule_storage).create_tick(tick_data)
 
-    def update_tick(self, tick):
-        return self._schedule_storage.update_tick(tick)
+    def update_tick(self, tick: "InstigatorTick"):
+        return check.not_none(self._schedule_storage).update_tick(tick)
 
     def purge_ticks(self, origin_id, selector_id, before, tick_statuses=None):
         self._schedule_storage.purge_ticks(origin_id, selector_id, before, tick_statuses)

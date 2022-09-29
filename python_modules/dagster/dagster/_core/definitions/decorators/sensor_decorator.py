@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
@@ -186,7 +187,8 @@ def asset_sensor(
 
 @experimental
 def multi_asset_sensor(
-    asset_keys: Sequence[AssetKey],
+    asset_keys: Optional[Sequence[AssetKey]] = None,
+    asset_selection: Optional[AssetSelection] = None,
     *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
@@ -211,7 +213,10 @@ def multi_asset_sensor(
     Takes a :py:class:`~dagster.MultiAssetSensorEvaluationContext`.
 
     Args:
-        asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
+        asset_keys (Optional[Sequence[AssetKey]]): The asset keys this sensor monitors. If not
+            provided, asset_selection argument must be provided.
+        asset_selection (Optional[AssetSelection]): The asset selection this sensor monitors. If not
+            provided, asset_keys argument must be provided.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
@@ -252,6 +257,7 @@ def multi_asset_sensor(
         return MultiAssetSensorDefinition(
             name=sensor_name,
             asset_keys=asset_keys,
+            asset_selection=asset_selection,
             job_name=job_name,
             asset_materialization_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,
