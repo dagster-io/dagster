@@ -417,6 +417,7 @@ def multi_asset(
                     **({"kind": compute_kind} if compute_kind else {}),
                     **(op_tags or {}),
                 },
+                config_schema=config_schema,
             )(fn)
 
         keys_by_input_name = {
