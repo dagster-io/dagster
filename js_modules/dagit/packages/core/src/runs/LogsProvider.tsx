@@ -183,12 +183,12 @@ const useLogsProviderWithSubscription = (runId: string) => {
     }, BATCH_INTERVAL);
   }, [syncPipelineStatusToApolloCache]);
 
-  const {nodes, counts, cursor, loading} = state;
+  const {nodes, counts, loading} = state;
 
   usePipelineRunLogsSubscriptionWorker(
-    {runId, cursor},
+    {runId},
     React.useCallback(
-      (logs: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess) => {
+      (logs) => {
         // Maintain a queue of messages as they arrive, and call the throttled setter.
         queue.current = [...queue.current, logs];
         // Wait until end of animation frame to call throttled set nodes

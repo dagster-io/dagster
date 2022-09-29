@@ -3,7 +3,14 @@ import React from 'react';
 import {AppContext} from '../app/AppContext';
 import {arrayBufferToString} from '../workers/util';
 
-export function usePipelineRunLogsSubscriptionWorker({runId}: any, onLogs: any) {
+import {PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess} from './types/PipelineRunLogsSubscription';
+
+export function usePipelineRunLogsSubscriptionWorker(
+  {runId}: {runId: string},
+  onLogs: (
+    result: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess,
+  ) => void,
+) {
   const {staticPathRoot, rootServerURI} = React.useContext(AppContext);
   React.useEffect(() => {
     const worker = new Worker(new URL('../workers/runLogs/runLogs.worker', import.meta.url));
