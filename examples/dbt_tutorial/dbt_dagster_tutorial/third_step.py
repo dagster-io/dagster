@@ -16,7 +16,7 @@ snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()]
 
 
 @asset(
-    key_prefix="raw_data",
+    key_prefix=["duckdb", "raw_data"],
     group_name="staging"
 )
 def customers() -> pd.DataFrame:
@@ -24,7 +24,7 @@ def customers() -> pd.DataFrame:
     return data
 
 @asset(
-    key_prefix="raw_data",
+    key_prefix=["duckdb", "raw_data"],
     group_name="staging"
 )
 def orders() -> pd.DataFrame:
@@ -37,11 +37,13 @@ DBT_PROFILES=file_relative_path(__file__, "../jaffle_shop/config")
 print(DBT_PROFILES)
 print(DBT_PROJECT_PATH)
 
-dbt_assets = load_assets_from_dbt_project(project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES)
+dbt_assets = load_assets_from_dbt_project(project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["duckdb", "jaffle_shop"], source_key_prefix=["duckdb"])
 
 @asset(
+    ins={"customers": AssetIn(key_prefix=["duckdb", "jaffle_shop"])},
     group_name="staging",
     io_manager_key="fs_io_manager",
+    key_prefix=["duckdb", "jaffle_shop"]
 )
 def order_count_chart(customers: pd.DataFrame):
     fig = px.histogram(customers, x="number_of_orders")
@@ -57,7 +59,10 @@ def jaffle_shop_repository():
             [customers, orders, *dbt_assets, order_count_chart],
             {
                 "dbt": dbt_cli_resource.configured(
-                    {"project_dir": DBT_PROJECT_PATH},
+                    {
+                        "project_dir": DBT_PROJECT_PATH,
+                        "profiles_dir": DBT_PROFILES,
+                    },
                 ),
                 "io_manager": duckdb_io_manager.configured(
                     {"duckdb_path": os.path.join(DBT_PROJECT_PATH, "example.duckdb")}

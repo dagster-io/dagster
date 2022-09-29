@@ -5,6 +5,7 @@ from dagster import Field, IOManager
 from dagster import _check as check
 from dagster import io_manager
 from dagster._seven.temp_dir import get_system_temp_directory
+from dagster._utils.backoff import backoff
 
 
 class DuckDBCSVIOManager(IOManager):
@@ -61,7 +62,11 @@ class DuckDBCSVIOManager(IOManager):
         return f"{self._schema(context)}.{self._table(context)}"
 
     def _connect_duckdb(self, context):
-        return duckdb.connect(database=context.resource_config["duckdb_path"], read_only=False)
+        return backoff(
+            fn=duckdb.connect,
+            retry_on=(RuntimeError,),
+            kwargs={"database": context.resource_config["duckdb_path"], "read_only": False}
+        )
 
 
 @io_manager(config_schema={"base_path": Field(str, is_required=False), "duckdb_path": str})
