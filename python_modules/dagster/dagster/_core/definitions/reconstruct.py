@@ -92,8 +92,6 @@ class ReconstructableRepository(
         return self._replace(repository_metadata=metadata)
 
     def get_definition(self):
-        print("GETTING DEFN")
-        print("......", self.pointer, self.repository_metadata)
         return repository_def_from_pointer(self.pointer, self.repository_metadata)
 
     def get_reconstructable_pipeline(self, name):
@@ -713,7 +711,6 @@ def repository_def_from_target_def(
     elif isinstance(target, RepositoryDefinition):
         return target
     elif isinstance(target, PendingRepositoryDefinition):
-        print("xxxxxxx", repository_metadata)
         return target.resolve(repository_metadata)
     else:
         return None

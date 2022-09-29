@@ -82,7 +82,6 @@ class StepDelegatingExecutor(Executor):
                 instance_ref=plan_context.plan_data.instance.get_ref(),
                 retry_mode=self.retries.for_inner_plan(),
                 known_state=active_execution.get_known_state(),
-                # TODO:RMD
                 should_verify_step=self._should_verify_step,
             ),
             pipeline_run=plan_context.pipeline_run,

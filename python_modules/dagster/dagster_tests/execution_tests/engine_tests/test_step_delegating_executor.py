@@ -1,11 +1,26 @@
 import subprocess
 import time
 
-from dagster import executor, job, op, reconstructable
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    DagsterInstance,
+    asset,
+    define_asset_job,
+    executor,
+    file_relative_path,
+    job,
+    op,
+    reconstructable,
+    repository,
+)
 from dagster._config import Permissive
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
+from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.repository_definition import AssetsDefinitionMetadata
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_pipeline
+from dagster._core.execution.api import execute_pipeline, reexecute_pipeline
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
@@ -276,3 +291,79 @@ def test_execute_verify_step():
     )
     assert result.success
     assert TestStepHandler.verify_step_count == 3
+
+
+def test_execute_using_repository_data():
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        recon_repo = ReconstructableRepository.for_file(
+            file_relative_path(__file__, "test_step_delegating_executor.py"), fn_name="pending_repo"
+        )
+        recon_pipeline = ReconstructablePipeline(
+            repository=recon_repo, pipeline_name="all_asset_job"
+        )
+
+        result = execute_pipeline(
+            recon_pipeline,
+            instance=instance,
+            run_config={"execution": {"config": {}}},
+        )
+        TestStepHandler.wait_for_processes()
+
+        assert any(
+            [
+                "Starting execution with step handler TestStepHandler" in (event.message or "")
+                for event in result.event_list
+            ]
+        )
+        assert result.success
+        assert instance.run_storage.kvs_get({"num_called"}).get("num_called") == "1"
+
+        result = reexecute_pipeline(recon_pipeline, result.run_id, instance=instance)
+        TestStepHandler.wait_for_processes()
+
+        assert any(
+            [
+                "Starting execution with step handler TestStepHandler" in (event.message or "")
+                for event in result.event_list
+            ]
+        )
+        assert result.success
+        # we do not attempt to fetch the previous repository metadata off of the execution plan
+        # from the previous run, so the reexecution will require us to fetch the metadata again
+        assert instance.run_storage.kvs_get({"num_called"}).get("num_called") == "2"
+
+
+class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
+    _metadata = AssetsDefinitionMetadata(keys_by_output_name={"result": AssetKey("foo")})
+
+    def get_metadata(self):
+        # used for tracking how many times this function gets called over an execution
+        instance = DagsterInstance.get()
+        kvs_key = "num_called"
+        num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
+        instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
+        return [self._metadata]
+
+    def get_definitions(self, metadata):
+        assert len(metadata) == 1
+        assert metadata == [self._metadata]
+
+        @op
+        def _op():
+            return 1
+
+        return [
+            AssetsDefinition.from_op(_op, keys_by_output_name=md.keys_by_output_name)
+            for md in metadata
+        ]
+
+
+@asset
+def bar(foo):
+    return foo + 1
+
+
+@repository(default_executor_def=test_step_delegating_executor)
+def pending_repo():
+    return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]

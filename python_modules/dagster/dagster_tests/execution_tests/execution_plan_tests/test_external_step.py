@@ -7,6 +7,8 @@ from threading import Thread
 import pytest
 
 from dagster import (
+    AssetKey,
+    AssetsDefinition,
     DynamicOut,
     DynamicOutput,
     Failure,
@@ -16,13 +18,23 @@ from dagster import (
     RetryPolicy,
     RetryRequested,
     String,
+    asset,
+    define_asset_job,
+    file_relative_path,
     fs_io_manager,
     job,
     op,
     reconstructable,
+    repository,
     resource,
+    with_resources,
+)
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionMetadata,
+    CacheableAssetsDefinition,
 )
 from dagster._core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
@@ -576,3 +588,73 @@ def test_multiproc_launcher_requests_retry():
                 event_types = [event.event_type for event in events]
                 assert DagsterEventType.STEP_UP_FOR_RETRY in event_types
                 assert DagsterEventType.STEP_RESTARTED in event_types
+
+
+def test_multiproc_launcher_with_repository_metadata():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        run_config = {
+            "resources": {
+                "step_launcher": {"config": {"scratch_dir": tmpdir}},
+                "io_manager": {"config": {"base_dir": tmpdir}},
+            }
+        }
+        with instance_for_test() as instance:
+            instance.run_storage.kvs_set({"val": "INITIAL_VALUE"})
+            recon_repo = ReconstructableRepository.for_file(
+                file_relative_path(__file__, "test_external_step.py"), fn_name="pending_repo"
+            )
+            recon_pipeline = ReconstructablePipeline(
+                repository=recon_repo, pipeline_name="all_asset_job"
+            )
+
+            run = execute_pipeline(
+                pipeline=recon_pipeline,
+                run_config=run_config,
+                instance=instance,
+            )
+            assert run.success
+            assert instance.run_storage.kvs_get({"val"}).get("val") == "NEW_VALUE"
+
+
+class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
+    _metadata = AssetsDefinitionMetadata(keys_by_output_name={"result": AssetKey("foo")})
+
+    def get_metadata(self):
+        # used for tracking how many times this function gets called over an execution
+        # since we're crossing process boundaries, we pre-populate this value in the host process
+        # and assert that this pre-populated value is present, to ensure that we'll error if this
+        # gets called in a child process
+        instance = DagsterInstance.get()
+        val = instance.run_storage.kvs_get({"val"}).get("val")
+        assert val == "INITIAL_VALUE"
+        instance.run_storage.kvs_set({"val": "NEW_VALUE"})
+        return [self._metadata]
+
+    def get_definitions(self, metadata):
+        assert len(metadata) == 1
+        assert metadata == [self._metadata]
+
+        @op(required_resource_keys={"step_launcher"})
+        def _op():
+            return 1
+
+        return with_resources(
+            [
+                AssetsDefinition.from_op(
+                    _op,
+                    keys_by_output_name=md.keys_by_output_name,
+                )
+                for md in metadata
+            ],
+            {"step_launcher": local_external_step_launcher},
+        )
+
+
+@asset
+def bar(foo):
+    return foo + 1
+
+
+@repository
+def pending_repo():
+    return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]

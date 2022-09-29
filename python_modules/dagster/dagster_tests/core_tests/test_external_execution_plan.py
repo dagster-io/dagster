@@ -5,13 +5,25 @@ import re
 import pytest
 
 from dagster import (
+    AssetKey,
+    AssetsDefinition,
     DagsterEventType,
     DagsterExecutionStepNotFoundError,
     DependencyDefinition,
     Int,
+    asset,
+    define_asset_job,
+    file_relative_path,
+    op,
     reconstructable,
+    repository,
+)
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionMetadata,
+    CacheableAssetsDefinition,
 )
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
@@ -258,19 +270,35 @@ def test_using_file_system_for_subplan_invalid_step():
         )
 
 
-import sys
+def test_using_repository_data():
+    with instance_for_test() as instance:
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = pending_repo.resolve(repository_metadata=None)
+        pipeline_def = repository_def.get_job("all_asset_job")
+        repository_metadata = repository_def.repository_metadata
 
-from dagster import (
-    AssetKey,
-    AssetsDefinition,
-    asset,
-    define_asset_job,
-    file_relative_path,
-    op,
-    repository,
-)
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-from dagster._core.definitions.repository_definition import AssetsDefinitionMetadata
+        recon_repo = ReconstructableRepository.for_file(
+            file_relative_path(__file__, "test_external_execution_plan.py"), fn_name="pending_repo"
+        )
+        recon_pipeline = ReconstructablePipeline(
+            repository=recon_repo, pipeline_name="all_asset_job"
+        )
+
+        execution_plan = create_execution_plan(
+            recon_pipeline, repository_metadata=repository_metadata
+        )
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def, execution_plan=execution_plan
+        )
+
+        execute_plan(
+            execution_plan=execution_plan,
+            pipeline=recon_pipeline,
+            pipeline_run=pipeline_run,
+            instance=instance,
+        )
+
+        assert instance.run_storage.kvs_get({"num_called"}).get("num_called") == "1"
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
@@ -306,48 +334,3 @@ def bar(foo):
 @repository
 def pending_repo():
     return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
-
-
-def test_using_repository_data():
-    records = []
-
-    def event_callback(record):
-        assert isinstance(record, EventLogEntry)
-        records.append(record)
-
-    from dagster._core.code_pointer import CodePointer
-    from dagster._core.definitions.reconstruct import (
-        ReconstructablePipeline,
-        ReconstructableRepository,
-    )
-    from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
-
-    with instance_for_test() as instance:
-        repository_def = pending_repo.resolve(repository_metadata=None)
-        pipeline_def = repository_def.get_job("all_asset_job")
-        repository_metadata = repository_def.repository_metadata
-
-        recon_repo = ReconstructableRepository.for_file(
-            file_relative_path(__file__, "test_external_execution_plan.py"), fn_name="pending_repo"
-        )
-        recon_pipeline = ReconstructablePipeline(
-            repository=recon_repo, pipeline_name="all_asset_job"
-        ).with_repository_metadata(repository_metadata)
-
-        # while create_execution_plan does support a repository_metadata argument, we cannot rely
-        # on this being supplied by the caller in (e.g.) custom executors. In these cases, we rely
-        # on the fact that the recon_pipeline will have been given repository metadata
-        execution_plan = create_execution_plan(recon_pipeline)
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def,
-            execution_plan=execution_plan,
-        )
-
-        execute_plan(
-            execution_plan=execution_plan,
-            pipeline=recon_pipeline,
-            pipeline_run=pipeline_run,
-            instance=instance,
-        )
-
-        assert instance.run_storage.kvs_get({"num_called"}).get("num_called") == "1"

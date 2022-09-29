@@ -119,6 +119,8 @@ def test_run_from_pending_repository():
                 assert num_called.get("num_called_a") == "1"
                 assert num_called.get("num_called_b") == "1"
 
+                # using create run here because we don't have easy access to the underlying
+                # pipeline definition
                 pipeline_run = instance.create_run(
                     pipeline_name="my_cool_asset_job",
                     run_id="xyzabc",
@@ -150,8 +152,6 @@ def test_run_from_pending_repository():
 
         # Server should wait until run finishes, then shutdown
         pipeline_run = poll_for_finished_run(instance, run_id)
-        for a in instance.all_logs(pipeline_run.run_id):
-            print(a)
         assert pipeline_run.status == PipelineRunStatus.SUCCESS
 
         start_time = time.time()

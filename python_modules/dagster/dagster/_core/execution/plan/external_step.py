@@ -143,6 +143,7 @@ def step_context_to_step_run_ref(
                     executable_path=recon_pipeline.repository.executable_path,
                     entry_point=recon_pipeline.repository.entry_point,
                     container_context=recon_pipeline.repository.container_context,
+                    repository_metadata=step_context.plan_data.execution_plan.repository_metadata,
                 ),
                 pipeline_name=recon_pipeline.pipeline_name,
                 solids_to_execute=recon_pipeline.solids_to_execute,
@@ -156,7 +157,6 @@ def step_context_to_step_run_ref(
         retry_mode=retry_mode,
         recon_pipeline=recon_pipeline,  # type: ignore
         known_state=step_context.get_known_state(),
-        # TODO:RMD
     )
 
 
@@ -201,7 +201,8 @@ def step_run_ref_to_step_context(
         mode=step_run_ref.pipeline_run.mode,
         step_keys_to_execute=[step_run_ref.step_key],
         known_state=step_run_ref.known_state,
-        # TODO:RMD
+        # we package repository_metadata onto the reconstructable pipeline
+        repository_metadata=pipeline.repository.repository_metadata,
     )
 
     initialization_manager = PlanExecutionContextManager(

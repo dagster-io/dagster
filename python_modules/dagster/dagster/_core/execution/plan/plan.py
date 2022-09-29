@@ -29,6 +29,7 @@ from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.executor_definition import ExecutorRequirement
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryMetadata
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
@@ -107,7 +108,15 @@ class _PlanBuilder:
         known_state: KnownExecutionState,
         instance_ref: Optional[InstanceRef],
         tags: Dict[str, str],
+        repository_metadata: Optional[RepositoryMetadata],
     ):
+        if isinstance(pipeline, ReconstructablePipeline) and repository_metadata is not None:
+            check.invariant(
+                pipeline.repository.repository_metadata == repository_metadata,
+                "When building an ExecutionPlan with explicit repository_metadata and a "
+                "ReconstructablePipeline, the repository_metadata on the pipeline must be identical "
+                "to passed-in repository_metadata.",
+            )
         self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
         self.resolved_run_config = check.inst_param(
             resolved_run_config, "resolved_run_config", ResolvedRunConfig
@@ -127,6 +136,9 @@ class _PlanBuilder:
         self._instance_ref = instance_ref
         self._seen_handles: Set[StepHandleUnion] = set()
         self._tags = check.dict_param(tags, "tags", key_type=str, value_type=str)
+        self.repository_metadata = check.opt_inst_param(
+            repository_metadata, "repository_metadata", RepositoryMetadata
+        )
 
     @property
     def pipeline_name(self) -> str:
@@ -233,6 +245,7 @@ class _PlanBuilder:
                 executable_map,
             ),
             executor_name=executor_name,
+            repository_metadata=self.repository_metadata,
         )
 
         if self.step_keys_to_execute is not None:
@@ -996,6 +1009,7 @@ class ExecutionPlan(
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
         tags: Optional[Dict[str, str]] = None,
+        repository_metadata: Optional[RepositoryMetadata] = None,
     ) -> "ExecutionPlan":
         """Here we build a new ExecutionPlan from a pipeline definition and the resolved run config.
 
@@ -1016,6 +1030,9 @@ class ExecutionPlan(
             default=KnownExecutionState(),
         )
         tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+        repository_metadata = check.opt_inst_param(
+            repository_metadata, "repository_metadata", RepositoryMetadata
+        )
 
         plan_builder = _PlanBuilder(
             pipeline,
@@ -1024,6 +1041,7 @@ class ExecutionPlan(
             known_state=known_state,
             instance_ref=instance_ref,
             tags=tags,
+            repository_metadata=repository_metadata,
         )
 
         # Finally, we build and return the execution plan

@@ -25,7 +25,7 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozendict, frozenlist, make_readonly_value, merge_dicts
+from dagster._utils import make_readonly_value, merge_dicts
 
 from .cacheable_assets import AssetsDefinitionMetadata
 from .events import AssetKey
@@ -1385,7 +1385,6 @@ class PendingRepositoryDefinition:
         return self._name
 
     def resolve(self, repository_metadata: Optional[RepositoryMetadata]) -> RepositoryDefinition:
-        print("yyyyyyyyyyyyyyyy", repository_metadata)
         if repository_metadata is None:
             # must generate metadata from scratch
             repository_metadata = RepositoryMetadata(
@@ -1393,7 +1392,6 @@ class PendingRepositoryDefinition:
                     defn.unique_id: defn.get_metadata() for defn in self._cacheable_definitions
                 }
             )
-        print("hi")
 
         resolved_definitions: List[RepositoryListDefinition] = []
         for defn in self._cacheable_definitions:
@@ -1414,7 +1412,6 @@ class PendingRepositoryDefinition:
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
         )
-        print("hello")
 
         return RepositoryDefinition(
             self._name,

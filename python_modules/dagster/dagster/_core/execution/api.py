@@ -12,6 +12,7 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    cast,
 )
 
 import dagster._check as check
@@ -161,9 +162,9 @@ def execute_run_iterator(
                 asset_selection=pipeline_run.asset_selection,
             )
 
-    print(pipeline_run)
     execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
-    print(execution_plan)
+    if isinstance(pipeline, ReconstructablePipeline):
+        pipeline = pipeline.with_repository_metadata(execution_plan.repository_metadata)
 
     return iter(
         ExecuteRunWithPlanIterable(
@@ -260,6 +261,9 @@ def execute_run(
             )
 
     execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
+    if isinstance(pipeline, ReconstructablePipeline):
+        pipeline = pipeline.with_repository_metadata(execution_plan.repository_metadata)
+
     output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
@@ -339,6 +343,8 @@ def execute_pipeline_iterator(
     """
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
+        pipeline, repository_metadata = _pipeline_with_repository_metadata(pipeline)
+
         (
             pipeline,
             run_config,
@@ -362,6 +368,7 @@ def execute_pipeline_iterator(
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             tags=tags,
+            repository_metadata=repository_metadata,
         )
 
         return execute_run_iterator(pipeline, pipeline_run, execute_instance)
@@ -528,6 +535,9 @@ def execute_job(
     check.inst_param(job, "job", ReconstructablePipeline)
     check.inst_param(instance, "instance", DagsterInstance)
 
+    # get the repository metadata here because we call job.get_definition() later in this fn
+    job, _ = _pipeline_with_repository_metadata(job)
+
     if reexecution_options is not None and op_selection is not None:
         raise DagsterInvariantViolationError(
             "re-execution and op selection cannot be used together at this time."
@@ -561,7 +571,7 @@ def execute_job(
 
     # We use PipelineExecutionResult to construct the JobExecutionResult.
     return ExecuteJobResult(
-        job_def=job.get_definition(),
+        job_def=cast(ReconstructableJob, job).get_definition(),
         reconstruct_context=result.reconstruct_context(),
         event_list=result.event_list,
         dagster_run=instance.get_run_by_id(result.run_id),
@@ -638,6 +648,9 @@ def _logged_execute_pipeline(
     raise_on_error: bool = True,
 ) -> PipelineExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
+
+    pipeline, repository_metadata = _pipeline_with_repository_metadata(pipeline)
+
     (
         pipeline,
         run_config,
@@ -666,6 +679,7 @@ def _logged_execute_pipeline(
         pipeline_code_origin=(
             pipeline.get_python_origin() if isinstance(pipeline, ReconstructablePipeline) else None
         ),
+        repository_metadata=repository_metadata,
     )
 
     return execute_run(
@@ -730,6 +744,8 @@ def reexecute_pipeline(
     check.str_param(parent_run_id, "parent_run_id")
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
+        pipeline, repository_metadata = _pipeline_with_repository_metadata(pipeline)
+
         (pipeline, run_config, mode, tags, _, _) = _check_execute_pipeline_args(
             pipeline=pipeline,
             run_config=run_config,
@@ -774,6 +790,8 @@ def reexecute_pipeline(
             solids_to_execute=parent_pipeline_run.solids_to_execute,
             root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
             parent_run_id=parent_pipeline_run.run_id,
+            pipeline_code_origin=parent_pipeline_run.pipeline_code_origin,
+            repository_metadata=repository_metadata,
         )
 
         return execute_run(
@@ -837,6 +855,8 @@ def reexecute_pipeline_iterator(
     check.str_param(parent_run_id, "parent_run_id")
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
+        pipeline, repository_metadata = _pipeline_with_repository_metadata(pipeline)
+
         (pipeline, run_config, mode, tags, _, _) = _check_execute_pipeline_args(
             pipeline=pipeline,
             run_config=run_config,
@@ -875,6 +895,7 @@ def reexecute_pipeline_iterator(
             solids_to_execute=parent_pipeline_run.solids_to_execute,
             root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
             parent_run_id=parent_pipeline_run.run_id,
+            repository_metadata=repository_metadata,
         )
 
         return execute_run_iterator(pipeline, pipeline_run, execute_instance)
@@ -894,6 +915,9 @@ def execute_plan_iterator(
     check.inst_param(instance, "instance", DagsterInstance)
     retry_mode = check.opt_inst_param(retry_mode, "retry_mode", RetryMode, RetryMode.DISABLED)
     run_config = check.opt_mapping_param(run_config, "run_config")
+
+    if isinstance(pipeline, ReconstructablePipeline):
+        pipeline = pipeline.with_repository_metadata(execution_plan.repository_metadata)
 
     return iter(
         ExecuteRunWithPlanIterable(
@@ -955,20 +979,24 @@ def _get_execution_plan_from_run(
 ) -> ExecutionPlan:
 
     execution_plan_snapshot = None
-    if pipeline_run.execution_plan_snapshot_id:
-        execution_plan_snapshot = instance.get_execution_plan_snapshot(
-            pipeline_run.execution_plan_snapshot_id
-        )
-
     if (
         pipeline.solids_to_execute is None
         and pipeline.asset_selection is None
-        and execution_plan_snapshot
-        and execution_plan_snapshot.can_reconstruct_plan
+        and pipeline_run.execution_plan_snapshot_id
     ):
-        return ExecutionPlan.rebuild_from_snapshot(
-            pipeline_run.pipeline_name,
-            execution_plan_snapshot,
+        execution_plan_snapshot = instance.get_execution_plan_snapshot(
+            pipeline_run.execution_plan_snapshot_id
+        )
+        if execution_plan_snapshot.can_reconstruct_plan:
+            return ExecutionPlan.rebuild_from_snapshot(
+                pipeline_run.pipeline_name,
+                execution_plan_snapshot,
+            )
+
+    if pipeline_run.has_repository_metadata:
+        # if you haven't fetched it already, get the snapshot now
+        execution_plan_snapshot = execution_plan_snapshot or instance.get_execution_plan_snapshot(
+            pipeline_run.execution_plan_snapshot_id
         )
     # need to rebuild execution plan so it matches the subsetted graph
     return create_execution_plan(
@@ -995,12 +1023,12 @@ def create_execution_plan(
 ) -> ExecutionPlan:
 
     pipeline = _check_pipeline(pipeline)
-    if isinstance(pipeline, ReconstructablePipeline):
+
+    # If you have repository_metadata, make sure to use it when building plan
+    if isinstance(pipeline, ReconstructablePipeline) and repository_metadata is not None:
         pipeline = pipeline.with_repository_metadata(repository_metadata)
 
-    print("RES3.1")
     pipeline_def = pipeline.get_definition()
-    print("RES3.2")
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
@@ -1019,7 +1047,6 @@ def create_execution_plan(
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 
-    print("RES3.3")
     plan = ExecutionPlan.build(
         pipeline,
         resolved_run_config,
@@ -1027,13 +1054,9 @@ def create_execution_plan(
         known_state=known_state,
         instance_ref=instance_ref,
         tags=tags,
+        repository_metadata=repository_metadata,
     )
-    print("RES3.4")
 
-    if repository_metadata is not None:
-        return plan._replace(repository_metadata=repository_metadata)
-    elif isinstance(pipeline, ReconstructablePipeline):
-        return plan._replace(repository_metadata=pipeline.repository.repository_metadata)
     return plan
 
 
@@ -1148,8 +1171,6 @@ class ExecuteRunWithPlanIterable:
         with capture_interrupts():
             yield from self.execution_context_manager.prepare_context()
             self.pipeline_context = self.execution_context_manager.get_context()
-            print("xxxxxxxxxxxx")
-            print(self.pipeline_context)
             generator_closed = False
             try:
                 if self.pipeline_context:  # False if we had a pipeline init failure
@@ -1286,7 +1307,6 @@ def _resolve_reexecute_step_selection(
         pipeline = pipeline.subset_for_execution(parent_pipeline_run.solid_selection, None)
 
     state = KnownExecutionState.build_for_reexecution(instance, parent_pipeline_run)
-    # TODO:RMD
 
     parent_plan = create_execution_plan(
         pipeline,
@@ -1304,3 +1324,17 @@ def _resolve_reexecute_step_selection(
         tags=parent_pipeline_run.tags,
     )
     return execution_plan
+
+
+def _pipeline_with_repository_metadata(
+    pipeline: Union[PipelineDefinition, IPipeline],
+) -> Tuple[Union[PipelineDefinition, IPipeline], Optional[RepositoryMetadata]]:
+    """For ReconstructablePipeline, generate and return any required RepositoryMetadata, alongside
+    a ReconstructablePipeline with this repository metadata baked in.
+    """
+    if isinstance(pipeline, ReconstructablePipeline):
+        # Unless this ReconstructablePipeline alread has repository_metadata attached, this will
+        # force the repository_metadata to be computed from scratch.
+        repository_metadata = pipeline.repository.get_definition().repository_metadata
+        return pipeline.with_repository_metadata(repository_metadata), repository_metadata
+    return pipeline, None
