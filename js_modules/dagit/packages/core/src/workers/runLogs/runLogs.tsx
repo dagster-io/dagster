@@ -21,13 +21,8 @@ export function onMainThreadMessage(data: MessageType) {
   }
 }
 
-const initialPostMessage = (_data: any): void => {
-  throw new Error('Worker not initialized');
-};
-let postMessage = initialPostMessage;
-
 function initialize(data: MessageType) {
-  postMessage = data.postMessage;
+  const postMessage = data.postMessage;
   data
     .getApolloClient()
     .subscribe({

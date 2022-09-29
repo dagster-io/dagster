@@ -17,11 +17,12 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
+import {TABLE_SCHEMA_FRAGMENT} from '../app/TableSchemaFragment';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 
-import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
+import {TableSchema} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
 export interface IMetadataEntries {

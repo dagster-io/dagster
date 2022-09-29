@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui';
 import {Spacing} from '@dagster-io/ui/src/components/types';
 import * as React from 'react';
@@ -114,22 +113,3 @@ const ArbitraryConstraintTag: React.FC<{constraint: string}> = ({constraint}) =>
     return <Tag intent="primary">{constraint}</Tag>;
   }
 };
-
-export const TABLE_SCHEMA_FRAGMENT = gql`
-  fragment TableSchemaFragment on TableSchema {
-    __typename
-    columns {
-      name
-      description
-      type
-      constraints {
-        nullable
-        unique
-        other
-      }
-    }
-    constraints {
-      other
-    }
-  }
-`;
