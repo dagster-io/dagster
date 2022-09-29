@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Button,
   Colors,
@@ -259,12 +258,3 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
     </div>
   );
 };
-
-export const RUN_DETAILS_FRAGMENT = gql`
-  fragment RunDetailsFragment on Run {
-    id
-    startTime
-    endTime
-    status
-  }
-`;
