@@ -77,7 +77,6 @@ class ReconstructableRepository(
             ),
         )
 
-    @lru_cache(maxsize=1)
     def get_definition(self):
         return repository_def_from_pointer(self.pointer)
 
@@ -172,26 +171,15 @@ class ReconstructablePipeline(
     def solid_selection(self) -> Optional[List[str]]:
         return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
 
+    # Keep the most recent 1 definition (globally since this is a NamedTuple method)
+    # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
     def get_definition(self):
-        from dagster._core.definitions.job_definition import JobDefinition
-
-        defn = self.repository.get_definition().get_pipeline(self.pipeline_name)
-
-        if isinstance(defn, JobDefinition):
-            return (
-                self.repository.get_definition()
-                .get_pipeline(self.pipeline_name)
-                .get_job_def_for_subset_selection(self.solid_selection, self.asset_selection)
-            )
-
-        check.invariant(
-            self.asset_selection == None, "Asset selection cannot be provided with a pipeline"
-        )
-        return (
-            self.repository.get_definition().get_pipeline(self.pipeline_name)
-            # pipelines use post-resolved selection
-            .get_pipeline_subset_def(self.solids_to_execute)
+        return self.repository.get_definition().get_maybe_subset_job_def(
+            self.pipeline_name,
+            self.solid_selection,
+            self.asset_selection,
+            self.solids_to_execute,
         )
 
     def get_reconstructable_repository(self):

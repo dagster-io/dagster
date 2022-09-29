@@ -92,6 +92,15 @@ export const AssetEvents: React.FC<Props> = ({
   setParams,
   liveData,
 }) => {
+  // The params behavior on this page is a bit nuanced - there are two main query
+  // params: ?timestamp= and ?partition= and only one is set at a time. They can
+  // be undefined, an empty string or a value and all three states are used.
+  //
+  // - If both are undefined, we expand the first item in the table by default
+  // - If one is present, it determines which xAxis is used (partition grouping)
+  // - If one is present and set to a value, that item in the table is expanded.
+  // - If one is present but an empty string, no items in the table is expanded.
+
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
   const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
   const xAxis =
@@ -135,11 +144,11 @@ export const AssetEvents: React.FC<Props> = ({
 
   const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
 
-  const onSetFocused = (group: AssetEventGroup) => {
+  const onSetFocused = (group: AssetEventGroup | undefined) => {
     const updates: Partial<AssetViewParams> =
       xAxis === 'time'
-        ? {time: group.timestamp !== params.time ? group.timestamp : ''}
-        : {partition: group.partition !== params.partition ? group.partition : ''};
+        ? {time: group?.timestamp !== params.time ? group?.timestamp || '' : ''}
+        : {partition: group?.partition !== params.partition ? group?.partition || '' : ''};
     setParams({...params, ...updates});
   };
 
@@ -182,16 +191,19 @@ export const AssetEvents: React.FC<Props> = ({
     );
   }
 
-  const focused =
-    grouped.find((b) =>
-      params.time
-        ? Number(b.timestamp) <= Number(params.time)
-        : params.partition
-        ? b.partition === params.partition
-        : false,
-    ) ||
-    grouped[0] ||
-    null;
+  let focused: AssetEventGroup | undefined = grouped.find((b) =>
+    params.time
+      ? Number(b.timestamp) <= Number(params.time)
+      : params.partition
+      ? b.partition === params.partition
+      : false,
+  );
+
+  if (params.time === undefined && params.partition === undefined) {
+    // default to expanding the first row in the table so users know how much
+    // detail exists within each item.
+    focused = grouped[0];
+  }
 
   if (loading) {
     return (
@@ -233,8 +245,8 @@ export const AssetEvents: React.FC<Props> = ({
                 onClick={(id: string) =>
                   setParams(
                     id === 'time'
-                      ? {...params, partition: undefined, time: focused.timestamp || ''}
-                      : {...params, partition: focused.partition || '', time: undefined},
+                      ? {...params, partition: undefined, time: focused?.timestamp || ''}
+                      : {...params, partition: focused?.partition || '', time: undefined},
                   )
                 }
               />

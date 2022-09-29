@@ -46,7 +46,7 @@ A software-defined asset includes the following:
 
 - [Basic software-defined assets](#a-basic-software-defined-asset)
 - [Assets with dependencies](#assets-with-dependencies)
-- [Creating assets from graphs](#graph-backed-assets)
+- [Graph-backed assets and multi-assets](#graph-backed-assets-and-multi-assets)
 - [Accessing asset context](#asset-context)
 - [Configuring assets](#asset-configuration)
 
@@ -207,114 +207,12 @@ def downstream_asset():
 
 In this example, Dagster doesn’t need to load data from `upstream_asset` to successfully compute the `downstream_asset`. While `downstream_asset` does depend on `upstream_asset`, the key difference with `non_argument_deps` is that data isn’t being passed between the functions. Specifically, the data from the `sugary_cereals` table isn't being passed as an argument to `downstream_asset`.
 
-### Graph-backed assets
+### Graph-backed assets and multi-assets
 
-[Basic software-defined assets](#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries but doesn't require you to link each intermediate value to an asset in persistent storage.
+If you'd like to define more complex assets, Dagster offers augmented software-defined asset abstractions:
 
-Graph-backed assets are useful if you have an existing graph that produces and consumes assets. Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph.
-
-To define a graph-backed asset, use the `from_graph` attribute on the <PyObject object="AssetsDefinition" /> object. The value returned from the graph that becomes the graph-backed asset will be stored in persistent storage as the asset:
-
-```python file=/concepts/assets/graph_backed_asset.py startafter=start example endbefore=end example
-import pandas as pd
-from dagster import AssetsDefinition, asset, graph, op
-
-
-@op(required_resource_keys={"slack"})
-def fetch_files_from_slack(context) -> pd.DataFrame:
-    files = context.resources.slack.files_list(channel="#random")
-    return pd.DataFrame(
-        [
-            {
-                "id": file.get("id"),
-                "created": file.get("created"),
-                "title": file.get("title"),
-                "permalink": file.get("permalink"),
-            }
-            for file in files
-        ]
-    )
-
-
-@op
-def store_files(files):
-    return files.to_sql(name="slack_files", con=create_db_connection())
-
-
-@graph
-def store_slack_files_in_sql():
-    return store_files(fetch_files_from_slack())
-
-
-graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
-```
-
-#### Defining basic dependencies for graph-backed assets
-
-The `from_graph` attribute on the `AssetsDefinition` object infers upstream and downstream asset dependencies from the graph definition provided. In the most simple case when the graph returns a singular output, Dagster infers the name of the graph to be the outputted asset key.
-
-In the example below, Dagster creates an asset with key `middle_asset` from the `middle_asset` graph. Just like assets defined via <PyObject object="asset" decorator />, each argument to the decorated graph function is an upstream asset name. `middle_asset` depends on `upstream_asset`, and `downstream_asset` depends on `middle_asset`:
-
-```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies endbefore=end_basic_dependencies
-from dagster import AssetsDefinition, asset, graph
-
-
-@asset
-def upstream_asset():
-    return 1
-
-
-@graph
-def middle_asset(upstream_asset):
-    return add_one(upstream_asset)
-
-
-middle_asset = AssetsDefinition.from_graph(middle_asset)
-
-
-@asset
-def downstream_asset(middle_asset):
-    return middle_asset + 1
-```
-
-When your graph returns multiple outputs, Dagster infers each output name to be the outputted asset key. In the below example, `two_assets_graph` accepts `upstream_asset` and outputs two assets, `first_asset` and `second_asset`:
-
-```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies_2 endbefore=end_basic_dependencies_2
-from dagster import AssetsDefinition, GraphOut, graph
-
-
-@graph(out={"first_asset": GraphOut(), "second_asset": GraphOut()})
-def two_assets_graph(upstream_asset):
-    one, two = two_outputs(upstream_asset)
-    return {"first_asset": one, "second_asset": two}
-
-
-two_assets = AssetsDefinition.from_graph(two_assets_graph)
-```
-
-#### Defining explicit dependencies for graph-backed assets
-
-You can also define dependencies for graph-backed assets explicitly via the `asset_keys_by_input_name` and `asset_keys_by_output_name` arguments to `from_graph`:
-
-```python file=/concepts/assets/graph_backed_asset.py startafter=start_explicit_dependencies endbefore=end_explicit_dependencies
-from dagster import AssetsDefinition, GraphOut, graph
-
-
-@graph(out={"one": GraphOut(), "two": GraphOut()})
-def return_one_and_two(zero):
-    one, two = two_outputs(zero)
-    return {"one": one, "two": two}
-
-
-explicit_deps_asset = AssetsDefinition.from_graph(
-    return_one_and_two,
-    keys_by_input_name={"zero": AssetKey("upstream_asset")},
-    keys_by_output_name={
-        "one": AssetKey("asset_one"),
-        "two": AssetKey("asset_two"),
-    },
-)
-```
+- [Multi-assets](/concepts/assets/multi-assets): A set of software-defined assets that are all updated by the same [op](/concepts/ops-jobs-graphs/ops) or [graph](/concepts/ops-jobs-graphs/graphs).
+- [Graph-backed assets](/concepts/assets/graph-backed-assets): An asset whose computations are separated into multiple [ops](/concepts/ops-jobs-graphs/ops) that are combined to build a [graph](/concepts/ops-jobs-graphs/graphs). If the graph outputs multiple assets, the graph-backed asset is a [multi-asset](/concepts/assets/multi-assets).
 
 ### Asset context
 
@@ -470,11 +368,9 @@ Jobs that target assets can materialize a fixed selection of assets each time th
 
 ---
 
----
-
 ## Grouping assets
 
-To help keep your assets tidy, you can organize them into groups. Grouping assets by project, concept, and so on simplifies [keeping track of them in Dagit](#viewing-asset-groups-in-dagit).
+To help keep your assets tidy, you can organize them into groups. Grouping assets by project, concept, and so on simplifies [keeping track of them in Dagit](#viewing-asset-groups-in-dagit). Each asset is assigned to a single group, which by default is called "default".
 
 - [Assigning assets to groups](#assigning-assets-to-groups)
 - [Viewing asset groups in Dagit](#viewing-asset-groups-in-dagit)
@@ -483,10 +379,20 @@ To help keep your assets tidy, you can organize them into groups. Grouping asset
 
 In Dagster, there are two ways to assign assets to groups:
 
-- [By using the group_name argument when calling `load_assets_from_package_module`](#from-assets-in-a-sub-module) (**recommended**)
 - [By specifying a group name on an individual asset](#on-individual-assets)
+- [By using the group_name argument when calling `load_assets_from_package_module`](#from-assets-in-a-sub-module) (**recommended**)
 
 By default, assets that aren't assigned to a group will be placed in a group named `default`. Use Dagit to [view these assets](#viewing-asset-groups-in-dagit).
+
+#### On individual assets
+
+Assets can also be given groups on an individual basis by specifying an argument when creating the asset:
+
+```python file=/concepts/assets/asset_group_argument.py startafter=start_example endbefore=end_example
+@asset(group_name="cereal_assets")
+def nabisco_cereals():
+    return [1, 2, 3]
+```
 
 #### From assets in a sub-module
 
@@ -501,23 +407,7 @@ cereal_assets = load_assets_from_package_module(
 )
 ```
 
-#### On individual assets
-
-Assets can also be given groups on an individual basis by specifying an argument when creating the asset:
-
-```python file=/concepts/assets/asset_group_argument.py startafter=start_example endbefore=end_example
-@asset(group_name="cereal_assets")
-def nabisco_cereals():
-    return [1, 2, 3]
-```
-
-#### To multiple groups
-
-**Assets can only be assigned to one group at a time**. Attempting to place a grouped asset in a second group will result in an error:
-
-```bash
-Group name already exists on assets [list_of_asset_keys]
-```
+If any of the assets in the module already has a `group_name` explicitly set on it, you'll encounter a `Group name already exists on assets` error.
 
 ### Viewing asset groups in Dagit
 
@@ -594,6 +484,28 @@ def test_uses_context():
     context = build_op_context(resources={"foo": "bar"})
     result = uses_context(context)
     assert result == "bar"
+```
+
+---
+
+## Loading asset values outside of Dagster runs
+
+It's sometimes useful to load an asset as a Python object outside of a Dagster run, e.g. if you want to do exploratory data analysis on it inside a Jupyter notebook. For this, you can use <PyObject object="RepositoryDefinition" method="load_asset_value" />:
+
+```python file=/concepts/assets/load_asset_values.py startafter=single_asset_start_marker endbefore=single_asset_end_marker dedent=4
+@repository
+def repo():
+    return [load_assets_from_current_module()]
+
+asset1_value = repo.load_asset_value(AssetKey("asset1"))
+```
+
+If you want to load the values of multiple assets, it's more efficient to use <PyObject object="RepositoryDefinition" method="load_asset_value" />, which avoids spinning up resources separately for each asset:
+
+```python file=/concepts/assets/load_asset_values.py startafter=multiple_asset_start_marker endbefore=multiple_asset_end_marker dedent=4
+with repo.get_asset_value_loader() as loader:
+    asset1_value = loader.load_asset_value(AssetKey("asset1"))
+    asset2_value = loader.load_asset_value(AssetKey("asset2"))
 ```
 
 ---

@@ -217,7 +217,7 @@ def test_run_monitoring(
 
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
-    assert instance["run_monitoring"]["enabled"] == True
+    assert instance["run_monitoring"]["enabled"] is True
 
 
 def test_run_retries(
@@ -233,7 +233,7 @@ def test_run_retries(
 
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
-    assert instance["run_retries"]["enabled"] == True
+    assert instance["run_retries"]["enabled"] is True
 
 
 def test_daemon_labels(template: HelmTemplate):
@@ -267,7 +267,7 @@ def test_sensor_threading(instance_template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     sensors_config = instance["sensors"]
     assert sensors_config.keys() == sensors_daemon_config().config_type.fields.keys()
-    assert instance["sensors"]["use_threads"] == True
+    assert instance["sensors"]["use_threads"] is True
     assert instance["sensors"]["num_workers"] == 4
 
 

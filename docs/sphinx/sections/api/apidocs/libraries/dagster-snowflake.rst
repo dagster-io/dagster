@@ -21,4 +21,3 @@ your data warehouse.
 .. autoclass:: SnowflakeConnection
   :members:
   :undoc-members:
-

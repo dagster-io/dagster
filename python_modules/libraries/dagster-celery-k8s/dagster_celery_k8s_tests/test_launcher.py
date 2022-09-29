@@ -290,7 +290,7 @@ def test_launcher_from_config(kubeconfig_file):
     ) as instance:
         run_launcher = instance.run_launcher
         assert isinstance(run_launcher, CeleryK8sRunLauncher)
-        assert run_launcher._fail_pod_on_run_failure == None  # pylint: disable=protected-access
+        assert run_launcher._fail_pod_on_run_failure is None  # pylint: disable=protected-access
 
     with instance_for_test(
         overrides={

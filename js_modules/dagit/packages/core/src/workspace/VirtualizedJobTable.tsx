@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Colors, Tag, Tooltip} from '@dagster-io/ui';
+import {Box, Caption, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -12,62 +12,28 @@ import {RunStatusPezList} from '../runs/RunStatusPez';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {Container, Inner, Row, RowCell} from '../ui/VirtualizedTable';
-import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
-import {useRepoExpansionState} from '../ui/useRepoExpansionState';
+import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
-import {LoadingOrNone, RepoRow, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {buildPipelineSelector} from './WorkspaceContext';
-import {repoAddressAsString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/SingleJobQuery';
 import {workspacePathFromAddress} from './workspacePath';
 
-type Repository = {
-  repoAddress: RepoAddress;
-  jobs: {
-    isJob: boolean;
-    name: string;
-  }[];
-};
+type Job = {isJob: boolean; name: string};
 
 interface Props {
-  repos: Repository[];
+  repoAddress: RepoAddress;
+  jobs: Job[];
 }
 
-type RowType =
-  | {type: 'header'; repoAddress: RepoAddress; jobCount: number}
-  | {type: 'job'; repoAddress: RepoAddress; isJob: boolean; name: string};
-
-const JOBS_EXPANSION_STATE_STORAGE_KEY = 'jobs-virtualized-expansion-state';
-
-export const VirtualizedJobTable: React.FC<Props> = ({repos}) => {
+export const VirtualizedJobTable: React.FC<Props> = ({repoAddress, jobs}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const {expandedKeys, onToggle} = useRepoExpansionState(JOBS_EXPANSION_STATE_STORAGE_KEY);
-
-  const flattened: RowType[] = React.useMemo(() => {
-    const flat: RowType[] = [];
-    repos.forEach(({repoAddress, jobs}) => {
-      flat.push({type: 'header', repoAddress, jobCount: jobs.length});
-      const repoKey = repoAddressAsString(repoAddress);
-      if (expandedKeys.includes(repoKey)) {
-        jobs.forEach(({isJob, name}) => {
-          flat.push({type: 'job', repoAddress, isJob, name});
-        });
-      }
-    });
-    return flat;
-  }, [repos, expandedKeys]);
-
-  const duplicateRepoNames = findDuplicateRepoNames(repos.map(({repoAddress}) => repoAddress.name));
 
   const rowVirtualizer = useVirtualizer({
-    count: flattened.length,
+    count: jobs.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (ii: number) => {
-      const row = flattened[ii];
-      return row?.type === 'header' ? 32 : 64;
-    },
+    estimateSize: () => 64,
     overscan: 10,
   });
 
@@ -75,41 +41,43 @@ export const VirtualizedJobTable: React.FC<Props> = ({repos}) => {
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <Container ref={parentRef}>
-      <Inner $totalHeight={totalHeight}>
-        {items.map(({index, key, size, start}) => {
-          const row: RowType = flattened[index];
-          const type = row!.type;
-          return type === 'header' ? (
-            <RepoRow
-              repoAddress={row.repoAddress}
-              key={key}
-              height={size}
-              start={start}
-              onToggle={onToggle}
-              showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-              rightElement={
-                <Tooltip
-                  content={row.jobCount === 1 ? '1 job' : `${row.jobCount} jobs`}
-                  placement="top"
-                >
-                  <Tag intent="primary">{row.jobCount}</Tag>
-                </Tooltip>
-              }
-            />
-          ) : (
-            <JobRow
-              key={key}
-              name={row.name}
-              isJob={row.isJob}
-              repoAddress={row.repoAddress}
-              height={size}
-              start={start}
-            />
-          );
-        })}
-      </Inner>
-    </Container>
+    <>
+      <Box
+        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '34% 30% 20% 8% 8%',
+          height: '32px',
+          fontSize: '12px',
+          color: Colors.Gray600,
+        }}
+      >
+        <HeaderCell>Job name</HeaderCell>
+        <HeaderCell>Schedules/sensors</HeaderCell>
+        <HeaderCell>Latest run</HeaderCell>
+        <HeaderCell>Run history</HeaderCell>
+        <HeaderCell>Actions</HeaderCell>
+      </Box>
+      <div style={{overflow: 'hidden'}}>
+        <Container ref={parentRef}>
+          <Inner $totalHeight={totalHeight}>
+            {items.map(({index, key, size, start}) => {
+              const row: Job = jobs[index];
+              return (
+                <JobRow
+                  key={key}
+                  name={row.name}
+                  isJob={row.isJob}
+                  repoAddress={repoAddress}
+                  height={size}
+                  start={start}
+                />
+              );
+            })}
+          </Inner>
+        </Container>
+      </div>
+    </>
   );
 };
 
@@ -159,7 +127,7 @@ const JobRow = (props: JobRowProps) => {
     <Row $height={height} $start={start}>
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <RowCell>
-          <div style={{whiteSpace: 'nowrap'}}>
+          <div style={{whiteSpace: 'nowrap', fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>{name}</Link>
           </div>
           <div
@@ -204,7 +172,9 @@ const JobRow = (props: JobRowProps) => {
         </RowCell>
         <RowCell>
           {latestRuns.length ? (
-            <RunStatusPezList jobName={name} runs={[...latestRuns].reverse()} fade />
+            <Box margin={{top: 4}}>
+              <RunStatusPezList jobName={name} runs={[...latestRuns].reverse()} fade />
+            </Box>
           ) : (
             <LoadingOrNone queryResult={queryResult} />
           )}

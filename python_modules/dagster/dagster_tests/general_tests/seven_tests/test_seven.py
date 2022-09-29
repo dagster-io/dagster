@@ -65,10 +65,10 @@ def test_is_lambda():
     class Oof:
         test = lambda x: x
 
-    assert _seven.is_lambda(foo) == True
-    assert _seven.is_lambda(Oof.test) == True
-    assert _seven.is_lambda(bar) == False
-    assert _seven.is_lambda(baz) == False
+    assert _seven.is_lambda(foo) is True
+    assert _seven.is_lambda(Oof.test) is True
+    assert _seven.is_lambda(bar) is False
+    assert _seven.is_lambda(baz) is False
 
 
 def test_is_fn_or_decor_inst():
@@ -90,10 +90,10 @@ def test_is_fn_or_decor_inst():
     def yoodles():
         pass
 
-    assert _seven.is_function_or_decorator_instance_of(foo, Quux) == True
-    assert _seven.is_function_or_decorator_instance_of(bar, Quux) == True
-    assert _seven.is_function_or_decorator_instance_of(baz, Quux) == False
-    assert _seven.is_function_or_decorator_instance_of(yoodles, Quux) == True
+    assert _seven.is_function_or_decorator_instance_of(foo, Quux) is True
+    assert _seven.is_function_or_decorator_instance_of(bar, Quux) is True
+    assert _seven.is_function_or_decorator_instance_of(baz, Quux) is False
+    assert _seven.is_function_or_decorator_instance_of(yoodles, Quux) is True
 
 
 class Foo:

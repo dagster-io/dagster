@@ -257,7 +257,7 @@ def test_strategy(instance: DagsterInstance):
         instance,
         status=PipelineRunStatus.FAILURE,
     )
-    assert get_reexecution_strategy(run, instance) == None
+    assert get_reexecution_strategy(run, instance) is None
 
     run = create_run(
         instance,
@@ -278,4 +278,4 @@ def test_strategy(instance: DagsterInstance):
         status=PipelineRunStatus.FAILURE,
         tags={RETRY_STRATEGY_TAG: "not a strategy"},
     )
-    assert get_reexecution_strategy(run, instance) == None
+    assert get_reexecution_strategy(run, instance) is None

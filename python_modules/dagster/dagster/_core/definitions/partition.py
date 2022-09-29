@@ -23,6 +23,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
@@ -220,6 +221,27 @@ class PartitionsDefinition(ABC, Generic[T]):
         from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 
         return IdentityPartitionMapping()
+
+    def get_partition_keys_in_range(self, partition_key_range: PartitionKeyRange) -> Sequence[str]:
+        partition_keys = self.get_partition_keys()
+
+        keys_exist = {
+            partition_key_range.start: partition_key_range.start in partition_keys,
+            partition_key_range.end: partition_key_range.end in partition_keys,
+        }
+        if not all(keys_exist.values()):
+            raise DagsterInvalidInvocationError(
+                f"""Partition range {partition_key_range.start} to {partition_key_range.end} is
+                not a valid range. Nonexistent partition keys:
+                {list(key for key in keys_exist if keys_exist[key] is False)}"""
+            )
+
+        return partition_keys[
+            partition_keys.index(partition_key_range.start) : partition_keys.index(
+                partition_key_range.end
+            )
+            + 1
+        ]
 
 
 class StaticPartitionsDefinition(

@@ -24,7 +24,7 @@ export const RefreshableCountdown = (props: Props) => {
           ? `Refreshing ${dataDescription}…`
           : `0:${seconds < 10 ? `0${seconds}` : seconds}`}
       </span>
-      <Tooltip content={<span style={{whiteSpace: 'nowrap'}}>Refresh now</span>} position="bottom">
+      <Tooltip content={<span style={{whiteSpace: 'nowrap'}}>Refresh now</span>} position="top">
         <RefreshButton onClick={onRefresh}>
           <Icon name="refresh" color={Colors.Gray400} />
         </RefreshButton>

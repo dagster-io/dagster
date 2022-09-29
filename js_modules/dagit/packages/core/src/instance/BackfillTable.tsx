@@ -10,10 +10,7 @@ import {
   Popover,
   Table,
   Tag,
-  Mono,
-  stringFromValue,
 } from '@dagster-io/ui';
-import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -22,8 +19,10 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PartitionStatus} from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {AssetKeyTagCollection} from '../runs/AssetKeyTagCollection';
 import {inProgressStatuses} from '../runs/RunStatuses';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -37,14 +36,11 @@ import {BackfillPartitionsRequestedDialog} from './BackfillPartitionsRequestedDi
 import {BackfillStepStatusDialog} from './BackfillStepStatusDialog';
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
 import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
-import {
-  BackfillTableFragment,
-  BackfillTableFragment_partitionSet,
-} from './types/BackfillTableFragment';
+import {BackfillTableFragment} from './types/BackfillTableFragment';
 import {resumeBackfill, resumeBackfillVariables} from './types/resumeBackfill';
 
 export const BackfillTable = ({
-  showPartitionSet = true,
+  showBackfillTarget = true,
   allPartitions,
   backfills,
   refetch,
@@ -52,7 +48,7 @@ export const BackfillTable = ({
   allPartitions?: string[];
   backfills: BackfillTableFragment[];
   refetch: () => void;
-  showPartitionSet?: boolean;
+  showBackfillTarget?: boolean;
 }) => {
   const [terminationBackfill, setTerminationBackfill] = React.useState<BackfillTableFragment>();
   const [stepStatusBackfill, setStepStatusBackfill] = React.useState<BackfillTableFragment>();
@@ -112,12 +108,12 @@ export const BackfillTable = ({
       <Table>
         <thead>
           <tr>
-            <th style={{width: 120}}>Backfill Id</th>
+            <th style={{width: 120}}>Backfill ID</th>
             <th style={{width: 200}}>Created</th>
-            {showPartitionSet ? <th>Partition Set</th> : null}
+            {showBackfillTarget ? <th>Backfill target</th> : null}
             {allPartitions ? <th>Requested</th> : null}
-            <th style={{textAlign: 'right', width: 200}}>Backfill Status</th>
-            <th>Run Status</th>
+            <th style={{width: 140}}>Backfill status</th>
+            <th>Run status</th>
             <th style={{width: 80}} />
           </tr>
         </thead>
@@ -125,7 +121,7 @@ export const BackfillTable = ({
           {backfills.map((backfill: BackfillTableFragment) => (
             <BackfillRow
               key={backfill.backfillId}
-              showPartitionSet={showPartitionSet}
+              showBackfillTarget={showBackfillTarget}
               backfill={backfill}
               allPartitions={allPartitions}
               onTerminateBackfill={setTerminationBackfill}
@@ -156,7 +152,7 @@ export const BackfillTable = ({
 const BackfillRow = ({
   backfill,
   allPartitions,
-  showPartitionSet,
+  showBackfillTarget,
   onTerminateBackfill,
   onResumeBackfill,
   onShowStepStatus,
@@ -166,7 +162,7 @@ const BackfillRow = ({
   allPartitions?: string[];
   onTerminateBackfill: (backfill: BackfillTableFragment) => void;
   onResumeBackfill: (backfill: BackfillTableFragment) => void;
-  showPartitionSet: boolean;
+  showBackfillTarget: boolean;
   onShowStepStatus: (backfill: BackfillTableFragment) => void;
   onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
 }) => {
@@ -179,57 +175,19 @@ const BackfillRow = ({
     },
   ]);
 
-  const repoAddress = backfill.partitionSet
-    ? buildRepoAddress(
-        backfill.partitionSet.repositoryOrigin.repositoryName,
-        backfill.partitionSet.repositoryOrigin.repositoryLocationName,
-      )
-    : null;
-  const repo = useRepository(repoAddress);
-  const isJob = !!(
-    repo &&
-    backfill.partitionSet &&
-    isThisThingAJob(repo, backfill.partitionSet.pipelineName)
-  );
-
-  const partitionSetBackfillUrl = backfill.partitionSet
-    ? workspacePipelinePath({
-        repoName: backfill.partitionSet.repositoryOrigin.repositoryName,
-        repoLocation: backfill.partitionSet.repositoryOrigin.repositoryLocationName,
-        pipelineName: backfill.partitionSet.pipelineName,
-        path: `/partitions?${qs.stringify({
-          partitionSet: backfill.partitionSet.name,
-          q: [stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}])],
-        })}`,
-        isJob,
-      })
-    : null;
-
   const canCancelRuns = backfill.partitionStatuses.results.some(
     (r) => r.runStatus === RunStatus.QUEUED || r.runStatus === RunStatus.STARTED,
   );
 
   return (
     <tr>
-      <td style={{width: 120}}>
-        <Mono>
-          {partitionSetBackfillUrl ? (
-            <Link to={partitionSetBackfillUrl}>{backfill.backfillId}</Link>
-          ) : (
-            backfill.backfillId
-          )}
-        </Mono>
-      </td>
+      <td style={{width: 120}}>{backfill.backfillId}</td>
       <td style={{width: 240}}>
         {backfill.timestamp ? <TimestampDisplay timestamp={backfill.timestamp} /> : '-'}
       </td>
-      {showPartitionSet ? (
+      {showBackfillTarget ? (
         <td>
-          {backfill.partitionSet ? (
-            <PartitionSetReference partitionSet={backfill.partitionSet} />
-          ) : (
-            backfill.partitionSetName
-          )}
+          <BackfillTarget backfill={backfill} />
         </td>
       ) : null}
       {allPartitions ? (
@@ -241,7 +199,7 @@ const BackfillRow = ({
           />
         </td>
       ) : null}
-      <td style={{textAlign: 'right', width: 200}}>
+      <td style={{width: 140}}>
         <BackfillStatus backfill={backfill} />
       </td>
       <td>
@@ -283,12 +241,12 @@ const BackfillRow = ({
                 />
               ) : null}
               <MenuItem
-                text="View Backfill Runs"
+                text="View backfill runs"
                 icon="settings_backup_restore"
                 onClick={() => history.push(runsUrl)}
               />
               <MenuItem
-                text="View Step Status"
+                text="View step status"
                 icon="view_list"
                 onClick={() => {
                   onShowStepStatus(backfill);
@@ -399,15 +357,42 @@ const BackfillRunStatus = ({
   );
 };
 
-const PartitionSetReference: React.FC<{
-  partitionSet: BackfillTableFragment_partitionSet;
-}> = ({partitionSet}) => {
-  const repoAddress = buildRepoAddress(
-    partitionSet.repositoryOrigin.repositoryName,
-    partitionSet.repositoryOrigin.repositoryLocationName,
-  );
+const BackfillTarget: React.FC<{
+  backfill: BackfillTableFragment;
+}> = ({backfill}) => {
+  const {assetSelection, partitionSet, partitionSetName} = backfill;
+
+  const repoAddress = partitionSet
+    ? buildRepoAddress(
+        partitionSet.repositoryOrigin.repositoryName,
+        partitionSet.repositoryOrigin.repositoryLocationName,
+      )
+    : null;
+
   const repo = useRepository(repoAddress);
+
+  if (!partitionSet || !repoAddress) {
+    return <span>{partitionSetName}</span>;
+  }
+
   const isJob = !!(repo && isThisThingAJob(repo, partitionSet.pipelineName));
+  const isHiddenAssetJob = isHiddenAssetGroupJob(partitionSet.pipelineName);
+
+  const repoLink = (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <Icon name="repo" color={Colors.Gray400} />
+      <Link to={workspacePathFromAddress(repoAddress)}>{repoAddressAsString(repoAddress)}</Link>
+    </Box>
+  );
+
+  if (isHiddenAssetJob) {
+    return (
+      <Box flex={{direction: 'column', gap: 8}}>
+        {repoLink}
+        <AssetKeyTagCollection assetKeys={assetSelection} modalTitle="Assets in Backfill" />
+      </Box>
+    );
+  }
 
   return (
     <Box flex={{direction: 'column', gap: 8}}>
@@ -422,10 +407,7 @@ const PartitionSetReference: React.FC<{
       >
         {partitionSet.name}
       </Link>
-      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        <Icon name="repo" color={Colors.Gray400} />
-        <Link to={workspacePathFromAddress(repoAddress)}>{repoAddressAsString(repoAddress)}</Link>
-      </Box>
+      {repoLink}
       <PipelineReference
         showIcon
         size="small"
@@ -479,6 +461,9 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
         runId
         runStatus
       }
+    }
+    assetSelection {
+      path
     }
     error {
       ...PythonErrorFragment

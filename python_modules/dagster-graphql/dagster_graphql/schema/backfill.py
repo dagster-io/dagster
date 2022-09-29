@@ -6,6 +6,7 @@ from dagster._core.storage.pipeline_run import FINISHED_STATUSES, PipelineRunSta
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 
 from ..implementation.fetch_partition_sets import partition_statuses_from_run_partition_data
+from .asset_key import GrapheneAssetKey
 from .errors import (
     GrapheneInvalidOutputError,
     GrapheneInvalidStepError,
@@ -109,6 +110,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     numRequested = graphene.NonNull(graphene.Int)
     fromFailure = graphene.NonNull(graphene.Boolean)
     reexecutionSteps = non_null_list(graphene.String)
+    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     partitionSetName = graphene.NonNull(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
@@ -139,6 +141,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             reexecutionSteps=backfill_job.reexecution_steps,
             partitionNames=backfill_job.partition_names,
             timestamp=backfill_job.backfill_timestamp,
+            assetSelection=backfill_job.asset_selection,
         )
 
     def _get_partition_set(self, graphene_info):
@@ -164,7 +167,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return external_partition_sets[0]
 
     def _get_records(self, graphene_info):
-        if self._records == None:
+        if self._records is None:
             filters = RunsFilter.for_backfill(self._backfill_job.backfill_id)
             self._records = graphene_info.context.instance.get_run_records(
                 filters=filters,

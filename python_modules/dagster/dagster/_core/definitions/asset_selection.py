@@ -69,7 +69,7 @@ class AssetSelection(ABC):
 
     @public  # type: ignore
     def downstream(
-        self, depth: Optional[int] = None, include_self: Optional[bool] = True
+        self, depth: Optional[int] = None, include_self: bool = True
     ) -> "DownstreamAssetSelection":
         """
         Returns a selection that includes all assets that are downstream of any of the assets in
@@ -81,7 +81,7 @@ class AssetSelection(ABC):
             selection.
         include_self (bool): If True, then include the assets in this selection in the result.
             If the include_self flag is False, return each downstream asset that is not part of the
-            original selection.
+            original selection. By default, set to True.
         """
         check.opt_int_param(depth, "depth")
         check.opt_bool_param(include_self, "include_self")
@@ -89,7 +89,7 @@ class AssetSelection(ABC):
 
     @public  # type: ignore
     def upstream(
-        self, depth: Optional[int] = None, include_self: Optional[bool] = True
+        self, depth: Optional[int] = None, include_self: bool = True
     ) -> "UpstreamAssetSelection":
         """
         Returns a selection that includes all assets that are upstream of any of the assets in
@@ -102,7 +102,7 @@ class AssetSelection(ABC):
                 selection.
             include_self (bool): If True, then include the assets in this selection in the result.
                 If the include_self flag is False, return each upstream asset that is not part of the
-                original selection.
+                original selection. By default, set to True.
         """
         check.opt_int_param(depth, "depth")
         check.opt_bool_param(include_self, "include_self")

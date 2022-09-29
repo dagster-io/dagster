@@ -648,7 +648,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"]
         asset_node = result.data["assetNodes"][0]
         assert len(asset_node["latestMaterializationByPartition"]) == 1
-        assert asset_node["latestMaterializationByPartition"][0] == None
+        assert asset_node["latestMaterializationByPartition"][0] is None
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -677,7 +677,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         new_start_time = materialization["stepStats"]["startTime"]
         assert new_start_time > start_time
 
-        assert asset_node["latestMaterializationByPartition"][1] == None
+        assert asset_node["latestMaterializationByPartition"][1] is None
 
     def test_materialization_count_by_partition(self, graphql_context):
         # test for unpartitioned asset
@@ -824,8 +824,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetsLatestInfo"]
         result = get_response_by_asset(result.data["assetsLatestInfo"])
 
-        assert result["asset_1"]["latestRun"] == None
-        assert result["asset_1"]["latestMaterialization"] == None
+        assert result["asset_1"]["latestRun"] is None
+        assert result["asset_1"]["latestMaterialization"] is None
         assert result["asset_1"]["computeStatus"] == "NONE"
 
         # Test with 1 run on all assets
@@ -851,10 +851,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_1"]["latestMaterialization"]["runId"] == first_run_id
         assert result["asset_1"]["computeStatus"] == "UP_TO_DATE"
         assert result["asset_2"]["latestRun"]["id"] == first_run_id
-        assert result["asset_2"]["latestMaterialization"] == None
+        assert result["asset_2"]["latestMaterialization"] is None
         assert result["asset_2"]["computeStatus"] == "NONE"
         assert result["asset_3"]["latestRun"]["id"] == first_run_id
-        assert result["asset_3"]["latestMaterialization"] == None
+        assert result["asset_3"]["latestMaterialization"] is None
         assert result["asset_3"]["computeStatus"] == "NONE"
 
         # Confirm that asset selection is respected
@@ -1129,12 +1129,12 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[0]["inProgressRunIds"] == []
 
             assert assets_live_info[1]["assetKey"]["path"] == ["hanging_asset"]
-            assert assets_live_info[1]["latestMaterialization"] == None
+            assert assets_live_info[1]["latestMaterialization"] is None
             assert assets_live_info[1]["unstartedRunIds"] == []
             assert assets_live_info[1]["inProgressRunIds"] == [run_id]
 
             assert assets_live_info[2]["assetKey"]["path"] == ["never_runs_asset"]
-            assert assets_live_info[2]["latestMaterialization"] == None
+            assert assets_live_info[2]["latestMaterialization"] is None
             assert assets_live_info[2]["unstartedRunIds"] == [run_id]
             assert assets_live_info[2]["inProgressRunIds"] == []
 
@@ -1186,12 +1186,12 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert len(assets_live_info) == 2
 
             assert assets_live_info[1]["assetKey"]["path"] == ["hanging_graph"]
-            assert assets_live_info[1]["latestMaterialization"] == None
+            assert assets_live_info[1]["latestMaterialization"] is None
             assert assets_live_info[1]["unstartedRunIds"] == []
             assert assets_live_info[1]["inProgressRunIds"] == [run_id]
 
             assert assets_live_info[0]["assetKey"]["path"] == ["downstream_asset"]
-            assert assets_live_info[0]["latestMaterialization"] == None
+            assert assets_live_info[0]["latestMaterialization"] is None
             assert assets_live_info[0]["unstartedRunIds"] == [run_id]
             assert assets_live_info[0]["inProgressRunIds"] == []
 

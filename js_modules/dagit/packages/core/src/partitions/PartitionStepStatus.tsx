@@ -127,7 +127,6 @@ export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) =
   const [minUnix, maxUnix] = timeboundsOfPartitions(partitionColumns);
   const topLabelHeight = topLabelHeightForLabels(partitionColumns.map((p) => p.name));
 
-  console.log(visibleColumns);
   return (
     <PartitionRunMatrixContainer>
       <Dialog
@@ -154,13 +153,12 @@ export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) =
         style={{
           position: 'relative',
           display: 'flex',
-          borderBottom: `1px solid ${Colors.KeylineGray}`,
         }}
       >
         <GridFloatingContainer floating={props.offset + visibleCount < props.partitionNames.length}>
           <GridColumn disabled style={{flex: 1, flexShrink: 1, overflow: 'hidden'}}>
             <TopLabel style={{height: topLabelHeight}} />
-            <LeftLabel style={{paddingLeft: 24}}>Last Run</LeftLabel>
+            <LeftLabel style={{paddingLeft: 24}}>Last run</LeftLabel>
             <Divider />
             {stepRows.map((step) => (
               <LeftLabel
@@ -384,12 +382,12 @@ const PartitionSquare: React.FC<{
         <Menu>
           <MenuLink
             icon="open_in_new"
-            text="Show Logs From Last Run"
+            text="Show logs from last run"
             to={linkToRunEvent(runs[runs.length - 1], {stepKey: step ? step.name : null})}
           />
           <MenuItem
             icon="settings_backup_restore"
-            text={`View Runs (${runs.length})`}
+            text={`View runs (${runs.length})`}
             onClick={() => setFocused({stepName: step?.name, partitionName})}
           />
         </Menu>

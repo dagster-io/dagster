@@ -105,7 +105,7 @@ def test_solid_def_receives_version():
     def solid_no_version(_):
         pass
 
-    assert solid_no_version.version == None
+    assert solid_no_version.version is None
 
     @solid(version="42")
     def solid_with_version(_):

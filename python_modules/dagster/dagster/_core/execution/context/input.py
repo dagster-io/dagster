@@ -73,6 +73,7 @@ class InputContext:
         resources: Optional[Union["Resources", Dict[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
+        asset_key: Optional[AssetKey] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -90,6 +91,7 @@ class InputContext:
         self._log = log_manager
         self._resource_config = resource_config
         self._step_context = step_context
+        self._asset_key = asset_key
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -232,27 +234,17 @@ class InputContext:
     @public  # type: ignore
     @property
     def has_asset_key(self) -> bool:
-        return (
-            self._step_context is not None
-            and self._name is not None
-            and self._step_context.pipeline_def.asset_layer.asset_key_for_input(
-                node_handle=self.step_context.solid_handle, input_name=self._name
-            )
-            is not None
-        )
+        return self._asset_key is not None
 
     @public  # type: ignore
     @property
     def asset_key(self) -> AssetKey:
-        result = self.step_context.pipeline_def.asset_layer.asset_key_for_input(
-            node_handle=self.step_context.solid_handle, input_name=self.name
-        )
-        if result is None:
+        if self._asset_key is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access asset_key, but no asset is associated with this input"
             )
 
-        return result
+        return self._asset_key
 
     @public  # type: ignore
     @property
@@ -318,6 +310,15 @@ class InputContext:
         Raises an error if the input asset has no partitioning.
         """
         return self.step_context.asset_partition_key_range_for_input(self.name)
+
+    @public  # type: ignore
+    @property
+    def asset_partition_keys(self) -> Sequence[str]:
+        """The partition keys for input asset.
+
+        Raises an error if the input asset has no partitioning.
+        """
+        return self.asset_partitions_def.get_partition_keys_in_range(self.asset_partition_key_range)
 
     @public  # type: ignore
     @property
@@ -471,6 +472,7 @@ def build_input_context(
     resources: Optional[Dict[str, Any]] = None,
     op_def: Optional["OpDefinition"] = None,
     step_context: Optional["StepExecutionContext"] = None,
+    asset_key: Optional["AssetKey"] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -519,6 +521,7 @@ def build_input_context(
     resources = check.opt_dict_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
+    asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
 
     return InputContext(
         name=name,
@@ -532,4 +535,5 @@ def build_input_context(
         resources=resources,
         step_context=step_context,
         op_def=op_def,
+        asset_key=asset_key,
     )

@@ -22,7 +22,8 @@ def _resource_type(unique_id: str) -> str:
 
 
 def _get_input_name(node_info: Mapping[str, Any]) -> str:
-    return node_info["unique_id"].replace(".", "_")
+    # * can be present when sources are sharded tables
+    return node_info["unique_id"].replace(".", "_").replace("*", "_star")
 
 
 def _get_output_name(node_info: Mapping[str, Any]) -> str:

@@ -165,4 +165,4 @@ def test_secretmanager_secrets_resource(mock_secretsmanager_resource):
             "binary_secret": None,
         }
 
-        assert os.getenv("binary_secret") == None
+        assert os.getenv("binary_secret") is None

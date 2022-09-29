@@ -34,7 +34,7 @@ def sync_get_external_execution_plan_grpc(
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     check.inst_param(pipeline_origin, "pipeline_origin", ExternalPipelineOrigin)
     solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
-    asset_selection = check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+    check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
     run_config = check.dict_param(run_config, "run_config", key_type=str)
     check.str_param(mode, "mode")
     check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)

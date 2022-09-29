@@ -584,7 +584,7 @@ def evaluate_sensors(instance, workspace, executor, timeout=75):
             logger,
             workspace,
             threadpool_executor=executor,
-            debug_futures=futures,
+            sensor_tick_futures=futures,
         )
     )
 

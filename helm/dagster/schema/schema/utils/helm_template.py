@@ -6,12 +6,14 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pprint import pprint
 from tempfile import NamedTemporaryFile, mkstemp
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import yaml
 from kubernetes.client.api_client import ApiClient
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
+
+import dagster._check as check
 
 
 def git_repo_root():
@@ -29,13 +31,20 @@ class HelmTemplate:
 
     def render(
         self,
-        values: Union[DagsterHelmValues, DagsterUserDeploymentsHelmValues],
+        values: Union[DagsterHelmValues, DagsterUserDeploymentsHelmValues] = None,
+        values_dict: Optional[Dict[str, Any]] = None,
         chart_version: Optional[str] = None,
     ) -> List[Any]:
+        check.invariant(
+            (values is None) != (values_dict is None), "Must provide either values or values_dict"
+        )
+
         with NamedTemporaryFile() as tmp_file:
             helm_dir_path = os.path.join(git_repo_root(), self.helm_dir_path)
 
-            values_json = json.loads(values.json(exclude_none=True, by_alias=True))
+            values_json = (
+                json.loads(values.json(exclude_none=True, by_alias=True)) if values else values_dict
+            )
             pprint(values_json)
             content = yaml.dump(values_json)
             tmp_file.write(content.encode())
