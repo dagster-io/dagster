@@ -1335,7 +1335,8 @@ class RepositoryDefinition:
         Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
 
         If you want to load the values of multiple assets, it's more efficient to use
-        `get_asset_value_loader`, which avoids spinning up resources separately for each asset.
+        :py:meth:`~dagster.RepositoryDefinition.get_asset_value_loader`, which avoids spinning up
+        resources separately for each asset.
 
         Args:
             asset_key (Union[AssetKey, Sequence[str], str]): The key of the asset to load.
