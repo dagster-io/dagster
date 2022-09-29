@@ -12,6 +12,7 @@ run_launcher:
   class: EcsRunLauncher
   config:
     include_sidecars: true
+    secrets_tag: ""
 
 run_storage:
   module: dagster_postgres.run_storage

@@ -34,6 +34,8 @@ def orders() -> pd.DataFrame:
 
 DBT_PROJECT_PATH=file_relative_path(__file__, "../jaffle_shop")
 DBT_PROFILES=file_relative_path(__file__, "../jaffle_shop/config")
+print(DBT_PROFILES)
+print(DBT_PROJECT_PATH)
 
 dbt_assets = load_assets_from_dbt_project(project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES)
 

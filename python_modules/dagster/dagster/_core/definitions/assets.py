@@ -746,6 +746,15 @@ class AssetsDefinition(ResourceAddable):
 
             return result
 
+    def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
+        for output_name, asset_key in self.keys_by_output_name.items():
+            if key == asset_key:
+                return self.node_def.resolve_output_to_origin(
+                    output_name, NodeHandle(self.node_def.name, parent=None)
+                )[0].io_manager_key
+
+        check.failed(f"Asset key {key.to_user_string()} not found in AssetsDefinition")
+
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
         yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
         for source_key, resource_def in self.resource_defs.items():
