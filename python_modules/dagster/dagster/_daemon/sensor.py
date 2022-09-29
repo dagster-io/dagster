@@ -1,9 +1,10 @@
-import concurrent.futures
+import logging
 import os
 import sys
 import threading
 import time
 from collections import defaultdict
+from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from typing import Dict, NamedTuple, Optional, Sequence
 
@@ -21,6 +22,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
+    InstigatorTick,
     SensorInstigatorData,
     TickData,
     TickStatus,
@@ -31,6 +33,8 @@ from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspace
 from dagster._utils import merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
+
+from .workspace import BaseDaemonWorkspace
 
 MIN_INTERVAL_LOOP_TIME = 5
 
@@ -49,7 +53,13 @@ class SkippedSensorRun(
 
 class SensorLaunchContext:
     def __init__(
-        self, external_sensor, tick, instance, logger, tick_retention_settings, sensor_state_lock
+        self,
+        external_sensor: ExternalSensor,
+        tick: InstigatorTick,
+        instance: DagsterInstance,
+        logger: logging.Logger,
+        tick_retention_settings,
+        sensor_state_lock: threading.Lock,
     ):
         self._external_sensor = external_sensor
         self._instance = instance
@@ -187,7 +197,12 @@ def _check_for_debug_crash(debug_crash_flags, key):
 RELOAD_WORKSPACE = 60
 
 
-def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
+def execute_sensor_iteration_loop(
+    instance: DagsterInstance,
+    workspace: BaseDaemonWorkspace,
+    logger: logging.Logger,
+    until=None,
+):
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
@@ -197,11 +212,12 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     workspace_loaded_time = pendulum.now("UTC").timestamp()
 
     sensor_state_lock = threading.Lock()
+    sensor_tick_futures: Dict[str, Future] = {}
     with ExitStack() as stack:
         settings = instance.get_settings("sensors")
         if settings.get("use_threads"):
             threadpool_executor = stack.enter_context(
-                concurrent.futures.ThreadPoolExecutor(
+                ThreadPoolExecutor(
                     max_workers=settings.get("num_workers"),
                     thread_name_prefix="sensor_daemon_worker",
                 )
@@ -228,8 +244,9 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
                 instance,
                 logger,
                 workspace.get_workspace_copy_for_iteration(),
-                threadpool_executor,
-                sensor_state_lock,
+                threadpool_executor=threadpool_executor,
+                sensor_tick_futures=sensor_tick_futures,
+                sensor_state_lock=sensor_state_lock,
                 log_verbose_checks=(workspace_iteration == 0),
             )
 
@@ -241,14 +258,14 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
 
 
 def execute_sensor_iteration(
-    instance,
-    logger,
-    workspace,
-    threadpool_executor=None,
-    sensor_state_lock=None,
-    log_verbose_checks=True,
+    instance: DagsterInstance,
+    logger: logging.Logger,
+    workspace: IWorkspace,
+    threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    sensor_tick_futures: Optional[Dict[str, Future]] = None,
+    sensor_state_lock: Optional[threading.Lock] = None,
+    log_verbose_checks: bool = True,
     debug_crash_flags=None,
-    debug_futures=None,
 ):
     check.inst_param(workspace, "workspace", IWorkspace)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -268,7 +285,7 @@ def execute_sensor_iteration(
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
 
-    sensors = {}
+    sensors: Dict[str, ExternalSensor] = {}
     for location_entry in workspace_snapshot.values():
         repo_location = location_entry.repository_location
         if repo_location:
@@ -308,9 +325,9 @@ def execute_sensor_iteration(
                     f"{repo_location_name} that can no longer be found in the workspace. "
                     "You can turn off this sensor in the Dagit UI from the Status tab."
                 )
-            elif not workspace_snapshot[repo_location_name].repository_location.has_repository(
-                repo_name
-            ):
+            elif not check.not_none(  # checked above
+                workspace_snapshot[repo_location_name].repository_location
+            ).has_repository(repo_name):
                 logger.warning(
                     f"Could not find repository {repo_name} in location {repo_location_name} to "
                     + f"run sensor {sensor_name}. If this repository no longer exists, you can "
@@ -346,7 +363,16 @@ def execute_sensor_iteration(
             continue
 
         if threadpool_executor:
-            # add the sensor evaluations to a threadpool
+            if sensor_tick_futures is None:
+                check.failed("sensor_tick_futures dict must be passed with threadpool_executor")
+
+            # only allow one tick per sensor to be in flight
+            if (
+                external_sensor.selector_id in sensor_tick_futures
+                and not sensor_tick_futures[external_sensor.selector_id].done()
+            ):
+                continue
+
             future = threadpool_executor.submit(
                 _process_tick,
                 logger,
@@ -358,10 +384,7 @@ def execute_sensor_iteration(
                 sensor_debug_crash_flags,
                 tick_retention_settings,
             )
-
-            # for tests, add the futures to enable for waiting
-            if debug_futures is not None:
-                debug_futures[external_sensor.selector_id] = future
+            sensor_tick_futures[external_sensor.selector_id] = future
             yield
 
         else:
@@ -407,7 +430,7 @@ def _process_tick(
 
 def _process_tick_generator(
     logger,
-    instance,
+    instance: DagsterInstance,
     workspace,
     external_sensor,
     sensor_state,

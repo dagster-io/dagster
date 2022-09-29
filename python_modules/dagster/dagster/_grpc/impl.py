@@ -296,7 +296,7 @@ def get_external_sensor_execution(
                     cursor=cursor,
                     repository_name=repo_def.name,
                     repository_def=repo_def,
-                    asset_keys=sensor_def.asset_keys,
+                    asset_selection=sensor_def.asset_selection,
                 )
             )
         else:
