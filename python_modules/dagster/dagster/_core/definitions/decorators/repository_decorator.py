@@ -137,7 +137,7 @@ class _Repository:
         if repository_data is None:
             return PendingRepositoryDefinition(
                 self.name,
-                repository_definitions=repository_definitions,
+                repository_definitions=list(_flatten(repository_definitions)),
                 description=self.description,
                 default_executor_def=self.default_executor_def,
                 default_logger_defs=self.default_logger_defs,
