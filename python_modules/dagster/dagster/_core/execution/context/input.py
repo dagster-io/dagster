@@ -74,6 +74,7 @@ class InputContext:
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
         asset_key: Optional[AssetKey] = None,
+        partition_key: Optional[str] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -92,6 +93,10 @@ class InputContext:
         self._resource_config = resource_config
         self._step_context = step_context
         self._asset_key = asset_key
+        if self._step_context and self._step_context.has_partition_key:
+            self._partition_key: Optional[str] = self._step_context.partition_key
+        else:
+            self._partition_key = partition_key
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -273,7 +278,7 @@ class InputContext:
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run"""
-        return self.step_context.has_partition_key
+        return self._partition_key is not None
 
     @public  # type: ignore
     @property
@@ -282,7 +287,11 @@ class InputContext:
 
         Raises an error if the current run is not a partitioned run.
         """
-        return self.step_context.partition_key
+        check.invariant(
+            self._partition_key is not None,
+            "Tried to access partition_key on a non-partitioned run.",
+        )
+        return cast(str, self._partition_key)
 
     @public  # type: ignore
     @property
@@ -473,6 +482,7 @@ def build_input_context(
     op_def: Optional["OpDefinition"] = None,
     step_context: Optional["StepExecutionContext"] = None,
     asset_key: Optional["AssetKey"] = None,
+    partition_key: Optional[str] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -497,6 +507,7 @@ def build_input_context(
         asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
+        partition_key (Optional[str]): String value representing partition key to execute with.
 
     Examples:
 
@@ -522,6 +533,7 @@ def build_input_context(
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
     asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
+    partition_key = check.opt_str_param(partition_key, "partition_key")
 
     return InputContext(
         name=name,
@@ -536,4 +548,5 @@ def build_input_context(
         step_context=step_context,
         op_def=op_def,
         asset_key=asset_key,
+        partition_key=partition_key,
     )
