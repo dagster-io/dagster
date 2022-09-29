@@ -22,7 +22,6 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
     "step_output_versions": []
   },
   "pipeline_snapshot_id": "4e770878de7d4f59d0c4841924046e1310918f5b",
-  "repository_metadata": null,
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "solid_one",
@@ -157,7 +156,6 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
     "step_output_versions": []
   },
   "pipeline_snapshot_id": "8ed9ed25f01be4b6c27ffe6d5619edbf54f7e859",
-  "repository_metadata": null,
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_solid"
@@ -221,7 +219,6 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
     "step_output_versions": []
   },
   "pipeline_snapshot_id": "9fe072eddd35c49d2899a4d605ae231e268086db",
-  "repository_metadata": null,
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_solid"
@@ -299,7 +296,6 @@ snapshots['test_create_with_composite 1'] = '''{
     "step_output_versions": []
   },
   "pipeline_snapshot_id": "7ff012b7ed8b0a5aeb1a53929bbd30108fe77873",
-  "repository_metadata": null,
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "comp_1.return_one",

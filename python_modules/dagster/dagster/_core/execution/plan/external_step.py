@@ -201,7 +201,8 @@ def step_run_ref_to_step_context(
         mode=step_run_ref.pipeline_run.mode,
         step_keys_to_execute=[step_run_ref.step_key],
         known_state=step_run_ref.known_state,
-        # we package repository_metadata onto the reconstructable pipeline
+        # we packaged repository_metadata onto the reconstructable pipeline when creating the
+        # StepRunRef, rather than putting it in a separate field
         repository_metadata=pipeline.repository.repository_metadata,
     )
 

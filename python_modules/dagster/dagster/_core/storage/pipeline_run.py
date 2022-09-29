@@ -237,7 +237,7 @@ def pipeline_run_from_storage(
     # * renamed solid_subset -> solid_selection, added solids_to_execute
     # * renamed environment_dict -> run_config
     # * added asset_selection
-    # * added repository_metadata
+    # * added has_repository_metadata
 
     # back compat for environment dict => run_config
     if environment_dict:

@@ -1047,7 +1047,7 @@ def create_execution_plan(
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 
-    plan = ExecutionPlan.build(
+    return ExecutionPlan.build(
         pipeline,
         resolved_run_config,
         step_keys_to_execute=step_keys_to_execute,
@@ -1056,8 +1056,6 @@ def create_execution_plan(
         tags=tags,
         repository_metadata=repository_metadata,
     )
-
-    return plan
 
 
 def pipeline_execution_iterator(

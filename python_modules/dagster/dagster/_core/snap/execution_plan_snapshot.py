@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, Set
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
@@ -19,7 +19,7 @@ from dagster._core.execution.plan.step import (
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
-from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 # Can be incremented on breaking changes to the snapshot (since it is used to reconstruct
@@ -33,7 +33,13 @@ def create_execution_plan_snapshot_id(execution_plan_snapshot) -> str:
     return create_snapshot_id(execution_plan_snapshot)
 
 
-@whitelist_for_serdes
+class ExecutionPlanSnapshotSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"repository_metadata"}  # Maintain stable snapshot ID for back-compat purposes
+
+
+@whitelist_for_serdes(serializer=ExecutionPlanSnapshotSerializer)
 class ExecutionPlanSnapshot(
     NamedTuple(
         "_ExecutionPlanSnapshot",
