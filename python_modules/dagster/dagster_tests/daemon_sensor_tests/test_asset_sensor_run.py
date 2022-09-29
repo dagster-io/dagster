@@ -1,12 +1,15 @@
+# pylint: disable=anomalous-backslash-in-string
+import threading
+
 import pendulum
 import pytest
-import threading
 
 from dagster import AssetKey, materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_sensor_run import (
+    d,
     e,
     evaluate_sensors,
     f,
@@ -20,7 +23,6 @@ from .test_sensor_run import (
     x,
     y,
     z,
-    d
 )
 
 
@@ -564,6 +566,7 @@ def test_layered_AND_sensor_no_materialize(executor):
                 TickStatus.SKIPPED,
             )
 
+
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_layered_OR_sensor_no_materialize(executor):
     """Asset graph:
@@ -899,7 +902,9 @@ def test_parent_in_progress_stops_materialization(executor):
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance)
             # materialize sleeper in a thread so that it will be actively materializing while the sensor tick is evaluated
-            sleeper_materialize_thread = threading.Thread(target=materialize, args=([sleeper],), kwargs={"instance": instance})
+            sleeper_materialize_thread = threading.Thread(
+                target=materialize, args=([sleeper],), kwargs={"instance": instance}
+            )
             sleeper_materialize_thread.start()
             wait_for_all_runs_to_start(instance)
 
@@ -930,6 +935,7 @@ def test_parent_in_progress_stops_materialization(executor):
             run_request = instance.get_runs(limit=1)[0]
             assert run_request.pipeline_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("waits_on_sleep")}
+
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_materialization_of_parent_and_child(executor):

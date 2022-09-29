@@ -7,7 +7,6 @@ from dagster import (
     IOManager,
     RunRequest,
     SkipReason,
-    SourceAsset,
     asset,
     build_asset_reconciliation_sensor,
     io_manager,
@@ -173,14 +172,6 @@ def the_manager():
     return MyIOManager()
 
 
-source_asset = SourceAsset(key=AssetKey("the_source"), io_manager_def=the_manager)
-
-
-@asset
-def downstream_of_source(the_source):
-    return the_source + 4
-
-
 def get_asset_sensors_repo():
     return [
         asset_a,
@@ -196,10 +187,10 @@ def get_asset_sensors_repo():
         downstream,
         runs_long,
         waits,
-        source_asset,
-        downstream_of_source,
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(downstream, waits, downstream_of_source),
+            selection=AssetSelection.assets(downstream, waits),
             name="generated_sensor",
+            wait_for_all_upstream=True,
+            wait_for_in_progress_runs=True,
         ),
     ]

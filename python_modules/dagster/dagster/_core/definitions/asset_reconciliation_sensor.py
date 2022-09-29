@@ -1,3 +1,4 @@
+# pylint: disable=anomalous-backslash-in-string
 import json
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Set, Tuple
@@ -10,7 +11,7 @@ from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, RunsFil
 from .asset_selection import AssetSelection
 from .events import AssetKey
 from .run_request import RunRequest
-from .sensor_definition import DefaultSensorStatus, MultiAssetSensorDefinition, SensorDefinition
+from .sensor_definition import DefaultSensorStatus, MultiAssetSensorDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -42,7 +43,7 @@ def _get_parent_updates(
     cursor_timestamp: float,
     will_materialize_list: Sequence[AssetKey],
     wait_for_in_progress_runs: bool,
-) -> Mapping[AssetKey, Tuple[bool, Optional[int]]]:
+) -> Mapping[AssetKey, Tuple[bool, float]]:
     """The bulk of the logic in the sensor is in this function. At the end of the function we return a
     dictionary that maps each asset to a Tuple. The Tuple contains a boolean, indicating if the asset
     has materialized or will materialize, and a float representing the timestamp the parent asset
@@ -79,7 +80,7 @@ def _get_parent_updates(
     from dagster._core.events import DagsterEventType
     from dagster._core.storage.event_log.base import EventRecordsFilter
 
-    parent_asset_event_records = {}
+    parent_asset_event_records: Dict[AssetKey, Tuple[bool, float]] = {}
 
     for p in parent_assets:
         if p in will_materialize_list:
@@ -166,12 +167,12 @@ def _get_parent_updates(
 def _make_sensor(
     selection: AssetSelection,
     name: str,
-    and_condition: bool,  # TODO better name for this parameter
+    wait_for_all_upstream: bool,
     wait_for_in_progress_runs: bool,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> SensorDefinition:
+) -> MultiAssetSensorDefinition:
     """Creates the sensor that will monitor the parents of all provided assets and determine
     which assets should be materialized (ie their parents have been updated).
 
@@ -184,8 +185,12 @@ def _make_sensor(
     """
 
     def sensor_fn(context):
-        asset_defs_by_key = context._repository_def._assets_defs_by_key
-        source_asset_defs_by_key = context._repository_def.source_assets_by_key
+        asset_defs_by_key = (
+            context._repository_def._assets_defs_by_key  # pylint: disable=protected-access
+        )
+        source_asset_defs_by_key = (
+            context._repository_def.source_assets_by_key  # pylint: disable=protected-access
+        )
         upstream: Mapping[AssetKey, Set[AssetKey]] = _get_upstream_mapping(
             selection=selection,
             assets=asset_defs_by_key.values(),
@@ -217,7 +222,7 @@ def _make_sensor(
                 wait_for_in_progress_runs=wait_for_in_progress_runs,
             )
 
-            condition = all if and_condition else any
+            condition = all if wait_for_all_upstream else any
             if condition(
                 [
                     materialization_status
@@ -249,7 +254,7 @@ def _make_sensor(
 def build_asset_reconciliation_sensor(
     selection: AssetSelection,
     name: str,
-    and_condition: bool = True,  # TODO better name for this parameter
+    wait_for_all_upstream: bool = False,
     wait_for_in_progress_runs: bool = True,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
@@ -261,86 +266,103 @@ def build_asset_reconciliation_sensor(
     its parents have materialized, but it can be set to materialize an asset when any of its
     parents have materialized.
 
-    Example:
-        If you have the following asset graph:
-
-            .. code-block:: python
-
-                a       b       c
-                \       /\      /
-                    d       e
-                    \       /
-                        f
-
-        and create the sensor:
-
-            .. code-block:: python
-
-                build_asset_reconciliation_sensor(
-                        AssetSelection.assets(d, e, f),
-                        name="my_reconciliation_sensor",
-                        and_condition=True,
-                        wait_for_in_progress_runs=True
-                )
-
-        You will observe the following behavior:
-            1. If a, b, and c are all materialized, then on the next sensor tick, the sensor will see that d and e can
-                be materialized. Since d and e will be materialized, f can also be materialized. The sensor will kick off a
-                run that will materialize d, e, and f.
-            2. If on the next sensor tick, a, b, and c have not been materialized again the sensor will not launch a run.
-            3. If before the next sensor tick, just asset a and b have been materialized, the sensor will launch a run to
-                materialize d.
-            4. If asset c is materialized by the next sensor tick, the sensor will see that e can be materialized (since b and
-                c have both been materialized since the last materialization of e). The sensor will also see that f can be materialized
-                since d was updated in the previous sensor tick and e will be materialized by the sensor. The sensor will launch a run
-                the materialize e and f.
-            5. If by the next sensor tick, only asset b has been materialized. The sensor will not launch a run since d and e both have
-                a parent that has not been updated.
-            6. If during the next sensor tick, there is a materialization of a in progress, the sensor will not launch a run to
-                materialize d. Once a has completed materialization, the next sensor tick will launch a run to materialize d.
-
-    Other considerations:
-        If an asset has a SourceAsset as a parent, and that source asset points to an external data source (ie the
-            source asset does not point to an asset in another repository), the sensor will not know when to consider
-            the source asset "materialized". If you have the asset graph:
-
-                .. code-block:: python
-
-                    x       source_asset
-                    \       /
-                        y
-
-            and create the sensor:
-
-                .. code-block:: python
-
-                    build_asset_reconciliation_sensor(AssetSelection.assets(y), name="my_reconciliation_sensor")
-
-            y will never be updated because source_asset is never considered "materialized. In this case you should create the
-            sensor build_asset_reconciliation_sensor(AssetSelection.assets(y), name="my_reconciliation_sensor", and_condition=False)
-            which will cause y to be materialized when x is materialized.
-
     Args:
         selection (AssetSelection): The group of assets you want to keep up-to-date
         name (str): The name to give the sensor.
-        and_condition (bool): If True (the default) the sensor will only materialize an asset when
+        wait_for_all_upstream (bool): If True, the sensor will only materialize an asset when
             all of its parents have materialized. If False, the sensor will materialize an asset when
-            any of its parents have materialized.
-        wait_for_in_progress_runs (bool): If True (the default), the sensor will not materialize an
+            any of its parents have materialized. Defaults to False.
+        wait_for_in_progress_runs (bool): If True, the sensor will not materialize an
             asset if there is an in-progress run that will materialize any of the asset's parents.
+            Defaults to True.
         minimum_interval_seconds (Optional[int]): The minimum amount of time that should elapse between sensor invocations.
         description (Optional[str]): A description for the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
 
-    Returns: A MultiAssetSensorDefinition that will monitor the parents of the provided assets to determine when
+    Returns:
+        A MultiAssetSensorDefinition that will monitor the parents of the provided assets to determine when
         the provided assets should be materialized
+
+    Example:
+        If you have the following asset graph:
+
+        .. code-block:: python
+
+            a       b       c
+             \     / \     /
+                d       e
+                 \     /
+                    f
+
+        and create the sensor:
+
+        .. code-block:: python
+
+            build_asset_reconciliation_sensor(
+                AssetSelection.assets(d, e, f),
+                name="my_reconciliation_sensor",
+                wait_for_all_upstream=True,
+                wait_for_in_progress_runs=True
+            )
+
+        You will observe the following behavior:
+            * If ``a``, ``b``, and ``c`` are all materialized, then on the next sensor tick, the sensor will see that ``d`` and ``e`` can
+              be materialized. Since ``d`` and ``e`` will be materialized, ``f`` can also be materialized. The sensor will kick off a
+              run that will materialize ``d``, ``e``, and ``f``.
+            * If on the next sensor tick, ``a``, ``b``, and ``c`` have not been materialized again the sensor will not launch a run.
+            * If before the next sensor tick, just asset ``a`` and ``b`` have been materialized, the sensor will launch a run to
+              materialize ``d``.
+            * If asset ``c`` is materialized by the next sensor tick, the sensor will see that ``e`` can be materialized (since ``b`` and
+              ``c`` have both been materialized since the last materialization of ``e``). The sensor will also see that ``f`` can be materialized
+              since ``d`` was updated in the previous sensor tick and ``e`` will be materialized by the sensor. The sensor will launch a run
+              the materialize ``e`` and ``f``.
+            * If by the next sensor tick, only asset ``b`` has been materialized. The sensor will not launch a run since ``d`` and ``e`` both have
+              a parent that has not been updated.
+            * If during the next sensor tick, there is a materialization of ``a`` in progress, the sensor will not launch a run to
+              materialize ``d``. Once ``a`` has completed materialization, the next sensor tick will launch a run to materialize ``d``.
+
+        **Other considerations:**
+            If an asset has a SourceAsset as a parent, and that source asset points to an external data source (ie the
+            source asset does not point to an asset in another repository), the sensor will not know when to consider
+            the source asset "materialized". If you have the asset graph:
+
+            .. code-block:: python
+
+                x   source_asset
+                 \       /
+                     y
+
+            and create the sensor:
+
+            .. code-block:: python
+
+                build_asset_reconciliation_sensor(
+                    AssetSelection.assets(y),
+                    name="my_reconciliation_sensor",
+                    wait_for_all_upstream=True,
+                    wait_for_in_progress_runs=True
+                )
+
+            ``y`` will never be updated because ``source_asset`` is never considered "materialized. In this case you should create the
+            sensor
+
+            .. code-block:: python
+
+                build_asset_reconciliation_sensor(
+                    AssetSelection.assets(y),
+                    name="my_reconciliation_sensor",
+                    wait_for_all_upstream=False,
+                    wait_for_in_progress_runs=True
+                )
+
+            which will cause ``y`` to be materialized when ``x`` is materialized.
     """
     check_valid_name(name)
     return _make_sensor(
         selection=selection,
         name=name,
-        and_condition=and_condition,
+        wait_for_all_upstream=wait_for_all_upstream,
         wait_for_in_progress_runs=wait_for_in_progress_runs,
         minimum_interval_seconds=minimum_interval_seconds,
         description=description,
