@@ -32,6 +32,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_fivetran_tests*"]),
-        install_requires=[f"dagster{pin}"],
+        install_requires=["dagster==1.0.11"],
         zip_safe=False,
     )
