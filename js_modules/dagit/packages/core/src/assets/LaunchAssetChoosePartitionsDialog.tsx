@@ -87,9 +87,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   assetJobName,
   upstreamAssetKeys,
 }) => {
-  const data = usePartitionHealthData(
-    assets.filter((a) => !!a.partitionDefinition).map((a) => a.assetKey),
-  );
+  const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
+  const data = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const upstreamData = usePartitionHealthData(upstreamAssetKeys);
 
   const allKeys = React.useMemo(() => (data[0] ? data[0].keys : []), [data]);
@@ -276,28 +275,25 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           flex={{direction: 'column', gap: 8}}
           style={{marginTop: 16, overflowY: 'auto', overflowX: 'visible', maxHeight: '50vh'}}
         >
-          {assets
-            .filter((a) => !!a.partitionDefinition)
-            .slice(0, previewCount)
-            .map((a) => (
-              <PartitionHealthSummary
-                assetKey={a.assetKey}
-                showAssetKey
-                key={displayNameForAssetKey(a.assetKey)}
-                data={data}
-                selected={selected}
-              />
-            ))}
+          {partitionedAssets.slice(0, previewCount).map((a) => (
+            <PartitionHealthSummary
+              assetKey={a.assetKey}
+              showAssetKey
+              key={displayNameForAssetKey(a.assetKey)}
+              data={data}
+              selected={selected}
+            />
+          ))}
           {previewCount === 0 ? (
             <Box margin={{vertical: 8}}>
               <ButtonLink onClick={() => setPreviewCount(5)}>
                 Show per-Asset partition health
               </ButtonLink>
             </Box>
-          ) : previewCount < assets.length ? (
+          ) : previewCount < partitionedAssets.length ? (
             <Box margin={{vertical: 8}}>
-              <ButtonLink onClick={() => setPreviewCount(assets.length)}>
-                Show {assets.length - previewCount} more previews
+              <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
+                Show {partitionedAssets.length - previewCount} more previews
               </ButtonLink>
             </Box>
           ) : undefined}
