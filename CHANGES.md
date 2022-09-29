@@ -5,9 +5,9 @@
 ### New
 
 * `RepositoryDefinition` now exposes a `load_asset_value` method, which accepts an asset key and invokes the asset’s I/O manager’s `load_input` function to load the asset as a Python object. This can be used in notebooks to do exploratory data analysis on assets.
+* Methods to fetch a list of partition keys from an input/output `PartitionKeyRange` now exist on the op execution context and input/output context.
 * [dagit] On the Instance Overview page, batched runs in the run timeline view will now proportionally reflect the status of the runs in the batch instead of reducing all run statuses to a single color.
 * [dagster-dbt] [dagster-snowflake] You can now use the Snowflake IO manager with dbt assets, which allows them to be loaded from Snowflake into Pandas DataFrames in downstream steps.
-* Methods to fetch a list of partition keys from an input/output `PartitionKeyRange` now exist on the op execution context and input/output context.
 * The dagster package’s pin of the alembic package is now much less restrictive.
 
 ### Bugfixes
@@ -22,7 +22,7 @@
 
 ### Community Contributions
 
-* The `resync_parameters` configuration on the `fivetran_resync_op` is now optional, enabling triggering historical re*syncs for connectors. Thanks @dwallace0723!
+* [dagster-fivetran] The `resync_parameters` configuration on the `fivetran_resync_op` is now optional, enabling triggering historical re*syncs for connectors. Thanks @dwallace0723!
 
 ### Documentation
 
