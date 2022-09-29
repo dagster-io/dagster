@@ -76,7 +76,11 @@ class CommandStepBuilder:
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary
         # path they return will be nested under /tmp.
         # https://github.com/pytest-dev/pytest/blob/501637547ecefa584db3793f71f1863da5ffc25f/src/_pytest/tmpdir.py#L116-L117
-        settings["environment"] = ["BUILDKITE", "PYTEST_DEBUG_TEMPROOT=/tmp"] + (env or [])
+        settings["environment"] = [
+            "BUILDKITE",
+            "PYTEST_DEBUG_TEMPROOT=/tmp",
+            "BUILDKITE_ANALYTICS_TOKEN",
+        ] + (env or [])
         ecr_settings = {
             "login": True,
             "no-include-email": True,
