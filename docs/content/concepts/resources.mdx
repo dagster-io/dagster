@@ -177,6 +177,9 @@ def db_resource(init_context):
 Dagster resources can serve as context managers, for scenarios where it is necessary to perform some sort of cleanup of the resource after execution. Let’s take the example of a database connection. We might want to clean up the connection once we are done using it. We can incorporate this into our resource like so:
 
 ```python file=/concepts/resources/resources.py startafter=start_cm_resource endbefore=end_cm_resource
+from contextlib import contextmanager
+
+
 @resource
 @contextmanager
 def db_connection():

@@ -183,6 +183,7 @@ export const PartitionStatus: React.FC<{
             ) : (
               <Tooltip
                 display="block"
+                position="top"
                 content={
                   tooltipMessage
                     ? tooltipMessage

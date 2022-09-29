@@ -1,6 +1,6 @@
 import {Box, Colors, Icon, IconWrapper, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
@@ -8,6 +8,7 @@ import {VersionNumber} from '../nav/VersionNumber';
 import {WorkspaceStatus} from '../nav/WorkspaceStatus';
 import {SearchDialog} from '../search/SearchDialog';
 
+import {useFeatureFlags} from './Flags';
 import {LayoutContext} from './LayoutProvider';
 import {ShortcutHandler} from './ShortcutHandler';
 import {WebSocketStatus} from './WebSocketProvider';
@@ -25,6 +26,8 @@ export const AppTopNav: React.FC<Props> = ({
   showStatusWarningIcon = true,
 }) => {
   const history = useHistory();
+  const {flagNewWorkspace} = useFeatureFlags();
+  const runHref = flagNewWorkspace ? '/instance/runs/timeline' : '/instance/runs';
 
   return (
     <AppTopNavContainer>
@@ -36,11 +39,11 @@ export const AppTopNav: React.FC<Props> = ({
       <Box flex={{direction: 'row', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
           <ShortcutHandler
-            onShortcut={() => history.push('/instance/runs')}
+            onShortcut={() => history.push(runHref)}
             shortcutLabel="⌥1"
             shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
           >
-            <TopNavLink to="/instance/runs" data-cy="AppTopNav_RunsLink">
+            <TopNavLink to={runHref} data-cy="AppTopNav_RunsLink">
               Runs
             </TopNavLink>
           </ShortcutHandler>
@@ -49,7 +52,7 @@ export const AppTopNav: React.FC<Props> = ({
             shortcutLabel="⌥2"
             shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
           >
-            <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink">
+            <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
               Assets
             </TopNavLink>
           </ShortcutHandler>
@@ -58,7 +61,18 @@ export const AppTopNav: React.FC<Props> = ({
             shortcutLabel="⌥3"
             shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
           >
-            <TopNavLink to="/instance" data-cy="AppTopNav_StatusLink">
+            <TopNavLink
+              to="/instance"
+              data-cy="AppTopNav_StatusLink"
+              isActive={(_, location) => {
+                const {pathname} = location;
+                return (
+                  pathname.startsWith('/instance') &&
+                  !pathname.startsWith('/instance/runs') &&
+                  !pathname.startsWith('/instance/assets')
+                );
+              }}
+            >
               <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                 Status
                 {showStatusWarningIcon ? <InstanceWarningIcon /> : null}
@@ -180,14 +194,20 @@ const DaggyTooltip = styled(Tooltip)`
   }
 `;
 
-export const TopNavLink = styled(Link)`
-  color: ${Colors.Gray200};
+export const TopNavLink = styled(NavLink)`
+  color: ${Colors.Gray400};
   font-weight: 600;
   transition: color 50ms linear;
   padding: 24px 0;
+  text-decoration: none;
 
-  :hover,
-  :active {
+  :hover {
+    color: ${Colors.Gray300};
+    text-decoration: none;
+  }
+
+  :active,
+  &.active {
     color: ${Colors.White};
     text-decoration: none;
   }

@@ -4,15 +4,16 @@ import types
 
 import pytest
 
-from dagster import DagsterInvariantViolationError
+from dagster import DagsterInvariantViolationError, execute_job, job, reconstructable, repository
 from dagster._core.code_pointer import FileCodePointer
-from dagster._core.definitions.reconstruct import reconstructable
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,
     RepositoryPythonOrigin,
 )
 from dagster._core.snap import PipelineSnapshot, create_pipeline_snapshot_id
+from dagster._core.test_utils import instance_for_test
 from dagster._legacy import PipelineDefinition, lambda_solid, pipeline
 from dagster._utils import file_relative_path
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
@@ -45,6 +46,16 @@ lambda_version = lambda: the_pipeline
 
 def pid(pipeline_def):
     return create_pipeline_snapshot_id(PipelineSnapshot.from_pipeline_def(pipeline_def))
+
+
+@job
+def some_job():
+    pass
+
+
+@repository
+def some_repo():
+    return [some_job]
 
 
 def test_function():
@@ -171,3 +182,21 @@ def test_reconstruct_from_origin():
     assert recon_pipeline.repository.container_image == origin.repository_origin.container_image
     assert recon_pipeline.repository.executable_path == origin.repository_origin.executable_path
     assert recon_pipeline.repository.container_context == origin.repository_origin.container_context
+
+
+def test_reconstructable_memoize():
+    recon_job = reconstructable(some_job)
+
+    # warm the cache
+    recon_job.get_definition()
+    starting_misses = ReconstructableJob.get_definition.cache_info().misses
+    with instance_for_test() as instance:
+        result = execute_job(recon_job, instance=instance)
+
+    assert result.success
+
+    # ensure the definition was not re-fetched during execution (at least in this process)
+    assert ReconstructableJob.get_definition.cache_info().misses == starting_misses
+
+    # if this starts failing, the need for the lru_cache is gone
+    assert ReconstructableJob.get_definition.cache_info().hits > 1

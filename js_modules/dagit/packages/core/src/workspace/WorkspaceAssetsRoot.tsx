@@ -3,6 +3,7 @@ import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useAssetNodeSearch} from '../assets/useAssetSearch';
 
@@ -27,6 +28,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
     },
   );
   const {data, loading} = queryResultOverview;
+  const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
@@ -85,7 +87,12 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader repoAddress={repoAddress} tab="assets" />
+      <WorkspaceHeader
+        repoAddress={repoAddress}
+        tab="assets"
+        refreshState={refreshState}
+        queryData={queryResultOverview}
+      />
       <Box padding={{horizontal: 24, vertical: 16}}>
         <TextInput
           icon="search"
