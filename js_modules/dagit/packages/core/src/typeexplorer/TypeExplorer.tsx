@@ -3,9 +3,9 @@ import {Box, ConfigTypeSchema} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
 import {gqlTypePredicate} from '../app/Util';
 import {dagsterTypeKind} from '../dagstertype/DagsterType';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {TableSchema} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';

@@ -14,7 +14,7 @@ import {
 import * as React from 'react';
 
 import {usePermissions} from '../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useViewport} from '../gantt/useViewport';
 import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/BackfillTable';
 import {RepositorySelector, RunStatus} from '../types/globalTypes';

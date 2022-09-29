@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 
 export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
   fragment LogsRowStructuredFragment on DagsterRunEvent {

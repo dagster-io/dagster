@@ -2,8 +2,9 @@ import {gql} from '@apollo/client';
 import {Box, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
 import {breakOnUnderscores} from '../app/Util';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {MetadataEntry} from '../metadata/MetadataEntry';
 import {useRepositoryOptions, findRepositoryAmongOptions} from '../workspace/WorkspaceContext';
 import {repoContainsPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';

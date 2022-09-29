@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {NonIdealPipelineQueryResult} from '../pipelines/NonIdealPipelineQueryResult';
 import {
   SidebarContainerOverview,

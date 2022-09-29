@@ -2,6 +2,7 @@ import {useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';

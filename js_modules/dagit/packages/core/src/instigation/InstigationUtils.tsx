@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RUN_TIME_FRAGMENT, titleForRun} from '../runs/RunUtils';

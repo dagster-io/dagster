@@ -20,7 +20,8 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {SharedToaster} from '../app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ONE_MONTH, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';

@@ -18,7 +18,8 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {InstigationTickStatus, InstigationType} from '../types/globalTypes';

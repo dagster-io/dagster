@@ -6,7 +6,8 @@ import {TimezoneProvider} from '../app/time/TimezoneContext';
 import {TestProvider} from '../testing/TestProvider';
 import {RunStatus} from '../types/globalTypes';
 
-import {RunDetails, RUN_DETAILS_FRAGMENT} from './RunDetails';
+import {RunDetails} from './RunDetails';
+import {RUN_DETAILS_FRAGMENT} from './RunFragments';
 import {RunDetailsTestQuery} from './types/RunDetailsTestQuery';
 
 jest.mock('../app/time/browserTimezone.ts', () => ({

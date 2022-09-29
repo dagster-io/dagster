@@ -1,11 +1,19 @@
 import {gql} from '@apollo/client';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/ExecutionPlanToGraphFragment';
 
 import {LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT} from './LogsScrollingTableMessageFragment';
-import {RUN_DETAILS_FRAGMENT} from './RunDetails';
 import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProviderFragment';
+
+export const RUN_DETAILS_FRAGMENT = gql`
+  fragment RunDetailsFragment on Run {
+    id
+    startTime
+    endTime
+    status
+  }
+`;
 
 export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
   fragment RunFragmentForRepositoryMatch on Run {

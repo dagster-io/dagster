@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';

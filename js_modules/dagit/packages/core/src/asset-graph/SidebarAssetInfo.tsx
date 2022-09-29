@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {AssetEvents} from '../assets/AssetEvents';
@@ -17,7 +18,6 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {pluginForMetadata} from '../plugins';

@@ -2,6 +2,7 @@ import {Button, Dialog, DialogBody, DialogFooter, Icon, Tooltip} from '@dagster-
 import * as React from 'react';
 
 import {usePermissions} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {
   reloadFnForWorkspace,

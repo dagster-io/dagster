@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
 
 export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
   fragment RunMetadataProviderMessageFragment on DagsterRunEvent {

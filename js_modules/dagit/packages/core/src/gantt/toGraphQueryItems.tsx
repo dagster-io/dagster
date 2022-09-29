@@ -1,5 +1,3 @@
-import {gql} from '@apollo/client';
-
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
 import {StepKind} from '../types/globalTypes';
@@ -110,18 +108,3 @@ export const toGraphQueryItems = (
 
   return Object.values(nodeTable);
 };
-
-export const EXECUTION_PLAN_TO_GRAPH_FRAGMENT = gql`
-  fragment ExecutionPlanToGraphFragment on ExecutionPlan {
-    steps {
-      key
-      kind
-      inputs {
-        dependsOn {
-          key
-          kind
-        }
-      }
-    }
-  }
-`;

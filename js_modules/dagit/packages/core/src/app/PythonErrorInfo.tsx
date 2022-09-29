@@ -78,18 +78,6 @@ export const UNAUTHORIZED_ERROR_FRAGMENT = gql`
   }
 `;
 
-export const PYTHON_ERROR_FRAGMENT = gql`
-  fragment PythonErrorFragment on PythonError {
-    __typename
-    message
-    stack
-    causes {
-      message
-      stack
-    }
-  }
-`;
-
 const ContextHeader = styled.h4`
   font-weight: 400;
   margin: 0 0 1em;

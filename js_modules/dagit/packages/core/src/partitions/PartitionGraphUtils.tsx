@@ -4,7 +4,7 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {colorHash} from '../app/Util';
 
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
