@@ -6,7 +6,7 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozendict, make_readonly_value, frozenlist
+from dagster._utils import frozendict, frozenlist, make_readonly_value
 
 
 @whitelist_for_serdes

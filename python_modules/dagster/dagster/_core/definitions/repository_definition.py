@@ -25,7 +25,7 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozendict, frozenlist, merge_dicts, make_readonly_value
+from dagster._utils import frozendict, frozenlist, make_readonly_value, merge_dicts
 
 from .cacheable_assets import AssetsDefinitionMetadata
 from .events import AssetKey

@@ -12,13 +12,12 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.execution.api import execute_plan
+from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, lambda_solid
-from dagster._core.execution.api import create_execution_plan
 
 
 def define_inty_pipeline(using_file_system=False):
@@ -259,19 +258,19 @@ def test_using_file_system_for_subplan_invalid_step():
         )
 
 
-from dagster import (
-    repository,
-    AssetsDefinition,
-    op,
-    AssetKey,
-    define_asset_job,
-    asset,
-    file_relative_path,
-)
+import sys
 
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    asset,
+    define_asset_job,
+    file_relative_path,
+    op,
+    repository,
+)
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.repository_definition import AssetsDefinitionMetadata
-import sys
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
@@ -316,12 +315,12 @@ def test_using_repository_data():
         assert isinstance(record, EventLogEntry)
         records.append(record)
 
-    from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
     from dagster._core.code_pointer import CodePointer
     from dagster._core.definitions.reconstruct import (
         ReconstructablePipeline,
         ReconstructableRepository,
     )
+    from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
     with instance_for_test() as instance:
         repository_def = pending_repo.resolve(repository_metadata=None)
