@@ -4,17 +4,11 @@ import plotly.express as px
 import plotly.offline as po
 
 from dagster_dbt import load_assets_from_dbt_project, dbt_cli_resource
-from dagster import repository, with_resources, asset, AssetIn, fs_io_manager, Output, MetadataValue
+from dagster import repository, with_resources, asset, AssetIn, fs_io_manager, Output
 from dagster._utils import file_relative_path
 
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
-from dbt_dagster_tutorial.duckdb_resource import duckdb_io_manager
-
-snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
-
-
+# These assets would be part of the first stage of the tutorial
 @asset(
     key_prefix=["duckdb", "raw_data"],
     group_name="staging"
@@ -34,11 +28,14 @@ def orders() -> pd.DataFrame:
 
 DBT_PROJECT_PATH=file_relative_path(__file__, "../jaffle_shop")
 DBT_PROFILES=file_relative_path(__file__, "../jaffle_shop/config")
-print(DBT_PROFILES)
-print(DBT_PROJECT_PATH)
 
+# if larger project use load_assets_from_dbt_manifest
+# dbt_assets = load_assets_from_dbt_manifest(json.load(DBT_PROJECT_PATH + "manifest.json", encoding="utf8"))
 dbt_assets = load_assets_from_dbt_project(project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["duckdb", "jaffle_shop"], source_key_prefix=["duckdb"])
 
+# end first stage of tutorial - at this point you can run dagit and launch a materialization
+
+# This asset would be the second stage of the tutorial
 @asset(
     ins={"customers": AssetIn(key_prefix=["duckdb", "jaffle_shop"])},
     group_name="staging",
@@ -50,23 +47,5 @@ def order_count_chart(customers: pd.DataFrame):
     fig.update_layout(bargap=0.2)
     plot_html = po.plot(fig)
 
+    # return plot html as metadata ex file:///Users/jamie/dev/dagster/examples/dbt_tutorial/temp-plot.html
     return plot_html
-
-
-@repository
-def jaffle_shop_repository():
-    return with_resources(
-            [customers, orders, *dbt_assets, order_count_chart],
-            {
-                "dbt": dbt_cli_resource.configured(
-                    {
-                        "project_dir": DBT_PROJECT_PATH,
-                        "profiles_dir": DBT_PROFILES,
-                    },
-                ),
-                "io_manager": duckdb_io_manager.configured(
-                    {"duckdb_path": os.path.join(DBT_PROJECT_PATH, "example.duckdb")}
-                ),
-                "fs_io_manager": fs_io_manager,
-            },
-        )

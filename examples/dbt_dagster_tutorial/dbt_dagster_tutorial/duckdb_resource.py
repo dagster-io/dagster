@@ -1,3 +1,4 @@
+# This will be moved to a dagster-duckdb library 
 import duckdb
 import pandas as pd
 
