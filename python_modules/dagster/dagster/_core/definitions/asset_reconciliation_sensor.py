@@ -53,7 +53,7 @@ def _get_parent_updates(
     """The bulk of the logic in the sensor is in this function. At the end of the function we return a
     dictionary that maps each asset to a Tuple. The Tuple contains a boolean, indicating if the asset
     has materialized or will materialize, and an in representing the storage id the parent asset
-    would update the cursor too if it is the most recent materialization of a parent asset. In some cases
+    would update the cursor to if it is the most recent materialization of a parent asset. In some cases
     we set the storage id to 0 so that the storage ids of other parent materializations will take precedent.
 
     Args:
