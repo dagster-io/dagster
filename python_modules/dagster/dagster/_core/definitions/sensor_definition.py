@@ -1,7 +1,7 @@
 import inspect
 import json
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from contextlib import ExitStack
 from enum import Enum
 from typing import (
@@ -477,6 +477,34 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                     materialization_by_partition[partition] = materialization
 
         return materialization_by_partition
+
+    @public
+    def latest_materialization_records_per_asset_by_partition(
+        self,
+    ) -> Mapping[str, List[Tuple[AssetKey, "EventLogRecord"]]]:
+        """
+        If all monitored assets are partitioned,
+        """
+        partitions_defs = list(self._partitions_def_by_asset_key.values())
+        if not partitions_defs or not all(x == partitions_defs[0] for x in partitions_defs):
+            raise DagsterInvalidInvocationError(
+                "All assets must be partitioned and share the same partitions definition"
+            )
+
+        asset_and_materialization_tuple_by_partition: Dict[
+            str, List[Tuple[AssetKey, "EventLogRecord"]]
+        ] = defaultdict(list)
+
+        for asset_key in self._asset_keys:
+            materialization_by_partition = self.latest_materialization_records_by_partition(
+                asset_key
+            )
+            for partition, materialization in materialization_by_partition.items():
+                asset_and_materialization_tuple_by_partition[partition].append(
+                    (asset_key, materialization)
+                )
+
+        return asset_and_materialization_tuple_by_partition
 
     @public
     def get_cursor_partition(self, asset_key: Optional[AssetKey]) -> Optional[str]:
