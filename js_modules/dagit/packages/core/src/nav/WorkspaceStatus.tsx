@@ -14,7 +14,7 @@ import {WorkspaceUpdateCheckQuery} from './types/WorkspaceUpdateCheckQuery';
 
 const POLL_INTERVAL = 3 * 1000;
 
-export const WorkspaceStatus = React.memo(() => {
+export const useWorkspaceStatus = () => {
   const {locationEntries, refetch} = React.useContext(WorkspaceContext);
   const history = useHistory();
 
@@ -191,11 +191,10 @@ export const WorkspaceStatus = React.memo(() => {
   }, [data, previousData, reloadWorkspaceQuietly, reloadWorkspaceLoudly, history]);
 
   if (showSpinner) {
-    return (
-      <Tooltip content="Loading workspace…" placement="bottom">
-        <Spinner purpose="body-text" fillColor={Colors.Gray300} />
-      </Tooltip>
-    );
+    return {
+      type: 'spinner',
+      content: <div>Loading workspace…</div>,
+    };
   }
 
   const repoErrors = locationEntries.filter(
@@ -203,24 +202,45 @@ export const WorkspaceStatus = React.memo(() => {
   );
 
   if (repoErrors.length) {
+    return {
+      type: 'warning',
+      content: (
+        <div style={{whiteSpace: 'nowrap'}}>{`${repoErrors.length} ${
+          repoErrors.length === 1
+            ? 'repository location failed to load'
+            : 'repository locations failed to load'
+        }`}</div>
+      ),
+    };
+  }
+
+  return null;
+};
+
+export const WorkspaceStatus = React.memo(() => {
+  const status = useWorkspaceStatus();
+
+  if (!status) {
+    return <div style={{width: '16px'}} />;
+  }
+
+  if (status.type === 'spinner') {
     return (
-      <WarningTooltip
-        content={
-          <div>{`${repoErrors.length} ${
-            repoErrors.length === 1
-              ? 'repository location failed to load'
-              : 'repository locations failed to load'
-          }`}</div>
-        }
-        position="bottom"
-        modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
-      >
-        <Icon name="warning" color={Colors.Yellow500} />
-      </WarningTooltip>
+      <Tooltip content={status.content} placement="bottom">
+        <Spinner purpose="body-text" fillColor={Colors.Gray300} />
+      </Tooltip>
     );
   }
 
-  return <div style={{width: '16px'}} />;
+  return (
+    <WarningTooltip
+      content={status.content}
+      position="bottom"
+      modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
+    >
+      <Icon name="warning" color={Colors.Yellow500} />
+    </WarningTooltip>
+  );
 });
 
 const ViewButton = styled(ButtonLink)`
