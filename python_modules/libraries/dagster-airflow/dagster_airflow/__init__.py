@@ -24,8 +24,13 @@ __all__ = [
     "make_dagster_repo_from_airflow_dags_path",
     "make_dagster_repo_from_airflow_dag_bag",
     "make_dagster_job_from_airflow_dag",
+    "DagsterHook",
+    "DagsterLink",
+    "DagsterOperator",
+    "DagsterCloudOperator",
     "airflow_operator_to_op",
 ]
+
 
 class DagsterAirflowPlugin(AirflowPlugin):
     name = "dagster_airflow"
@@ -35,15 +40,18 @@ class DagsterAirflowPlugin(AirflowPlugin):
         DagsterLink(),
     ]
 
+
 def get_provider_info():
     return {
         "package-name": "dagster-airflow",
         "name": "Dagster Airflow",
         "description": "`Dagster <https://docs.dagster.io>`__",
         "hook-class-names": ["dagster_airflow.hooks.dagster_hook.DagsterHook"],
-        "connection-types": [{
-            "connection-type": "dagster",
-            "hook-class-name": "dagster_airflow.hooks.dagster_hook.DagsterHook",
-        }],
-        "versions": [__version__]
+        "connection-types": [
+            {
+                "connection-type": "dagster",
+                "hook-class-name": "dagster_airflow.hooks.dagster_hook.DagsterHook",
+            }
+        ],
+        "versions": [__version__],
     }
