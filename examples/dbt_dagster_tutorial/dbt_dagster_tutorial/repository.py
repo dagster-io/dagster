@@ -1,14 +1,22 @@
 import os
+
 import pandas as pd
 import plotly.express as px
 import plotly.offline as po
+from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
+from dbt_dagster_tutorial.assets import (
+    DBT_PROFILES,
+    DBT_PROJECT_PATH,
+    customers,
+    dbt_assets,
+    order_count_chart,
+    orders,
+)
+from dbt_dagster_tutorial.duckdb_resource import duckdb_io_manager
 
-from dagster_dbt import load_assets_from_dbt_project, dbt_cli_resource
-from dagster import repository, with_resources, asset, AssetIn, fs_io_manager, Output
+from dagster import AssetIn, Output, asset, fs_io_manager, repository, with_resources
 from dagster._utils import file_relative_path
 
-from dbt_dagster_tutorial.duckdb_resource import duckdb_io_manager
-from dbt_dagster_tutorial.assets import DBT_PROFILES, DBT_PROJECT_PATH, customers, orders, dbt_assets, order_count_chart
 
 @repository
 def jaffle_shop_repository():

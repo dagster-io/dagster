@@ -1,10 +1,11 @@
 import os
+
 import pandas as pd
 import plotly.express as px
 import plotly.offline as po
+from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 
-from dagster_dbt import load_assets_from_dbt_project, dbt_cli_resource
-from dagster import repository, with_resources, asset, AssetIn, fs_io_manager, Output
+from dagster import AssetIn, Output, asset, fs_io_manager, repository, with_resources, MetadataValue
 from dagster._utils import file_relative_path
 
 
@@ -15,6 +16,7 @@ from dagster._utils import file_relative_path
 )
 def customers() -> pd.DataFrame:
     data = pd.read_csv('s3://dbt-tutorial-public/jaffle_shop_customers.csv')
+    # data = pd.read_csv("https://docs.dagster.io/assets/customers.csv") TODO replace ^ with this
     return data
 
 @asset(
@@ -23,6 +25,7 @@ def customers() -> pd.DataFrame:
 )
 def orders() -> pd.DataFrame:
     data = pd.read_csv('s3://dbt-tutorial-public/jaffle_shop_orders.csv')
+    # data = pd.read_csv("https://docs.dagster.io/assets/orders.csv") TODO replace ^ with this
     return data
 
 
@@ -45,7 +48,7 @@ dbt_assets = load_assets_from_dbt_project(project_dir=DBT_PROJECT_PATH, profiles
 def order_count_chart(customers: pd.DataFrame):
     fig = px.histogram(customers, x="number_of_orders")
     fig.update_layout(bargap=0.2)
-    plot_html = po.plot(fig)
+    plot_html = fig.write_html(file_relative_path(__file__, "order_count_chart.html"), auto_open=True)
 
     # return plot html as metadata ex file:///Users/jamie/dev/dagster/examples/dbt_tutorial/temp-plot.html
-    return plot_html
+    return Output(None, metadata={"plot_url": MetadataValue.url("file://" + file_relative_path(__file__, "order_count_chart.html"))})
