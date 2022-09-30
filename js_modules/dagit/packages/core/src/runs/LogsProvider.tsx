@@ -244,9 +244,10 @@ const SubscriptionComponent = ({
     return {
       runId,
       cursor,
-      lostWebsocket,
     };
     // Don't add cursor to memo otherwise subscription gets recreated
+    // Add lostWebSocket to dependency so that we record the cursor we're at
+    // for when the status comes back
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId, lostWebsocket]);
 
