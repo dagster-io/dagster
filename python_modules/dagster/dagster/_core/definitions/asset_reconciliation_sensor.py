@@ -41,7 +41,7 @@ def _get_parent_updates(
     current_asset: AssetKey,
     parent_assets: Set[AssetKey],
     cursor_timestamp: float,
-    will_materialize_list: Sequence[AssetKey],
+    will_materialize_set: Set[AssetKey],
     wait_for_in_progress_runs: bool,
 ) -> Mapping[AssetKey, Tuple[bool, float]]:
     """The bulk of the logic in the sensor is in this function. At the end of the function we return a
@@ -49,6 +49,18 @@ def _get_parent_updates(
     has materialized or will materialize, and a float representing the timestamp the parent asset
     would update the cursor too if it is the most recent materialization of a parent asset. In some cases
     we set the timestamp to 0.0 so that the timestamps of other parent materializations will take precedent.
+
+    Args:
+        current_asset: We want to determine if this asset should materialize, so we gather information about
+            if its parents have materialized.
+        parent_assets: the parents of current_asset.
+        cursor_timestamp: In the cursor for the sensor we store the timestamp of the most recent materialization
+            of current_asset's parents. This allows us to see if any of the parents have been materialized
+            more recently.
+        will_materialize_set: A set of all of the assets the sensor has already determined it will materialize.
+            We check if the parent assets are in this list when determining their materialization status
+        wait_for_in_progress_runs: If the user wants the sensor to wait for in progress runs of parent
+            assets to complete before materializing current_asset.
 
     Here's how we get there:
 
@@ -61,8 +73,7 @@ def _get_parent_updates(
     asset's materialization status can be one of three options:
     1. The parent has materialized since the last time the child was materialized (determined by comparing
         the timestamp of the parent materialization to the cursor_timestamp).
-    2. The parent will be materialized as part of the materialization that will be kicked off by the
-        sensor.
+    2. The parent is slated to be materialized (i.e. included in will_materialize_list)
     3. The parent has not been materialized and will not be materialized by the sensor.
 
     In cases 1 and 2 we indicate that the parent has been updated by setting its value in
@@ -83,7 +94,7 @@ def _get_parent_updates(
     parent_asset_event_records: Dict[AssetKey, Tuple[bool, float]] = {}
 
     for p in parent_assets:
-        if p in will_materialize_list:
+        if p in will_materialize_set:
             # if p will be materialized by this sensor, then we can also materialize current_asset
             # we don't know what time asset p will be materialized so we set the cursor val to 0.0
             parent_asset_event_records[p] = (
@@ -198,7 +209,7 @@ def _make_sensor(
         )
 
         cursor_dict: Dict[str, float] = json.loads(context.cursor) if context.cursor else {}
-        should_materialize: List[AssetKey] = []
+        should_materialize: Set[AssetKey] = {}
         cursor_update_dict: Dict[str, float] = {}
 
         # sort the assets topologically so that we process them in order
@@ -229,7 +240,7 @@ def _make_sensor(
                     for materialization_status, _ in parent_update_records.values()
                 ]
             ):
-                should_materialize.append(a)
+                should_materialize.add(a)
                 cursor_update_dict[str(a)] = max(
                     [cursor_val for _, cursor_val in parent_update_records.values()] + [a_cursor]
                 )
@@ -237,7 +248,7 @@ def _make_sensor(
         if len(should_materialize) > 0:
             context.update_cursor(json.dumps(cursor_update_dict))
             context.cursor_has_been_updated = True
-            return RunRequest(run_key=f"{context.cursor}", asset_selection=should_materialize)
+            return RunRequest(run_key=f"{context.cursor}", asset_selection=list(should_materialize))
 
     return MultiAssetSensorDefinition(
         asset_keys=[],
@@ -265,6 +276,8 @@ def build_asset_reconciliation_sensor(
     latest data available to them. The sensor defaults to materializing an asset when all of
     its parents have materialized, but it can be set to materialize an asset when any of its
     parents have materialized.
+
+    **Note:** Currently, this sensor only works for non-partitioned assets.
 
     Args:
         selection (AssetSelection): The group of assets you want to keep up-to-date
