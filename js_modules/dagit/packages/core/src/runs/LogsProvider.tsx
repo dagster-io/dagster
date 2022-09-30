@@ -257,8 +257,8 @@ const LogsProviderWithSubscription: React.FC<LogsProviderProps> = (props) => {
   const state = useLogsProviderWithSubscription(props.runId);
   return (
     <>
-      {props.children(state)}
       {state.subscriptionComponent}
+      {props.children(state)}
     </>
   );
 };
