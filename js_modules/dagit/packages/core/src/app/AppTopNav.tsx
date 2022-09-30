@@ -74,7 +74,7 @@ export const AppTopNav: React.FC<Props> = ({
               }}
             >
               <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                Status
+                Deployment
                 {showStatusWarningIcon ? <InstanceWarningIcon /> : null}
               </Box>
             </TopNavLink>

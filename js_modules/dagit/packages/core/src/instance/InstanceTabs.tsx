@@ -15,9 +15,6 @@ interface Props<TData> {
   tab: string;
 }
 
-// todo dish: Delete this once Cloud is switched to use `InstancePageContext`.
-export const InstanceTabContext = React.createContext({healthTitle: 'Daemons'});
-
 export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {refreshState, tab} = props;
 

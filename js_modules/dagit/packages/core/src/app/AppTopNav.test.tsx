@@ -58,7 +58,7 @@ describe('AppTopNav', () => {
       const runsLink = screen.getByRole('link', {name: /runs/i});
       expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
       expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
-      expect(screen.getByText('Status').closest('a')).toHaveAttribute('href', '/instance');
+      expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/instance');
       expect(screen.getByText('RightOfSearchBar')).toBeVisible();
     });
   });
@@ -145,11 +145,11 @@ describe('AppTopNav', () => {
       });
 
       expect(screen.getByText(/workspace/i)).toBeVisible();
-      const link = screen.getByRole('link', {name: /status/i});
+      const link = screen.getByRole('link', {name: /deployment/i});
       expect(within(link).queryByText(/warning/i)).toBeNull();
     });
 
-    it('shows status warning icon by default, if there are errors', async () => {
+    it('shows deployment warning icon by default, if there are errors', async () => {
       await act(async () => {
         render(
           <TestProvider
@@ -161,13 +161,13 @@ describe('AppTopNav', () => {
       });
 
       const link = screen.getByRole('link', {
-        name: /status warning/i,
+        name: /deployment warning/i,
       });
 
-      expect(within(link).getByText(/status/i)).toBeVisible();
+      expect(within(link).getByText(/deployment/i)).toBeVisible();
     });
 
-    it('does not show status warning icon if `showStatusWarningIcon` is false, even with errors', async () => {
+    it('does not show deployment warning icon if `showStatusWarningIcon` is false, even with errors', async () => {
       await act(async () => {
         render(
           <TestProvider
@@ -179,7 +179,7 @@ describe('AppTopNav', () => {
       });
 
       expect(screen.getByText(/workspace/i)).toBeVisible();
-      const link = screen.getByRole('link', {name: /status/i});
+      const link = screen.getByRole('link', {name: /deployment/i});
       expect(within(link).queryByText(/warning/i)).toBeNull();
     });
   });
