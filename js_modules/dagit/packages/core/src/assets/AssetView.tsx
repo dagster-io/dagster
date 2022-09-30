@@ -37,6 +37,7 @@ import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNo
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
+import {AssetPlots} from './AssetPlots';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
@@ -46,7 +47,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'activity' | 'definition' | 'lineage';
+  view?: 'activity' | 'definition' | 'lineage' | 'plots';
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
   partition?: string;
@@ -155,6 +156,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               title="Activity"
               onClick={() => setParams({...params, view: 'activity'})}
             />
+            <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
             <Tab
               id="definition"
               title="Definition"
@@ -234,6 +236,13 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : (
             <AssetNoDefinitionState />
           )
+        ) : params.view === 'plots' ? (
+          <AssetPlots
+            assetKey={assetKey}
+            params={params}
+            setParams={setParams}
+            assetHasDefinedPartitions={!!definition?.partitionDefinition}
+          />
         ) : (
           <AssetEvents
             assetKey={assetKey}
