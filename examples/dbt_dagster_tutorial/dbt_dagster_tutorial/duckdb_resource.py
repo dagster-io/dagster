@@ -1,4 +1,4 @@
-# This will be moved to a dagster-duckdb library 
+# This will be moved to a dagster-duckdb library
 import duckdb
 import pandas as pd
 
@@ -66,7 +66,7 @@ class DuckDBCSVIOManager(IOManager):
         return backoff(
             fn=duckdb.connect,
             retry_on=(RuntimeError,),
-            kwargs={"database": context.resource_config["duckdb_path"], "read_only": False}
+            kwargs={"database": context.resource_config["duckdb_path"], "read_only": False},
         )
 
 

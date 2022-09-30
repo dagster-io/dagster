@@ -3,5 +3,5 @@ jaffle_shop:
   outputs:
     local:
       type: duckdb
-      path: example.duckdb
+      path: tutorial.duckdb
       schema: jaffle_shop
