@@ -26,7 +26,6 @@ DBT_PROFILES = file_relative_path(__file__, "../jaffle_shop/config")
 
 # if larger project use load_assets_from_dbt_manifest
 # dbt_assets = load_assets_from_dbt_manifest(json.load(DBT_PROJECT_PATH + "manifest.json", encoding="utf8"))
-#  key_prefix=["duckdb", "jaffle_shop"], source_key_prefix=["duckdb"]
 dbt_assets = load_assets_from_dbt_project(
     project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
 )
@@ -37,7 +36,6 @@ dbt_assets = load_assets_from_dbt_project(
 @asset(
     ins={"customers": AssetIn(key_prefix=["jaffle_shop"])},
     group_name="staging",
-    # key_prefix=["jaffle_shop"]
 )
 def order_count_chart(context, customers: pd.DataFrame):
     fig = px.histogram(customers, x="number_of_orders")
