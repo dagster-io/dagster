@@ -9,7 +9,6 @@ const MAX_HOVER_WIDTH = (MAX_WIDTH / 40.0) * 40.5;
 
 export const RenderedDAG: React.FC<{
   svgSrc: string;
-  isAssetGraph?: boolean;
   mobileImgSrc: string;
 }> = ({svgSrc}) => {
   const [focus, setFocus] = React.useState(false);
@@ -55,7 +54,6 @@ export const RenderedDAG: React.FC<{
             'width 300ms ease-in-out, max-width 300ms ease-in-out, padding-left 300ms ease-in-out, left 300ms ease-in-out',
         }}
       >
-        {/* {isAssetGraph && <MaterializeButton />} */}
         {focus && (
           <div
             onClick={() => setFocus(false)}
