@@ -668,8 +668,8 @@ def test_multi_asset_sensor_custom_partition_mapping():
         list(asset_sensor(ctx))
 
 
-def test_multi_asset_sensor_partitions_retains_ordering():
-    partition_ordering = ["2022-07-15", "2022-07-14", "2022-07-13", "2022-07-12"]
+def test_multi_asset_sensor_retains_ordering_and_fetches_latest_per_partition():
+    partition_ordering = ["2022-07-15", "2022-07-14", "2022-07-13", "2022-07-12", "2022-07-15"]
     partitions_july = DailyPartitionsDefinition("2022-07-01")
 
     @asset(partitions_def=partitions_july)
@@ -688,7 +688,9 @@ def test_multi_asset_sensor_partitions_retains_ordering():
                     july_daily_partitions.key
                 ).keys()
             )
-            == partition_ordering
+            == partition_ordering[
+                1:
+            ]  # 2022-07-15 is duplicated, so we fetch the later materialization and ignore the first materialization
         )
 
     with instance_for_test() as instance:
@@ -747,6 +749,76 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
         list(after_cursor_partitions_asset_sensor(ctx))
         materialize([august_asset], partition_key="2022-08-05", instance=instance)
         list(after_cursor_partitions_asset_sensor(ctx))
+
+
+def test_multi_asset_sensor_advance_cursor_no_update_on_older_materialization():
+    @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
+    def july_asset():
+        return 1
+
+    @repository
+    def my_repo():
+        return [july_asset]
+
+    @multi_asset_sensor(asset_keys=[july_asset.key])
+    def after_cursor_partitions_asset_sensor(context):
+        events = context.materialization_records_for_key(july_asset.key, limit=2)
+
+        context.advance_cursor({july_asset.key: events[1]})  # advance to later materialization
+        context.advance_cursor(
+            {july_asset.key: events[0]}
+        )  # attempt to advance to earlier materialization
+
+        cursor = json.loads(context.cursor)
+        partition, storage_id = cursor[str(july_asset.key)]
+        assert partition == "2022-07-10"
+        assert storage_id == events[1].storage_id
+        assert storage_id > events[0].storage_id
+
+    with instance_for_test() as instance:
+        materialize(
+            [july_asset],
+            partition_key="2022-07-05",
+            instance=instance,
+        )
+        materialize([july_asset], partition_key="2022-07-10", instance=instance)
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(after_cursor_partitions_asset_sensor(ctx))
+
+
+def test_multi_asset_sensor_latest_materialization_records_per_asset_by_partition():
+    @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
+    def july_asset():
+        return 1
+
+    @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
+    def july_asset_2():
+        return 1
+
+    @repository
+    def my_repo():
+        return [july_asset, july_asset_2]
+
+    @multi_asset_sensor(asset_keys=[july_asset.key, july_asset_2.key])
+    def my_sensor(context):
+        events = context.latest_materialization_records_per_asset_by_partition()
+        for partition_key, asset_and_materialization in events.items():
+            assert partition_key == "2022-08-04"
+            assert len(asset_and_materialization) == 2
+
+    with instance_for_test() as instance:
+        materialize(
+            [july_asset_2, july_asset],
+            partition_key="2022-08-04",
+            instance=instance,
+        )
+        materialize([july_asset], partition_key="2022-08-04", instance=instance)
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key, july_asset_2.key], instance=instance, repository_def=my_repo
+        )
+        list(my_sensor(ctx))
 
 
 def test_asset_keys_or_selection_mandatory():

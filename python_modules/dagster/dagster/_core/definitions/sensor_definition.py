@@ -483,7 +483,18 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self,
     ) -> Mapping[str, List[Tuple[AssetKey, "EventLogRecord"]]]:
         """
-        If all monitored assets are partitioned,
+        Finds the most recent materialization for each partition after the cursor for each asset
+        monitored by the sensor. Aggregates all materializations into a mapping of partition key
+        to a list of tuples containing the asset key and the materialization event.
+
+        For example, if the sensor monitors two partitioned assets A and B that are materialized
+        for partition_x after the cursor, this function returns:
+        {
+            "partition_x": [(asset_a.key, EventLogRecord(...)), (asset_b.key, EventLogRecord(...))]
+        }
+
+        This method can only be called when all monitored assets are partitioned and share
+        the same partition definition.
         """
         partitions_defs = list(self._partitions_def_by_asset_key.values())
         if not partitions_defs or not all(x == partitions_defs[0] for x in partitions_defs):
@@ -660,6 +671,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self, materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]]
     ):
         """Advances the cursor for a group of AssetKeys based on the EventLogRecord provided for each AssetKey.
+        If a materialization record is provided for an asset key that is prior to the current cursor,
+        the cursor will not be advanced for that asset key.
 
         Args:
             materialization_records_by_key (Mapping[AssetKey, Optional[EventLogRecord]]): Mapping of AssetKeys to EventLogRecord or None. If
@@ -670,14 +683,18 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         check.dict_param(cursor_dict, "cursor_dict", key_type=str)
 
         # Use default values from cursor dictionary if not provided in materialization_records_by_key
-        cursor_dict.update(
-            {
-                str(k): (_get_partition_key_from_event_log_record(v), v.storage_id)
-                if v
-                else cursor_dict.get(str(k))
-                for k, v in materialization_records_by_key.items()
-            }
-        )
+        for asset_key, materialization in materialization_records_by_key.items():
+            _, storage_id = self._get_cursor(asset_key)
+            if materialization and (storage_id is None or materialization.storage_id > storage_id):
+                cursor_dict.update(
+                    {
+                        str(asset_key): (
+                            _get_partition_key_from_event_log_record(materialization),
+                            materialization.storage_id,
+                        )
+                    }
+                )
+
         cursor_str = json.dumps(cursor_dict)
         self._cursor = check.opt_str_param(cursor_str, "cursor")
         self.cursor_has_been_updated = True
