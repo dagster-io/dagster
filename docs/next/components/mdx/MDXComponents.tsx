@@ -425,7 +425,6 @@ const Code: React.FC<CodeProps> = ({children, dagimage, ...props}) => {
       {dagimage && (
         <RenderedDAG
           svgSrc="/images/asset-screenshots/my_assets.svg"
-          isAssetGraph
           mobileImgSrc="/images-2022-july/screenshots/python-assets2.png"
         />
       )}
