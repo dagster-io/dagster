@@ -1,4 +1,10 @@
-import {gql, useApolloClient, useQuery, useSubscription} from '@apollo/client';
+import {
+  gql,
+  OnSubscriptionDataOptions,
+  useApolloClient,
+  useQuery,
+  useSubscription,
+} from '@apollo/client';
 import {TokenizingFieldValue} from '@dagster-io/ui';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
@@ -186,30 +192,60 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
   const {nodes, counts, cursor, loading} = state;
 
+  const subscriptionComponent = React.useMemo(
+    () => (
+      <SubscriptionComponent
+        runId={runId}
+        cursor={cursor}
+        onSubscriptionData={({subscriptionData}) => {
+          const logs = subscriptionData.data?.pipelineRunLogs;
+          if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
+            return;
+          }
+          // Maintain a queue of messages as they arrive, and call the throttled setter.
+          queue.current.push(logs);
+          // Wait until end of animation frame to call throttled set nodes
+          // otherwise we wont end up batching anything if rendering takes
+          // longer than the BATCH_INTERVAL
+          requestAnimationFrame(throttledSetNodes);
+        }}
+      />
+    ),
+    [runId, cursor, throttledSetNodes],
+  );
+
+  return React.useMemo(
+    () =>
+      nodes !== null
+        ? {allNodes: nodes, counts, loading, subscriptionComponent}
+        : {allNodes: [], counts, loading, subscriptionComponent},
+    [counts, loading, nodes, subscriptionComponent],
+  );
+};
+
+/**
+ * Putting useSubscription in a component that returns null avoids re-rendering
+ * any children components that aren't completely memoized
+ * https://stackoverflow.com/questions/61876931/how-to-prevent-re-rendering-with-usesubscription
+ */
+const SubscriptionComponent = ({
+  runId,
+  cursor,
+  onSubscriptionData,
+}: {
+  runId: string;
+  cursor: string | null;
+  onSubscriptionData: (options: OnSubscriptionDataOptions<PipelineRunLogsSubscription>) => void;
+}) => {
   useSubscription<PipelineRunLogsSubscription, PipelineRunLogsSubscriptionVariables>(
     PIPELINE_RUN_LOGS_SUBSCRIPTION,
     {
       fetchPolicy: 'no-cache',
       variables: {runId, cursor},
-      onSubscriptionData: ({subscriptionData}) => {
-        const logs = subscriptionData.data?.pipelineRunLogs;
-        if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
-          return;
-        }
-        // Maintain a queue of messages as they arrive, and call the throttled setter.
-        queue.current = [...queue.current, logs];
-        // Wait until end of animation frame to call throttled set nodes
-        // otherwise we wont end up batching anything if rendering takes
-        // longer than the BATCH_INTERVAL
-        requestAnimationFrame(throttledSetNodes);
-      },
+      onSubscriptionData,
     },
   );
-
-  return React.useMemo(
-    () => (nodes !== null ? {allNodes: nodes, counts, loading} : {allNodes: [], counts, loading}),
-    [counts, loading, nodes],
-  );
+  return null;
 };
 
 interface LogsProviderProps {
@@ -219,7 +255,12 @@ interface LogsProviderProps {
 
 const LogsProviderWithSubscription: React.FC<LogsProviderProps> = (props) => {
   const state = useLogsProviderWithSubscription(props.runId);
-  return <>{props.children(state)}</>;
+  return (
+    <>
+      {props.children(state)}
+      {state.subscriptionComponent}
+    </>
+  );
 };
 
 interface LogsProviderWithQueryProps {
