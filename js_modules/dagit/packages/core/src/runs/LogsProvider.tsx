@@ -237,11 +237,24 @@ const SubscriptionComponent = ({
   cursor: string | null;
   onSubscriptionData: (options: OnSubscriptionDataOptions<PipelineRunLogsSubscription>) => void;
 }) => {
+  const {availability, disabled, status} = React.useContext(WebSocketContext);
+  const lostWebsocket = !disabled && availability === 'available' && status === WebSocket.CLOSED;
+
+  const variables = React.useMemo(() => {
+    return {
+      runId,
+      cursor,
+      lostWebsocket,
+    };
+    // Don't add cursor to memo otherwise subscription gets recreated
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId, lostWebsocket]);
+
   useSubscription<PipelineRunLogsSubscription, PipelineRunLogsSubscriptionVariables>(
     PIPELINE_RUN_LOGS_SUBSCRIPTION,
     {
       fetchPolicy: 'no-cache',
-      variables: {runId, cursor},
+      variables,
       onSubscriptionData,
     },
   );
