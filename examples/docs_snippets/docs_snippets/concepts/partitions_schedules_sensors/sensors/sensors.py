@@ -321,37 +321,28 @@ def trigger_weekly_asset_from_daily_asset(context):
 # end_daily_asset_to_weekly_asset
 
 # start_daily_partitioned_asset_with_two_upstreams
-
-
 @multi_asset_sensor(
     asset_keys=[AssetKey("upstream_daily_1"), AssetKey("upstream_daily_2")],
     job=downstream_daily_job,
 )
 def trigger_daily_asset_if_all_upstream_partitions_materialized(context):
     run_requests_by_partition = {}
-
-    for asset_key in context.asset_keys:
-        for (
-            partition,
-            materialization,
-        ) in context.latest_materialization_records_by_partition(asset_key).items():
-            # Check that the partition is materialized in the other asset
-            if (
-                all(
-                    [
-                        context.all_partitions_materialized(other_key, [partition])
-                        for other_key in context.asset_keys
-                        if other_key != asset_key
-                    ]
-                )
-                and partition not in run_requests_by_partition
-            ):
-                # Yield a run request for the partition if a run request does not already exist
-                run_requests_by_partition[
-                    partition
-                ] = downstream_daily_job.run_request_for_partition(partition)
-            context.advance_cursor({asset_key: materialization})
-
+    for (
+        partition,
+        materializations_list,
+    ) in context.latest_materialization_records_per_asset_by_partition().items():
+        if all(
+            [
+                context.all_partitions_materialized(asset_key, [partition])
+                for asset_key in context.asset_keys
+            ]
+        ):
+            run_requests_by_partition[
+                partition
+            ] = downstream_daily_job.run_request_for_partition(partition)
+            for key_materialization_tuple in materializations_list:
+                asset_key, materialization = key_materialization_tuple
+                context.advance_cursor({asset_key: materialization})
     return list(run_requests_by_partition.values())
 
 
