@@ -250,38 +250,27 @@ async function stateForLaunchingAssets(
   >({
     query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
     variables: {
-      pipelineSelector: {
-        pipelineName: jobName,
-        repositoryName: assets[0].repository.name,
-        repositoryLocationName: assets[0].repository.location.name,
-      },
+      pipelineName: jobName,
+      repositoryName: assets[0].repository.name,
+      repositoryLocationName: assets[0].repository.location.name,
     },
   });
   const pipeline = resourceResult.data.pipelineOrError;
   if (pipeline.__typename !== 'Pipeline') {
-    return {
-      type: 'error',
-      error: `Pipeline ${jobName} does not exist.`,
-    };
+    return {type: 'error', error: pipeline.message};
   }
+  const partitionSets = resourceResult.data.partitionSetsOrError;
+  if (partitionSets.__typename !== 'PartitionSets') {
+    return {type: 'error', error: partitionSets.message};
+  }
+
   const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
   const resources = pipeline.modes[0].resources.filter((r) =>
     requiredResourceKeys.includes(r.name),
   );
   const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
-
   const anyAssetsHaveRequiredConfig = assets.some((a) => a.configField?.isRequired);
 
-  if (partitionDefinition) {
-    const upstreamAssetKeys = getUpstreamAssetKeys(assets);
-    return {
-      type: 'partitions',
-      assets,
-      jobName,
-      repoAddress,
-      upstreamAssetKeys,
-    };
-  }
   if (anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
@@ -292,7 +281,24 @@ async function stateForLaunchingAssets(
         flattenGraphs: true,
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
+        base: partitionSets.results.length
+          ? {
+              partitionsSetName: partitionSets.results[0].name,
+              partitionName: null,
+              tags: [],
+            }
+          : undefined,
       },
+    };
+  }
+  if (partitionDefinition) {
+    const upstreamAssetKeys = getUpstreamAssetKeys(assets);
+    return {
+      type: 'partitions',
+      assets,
+      jobName,
+      repoAddress,
+      upstreamAssetKeys,
     };
   }
   return {
@@ -444,8 +450,48 @@ const LAUNCH_ASSET_LOADER_QUERY = gql`
 `;
 
 const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
-  query LaunchAssetLoaderResourceQuery($pipelineSelector: PipelineSelector!) {
-    pipelineOrError(params: $pipelineSelector) {
+  query LaunchAssetLoaderResourceQuery(
+    $pipelineName: String!
+    $repositoryLocationName: String!
+    $repositoryName: String!
+  ) {
+    partitionSetsOrError(
+      pipelineName: $pipelineName
+      repositorySelector: {
+        repositoryName: $repositoryName
+        repositoryLocationName: $repositoryLocationName
+      }
+    ) {
+      ... on PythonError {
+        message
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on PartitionSets {
+        results {
+          id
+          name
+        }
+      }
+    }
+
+    pipelineOrError(
+      params: {
+        pipelineName: $pipelineName
+        repositoryName: $repositoryName
+        repositoryLocationName: $repositoryLocationName
+      }
+    ) {
+      ... on PythonError {
+        message
+      }
+      ... on InvalidSubsetError {
+        message
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
       ... on Pipeline {
         id
         modes {

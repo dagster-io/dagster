@@ -3,14 +3,46 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector } from "./../../types/globalTypes";
-
 // ====================================================
 // GraphQL query operation: LaunchAssetLoaderResourceQuery
 // ====================================================
 
+export interface LaunchAssetLoaderResourceQuery_partitionSetsOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+}
+
+export interface LaunchAssetLoaderResourceQuery_partitionSetsOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError";
+  message: string;
+}
+
+export interface LaunchAssetLoaderResourceQuery_partitionSetsOrError_PartitionSets_results {
+  __typename: "PartitionSet";
+  id: string;
+  name: string;
+}
+
+export interface LaunchAssetLoaderResourceQuery_partitionSetsOrError_PartitionSets {
+  __typename: "PartitionSets";
+  results: LaunchAssetLoaderResourceQuery_partitionSetsOrError_PartitionSets_results[];
+}
+
+export type LaunchAssetLoaderResourceQuery_partitionSetsOrError = LaunchAssetLoaderResourceQuery_partitionSetsOrError_PythonError | LaunchAssetLoaderResourceQuery_partitionSetsOrError_PipelineNotFoundError | LaunchAssetLoaderResourceQuery_partitionSetsOrError_PartitionSets;
+
+export interface LaunchAssetLoaderResourceQuery_pipelineOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+}
+
+export interface LaunchAssetLoaderResourceQuery_pipelineOrError_InvalidSubsetError {
+  __typename: "InvalidSubsetError";
+  message: string;
+}
+
 export interface LaunchAssetLoaderResourceQuery_pipelineOrError_PipelineNotFoundError {
-  __typename: "PipelineNotFoundError" | "InvalidSubsetError" | "PythonError";
+  __typename: "PipelineNotFoundError";
+  message: string;
 }
 
 export interface LaunchAssetLoaderResourceQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -549,12 +581,15 @@ export interface LaunchAssetLoaderResourceQuery_pipelineOrError_Pipeline {
   modes: LaunchAssetLoaderResourceQuery_pipelineOrError_Pipeline_modes[];
 }
 
-export type LaunchAssetLoaderResourceQuery_pipelineOrError = LaunchAssetLoaderResourceQuery_pipelineOrError_PipelineNotFoundError | LaunchAssetLoaderResourceQuery_pipelineOrError_Pipeline;
+export type LaunchAssetLoaderResourceQuery_pipelineOrError = LaunchAssetLoaderResourceQuery_pipelineOrError_PythonError | LaunchAssetLoaderResourceQuery_pipelineOrError_InvalidSubsetError | LaunchAssetLoaderResourceQuery_pipelineOrError_PipelineNotFoundError | LaunchAssetLoaderResourceQuery_pipelineOrError_Pipeline;
 
 export interface LaunchAssetLoaderResourceQuery {
+  partitionSetsOrError: LaunchAssetLoaderResourceQuery_partitionSetsOrError;
   pipelineOrError: LaunchAssetLoaderResourceQuery_pipelineOrError;
 }
 
 export interface LaunchAssetLoaderResourceQueryVariables {
-  pipelineSelector: PipelineSelector;
+  pipelineName: string;
+  repositoryLocationName: string;
+  repositoryName: string;
 }
