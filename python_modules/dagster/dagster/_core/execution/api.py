@@ -790,7 +790,11 @@ def reexecute_pipeline(
             solids_to_execute=parent_pipeline_run.solids_to_execute,
             root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
             parent_run_id=parent_pipeline_run.run_id,
-            pipeline_code_origin=parent_pipeline_run.pipeline_code_origin,
+            pipeline_code_origin=(
+                pipeline.get_python_origin()
+                if isinstance(pipeline, ReconstructablePipeline)
+                else None
+            ),
             repository_load_data=repository_load_data,
         )
 
@@ -1080,6 +1084,8 @@ def pipeline_execution_iterator(
     try:
         for event in pipeline_context.executor.execute(pipeline_context, execution_plan):
             if event.is_step_failure:
+                failed_steps.append(event.step_key)
+            elif event.is_resource_init_failure and event.step_key:
                 failed_steps.append(event.step_key)
 
             yield event
