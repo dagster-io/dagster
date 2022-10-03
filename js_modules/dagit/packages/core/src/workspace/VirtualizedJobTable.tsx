@@ -127,7 +127,7 @@ const JobRow = (props: JobRowProps) => {
     <Row $height={height} $start={start}>
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <RowCell>
-          <div style={{whiteSpace: 'nowrap'}}>
+          <div style={{whiteSpace: 'nowrap', fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>{name}</Link>
           </div>
           <div
@@ -172,7 +172,9 @@ const JobRow = (props: JobRowProps) => {
         </RowCell>
         <RowCell>
           {latestRuns.length ? (
-            <RunStatusPezList jobName={name} runs={[...latestRuns].reverse()} fade />
+            <Box margin={{top: 4}}>
+              <RunStatusPezList jobName={name} runs={[...latestRuns].reverse()} fade />
+            </Box>
           ) : (
             <LoadingOrNone queryResult={queryResult} />
           )}

@@ -3,14 +3,15 @@
 import os
 import sys
 from contextlib import ExitStack
-from typing import Generator, List, Optional
+from typing import Generator, List, Optional, Sequence
 
 import pendulum
 
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import (
     MultiAssetSensorDefinition,
     MultiAssetSensorEvaluationContext,
@@ -39,6 +40,7 @@ from dagster._core.host_representation.external_data import (
     ExternalSensorExecutionErrorData,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
@@ -215,44 +217,33 @@ def start_run_in_subprocess(
 
 
 def get_external_pipeline_subset_result(
-    recon_pipeline: ReconstructablePipeline,
+    repo_def: RepositoryDefinition,
+    job_name: str,
     solid_selection: Optional[List[str]],
     asset_selection: Optional[List[AssetKey]],
 ):
-    check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
-    check.opt_list_param(solid_selection, "solid_selection", str)
-    check.opt_list_param(asset_selection, "asset_selection", AssetKey)
-    if solid_selection or asset_selection:
-        try:
-            sub_pipeline = recon_pipeline.subset_for_execution(
-                solid_selection=solid_selection,
-                asset_selection=frozenset(asset_selection) if asset_selection else None,
-            )
-            definition = sub_pipeline.get_definition()
-        except Exception:
-            return ExternalPipelineSubsetResult(
-                success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
-            )
-    else:
-        definition = recon_pipeline.get_definition()
+    try:
+        definition = repo_def.get_maybe_subset_job_def(
+            job_name,
+            op_selection=solid_selection,
+            asset_selection=frozenset(asset_selection) if asset_selection else None,
+        )
+    except Exception:
+        return ExternalPipelineSubsetResult(
+            success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
+        )
     external_pipeline_data = external_pipeline_data_from_def(definition)
     return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
 
 
 def get_external_schedule_execution(
-    recon_repo,
-    instance_ref,
-    schedule_name,
-    scheduled_execution_timestamp,
-    scheduled_execution_timezone,
+    repo_def: RepositoryDefinition,
+    instance_ref: Optional[InstanceRef],
+    schedule_name: str,
+    scheduled_execution_timestamp: float,
+    scheduled_execution_timezone: str,
 ):
-    check.inst_param(
-        recon_repo,
-        "recon_repo",
-        ReconstructableRepository,
-    )
-    definition = recon_repo.get_definition()
-    schedule_def = definition.get_schedule_def(schedule_name)
+    schedule_def = repo_def.get_schedule_def(schedule_name)
     scheduled_execution_time = (
         pendulum.from_timestamp(
             scheduled_execution_timestamp,
@@ -277,16 +268,14 @@ def get_external_schedule_execution(
 
 
 def get_external_sensor_execution(
-    recon_repo, instance_ref, sensor_name, last_completion_timestamp, last_run_key, cursor
+    repo_def: RepositoryDefinition,
+    instance_ref: Optional[InstanceRef],
+    sensor_name: str,
+    last_completion_timestamp: Optional[float],
+    last_run_key: Optional[str],
+    cursor: Optional[str],
 ):
-    check.inst_param(
-        recon_repo,
-        "recon_repo",
-        ReconstructableRepository,
-    )
-
-    definition = recon_repo.get_definition()
-    sensor_def = definition.get_sensor_def(sensor_name)
+    sensor_def = repo_def.get_sensor_def(sensor_name)
 
     with ExitStack() as stack:
 
@@ -297,9 +286,9 @@ def get_external_sensor_execution(
                     last_completion_time=last_completion_timestamp,
                     last_run_key=last_run_key,
                     cursor=cursor,
-                    repository_name=recon_repo.get_definition().name,
-                    repository_def=definition,
-                    asset_keys=sensor_def.asset_keys,
+                    repository_name=repo_def.name,
+                    repository_def=repo_def,
+                    asset_selection=sensor_def.asset_selection,
                 )
             )
         else:
@@ -309,7 +298,7 @@ def get_external_sensor_execution(
                     last_completion_time=last_completion_timestamp,
                     last_run_key=last_run_key,
                     cursor=cursor,
-                    repository_name=recon_repo.get_definition().name,
+                    repository_name=repo_def.name,
                 )
             )
 
@@ -326,9 +315,13 @@ def get_external_sensor_execution(
             )
 
 
-def get_partition_config(recon_repo, partition_set_name, partition_name):
-    definition = recon_repo.get_definition()
-    partition_set_def = definition.get_partition_set_def(partition_set_name)
+def get_partition_config(
+    repo_def: RepositoryDefinition,
+    partition_set_name: str,
+    partition_name: str,
+):
+
+    partition_set_def = repo_def.get_partition_set_def(partition_set_name)
     partition = partition_set_def.get_partition(partition_name)
     try:
         with user_code_error_boundary(
@@ -353,9 +346,11 @@ def _get_target_for_partition_execution_error(partition_set_def):
         return f"partition set '{partition_set_def.name}'"
 
 
-def get_partition_names(recon_repo, partition_set_name):
-    definition = recon_repo.get_definition()
-    partition_set_def = definition.get_partition_set_def(partition_set_name)
+def get_partition_names(
+    repo_def: RepositoryDefinition,
+    partition_set_name: str,
+):
+    partition_set_def = repo_def.get_partition_set_def(partition_set_name)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -371,9 +366,12 @@ def get_partition_names(recon_repo, partition_set_name):
         )
 
 
-def get_partition_tags(recon_repo, partition_set_name, partition_name):
-    definition = recon_repo.get_definition()
-    partition_set_def = definition.get_partition_set_def(partition_set_name)
+def get_partition_tags(
+    repo_def: RepositoryDefinition,
+    partition_set_name: str,
+    partition_name: str,
+):
+    partition_set_def = repo_def.get_partition_set_def(partition_set_name)
     partition = partition_set_def.get_partition(partition_name)
     try:
         with user_code_error_boundary(
@@ -389,21 +387,21 @@ def get_partition_tags(recon_repo, partition_set_name, partition_name):
         )
 
 
-def get_external_execution_plan_snapshot(recon_pipeline, args):
-    check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
-    check.inst_param(args, "args", ExecutionPlanSnapshotArgs)
-
+def get_external_execution_plan_snapshot(
+    repo_def: RepositoryDefinition,
+    job_name: str,
+    args: ExecutionPlanSnapshotArgs,
+):
     try:
-        pipeline = recon_pipeline
-
-        if args.solid_selection or args.asset_selection:
-            pipeline = pipeline.subset_for_execution(
-                solid_selection=args.solid_selection, asset_selection=args.asset_selection
-            )
+        job_def = repo_def.get_maybe_subset_job_def(
+            job_name,
+            op_selection=args.solid_selection,
+            asset_selection=args.asset_selection,
+        )
 
         return snapshot_from_execution_plan(
             create_execution_plan(
-                pipeline=pipeline,
+                job_def,
                 run_config=args.run_config,
                 mode=args.mode,
                 step_keys_to_execute=args.step_keys_to_execute,
@@ -418,8 +416,11 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
         )
 
 
-def get_partition_set_execution_param_data(recon_repo, partition_set_name, partition_names):
-    repo_definition = recon_repo.get_definition()
+def get_partition_set_execution_param_data(
+    repo_definition: RepositoryDefinition,
+    partition_set_name: str,
+    partition_names: Sequence[str],
+):
     partition_set_def = repo_definition.get_partition_set_def(partition_set_name)
     try:
         with user_code_error_boundary(

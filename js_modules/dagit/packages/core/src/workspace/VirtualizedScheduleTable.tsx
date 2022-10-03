@@ -159,14 +159,16 @@ const ScheduleRow = (props: ScheduleRowProps) => {
         <RowCell>
           {scheduleData ? (
             <Box flex={{direction: 'column', gap: 4}}>
-              <Tooltip position="bottom" content={scheduleData.cronSchedule}>
-                <span style={{color: Colors.Dark}}>
-                  {humanCronString(
-                    scheduleData.cronSchedule,
-                    scheduleData.executionTimezone || 'UTC',
-                  )}
-                </span>
-              </Tooltip>
+              <div>
+                <Tooltip position="top" content={scheduleData.cronSchedule}>
+                  <span style={{color: Colors.Dark}}>
+                    {humanCronString(
+                      scheduleData.cronSchedule,
+                      scheduleData.executionTimezone || 'UTC',
+                    )}
+                  </span>
+                </Tooltip>
+              </div>
               <Caption>
                 Next tick:&nbsp;
                 {scheduleData.scheduleState.nextTick &&
@@ -238,9 +240,7 @@ const ScheduleRow = (props: ScheduleRowProps) => {
             >
               <Button icon={<Icon name="expand_more" />} />
             </Popover>
-          ) : (
-            <LoadingOrNone queryResult={queryResult} />
-          )}
+          ) : null}
         </RowCell>
       </RowGrid>
     </Row>

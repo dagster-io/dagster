@@ -8,6 +8,7 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     fetch_connected,
+    fetch_sinks,
     generate_asset_dep_graph,
     generate_asset_name_to_definition_map,
 )
@@ -67,31 +68,55 @@ class AssetSelection(ABC):
         return GroupsAssetSelection(*group_strs)
 
     @public  # type: ignore
-    def downstream(self, depth: Optional[int] = None) -> "DownstreamAssetSelection":
+    def downstream(
+        self, depth: Optional[int] = None, include_self: bool = True
+    ) -> "DownstreamAssetSelection":
         """
         Returns a selection that includes all assets that are downstream of any of the assets in
-        this selection, as well as all the assets in this selection.
+        this selection, selecting the assets in this selection by default. Iterates through each
+        asset in this selection and returns the union of all downstream assets.
 
         depth (Optional[int]): If provided, then only include assets to the given depth. A depth
             of 2 means all assets that are children or grandchildren of the assets in this
             selection.
+        include_self (bool): If True, then include the assets in this selection in the result.
+            If the include_self flag is False, return each downstream asset that is not part of the
+            original selection. By default, set to True.
         """
         check.opt_int_param(depth, "depth")
-        return DownstreamAssetSelection(self, depth=depth)
+        check.opt_bool_param(include_self, "include_self")
+        return DownstreamAssetSelection(self, depth=depth, include_self=include_self)
 
     @public  # type: ignore
-    def upstream(self, depth: Optional[int] = None) -> "UpstreamAssetSelection":
+    def upstream(
+        self, depth: Optional[int] = None, include_self: bool = True
+    ) -> "UpstreamAssetSelection":
         """
         Returns a selection that includes all assets that are upstream of any of the assets in
-        this selection, as well as all the assets in this selection.
+        this selection, selecting the assets in this selection by default. Iterates through each
+        asset in this selection and returns the union of all downstream assets.
 
         Args:
             depth (Optional[int]): If provided, then only include assets to the given depth. A depth
                 of 2 means all assets that are parents or grandparents of the assets in this
                 selection.
+            include_self (bool): If True, then include the assets in this selection in the result.
+                If the include_self flag is False, return each upstream asset that is not part of the
+                original selection. By default, set to True.
         """
         check.opt_int_param(depth, "depth")
-        return UpstreamAssetSelection(self, depth=depth)
+        check.opt_bool_param(include_self, "include_self")
+        return UpstreamAssetSelection(self, depth=depth, include_self=include_self)
+
+    @public  # type: ignore
+    def sinks(self) -> "SinkAssetSelection":
+        """
+        Given an asset selection, returns a new asset selection that contains all of the sink
+        assets within the original asset selection.
+
+        A sink asset is an asset that has no downstream dependencies within the asset selection.
+        The sink asset can have downstream dependencies outside of the asset selection."""
+        return SinkAssetSelection(self)
 
     def __or__(self, other: "AssetSelection") -> "OrAssetSelection":
         check.inst_param(other, "other", AssetSelection)
@@ -100,6 +125,10 @@ class AssetSelection(ABC):
     def __and__(self, other: "AssetSelection") -> "AndAssetSelection":
         check.inst_param(other, "other", AssetSelection)
         return AndAssetSelection(self, other)
+
+    def __sub__(self, other: "AssetSelection") -> "SubAssetSelection":
+        check.inst_param(other, "other", AssetSelection)
+        return SubAssetSelection(self, other)
 
     def resolve(
         self, all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]
@@ -117,10 +146,30 @@ class AndAssetSelection(AssetSelection):
         self.children = (child_1, child_2)
 
 
+class SubAssetSelection(AssetSelection):
+    def __init__(self, child_1: AssetSelection, child_2: AssetSelection):
+        self.children = (child_1, child_2)
+
+
+class SinkAssetSelection(AssetSelection):
+    def __init__(
+        self,
+        child: AssetSelection,
+    ):
+        self.children = (child,)
+
+
 class DownstreamAssetSelection(AssetSelection):
-    def __init__(self, child: AssetSelection, *, depth: Optional[int] = None):
+    def __init__(
+        self,
+        child: AssetSelection,
+        *,
+        depth: Optional[int] = None,
+        include_self: Optional[bool] = True,
+    ):
         self.children = (child,)
         self.depth = depth
+        self.include_self = include_self
 
 
 class GroupsAssetSelection(AssetSelection):
@@ -139,9 +188,16 @@ class OrAssetSelection(AssetSelection):
 
 
 class UpstreamAssetSelection(AssetSelection):
-    def __init__(self, child: AssetSelection, *, depth: Optional[int] = None):
+    def __init__(
+        self,
+        child: AssetSelection,
+        *,
+        depth: Optional[int] = None,
+        include_self: Optional[bool] = True,
+    ):
         self.children = (child,)
         self.depth = depth
+        self.include_self = include_self
 
 
 # ########################
@@ -179,20 +235,29 @@ class Resolver:
         elif isinstance(node, AndAssetSelection):
             child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 & child_2
+        elif isinstance(node, SubAssetSelection):
+            child_1, child_2 = [self._resolve(child) for child in node.children]
+            return child_1 - child_2
+        elif isinstance(node, SinkAssetSelection):
+            selection = self._resolve(node.children[0])
+            return fetch_sinks(self.asset_dep_graph, selection)
         elif isinstance(node, DownstreamAssetSelection):
-            child = self._resolve(node.children[0])
-            return reduce(
-                operator.or_,
-                [
-                    {asset_name}
-                    | fetch_connected(
-                        item=asset_name,
-                        graph=self.asset_dep_graph,
-                        direction="downstream",
-                        depth=node.depth,
-                    )
-                    for asset_name in child
-                ],
+            selection = self._resolve(node.children[0])
+            return operator.sub(
+                reduce(
+                    operator.or_,
+                    [
+                        {asset_name}
+                        | fetch_connected(
+                            item=asset_name,
+                            graph=self.asset_dep_graph,
+                            direction="downstream",
+                            depth=node.depth,
+                        )
+                        for asset_name in selection
+                    ],
+                ),
+                selection if not node.include_self else set(),
             )
         elif isinstance(node, GroupsAssetSelection):
             return reduce(
@@ -221,19 +286,22 @@ class Resolver:
             child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 | child_2
         elif isinstance(node, UpstreamAssetSelection):
-            child = self._resolve(node.children[0])
-            return reduce(
-                operator.or_,
-                [
-                    {asset_name}
-                    | fetch_connected(
-                        item=asset_name,
-                        graph=self.asset_dep_graph,
-                        direction="upstream",
-                        depth=node.depth,
-                    )
-                    for asset_name in child
-                ],
+            selection = self._resolve(node.children[0])
+            return operator.sub(
+                reduce(
+                    operator.or_,
+                    [
+                        {asset_name}
+                        | fetch_connected(
+                            item=asset_name,
+                            graph=self.asset_dep_graph,
+                            direction="upstream",
+                            depth=node.depth,
+                        )
+                        for asset_name in selection
+                    ],
+                ),
+                selection if not node.include_self else set(),
             )
         else:
             check.failed(f"Unknown node type: {type(node)}")

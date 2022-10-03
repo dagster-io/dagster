@@ -148,6 +148,7 @@ const ComputeLogToolbar = ({
   const logCaptureSteps =
     metadata.logCaptureSteps || extractLogCaptureStepsFromLegacySteps(Object.keys(metadata.steps));
   const isValidStepSelection = computeLogKey && logCaptureSteps[computeLogKey];
+
   const logKeyText = (logKey?: string) => {
     if (!logKey || !logCaptureSteps[logKey]) {
       return null;
@@ -171,6 +172,9 @@ const ComputeLogToolbar = ({
         <Select
           disabled={!steps.length}
           items={Object.keys(logCaptureSteps)}
+          itemPredicate={(query, item) =>
+            item.toLocaleLowerCase().includes(query.toLocaleLowerCase())
+          }
           itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
             <MenuItem
               key={item}
@@ -180,7 +184,6 @@ const ComputeLogToolbar = ({
             />
           )}
           activeItem={computeLogKey}
-          filterable={false}
           onItemSelect={(logKey) => {
             onSetComputeLogKey(logKey);
           }}

@@ -84,11 +84,13 @@ export function handleLaunchResult(
   if (obj.__typename === 'LaunchRunSuccess') {
     const pathname = `/instance/runs/${obj.run.runId}`;
     const search = options.preserveQuerystring ? history.location.search : '';
+    const openInNewTab = () => window.open(history.createHref({pathname, search}), '_blank');
+    const openInSameTab = () => history.push({pathname, search});
 
     if (options.behavior === 'open-in-new-tab') {
-      window.open(history.createHref({pathname, search}), '_blank');
+      openInNewTab();
     } else if (options.behavior === 'open') {
-      history.push({pathname, search});
+      openInSameTab();
     } else {
       SharedToaster.show({
         intent: 'success',
@@ -99,7 +101,7 @@ export function handleLaunchResult(
         ),
         action: {
           text: 'View',
-          onClick: () => history.push({pathname, search}),
+          onClick: () => openInNewTab(),
         },
       });
     }

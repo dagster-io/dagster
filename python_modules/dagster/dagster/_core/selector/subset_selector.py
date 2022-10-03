@@ -234,6 +234,19 @@ def fetch_connected(
         return Traverser(graph).fetch_upstream(item, depth)
 
 
+def fetch_sinks(graph: DependencyGraph, within_selection: AbstractSet[str]) -> FrozenSet[str]:
+    """
+    A sink is an asset that has no downstream dependencies within the provided selection.
+    It can have other dependencies outside of the selection.
+    """
+    traverser = Traverser(graph)
+    sinks = set()
+    for item in within_selection:
+        if len(traverser.fetch_downstream(item, depth=MAX_NUM) & within_selection) == 0:
+            sinks.add(item)
+    return frozenset(sinks)
+
+
 # Maps string names of individual assets (used in the dependency graphs) to `AssetsDefinition`
 # objects
 def generate_asset_name_to_definition_map(
@@ -373,7 +386,8 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dic
 
 
 def parse_solid_selection(
-    pipeline_def: "PipelineDefinition", solid_selection: List[str]
+    pipeline_def: "PipelineDefinition",
+    solid_selection: Sequence[str],
 ) -> FrozenSet[str]:
     """Take pipeline definition and a list of solid selection queries (inlcuding names of solid
         invocations. See syntax examples below) and return a set of the qualified solid names.

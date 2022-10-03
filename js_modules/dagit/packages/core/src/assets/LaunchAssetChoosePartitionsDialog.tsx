@@ -30,11 +30,9 @@ import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
 } from '../launchpad/types/ConfigPartitionSelectionQuery';
-import {
-  assembleIntoSpans,
-  PartitionRangeInput,
-  stringForSpan,
-} from '../partitions/PartitionRangeInput';
+import {assembleIntoSpans, stringForSpan} from '../partitions/PartitionRangeInput';
+import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
+import {PartitionState} from '../partitions/PartitionStatus';
 import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/PartitionsBackfill';
 import {RepoAddress} from '../workspace/types';
 
@@ -89,20 +87,16 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   assetJobName,
   upstreamAssetKeys,
 }) => {
-  const data = usePartitionHealthData(assets.map((a) => a.assetKey));
+  const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
+  const data = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const upstreamData = usePartitionHealthData(upstreamAssetKeys);
 
-  const allKeys = data[0] ? data[0].keys : [];
+  const allKeys = React.useMemo(() => (data[0] ? data[0].keys : []), [data]);
   const mostRecentKey = allKeys[allKeys.length - 1];
 
   const [selected, setSelected] = React.useState<string[]>([]);
-  const [previewCount, setPreviewCount] = React.useState(4);
+  const [previewCount, setPreviewCount] = React.useState(0);
   const [launching, setLaunching] = React.useState(false);
-
-  const setMostRecent = () => setSelected([mostRecentKey]);
-  const setAll = () => setSelected([...allKeys]);
-  const setMissing = () =>
-    setSelected(allKeys.filter((key) => data.every((d) => !d.statusByPartition[key])));
 
   React.useEffect(() => {
     setSelected([mostRecentKey]);
@@ -255,35 +249,33 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     setSelected(reject(selected, upstreamUnavailable));
   };
 
+  const partitionData = React.useMemo(() => {
+    const result: {[partitionName: string]: PartitionState} = {};
+    allKeys.forEach((partitionName) => {
+      const success = data.every((d) => d.statusByPartition[partitionName]);
+      result[partitionName] = success ? PartitionState.SUCCESS : PartitionState.MISSING;
+    });
+    return result;
+  }, [allKeys, data]);
+
   return (
     <>
       <DialogBody>
         <Box flex={{direction: 'column', gap: 8}}>
           <Subheading style={{flex: 1}}>Partition Keys</Subheading>
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'baseline'}}>
-            <Box flex={{direction: 'column'}} style={{flex: 1}}>
-              <PartitionRangeInput
-                value={selected}
-                onChange={setSelected}
-                partitionNames={allKeys}
-              />
-            </Box>
-            <Button small onClick={setMostRecent}>
-              Most Recent
-            </Button>
-            <Button small onClick={setMissing}>
-              Missing
-            </Button>
-            <Button small onClick={setAll}>
-              All
-            </Button>
-          </Box>
+
+          <PartitionRangeWizard
+            all={allKeys}
+            selected={selected}
+            setSelected={setSelected}
+            partitionData={partitionData}
+          />
         </Box>
         <Box
           flex={{direction: 'column', gap: 8}}
           style={{marginTop: 16, overflowY: 'auto', overflowX: 'visible', maxHeight: '50vh'}}
         >
-          {assets.slice(0, previewCount).map((a) => (
+          {partitionedAssets.slice(0, previewCount).map((a) => (
             <PartitionHealthSummary
               assetKey={a.assetKey}
               showAssetKey
@@ -292,10 +284,16 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               selected={selected}
             />
           ))}
-          {previewCount < assets.length ? (
+          {previewCount === 0 ? (
             <Box margin={{vertical: 8}}>
-              <ButtonLink onClick={() => setPreviewCount(assets.length)}>
-                Show {assets.length - previewCount} more previews
+              <ButtonLink onClick={() => setPreviewCount(5)}>
+                Show per-Asset partition health
+              </ButtonLink>
+            </Box>
+          ) : previewCount < partitionedAssets.length ? (
+            <Box margin={{vertical: 8}}>
+              <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
+                Show {partitionedAssets.length - previewCount} more previews
               </ButtonLink>
             </Box>
           ) : undefined}
@@ -325,7 +323,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
         </Button>
-        <Button intent="primary" onClick={onLaunch}>
+        <Button
+          intent="primary"
+          onClick={onLaunch}
+          disabled={selected.length === 0}
+          loading={launching}
+        >
           {launching
             ? 'Launching...'
             : selected.length !== 1

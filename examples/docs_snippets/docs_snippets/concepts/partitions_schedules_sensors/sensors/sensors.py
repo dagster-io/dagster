@@ -215,15 +215,8 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
 def asset_a_and_b_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
-        logger_str = (
-            f"Assets {asset_events[AssetKey('asset_a')].event_log_entry.dagster_event.asset_key.path} "
-            f"and {asset_events[AssetKey('asset_b')].event_log_entry.dagster_event.asset_key.path} materialized"
-        )
         context.advance_all_cursors()
-        return RunRequest(
-            run_key=f"{context.cursor}",
-            run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
-        )
+        return RunRequest()
 
 
 # end_multi_asset_sensor_marker
@@ -232,22 +225,25 @@ def asset_a_and_b_sensor(context):
 
 
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_c")],
+    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     job=my_job,
 )
-def every_fifth_asset_c_sensor(context):
-    # this sensor will return a run request every fifth materialization of asset_c
-    asset_events = context.materialization_records_for_key(
-        asset_key=AssetKey("asset_c"), limit=5
-    )
-    if len(asset_events) == 5:
-        context.advance_cursor({AssetKey("asset_c"): asset_events[-1]})
-        return RunRequest(run_key=f"{context.cursor}")
-    else:
-        # you can optionally return a SkipReason
-        # we don't update the cursor here since we want to keep fetching the same events until we
-        # fetch 5 events
-        return SkipReason(f"asset_c only materialized {len(asset_events)} times.")
+def asset_a_and_b_sensor_with_skip_reason(context):
+    asset_events = context.latest_materialization_records_by_key()
+    if all(asset_events.values()):
+        context.advance_all_cursors()
+        return RunRequest()
+    elif any(asset_events.values()):
+        materialized_asset_key_strs = [
+            key.to_user_string() for key, value in asset_events.items() if value
+        ]
+        not_materialized_asset_key_strs = [
+            key.to_user_string() for key, value in asset_events.items() if not value
+        ]
+        return SkipReason(
+            f"Observed materializations for {materialized_asset_key_strs}, "
+            f"but not for {not_materialized_asset_key_strs}"
+        )
 
 
 # end_multi_asset_sensor_w_skip_reason

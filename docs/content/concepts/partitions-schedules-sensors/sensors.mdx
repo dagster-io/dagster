@@ -142,11 +142,7 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
 
 Multi-asset sensors, which can trigger job executions based on multiple asset materialization event streams, can be handled using the <PyObject object="multi_asset_sensor" decorator/> decorator.
 
-In the body of the sensor, you have access to the materialization event records for each asset via the `context`. The context object provides methods for fetching the materialization event records, as well as methods to handle partitioned materializations. For a full list of context methods available, view the [API reference here](/\_apidocs/schedules-sensors#dagster.MultiAssetSensorEvaluationContext).
-
-#### Triggering a run after monitored assets are materialized
-
-You can use the <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_key" /> to monitor when multiple assets are materialized:
+In the body of the sensor, you have access to the materialization event records for each asset via the context. <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_key" /> returns a dictionary mapping the `AssetKey` for each monitored asset to the most recent materialization record. If there is no materialization event, the mapped value will be `None`. <PyObject object="MultiAssetSensorEvaluationContext" method="materialization_records_for_key" /> returns a list of materialization event records for a specified `AssetKey`. Both methods only return materializations after the latest cursor.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
 @multi_asset_sensor(
@@ -156,39 +152,35 @@ You can use the <PyObject object="MultiAssetSensorEvaluationContext" method="lat
 def asset_a_and_b_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
-        logger_str = (
-            f"Assets {asset_events[AssetKey('asset_a')].event_log_entry.dagster_event.asset_key.path} "
-            f"and {asset_events[AssetKey('asset_b')].event_log_entry.dagster_event.asset_key.path} materialized"
-        )
         context.advance_all_cursors()
-        return RunRequest(
-            run_key=f"{context.cursor}",
-            run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
-        )
+        return RunRequest()
 ```
 
-Note the `context.advance_all_cursors` call near the end of the sensor. The cursor helps keep track of which materialization events have been processed by the sensor so that the next time the sensor runs, only newer events are fetched. Since `multi_asset_sensor`s provide increased flexibility to determine what conditions should result in `RunRequest`s, the sensor must manually update the cursor if a `RunRequest` is returned.
+Note the `context.advance_all_cursors` call near the end of the sensor. The cursor helps keep track of which materialization events have been processed by the sensor so that the next time the sensor runs, only newer events are fetched. Since `multi_asset_sensor`s provide flexibility to determine what conditions should result in `RunRequest`s, the sensor must manually update the cursor if a <PyObject object="RunRequest" /> is returned.
 
-You can also use the <PyObject object="MultiAssetSensorEvaluationContext" method="materialization_records_for_key"/> method to kick off runs after multiple materializations occur. The example below triggers a run on every fifth materialization. You can also return a `SkipReason` to document why the sensor didn't launch a run.
+You can also return a <PyObject object="SkipReason" /> to document why the sensor didn't launch a run.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_w_skip_reason endbefore=end_multi_asset_sensor_w_skip_reason
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_c")],
+    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     job=my_job,
 )
-def every_fifth_asset_c_sensor(context):
-    # this sensor will return a run request every fifth materialization of asset_c
-    asset_events = context.materialization_records_for_key(
-        asset_key=AssetKey("asset_c"), limit=5
-    )
-    if len(asset_events) == 5:
-        context.advance_cursor({AssetKey("asset_c"): asset_events[-1]})
-        return RunRequest(run_key=f"{context.cursor}")
-    else:
-        # you can optionally return a SkipReason
-        # we don't update the cursor here since we want to keep fetching the same events until we
-        # fetch 5 events
-        return SkipReason(f"asset_c only materialized {len(asset_events)} times.")
+def asset_a_and_b_sensor_with_skip_reason(context):
+    asset_events = context.latest_materialization_records_by_key()
+    if all(asset_events.values()):
+        context.advance_all_cursors()
+        return RunRequest()
+    elif any(asset_events.values()):
+        materialized_asset_key_strs = [
+            key.to_user_string() for key, value in asset_events.items() if value
+        ]
+        not_materialized_asset_key_strs = [
+            key.to_user_string() for key, value in asset_events.items() if not value
+        ]
+        return SkipReason(
+            f"Observed materializations for {materialized_asset_key_strs}, "
+            f"but not for {not_materialized_asset_key_strs}"
+        )
 ```
 
 #### Triggering a partitioned run after upstream partitions are materialized

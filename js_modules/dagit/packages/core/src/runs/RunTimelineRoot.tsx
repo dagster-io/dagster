@@ -1,4 +1,4 @@
-import {Page, PageHeader, Heading, Box, TextInput, ButtonGroup} from '@dagster-io/ui';
+import {Page, PageHeader, Heading, Box, TextInput, ButtonGroup, Button} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useTrackPageView} from '../app/analytics';
@@ -16,6 +16,19 @@ const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
 const POLL_INTERVAL = 60 * 1000;
 
+const hourWindowToOffset = (hourWindow: HourWindow) => {
+  switch (hourWindow) {
+    case '1':
+      return ONE_HOUR;
+    case '6':
+      return 6 * ONE_HOUR;
+    case '12':
+      return 12 * ONE_HOUR;
+    case '24':
+      return 24 * ONE_HOUR;
+  }
+};
+
 export const RunTimelineRoot = () => {
   useTrackPageView();
   useDocumentTitle('Runs');
@@ -25,6 +38,7 @@ export const RunTimelineRoot = () => {
   const [searchValue, setSearchValue] = React.useState('');
   const [hourWindow, setHourWindow] = useHourWindow('12');
   const [now, setNow] = React.useState(() => Date.now());
+  const [offsetMsec, setOffsetMsec] = React.useState(() => 0);
 
   React.useEffect(() => {
     setNow(Date.now());
@@ -37,9 +51,24 @@ export const RunTimelineRoot = () => {
     };
   }, [hourWindow]);
 
+  const onPageEarlier = React.useCallback(() => {
+    setOffsetMsec((current) => current - hourWindowToOffset(hourWindow));
+  }, [hourWindow]);
+
+  const onPageLater = React.useCallback(() => {
+    setOffsetMsec((current) => current + hourWindowToOffset(hourWindow));
+  }, [hourWindow]);
+
+  const onPageNow = React.useCallback(() => {
+    setOffsetMsec(0);
+  }, []);
+
   const range: [number, number] = React.useMemo(
-    () => [now - Number(hourWindow) * ONE_HOUR, now + LOOKAHEAD_HOURS * ONE_HOUR],
-    [hourWindow, now],
+    () => [
+      now - Number(hourWindow) * ONE_HOUR + offsetMsec,
+      now + LOOKAHEAD_HOURS * ONE_HOUR + offsetMsec,
+    ],
+    [hourWindow, now, offsetMsec],
   );
 
   const visibleJobKeys = React.useMemo(() => {
@@ -57,7 +86,7 @@ export const RunTimelineRoot = () => {
     <Page>
       <PageHeader title={<Heading>Runs</Heading>} tabs={<RunListTabs />} />
       <Box
-        padding={{horizontal: 24, top: 16}}
+        padding={{horizontal: 24, vertical: 16}}
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}>
@@ -67,19 +96,26 @@ export const RunTimelineRoot = () => {
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Filter by job name…"
-            style={{width: '340px'}}
+            style={{width: '200px'}}
           />
         </Box>
-        <ButtonGroup<HourWindow>
-          activeItems={new Set([hourWindow])}
-          buttons={[
-            {id: '1', label: '1hr'},
-            {id: '6', label: '6hr'},
-            {id: '12', label: '12hr'},
-            {id: '24', label: '24hr'},
-          ]}
-          onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
-        />
+        <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
+          <ButtonGroup<HourWindow>
+            activeItems={new Set([hourWindow])}
+            buttons={[
+              {id: '1', label: '1hr'},
+              {id: '6', label: '6hr'},
+              {id: '12', label: '12hr'},
+              {id: '24', label: '24hr'},
+            ]}
+            onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
+          />
+          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+            <Button onClick={onPageEarlier}>&larr;</Button>
+            <Button onClick={onPageNow}>Now</Button>
+            <Button onClick={onPageLater}>&rarr;</Button>
+          </Box>
+        </Box>
       </Box>
       <QueryfulRunTimeline range={range} visibleJobKeys={visibleJobKeys} />
     </Page>
