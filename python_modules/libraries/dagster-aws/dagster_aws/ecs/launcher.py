@@ -247,10 +247,6 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         """
         Launch a run in an ECS task.
-
-        Currently, Fargate is the only supported launchType and awsvpc is the
-        only supported networkMode. These are the defaults that are set up by
-        docker-compose when you use the Dagster ECS reference deployment.
         """
         run = context.pipeline_run
         container_context = EcsContainerContext.create_for_run(run, self)
