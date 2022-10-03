@@ -16,31 +16,20 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     def get_cached_data(self):
         # used for tracking how many times this function gets called over an execution
+        # if this gets called within the step worker, there will be an error as DAGSTER_HOME is not
+        # set in those containers
         instance = DagsterInstance.get()
         kvs_key = "get_cached_data_called"
         num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
-        print("x" * 1000)
-        print(num_called)
-        print("x" * 1000)
         # a quirk of how we end up launching this run requires us to get the definition twice before
         # the run starts
-        assert num_called < 2
+        assert num_called < 3
         instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
         return [self._cached_data]
 
     def get_definitions(self, cached_data):
         assert len(cached_data) == 1
         assert cached_data == [self._cached_data]
-        # used for tracking how many times this function gets called over an execution
-        instance = DagsterInstance.get()
-        kvs_key = "get_definitions_called"
-        num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
-        instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
-        print("y" * 1000)
-        print(num_called)
-        print("y" * 1000)
-        # twice before the run starts, once for each step of the run
-        assert num_called < 5
 
         @op
         def _op(foo):
