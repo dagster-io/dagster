@@ -28,7 +28,7 @@ from .events import AssetKey
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.repository_definition import RepositoryMetadata
+    from dagster._core.definitions.repository_definition import RepositoryLoadData
 
     from .asset_group import AssetGroup
     from .graph_definition import GraphDefinition
@@ -51,7 +51,7 @@ class ReconstructableRepository(
             ("executable_path", Optional[str]),
             ("entry_point", List[str]),
             ("container_context", Optional[Dict[str, Any]]),
-            ("repository_metadata", Optional["RepositoryMetadata"]),
+            ("repository_load_data", Optional["RepositoryLoadData"]),
         ],
     )
 ):
@@ -62,9 +62,9 @@ class ReconstructableRepository(
         executable_path=None,
         entry_point=None,
         container_context=None,
-        repository_metadata=None,
+        repository_load_data=None,
     ):
-        from dagster._core.definitions.repository_definition import RepositoryMetadata
+        from dagster._core.definitions.repository_definition import RepositoryLoadData
 
         return super(ReconstructableRepository, cls).__new__(
             cls,
@@ -81,18 +81,18 @@ class ReconstructableRepository(
                 if container_context != None
                 else None
             ),
-            repository_metadata=check.opt_inst_param(
-                repository_metadata, "repository_metadata", RepositoryMetadata
+            repository_load_data=check.opt_inst_param(
+                repository_load_data, "repository_load_data", RepositoryLoadData
             ),
         )
 
-    def with_repository_metadata(
-        self, metadata: Optional["RepositoryMetadata"]
+    def with_repository_load_data(
+        self, metadata: Optional["RepositoryLoadData"]
     ) -> "ReconstructableRepository":
-        return self._replace(repository_metadata=metadata)
+        return self._replace(repository_load_data=metadata)
 
     def get_definition(self):
-        return repository_def_from_pointer(self.pointer, self.repository_metadata)
+        return repository_def_from_pointer(self.pointer, self.repository_load_data)
 
     def get_reconstructable_pipeline(self, name):
         return ReconstructablePipeline(self, name)
@@ -181,10 +181,10 @@ class ReconstructablePipeline(
             asset_selection=asset_selection,
         )
 
-    def with_repository_metadata(
-        self, metadata: Optional["RepositoryMetadata"]
+    def with_repository_load_data(
+        self, metadata: Optional["RepositoryLoadData"]
     ) -> "ReconstructablePipeline":
-        return self._replace(repository=self.repository.with_repository_metadata(metadata))
+        return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
     @property
     def solid_selection(self) -> Optional[List[str]]:
@@ -672,20 +672,20 @@ def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
 # NOTE: mypy can't handle these overloads but pyright can
 def repository_def_from_target_def(  # type: ignore
     target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"],
-    repository_metadata: Optional["RepositoryMetadata"] = None,
+    repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
     ...
 
 
 @overload
 def repository_def_from_target_def(
-    target: object, repository_metadata: Optional["RepositoryMetadata"] = None
+    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
 ) -> None:
     ...
 
 
 def repository_def_from_target_def(
-    target: object, repository_metadata: Optional["RepositoryMetadata"] = None
+    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
 ) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions import AssetGroup
 
@@ -711,16 +711,19 @@ def repository_def_from_target_def(
     elif isinstance(target, RepositoryDefinition):
         return target
     elif isinstance(target, PendingRepositoryDefinition):
-        return target.resolve(repository_metadata)
+        # must regenerate metadata
+        if repository_load_data is None:
+            repository_load_data = target.get_repository_load_data()
+        return target.resolve(repository_load_data)
     else:
         return None
 
 
 def repository_def_from_pointer(
-    pointer: CodePointer, repository_metadata: Optional["RepositoryMetadata"] = None
+    pointer: CodePointer, repository_load_data: Optional["RepositoryLoadData"] = None
 ) -> "RepositoryDefinition":
     target = def_from_pointer(pointer)
-    repo_def = repository_def_from_target_def(target, repository_metadata)
+    repo_def = repository_def_from_target_def(target, repository_load_data)
     if not repo_def:
         raise DagsterInvariantViolationError(
             "CodePointer ({str}) must resolve to a "

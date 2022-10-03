@@ -18,10 +18,7 @@ from dagster import (
     reconstructable,
     repository,
 )
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionMetadata,
-    CacheableAssetsDefinition,
-)
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition, CachedAssetsData
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -273,9 +270,15 @@ def test_using_file_system_for_subplan_invalid_step():
 def test_using_repository_data():
     with instance_for_test() as instance:
         # first, we resolve the repository to generate our cached metadata
-        repository_def = pending_repo.resolve(repository_metadata=None)
+        repository_load_data = pending_repo.get_repository_load_data()
+        repository_def = pending_repo.resolve(repository_load_data)
         pipeline_def = repository_def.get_job("all_asset_job")
-        repository_metadata = repository_def.repository_metadata
+        repository_load_data = repository_def.repository_load_data
+
+        assert (
+            instance.run_storage.kvs_get({"get_definitions_called"}).get("get_definitions_called")
+            == "1"
+        )
 
         recon_repo = ReconstructableRepository.for_file(
             file_relative_path(__file__, "test_external_execution_plan.py"), fn_name="pending_repo"
@@ -285,8 +288,15 @@ def test_using_repository_data():
         )
 
         execution_plan = create_execution_plan(
-            recon_pipeline, repository_metadata=repository_metadata
+            recon_pipeline, repository_load_data=repository_load_data
         )
+
+        # need to get the definitions from metadata when creating the plan
+        assert (
+            instance.run_storage.kvs_get({"get_definitions_called"}).get("get_definitions_called")
+            == "2"
+        )
+
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def, execution_plan=execution_plan
         )
@@ -298,31 +308,45 @@ def test_using_repository_data():
             instance=instance,
         )
 
-        assert instance.run_storage.kvs_get({"num_called"}).get("num_called") == "1"
+        assert (
+            instance.run_storage.kvs_get({"get_cached_data_called"}).get("get_cached_data_called")
+            == "1"
+        )
+        # should not have needed to get_definitions again after creating the plan
+        assert (
+            instance.run_storage.kvs_get({"get_definitions_called"}).get("get_definitions_called")
+            == "2"
+        )
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _metadata = AssetsDefinitionMetadata(keys_by_output_name={"result": AssetKey("foo")})
+    _cached_data = CachedAssetsData(keys_by_output_name={"result": AssetKey("foo")})
 
-    def get_metadata(self):
+    def get_cached_data(self):
         # used for tracking how many times this function gets called over an execution
         instance = DagsterInstance.get()
-        kvs_key = "num_called"
-        num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
-        instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
-        return [self._metadata]
+        kvs_key = "get_cached_data_called"
+        get_cached_data_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
+        instance.run_storage.kvs_set({kvs_key: str(get_cached_data_called + 1)})
+        return [self._cached_data]
 
-    def get_definitions(self, metadata):
-        assert len(metadata) == 1
-        assert metadata == [self._metadata]
+    def get_definitions(self, cached_data):
+        assert len(cached_data) == 1
+        assert cached_data == [self._cached_data]
+
+        # used for tracking how many times this function gets called over an execution
+        instance = DagsterInstance.get()
+        kvs_key = "get_definitions_called"
+        get_definitions_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
+        instance.run_storage.kvs_set({kvs_key: str(get_definitions_called + 1)})
 
         @op
         def _op():
             return 1
 
         return [
-            AssetsDefinition.from_op(_op, keys_by_output_name=md.keys_by_output_name)
-            for md in metadata
+            AssetsDefinition.from_op(_op, keys_by_output_name=cd.keys_by_output_name)
+            for cd in cached_data
         ]
 
 

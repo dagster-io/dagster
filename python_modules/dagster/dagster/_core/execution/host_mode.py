@@ -197,7 +197,7 @@ def execute_run_host_mode(
         pipeline_run.pipeline_name,
         execution_plan_snapshot,
     )
-    pipeline = pipeline.with_repository_metadata(execution_plan.repository_metadata)
+    pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,

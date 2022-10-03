@@ -30,7 +30,7 @@ from dagster._core.definitions.executor_definition import ExecutorRequirement
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
-from dagster._core.definitions.repository_definition import RepositoryMetadata
+from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
@@ -108,14 +108,14 @@ class _PlanBuilder:
         known_state: KnownExecutionState,
         instance_ref: Optional[InstanceRef],
         tags: Dict[str, str],
-        repository_metadata: Optional[RepositoryMetadata],
+        repository_load_data: Optional[RepositoryLoadData],
     ):
-        if isinstance(pipeline, ReconstructablePipeline) and repository_metadata is not None:
+        if isinstance(pipeline, ReconstructablePipeline) and repository_load_data is not None:
             check.invariant(
-                pipeline.repository.repository_metadata == repository_metadata,
-                "When building an ExecutionPlan with explicit repository_metadata and a "
-                "ReconstructablePipeline, the repository_metadata on the pipeline must be identical "
-                "to passed-in repository_metadata.",
+                pipeline.repository.repository_load_data == repository_load_data,
+                "When building an ExecutionPlan with explicit repository_load_data and a "
+                "ReconstructablePipeline, the repository_load_data on the pipeline must be identical "
+                "to passed-in repository_load_data.",
             )
         self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
         self.resolved_run_config = check.inst_param(
@@ -136,8 +136,8 @@ class _PlanBuilder:
         self._instance_ref = instance_ref
         self._seen_handles: Set[StepHandleUnion] = set()
         self._tags = check.dict_param(tags, "tags", key_type=str, value_type=str)
-        self.repository_metadata = check.opt_inst_param(
-            repository_metadata, "repository_metadata", RepositoryMetadata
+        self.repository_load_data = check.opt_inst_param(
+            repository_load_data, "repository_load_data", RepositoryLoadData
         )
 
     @property
@@ -245,7 +245,7 @@ class _PlanBuilder:
                 executable_map,
             ),
             executor_name=executor_name,
-            repository_metadata=self.repository_metadata,
+            repository_load_data=self.repository_load_data,
         )
 
         if self.step_keys_to_execute is not None:
@@ -625,7 +625,7 @@ class ExecutionPlan(
             ("artifacts_persisted", bool),
             ("step_dict_by_key", Dict[str, IExecutionStep]),
             ("executor_name", Optional[str]),
-            ("repository_metadata", Optional[RepositoryMetadata]),
+            ("repository_load_data", Optional[RepositoryLoadData]),
         ],
     )
 ):
@@ -639,7 +639,7 @@ class ExecutionPlan(
         artifacts_persisted: bool = False,
         step_dict_by_key: Optional[Dict[str, IExecutionStep]] = None,
         executor_name: Optional[str] = None,
-        repository_metadata: Optional[RepositoryMetadata] = None,
+        repository_load_data: Optional[RepositoryLoadData] = None,
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
@@ -675,8 +675,8 @@ class ExecutionPlan(
                 ),
             ),
             executor_name=check.opt_str_param(executor_name, "executor_name"),
-            repository_metadata=check.opt_inst_param(
-                repository_metadata, "repository_metadata", RepositoryMetadata
+            repository_load_data=check.opt_inst_param(
+                repository_load_data, "repository_load_data", RepositoryLoadData
             ),
         )
 
@@ -863,7 +863,7 @@ class ExecutionPlan(
                 executable_map,
             ),
             executor_name=self.executor_name,
-            repository_metadata=self.repository_metadata,
+            repository_load_data=self.repository_load_data,
         )
 
     def get_version_for_step_output_handle(
@@ -1009,7 +1009,7 @@ class ExecutionPlan(
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
         tags: Optional[Dict[str, str]] = None,
-        repository_metadata: Optional[RepositoryMetadata] = None,
+        repository_load_data: Optional[RepositoryLoadData] = None,
     ) -> "ExecutionPlan":
         """Here we build a new ExecutionPlan from a pipeline definition and the resolved run config.
 
@@ -1030,8 +1030,8 @@ class ExecutionPlan(
             default=KnownExecutionState(),
         )
         tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
-        repository_metadata = check.opt_inst_param(
-            repository_metadata, "repository_metadata", RepositoryMetadata
+        repository_load_data = check.opt_inst_param(
+            repository_load_data, "repository_load_data", RepositoryLoadData
         )
 
         plan_builder = _PlanBuilder(
@@ -1041,7 +1041,7 @@ class ExecutionPlan(
             known_state=known_state,
             instance_ref=instance_ref,
             tags=tags,
-            repository_metadata=repository_metadata,
+            repository_load_data=repository_load_data,
         )
 
         # Finally, we build and return the execution plan
@@ -1169,7 +1169,7 @@ class ExecutionPlan(
             execution_plan_snapshot.initial_known_state or KnownExecutionState(),
             execution_plan_snapshot.artifacts_persisted,
             executor_name=execution_plan_snapshot.executor_name,
-            repository_metadata=execution_plan_snapshot.repository_metadata,
+            repository_load_data=execution_plan_snapshot.repository_load_data,
         )
 
 

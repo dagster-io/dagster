@@ -10,7 +10,7 @@ from dagster._utils import frozendict, frozenlist, make_readonly_value
 
 
 @whitelist_for_serdes
-class AssetsDefinitionMetadata(
+class CachedAssetsData(
     NamedTuple(
         "_AssetsDefinitionMetadata",
         [
@@ -93,14 +93,14 @@ class CacheableAssetsDefinition:
     def unique_id(self) -> str:
         return self._unique_id
 
-    def get_metadata(self) -> Sequence[AssetsDefinitionMetadata]:
+    def get_cached_data(self) -> Sequence[CachedAssetsData]:
         """Returns an object representing cacheable information about assets which are not defined
         in Python code.
         """
         raise NotImplementedError()
 
     def get_definitions(
-        self, metadata: Sequence[AssetsDefinitionMetadata]
+        self, cached_data: Sequence[CachedAssetsData]
     ) -> Sequence[AssetsDefinition]:
         """For a given set of AssetsDefinitionMetadata, return a list of AssetsDefinitions"""
         raise NotImplementedError()

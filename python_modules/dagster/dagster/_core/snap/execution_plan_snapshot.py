@@ -2,7 +2,7 @@ from typing import Dict, List, NamedTuple, Optional, Set
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
-from dagster._core.definitions.repository_definition import RepositoryMetadata
+from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.execution.plan.inputs import (
     StepInput,
     StepInputSourceUnion,
@@ -36,7 +36,7 @@ def create_execution_plan_snapshot_id(execution_plan_snapshot) -> str:
 class ExecutionPlanSnapshotSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def skip_when_empty(cls) -> Set[str]:
-        return {"repository_metadata"}  # Maintain stable snapshot ID for back-compat purposes
+        return {"repository_load_data"}  # Maintain stable snapshot ID for back-compat purposes
 
 
 @whitelist_for_serdes(serializer=ExecutionPlanSnapshotSerializer)
@@ -51,7 +51,7 @@ class ExecutionPlanSnapshot(
             ("initial_known_state", Optional[KnownExecutionState]),
             ("snapshot_version", Optional[int]),
             ("executor_name", Optional[str]),
-            ("repository_metadata", Optional[RepositoryMetadata]),
+            ("repository_load_data", Optional[RepositoryLoadData]),
         ],
     )
 ):
@@ -63,7 +63,7 @@ class ExecutionPlanSnapshot(
     #   can be used to track breaking changes to snapshot execution format if needed)
     # added step_output_versions
     # removed step_output_versions
-    # added repository_metadata
+    # added repository_load_data
     def __new__(
         cls,
         steps: List["ExecutionStepSnap"],
@@ -73,7 +73,7 @@ class ExecutionPlanSnapshot(
         initial_known_state: Optional[KnownExecutionState] = None,
         snapshot_version: Optional[int] = None,
         executor_name: Optional[str] = None,
-        repository_metadata: Optional[RepositoryMetadata] = None,
+        repository_load_data: Optional[RepositoryLoadData] = None,
     ):
         return super(ExecutionPlanSnapshot, cls).__new__(
             cls,
@@ -90,8 +90,8 @@ class ExecutionPlanSnapshot(
             ),
             snapshot_version=check.opt_int_param(snapshot_version, "snapshot_version"),
             executor_name=check.opt_str_param(executor_name, "executor_name"),
-            repository_metadata=check.opt_inst_param(
-                repository_metadata, "repository_metadata", RepositoryMetadata
+            repository_load_data=check.opt_inst_param(
+                repository_load_data, "repository_load_data", RepositoryLoadData
             ),
         )
 
@@ -313,5 +313,5 @@ def snapshot_from_execution_plan(
         initial_known_state=execution_plan.known_state,
         snapshot_version=CURRENT_SNAPSHOT_VERSION,
         executor_name=execution_plan.executor_name,
-        repository_metadata=execution_plan.repository_metadata,
+        repository_load_data=execution_plan.repository_load_data,
     )

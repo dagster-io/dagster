@@ -1,6 +1,7 @@
 import os
 import time
 
+import pytest
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     find_local_test_image,
@@ -19,7 +20,8 @@ from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
-def test_image_on_pipeline(aws_env):
+@pytest.mark.parametrize("from_pending_repository", [True, False])
+def test_image_on_pipeline(aws_env, from_pending_repository):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
@@ -59,9 +61,15 @@ def test_image_on_pipeline(aws_env):
             }
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_docker", docker_image)
+        filename = "pending_repo.py" if from_pending_repository else "repo.py"
+        recon_pipeline = get_test_project_recon_pipeline(
+            "demo_pipeline_docker", docker_image, filename=filename
+        )
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline_docker", container_image=docker_image
+            instance,
+            "demo_pipeline_docker",
+            container_image=docker_image,
+            filename=filename,
         ) as (
             workspace,
             orig_pipeline,

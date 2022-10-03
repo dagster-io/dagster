@@ -28,7 +28,7 @@ from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import make_readonly_value, merge_dicts
 
-from .cacheable_assets import AssetsDefinitionMetadata
+from .cacheable_assets import CachedAssetsData
 from .events import AssetKey, CoercibleToAssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
@@ -78,21 +78,21 @@ RepositoryListDefinition = Union[
 
 
 @whitelist_for_serdes
-class RepositoryMetadata(
+class RepositoryLoadData(
     NamedTuple(
-        "_RepositoryMetadata",
+        "_RepositoryLoadData",
         [
-            ("cached_metadata_by_key", Mapping[str, Sequence[AssetsDefinitionMetadata]]),
+            ("cached_data_by_key", Mapping[str, Sequence[CachedAssetsData]]),
         ],
     )
 ):
-    def __new__(cls, cached_metadata_by_key: Mapping[str, Sequence[AssetsDefinitionMetadata]]):
-        return super(RepositoryMetadata, cls).__new__(
+    def __new__(cls, cached_data_by_key: Mapping[str, Sequence[CachedAssetsData]]):
+        return super(RepositoryLoadData, cls).__new__(
             cls,
-            cached_metadata_by_key=make_readonly_value(
+            cached_data_by_key=make_readonly_value(
                 check.mapping_param(
-                    cached_metadata_by_key,
-                    "cached_metadata_by_key",
+                    cached_data_by_key,
+                    "cached_data_by_key",
                     key_type=str,
                     value_type=list,
                 )
@@ -1180,18 +1180,18 @@ class RepositoryDefinition:
         *,
         repository_data,
         description=None,
-        repository_metadata=None,
+        repository_load_data=None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
         self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
-        self._repository_metadata = check.opt_inst_param(
-            repository_metadata, "repository_metadata", RepositoryMetadata
+        self._repository_load_data = check.opt_inst_param(
+            repository_load_data, "repository_load_data", RepositoryLoadData
         )
 
     @property
-    def repository_metadata(self) -> Optional[RepositoryMetadata]:
-        return self._repository_metadata
+    def repository_load_data(self) -> Optional[RepositoryLoadData]:
+        return self._repository_load_data
 
     @public  # type: ignore
     @property
@@ -1420,7 +1420,9 @@ class PendingRepositoryDefinition:
     def __init__(
         self,
         name: str,
-        repository_definitions: Any,
+        repository_definitions: Sequence[
+            Union[RepositoryListDefinition, "CacheableAssetsDefinition"]
+        ],
         description: Optional[str] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
@@ -1439,31 +1441,32 @@ class PendingRepositoryDefinition:
     def name(self) -> str:
         return self._name
 
-    def resolve(self, repository_metadata: Optional[RepositoryMetadata]) -> RepositoryDefinition:
+    def get_repository_load_data(self) -> RepositoryLoadData:
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
-        if repository_metadata is None:
-            # must generate metadata from scratch
-            repository_metadata = RepositoryMetadata(
-                cached_metadata_by_key={
-                    defn.unique_id: defn.get_metadata()
-                    for defn in self._repository_definitions
-                    if isinstance(defn, CacheableAssetsDefinition)
-                }
-            )
+        return RepositoryLoadData(
+            cached_data_by_key={
+                defn.unique_id: defn.get_cached_data()
+                for defn in self._repository_definitions
+                if isinstance(defn, CacheableAssetsDefinition)
+            }
+        )
+
+    def resolve(self, repository_load_data: RepositoryLoadData) -> RepositoryDefinition:
+        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
         resolved_definitions: List[RepositoryListDefinition] = []
         for defn in self._repository_definitions:
             if isinstance(defn, CacheableAssetsDefinition):
                 # should always have metadata for each cached defn at this point
                 check.invariant(
-                    defn.unique_id in repository_metadata.cached_metadata_by_key,
+                    defn.unique_id in repository_load_data.cached_data_by_key,
                     f"No metadata found for CacheableAssetsDefinition with unique_id {defn.unique_id}.",
                 )
                 # use the emtadata to generate definitions
                 resolved_definitions.extend(
                     defn.get_definitions(
-                        metadata=repository_metadata.cached_metadata_by_key[defn.unique_id]
+                        cached_data=repository_load_data.cached_data_by_key[defn.unique_id]
                     )
                 )
             else:
@@ -1479,7 +1482,7 @@ class PendingRepositoryDefinition:
             self._name,
             repository_data=repository_data,
             description=self._description,
-            repository_metadata=repository_metadata,
+            repository_load_data=repository_load_data,
         )
 
 

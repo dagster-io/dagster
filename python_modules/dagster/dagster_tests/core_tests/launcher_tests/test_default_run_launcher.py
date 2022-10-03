@@ -195,9 +195,18 @@ def test_successful_run_from_pending(
         known_state=None,
     )
 
-    num_called = instance.run_storage.kvs_get({"num_called_a", "num_called_b"})
-    assert num_called.get("num_called_a") == "1"
-    assert num_called.get("num_called_b") == "1"
+    call_counts = instance.run_storage.kvs_get(
+        {
+            "get_cached_data_called_a",
+            "get_cached_data_called_b",
+            "get_definitions_called_a",
+            "get_definitions_called_b",
+        }
+    )
+    assert call_counts.get("get_cached_data_called_a") == "1"
+    assert call_counts.get("get_cached_data_called_b") == "1"
+    assert call_counts.get("get_definitions_called_a") == "1"
+    assert call_counts.get("get_definitions_called_b") == "1"
 
     created_pipeline_run = instance.create_run(
         pipeline_name="my_cool_asset_job",
@@ -230,15 +239,26 @@ def test_successful_run_from_pending(
         == stored_pipeline_run.execution_plan_snapshot_id
     )
     assert (
-        created_pipeline_run.has_repository_metadata and stored_pipeline_run.has_repository_metadata
+        created_pipeline_run.has_repository_load_data
+        and stored_pipeline_run.has_repository_load_data
     )
 
     finished_pipeline_run = poll_for_finished_run(instance, run_id)
     assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
-    num_called = instance.run_storage.kvs_get({"num_called_a", "num_called_b"})
-    assert num_called.get("num_called_a") == "1"
-    assert num_called.get("num_called_b") == "1"
+    call_counts = instance.run_storage.kvs_get(
+        {
+            "get_cached_data_called_a",
+            "get_cached_data_called_b",
+            "get_definitions_called_a",
+            "get_definitions_called_b",
+        }
+    )
+    assert call_counts.get("get_cached_data_called_a") == "1"
+    assert call_counts.get("get_cached_data_called_b") == "1"
+    # each step is in a different process, so should be called 3 more times
+    assert call_counts.get("get_definitions_called_a") == "4"
+    assert call_counts.get("get_definitions_called_b") == "4"
 
 
 def test_invalid_instance_run():

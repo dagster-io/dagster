@@ -45,7 +45,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         recon_pipeline,
         retry_mode,
         known_state,
-        repository_metadata,
+        repository_load_data,
     ):
         self.run_config = run_config
         self.pipeline_run = pipeline_run
@@ -55,7 +55,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         self.recon_pipeline = recon_pipeline
         self.retry_mode = retry_mode
         self.known_state = known_state
-        self.repository_metadata = repository_metadata
+        self.repository_load_data = repository_load_data
 
     def execute(self):
         pipeline = self.recon_pipeline
@@ -67,7 +67,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 mode=self.pipeline_run.mode,
                 step_keys_to_execute=[self.step_key],
                 known_state=self.known_state,
-                repository_metadata=self.repository_metadata,
+                repository_load_data=self.repository_load_data,
             )
 
             log_manager = create_context_free_log_manager(instance, self.pipeline_run)
@@ -204,7 +204,7 @@ class MultiprocessExecutor(Executor):
                                 term_events,
                                 self.retries,
                                 active_execution.get_known_state(),
-                                execution_plan.repository_metadata,
+                                execution_plan.repository_load_data,
                             )
 
                     # process active iterators
@@ -307,7 +307,7 @@ def execute_step_out_of_process(
     term_events,
     retries,
     known_state,
-    repository_metadata,
+    repository_load_data,
 ):
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
@@ -318,7 +318,7 @@ def execute_step_out_of_process(
         recon_pipeline=pipeline,
         retry_mode=retries,
         known_state=known_state,
-        repository_metadata=repository_metadata,
+        repository_load_data=repository_load_data,
     )
 
     yield DagsterEvent.step_worker_starting(

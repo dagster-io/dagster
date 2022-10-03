@@ -11,7 +11,7 @@ class GrapheneRepositoryMetadata(graphene.ObjectType):
     value = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "RepositoryMetadata"
+        name = "RepositoryLoadData"
 
 
 class GrapheneRepositoryOrigin(graphene.ObjectType):

@@ -18,7 +18,7 @@ from dagster._config import Permissive
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
-from dagster._core.definitions.repository_definition import AssetsDefinitionMetadata
+from dagster._core.definitions.repository_definition import CachedAssetsData
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_pipeline, reexecute_pipeline
 from dagster._core.execution.retries import RetryMode
@@ -308,6 +308,11 @@ def test_execute_using_repository_data():
             instance=instance,
             run_config={"execution": {"config": {}}},
         )
+        call_counts = instance.run_storage.kvs_get(
+            {"get_cached_data_called", "get_definitions_called"}
+        )
+        assert call_counts.get("get_cached_data_called") == "1"
+        assert call_counts.get("get_definitions_called") == "4"
         TestStepHandler.wait_for_processes()
 
         assert any(
@@ -317,7 +322,6 @@ def test_execute_using_repository_data():
             ]
         )
         assert result.success
-        assert instance.run_storage.kvs_get({"num_called"}).get("num_called") == "1"
 
         result = reexecute_pipeline(recon_pipeline, result.run_id, instance=instance)
         TestStepHandler.wait_for_processes()
@@ -329,33 +333,43 @@ def test_execute_using_repository_data():
             ]
         )
         assert result.success
-        # we do not attempt to fetch the previous repository metadata off of the execution plan
+        # we do not attempt to fetch the previous repository load data off of the execution plan
         # from the previous run, so the reexecution will require us to fetch the metadata again
-        assert instance.run_storage.kvs_get({"num_called"}).get("num_called") == "2"
+        call_counts = instance.run_storage.kvs_get(
+            {"get_cached_data_called", "get_definitions_called"}
+        )
+        assert call_counts.get("get_cached_data_called") == "2"
+
+        assert call_counts.get("get_definitions_called") == "7"
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _metadata = AssetsDefinitionMetadata(keys_by_output_name={"result": AssetKey("foo")})
+    _cached_data = CachedAssetsData(keys_by_output_name={"result": AssetKey("foo")})
 
-    def get_metadata(self):
+    def get_cached_data(self):
         # used for tracking how many times this function gets called over an execution
         instance = DagsterInstance.get()
-        kvs_key = "num_called"
+        kvs_key = "get_cached_data_called"
         num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
         instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
-        return [self._metadata]
+        return [self._cached_data]
 
-    def get_definitions(self, metadata):
-        assert len(metadata) == 1
-        assert metadata == [self._metadata]
+    def get_definitions(self, cached_data):
+        assert len(cached_data) == 1
+        assert cached_data == [self._cached_data]
+        # used for tracking how many times this function gets called over an execution
+        instance = DagsterInstance.get()
+        kvs_key = "get_definitions_called"
+        num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
+        instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
 
         @op
         def _op():
             return 1
 
         return [
-            AssetsDefinition.from_op(_op, keys_by_output_name=md.keys_by_output_name)
-            for md in metadata
+            AssetsDefinition.from_op(_op, keys_by_output_name=cd.keys_by_output_name)
+            for cd in cached_data
         ]
 
 

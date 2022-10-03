@@ -386,12 +386,12 @@ def _execute_step_command_body(
             if not success:
                 return
 
-        if pipeline_run.has_repository_metadata:
-            repository_metadata = instance.get_execution_plan_snapshot(
+        if pipeline_run.has_repository_load_data:
+            repository_load_data = instance.get_execution_plan_snapshot(
                 pipeline_run.execution_plan_snapshot_id
-            ).repository_metadata
+            ).repository_load_data
         else:
-            repository_metadata = None
+            repository_load_data = None
 
         recon_pipeline = recon_pipeline_from_origin(
             cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
@@ -405,7 +405,7 @@ def _execute_step_command_body(
             step_keys_to_execute=args.step_keys_to_execute,
             mode=pipeline_run.mode,
             known_state=args.known_state,
-            repository_metadata=repository_metadata,
+            repository_load_data=repository_load_data,
         )
 
         yield from execute_plan_iterator(

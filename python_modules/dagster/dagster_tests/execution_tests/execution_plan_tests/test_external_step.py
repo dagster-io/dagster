@@ -29,10 +29,7 @@ from dagster import (
     resource,
     with_resources,
 )
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionMetadata,
-    CacheableAssetsDefinition,
-)
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition, CachedAssetsData
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.events import DagsterEventType
@@ -590,7 +587,7 @@ def test_multiproc_launcher_requests_retry():
                 assert DagsterEventType.STEP_RESTARTED in event_types
 
 
-def test_multiproc_launcher_with_repository_metadata():
+def test_multiproc_launcher_with_repository_load_data():
     with tempfile.TemporaryDirectory() as tmpdir:
         run_config = {
             "resources": {
@@ -617,9 +614,9 @@ def test_multiproc_launcher_with_repository_metadata():
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _metadata = AssetsDefinitionMetadata(keys_by_output_name={"result": AssetKey("foo")})
+    _metadata = CachedAssetsData(keys_by_output_name={"result": AssetKey("foo")})
 
-    def get_metadata(self):
+    def get_cached_data(self):
         # used for tracking how many times this function gets called over an execution
         # since we're crossing process boundaries, we pre-populate this value in the host process
         # and assert that this pre-populated value is present, to ensure that we'll error if this
@@ -630,9 +627,9 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         instance.run_storage.kvs_set({"val": "NEW_VALUE"})
         return [self._metadata]
 
-    def get_definitions(self, metadata):
-        assert len(metadata) == 1
-        assert metadata == [self._metadata]
+    def get_definitions(self, cached_data):
+        assert len(cached_data) == 1
+        assert cached_data == [self._cached_data]
 
         @op(required_resource_keys={"step_launcher"})
         def _op():
@@ -642,9 +639,9 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
             [
                 AssetsDefinition.from_op(
                     _op,
-                    keys_by_output_name=md.keys_by_output_name,
+                    keys_by_output_name=cd.keys_by_output_name,
                 )
-                for md in metadata
+                for cd in cached_data
             ],
             {"step_launcher": local_external_step_launcher},
         )

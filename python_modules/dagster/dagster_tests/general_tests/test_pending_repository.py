@@ -13,13 +13,10 @@ from dagster import (
     op,
     repository,
 )
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionMetadata,
-    CacheableAssetsDefinition,
-)
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition, CachedAssetsData
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
-    RepositoryMetadata,
+    RepositoryLoadData,
 )
 
 from .test_repository import define_empty_job, define_simple_job, define_with_resources_job
@@ -27,15 +24,15 @@ from .test_repository import define_empty_job, define_simple_job, define_with_re
 
 def define_cacheable_and_uncacheable_assets():
     class MyCacheableAssets(CacheableAssetsDefinition):
-        def get_metadata(self):
+        def get_cached_data(self):
             return [
-                AssetsDefinitionMetadata(
+                CachedAssetsData(
                     keys_by_input_name={"upstream": AssetKey("upstream")},
                     keys_by_output_name={"result": AssetKey(self.unique_id)},
                 )
             ]
 
-        def get_definitions(self, metadata):
+        def get_definitions(self, cached_data):
             @op(name=self.unique_id)
             def _op(upstream):
                 return upstream + 1
@@ -43,10 +40,10 @@ def define_cacheable_and_uncacheable_assets():
             return [
                 AssetsDefinition.from_op(
                     _op,
-                    keys_by_input_name=md.keys_by_input_name,
-                    keys_by_output_name=md.keys_by_output_name,
+                    keys_by_input_name=cd.keys_by_input_name,
+                    keys_by_output_name=cd.keys_by_output_name,
                 )
-                for md in metadata
+                for cd in cached_data
             ]
 
     @asset
@@ -78,7 +75,7 @@ def pending_repo():
 
 def test_resolve_empty():
     assert isinstance(pending_repo, PendingRepositoryDefinition)
-    repo = pending_repo.resolve(repository_metadata=None)
+    repo = pending_repo.resolve(repository_load_data=None)
     assert isinstance(repo, RepositoryDefinition)
     assert isinstance(repo.get_job("simple_job"), JobDefinition)
     assert isinstance(repo.get_job("all_asset_job"), JobDefinition)
@@ -88,10 +85,10 @@ def test_resolve_missing_key():
     assert isinstance(pending_repo, PendingRepositoryDefinition)
     with pytest.raises(check.CheckError, match="No metadata found"):
         pending_repo.resolve(
-            repository_metadata=RepositoryMetadata(
-                cached_metadata_by_key={
+            repository_load_data=RepositoryLoadData(
+                cached_data_by_key={
                     "a": [
-                        AssetsDefinitionMetadata(
+                        CachedAssetsData(
                             keys_by_input_name={"upstream": AssetKey("upstream")},
                             keys_by_output_name={"result": AssetKey("a")},
                         )
@@ -108,16 +105,16 @@ def test_resolve_wrong_data():
         match=r"Input asset .*\"b\".* is not produced by any of the provided asset ops and is not one of the provided sources",
     ):
         pending_repo.resolve(
-            repository_metadata=RepositoryMetadata(
-                cached_metadata_by_key={
+            repository_load_data=RepositoryLoadData(
+                cached_data_by_key={
                     "a": [
-                        AssetsDefinitionMetadata(
+                        CachedAssetsData(
                             keys_by_input_name={"upstream": AssetKey("upstream")},
                             keys_by_output_name={"result": AssetKey("a")},
                         )
                     ],
                     "b": [
-                        AssetsDefinitionMetadata(
+                        CachedAssetsData(
                             keys_by_input_name={"upstream": AssetKey("upstream")},
                             keys_by_output_name={"result": AssetKey("BAD_ASSET_KEY")},
                         )
