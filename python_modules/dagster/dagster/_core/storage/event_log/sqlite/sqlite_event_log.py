@@ -409,6 +409,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         with self.index_connection() as conn:
             return check_alembic_revision(alembic_config, conn)
 
+    @property
+    def is_sharded(self):
+        return True
+
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
     def __init__(self, event_log_storage, run_id, callback, cursor, **kwargs):
