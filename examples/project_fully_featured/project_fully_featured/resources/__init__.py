@@ -48,7 +48,7 @@ configured_pyspark = pyspark_resource.configured(
 )
 
 
-snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB_ASSETS"})
+snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB"})
 
 RESOURCES_PROD = {
     "s3_bucket": ResourceDefinition.hardcoded_resource("hackernews-elementl-prod"),
@@ -61,9 +61,7 @@ RESOURCES_PROD = {
     "dbt": dbt_prod_resource,
 }
 
-snowflake_io_manager_staging = snowflake_io_manager.configured(
-    {"database": "DEMO_DB_ASSETS_STAGING"}
-)
+snowflake_io_manager_staging = snowflake_io_manager.configured({"database": "DEMO_DB_STAGING"})
 
 
 RESOURCES_STAGING = {
