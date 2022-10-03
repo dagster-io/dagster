@@ -139,31 +139,33 @@ asset_result = materialize(
 A common use case for configuration is passing secrets to connect to external services. Resources, which can be used to model connections to external services, accept secrets as configuration values. These secrets can be read from your environment variables:
 
 ```python file=/concepts/configuration/env_vars_config.py startafter=start_database_example endbefore=end_database_example
+from dagster import StringSource, job, op, resource
+
+
+@resource(config_schema={"username": StringSource, "password": StringSource})
+def database_client(context):
+    username = context.resource_config["username"]
+    password = context.resource_config["password"]
+    ...
+
+
 @op(required_resource_keys={"database"})
 def get_one(context):
     context.resources.database.execute_query("SELECT 1")
 
 
-@job(resource_defs={"database": database_client})
-def get_one_from_db():
-    get_one()
-
-
-get_one_from_db.execute_in_process(
-    run_config={
-        "resources": {
-            "database": {
-                "config": {
-                    "username": {"env": "SYSTEM_USER"},
-                    "password": {"env": "SYSTEM_PASSWORD"},
-                    "hostname": "abccompany",
-                    "db_name": "PRODUCTION",
-                    "port": "5432",
-                }
+@job(
+    resource_defs={
+        "database": database_client.configured(
+            {
+                "username": {"env": "SYSTEM_USER"},
+                "password": {"env": "SYSTEM_PASSWORD"},
             }
-        }
+        )
     }
 )
+def get_one_from_db():
+    get_one()
 ```
 
 By providing secrets through environment variables, your secrets won't be visible in your code or Dagit's launchpad.
