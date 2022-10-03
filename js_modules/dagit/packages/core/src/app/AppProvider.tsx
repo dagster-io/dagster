@@ -163,8 +163,8 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
   const analytics = React.useMemo(() => dummyAnalytics(), []);
   const instancePageValue = React.useMemo(
     () => ({
-      pageTitle: 'Instance status',
-      healthTitle: 'Health',
+      pageTitle: 'Deployment',
+      healthTitle: 'Daemons',
     }),
     [],
   );
