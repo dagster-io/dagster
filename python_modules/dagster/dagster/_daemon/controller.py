@@ -156,7 +156,7 @@ class DagsterDaemonController:
 
         self._logger = logging.getLogger("dagster.daemon")
         self._logger.info(
-            "instance is configured with the following daemons: %s",
+            "Instance is configured with the following daemons: %s",
             _sorted_quoted(type(daemon).__name__ for daemon in self.daemons),
         )
 
@@ -229,11 +229,10 @@ class DagsterDaemonController:
         ]
 
         if failed_daemons:
-            raise Exception(
-                "Stopping dagster-daemon process since the following threads are no longer running: {failed_daemons}".format(
-                    failed_daemons=failed_daemons
-                )
+            self._logger.error(
+                f"Stopping dagster-daemon process since the following threads are no longer running: {failed_daemons}"
             )
+            raise Exception("Stopped dagster-daemon process due to threads no longer running")
 
     def check_daemon_heartbeats(self):
         failed_daemons = [
@@ -243,11 +242,10 @@ class DagsterDaemonController:
         ]
 
         if failed_daemons:
-            raise Exception(
-                "Stopping dagster-daemon process since the following threads are no longer sending heartbeats: {failed_daemons}".format(
-                    failed_daemons=failed_daemons
-                )
+            self._logger.error(
+                f"Stopping dagster-daemon process since the following threads are no longer sending heartbeats: {failed_daemons}"
             )
+            raise Exception("Stopped dagster-daemon process due to thread heartbeat failure")
 
     def check_daemon_loop(self):
         start_time = time.time()
@@ -274,13 +272,15 @@ class DagsterDaemonController:
                 last_heartbeat_check_time = time.time()
 
     def __exit__(self, exception_type, exception_value, traceback):
+        self._logger.info("Shutting down daemon threads...")
         self._daemon_shutdown_event.set()
         for daemon_type, thread in self._daemon_threads.items():
             if thread.is_alive():
                 thread.join(timeout=30)
 
                 if thread.is_alive():
-                    self._logger.error("Thread for %s did not shut down gracefully", daemon_type)
+                    self._logger.error("Thread for %s did not shut down gracefully.", daemon_type)
+        self._logger.info("Daemon threads shut down.")
 
     def _add_daemon(self, daemon):
         self._daemons[daemon.daemon_type()] = daemon

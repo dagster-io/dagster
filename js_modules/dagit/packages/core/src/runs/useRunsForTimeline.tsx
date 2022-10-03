@@ -167,7 +167,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
 
   return {
     jobs: jobsWithRuns,
-    loading: loading && !data && !previousData,
+    loading: loading && !data,
   };
 };
 

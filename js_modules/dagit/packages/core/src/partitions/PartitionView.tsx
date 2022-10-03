@@ -17,14 +17,14 @@ import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useViewport} from '../gantt/useViewport';
 import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/BackfillTable';
-import {RepositorySelector, RunStatus} from '../types/globalTypes';
+import {RepositorySelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {BackfillPartitionSelector} from './BackfillSelector';
 import {PartitionGraph} from './PartitionGraph';
-import {PartitionStatus} from './PartitionStatus';
+import {PartitionState, PartitionStatus, runStatusToPartitionState} from './PartitionStatus';
 import {PartitionStepStatus} from './PartitionStepStatus';
 import {
   PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results,
@@ -37,8 +37,6 @@ import {usePartitionStepQuery} from './usePartitionStepQuery';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 type PartitionStatus = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results;
-
-const FAILED_STATUSES = [RunStatus.FAILURE, RunStatus.CANCELED, RunStatus.CANCELING];
 
 export const PartitionView: React.FC<{
   partitionSet: PartitionSet;
@@ -135,12 +133,12 @@ const PartitionViewContent: React.FC<{
       ];
     });
   });
-  const statusData: {[name: string]: RunStatus | null} = {};
+  const statusData: {[name: string]: PartitionState} = {};
   (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
     ? partitionSet.partitionStatusesOrError.results
     : []
   ).forEach((p) => {
-    statusData[p.partitionName] = p.runStatus;
+    statusData[p.partitionName] = runStatusToPartitionState(p.runStatus);
     if (selectedPartitions.includes(p.partitionName)) {
       runDurationData[p.partitionName] = p.runDuration || undefined;
     }
@@ -209,12 +207,7 @@ const PartitionViewContent: React.FC<{
       >
         <CountBox count={partitionNames.length} label="Total partitions" />
         <CountBox
-          count={
-            partitionNames.filter((x) => {
-              const status = statusData[x];
-              return status && FAILED_STATUSES.includes(status);
-            }).length
-          }
+          count={partitionNames.filter((x) => statusData[x] === PartitionState.FAILURE).length}
           label="Failed partitions"
         />
         <CountBox

@@ -2,7 +2,6 @@ import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
 import {RunsFilter} from '../types/globalTypes';
-import {LoadingSpinner} from '../ui/Loading';
 
 import {RunTimeline} from './RunTimeline';
 import {useRunsForTimeline} from './useRunsForTimeline';
@@ -23,9 +22,12 @@ export const QueryfulRunTimeline = (props: Props) => {
     visibleJobKeys,
   ]);
 
-  if (loading) {
-    return <LoadingSpinner purpose="section" />;
-  }
-
-  return <RunTimeline range={range} jobs={visibleJobs} bucketByRepo={flagRunBucketing} />;
+  return (
+    <RunTimeline
+      loading={loading}
+      range={range}
+      jobs={visibleJobs}
+      bucketByRepo={flagRunBucketing}
+    />
+  );
 };

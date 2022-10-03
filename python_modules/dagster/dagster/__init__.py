@@ -456,6 +456,9 @@ from dagster._core.event_api import (
     EventRecordsFilter as EventRecordsFilter,
     RunShardedEventsCursor as RunShardedEventsCursor,
 )
+from dagster._core.storage.asset_value_loader import (
+    AssetValueLoader as AssetValueLoader,
+)
 from dagster._core.storage.file_manager import (
     FileHandle as FileHandle,
     LocalFileHandle as LocalFileHandle,

@@ -142,7 +142,7 @@ def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
 
 
 def _get_node_description(node_info):
-    code_block = textwrap.indent(node_info["raw_sql"], "    ")
+    code_block = textwrap.indent(node_info.get("raw_sql") or node_info.get("raw_code", ""), "    ")
     description_sections = [
         node_info["description"] or f"dbt {node_info['resource_type']} {node_info['name']}",
         f"#### Raw SQL:\n```\n{code_block}\n```",

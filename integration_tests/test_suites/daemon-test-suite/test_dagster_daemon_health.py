@@ -142,7 +142,7 @@ def test_thread_die_daemon(monkeypatch):
                         controller.check_daemon_threads()  # Should eventually throw since the sensor thread is interrupted
                     except Exception as e:
                         assert (
-                            "Stopping dagster-daemon process since the following threads are no longer running: ['SENSOR']"
+                            "Stopped dagster-daemon process due to threads no longer running"
                             in str(e)
                         )
                         break
@@ -175,7 +175,7 @@ def test_transient_heartbeat_failure(mocker):
 
             with pytest.raises(
                 Exception,
-                match="Stopping dagster-daemon process since the following threads are no longer sending heartbeats",
+                match="Stopped dagster-daemon process due to thread heartbeat failure",
             ):
                 controller.check_daemon_heartbeats()
 

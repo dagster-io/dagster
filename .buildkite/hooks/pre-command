@@ -1,1 +1,5 @@
+set -eu
+
 . ./.buildkite/scripts/docker_prune.sh
+
+export BUILDKITE_ANALYTICS_TOKEN=$DAGSTER_BUILDKITE_ANALYTICS_TOKEN
