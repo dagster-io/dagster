@@ -1,6 +1,7 @@
 from contextlib import ExitStack
 from typing import Dict, Mapping, Optional, Type, cast
 
+from dagster._annotations import public
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.resource_definition import ResourceDefinition
@@ -18,7 +19,11 @@ from .io_manager import IOManager
 
 class AssetValueLoader:
     """Caches resource definitions that are used to load asset values across multiple load
-    invocations"""
+    invocations.
+
+    Should not be instantiated directly. Instead, use
+    :py:meth:`~dagster.RepositoryDefinition.get_asset_value_loader`.
+    """
 
     def __init__(
         self,
@@ -46,6 +51,7 @@ class AssetValueLoader:
         ):
             self._resource_instance_cache[built_resource_key] = built_resource
 
+    @public
     def load_asset_value(
         self,
         asset_key: CoercibleToAssetKey,
