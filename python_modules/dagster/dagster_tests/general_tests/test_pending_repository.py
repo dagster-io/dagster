@@ -75,7 +75,9 @@ def pending_repo():
 
 def test_resolve_empty():
     assert isinstance(pending_repo, PendingRepositoryDefinition)
-    repo = pending_repo.resolve(repository_load_data=None)
+    with pytest.raises(check.CheckError):
+        repo = pending_repo.resolve(repository_load_data=None)
+    repo = pending_repo.resolve(pending_repo.get_repository_load_data())
     assert isinstance(repo, RepositoryDefinition)
     assert isinstance(repo.get_job("simple_job"), JobDefinition)
     assert isinstance(repo.get_job("all_asset_job"), JobDefinition)

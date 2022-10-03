@@ -1455,6 +1455,8 @@ class PendingRepositoryDefinition:
     def resolve(self, repository_load_data: RepositoryLoadData) -> RepositoryDefinition:
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
+        check.inst_param(repository_load_data, "repository_load_data", RepositoryLoadData)
+
         resolved_definitions: List[RepositoryListDefinition] = []
         for defn in self._repository_definitions:
             if isinstance(defn, CacheableAssetsDefinition):

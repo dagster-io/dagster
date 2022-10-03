@@ -21,7 +21,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
         assert num_called == 0
         instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
-        return [self._metadata]
+        return [self._cached_data]
 
     def get_definitions(self, cached_data):
         assert len(cached_data) == 1

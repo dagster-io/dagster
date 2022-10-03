@@ -614,7 +614,7 @@ def test_multiproc_launcher_with_repository_load_data():
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _metadata = CachedAssetsData(keys_by_output_name={"result": AssetKey("foo")})
+    _cached_data = CachedAssetsData(keys_by_output_name={"result": AssetKey("foo")})
 
     def get_cached_data(self):
         # used for tracking how many times this function gets called over an execution
@@ -625,7 +625,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         val = instance.run_storage.kvs_get({"val"}).get("val")
         assert val == "INITIAL_VALUE"
         instance.run_storage.kvs_set({"val": "NEW_VALUE"})
-        return [self._metadata]
+        return [self._cached_data]
 
     def get_definitions(self, cached_data):
         assert len(cached_data) == 1
