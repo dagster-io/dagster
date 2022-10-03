@@ -3,6 +3,7 @@ import string
 import sys
 import tempfile
 import time
+import warnings
 from contextlib import ExitStack, contextmanager
 
 import pendulum
@@ -15,6 +16,7 @@ from dagster import (
     AssetObservation,
     AssetSelection,
     DagsterRunStatus,
+    ExperimentalWarning,
     Field,
     HourlyPartitionsDefinition,
     JobSelector,
@@ -22,6 +24,7 @@ from dagster import (
     RepositorySelector,
     WeeklyPartitionsDefinition,
     asset,
+    build_asset_reconciliation_sensor,
     define_asset_job,
     graph,
     load_assets_from_current_module,
@@ -30,6 +33,9 @@ from dagster import (
     repository,
     run_failure_sensor,
 )
+
+warnings.filterwarnings("ignore", category=ExperimentalWarning)
+
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
@@ -557,6 +563,171 @@ def the_status_in_code_repo():
         the_pipeline,
         always_running_sensor,
         never_running_sensor,
+    ]
+
+
+@asset
+def x():
+    return 1
+
+
+@asset
+def y(x):
+    return x + 1
+
+
+@asset
+def z():
+    return 2
+
+
+@asset
+def d(x, z):
+    return x + z
+
+
+@asset
+def e():
+    return 3
+
+
+@asset
+def f(z, e):
+    return z + e
+
+
+@asset
+def g(d, f):
+    return d + f
+
+
+@asset
+def h():
+    return 1
+
+
+@asset
+def i(h):
+    return h + 1
+
+
+@asset
+def sleeper():
+    from time import sleep
+
+    sleep(30)
+    return 1
+
+
+@asset
+def waits_on_sleep(sleeper, x):
+    return sleeper + x
+
+
+@repository
+def asset_sensor_repo():
+    return [
+        x,
+        y,
+        z,
+        d,
+        e,
+        f,
+        g,
+        h,
+        i,
+        sleeper,
+        waits_on_sleep,
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(y),
+            name="just_y_OR",
+            wait_for_all_upstream=False,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(d),
+            name="just_d_OR",
+            wait_for_all_upstream=False,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(d, f),
+            name="d_and_f_OR",
+            wait_for_all_upstream=False,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(d, f, g),
+            name="d_and_f_and_g_OR",
+            wait_for_all_upstream=False,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(y, d),
+            name="y_and_d_OR",
+            wait_for_all_upstream=False,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(y, i),
+            name="y_and_i_OR",
+            wait_for_all_upstream=False,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(g),
+            name="just_g_OR",
+            wait_for_all_upstream=False,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(y),
+            name="just_y_AND",
+            wait_for_all_upstream=True,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(d),
+            name="just_d_AND",
+            wait_for_all_upstream=True,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(d, f),
+            name="d_and_f_AND",
+            wait_for_all_upstream=True,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(d, f, g),
+            name="d_and_f_and_g_AND",
+            wait_for_all_upstream=True,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(y, d),
+            name="y_and_d_AND",
+            wait_for_all_upstream=True,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(y, i),
+            name="y_and_i_AND",
+            wait_for_all_upstream=True,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(g),
+            name="just_g_AND",
+            wait_for_all_upstream=True,
+            wait_for_in_progress_runs=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(waits_on_sleep),
+            name="in_progress_condition_sensor",
+            wait_for_in_progress_runs=True,
+            wait_for_all_upstream=False,
+        ),
     ]
 
 

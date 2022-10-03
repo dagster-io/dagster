@@ -489,9 +489,12 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         For example, if the sensor monitors two partitioned assets A and B that are materialized
         for partition_x after the cursor, this function returns:
-        {
-            "partition_x": {asset_a.key: EventLogRecord(...), asset_b.key: EventLogRecord(...)}
-        }
+
+            .. code-block:: python
+
+                {
+                    "partition_x": {asset_a.key: EventLogRecord(...), asset_b.key: EventLogRecord(...)}
+                }
 
         This method can only be called when all monitored assets are partitioned and share
         the same partition definition.
