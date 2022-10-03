@@ -22,7 +22,7 @@ if __name__ == "__main__":
         author_email="hello@elementl.com",
         license="Apache-2.0",
         description="Package for DuckDB-specific Dagster framework op and resource components.",
-        url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-azure",
+        url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-duckb",
         classifiers=[
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
