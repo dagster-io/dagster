@@ -788,7 +788,7 @@ def test_multi_asset_sensor_advance_cursor_no_update_on_older_materialization():
         list(after_cursor_partitions_asset_sensor(ctx))
 
 
-def test_multi_asset_sensor_latest_materialization_records_per_asset_by_partition():
+def test_multi_asset_sensor_latest_materialization_records_by_partition_and_asset():
     @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
     def july_asset():
         return 1
@@ -803,10 +803,12 @@ def test_multi_asset_sensor_latest_materialization_records_per_asset_by_partitio
 
     @multi_asset_sensor(asset_keys=[july_asset.key, july_asset_2.key])
     def my_sensor(context):
-        events = context.latest_materialization_records_per_asset_by_partition()
-        for partition_key, asset_and_materialization in events.items():
+        events = context.latest_materialization_records_by_partition_and_asset()
+        for partition_key, materialization_by_asset in events.items():
             assert partition_key == "2022-08-04"
-            assert len(asset_and_materialization) == 2
+            assert len(materialization_by_asset) == 2
+            assert july_asset.key in materialization_by_asset
+            assert july_asset_2.key in materialization_by_asset
 
     with instance_for_test() as instance:
         materialize(

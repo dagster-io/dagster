@@ -479,18 +479,18 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         return materialization_by_partition
 
     @public
-    def latest_materialization_records_per_asset_by_partition(
+    def latest_materialization_records_by_partition_and_asset(
         self,
-    ) -> Mapping[str, List[Tuple[AssetKey, "EventLogRecord"]]]:
+    ) -> Mapping[str, Mapping[AssetKey, "EventLogRecord"]]:
         """
         Finds the most recent materialization for each partition after the cursor for each asset
         monitored by the sensor. Aggregates all materializations into a mapping of partition key
-        to a list of tuples containing the asset key and the materialization event.
+        to a mapping of asset key to the materialization event for that partition.
 
         For example, if the sensor monitors two partitioned assets A and B that are materialized
         for partition_x after the cursor, this function returns:
         {
-            "partition_x": [(asset_a.key, EventLogRecord(...)), (asset_b.key, EventLogRecord(...))]
+            "partition_x": {asset_a.key: EventLogRecord(...), asset_b.key: EventLogRecord(...)}
         }
 
         This method can only be called when all monitored assets are partitioned and share
@@ -503,17 +503,15 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             )
 
         asset_and_materialization_tuple_by_partition: Dict[
-            str, List[Tuple[AssetKey, "EventLogRecord"]]
-        ] = defaultdict(list)
+            str, Dict[AssetKey, "EventLogRecord"]
+        ] = defaultdict(dict)
 
         for asset_key in self._asset_keys:
             materialization_by_partition = self.latest_materialization_records_by_partition(
                 asset_key
             )
             for partition, materialization in materialization_by_partition.items():
-                asset_and_materialization_tuple_by_partition[partition].append(
-                    (asset_key, materialization)
-                )
+                asset_and_materialization_tuple_by_partition[partition][asset_key] = materialization
 
         return asset_and_materialization_tuple_by_partition
 
