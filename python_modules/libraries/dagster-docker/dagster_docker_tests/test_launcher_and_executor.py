@@ -77,7 +77,7 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
             orig_pipeline,
         ):
             external_pipeline = ReOriginatedExternalPipelineForTest(
-                orig_pipeline, container_image=docker_image
+                orig_pipeline, container_image=docker_image, filename=filename
             )
 
             run = instance.create_run_for_pipeline(
