@@ -76,6 +76,7 @@ def main(quiet: bool, extra_packages: List[str]) -> None:
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-e python_modules/libraries/dagster-azure",
         "-e python_modules/libraries/dagster-msteams",
+        "-e python_modules/libraries/dagster-duckdb",
         "-e helm/dagster/schema[test]",
     ]
 
