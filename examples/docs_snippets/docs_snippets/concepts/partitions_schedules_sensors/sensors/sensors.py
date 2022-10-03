@@ -329,19 +329,20 @@ def trigger_daily_asset_if_all_upstream_partitions_materialized(context):
     run_requests_by_partition = {}
     for (
         partition,
-        materializations_list,
-    ) in context.latest_materialization_records_per_asset_by_partition().items():
-        if all(
-            [
-                context.all_partitions_materialized(asset_key, [partition])
-                for asset_key in context.asset_keys
-            ]
-        ):
-            run_requests_by_partition[
-                partition
-            ] = downstream_daily_job.run_request_for_partition(partition)
-            for key_materialization_tuple in materializations_list:
-                asset_key, materialization = key_materialization_tuple
+        materializations_by_asset,
+    ) in context.latest_materialization_records_by_partition_and_asset().items():
+        for asset_key, materialization in materializations_by_asset.items():
+            if all(
+                [
+                    context.all_partitions_materialized(other_key, [partition])
+                    for other_key in context.asset_keys
+                    if other_key != asset_key
+                ]
+            ):
+                if partition not in run_requests_by_partition:
+                    run_requests_by_partition[
+                        partition
+                    ] = downstream_daily_job.run_request_for_partition(partition)
                 context.advance_cursor({asset_key: materialization})
     return list(run_requests_by_partition.values())
 
