@@ -38,9 +38,13 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
     else:
         find_local_test_image(docker_image)
 
-    executor_config = {
-        "execution": {"docker": {"config": {}}},
-    }
+    executor_config = (
+        {
+            "execution": {"docker": {"config": {}}},
+        }
+        if not from_pending_repository
+        else {}
+    )
 
     env_yamls = [os.path.join(get_test_project_environments_path(), "env_s3.yaml")]
     if not from_pending_repository:

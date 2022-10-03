@@ -22,6 +22,8 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         print("x" * 1000)
         print(num_called)
         print("x" * 1000)
+        # a quirk of how we end up launching this run requires us to get the definition twice before
+        # the run starts
         assert num_called < 2
         instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
         return [self._cached_data]
@@ -37,7 +39,8 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         print("y" * 1000)
         print(num_called)
         print("y" * 1000)
-        # assert num_called < 4
+        # twice before the run starts, once for each step of the run
+        assert num_called < 5
 
         @op
         def _op(foo):
