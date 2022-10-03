@@ -100,14 +100,17 @@ def _step_output_error_checked_user_event_sequence(
             step_context.observe_output(output.output_name)
 
             metadata = step_context.get_output_metadata(output.output_name)
-            output = Output(
-                value=output.value,
-                output_name=output.output_name,
-                metadata_entries=[
-                    *output.metadata_entries,
-                    *normalize_metadata(cast(Dict[str, Any], metadata), []),
-                ],
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+
+                output = Output(
+                    value=output.value,
+                    output_name=output.output_name,
+                    metadata_entries=[
+                        *output.metadata_entries,
+                        *normalize_metadata(cast(Dict[str, Any], metadata), []),
+                    ],
+                )
         else:
             if not output_def.is_dynamic:
                 raise DagsterInvariantViolationError(
