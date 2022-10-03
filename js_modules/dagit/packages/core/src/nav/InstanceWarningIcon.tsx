@@ -9,7 +9,7 @@ import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 import {WarningTooltip} from './WarningTooltip';
 import {InstanceWarningQuery} from './types/InstanceWarningQuery';
 
-export const InstanceWarningIcon = React.memo(() => {
+export const useDeploymentStatus = () => {
   const {options} = useRepositoryOptions();
   const queryResult = useQuery<InstanceWarningQuery>(INSTANCE_WARNING_QUERY, {
     fetchPolicy: 'cache-and-network',
@@ -78,22 +78,35 @@ export const InstanceWarningIcon = React.memo(() => {
   }, [anySchedules, anySensors, healthData]);
 
   if (visibleErrorCount) {
-    return (
-      <WarningTooltip
-        content={
-          <div>{`${visibleErrorCount} ${
-            visibleErrorCount === 1 ? 'daemon not running' : 'daemons not running'
-          }`}</div>
-        }
-        position="bottom"
-        modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
-      >
-        <Icon name="warning" color={Colors.Yellow500} />
-      </WarningTooltip>
-    );
+    return {
+      type: 'warning',
+      content: (
+        <div style={{whiteSpace: 'nowrap'}}>{`${visibleErrorCount} ${
+          visibleErrorCount === 1 ? 'daemon not running' : 'daemons not running'
+        }`}</div>
+      ),
+    };
   }
 
   return null;
+};
+
+export const InstanceWarningIcon = React.memo(() => {
+  const status = useDeploymentStatus();
+
+  if (!status) {
+    return null;
+  }
+
+  return (
+    <WarningTooltip
+      content={status.content}
+      position="bottom"
+      modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
+    >
+      <Icon name="warning" color={Colors.Yellow500} />
+    </WarningTooltip>
+  );
 });
 
 const INSTANCE_WARNING_QUERY = gql`

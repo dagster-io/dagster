@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
+import {DeploymentStatusIcon} from '../nav/DeploymentStatus';
 import {VersionNumber} from '../nav/VersionNumber';
 import {WorkspaceStatus} from '../nav/WorkspaceStatus';
 import {SearchDialog} from '../search/SearchDialog';
@@ -19,15 +19,53 @@ interface Props {
   showStatusWarningIcon?: boolean;
 }
 
-export const AppTopNav: React.FC<Props> = ({
-  children,
-  rightOfSearchBar,
-  searchPlaceholder,
-  showStatusWarningIcon = true,
-}) => {
+export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPlaceholder}) => {
   const history = useHistory();
   const {flagNewWorkspace} = useFeatureFlags();
   const runHref = flagNewWorkspace ? '/instance/runs/timeline' : '/instance/runs';
+
+  const deploymentItem = (
+    <ShortcutHandler
+      key="deployment"
+      onShortcut={() => history.push('/instance')}
+      shortcutLabel="⌥3"
+      shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
+    >
+      <TopNavLink
+        to="/instance"
+        data-cy="AppTopNav_StatusLink"
+        isActive={(_, location) => {
+          const {pathname} = location;
+          return (
+            pathname.startsWith('/instance') &&
+            !pathname.startsWith('/instance/runs') &&
+            !pathname.startsWith('/instance/assets')
+          );
+        }}
+      >
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+          Deployment
+          <DeploymentStatusIcon />
+        </Box>
+      </TopNavLink>
+    </ShortcutHandler>
+  );
+
+  const workspaceItem = (
+    <ShortcutHandler
+      key="workspace"
+      onShortcut={() => history.push('/workspace')}
+      shortcutLabel="⌥4"
+      shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
+    >
+      <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+          Workspace
+          {flagNewWorkspace ? null : <WorkspaceStatus />}
+        </Box>
+      </TopNavLink>
+    </ShortcutHandler>
+  );
 
   return (
     <AppTopNavContainer>
@@ -56,41 +94,7 @@ export const AppTopNav: React.FC<Props> = ({
               Assets
             </TopNavLink>
           </ShortcutHandler>
-          <ShortcutHandler
-            onShortcut={() => history.push('/instance')}
-            shortcutLabel="⌥3"
-            shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
-          >
-            <TopNavLink
-              to="/instance"
-              data-cy="AppTopNav_StatusLink"
-              isActive={(_, location) => {
-                const {pathname} = location;
-                return (
-                  pathname.startsWith('/instance') &&
-                  !pathname.startsWith('/instance/runs') &&
-                  !pathname.startsWith('/instance/assets')
-                );
-              }}
-            >
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                Deployment
-                {showStatusWarningIcon ? <InstanceWarningIcon /> : null}
-              </Box>
-            </TopNavLink>
-          </ShortcutHandler>
-          <ShortcutHandler
-            onShortcut={() => history.push('/workspace')}
-            shortcutLabel="⌥4"
-            shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
-          >
-            <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                Workspace
-                <WorkspaceStatus />
-              </Box>
-            </TopNavLink>
-          </ShortcutHandler>
+          {flagNewWorkspace ? [workspaceItem, deploymentItem] : [deploymentItem, workspaceItem]}
         </Box>
         {children}
       </Box>
