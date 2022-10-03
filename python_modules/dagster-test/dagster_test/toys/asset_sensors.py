@@ -173,7 +173,7 @@ def get_asset_sensors_repo():
         runs_long,
         waits,
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(downstream, waits),
+            asset_selection=AssetSelection.assets(downstream, waits),
             name="generated_sensor",
             wait_for_all_upstream=True,
             wait_for_in_progress_runs=True,
