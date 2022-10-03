@@ -22,7 +22,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         print("x" * 1000)
         print(num_called)
         print("x" * 1000)
-        # assert num_called == 0
+        assert num_called < 2
         instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
         return [self._cached_data]
 

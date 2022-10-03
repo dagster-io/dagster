@@ -42,13 +42,11 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
         "execution": {"docker": {"config": {}}},
     }
 
+    env_yamls = [os.path.join(get_test_project_environments_path(), "env_s3.yaml")]
+    if not from_pending_repository:
+        env_yamls.append(os.path.join(get_test_project_environments_path(), "env.yaml"))
     run_config = merge_dicts(
-        merge_yamls(
-            [
-                os.path.join(get_test_project_environments_path(), "env.yaml"),
-                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
-            ]
-        ),
+        merge_yamls(env_yamls),
         executor_config,
     )
 
