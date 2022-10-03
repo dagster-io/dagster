@@ -1,12 +1,15 @@
 # pylint: disable=anomalous-backslash-in-string
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Set, Tuple
+from datetime import datetime
+from typing import TYPE_CHECKING, Dict, Mapping, Optional, Set, Tuple, cast
 
+import pendulum
 import toposort
 
 from dagster._annotations import experimental
 from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
+from dagster._utils import utc_datetime_from_timestamp
 
 from .asset_selection import AssetSelection
 from .events import AssetKey
@@ -145,12 +148,19 @@ def _get_parent_updates(
                             planned_materialization_cache,
                         )
             # check if there is a completed materialization for p
+
             event_records = context.instance.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
                     asset_key=p,
                     after_cursor=RunShardedEventsCursor(
-                        run_updated_after=cursor_tuple[0], id=cursor_tuple[1]
+                        run_updated_after=cast(
+                            datetime,
+                            pendulum.parse(
+                                utc_datetime_from_timestamp(cursor_tuple[0]).isoformat()
+                            ),
+                        ),
+                        id=cursor_tuple[1],
                     ),
                 ),
                 ascending=False,
