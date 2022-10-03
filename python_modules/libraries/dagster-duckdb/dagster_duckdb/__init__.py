@@ -1,0 +1,1 @@
+from .io_manager import duckdb_io_manager

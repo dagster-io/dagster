@@ -13,6 +13,7 @@ if __name__ == "__main__":
             "scipy",
             "dbt-core",
             "dbt-duckdb",
+            "dagster-duckdb",
         ],
         extras_require={"dev": ["dagit", "pytest"]},
     )

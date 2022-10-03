@@ -5,6 +5,7 @@ from dagster import Field, IOManager
 from dagster import _check as check
 from dagster import io_manager
 from dagster._seven.temp_dir import get_system_temp_directory
+from dagster._utils.backoff import backoff
 
 
 class DuckDBCSVIOManager(IOManager):
@@ -46,26 +47,58 @@ class DuckDBCSVIOManager(IOManager):
         )
 
     def _get_path(self, context):
-        return f"{self._base_path}/{'_'.join(context.asset_key.path)}.csv"
+        if context.has_asset_key:
+            return f"{self._base_path}/{'_'.join(context.asset_key.path)}.csv"
+        else:
+            keys = context.get_identifier()
+            run_id = keys[0]
+            output_identifiers = keys[1:]  # variable length because of mapping key
+
+            path = ["storage", run_id, "files", *output_identifiers]
+        return "/".join([self.base_path, *path])
 
     def _schema(self, context):
-        # assume that the schema is the second to last component of the asset key, e.g.
-        # AssetKey([database, schema, tablename])
-        return context.asset_key.path[-2]
+        if context.has_asset_key:
+            # the schema is the second to last component of the asset key, e.g.
+            # AssetKey([database, schema, tablename])
+            return context.asset_key.path[-2]
+        else:
+            # for non-asset outputs, the schema should be specified as metadata, or will default to public
+            context_metadata = context.metadata or {}
+            return context_metadata.get("schema", "public")
 
     def _table(self, context):
-        # same as above, but for table
-        return context.asset_key.path[-1]
+        if context.has_asset_key:
+            # the table is the  last component of the asset key, e.g.
+            # AssetKey([database, schema, tablename])
+            return context.asset_key.path[-1]
+        else:
+            # for non-asset outputs, the table is the output name
+            return context.name
 
     def _table_path(self, context):
         return f"{self._schema(context)}.{self._table(context)}"
 
     def _connect_duckdb(self, context):
-        return duckdb.connect(database=context.resource_config["duckdb_path"], read_only=False)
+        return backoff(
+            fn=duckdb.connect,
+            retry_on=(RuntimeError,),
+            kwargs={"database": context.resource_config["duckdb_path"], "read_only": False},
+        )
 
 
 @io_manager(config_schema={"base_path": Field(str, is_required=False), "duckdb_path": str})
 def duckdb_io_manager(init_context):
+    """IO Manager for storing outputs in a DuckDB database
+
+    Supports storing and loading Pandas DataFrame objects. Converts the DataFrames to CSV and
+    creates DuckDB views over the files.
+
+    Assets will be stored in the schema and table name specified by their AssetKey.
+    Subsequent materializations of an asset will overwrite previous materializations of that asset.
+    Op outputs will be stored in the schema specified by output metadata (defaults to public) in a
+    table of the name of the output.
+    """
     return DuckDBCSVIOManager(
         base_path=init_context.resource_config.get("base_path", get_system_temp_directory())
     )
