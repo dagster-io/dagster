@@ -491,7 +491,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         for partition_x after the cursor, this function returns:
 
             .. code-block:: python
-            
+
                 {
                     "partition_x": {asset_a.key: EventLogRecord(...), asset_b.key: EventLogRecord(...)}
                 }

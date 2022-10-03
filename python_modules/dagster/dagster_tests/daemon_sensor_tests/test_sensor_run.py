@@ -663,7 +663,7 @@ def asset_sensor_repo():
             wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
-            selection=AssetSelection.assets(y, d),
+            asset_selection=AssetSelection.assets(y, d),
             name="y_and_d_OR",
             wait_for_all_upstream=False,
             wait_for_in_progress_runs=False,

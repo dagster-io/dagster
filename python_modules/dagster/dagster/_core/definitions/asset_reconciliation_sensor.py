@@ -8,9 +8,9 @@ import pendulum
 import toposort
 
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._utils import utc_datetime_from_timestamp
-from dagster._core.definitions.asset_selection import AssetSelection
 
 from .asset_selection import AssetSelection
 from .events import AssetKey
@@ -293,7 +293,8 @@ def _make_sensor(
             return RunRequest(run_key=f"{context.cursor}", asset_selection=list(should_materialize))
 
     return MultiAssetSensorDefinition(
-        asset_selection=AssetSelection.keys(),
+        asset_selection=selection,
+        asset_keys=None,
         asset_materialization_fn=sensor_fn,
         name=name,
         job_name="__ASSET_JOB",
