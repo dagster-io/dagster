@@ -500,7 +500,7 @@ def repo():
 asset1_value = repo.load_asset_value(AssetKey("asset1"))
 ```
 
-If you want to load the values of multiple assets, it's more efficient to use <PyObject object="RepositoryDefinition" method="load_asset_value" />, which avoids spinning up resources separately for each asset:
+If you want to load the values of multiple assets, it's more efficient to use <PyObject object="RepositoryDefinition" method="get_asset_value_loader" />, which avoids spinning up resources separately for each asset:
 
 ```python file=/concepts/assets/load_asset_values.py startafter=multiple_asset_start_marker endbefore=multiple_asset_end_marker dedent=4
 with repo.get_asset_value_loader() as loader:
