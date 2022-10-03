@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {DeploymentStatusIcon} from '../nav/DeploymentStatus';
+import {DeploymentStatusIcon} from '../nav/DeploymentStatusIcon';
 import {VersionNumber} from '../nav/VersionNumber';
 import {WorkspaceStatus} from '../nav/WorkspaceStatus';
 import {SearchDialog} from '../search/SearchDialog';
@@ -67,7 +67,7 @@ export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPl
         <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
           <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
             Workspace
-            {flagNewWorkspace ? null : <WorkspaceStatus />}
+            {flagNewWorkspace ? null : <WorkspaceStatus placeholder />}
           </Box>
         </TopNavLink>
       </ShortcutHandler>
