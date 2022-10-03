@@ -197,7 +197,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
   const currentInitialCursorRef = React.useRef<string | null>(cursor);
 
   if (lostWebsocket) {
-    // Record the cursor we're at when disconnecting/reconnecting so that our subscription
+    // Record the cursor we're at when disconnecting so that our subscription
     // picks up where we left off.
     currentInitialCursorRef.current = cursor;
   }
