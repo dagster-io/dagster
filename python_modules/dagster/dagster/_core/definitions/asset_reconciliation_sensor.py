@@ -50,9 +50,9 @@ def _get_parent_updates(
 ) -> Tuple[Mapping[AssetKey, Tuple[bool, Tuple[float, int]]], Dict[AssetKey, "EventLogRecord"],]:
     """The bulk of the logic in the sensor is in this function. At the end of the function we return a
     dictionary that maps each asset to a Tuple. The Tuple contains a boolean, indicating if the asset
-    has materialized or will materialize, and an in representing the storage id the parent asset
-    would update the cursor to if it is the most recent materialization of a parent asset. In some cases
-    we set the storage id to 0 so that the storage ids of other parent materializations will take precedent.
+    has materialized or will materialize, and a tuple(float, int) representing the timestamp and storage id
+    the parent asset would update the cursor to if it is the most recent materialization of a parent asset.
+    In some cases we set the tuple to (0.0, 0) so that the tuples of other parent materializations will take precedent.
 
     Args:
         current_asset: We want to determine if this asset should materialize, so we gather information about
@@ -76,7 +76,7 @@ def _get_parent_updates(
     We iterate through each parent of the asset and determine its materialization info. The parent
     asset's materialization status can be one of three options:
     1. The parent has materialized since the last time the child was materialized.
-    2. The parent is slated to be materialized (i.e. included in will_materialize_list)
+    2. The parent is slated to be materialized (i.e. included in will_materialize_set)
     3. The parent has not been materialized and will not be materialized by the sensor.
 
     In cases 1 and 2 we indicate that the parent has been updated by setting its value in
@@ -100,7 +100,7 @@ def _get_parent_updates(
     for p in parent_assets:
         if p in will_materialize_set:
             # if p will be materialized by this sensor, then we can also materialize current_asset
-            # we don't know what time asset p will be materialized so we set the cursor val to 0.0
+            # we don't know what time asset p will be materialized so we set the cursor val to (0.0, 0)
             parent_asset_event_records[p] = (
                 True,
                 (0.0, 0),
@@ -251,7 +251,7 @@ def _make_sensor(
         ]
 
         # if the event storage is sharded we want to compare timestamps, otherwise we compare
-        # storage ids
+        # storage ids. In the cursor, timestamp is index 0 and storage_id is 1
         cursor_compare_idx = 0 if context.instance.event_log_storage.is_sharded else 1
 
         # determine which assets should materialize based on the materialization status of their
@@ -278,6 +278,9 @@ def _make_sensor(
             ):
                 should_materialize.add(a)
 
+                # get the cursor value by selecting the max of all the cadidates. If we're using a
+                # sharded event log storage, compare timestamps, otherwise compare storage ids. See
+                # cursor_compare_idx for how this is determined 
                 cursor_update_dict[str(a)] = max(
                     [cursor_val for _, cursor_val in parent_update_records.values()] + [a_cursor],
                     key=lambda cursor: cursor[cursor_compare_idx],
