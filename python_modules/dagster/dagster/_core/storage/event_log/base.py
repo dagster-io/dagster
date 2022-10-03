@@ -310,6 +310,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         return None
 
     @property
-    def is_sharded(self):
+    def is_run_sharded(self):
         """Indicates that the EventLogStoarge is sharded"""
         return False

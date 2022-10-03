@@ -410,7 +410,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             return check_alembic_revision(alembic_config, conn)
 
     @property
-    def is_sharded(self):
+    def is_run_sharded(self):
         return True
 
 

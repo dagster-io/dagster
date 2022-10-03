@@ -10,6 +10,7 @@ import toposort
 from dagster._annotations import experimental
 from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._utils import utc_datetime_from_timestamp
+from dagster._core.definitions.asset_selection import AssetSelection
 
 from .asset_selection import AssetSelection
 from .events import AssetKey
@@ -252,7 +253,7 @@ def _make_sensor(
 
         # if the event storage is sharded we want to compare timestamps, otherwise we compare
         # storage ids. In the cursor, timestamp is index 0 and storage_id is 1
-        cursor_compare_idx = 0 if context.instance.event_log_storage.is_sharded else 1
+        cursor_compare_idx = 0 if context.instance.event_log_storage.is_run_sharded else 1
 
         # determine which assets should materialize based on the materialization status of their
         # parents
@@ -280,7 +281,7 @@ def _make_sensor(
 
                 # get the cursor value by selecting the max of all the cadidates. If we're using a
                 # sharded event log storage, compare timestamps, otherwise compare storage ids. See
-                # cursor_compare_idx for how this is determined 
+                # cursor_compare_idx for how this is determined
                 cursor_update_dict[str(a)] = max(
                     [cursor_val for _, cursor_val in parent_update_records.values()] + [a_cursor],
                     key=lambda cursor: cursor[cursor_compare_idx],
@@ -292,7 +293,7 @@ def _make_sensor(
             return RunRequest(run_key=f"{context.cursor}", asset_selection=list(should_materialize))
 
     return MultiAssetSensorDefinition(
-        asset_keys=[],
+        asset_selection=AssetSelection.keys(),
         asset_materialization_fn=sensor_fn,
         name=name,
         job_name="__ASSET_JOB",
@@ -304,7 +305,7 @@ def _make_sensor(
 
 @experimental
 def build_asset_reconciliation_sensor(
-    selection: AssetSelection,
+    asset_selection: AssetSelection,
     name: str,
     wait_for_all_upstream: bool = False,
     wait_for_in_progress_runs: bool = True,
@@ -321,7 +322,7 @@ def build_asset_reconciliation_sensor(
     **Note:** Currently, this sensor only works for non-partitioned assets.
 
     Args:
-        selection (AssetSelection): The group of assets you want to keep up-to-date
+        asset_selection (AssetSelection): The group of assets you want to keep up-to-date
         name (str): The name to give the sensor.
         wait_for_all_upstream (bool): If True, the sensor will only materialize an asset when
             all of its parents have materialized. If False, the sensor will materialize an asset when
@@ -414,7 +415,7 @@ def build_asset_reconciliation_sensor(
     """
     check_valid_name(name)
     return _make_sensor(
-        selection=selection,
+        selection=asset_selection,
         name=name,
         wait_for_all_upstream=wait_for_all_upstream,
         wait_for_in_progress_runs=wait_for_in_progress_runs,
