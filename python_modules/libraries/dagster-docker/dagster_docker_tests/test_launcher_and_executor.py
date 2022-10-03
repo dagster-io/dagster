@@ -67,6 +67,9 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
         recon_pipeline = get_test_project_recon_pipeline(
             "demo_pipeline_docker", docker_image, filename=filename
         )
+        repository_load_data = recon_pipeline.repository.get_definition().repository_load_data
+        recon_pipeline = recon_pipeline.with_repository_load_data(repository_load_data)
+
         with get_test_project_workspace_and_external_pipeline(
             instance,
             "demo_pipeline_docker",
@@ -85,6 +88,7 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
                 run_config=run_config,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
+                repository_load_data=repository_load_data,
             )
 
             instance.launch_run(run.run_id, workspace)
