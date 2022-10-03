@@ -98,9 +98,6 @@ def test_run_from_pending_repository():
                     location_name="test2",
                 ),
             ) as workspace_process_context:
-                num_called = int(
-                    instance.run_storage.kvs_get({"num_called"}).get("num_called", "0")
-                )
                 workspace = workspace_process_context.create_request_context()
 
                 repo_location = workspace.get_repository_location("test2")
@@ -115,9 +112,18 @@ def test_run_from_pending_repository():
                     known_state=None,
                 )
 
-                num_called = instance.run_storage.kvs_get({"num_called_a", "num_called_b"})
-                assert num_called.get("num_called_a") == "1"
-                assert num_called.get("num_called_b") == "1"
+                call_counts = instance.run_storage.kvs_get(
+                    {
+                        "get_cached_data_called_a",
+                        "get_cached_data_called_b",
+                        "get_definitions_called_a",
+                        "get_definitions_called_b",
+                    }
+                )
+                assert call_counts.get("get_cached_data_called_a") == "1"
+                assert call_counts.get("get_cached_data_called_b") == "1"
+                assert call_counts.get("get_definitions_called_a") == "1"
+                assert call_counts.get("get_definitions_called_b") == "1"
 
                 # using create run here because we don't have easy access to the underlying
                 # pipeline definition
@@ -163,9 +169,20 @@ def test_run_from_pending_repository():
         server_process.wait()
 
         # should only have had to get the metadata once for each cacheable asset def
-        num_called = instance.run_storage.kvs_get({"num_called_a", "num_called_b"})
-        assert num_called.get("num_called_a") == "1"
-        assert num_called.get("num_called_b") == "1"
+        call_counts = instance.run_storage.kvs_get(
+            {
+                "get_cached_data_called_a",
+                "get_cached_data_called_b",
+                "get_definitions_called_a",
+                "get_definitions_called_b",
+            }
+        )
+        assert call_counts.get("get_cached_data_called_a") == "1"
+        assert call_counts.get("get_cached_data_called_b") == "1"
+        # once at initial load time, once inside the run launch process, once for each (3) subprocess
+        # upper bound of 5 here because race conditions result in lower count sometimes
+        assert int(call_counts.get("get_definitions_called_a")) < 6
+        assert int(call_counts.get("get_definitions_called_b")) < 6
 
 
 def test_terminate_after_shutdown():

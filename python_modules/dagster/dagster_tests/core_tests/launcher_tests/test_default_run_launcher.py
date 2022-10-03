@@ -256,9 +256,10 @@ def test_successful_run_from_pending(
     )
     assert call_counts.get("get_cached_data_called_a") == "1"
     assert call_counts.get("get_cached_data_called_b") == "1"
-    # each step is in a different process, so should be called 3 more times
-    assert call_counts.get("get_definitions_called_a") == "4"
-    assert call_counts.get("get_definitions_called_b") == "4"
+    # once at initial load time, once inside the run launch process, once for each (3) subprocess
+    # upper bound of 5 here because race conditions result in lower count sometimes
+    assert int(call_counts.get("get_definitions_called_a")) < 6
+    assert int(call_counts.get("get_definitions_called_b")) < 6
 
 
 def test_invalid_instance_run():
