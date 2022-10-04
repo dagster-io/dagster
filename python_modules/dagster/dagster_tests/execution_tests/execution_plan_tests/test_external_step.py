@@ -29,7 +29,10 @@ from dagster import (
     resource,
     with_resources,
 )
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition, CachedAssetsData
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.events import DagsterEventType
@@ -614,9 +617,9 @@ def test_multiproc_launcher_with_repository_load_data():
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _cached_data = CachedAssetsData(keys_by_output_name={"result": AssetKey("foo")})
+    _cacheable_data = AssetsDefinitionCacheableData(keys_by_output_name={"result": AssetKey("foo")})
 
-    def get_cached_data(self):
+    def compute_cacheable_data(self):
         # used for tracking how many times this function gets called over an execution
         # since we're crossing process boundaries, we pre-populate this value in the host process
         # and assert that this pre-populated value is present, to ensure that we'll error if this
@@ -625,11 +628,11 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         val = instance.run_storage.kvs_get({"val"}).get("val")
         assert val == "INITIAL_VALUE"
         instance.run_storage.kvs_set({"val": "NEW_VALUE"})
-        return [self._cached_data]
+        return [self._cacheable_data]
 
-    def get_definitions(self, cached_data):
-        assert len(cached_data) == 1
-        assert cached_data == [self._cached_data]
+    def build_definitions(self, data):
+        assert len(data) == 1
+        assert data == [self._cacheable_data]
 
         @op(required_resource_keys={"step_launcher"})
         def _op():
@@ -641,7 +644,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
                     _op,
                     keys_by_output_name=cd.keys_by_output_name,
                 )
-                for cd in cached_data
+                for cd in data
             ],
             {"step_launcher": local_external_step_launcher},
         )

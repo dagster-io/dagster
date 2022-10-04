@@ -711,10 +711,11 @@ def repository_def_from_target_def(
     elif isinstance(target, RepositoryDefinition):
         return target
     elif isinstance(target, PendingRepositoryDefinition):
-        # must regenerate metadata
+        # must load repository from scratch
         if repository_load_data is None:
-            repository_load_data = target.get_repository_load_data()
-        return target.resolve(repository_load_data)
+            return target.compute_repository_definition()
+        # can use the cached data to more efficiently load data
+        return target.reconstruct_repository_definition(repository_load_data)
     else:
         return None
 

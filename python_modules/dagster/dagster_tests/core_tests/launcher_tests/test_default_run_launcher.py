@@ -197,14 +197,14 @@ def test_successful_run_from_pending(
 
     call_counts = instance.run_storage.kvs_get(
         {
-            "get_cached_data_called_a",
-            "get_cached_data_called_b",
+            "compute_cacheable_data_called_a",
+            "compute_cacheable_data_called_b",
             "get_definitions_called_a",
             "get_definitions_called_b",
         }
     )
-    assert call_counts.get("get_cached_data_called_a") == "1"
-    assert call_counts.get("get_cached_data_called_b") == "1"
+    assert call_counts.get("compute_cacheable_data_called_a") == "1"
+    assert call_counts.get("compute_cacheable_data_called_b") == "1"
     assert call_counts.get("get_definitions_called_a") == "1"
     assert call_counts.get("get_definitions_called_b") == "1"
 
@@ -248,14 +248,14 @@ def test_successful_run_from_pending(
 
     call_counts = instance.run_storage.kvs_get(
         {
-            "get_cached_data_called_a",
-            "get_cached_data_called_b",
+            "compute_cacheable_data_called_a",
+            "compute_cacheable_data_called_b",
             "get_definitions_called_a",
             "get_definitions_called_b",
         }
     )
-    assert call_counts.get("get_cached_data_called_a") == "1"
-    assert call_counts.get("get_cached_data_called_b") == "1"
+    assert call_counts.get("compute_cacheable_data_called_a") == "1"
+    assert call_counts.get("compute_cacheable_data_called_b") == "1"
     # once at initial load time, once inside the run launch process, once for each (3) subprocess
     # upper bound of 5 here because race conditions result in lower count sometimes
     assert int(call_counts.get("get_definitions_called_a")) < 6

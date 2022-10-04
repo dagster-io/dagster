@@ -1,16 +1,19 @@
 from dagster import AssetKey, AssetsDefinition, op, repository
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition, CachedAssetsData
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    def get_cached_data(self):
+    def compute_cacheable_data(self):
         return [
-            CachedAssetsData(
+            AssetsDefinitionCacheableData(
                 keys_by_input_name={}, keys_by_output_name={"result": AssetKey(self.unique_id)}
             )
         ]
 
-    def get_definitions(self, cached_data):
+    def build_definitions(self, data):
         @op
         def my_op():
             return 1
@@ -21,7 +24,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
                 keys_by_input_name=cd.keys_by_input_name,
                 keys_by_output_name=cd.keys_by_output_name,
             )
-            for cd in cached_data
+            for cd in data
         ]
 
 

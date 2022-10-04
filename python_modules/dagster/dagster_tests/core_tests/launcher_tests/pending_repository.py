@@ -10,19 +10,24 @@ from dagster import (
     op,
     repository,
 )
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition, CachedAssetsData
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
 
 
 class MyAssets(CacheableAssetsDefinition):
-    def get_cached_data(self):
+    def compute_cacheable_data(self):
         # used for tracking how many times we've executed this function
         instance = DagsterInstance.get()
-        kvs_key = f"get_cached_data_called_{self.unique_id}"
-        get_cached_data_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
-        instance.run_storage.kvs_set({kvs_key: str(get_cached_data_called + 1)})
+        kvs_key = f"compute_cacheable_data_called_{self.unique_id}"
+        compute_cacheable_data_called = int(
+            instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0")
+        )
+        instance.run_storage.kvs_set({kvs_key: str(compute_cacheable_data_called + 1)})
 
         return [
-            CachedAssetsData(
+            AssetsDefinitionCacheableData(
                 keys_by_input_name={"inp": AssetKey(f"upstream_{self.unique_id}")},
                 keys_by_output_name={"result": AssetKey(f"foo_{self.unique_id}")},
                 internal_asset_deps={"result": {AssetKey(f"upstream_{self.unique_id}")}},
@@ -41,7 +46,7 @@ class MyAssets(CacheableAssetsDefinition):
             )
         ]
 
-    def get_definitions(self, cached_data):
+    def build_definitions(self, data):
         # used for tracking how many times we've executed this function
         instance = DagsterInstance.get()
         kvs_key = f"get_definitions_called_{self.unique_id}"
@@ -61,7 +66,7 @@ class MyAssets(CacheableAssetsDefinition):
                 group_name=cd.group_name,
                 metadata_by_output_name=cd.metadata_by_output_name,
             )
-            for cd in (cached_data or [])
+            for cd in (data or [])
         ]
 
 

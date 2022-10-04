@@ -18,7 +18,10 @@ from dagster import (
     reconstructable,
     repository,
 )
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition, CachedAssetsData
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -309,7 +312,9 @@ def test_using_repository_data():
         )
 
         assert (
-            instance.run_storage.kvs_get({"get_cached_data_called"}).get("get_cached_data_called")
+            instance.run_storage.kvs_get({"compute_cacheable_data_called"}).get(
+                "compute_cacheable_data_called"
+            )
             == "1"
         )
         # should not have needed to get_definitions again after creating the plan
@@ -320,19 +325,21 @@ def test_using_repository_data():
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _cached_data = CachedAssetsData(keys_by_output_name={"result": AssetKey("foo")})
+    _cacheable_data = AssetsDefinitionCacheableData(keys_by_output_name={"result": AssetKey("foo")})
 
-    def get_cached_data(self):
+    def compute_cacheable_data(self):
         # used for tracking how many times this function gets called over an execution
         instance = DagsterInstance.get()
-        kvs_key = "get_cached_data_called"
-        get_cached_data_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
-        instance.run_storage.kvs_set({kvs_key: str(get_cached_data_called + 1)})
-        return [self._cached_data]
+        kvs_key = "compute_cacheable_data_called"
+        compute_cacheable_data_called = int(
+            instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0")
+        )
+        instance.run_storage.kvs_set({kvs_key: str(compute_cacheable_data_called + 1)})
+        return [self._cacheable_data]
 
-    def get_definitions(self, cached_data):
-        assert len(cached_data) == 1
-        assert cached_data == [self._cached_data]
+    def build_definitions(self, data):
+        assert len(data) == 1
+        assert data == [self._cacheable_data]
 
         # used for tracking how many times this function gets called over an execution
         instance = DagsterInstance.get()
@@ -345,8 +352,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
             return 1
 
         return [
-            AssetsDefinition.from_op(_op, keys_by_output_name=cd.keys_by_output_name)
-            for cd in cached_data
+            AssetsDefinition.from_op(_op, keys_by_output_name=cd.keys_by_output_name) for cd in data
         ]
 
 
