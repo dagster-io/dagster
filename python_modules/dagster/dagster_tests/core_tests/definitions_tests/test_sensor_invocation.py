@@ -733,8 +733,7 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
             assert materialization
             context.advance_cursor({august_asset.key: materialization})
 
-            cursor = json.loads(context.cursor)
-            partition, _ = cursor[str(july_asset.key)]
+            partition, _, _ = context._get_cursor(july_asset.key)
             assert partition == "2022-07-10"
 
     with instance_for_test() as instance:
@@ -769,8 +768,7 @@ def test_multi_asset_sensor_advance_cursor_no_update_on_older_materialization():
             {july_asset.key: events[0]}
         )  # attempt to advance to earlier materialization
 
-        cursor = json.loads(context.cursor)
-        partition, storage_id = cursor[str(july_asset.key)]
+        partition, storage_id, _ = context._get_cursor(july_asset.key)
         assert partition == "2022-07-10"
         assert storage_id == events[1].storage_id
         assert storage_id > events[0].storage_id

@@ -657,6 +657,9 @@ class SqlEventLogStorage(EventLogStorage):
                 > datetime.utcfromtimestamp(event_records_filter.after_timestamp)
             )
 
+        if event_records_filter.storage_ids:
+            query = query.where(SqlEventLogStorageTable.c.id.in_(event_records_filter.storage_ids))
+
         return query
 
     def get_event_records(
