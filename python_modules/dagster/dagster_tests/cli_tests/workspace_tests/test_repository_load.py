@@ -159,6 +159,15 @@ def test_missing_repo_name_in_multi_repo_location():
     ) in result.stdout
 
 
+def test_pending_repo():
+    pending_location = file_relative_path(__file__, "pending_repo/pending_repo.yaml")
+
+    def the_assert(external_repository):
+        assert external_repository.name == "pending_repo"
+
+    successfully_load_repository_via_cli(["-w", pending_location, "-r", "pending_repo"], the_assert)
+
+
 def test_local_directory_module():
     cli_args = [
         "-w",

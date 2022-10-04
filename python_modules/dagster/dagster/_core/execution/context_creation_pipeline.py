@@ -124,6 +124,7 @@ def create_context_creation_data(
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
 ) -> "ContextCreationData":
+
     pipeline_def = pipeline.get_definition()
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=pipeline_run.mode)
 
