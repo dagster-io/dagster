@@ -7,6 +7,7 @@ from dagster._core.definitions import Failure, HookExecutionResult, RetryRequest
 from dagster._core.errors import (
     DagsterError,
     DagsterExecutionInterruptedError,
+    DagsterMaxRetriesExceededError,
     DagsterUserCodeExecutionError,
     HookExecutionError,
     user_code_error_boundary,
@@ -259,6 +260,8 @@ def dagster_event_sequence_for_step(
                         error_source=ErrorSource.USER_CODE_ERROR if fail_err.cause else None,
                     ),
                 )
+                if step_context.raise_on_error:
+                    raise DagsterMaxRetriesExceededError.from_error_info(fail_err)
             else:
                 yield DagsterEvent.step_retry_event(
                     step_context,
