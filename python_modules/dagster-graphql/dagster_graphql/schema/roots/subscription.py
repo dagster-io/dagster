@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
 from ...implementation.execution import get_compute_log_observable, get_pipeline_run_observable
-from ..external import GrapheneLocationStateChangeSubscription, get_location_state_change_observable
+from ..external import GrapheneAssetLogEventsSubscription, GrapheneLocationStateChangeSubscription, get_location_state_change_observable
 from ..logs.compute_logs import GrapheneComputeIOType, GrapheneComputeLogFile
 from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
 
@@ -36,6 +36,11 @@ class GrapheneDagitSubscription(graphene.ObjectType):
         description="Retrieve real-time events when a location in the workspace undergoes a state change.",
     )
 
+    assetLogEvents = graphene.Field(
+        graphene.NonNull(GrapheneAssetLogEventsSubscription),
+        description="Real-time events when any run emits an asset materialization or observation event."
+    )
+
     def resolve_pipelineRunLogs(self, graphene_info, runId, cursor=None):
         return get_pipeline_run_observable(graphene_info, runId, cursor)
 
@@ -47,3 +52,6 @@ class GrapheneDagitSubscription(graphene.ObjectType):
 
     def resolve_locationStateChangeEvents(self, graphene_info):
         return get_location_state_change_observable(graphene_info)
+
+    def resolve_assetLogEvents(self, graphene_info):
+        return get_asset_log_events_observable(graphene_info)
