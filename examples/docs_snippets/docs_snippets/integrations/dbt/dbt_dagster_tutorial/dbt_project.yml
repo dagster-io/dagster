@@ -1,0 +1,7 @@
+[...]
+profile: 'jaffle_shop'       # Specified profile
+[...]
+models:
+  jaffle_shop:
+    +materialized: table    # Materialization set to tables
+[...]

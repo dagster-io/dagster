@@ -3,9 +3,15 @@ title: "Using Dagster with dbt"
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
-## Using dbt with Dagster
+# Using dbt with Dagster
 
-<Note>Using dbt Cloud? Check out the <a href="/integrations/dbt/using-dbt-cloud-with-dagster">dbt Cloud with Dagster guide</a>!</Note>
+<Note>
+  Using dbt Cloud? Check out the{" "}
+  <a href="/integrations/dbt/using-dbt-cloud-with-dagster">
+    dbt Cloud with Dagster guide
+  </a>
+  !
+</Note>
 
 Using Dagster, you can combine dbt and the other technologies in your stack - Spark, Python, and so on - into a single data pipeline. You could, for example:
 
@@ -13,10 +19,10 @@ Using Dagster, you can combine dbt and the other technologies in your stack - Sp
 - Selectively materialize dbt models and their dependencies
 - TODO: what else?
 
-In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop) and the [dagster-dbt library](/_apidocs/libraries/dagster-dbt). By the end of this tutorial, you will:
+In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a DuckDB database. By the end of this tutorial, you will:
 
 - Understand how dbt models and Dagster [software-defined assets](/concepts/assets/software-defined-assets) (or SDAs) work together
-- Load existing dbt models into a Dagster project as SDAs 
+- Load existing dbt models into a Dagster project as SDAs
 - Materialize the assets using Dagit, Dagster’s web UI
 - Add upstream and downstream dependencies
 
@@ -34,9 +40,7 @@ Let’s take a look at a dbt model and an SDA, in code:
 
 Here's what's happening in this example:
 
-<TODO>
-</TODO>
-
+<TODO></TODO>
 
 ---
 
@@ -44,8 +48,214 @@ Here's what's happening in this example:
 
 To complete this tutorial, you'll need:
 
-- **To install dbt**, if you haven't already.
-- **To install Dagster**, if you haven't already.
+- To install the following:
+
+  - **dbt**. You'll also need an existing dbt project. This tutorial uses dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project as well.
+
+  - **Dagster**. If you don't already have Dagster installed, run the following:
+
+    ```shell
+    pip install dagster dagit
+    ```
+
+  - **The `dbt-duckdb` adapter.** This tutorial uses [DuckDB](https://docs.getdbt.com/reference/warehouse-profiles/duckdb-profile) as the database backing dbt. Run the following to install the adapter:
+
+    ```shell
+    pip install dbt-duckdb
+    ```
+
+TODO: Add link to GitHub code
 
 ---
 
+## Step 1: Set up the dbt project
+
+First, you'll set up the dbt project for the tutorial. We're using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project as well.
+
+In this step, you'll:
+
+- [Clone the jaffle_shop dbt project](todo)
+- [Create a DuckDB connection profile](todo)
+- [Configure the project's `dbt_project.yml` file](todo)
+
+### Step 1.1: Clone the jaffle_shop dbt project
+
+1. In the terminal, create a folder named `dbt_dagster_tutorial`:
+
+   ```shell
+   mkdir dbt_dagster_shell
+   ```
+
+2. Navigate into the new folder:
+
+   ```shell
+   cd dbt_dagster_tutorial
+   ```
+
+3. In the `dbt_dagster_tutorial` folder, clone the `jaffle_shop` dbt project:
+
+   ```shell
+   git clone https://github.com/dbt-labs/jaffle_shop.git
+   ```
+
+The folder structure should now be similar to the following:
+
+```yaml file=/integrations/dbt/dbt_dagster_tutorial/project_structure.yaml startafter=initial_structure_start endbefore=initial_structure_end
+dbt_dagster_tutorial └── jaffle_shop ├── README.md ├── dbt_project.yml ├── models │  ├── customers.sql │  ├── orders.sql │  ├── schema.yml │  └── staging │     ├── schema.yml │     ├── stg_customers.sql │     └── stg_orders.sql └── seeds
+```
+
+### Step 1.2: Create a DuckDB profile
+
+In this step, you'll add a DuckDB profile to the dbt project. This will allow you to connect dbt to the DuckDB database.
+
+In our example code (viewable [here](TODO)), we've created this file in `/dbt_dagster_tutorial/jaffle_shop/config/profiles.yml`:
+
+```yaml file=../../dbt_dagster_tutorial/jaffle_shop/config/profiles.yml
+jaffle_shop:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: tutorial.duckdb
+      schema: jaffle_shop
+```
+
+### Step 1.3: Configure the dbt_project.yml file
+
+In this step, you'll verify that your dbt project's `dbt_project.yml` file is correctly configured. To work with this tutorial, this file must:
+
+- Specify `jaffle_shop` as the `profile`, and
+- Specify that `jaffle_shop` models are materialized into tables
+
+```yaml file=integrations/dbt/dbt_dagster_tutorial/dbt_project.yml
+[...]
+profile: 'jaffle_shop'       # Specified profile
+[...]
+models:
+  jaffle_shop:
+    +materialized: table    # Materialization set to tables
+[...]
+```
+
+---
+
+## Step 2: Configure dbt model data sources
+
+Next, you'll tell the models in your dbt project where the source data they depend on will be located. There isn't any data yet, but we'll create Dagster assets in the next section that fetch and provide the data to the dbt models.
+
+1. [Declare a source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source) by creating a `sources.yml` file in `/dbt_dagster_tutorial/jaffle_shop/models`. This defines the location of tables containing source data:
+
+   ```yaml file=../../dbt_dagster_tutorial/jaffle_shop/models/sources.yml
+   version: 2
+
+   sources:
+     - name: jaffle_shop
+       tables:
+         - name: orders_raw
+         - name: customers_raw
+   ```
+
+2. Update the models in `dbt_dagster_tutorial/jaffle_shop/models/staging` to [select data from the sources you just declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#selecting-from-a-source).
+
+   To do this, update the models' `FROM` statement to use the [`{{ source()}}` function](https://docs.getdbt.com/reference/dbt-jinja-functions/source). When finished, the files should look like the following:
+
+   - For `stg_customers.sql`:
+
+     ```sql file=../../dbt_dagster_tutorial/jaffle_shop/models/staging/stg_customers.sql
+     select
+         id as customer_id,
+         first_name,
+         last_name
+
+     from {{ source('jaffle_shop', 'customers_raw') }}
+     ```
+
+   - For `stg_orders.sql`:
+
+     ```sql file=../../dbt_dagster_tutorial/jaffle_shop/models/staging/stg_orders.sql
+     select
+         id as order_id,
+         user_id as customer_id,
+         order_date,
+         status
+
+     from {{ source('jaffle_shop', 'orders_raw') }}
+     ```
+
+---
+
+## Step 3: Create Dagster assets and load dbt models
+
+In this step, you'll:
+
+- TODO: Add a dagster directory under dbt_dagster_tutorial
+- Create the assets
+- Load the dbt models into Dagster
+- Supply resources
+
+### Step 3.1: Create the Dagster assets
+
+To fetch the data the dbt models require, we'll write two Dagster assets: one for `customers` and one for `orders`:
+
+```python file=../../dbt_dagster_tutorial/dbt_dagster_tutorial/assets.py
+import pandas as pd
+import plotly.express as px
+from dagster_dbt import load_assets_from_dbt_project
+
+from dagster import AssetIn, MetadataValue, asset
+from dagster._utils import file_relative_path
+
+
+# These assets would be part of the first stage of the tutorial
+@asset(key_prefix=["jaffle_shop"], group_name="staging")
+def customers_raw() -> pd.DataFrame:
+    data = pd.read_csv("s3://dbt-tutorial-public/jaffle_shop_customers.csv")
+    # data = pd.read_csv("https://docs.dagster.io/assets/customers.csv") TODO replace ^ with this
+    return data
+
+
+@asset(key_prefix=["jaffle_shop"], group_name="staging")
+def orders_raw() -> pd.DataFrame:
+    data = pd.read_csv("s3://dbt-tutorial-public/jaffle_shop_orders.csv")
+    # data = pd.read_csv("https://docs.dagster.io/assets/orders.csv") TODO replace ^ with this
+    return data
+
+
+DBT_PROJECT_PATH = file_relative_path(__file__, "../jaffle_shop")
+DBT_PROFILES = file_relative_path(__file__, "../jaffle_shop/config")
+
+# if larger project use load_assets_from_dbt_manifest
+# dbt_assets = load_assets_from_dbt_manifest(json.load(DBT_PROJECT_PATH + "manifest.json", encoding="utf8"))
+dbt_assets = load_assets_from_dbt_project(
+    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+)
+
+# end first stage of tutorial - at this point you can run dagit and launch a materialization
+
+# This asset would be the second stage of the tutorial
+@asset(
+    ins={"customers": AssetIn(key_prefix=["jaffle_shop"])},
+    group_name="staging",
+)
+def order_count_chart(context, customers: pd.DataFrame):
+    fig = px.histogram(customers, x="number_of_orders")
+    fig.update_layout(bargap=0.2)
+    save_chart_path = file_relative_path(__file__, "order_count_chart.html")
+    fig.write_html(save_chart_path, auto_open=True)
+
+    context.add_output_metadata({"plot_url": MetadataValue.url("file://" + save_chart_path)})
+```
+
+Let's take a closer look at a few things in this example:
+
+- 
+
+---
+
+## Step 4: Add a downstream asset
+
+---
+
+## Step 5: Materialize the assets
+
+TODO
