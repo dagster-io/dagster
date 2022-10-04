@@ -273,8 +273,7 @@ def test_using_file_system_for_subplan_invalid_step():
 def test_using_repository_data():
     with instance_for_test() as instance:
         # first, we resolve the repository to generate our cached metadata
-        repository_load_data = pending_repo.get_repository_load_data()
-        repository_def = pending_repo.resolve(repository_load_data)
+        repository_def = pending_repo.compute_repository_definition()
         pipeline_def = repository_def.get_job("all_asset_job")
         repository_load_data = repository_def.repository_load_data
 

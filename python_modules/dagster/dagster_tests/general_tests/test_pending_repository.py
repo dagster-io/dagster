@@ -79,7 +79,7 @@ def pending_repo():
 def test_resolve_empty():
     assert isinstance(pending_repo, PendingRepositoryDefinition)
     with pytest.raises(check.CheckError):
-        repo = pending_repo.resolve(repository_load_data=None)
+        repo = pending_repo.reconstruct_repository_definition(repository_load_data=None)
     repo = pending_repo.compute_repository_definition()
     assert isinstance(repo, RepositoryDefinition)
     assert isinstance(repo.get_job("simple_job"), JobDefinition)
@@ -89,7 +89,7 @@ def test_resolve_empty():
 def test_resolve_missing_key():
     assert isinstance(pending_repo, PendingRepositoryDefinition)
     with pytest.raises(check.CheckError, match="No metadata found"):
-        pending_repo.resolve(
+        pending_repo.reconstruct_repository_definition(
             repository_load_data=RepositoryLoadData(
                 cached_data_by_key={
                     "a": [
@@ -109,7 +109,7 @@ def test_resolve_wrong_data():
         DagsterInvalidDefinitionError,
         match=r"Input asset .*\"b\".* is not produced by any of the provided asset ops and is not one of the provided sources",
     ):
-        pending_repo.resolve(
+        pending_repo.reconstruct_repository_definition(
             repository_load_data=RepositoryLoadData(
                 cached_data_by_key={
                     "a": [
