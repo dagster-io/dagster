@@ -1,6 +1,6 @@
 import pytest
 
-from dagster._core.test_utils import create_test_daemon_workspace
+from dagster._core.test_utils import create_test_daemon_workspace_context
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._utils.test.postgres_instance import postgres_instance_for_test
 
@@ -24,16 +24,16 @@ def instance():
 
 
 @pytest.fixture
-def empty_workspace(instance):
-    with create_test_daemon_workspace(
+def empty_workspace_context(instance):
+    with create_test_daemon_workspace_context(
         workspace_load_target=EmptyWorkspaceTarget(), instance=instance
-    ) as workspace:
-        yield workspace
+    ) as workspace_context:
+        yield workspace_context
 
 
 @pytest.fixture
-def workspace(instance):
-    with create_test_daemon_workspace(
+def workspace_context(instance):
+    with create_test_daemon_workspace_context(
         workspace_load_target=workspace_load_target(), instance=instance
     ) as workspace:
         yield workspace

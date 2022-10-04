@@ -3,15 +3,15 @@ import sys
 import threading
 import time
 import uuid
-from contextlib import ExitStack, contextmanager
-from typing import Callable, ContextManager, Iterator, Sequence, Tuple
+from contextlib import AbstractContextManager, ExitStack, contextmanager
+from typing import Callable, Iterator, Sequence
 
 import pendulum
 
 import dagster._check as check
 from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster._core.instance import DagsterInstance
-from dagster._core.workspace.context import IWorkspace
+from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 from dagster._daemon.daemon import (
@@ -25,8 +25,6 @@ from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import Queued
 from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 from dagster._utils.interrupts import raise_interrupts_as
 from dagster._utils.log import configure_loggers
-
-from .workspace import DaemonWorkspace
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
 DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 300
@@ -44,6 +42,7 @@ THREAD_CHECK_INTERVAL = 5
 
 HEARTBEAT_CHECK_INTERVAL = 15
 
+RELOAD_WORKSPACE_INTERVAL = 60
 
 DAEMON_GRPC_SERVER_RELOAD_INTERVAL = 60
 DAEMON_GRPC_SERVER_HEARTBEAT_TTL = 120
@@ -87,39 +86,34 @@ def daemon_controller_from_instance(
         with ExitStack() as stack:
             grpc_server_registry = stack.enter_context(create_daemon_grpc_server_registry(instance))
             daemons = [stack.enter_context(daemon) for daemon in gen_daemons(instance)]
+            workspace_process_context = stack.enter_context(
+                WorkspaceProcessContext(
+                    instance=instance,
+                    workspace_load_target=workspace_load_target,
+                    grpc_server_registry=grpc_server_registry,
+                )
+            )
+            controller = stack.enter_context(
+                DagsterDaemonController(
+                    workspace_process_context,
+                    daemons,
+                    heartbeat_interval_seconds=heartbeat_interval_seconds,
+                    heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
+                    error_interval_seconds=error_interval_seconds,
+                )
+            )
 
-            instance_ref = instance.get_ref()
-
-            # Create this in each daemon to generate a workspace per-daemon
-            @contextmanager
-            def _context_fn(_):
-                with DaemonWorkspace(
-                    grpc_server_registry, workspace_load_target
-                ) as workspace, DagsterInstance.from_ref(  # clone instance object so each thread has its own
-                    instance_ref
-                ) as thread_instance:
-                    yield thread_instance, workspace
-
-            with DagsterDaemonController(
-                instance,
-                daemons,
-                _context_fn,
-                heartbeat_interval_seconds=heartbeat_interval_seconds,
-                heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
-                error_interval_seconds=error_interval_seconds,
-            ) as controller:
-                yield controller
+            yield controller
     finally:
         if wait_for_processes_on_exit and grpc_server_registry:
             grpc_server_registry.wait_for_processes()  # pylint: disable=no-member
 
 
-class DagsterDaemonController:
+class DagsterDaemonController(AbstractContextManager):
     def __init__(
         self,
-        instance: DagsterInstance,
+        workspace_process_context: IWorkspaceProcessContext,
         daemons: Sequence[DagsterDaemon],
-        context_fn: Callable[[str], ContextManager[Tuple[DagsterInstance, IWorkspace]]],
         heartbeat_interval_seconds: int = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds: int = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
@@ -131,13 +125,9 @@ class DagsterDaemonController:
         self._daemons = {}
         self._daemon_threads = {}
 
-        self._instance = check.inst_param(instance, "instance", DagsterInstance)
-        self._daemons = {
-            daemon.daemon_type(): daemon
-            for daemon in check.list_param(daemons, "daemons", of_type=DagsterDaemon)
-        }
-
-        check.callable_param(context_fn, "context_fn")
+        self._workspace_process_context = workspace_process_context
+        self._instance = workspace_process_context.instance
+        self._daemons = {daemon.daemon_type(): daemon for daemon in daemons}
 
         self._heartbeat_interval_seconds = check.numeric_param(
             heartbeat_interval_seconds, "heartbeat_interval_seconds"
@@ -166,9 +156,9 @@ class DagsterDaemonController:
             self._daemon_threads[daemon_type] = threading.Thread(
                 target=daemon.run_daemon_loop,
                 args=(
+                    workspace_process_context,
                     self._daemon_uuid,
                     self._daemon_shutdown_event,
-                    context_fn,
                     heartbeat_interval_seconds,
                     error_interval_seconds,
                 ),
@@ -250,10 +240,16 @@ class DagsterDaemonController:
     def check_daemon_loop(self):
         start_time = time.time()
         last_heartbeat_check_time = start_time
+        last_workspace_update_time = start_time
         while True:
             with raise_interrupts_as(KeyboardInterrupt):
                 time.sleep(THREAD_CHECK_INTERVAL)
                 self.check_daemon_threads()
+
+                # periodically refresh the shared workspace context
+                if (time.time() - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
+                    self._workspace_process_context.reload_workspace()
+                    last_workspace_update_time = time.time()
 
                 if self._instance.daemon_skip_heartbeats_without_errors:
                     # If we're skipping heartbeats without errors, we just check the threads.

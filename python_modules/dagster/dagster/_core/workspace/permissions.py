@@ -68,8 +68,8 @@ def _get_disabled_reason(enabled: bool):
     return None if enabled else "Disabled by your administrator"
 
 
-def get_user_permissions(context: "WorkspaceProcessContext") -> Dict[str, PermissionResult]:
-    if context.read_only:
+def get_user_permissions(read_only: bool) -> Dict[str, PermissionResult]:
+    if read_only:
         perm_map = VIEWER_PERMISSIONS
     else:
         perm_map = EDITOR_PERMISSIONS

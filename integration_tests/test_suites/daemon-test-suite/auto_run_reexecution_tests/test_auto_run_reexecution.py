@@ -10,13 +10,13 @@ from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_STRATEGY_TAG
 from dagster._core.test_utils import create_run_for_test, instance_for_test
-from dagster._legacy import PipelineRunStatus
-from dagster.daemon.auto_run_reexecution.auto_run_reexecution import (
+from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
     filter_runs_to_should_retry,
     get_reexecution_strategy,
 )
-from dagster.daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
+from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
+from dagster._legacy import PipelineRunStatus
 
 from .utils import foo, get_foo_pipeline_handle
 
@@ -140,14 +140,13 @@ def test_filter_runs_to_should_retry_tags(instance):
     )
 
 
-def test_consume_new_runs_for_automatic_reexecution(instance, workspace):
+def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context):
     instance.wipe()
     instance.run_coordinator.queue().clear()
 
     list(
         consume_new_runs_for_automatic_reexecution(
-            instance,
-            workspace,
+            workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
         )
     )
@@ -174,8 +173,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace):
 
     list(
         consume_new_runs_for_automatic_reexecution(
-            instance,
-            workspace,
+            workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
         )
     )
@@ -184,8 +182,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace):
     # doesn't retry again
     list(
         consume_new_runs_for_automatic_reexecution(
-            instance,
-            workspace,
+            workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
         )
     )
@@ -209,8 +206,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace):
     instance.handle_new_event(event_record)
     list(
         consume_new_runs_for_automatic_reexecution(
-            instance,
-            workspace,
+            workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
         )
     )
@@ -234,8 +230,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace):
     instance.handle_new_event(event_record)
     list(
         consume_new_runs_for_automatic_reexecution(
-            instance,
-            workspace,
+            workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
         )
     )

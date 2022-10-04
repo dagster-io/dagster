@@ -9,7 +9,7 @@ from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.test_utils import (
     cleanup_test_instance,
-    create_test_daemon_workspace,
+    create_test_daemon_workspace_context,
     get_crash_signals,
     get_terminate_signal,
 )
@@ -31,12 +31,13 @@ spawn_ctx = multiprocessing.get_context("spawn")
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with create_test_daemon_workspace(workspace_load_target(), instance) as workspace:
+            with create_test_daemon_workspace_context(
+                workspace_load_target(), instance
+            ) as workspace_context:
                 with pendulum.test(execution_datetime):
                     list(
                         launch_scheduled_runs(
-                            instance,
-                            workspace,
+                            workspace_context,
                             logger(),
                             pendulum.now("UTC"),
                             debug_crash_flags=debug_crash_flags,

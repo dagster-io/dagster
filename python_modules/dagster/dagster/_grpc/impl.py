@@ -3,7 +3,7 @@
 import os
 import sys
 from contextlib import ExitStack
-from typing import Generator, List, Optional, Sequence
+from typing import Generator, Optional, Sequence
 
 import pendulum
 
@@ -219,8 +219,8 @@ def start_run_in_subprocess(
 def get_external_pipeline_subset_result(
     repo_def: RepositoryDefinition,
     job_name: str,
-    solid_selection: Optional[List[str]],
-    asset_selection: Optional[List[AssetKey]],
+    solid_selection: Optional[Sequence[str]],
+    asset_selection: Optional[Sequence[AssetKey]],
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
