@@ -11,7 +11,7 @@ import {Tab, Transition} from '@headlessui/react';
 import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
-import React, {useContext, useRef, useState} from 'react';
+import React, {ReactElement, useContext, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
 import {useVersion} from '../../util/useVersion';
@@ -345,16 +345,27 @@ const Experimental = () => {
 // around the <code> tag once we have access to the <code> tag's props.
 const Pre: React.FC<React.HTMLProps<HTMLPreElement>> = ({children, ...props}) => {
   const updatedProps = {...props, className: 'noop'};
-  return <pre {...updatedProps}>{children}</pre>;
+  return (
+    <pre {...updatedProps}>
+      {React.Children.map(children, (child: ReactElement<any>) =>
+        React.cloneElement(child, {fullwidth: true}),
+      )}
+    </pre>
+  );
 };
 
-interface CodeProps extends React.HTMLProps<HTMLPreElement> {
+interface CodeProps extends React.HTMLProps<HTMLElement> {
   dagimage?: string;
+  fullwidth?: boolean;
 }
 
 const Code: React.FC<CodeProps> = ({children, dagimage, ...props}) => {
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
+
+  if (!props.fullwidth) {
+    return <code {...props}>{children}</code>;
+  }
 
   const onClick = async () => {
     try {
