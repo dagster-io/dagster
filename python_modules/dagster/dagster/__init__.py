@@ -478,6 +478,7 @@ from dagster._core.storage.io_manager import (
     io_manager as io_manager,
 )
 from dagster._core.storage.mem_io_manager import (
+    InMemoryIOManager as InMemoryIOManager,
     mem_io_manager as mem_io_manager,
 )
 from dagster._core.storage.memoizable_io_manager import (
