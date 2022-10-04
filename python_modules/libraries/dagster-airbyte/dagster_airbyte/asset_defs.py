@@ -15,6 +15,7 @@ from typing import (
     cast,
 )
 
+import hashlib
 import yaml
 from dagster_airbyte.resources import AirbyteResource
 from dagster_airbyte.utils import generate_materializations
@@ -42,7 +43,7 @@ def _build_airbyte_asset_defn_metadata(
     group_name: Optional[str] = None,
 ) -> AssetsDefinitionCacheableData:
 
-    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
 
     # Generate a list of outputs, the set of destination tables plus any affiliated
     # normalization tables
@@ -113,7 +114,9 @@ def _build_airbyte_assets_from_metadata(
     )
     def _assets(context):
         ab_output = context.resources.airbyte.sync_and_poll(connection_id=connection_id)
-        for materialization in generate_materializations(ab_output, assets_defn_meta.key_prefix):
+        for materialization in generate_materializations(
+            ab_output, assets_defn_meta.key_prefix or []
+        ):
             table_name = materialization.asset_key.path[-1]
             if table_name in destination_tables:
                 yield Output(
@@ -368,7 +371,12 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
         self._create_assets_for_normalization_tables = create_assets_for_normalization_tables
         self._connection_to_group_fn = connection_to_group_fn
 
-        super().__init__(unique_id="airbyte")
+        contents = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
+        contents.update(str(workspace_id).encode("utf-8"))
+        contents.update(",".join(key_prefix).encode("utf-8"))
+        contents.update(str(create_assets_for_normalization_tables).encode("utf-8"))
+
+        super().__init__(unique_id=f"airbyte-{contents.hexdigest()}")
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
 
@@ -395,7 +403,7 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
             ).get("connections", []),
         )
 
-        asset_defn_metas: List[AssetsDefinitionCacheableData] = []
+        asset_defn_data: List[AssetsDefinitionCacheableData] = []
         for connection_json in connections:
             connection_id = cast(str, connection_json.get("connectionId"))
 
@@ -414,7 +422,7 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
                 self._create_assets_for_normalization_tables
             )
 
-            assets_for_connection = _build_airbyte_asset_defn_metadata(
+            asset_data_for_conn = _build_airbyte_asset_defn_metadata(
                 connection_id=connection_id,
                 destination_tables=list(table_mapping.keys()),
                 normalization_tables=table_mapping,
@@ -424,15 +432,15 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
                 else None,
             )
 
-            asset_defn_metas.append(assets_for_connection)
+            asset_defn_data.append(asset_data_for_conn)
 
-        return asset_defn_metas
+        return asset_defn_data
 
     def build_definitions(
-        self, cached_data: Sequence[AssetsDefinitionCacheableData]
+        self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
         return with_resources(
-            [_build_airbyte_assets_from_metadata(meta) for meta in cached_data],
+            [_build_airbyte_assets_from_metadata(meta) for meta in data],
             {"airbyte": self._airbyte_resource_def},
         )
 
