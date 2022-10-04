@@ -24,10 +24,7 @@ from dagster import _check as check
 from dagster import with_resources
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionMetadata,
-    CacheableAssetsDefinition,
-)
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition, CachedAssetsData
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import with_group
 from dagster._core.execution.context.init import build_init_resource_context
@@ -40,7 +37,7 @@ def _build_airbyte_asset_defn_metadata(
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     upstream_assets: Optional[Iterable[AssetKey]] = None,
     group_name: Optional[str] = None,
-) -> AssetsDefinitionMetadata:
+) -> CachedAssetsData:
 
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
@@ -72,7 +69,7 @@ def _build_airbyte_asset_defn_metadata(
     for table in destination_tables:
         internal_deps[table] = set(upstream_assets or [])
 
-    return AssetsDefinitionMetadata(
+    return CachedAssetsData(
         keys_by_input_name={asset_key.path[-1]: asset_key for asset_key in upstream_assets}
         if upstream_assets
         else {},
@@ -91,7 +88,7 @@ def _build_airbyte_asset_defn_metadata(
 
 
 def _build_airbyte_assets_from_metadata(
-    assets_defn_meta: AssetsDefinitionMetadata,
+    assets_defn_meta: CachedAssetsData,
 ) -> AssetsDefinition:
 
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
@@ -370,7 +367,7 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
 
         super().__init__(unique_id="airbyte")
 
-    def get_metadata(self) -> Sequence[AssetsDefinitionMetadata]:
+    def get_cached_data(self) -> Sequence[CachedAssetsData]:
 
         workspace_id = self._workspace_id
         if not workspace_id:
@@ -395,7 +392,7 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
             ).get("connections", []),
         )
 
-        asset_defn_metas: List[AssetsDefinitionMetadata] = []
+        asset_defn_metas: List[CachedAssetsData] = []
         for connection_json in connections:
             connection_id = cast(str, connection_json.get("connectionId"))
 
@@ -429,10 +426,10 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
         return asset_defn_metas
 
     def get_definitions(
-        self, metadata: Sequence[AssetsDefinitionMetadata]
+        self, cached_data: Sequence[CachedAssetsData]
     ) -> Sequence[AssetsDefinition]:
         return with_resources(
-            [_build_airbyte_assets_from_metadata(meta) for meta in metadata],
+            [_build_airbyte_assets_from_metadata(meta) for meta in cached_data],
             {"airbyte": self._airbyte_resource_def},
         )
 
