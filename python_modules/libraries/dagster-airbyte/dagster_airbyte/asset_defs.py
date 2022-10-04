@@ -1,3 +1,4 @@
+import hashlib
 import os
 import re
 from itertools import chain
@@ -15,7 +16,6 @@ from typing import (
     cast,
 )
 
-import hashlib
 import yaml
 from dagster_airbyte.resources import AirbyteResource
 from dagster_airbyte.utils import generate_materializations
@@ -26,8 +26,8 @@ from dagster import with_resources
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.cacheable_assets import (
-    CacheableAssetsDefinition,
     AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import with_group
