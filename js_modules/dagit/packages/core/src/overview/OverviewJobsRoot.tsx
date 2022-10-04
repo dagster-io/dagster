@@ -6,7 +6,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {HeaderCell} from '../ui/VirtualizedTable';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -98,29 +97,7 @@ export const OverviewJobsRoot = () => {
       );
     }
 
-    return (
-      <>
-        <Box
-          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '34% 30% 20% 8% 8%',
-            height: '32px',
-            fontSize: '12px',
-            color: Colors.Gray600,
-          }}
-        >
-          <HeaderCell>Job name</HeaderCell>
-          <HeaderCell>Schedules/sensors</HeaderCell>
-          <HeaderCell>Latest run</HeaderCell>
-          <HeaderCell>Run history</HeaderCell>
-          <HeaderCell>Actions</HeaderCell>
-        </Box>
-        <div style={{overflow: 'hidden'}}>
-          <OverviewJobsTable repos={filteredBySearch} />
-        </div>
-      </>
-    );
+    return <OverviewJobsTable repos={filteredBySearch} />;
   };
 
   return (
