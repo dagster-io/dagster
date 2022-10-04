@@ -63,7 +63,7 @@ def test_load_from_instance(use_normalization_tables, connection_to_group_fn):
             ab_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
         )
-    ab_assets = ab_cacheable_assets.get_definitions(ab_cacheable_assets.get_cached_data())
+    ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
 
     tables = {"dagster_releases", "dagster_tags", "dagster_teams"} | (
         {"dagster_releases_assets", "dagster_releases_author", "dagster_tags_commit"}
