@@ -1,0 +1,51 @@
+---
+title: "Using Dagster with dbt"
+description: Dagster can orchestrate dbt alongside other technologies.
+---
+
+## Using dbt with Dagster
+
+<Note>Using dbt Cloud? Check out the <a href="/integrations/dbt/using-dbt-cloud-with-dagster">dbt Cloud with Dagster guide</a>!</Note>
+
+Using Dagster, you can combine dbt and the other technologies in your stack - Spark, Python, and so on - into a single data pipeline. You could, for example:
+
+- Run your dbt models after ingesting data into your data warehouse
+- Selectively materialize dbt models and their dependencies
+- TODO: what else?
+
+In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop) and the [dagster-dbt library](/_apidocs/libraries/dagster-dbt). By the end of this tutorial, you will:
+
+- Understand how dbt models and Dagster [software-defined assets](/concepts/assets/software-defined-assets) (or SDAs) work together
+- Load existing dbt models into a Dagster project as SDAs 
+- Materialize the assets using Dagit, Dagster’s web UI
+- Add upstream and downstream dependencies
+
+---
+
+## dbt models and Dagster software-defined assets
+
+- Section goal: Explain dbt models and Dagster assets; show how they’re alike and fit together. Lead into the tutorial.
+
+Dagster’s [software-defined assets](/concepts/assets/software-defined-assets) (SDAs) bear a number of similarities to dbt models. At a high level, SDAs and dbt models both contain todo
+
+Let’s take a look at a dbt model and an SDA, in code:
+
+<TODO>ADD CODE EXAMPLE</TODO>
+
+Here's what's happening in this example:
+
+<TODO>
+</TODO>
+
+
+---
+
+## Prerequisites
+
+To complete this tutorial, you'll need:
+
+- **To install dbt**, if you haven't already.
+- **To install Dagster**, if you haven't already.
+
+---
+
