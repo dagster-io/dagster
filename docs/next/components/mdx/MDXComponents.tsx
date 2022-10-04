@@ -345,6 +345,8 @@ const Experimental = () => {
 // around the <code> tag once we have access to the <code> tag's props.
 const Pre: React.FC<React.HTMLProps<HTMLPreElement>> = ({children, ...props}) => {
   const updatedProps = {...props, className: 'noop'};
+  // Add a prop to children so that the Code renderer can tell if it's a code block
+  // or not
   return (
     <pre {...updatedProps}>
       {React.Children.map(children, (child: ReactElement<any>) =>
@@ -363,6 +365,7 @@ const Code: React.FC<CodeProps> = ({children, dagimage, ...props}) => {
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
 
+  // Early exit if we're not a full width code block
   if (!props.fullwidth) {
     return <code {...props}>{children}</code>;
   }
