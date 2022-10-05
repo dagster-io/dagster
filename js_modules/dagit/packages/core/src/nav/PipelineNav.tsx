@@ -92,8 +92,8 @@ export const PipelineNav: React.FC<Props> = (props) => {
   const repoJobEntry = repo?.repository.pipelines.find(
     (pipelineOrJob) => pipelineOrJob.name === pipelineName,
   );
-  const isJob = repoJobEntry?.isJob || false;
-  const isAssetJob = repoJobEntry?.isAssetJob || false;
+  const isJob = !!repoJobEntry?.isJob;
+  const isAssetJob = !!repoJobEntry?.isAssetJob;
 
   // If using pipeline:mode tuple (crag flag), check for partition sets that are for this specific
   // pipeline:mode tuple. Otherwise, just check for a pipeline name match.
