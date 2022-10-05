@@ -9,6 +9,15 @@ Dagster can orchestrate your Airbyte connections, making it easy to chain an Air
 
 This guide focuses on how to work with Airbyte connections using Dagster's [software-defined asset (SDA)](/concepts/assets/software-defined-assets) framework.
 
+<center>
+  <Image
+    alt="Screenshot of the Airbyte UI in a browser, showing the connection ID in the URL."
+    src="/images/integrations/airbyte/airbyte_assets.png"
+    width={2200}
+    height={1300}
+  />
+</center>
+
 ---
 
 ## Airbyte connections and Dagster software-defined assets
@@ -43,7 +52,7 @@ airbyte_assets = load_assets_from_airbyte_project(
 )
 ```
 
-The `load_assets_from_airbyte_project` function parses the YAML metadata, generating a set of software-defined assets which reflect each of the data streams synced by your connections. Each connection has an associated [operation](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.
+The `load_assets_from_airbyte_project` function parses the YAML metadata, generating a set of software-defined assets which reflect each of the data streams synced by your connections. Each connection has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.
 
 #### Adding a resource
 
@@ -96,9 +105,9 @@ Instead of having Dagster automatically create the asset defintions for your Air
 <center>
   <Image
     alt="Screenshot of the Airbyte UI in a browser, showing the connection ID in the URL."
-    src="/images/integrations/airbyte/airbyte_connection_id.png"
-    width={1223}
-    height={475}
+    src="/images/integrations/airbyte/airbyte_connection_ui.png"
+    width={3102}
+    height={1746}
   />
 </center>
 
