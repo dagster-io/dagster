@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Dict
 
 from setuptools import find_packages, setup
@@ -5,7 +6,7 @@ from setuptools import find_packages, setup
 
 def get_version() -> str:
     version: Dict[str, str] = {}
-    with open("dagster_k8s/version.py", encoding="utf8") as fp:
+    with open(Path(__file__).parent / "dagster_k8s/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     return version["__version__"]
