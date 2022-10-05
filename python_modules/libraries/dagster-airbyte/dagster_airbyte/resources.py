@@ -217,7 +217,7 @@ class AirbyteResource:
         ),
         "port": Field(
             StringSource,
-            is_required=False,
+            is_required=True,
             description="Port for the Airbyte Server.",
         ),
         "use_https": Field(
