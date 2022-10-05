@@ -111,7 +111,6 @@ def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[Bu
                 for requirement in pkg.requirements
             )
         ):
-            print(pkg.name)
             steps += pkg.build_steps()
 
     return steps
