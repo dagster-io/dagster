@@ -28,7 +28,7 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
       <div>
         <Button
           icon={<Icon name="content_copy" />}
-          onClick={() => window.open(notebookPath.value, '_blank', 'noopener,noreferrer')}
+          onClick={() => window.open(notebookPath.value, '_blank')}
         >
           View Notebook
         </Button>
