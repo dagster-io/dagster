@@ -208,6 +208,7 @@ class _Asset:
         op_tags: Optional[Dict[str, Any]] = None,
         group_name: Optional[str] = None,
         output_required: bool = True,
+        ignore_ins_checking: bool = False,
     ):
         self.name = name
 
@@ -230,11 +231,12 @@ class _Asset:
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         self.group_name = group_name
         self.output_required = output_required
+        self.ignore_ins_checking = ignore_ins_checking
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
 
-        asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps)
+        asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps, ignore_check=self.ignore_ins_checking)
 
         out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
         with warnings.catch_warnings():
@@ -468,6 +470,7 @@ def build_asset_ins(
     fn: Callable,
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[AbstractSet[AssetKey]],
+    ignore_check: bool,
 ) -> Mapping[AssetKey, Tuple[str, In]]:
     """
     Creates a mapping from AssetKey to (name of input, In object)
@@ -491,10 +494,11 @@ def build_asset_ins(
     if not has_kwargs:
         for in_key in asset_ins.keys():
             if in_key not in non_var_input_param_names:
-                raise DagsterInvalidDefinitionError(
-                    f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
-                    "of the arguments to the decorated function"
-                )
+                if not ignore_check:
+                    raise DagsterInvalidDefinitionError(
+                        f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
+                        "of the arguments to the decorated function"
+                    )
 
     ins_by_asset_key: Dict[AssetKey, Tuple[str, In]] = {}
     for input_name in all_input_names:
