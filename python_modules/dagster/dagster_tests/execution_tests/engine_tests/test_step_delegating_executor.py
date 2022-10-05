@@ -1,5 +1,8 @@
+# pylint: disable=unused-argument
 import subprocess
 import time
+
+import pytest
 
 from dagster import (
     AssetKey,
@@ -29,6 +32,12 @@ from dagster._core.executor.step_delegating import (
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import merge_dicts
+
+from .retry_jobs import (
+    assert_expected_failure_behavior,
+    get_dynamic_job_op_failure,
+    get_dynamic_job_resource_init_failure,
+)
 
 
 class TestStepHandler(StepHandler):
@@ -380,3 +389,32 @@ def bar(foo):
 @repository(default_executor_def=test_step_delegating_executor)
 def pending_repo():
     return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
+
+
+def get_dynamic_resource_init_failure_job():
+    return get_dynamic_job_resource_init_failure(test_step_delegating_executor)[0]
+
+
+def get_dynamic_op_failure_job():
+    return get_dynamic_job_op_failure(test_step_delegating_executor)[0]
+
+
+# Tests identical retry behavior when a job fails because of resource
+# initialization of a dynamic step, and failure during op runtime of a
+# dynamic step.
+@pytest.mark.parametrize(
+    "job_fn,config_fn",
+    [
+        (
+            get_dynamic_resource_init_failure_job,
+            get_dynamic_job_resource_init_failure(test_step_delegating_executor)[1],
+        ),
+        (
+            get_dynamic_op_failure_job,
+            get_dynamic_job_op_failure(test_step_delegating_executor)[1],
+        ),
+    ],
+)
+def test_dynamic_failure_retry(job_fn, config_fn):
+    TestStepHandler.reset()
+    assert_expected_failure_behavior(job_fn, config_fn)
