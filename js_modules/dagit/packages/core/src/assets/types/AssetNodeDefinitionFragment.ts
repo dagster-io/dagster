@@ -3124,8 +3124,11 @@ export interface AssetNodeDefinitionFragment {
   partitionDefinition: AssetNodeDefinitionFragment_partitionDefinition | null;
   repository: AssetNodeDefinitionFragment_repository;
   computeKind: string | null;
+  isSource: boolean;
   assetKey: AssetNodeDefinitionFragment_assetKey;
-  reconcile: boolean | null;
+  versioned: boolean | null;
+  currentLogicalVersion: string | null;
+  projectedLogicalVersion: string | null;
   metadataEntries: AssetNodeDefinitionFragment_metadataEntries[];
   type: AssetNodeDefinitionFragment_type | null;
 }

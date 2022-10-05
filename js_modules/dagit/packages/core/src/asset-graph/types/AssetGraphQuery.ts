@@ -42,6 +42,8 @@ export interface AssetGraphQuery_assetNodes {
   id: string;
   groupName: string | null;
   repository: AssetGraphQuery_assetNodes_repository;
+  currentLogicalVersion: string | null;
+  projectedLogicalVersion: string | null;
   dependencyKeys: AssetGraphQuery_assetNodes_dependencyKeys[];
   dependedByKeys: AssetGraphQuery_assetNodes_dependedByKeys[];
   graphName: string | null;
@@ -49,8 +51,9 @@ export interface AssetGraphQuery_assetNodes {
   opNames: string[];
   description: string | null;
   computeKind: string | null;
+  isSource: boolean;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
-  reconcile: boolean | null;
+  versioned: boolean | null;
 }
 
 export interface AssetGraphQuery {

@@ -43,4 +43,6 @@ export interface AssetNodeLiveFragment {
   assetMaterializations: AssetNodeLiveFragment_assetMaterializations[];
   freshnessPolicy: AssetNodeLiveFragment_freshnessPolicy | null;
   freshnessInfo: AssetNodeLiveFragment_freshnessInfo | null;
+  currentLogicalVersion: string | null;
+  projectedLogicalVersion: string | null;
 }

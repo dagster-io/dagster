@@ -48,6 +48,7 @@ export const AssetNode: React.FC<{
   liveData?: LiveDataForNode;
   selected: boolean;
   inAssetCatalog?: boolean;
+
 }> = React.memo(({definition, selected, liveData, inAssetCatalog}) => {
   const firstOp = definition.opNames.length ? definition.opNames[0] : null;
   const computeName = definition.graphName || definition.opNames[0] || null;
@@ -77,7 +78,7 @@ export const AssetNode: React.FC<{
             <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
               <ComputeStatusNotice computeStatus={computeStatus} />
             </div>
-            {definition.reconcile ? <ReconcileBadge>R</ReconcileBadge> : null}
+            {definition.versioned ? <VersionedBadge>V</VersionedBadge> : null}
           </Name>
           {definition.description && !inAssetCatalog && (
             <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
@@ -126,6 +127,13 @@ export const AssetNode: React.FC<{
                 <AssetLatestRunWithNotices liveData={liveData} />
               </Caption>
             </StatsRow>
+            {!definition.isSource && definition.currentLogicalVersion !== definition.projectedLogicalVersion && (
+              <>
+                <CaptionMono style={{textAlign: 'right', background: Colors.Yellow500}}>
+                  STALE
+                </CaptionMono>
+              </>
+            )}
           </Stats>
           {definition.computeKind && (
             <OpTags
@@ -204,6 +212,8 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     freshnessInfo {
       currentMinutesLate
     }
+    currentLogicalVersion
+    projectedLogicalVersion
   }
 `;
 
@@ -219,10 +229,13 @@ export const ASSET_NODE_FRAGMENT = gql`
     opNames
     description
     computeKind
+    isSource
     assetKey {
       path
     }
-    reconcile
+    versioned
+    currentLogicalVersion
+    projectedLogicalVersion
   }
 `;
 
@@ -237,7 +250,7 @@ const AssetInsetForHoverEffect = styled.div`
   height: 100%;
 `;
 
-const AssetNodeContainer = styled.div<{$selected: boolean}>`
+export const AssetNodeContainer = styled.div<{$selected: boolean}>`
   outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
   border-radius: 6px;
   outline-offset: -1px;
@@ -245,7 +258,7 @@ const AssetNodeContainer = styled.div<{$selected: boolean}>`
   padding: 4px;
 `;
 
-const AssetNodeBox = styled.div<{$selected: boolean}>`
+export const AssetNodeBox = styled.div<{$selected: boolean}>`
   border: 2px solid ${(p) => (p.$selected ? Colors.Blue500 : Colors.Blue200)};
   background: ${BoxColors.Stats};
   border-radius: 5px;
@@ -303,7 +316,7 @@ const Description = styled.div`
   font-size: 12px;
 `;
 
-export const ReconcileBadge = styled.div`
+export const VersionedBadge = styled.div`
   /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
   padding: 2px 5px;
   background: ${Colors.Green200};

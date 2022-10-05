@@ -39,6 +39,7 @@ export function useLaunchWithTelemetry() {
 
   return React.useCallback(
     async (variables: LaunchPipelineExecutionVariables, behavior: LaunchBehavior) => {
+      console.log(variables);
       const jobName =
         variables.executionParams.selector.jobName ||
         variables.executionParams.selector.pipelineName;

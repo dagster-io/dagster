@@ -20,6 +20,9 @@ export interface AssetNodeFragment {
   opNames: string[];
   description: string | null;
   computeKind: string | null;
+  isSource: boolean;
   assetKey: AssetNodeFragment_assetKey;
-  reconcile: boolean | null;
+  versioned: boolean | null;
+  currentLogicalVersion: string | null;
+  projectedLogicalVersion: string | null;
 }

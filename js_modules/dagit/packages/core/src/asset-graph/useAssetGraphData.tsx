@@ -186,6 +186,8 @@ const ASSET_GRAPH_QUERY = gql`
           name
         }
       }
+      currentLogicalVersion
+      projectedLogicalVersion
       dependencyKeys {
         path
       }

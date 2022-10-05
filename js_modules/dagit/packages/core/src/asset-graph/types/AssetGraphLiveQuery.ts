@@ -45,6 +45,8 @@ export interface AssetGraphLiveQuery_assetNodes {
   assetMaterializations: AssetGraphLiveQuery_assetNodes_assetMaterializations[];
   freshnessPolicy: AssetGraphLiveQuery_assetNodes_freshnessPolicy | null;
   freshnessInfo: AssetGraphLiveQuery_assetNodes_freshnessInfo | null;
+  currentLogicalVersion: string | null;
+  projectedLogicalVersion: string | null;
 }
 
 export interface AssetGraphLiveQuery_assetsLatestInfo_assetKey {

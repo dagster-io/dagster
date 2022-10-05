@@ -564,6 +564,8 @@ export interface LaunchAssetExecutionAssetNodeFragment {
   jobNames: string[];
   graphName: string | null;
   partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
+  versioned: boolean | null;
+  isSource: boolean;
   assetKey: LaunchAssetExecutionAssetNodeFragment_assetKey;
   dependencyKeys: LaunchAssetExecutionAssetNodeFragment_dependencyKeys[];
   repository: LaunchAssetExecutionAssetNodeFragment_repository;

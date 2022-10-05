@@ -47,9 +47,6 @@ export interface GraphData {
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
 }
-export const isSourceAsset = (node: {graphName: string | null; opNames: string[]}) => {
-  return !node.graphName && !node.opNames.length;
-};
 
 export const buildGraphData = (assetNodes: AssetNode[]) => {
   const data: GraphData = {

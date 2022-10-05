@@ -51,7 +51,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
     [history, location.search, repoAddress, isJob],
   );
 
-  const onNavigateToForeignNode = React.useCallback(
+  const onNavigateToSourceAssetNode = React.useCallback(
     (node: AssetLocation) => {
       if (!node.jobName || !node.opNames.length || !node.repoAddress) {
         // This op has no definition in any loaded repository (source asset).
@@ -84,7 +84,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
       repoAddress={repoAddress}
       explorerPath={explorerPath}
       onChangeExplorerPath={onChangeExplorerPath}
-      onNavigateToForeignNode={onNavigateToForeignNode}
+      onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
     />
   );
 };
