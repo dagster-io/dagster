@@ -33,6 +33,8 @@ from dagster import (
     run_failure_sensor,
     run_status_sensor,
     sensor,
+    EventRecordsFilter,
+    DagsterEventType,
 )
 from dagster._check import CheckError
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
@@ -870,3 +872,92 @@ def test_asset_selection_or_asset_keys_mandatory_on_context():
                 instance=instance,
                 repository_def=my_repo,
             )
+
+
+def test_multi_asset_sensor_skipped_events():
+    @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
+    def july_asset():
+        return 1
+
+    @repository
+    def my_repo():
+        return [july_asset]
+
+    invocation_num = 0
+
+    @multi_asset_sensor(asset_keys=[july_asset.key])
+    def test_skipped_events_sensor(context):
+        print("invocation num", invocation_num)
+        if invocation_num == 0:
+            events = context.materialization_records_for_key(july_asset.key, limit=3)
+            assert len(events) == 3
+            context.advance_cursor({july_asset.key: events[1]})  # advance to later materialization
+        if invocation_num == 1:
+            # Should fetch skipped event
+            events = context.materialization_records_for_key(july_asset.key, limit=2)
+            assert len(events) == 2
+            context.advance_cursor({july_asset.key: events[0]})
+        if invocation_num == 2:
+            events = context.materialization_records_for_key(july_asset.key, limit=2)
+            assert len(events) == 2
+            context.advance_cursor({july_asset.key: events[1]})
+
+    with instance_for_test() as instance:
+        # Invocation 0:
+        # Materialize partition 2022-07-05. Then materialize 2022-07-10 twice, updating cursor
+        # to the first 2022-07-10 materialization. The first 2022-07-05 materialization should be skipped.
+        materialize(
+            [july_asset],
+            partition_key="2022-07-05",
+            instance=instance,
+        )
+        # If there are two materializations for the same partition, calling advance_cursor
+        # on the first materialization of the partition should only advance the cursor to that
+        # materialization, not the second.
+        materialize([july_asset], partition_key="2022-07-10", instance=instance)
+        materialize([july_asset], partition_key="2022-07-10", instance=instance)
+
+        event_records = list(
+            instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION), ascending=True
+            )
+        )
+        assert len(event_records) == 3
+        repeat_partition_first_materialization = event_records[1].storage_id
+        skipped_storage_id = event_records[0].storage_id
+        assert repeat_partition_first_materialization > skipped_storage_id
+        assert repeat_partition_first_materialization < event_records[2].storage_id
+
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(test_skipped_events_sensor(ctx))
+        partition_key, storage_id, skipped_events = ctx._get_cursor(july_asset.key)
+        assert repeat_partition_first_materialization == storage_id
+        assert partition_key == "2022-07-10"
+        # Second materialization for 2022-07-10 is after cursor so should not be skipped
+        assert skipped_events == [skipped_storage_id]
+
+        # Invocation 1:
+        # Confirm that the skipped event is fetched. After, the skipped event should
+        # no longer show up in the cursor. The storage ID of the cursor should stay the same.
+        invocation_num += 1
+        list(test_skipped_events_sensor(ctx))
+        partition_key, storage_id, skipped_events = ctx._get_cursor(july_asset.key)
+        assert partition_key == "2022-07-10"
+        assert skipped_events == []
+        assert storage_id == repeat_partition_first_materialization
+
+        # Invocation 2:
+        # After a new materialization of 2022-07-10, confirm the skipped event should not be
+        # fetched again. Advance the cursor to the second 2022-07-10 partition and confirm
+        # that the original 2022-07-10 materialization left over from invocation 0 is advanced.
+        # Calling "advance" on the latest materialization for a given partition should advance
+        # through all of the prior materializations for that partition.
+        invocation_num += 1
+        materialize([july_asset], partition_key="2022-07-10", instance=instance)
+        list(test_skipped_events_sensor(ctx))
+        partition_key, storage_id, skipped_events = ctx._get_cursor(july_asset.key)
+        assert partition_key == "2022-07-10"
+        assert skipped_events == []
+        assert storage_id > repeat_partition_first_materialization

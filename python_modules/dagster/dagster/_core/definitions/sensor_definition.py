@@ -474,7 +474,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 asset_event_records[a] = None
 
         for event in asset_event_records.values():
-            print(event)
             if event is not None:
                 self._add_fetched_events(event)
 
@@ -877,6 +876,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 partition_key = _get_partition_key_from_event_log_record(materialization)
 
                 if partition_key:
+                    # We should probably remove any materializations from the skipped events
+                    # that are for the same partition
                     for event_id in self._event_ids_by_partition_key[partition_key]:
                         if event_id <= materialization.storage_id:
                             self._event_fetched_is_advanced[event_id] = True
