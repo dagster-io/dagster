@@ -1,3 +1,4 @@
+from dagster._core.storage.event_log.polling_asset_event_watcher import SqlPollingAssetEventWatcher
 import sqlalchemy as db
 
 import dagster._check as check
@@ -52,6 +53,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self._disposed = False
 
         self._event_watcher = SqlPollingEventWatcher(self)
+        self._asset_event_watcher = SqlPollingAssetEventWatcher(self)
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
@@ -177,6 +179,12 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)
 
+    def watch_asset_events(self, callback):
+        self._asset_event_watcher.watch(callback)
+
+    def end_watch(self, handler):
+        self._asset_event_watcher.unwatch(handler)
+
     @property
     def event_watcher(self):
         return self._event_watcher
@@ -188,6 +196,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if not self._disposed:
             self._disposed = True
             self._event_watcher.close()
+            self._asset_event_watcher.close()
 
     def alembic_version(self):
         alembic_config = mysql_alembic_config(__file__)

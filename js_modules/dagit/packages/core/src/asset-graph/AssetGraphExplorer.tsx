@@ -6,12 +6,7 @@ import React from 'react';
 import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {
-  FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
-  QueryRefreshState,
-  useQueryRefreshAtInterval,
-} from '../app/QueryRefresh';
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
@@ -31,7 +26,6 @@ import {
   LoadingNotice,
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {useDidLaunchEvent} from '../runs/RunUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
@@ -81,10 +75,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     applyingEmptyDefault,
   } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
 
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
-  const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
-
-  useDidLaunchEvent(liveResult.refetch);
+  const {liveDataRefreshState, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>

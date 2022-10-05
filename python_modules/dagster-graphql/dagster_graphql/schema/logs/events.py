@@ -405,7 +405,7 @@ class GrapheneAssetMaterializationPlannedEvent(graphene.ObjectType):
         super().__init__(**construct_basic_params(event))
 
     def resolve_assetKey(self, _graphene_info):
-        return self._event.dagster_event.asset_materialization_planned_data
+        return self._event.dagster_event.asset_materialization_planned_data.asset_key
 
     def resolve_runOrError(self, graphene_info):
         return get_run_by_id(graphene_info, self._event.run_id)

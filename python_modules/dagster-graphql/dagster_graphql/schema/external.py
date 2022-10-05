@@ -1,6 +1,7 @@
+from typing import List
 from dagster._core.events.log import EventLogEntry
 from dagster_graphql.implementation.events import from_dagster_event_record, from_event_record
-from dagster_graphql.schema.logs.events import GrapheneAssetMaterializationPlannedEvent, GrapheneMaterializationEvent, GrapheneObservationEvent
+from dagster_graphql.schema.logs.events import GrapheneAssetMaterializationPlannedEvent, GrapheneExecutionStepFailureEvent, GrapheneMaterializationEvent, GrapheneExecutionStepStartEvent,GrapheneObservationEvent
 import graphene
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
@@ -325,7 +326,7 @@ def get_location_state_change_observable(graphene_info):
 
 class GrapheneAssetLogEventsSubscriptionEvent(graphene.Union):
     class Meta:
-        types = (GrapheneMaterializationEvent, GrapheneObservationEvent, GrapheneAssetMaterializationPlannedEvent)
+        types = (GrapheneMaterializationEvent, GrapheneObservationEvent, GrapheneAssetMaterializationPlannedEvent, GrapheneExecutionStepStartEvent, GrapheneExecutionStepFailureEvent)
         name = "AssetLogEventsSubscriptionEvent"
 
 class GrapheneAssetLogEventsSubscription(graphene.ObjectType):
@@ -358,19 +359,18 @@ class AssetLogsEventsSubscribe:
 
     def __call__(self, observer):
         self.observer = observer
-        self.instance.add_all_runs_event_listener(self.handle_new_event)
+        self.instance.event_log_storage.watch_asset_events(self.handle_new_events)
         return self
 
     def dispose(self):
-        # called when the connection gets closed, allowing the observer to get GC'ed
+        self.instance.event_log_storage.end_watch_asset_events(self.handle_new_events)
         if self.observer and callable(getattr(self.observer, "dispose", None)):
             self.observer.dispose()
         self.observer = None
-        self.instance.remove_all_runs_event_listener(self.handle_new_event)
 
-    def handle_new_event(self, new_event: EventLogEntry):
-        if self.observer and new_event.dagster_event.asset_key:
-            self.observer.on_next([new_event])
+    def handle_new_events(self, new_events: List[EventLogEntry]):
+        print('handle_new_events', new_events)
+        self.observer.on_next(new_events)
 
 
 class GrapheneRepositoriesOrError(graphene.Union):

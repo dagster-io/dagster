@@ -2753,6 +2753,11 @@ type DagitSubscription {
   Retrieve real-time events when a location in the workspace undergoes a state change.
   """
   locationStateChangeEvents: LocationStateChangeSubscription!
+
+  """
+  Real-time events when any run emits an asset materialization or observation event.
+  """
+  assetLogEvents: AssetLogEventsSubscription!
 }
 
 union PipelineRunLogsSubscriptionPayload =
@@ -2793,6 +2798,17 @@ enum LocationStateChangeEventType {
   LOCATION_RECONNECTED
   LOCATION_ERROR
 }
+
+type AssetLogEventsSubscription {
+  events: [AssetLogEventsSubscriptionEvent!]!
+}
+
+union AssetLogEventsSubscriptionEvent =
+    MaterializationEvent
+  | ObservationEvent
+  | AssetMaterializationPlannedEvent
+  | ExecutionStepStartEvent
+  | ExecutionStepFailureEvent
 
 type MissingRunIdErrorEvent {
   invalidRunId: String!

@@ -214,6 +214,14 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def end_watch(self, run_id: str, handler: Callable):
         """Call this method to stop watching."""
 
+    def watch_asset_events(self, callback: Callable):
+        """Call this method to start watching all asset events."""
+        return
+
+    def end_watch_asset_events(self, handler: Callable):
+        """Call this method to stop watching all asset events."""
+        return
+
     @property
     @abstractmethod
     def is_persistent(self) -> bool:

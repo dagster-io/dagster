@@ -127,11 +127,11 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     () => displayed.map<AssetKey>((a) => ({path: a.key.path})),
     [displayed],
   );
-  const {liveDataByNode, liveResult} = useLiveDataForAssetKeys(displayedKeys);
+  const {liveDataByNode, liveDataRefreshState} = useLiveDataForAssetKeys(displayedKeys);
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(query, FIFTEEN_SECONDS),
-    useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS),
+    liveDataRefreshState,
   );
 
   React.useEffect(() => {

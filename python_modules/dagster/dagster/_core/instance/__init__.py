@@ -335,8 +335,6 @@ class DagsterInstance:
 
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
 
-        self._subscribers_all_runs: List[Callable] = list()
-
         run_monitoring_enabled = self.run_monitoring_settings.get("enabled", False)
         if run_monitoring_enabled and not self.run_launcher.supports_check_run_worker_health:
             run_monitoring_enabled = False
@@ -1513,17 +1511,9 @@ class DagsterInstance:
 
         for sub in self._subscribers[run_id]:
             sub(event)
-        for sub in self._subscribers_all_runs:
-            sub(event)
 
     def add_event_listener(self, run_id, cb):
         self._subscribers[run_id].append(cb)
-
-    def add_all_runs_event_listener(self, cb):
-        self._subscribers_all_runs.append(cb)
-
-    def remove_all_runs_event_listener(self, cb):
-        self._subscribers_all_runs.remove(cb)
 
     def report_engine_event(
         self,
