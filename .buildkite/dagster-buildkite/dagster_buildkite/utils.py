@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import packaging.version
@@ -176,3 +177,13 @@ def parse_package_version(version_str: str) -> packaging.version.Version:
         parsed_version, packaging.version.Version
     ), f"Found LegacyVersion: {version_str}"
     return parsed_version
+
+
+def get_changed_files():
+    paths = (
+        subprocess.check_output(["git", "diff", "origin/master...HEAD", "--name-only"])
+        .decode("utf-8")
+        .strip()
+        .split("\n")
+    )
+    return [Path(path) for path in paths]
