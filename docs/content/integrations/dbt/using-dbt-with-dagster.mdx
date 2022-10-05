@@ -48,23 +48,29 @@ Here's what's happening in this example:
 
 To complete this tutorial, you'll need:
 
-- To install the following:
-
-  - **dbt**. You'll also need an existing dbt project. This tutorial uses dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project as well.
-
-  - **Dagster**. If you don't already have Dagster installed, run the following:
-
-    ```shell
-    pip install dagster dagit
-    ```
-
-  - **The `dbt-duckdb` adapter.** This tutorial uses [DuckDB](https://docs.getdbt.com/reference/warehouse-profiles/duckdb-profile) as the database backing dbt. Run the following to install the adapter:
+- **To install the following**:
+   - **dbt and Dagster**. Refer to the [dbt](https://docs.getdbt.com/dbt-cli/install/overview) and [Dagster](/getting-started/install) installation docs for more info.
+   - **The dbt-duckdb adapter.** This tutorial uses [DuckDB](https://docs.getdbt.com/reference/warehouse-profiles/duckdb-profile) as the database backing dbt. Run the following to install the adapter:
 
     ```shell
     pip install dbt-duckdb
     ```
+   - **The dagster-dbt library.** This library allows you to integrate dbt with Dagster. Run the following to install the library:
 
-TODO: Add link to GitHub code
+      ```shell
+      pip install dagster-dbt
+      ```
+   - **The pandas Python library.** This tutorial uses [pandas](https://pandas.pydata.org/docs/index.html) to fetch raw data. Run the following to install the library:
+
+      ```shell
+      pip install pandas
+      ```
+   - **The plotly Python library**. This tutorial uses [plotly](https://plotly.com/python/) to create a histogram asset. Run the following to install the library:
+
+   ```shell
+   pip install plotly
+   ```
+- **An existing dbt project.** This tutorial uses dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project.
 
 ---
 
@@ -124,24 +130,25 @@ jaffle_shop:
 
 In this step, you'll verify that your dbt project's `dbt_project.yml` file is correctly configured. To work with this tutorial, this file must:
 
-- Specify `jaffle_shop` as the `profile`, and
-- Specify that `jaffle_shop` models are materialized into tables
+- Specify `jaffle_shop` as the `profile`:
 
-```yaml file=integrations/dbt/dbt_dagster_tutorial/dbt_project.yml
-[...]
-profile: 'jaffle_shop'       # Specified profile
-[...]
-models:
-  jaffle_shop:
-    +materialized: table    # Materialization set to tables
-[...]
-```
+  ```yaml
+  profile: 'jaffle_shop'
+  ```
+
+- Specify that `jaffle_shop` models are materialized into tables:
+
+  ```yaml
+  models:
+    jaffle_shop:
+      +materialized: table
+  ```
 
 ---
 
 ## Step 2: Configure dbt model data sources
 
-Next, you'll tell the models in your dbt project where the source data they depend on will be located. There isn't any data yet, but we'll create Dagster assets in the next section that fetch and provide the data to the dbt models.
+Next, you'll tell the models in your dbt project where the source data they depend on will be located. There isn't any data yet - in the next section, we'll create Dagster assets that fetch and provide data to the dbt models.
 
 1. [Declare a source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source) by creating a `sources.yml` file in `/dbt_dagster_tutorial/jaffle_shop/models`. This defines the location of tables containing source data:
 
@@ -193,62 +200,110 @@ In this step, you'll:
 - Load the dbt models into Dagster
 - Supply resources
 
-### Step 3.1: Create the Dagster assets
+### Step 3.2: Create the Dagster assets
 
-To fetch the data the dbt models require, we'll write two Dagster assets: one for `customers` and one for `orders`:
+To fetch the data the dbt models require, we'll write two Dagster assets: one for `customers` and one for `orders`.
 
-```python file=../../dbt_dagster_tutorial/dbt_dagster_tutorial/assets.py
+1. In the `dagster_code` folder you created in the previous step, create a file named `assets.py`.
+
+2. In `assets.py`, add the following code:
+
+   ```python
+   import pandas as pd
+   from dagster import asset
+
+   @asset(key_prefix=["jaffle_shop"], group_name="staging")
+   def customers_raw() -> pd.DataFrame:
+       data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
+       return data
+
+   @asset(key_prefix=["jaffle_shop"], group_name="staging")
+   def orders_raw() -> pd.DataFrame:
+       data = pd.read_csv("https://docs.dagster.io/assets/orders.csv")
+       return data
+   ```
+
+Let's take a closer look at the arguments we've provided:
+
+- `group_name` - When Dagster loads the dbt models as assets, the assets will be placed in an asset group based on the name of the folder (`staging`) containing the models. Because we want the assets we add to be included in the same group, we defined this as `staging`.
+
+- `key_prefix` - When the assets are materialized, Dagster will store them in DuckDB in the schema defined by the last value in `key_prefix`. In this case, that's `jaffle_shop`. The tables will have the same names as the assets that produced them, which are `customers_raw` and `orders_raw`.
+
+   Because these tables will become the source data for the `stg_customers.sql` and `stg_orders.sql` models in the dbt project, the names of the assets must match the table names specified in `/dbt_dagster_tutorial/jaffle_shop/models/sources.yml`.
+
+### Step 3.3: Load the dbt models as assets
+
+Next, we'll load the dbt models into Dagster as assets. This step requires the [`dagster-dbt`](TODO) library.
+
+1. In `assets.py`, add the following lines to the top of the file:
+
+   ```python
+   from dagster_dbt import load_assets_from_dbt_project
+   from dagster._utils import file_relative_path
+   ```
+
+   The file should now look like this:
+
+   ```python
+   import pandas as pd
+   from dagster import asset
+   from dagster_dbt import load_assets_from_dbt_project
+   from dagster._utils import file_relative_path
+   ```
+
+2. After the `orders_raw` asset in `assets.py`, add the following:
+
+   ```python
+   DBT_PROJECT_PATH = file_relative_path(__file__, "../jaffle_shop")
+   DBT_PROFILES = file_relative_path(__file__, "../jaffle_shop/config")
+
+   dbt_assets = load_assets_from_dbt_project(
+       project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+   )
+   ```
+
+Here, we're using the <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> function to load the models into Dagster as assets. This creates one Dagster asset for each dbt model.
+
+Let's take a look at the arguments we've supplied:
+
+- `project_dir`, which is the path to the dbt project
+- `profiles_dir`, which is the path to the dbt project's connection profiles
+- `key_prefix`, which is a prefix to apply to all models in the dbt project
+
+When invoked, this function:
+
+1. Compiles your dbt project using the provided arguments,
+2. Parses the metadata provided by dbt, and
+3. Generates a set of software-defined assets reflecting the models in the project. These assets share the same underlying operation, which will invoke dbt to run the models represented by the loaded assets.
+
+At this point, `assets.py` should look like this:
+
+```python
 import pandas as pd
-import plotly.express as px
+from dagster import asset
 from dagster_dbt import load_assets_from_dbt_project
-
-from dagster import AssetIn, MetadataValue, asset
 from dagster._utils import file_relative_path
 
 
-# These assets would be part of the first stage of the tutorial
 @asset(key_prefix=["jaffle_shop"], group_name="staging")
 def customers_raw() -> pd.DataFrame:
-    data = pd.read_csv("s3://dbt-tutorial-public/jaffle_shop_customers.csv")
-    # data = pd.read_csv("https://docs.dagster.io/assets/customers.csv") TODO replace ^ with this
+    data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
     return data
 
 
 @asset(key_prefix=["jaffle_shop"], group_name="staging")
 def orders_raw() -> pd.DataFrame:
-    data = pd.read_csv("s3://dbt-tutorial-public/jaffle_shop_orders.csv")
-    # data = pd.read_csv("https://docs.dagster.io/assets/orders.csv") TODO replace ^ with this
+    data = pd.read_csv("https://docs.dagster.io/assets/orders.csv")
     return data
 
 
 DBT_PROJECT_PATH = file_relative_path(__file__, "../jaffle_shop")
 DBT_PROFILES = file_relative_path(__file__, "../jaffle_shop/config")
 
-# if larger project use load_assets_from_dbt_manifest
-# dbt_assets = load_assets_from_dbt_manifest(json.load(DBT_PROJECT_PATH + "manifest.json", encoding="utf8"))
 dbt_assets = load_assets_from_dbt_project(
     project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
 )
-
-# end first stage of tutorial - at this point you can run dagit and launch a materialization
-
-# This asset would be the second stage of the tutorial
-@asset(
-    ins={"customers": AssetIn(key_prefix=["jaffle_shop"])},
-    group_name="staging",
-)
-def order_count_chart(context, customers: pd.DataFrame):
-    fig = px.histogram(customers, x="number_of_orders")
-    fig.update_layout(bargap=0.2)
-    save_chart_path = file_relative_path(__file__, "order_count_chart.html")
-    fig.write_html(save_chart_path, auto_open=True)
-
-    context.add_output_metadata({"plot_url": MetadataValue.url("file://" + save_chart_path)})
 ```
-
-Let's take a closer look at a few things in this example:
-
-- 
 
 ---
 
