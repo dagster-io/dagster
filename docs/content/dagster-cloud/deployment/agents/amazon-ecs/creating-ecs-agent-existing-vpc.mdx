@@ -25,9 +25,9 @@ To complete the steps in this guide, you'll need:
 
 - **In Amazon Web Services (AWS)**:
   - **An existing VPC with the following:**
-    - **Public subnets**. Refer to the [AWS Work with VPCs guide](https://docs.aws.amazon.com/vpc/latest/userguide/working-with-vpcs.html) for more info.
+    - **Subnets with access to the public internet**. Refer to the [AWS Work with VPCs guide](https://docs.aws.amazon.com/vpc/latest/userguide/working-with-vpcs.html) for more info.
     - **Enabled `enableDnsHostnames` and `enableDnsSupport` DNS attributes**. Refer to the [AWS DNS attributes documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-dns.html#vpc-dns-support) for more info.
-  - **Optional**: An existing ECS cluster with a [fargate capacity provider](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-capacity-providers.html). The CloudFormation template will create a cluster for you if one isn't specified.
+  - **Optional**: An existing ECS cluster with a [Fargate or EC2 capacity provider](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-capacity-providers.html). The CloudFormation template will create a cluster for you if one isn't specified.
 
 ---
 
