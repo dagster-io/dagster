@@ -4,7 +4,10 @@ from typing import Any, Callable, List
 import dagster._check as check
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
-from dagster._daemon.auto_run_reexecution.event_log_consumer import _EVENT_LOG_FETCH_LIMIT, get_new_cursor
+from dagster._daemon.auto_run_reexecution.event_log_consumer import (
+    _EVENT_LOG_FETCH_LIMIT,
+    get_new_cursor,
+)
 
 from .sql_event_log import SqlEventLogStorage
 
@@ -20,17 +23,13 @@ class SqlPollingAssetEventWatcher:
         self._thread = None
         self._disposed = False
 
-    def watch(
-        self, callback: Callable[[EventLogEntry], Any]
-    ):
+    def watch(self, callback: Callable[[EventLogEntry], Any]):
         if self._disposed:
             return
         callback = check.callable_param(callback, "callback")
         with self._watching_lock:
             if not self._thread or self._thread.should_thread_exit.is_set():
-                self._thread = SqlPollingAssetEventWatcherThread(
-                    self._event_log_storage
-                )
+                self._thread = SqlPollingAssetEventWatcherThread(self._event_log_storage)
                 self._thread.daemon = True
                 self._thread.start()
             self._thread.add_callback(callback)
@@ -39,7 +38,7 @@ class SqlPollingAssetEventWatcher:
         callback = check.callable_param(callback, "callback")
         with self._watching_lock:
             self._thread.remove_callback(callback)
-           
+
     def __del__(self):
         self.close()
 
@@ -120,7 +119,13 @@ class SqlPollingAssetEventWatcherThread(threading.Thread):
         while not self._should_thread_exit.wait(POLLING_CADENCE):
             events_by_log_id_for_type = self._event_log_storage.get_logs_for_all_runs_by_log_id(
                 after_cursor=-1 if cursor == None else cursor,
-                dagster_event_type={DagsterEventType.ASSET_MATERIALIZATION, DagsterEventType.ASSET_MATERIALIZATION_PLANNED, DagsterEventType.ASSET_OBSERVATION, DagsterEventType.STEP_START, DagsterEventType.STEP_FAILURE},
+                dagster_event_type={
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    DagsterEventType.ASSET_OBSERVATION,
+                    DagsterEventType.STEP_START,
+                    DagsterEventType.STEP_FAILURE,
+                },
                 limit=1 if cursor == None else _EVENT_LOG_FETCH_LIMIT,
             )
 
@@ -129,7 +134,7 @@ class SqlPollingAssetEventWatcherThread(threading.Thread):
                 with self._callback_fn_list_lock:
                     for callback in self._callback_fn_list:
                         callback(events)
-                
+
             cursor = get_new_cursor(
                 cursor,
                 self._event_log_storage.get_maximum_record_id(),

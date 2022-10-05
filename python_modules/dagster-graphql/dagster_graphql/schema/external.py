@@ -1,14 +1,23 @@
 from typing import List
-from dagster._core.events.log import EventLogEntry
-from dagster_graphql.implementation.events import from_dagster_event_record, from_event_record
-from dagster_graphql.schema.logs.events import GrapheneAssetMaterializationPlannedEvent, GrapheneExecutionStepFailureEvent, GrapheneMaterializationEvent, GrapheneExecutionStepStartEvent,GrapheneObservationEvent
+
 import graphene
+from dagster_graphql.implementation.asset_subscription import AssetLogsEventsSubscribe
+from dagster_graphql.implementation.events import from_dagster_event_record, from_event_record
+from dagster_graphql.implementation.fetch_assets import asset_node_iter, get_asset_nodes
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
-
+from dagster_graphql.schema.logs.events import (
+    GrapheneAssetMaterializationPlannedEvent,
+    GrapheneExecutionStepFailureEvent,
+    GrapheneExecutionStepStartEvent,
+    GrapheneMaterializationEvent,
+    GrapheneObservationEvent,
+)
 from rx import Observable
+
 from dagster import DagsterInstance
 from dagster import _check as check
+from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
@@ -323,54 +332,77 @@ def get_location_state_change_observable(graphene_info):
     )
 
 
-
 class GrapheneAssetLogEventsSubscriptionEvent(graphene.Union):
     class Meta:
-        types = (GrapheneMaterializationEvent, GrapheneObservationEvent, GrapheneAssetMaterializationPlannedEvent, GrapheneExecutionStepStartEvent, GrapheneExecutionStepFailureEvent)
+        types = (
+            GrapheneMaterializationEvent,
+            GrapheneObservationEvent,
+            GrapheneAssetMaterializationPlannedEvent,
+            GrapheneExecutionStepStartEvent,
+            GrapheneExecutionStepFailureEvent,
+        )
         name = "AssetLogEventsSubscriptionEvent"
 
-class GrapheneAssetLogEventsSubscription(graphene.ObjectType):
+
+class GrapheneAssetLogEventsSubscriptionSuccess(graphene.ObjectType):
     events = non_null_list(GrapheneAssetLogEventsSubscriptionEvent)
+
     class Meta:
         name = "AssetLogEventsSubscription"
 
 
-def get_assetlog_events_observable(graphene_info):
+class GrapheneAssetLogEventsSubscriptionFailure(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
 
-    # This observerable lives on the process context and is never modified/destroyed, so we can
-    # access it directly
+    class Meta:
+        name = "AssetLogEventsSubscriptionFailure"
+
+
+class GrapheneAssetLogEventsSubscriptionPayload(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneAssetLogEventsSubscriptionSuccess,
+            GrapheneAssetLogEventsSubscriptionFailure,
+        )
+        name = "AssetLogEventsSubscriptionPayload"
+
+
+def get_asset_log_events_observable(graphene_info, asset_keys):
     instance = graphene_info.context.instance
+    asset_nodes = [
+        node for _, _, node in asset_node_iter(graphene_info) if node.asset_key in asset_keys
+    ]
+
+    if not asset_nodes:
+
+        def _get_error_observable(observer):
+            observer.on_next(
+                GrapheneAssetLogEventsSubscriptionFailure(message="No asset nodes were specified")
+            )
+
+        return Observable.create(_get_error_observable)  # pylint: disable=E1101
+
+    if not instance.event_log_storage.supports_watch_asset_events():
+
+        def _get_error_observable(observer):
+            observer.on_next(
+                GrapheneAssetLogEventsSubscriptionFailure(
+                    message="This feature is not supported by the event log storage engine"
+                )
+            )
+
+        return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
     def _handle_events(events: EventLogEntry):
-        return GrapheneAssetLogEventsSubscription(
-            events=[from_dagster_event_record(event, event.dagster_event.pipeline_name) for event in events],
+        return GrapheneAssetLogEventsSubscriptionSuccess(
+            events=[
+                from_dagster_event_record(event, event.dagster_event.pipeline_name)
+                for event in events
+            ],
         )
 
     # pylint: disable=E1101
-    return Observable.create(AssetLogsEventsSubscribe(instance)).map(
-        _handle_events
-    )
-
-
-class AssetLogsEventsSubscribe:
-    def __init__(self, instance):
-        self.instance = instance
-        self.observer = None
-
-    def __call__(self, observer):
-        self.observer = observer
-        self.instance.event_log_storage.watch_asset_events(self.handle_new_events)
-        return self
-
-    def dispose(self):
-        self.instance.event_log_storage.end_watch_asset_events(self.handle_new_events)
-        if self.observer and callable(getattr(self.observer, "dispose", None)):
-            self.observer.dispose()
-        self.observer = None
-
-    def handle_new_events(self, new_events: List[EventLogEntry]):
-        print('handle_new_events', new_events)
-        self.observer.on_next(new_events)
+    return Observable.create(AssetLogsEventsSubscribe(instance, asset_nodes)).map(_handle_events)
 
 
 class GrapheneRepositoriesOrError(graphene.Union):
@@ -395,6 +427,8 @@ types = [
     GrapheneLocationStateChangeEvent,
     GrapheneLocationStateChangeEventType,
     GrapheneLocationStateChangeSubscription,
+    GrapheneAssetLogEventsSubscriptionEvent,
+    GrapheneAssetLogEventsSubscription,
     GrapheneRepositoriesOrError,
     GrapheneRepository,
     GrapheneRepositoryConnection,

@@ -1,10 +1,18 @@
 import graphene
+from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
+from dagster_graphql.schema.util import non_null_list
 
 import dagster._check as check
+from dagster import AssetKey
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
 from ...implementation.execution import get_compute_log_observable, get_pipeline_run_observable
-from ..external import GrapheneAssetLogEventsSubscription, GrapheneLocationStateChangeSubscription, get_assetlog_events_observable, get_location_state_change_observable
+from ..external import (
+    GrapheneAssetLogEventsSubscriptionPayload,
+    GrapheneLocationStateChangeSubscription,
+    get_asset_log_events_observable,
+    get_location_state_change_observable,
+)
 from ..logs.compute_logs import GrapheneComputeIOType, GrapheneComputeLogFile
 from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
 
@@ -37,8 +45,9 @@ class GrapheneDagitSubscription(graphene.ObjectType):
     )
 
     assetLogEvents = graphene.Field(
-        graphene.NonNull(GrapheneAssetLogEventsSubscription),
-        description="Real-time events when any run emits an asset materialization or observation event."
+        graphene.NonNull(GrapheneAssetLogEventsSubscriptionPayload),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
+        description="Real-time events when any run emits an asset materialization or observation event.",
     )
 
     def resolve_pipelineRunLogs(self, graphene_info, runId, cursor=None):
@@ -53,5 +62,8 @@ class GrapheneDagitSubscription(graphene.ObjectType):
     def resolve_locationStateChangeEvents(self, graphene_info):
         return get_location_state_change_observable(graphene_info)
 
-    def resolve_assetLogEvents(self, graphene_info):
-        return get_assetlog_events_observable(graphene_info)
+    def resolve_assetLogEvents(self, graphene_info, **kwargs):
+        asset_keys = set(
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+        )
+        return get_asset_log_events_observable(graphene_info, asset_keys)

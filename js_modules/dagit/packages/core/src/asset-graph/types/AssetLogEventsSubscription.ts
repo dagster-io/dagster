@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { AssetKeyInput } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL subscription operation: AssetLogEventsSubscription
 // ====================================================
@@ -58,4 +60,8 @@ export interface AssetLogEventsSubscription_assetLogEvents {
 
 export interface AssetLogEventsSubscription {
   assetLogEvents: AssetLogEventsSubscription_assetLogEvents;
+}
+
+export interface AssetLogEventsSubscriptionVariables {
+  assetKeys: AssetKeyInput[];
 }

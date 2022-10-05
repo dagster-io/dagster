@@ -2757,7 +2757,7 @@ type DagitSubscription {
   """
   Real-time events when any run emits an asset materialization or observation event.
   """
-  assetLogEvents: AssetLogEventsSubscription!
+  assetLogEvents(assetKeys: [AssetKeyInput!]!): AssetLogEventsSubscription!
 }
 
 union PipelineRunLogsSubscriptionPayload =

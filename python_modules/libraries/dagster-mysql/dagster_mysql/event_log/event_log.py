@@ -1,4 +1,3 @@
-from dagster._core.storage.event_log.polling_asset_event_watcher import SqlPollingAssetEventWatcher
 import sqlalchemy as db
 
 import dagster._check as check
@@ -11,6 +10,7 @@ from dagster._core.storage.event_log import (
 )
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.event_log.polling_asset_event_watcher import SqlPollingAssetEventWatcher
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -178,6 +178,9 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)
+
+    def supports_watch_asset_events(self):
+        return True
 
     def watch_asset_events(self, callback):
         self._asset_event_watcher.watch(callback)

@@ -1,5 +1,4 @@
 from typing import Optional
-from dagster._core.storage.event_log.polling_asset_event_watcher import SqlPollingAssetEventWatcher
 
 import sqlalchemy as db
 
@@ -14,6 +13,7 @@ from dagster._core.storage.event_log import (
 )
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.event_log.polling_asset_event_watcher import SqlPollingAssetEventWatcher
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -264,6 +264,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         self._event_watcher.unwatch_run(run_id, handler)
 
+    def supports_watch_asset_events(self):
+        return True
+
     def watch_asset_events(self, callback):
         if self._asset_event_watcher is None:
             self._asset_event_watcher = SqlPollingAssetEventWatcher(self)
@@ -275,7 +278,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if self._asset_event_watcher is None:
             return
         self._asset_event_watcher.unwatch(handler)
-
 
     def __del__(self):
         # Keep the inherent limitations of __del__ in Python in mind!
