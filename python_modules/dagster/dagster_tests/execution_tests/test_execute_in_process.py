@@ -17,7 +17,6 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.output import GraphOut
 from dagster._core.errors import DagsterMaxRetriesExceededError
 from dagster._legacy import solid
