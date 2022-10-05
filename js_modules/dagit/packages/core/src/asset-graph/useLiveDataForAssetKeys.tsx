@@ -8,15 +8,15 @@ import {
 import React from 'react';
 
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useDidLaunchEvent} from '../runs/RunUtils';
 import {AssetKeyInput} from '../types/globalTypes';
 
 import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {buildLiveData} from './Utils';
 import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
 import {AssetLogEventsSubscription} from './types/AssetLogEventsSubscription';
-import {useDidLaunchEvent} from '../runs/RunUtils';
 
-const SUBSCRIPTION_IDLE_POLL_RATE = 120 * 1000;
+const SUBSCRIPTION_IDLE_POLL_RATE = 60 * 1000;
 const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
 const SUBSCRIPTION_UNSUPPORTED_POLL_RATE = 15 * 1000;
 
@@ -54,10 +54,11 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
   const timerRef = React.useRef<NodeJS.Timeout | null>(null);
   const onSubscriptionData = React.useCallback(
     (data: OnSubscriptionDataOptions<AssetLogEventsSubscription>) => {
-      if (!data.subscriptionData.data) {
+      const assetLogEvents = data.subscriptionData.data?.assetLogEvents;
+      if (!assetLogEvents) {
         return;
       }
-      if (data.subscriptionData.data.__typename !== 'AssetLogEventsSubscriptionSuccess') {
+      if (assetLogEvents.__typename !== 'AssetLogEventsSubscriptionSuccess') {
         setSubscriptionSupported(false);
       }
 
@@ -85,9 +86,10 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
   );
 
   useSubscription<AssetLogEventsSubscription>(ASSET_LOG_EVENTS_SUBSCRIPTION, {
+    skip: assetKeys.length === 0,
     fetchPolicy: 'no-cache',
     variables: {assetKeys},
-    onSubscriptionData: onSubscriptionData,
+    onSubscriptionData,
   });
 
   // If the event log storage does not support streaming us asset events, fall back to
@@ -143,6 +145,7 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
 const ASSET_LOG_EVENTS_SUBSCRIPTION = gql`
   subscription AssetLogEventsSubscription($assetKeys: [AssetKeyInput!]!) {
     assetLogEvents(assetKeys: $assetKeys) {
+      __typename
       ... on AssetLogEventsSubscriptionSuccess {
         events {
           __typename

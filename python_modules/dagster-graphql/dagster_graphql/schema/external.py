@@ -1,4 +1,3 @@
-
 import graphene
 from dagster_graphql.implementation.asset_subscription import AssetLogsEventsSubscribe
 from dagster_graphql.implementation.events import from_dagster_event_record
