@@ -1,5 +1,7 @@
 import * as React from 'react';
 
+import {DeploymentStatusType} from '../instance/DeploymentStatusProvider';
+
 export type AppContextValue = {
   // `basePath` is the root used for routing and GraphQL requests. In open source Dagit,
   // this will also be the same as the root for static assets, `staticPathRoot`.
@@ -11,6 +13,7 @@ export type AppContextValue = {
   // WebWorkers to import other files.
   staticPathRoot?: string;
   telemetryEnabled: boolean;
+  statusPolling?: Set<DeploymentStatusType>;
 };
 
 export const AppContext = React.createContext<AppContextValue>({
