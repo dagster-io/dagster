@@ -213,8 +213,8 @@ class MultiAssetSensorContextCursor:
             json.loads(cursor) if cursor else {}
         )
         check.dict_param(self._unpacked_cursor, "unpacked_cursor", key_type=str)
-        self.cursor_has_been_updated = False
         self._context = context
+        self._cursor_has_been_updated = False
 
     def get_cursor_for_asset(self, asset_key: AssetKey):
         partition_key, cursor, skipped_event_ids = self._unpacked_cursor.get(
@@ -246,7 +246,7 @@ class MultiAssetSensorContextCursor:
             {str(asset_key): (cursor_partition, cursor_storage_id, skipped_event_ids)}
         )
 
-        self.cursor_has_been_updated = True
+        self._cursor_has_been_updated = True
 
     def reset_cursors_to_materializations(
         self, latest_event_by_asset_key: Mapping[AssetKey, Optional["EventLogRecord"]]
@@ -278,7 +278,7 @@ class MultiAssetSensorContextCursor:
                     }
                 )
 
-        self.cursor_has_been_updated = True
+            self._cursor_has_been_updated = True
 
     def add_skipped_event_id(self, asset_key: AssetKey, storage_id: int):
         # Method should only be called at the end of sensor evaluation
@@ -1555,6 +1555,10 @@ class MultiAssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a list of
     assets.
 
+    Users should not instantiate this object directly. To construct a
+    `MultiAssetSensorDefinition`, use :py:func:`dagster.
+    multi_asset_sensor`.
+
     Args:
         name (str): The name of the sensor to create.
         asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
@@ -1573,6 +1577,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        is_asset_reconciliation_sensor (bool): Bool representing whether the sensor is created as
+            an asset reconciliation sensor.
     """
 
     def __init__(
@@ -1590,6 +1596,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
         job: Optional[ExecutableDefinition] = None,
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+        is_asset_reconciliation_sensor: bool = False,
     ):
 
         check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
@@ -1622,15 +1629,17 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
                     yield result
 
-                if runs_yielded and not context._unpacked_cursor.cursor_has_been_updated:
-                    raise DagsterInvalidDefinitionError(
-                        "Asset materializations have been handled in this sensor, "
-                        "but the cursor was not updated. This means the same materialization events "
-                        "will be handled in the next sensor tick. Use context.advance_cursor or "
-                        "context.advance_all_cursors to update the cursor."
-                    )
+                if not is_asset_reconciliation_sensor:
+                    if runs_yielded and not context._unpacked_cursor._cursor_has_been_updated:
+                        raise DagsterInvalidDefinitionError(
+                            "Asset materializations have been handled in this sensor, "
+                            "but the cursor was not updated. This means the same materialization events "
+                            "will be handled in the next sensor tick. Use context.advance_cursor or "
+                            "context.advance_all_cursors to update the cursor."
+                        )
 
-                context.update_cursor_after_evaluation()
+                    # Asset reconciliation sensor has custom cursor logic
+                    context.update_cursor_after_evaluation()
 
             return _fn
 
