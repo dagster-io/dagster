@@ -515,9 +515,7 @@ def test_invalid_partition_mapping():
 def test_multi_asset_sensor_after_cursor_partition_flag():
     @multi_asset_sensor(asset_keys=[july_asset.key])
     def after_cursor_partitions_asset_sensor(context):
-        events = context.latest_materialization_records_by_key(
-            [july_asset.key], after_cursor_partition=True
-        )
+        events = context.latest_materialization_records_by_key([july_asset.key])
 
         if (
             events[july_asset.key]
@@ -991,7 +989,8 @@ def test_materialization_records_for_key_fetches_skipped_events():
                 "2022-07-02",
                 "2022-07-04",
             ]
-            _, _, skipped = context._get_cursor(july_asset.key)
+
+            skipped = context.get_skipped_events(july_asset.key)
             assert len(skipped) == 2
 
     with instance_for_test() as instance:
