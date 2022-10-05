@@ -275,3 +275,13 @@ class PackageSpec(
             return run_setup(Path(self.directory) / "setup.py")
         else:
             return Distribution()
+
+    @property
+    def requirements(self):
+        extras = [
+            requirement
+            for requirements in self.distribution.extras_require.values()
+            for requirement in requirements
+        ]
+        install = self.distribution.install_requires
+        return extras + install
