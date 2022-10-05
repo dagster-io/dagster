@@ -266,7 +266,7 @@ export const Icons = {
   noteable_logo,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([slack]);
+const SVGS_WITH_COLORS = new Set([slack, noteable_logo]);
 
 export type IconName = keyof typeof Icons;
 

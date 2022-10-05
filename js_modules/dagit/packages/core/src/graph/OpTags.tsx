@@ -1,4 +1,4 @@
-import {Colors, FontFamily} from '@dagster-io/ui';
+import {Colors, FontFamily, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -40,18 +40,26 @@ function hueForTag(text = '') {
   );
 }
 
+function getTag(tag: IOpTag) {
+  if (tag.label === 'noteable') {
+    return <Tag icon="noteable_logo" key={tag.label} />;
+  } else {
+    return (
+      <div
+        key={tag.label}
+        style={{background: `hsl(${hueForTag(tag.label)}, 75%, 50%)`}}
+        onClick={tag.onClick}
+      >
+        {tag.label}
+      </div>
+    );
+  }
+}
+
 export const OpTags = React.memo(({tags, style, minified}: IOpTagsProps) => {
   return (
     <OpTagsContainer style={style} $minified={minified}>
-      {tags.map((tag) => (
-        <div
-          key={tag.label}
-          style={{background: `hsl(${hueForTag(tag.label)}, 75%, 50%)`}}
-          onClick={tag.onClick}
-        >
-          {tag.label}
-        </div>
-      ))}
+      {tags.map((tag) => getTag(tag))}
     </OpTagsContainer>
   );
 });
