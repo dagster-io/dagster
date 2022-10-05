@@ -89,7 +89,7 @@ In this step, you'll:
 1. In the terminal, create a folder named `dbt_dagster_tutorial`:
 
    ```shell
-   mkdir dbt_dagster_shell
+   mkdir dbt_dagster_tutorial
    ```
 
 2. Navigate into the new folder:
@@ -193,12 +193,25 @@ Next, you'll tell the models in your dbt project where the source data they depe
 
 ## Step 3: Create Dagster assets and load dbt models
 
-In this step, you'll:
+In this step, you'll finally begin integrating dbt with Dagster! The Dagster assets you'll create will be upstream of the dbt models, responsible for fetching the data required to run the models. To do this, you'll:
 
-- TODO: Add a dagster directory under dbt_dagster_tutorial
-- Create the assets
-- Load the dbt models into Dagster
-- Supply resources
+- Create a new folder for your Dagster code
+- Create the upstream Dagster assets
+- Load the dbt models into Dagster as assets
+
+### Step 3.1: Create a folder for Dagster code
+
+To get started, create a new folder in the `dbt_dagster_tutorial` to contain your Dagster code:
+
+```shell
+mkdir dagster_code
+```
+
+The folder structure should now be similar to the following:
+
+```yaml
+INSERT STRUCTURE HERE
+```
 
 ### Step 3.2: Create the Dagster assets
 
@@ -262,7 +275,7 @@ Next, we'll load the dbt models into Dagster as assets. This step requires the [
    )
    ```
 
-Here, we're using the <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> function to load the models into Dagster as assets. This creates one Dagster asset for each dbt model.
+Let's discuss what this example is doing, specifically the <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> function. This function loads dbt models into Dagster as assets, creating one Dagster asset for each model.
 
 Let's take a look at the arguments we've supplied:
 
@@ -275,6 +288,10 @@ When invoked, this function:
 1. Compiles your dbt project using the provided arguments,
 2. Parses the metadata provided by dbt, and
 3. Generates a set of software-defined assets reflecting the models in the project. These assets share the same underlying operation, which will invoke dbt to run the models represented by the loaded assets.
+
+<Note>
+ TODO: ADD INFO ABOUT LARGER PROJECTS, ADD NOTE ABOUT THIS BEING GOOD FOR SMALL PROJECTS
+</Note>
 
 At this point, `assets.py` should look like this:
 
@@ -307,10 +324,162 @@ dbt_assets = load_assets_from_dbt_project(
 
 ---
 
-## Step 4: Add a downstream asset
+## Step 4: Materialize the assets
+
+In this step, you'll:
+
+- TODO: DuckDB resource
+- Create a Dagster repository and supply resources
+- Materialize the assets using Dagit
+
+### Step 4.1: Create a Dagster DuckDB resource
+
+### Step 4.2: Create a Dagster repository and supply resources
+
+In the `dagster_code` folder, create a `repository.py` file:
+
+```python
+import os
+
+from dagster_dbt import dbt_cli_resource
+from dbt_dagster_tutorial.assets import (
+    DBT_PROFILES,
+    DBT_PROJECT_PATH,
+    customers_raw,
+    dbt_assets,
+    orders_raw,
+)
+from dbt_dagster_tutorial.duckdb_resource import duckdb_io_manager
+
+from dagster import repository, with_resources
+
+
+@repository
+def jaffle_shop_repository():
+    return with_resources(
+        [
+            customers_raw,
+            orders_raw,
+            *dbt_assets,
+        ],
+        {
+            "dbt": dbt_cli_resource.configured(
+                {
+                    "project_dir": DBT_PROJECT_PATH,
+                    "profiles_dir": DBT_PROFILES,
+                },
+            ),
+            "io_manager": duckdb_io_manager.configured(
+                {"duckdb_path": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
+            ),
+        },
+    )
+```
+
+### Step 4.2: Materialize the assets using Dagit
 
 ---
 
-## Step 5: Materialize the assets
+## Step 5: Add a downstream asset
 
-TODO
+In this step, you'll:
+
+- Create a downstream asset, which will compute a histogram
+- Update the Dagster repository to include the new asset
+
+### Step 5.1: Create the histogram asset
+
+You've added upstream assets to your data pipeline, but nothing downstream - until now. In this step, you'll create a Dagster asset - called `order_count_chart` - that's downstream of the `customers_raw` and `orders_raw` assets. The `order_count_chart` asset computes a plotly histogram using the data from its upstream asset dependencies.
+
+1. In `assets.py`, add the following line to the top of the file:
+
+   ```python
+   import plotly.express as px
+   ```
+
+2. Additionally, update the `from dagster` import to include `AssetIn` and `MetadataValue`:
+
+   ```python
+   from dagster import AssetIn, MetadataValue, asset
+   ```
+
+   The file should now look like this:
+
+   ```python
+   import pandas as pd
+   import plotly.express as px
+   from dagster_dbt import load_assets_from_dbt_project
+
+   from dagster import AssetIn, MetadataValue, asset
+   from dagster._utils import file_relative_path
+   ```
+
+3. After <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" />, add the following:
+
+   ```python
+   @asset(
+       ins={"customers": AssetIn(key_prefix=["jaffle_shop"])},
+       group_name="staging",
+   )
+   def order_count_chart(context, customers: pd.DataFrame):
+       fig = px.histogram(customers, x="number_of_orders")
+       fig.update_layout(bargap=0.2)
+       save_chart_path = file_relative_path(__file__, "order_count_chart.html")
+       fig.write_html(save_chart_path, auto_open=True)
+
+       context.add_output_metadata({"plot_url": MetadataValue.url("file://" + save_chart_path)})
+   ```
+
+Let's discuss what's happening here:
+
+- TODO
+
+### Step 5.2: Update the Dagster repository
+
+To materialize the new `order_count_chart` asset, you'll need to update the Dagster repository to include it.
+
+Replace the contents of `repository.py` with the following:
+
+```python
+import os
+
+from dagster_dbt import dbt_cli_resource
+from dbt_dagster_tutorial.assets import (
+    DBT_PROFILES,
+    DBT_PROJECT_PATH,
+    customers_raw,
+    dbt_assets,
+    order_count_chart,
+    orders_raw,
+)
+from dbt_dagster_tutorial.duckdb_resource import duckdb_io_manager
+
+from dagster import repository, with_resources
+
+
+@repository
+def jaffle_shop_repository():
+    return with_resources(
+        [
+            customers_raw,
+            orders_raw,
+            *dbt_assets,
+            order_count_chart,
+        ],  # we could swap this out with a fn that loads all assets from a file/module
+        {
+            "dbt": dbt_cli_resource.configured(
+                {
+                    "project_dir": DBT_PROJECT_PATH,
+                    "profiles_dir": DBT_PROFILES,
+                },
+            ),
+            "io_manager": duckdb_io_manager.configured(
+                {"duckdb_path": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
+            ),
+        },
+    )
+```
+
+---
+
+## Step 6: TODO?
