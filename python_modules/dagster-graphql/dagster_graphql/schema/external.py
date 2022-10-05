@@ -1,9 +1,8 @@
-from typing import List
 
 import graphene
 from dagster_graphql.implementation.asset_subscription import AssetLogsEventsSubscribe
-from dagster_graphql.implementation.events import from_dagster_event_record, from_event_record
-from dagster_graphql.implementation.fetch_assets import asset_node_iter, get_asset_nodes
+from dagster_graphql.implementation.events import from_dagster_event_record
+from dagster_graphql.implementation.fetch_assets import asset_node_iter
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.schema.logs.events import (
@@ -348,7 +347,7 @@ class GrapheneAssetLogEventsSubscriptionSuccess(graphene.ObjectType):
     events = non_null_list(GrapheneAssetLogEventsSubscriptionEvent)
 
     class Meta:
-        name = "AssetLogEventsSubscription"
+        name = "AssetLogEventsSubscriptionSuccess"
 
 
 class GrapheneAssetLogEventsSubscriptionFailure(graphene.ObjectType):
@@ -428,7 +427,9 @@ types = [
     GrapheneLocationStateChangeEventType,
     GrapheneLocationStateChangeSubscription,
     GrapheneAssetLogEventsSubscriptionEvent,
-    GrapheneAssetLogEventsSubscription,
+    GrapheneAssetLogEventsSubscriptionSuccess,
+    GrapheneAssetLogEventsSubscriptionFailure,
+    GrapheneAssetLogEventsSubscriptionPayload,
     GrapheneRepositoriesOrError,
     GrapheneRepository,
     GrapheneRepositoryConnection,

@@ -272,8 +272,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self._asset_event_watcher = SqlPollingAssetEventWatcher(self)
         self._asset_event_watcher.watch(callback)
 
-        """Call this method to start watching."""
-
     def end_watch_asset_events(self, handler):
         if self._asset_event_watcher is None:
             return

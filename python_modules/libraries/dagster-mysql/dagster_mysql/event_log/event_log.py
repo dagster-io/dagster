@@ -185,7 +185,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def watch_asset_events(self, callback):
         self._asset_event_watcher.watch(callback)
 
-    def end_watch(self, handler):
+    def end_watch_asset_events(self, handler):
         self._asset_event_watcher.unwatch(handler)
 
     @property

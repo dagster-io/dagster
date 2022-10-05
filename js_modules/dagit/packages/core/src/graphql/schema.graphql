@@ -2757,7 +2757,7 @@ type DagitSubscription {
   """
   Real-time events when any run emits an asset materialization or observation event.
   """
-  assetLogEvents(assetKeys: [AssetKeyInput!]!): AssetLogEventsSubscription!
+  assetLogEvents(assetKeys: [AssetKeyInput!]!): AssetLogEventsSubscriptionPayload!
 }
 
 union PipelineRunLogsSubscriptionPayload =
@@ -2799,7 +2799,11 @@ enum LocationStateChangeEventType {
   LOCATION_ERROR
 }
 
-type AssetLogEventsSubscription {
+union AssetLogEventsSubscriptionPayload =
+    AssetLogEventsSubscriptionSuccess
+  | AssetLogEventsSubscriptionFailure
+
+type AssetLogEventsSubscriptionSuccess {
   events: [AssetLogEventsSubscriptionEvent!]!
 }
 
@@ -2809,6 +2813,10 @@ union AssetLogEventsSubscriptionEvent =
   | AssetMaterializationPlannedEvent
   | ExecutionStepStartEvent
   | ExecutionStepFailureEvent
+
+type AssetLogEventsSubscriptionFailure {
+  message: String!
+}
 
 type MissingRunIdErrorEvent {
   invalidRunId: String!
