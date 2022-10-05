@@ -133,5 +133,8 @@ class CommandStepBuilder:
             self._step["depends_on"] = step_keys
         return self
 
+    def with_skip(self, skip: bool = True) -> "CommandStepBuilder":
+        self._step["skip"] = skip
+
     def build(self) -> CommandStep:
         return self._step

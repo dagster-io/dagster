@@ -18,6 +18,7 @@ _COMMAND_TYPE_TO_EMOJI_MAP = {
 def build_tox_step(
     root_dir: str,
     tox_env: str,
+    skip: bool = False,
     base_label: Optional[str] = None,
     command_type: str = "miscellaneous",
     python_version: Optional[AvailablePythonVersion] = None,
@@ -66,6 +67,7 @@ def build_tox_step(
         .with_dependencies(dependencies)
         .with_queue(queue)
         .on_test_image(python_version, env_vars or [])
+        .with_skip(skip)
     ).build()
 
 

@@ -162,7 +162,7 @@ class PackageSpec(
             run_pylint,
         )
 
-    def build_steps(self) -> List[GroupStep]:
+    def build_steps(self, skip: bool = False) -> List[GroupStep]:
         base_name = self.name or os.path.basename(self.directory)
         steps: List[BuildkiteLeafStep] = []
 
@@ -234,6 +234,7 @@ class PackageSpec(
                             timeout_in_minutes=self.timeout_in_minutes,
                             queue=self.queue,
                             retries=self.retries,
+                            skip=skip,
                         )
                     )
 
@@ -245,6 +246,7 @@ class PackageSpec(
                     base_label=base_name,
                     command_type="mypy",
                     python_version=supported_python_versions[-1],
+                    skip=skip,
                 )
             )
 
@@ -256,6 +258,7 @@ class PackageSpec(
                     base_label=base_name,
                     command_type="pylint",
                     python_version=supported_python_versions[-1],
+                    skip=skip,
                 )
             )
 
