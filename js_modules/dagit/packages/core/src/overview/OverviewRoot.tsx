@@ -3,9 +3,10 @@ import {Redirect, Route, Switch} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {InstanceBackfills} from '../instance/InstanceBackfills';
-import {InstanceSchedules} from '../instance/InstanceSchedules';
-import {InstanceSensors} from '../instance/InstanceSensors';
 
+import {OverviewJobsRoot} from './OverviewJobsRoot';
+import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
+import {OverviewSensorsRoot} from './OverviewSensorsRoot';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
 
 export const OverviewRoot = () => {
@@ -20,11 +21,14 @@ export const OverviewRoot = () => {
       <Route path="/overview/timeline">
         <OverviewTimelineRoot />
       </Route>
+      <Route path="/overview/jobs">
+        <OverviewJobsRoot />
+      </Route>
       <Route path="/overview/schedules">
-        <InstanceSchedules />
+        <OverviewSchedulesRoot />
       </Route>
       <Route path="/overview/sensors">
-        <InstanceSensors />
+        <OverviewSensorsRoot />
       </Route>
       <Route path="/overview/backfills">
         <InstanceBackfills />

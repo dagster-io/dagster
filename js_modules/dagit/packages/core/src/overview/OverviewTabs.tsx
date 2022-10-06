@@ -17,7 +17,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
         <TabLink id="timeline" title="Timeline" to="/overview/timeline" />
-        {/* <TabLink id="jobs" title="Jobs" to="/overview/jobs" /> */}
+        <TabLink id="jobs" title="Jobs" to="/overview/jobs" />
         <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
         <TabLink id="sensors" title="Sensors" to="/overview/sensors" />
         <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
