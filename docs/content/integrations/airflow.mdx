@@ -7,12 +7,38 @@ description: The dagster-airflow package allows you to export Dagster jobs as Ai
 
 <CodeReferenceLink filePath="examples/with_airflow" />
 
-The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) package allows you to export Dagster jobs as Airflow DAGs, as well as to import Airflow DAGs into Dagster jobs.
+The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) package allows you to orchestrate Dagster from Airflow, export Dagster jobs as Airflow DAGs, and import Airflow DAGs into Dagster jobs.
 
 Dagster is a fully-featured orchestrator and does not require a system like Airflow to deploy, execute, or schedule jobs. The main scenarios for using Dagster with Airflow are:
 
 - You have an existing Airflow setup that's too difficult to migrate away from, but you want to use Dagster for local development.
 - You want to migrate from Airflow to Dagster in an incremental fashion.
+
+## Orchestrating Dagster jobs from Airflow
+
+You can orchestrate Dagster job runs from airflow by using the `DagsterCloudOperator` or `DagsterOperator` operators in your existing airflow dags. For example, here's an airflow Dag:
+
+```python file=/integrations/airflow/operator.py
+from datetime import datetime
+
+from airflow import DAG
+from dagster_airflow import DagsterCloudOperator
+
+with DAG(
+    dag_id="dagster_cloud",
+    start_date=datetime(2022, 5, 28),
+    schedule_interval="*/5 * * * *",
+    catchup=False,
+) as dag:
+    DagsterCloudOperator(
+        task_id="new_dagster_assets",
+        repostitory_location_name="example_location",
+        repository_name="my_dagster_project",
+        job_name="all_assets_job",
+    )
+```
+
+In airflow 2.0+ you can create a dagster connection type to store configuration related to your dagster cloud organization, you can also pass this directly to the operator if you're using airflow 1.0.
 
 ## Exporting Dagster jobs to Airflow
 
