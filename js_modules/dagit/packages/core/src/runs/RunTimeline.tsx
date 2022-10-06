@@ -495,7 +495,7 @@ const NowMarker = styled.div`
 `;
 
 const MIN_CHUNK_WIDTH = 2;
-const MIN_WIDTH_FOR_MULTIPLE = 16;
+const MIN_WIDTH_FOR_MULTIPLE = 12;
 
 const RunTimelineRow = ({
   job,
