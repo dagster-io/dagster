@@ -1088,3 +1088,70 @@ def test_latest_materialization_records_by_partition_fetches_unevaluated_events(
         # We should remove the 2022-07-02 materialization from the unevaluated events list
         # since we have advanced the cursor for a later materialization with that partition key.
         assert len(second_july_cursor.unevaluated_event_ids) == 0
+
+
+def test_test_unfetched_partitioned_events_are_unevaluated():
+    @multi_asset_sensor(asset_keys=[july_asset.key])
+    def test_unevaluated_events_sensor(context):
+        context.advance_cursor(
+            {
+                july_asset.key: context.latest_materialization_records_by_partition(july_asset.key)[
+                    "2022-07-05"
+                ]
+            }
+        )
+
+    with instance_for_test() as instance:
+        for _ in range(5):
+            materialize(
+                [july_asset],
+                partition_key=f"2022-07-04",
+                instance=instance,
+            )
+            materialize(
+                [july_asset],
+                partition_key=f"2022-07-05",
+                instance=instance,
+            )
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(test_unevaluated_events_sensor(ctx))
+        first_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        assert first_july_cursor.latest_evaluated_event_id
+        assert first_july_cursor.latest_evaluated_event_partition == "2022-07-05"
+        assert len(first_july_cursor.unevaluated_event_ids) == 5
+
+        records = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=july_asset.key,
+                storage_ids=first_july_cursor.unevaluated_event_ids,
+            )
+        )
+        assert all(
+            [_get_partition_key_from_event_log_record(record) == "2022-07-04" for record in records]
+        )
+
+        materialize(
+            [july_asset],
+            partition_key=f"2022-07-04",
+            instance=instance,
+        )
+        materialize(
+            [july_asset],
+            partition_key=f"2022-07-05",
+            instance=instance,
+        )
+
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(test_unevaluated_events_sensor(ctx))
+        second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        assert (
+            second_july_cursor.latest_evaluated_event_id
+            > first_july_cursor.latest_evaluated_event_id
+        )
+        assert second_july_cursor.latest_evaluated_event_partition == "2022-07-05"
+        assert len(second_july_cursor.unevaluated_event_ids) == 6
