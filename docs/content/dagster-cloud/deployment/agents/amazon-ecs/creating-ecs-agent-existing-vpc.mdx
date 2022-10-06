@@ -58,6 +58,7 @@ After the stack is installed, you'll be prompted to configure it. In the ECS wiz
 - **Deploy VPC**: The existing VPC to deploy the agent into.
 - **Deploy VPC Subnet**: A public subnet of the existing VPC to deploy the agent into.
 - **Existing ECS Cluster**: Optionally, the name of an existing ECS cluster to deploy the agent in. Leave blank to create a new cluster
+- **Task Launch Type**: Optionally, the launch type to use for new tasks created by the agent (FARGATE or EC2). Defaults to FARGATE.
 
 The page should look similar to the following image. In this example, our organization name is `hooli` and our deployment is `prod`:
 
@@ -65,7 +66,7 @@ The page should look similar to the following image. In this example, our organi
 alt="Example Configuration for the ECS Agent CloudFormation Template"
 src="/images/dagster-cloud/agents/aws-ecs-stack-wizard-existing.png"
 width={927}
-height={1009}
+height={1099}
 />
 
 After you've finished configuring the stack in AWS, you can view the agent in Dagster Cloud. To do so, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
