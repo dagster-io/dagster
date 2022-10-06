@@ -251,7 +251,6 @@ class MultiAssetSensorContextCursor:
         )
         check.dict_param(self._cursor_component_by_asset_key, "unpacked_cursor", key_type=str)
         self._context = context
-        self._cursor_has_been_updated = False
 
     def get_cursor_for_asset(self, asset_key: AssetKey) -> MultiAssetSensorAssetCursorComponent:
         return self._cursor_component_by_asset_key.get(
@@ -296,8 +295,6 @@ class MultiAssetSensorContextCursor:
             }
         )
 
-        self._cursor_has_been_updated = True
-
     def reset_cursors_to_materializations(
         self, latest_event_by_asset_key: Mapping[AssetKey, Optional["EventLogRecord"]]
     ) -> None:
@@ -327,8 +324,6 @@ class MultiAssetSensorContextCursor:
                         )
                     }
                 )
-
-            self._cursor_has_been_updated = True
 
     def add_skipped_event_id(self, asset_key: AssetKey, storage_id: int):
         # Method should only be called at the end of sensor evaluation
@@ -445,6 +440,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         # At the end of each tick, must call update_cursor_after_evaluation to update the serialized
         # cursor.
         self._cursor_component_by_asset_key = MultiAssetSensorContextCursor(cursor, self)
+        self._cursor_has_been_updated = False
 
         self._event_fetched_is_advanced: Dict[int, bool] = {}  # key is storage id
         self._event_ids_by_partition_key: Dict[str, List[int]] = defaultdict(list)
@@ -542,6 +538,12 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         """Updates the cursor after the sensor evaluation function has been called. This method
         should be called at most once per evaluation.
         """
+
+        if self._event_fetched_is_advanced == {}:
+            # No events fetched by this context object by existing context methods
+            # This context object is not responsible for updating the cursor
+            # This occurs when the cursor is managed by the asset reconciliation sensor
+            return
 
         for fetched_event_id, advanced in self._event_fetched_is_advanced.items():
             if not advanced:
@@ -976,10 +978,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 an EventLogRecord is provided, the cursor for the AssetKey will be updated and future calls to fetch asset materialization events
                 will not fetch this event again. If None is provided, the cursor for the AssetKey will not be updated.
         """
-        cursor_dict = json.loads(self.cursor) if self.cursor else {}
-        check.dict_param(cursor_dict, "cursor_dict", key_type=str)
-
-        # Use default values from cursor dictionary if not provided in materialization_records_by_key
         for asset_key, materialization in materialization_records_by_key.items():
             if materialization:
                 partition_key = _get_partition_key_from_event_log_record(materialization)
@@ -990,6 +988,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                             self._event_fetched_is_advanced[event_id] = True
 
                 self._cursor_component_by_asset_key.advance(asset_key, materialization)
+
+        self._cursor_has_been_updated = True
 
     @public
     def advance_all_cursors(self):
@@ -1011,6 +1011,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._cursor_component_by_asset_key.reset_cursors_to_materializations(
             materializations_by_key
         )
+
+        self._cursor_has_been_updated = True
 
     @public  # type: ignore
     @property
@@ -1625,8 +1627,6 @@ class MultiAssetSensorDefinition(SensorDefinition):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        is_asset_reconciliation_sensor (bool): Bool representing whether the sensor is created as
-            an asset reconciliation sensor.
     """
 
     def __init__(
@@ -1644,7 +1644,6 @@ class MultiAssetSensorDefinition(SensorDefinition):
         job: Optional[ExecutableDefinition] = None,
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        is_asset_reconciliation_sensor: bool = False,
     ):
 
         check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
@@ -1677,20 +1676,17 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
                     yield result
 
-                if not is_asset_reconciliation_sensor:
-                    if (
-                        runs_yielded
-                        and not context._cursor_component_by_asset_key._cursor_has_been_updated  # pylint: disable=protected-access
-                    ):
-                        raise DagsterInvalidDefinitionError(
-                            "Asset materializations have been handled in this sensor, "
-                            "but the cursor was not updated. This means the same materialization events "
-                            "will be handled in the next sensor tick. Use context.advance_cursor or "
-                            "context.advance_all_cursors to update the cursor."
-                        )
+                if (
+                    runs_yielded and not context._cursor_has_been_updated
+                ):  # pylint: disable=protected-access
+                    raise DagsterInvalidDefinitionError(
+                        "Asset materializations have been handled in this sensor, "
+                        "but the cursor was not updated. This means the same materialization events "
+                        "will be handled in the next sensor tick. Use context.advance_cursor or "
+                        "context.advance_all_cursors to update the cursor."
+                    )
 
-                    # Asset reconciliation sensor has custom cursor logic
-                    context.update_cursor_after_evaluation()
+                context.update_cursor_after_evaluation()
 
             return _fn
 

@@ -289,6 +289,7 @@ def _make_sensor(
 
         if len(should_materialize) > 0:
             context.update_cursor(json.dumps(cursor_update_dict))
+            context._cursor_has_been_updated = True
             return RunRequest(run_key=f"{context.cursor}", asset_selection=list(should_materialize))
 
     return MultiAssetSensorDefinition(
@@ -300,7 +301,6 @@ def _make_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
         description=description,
         default_status=default_status,
-        is_asset_reconciliation_sensor=True,
     )
 
 
