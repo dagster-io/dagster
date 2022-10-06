@@ -6,7 +6,11 @@ description: Dagster can orchestrate dbt alongside other technologies.
 # Using dbt with Dagster, part one: Set up the dbt project
 
 <Note>
-  This is part one of the <a href="/integrations/dbt/using-dbt-with-dagster">Using dbt with Dagster software-defined assets</a> tutorial.
+  This is part one of the{" "}
+  <a href="/integrations/dbt/using-dbt-with-dagster">
+    Using dbt with Dagster software-defined assets
+  </a>{" "}
+  tutorial.
 </Note>
 
 First, you'll set up the dbt project for the tutorial. We're using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project as well.
@@ -73,7 +77,7 @@ In this step, you'll verify that your dbt project's `dbt_project.yml` file is co
 - Specify `jaffle_shop` as the `profile`:
 
   ```yaml
-  profile: 'jaffle_shop'
+  profile: "jaffle_shop"
   ```
 
 - Specify that `jaffle_shop` models are materialized into tables:

@@ -52,27 +52,33 @@ In this tutorial, we'll walk you through integrating dbt with Dagster using dbt'
 To complete this tutorial, you'll need:
 
 - **To install the following**:
-   - **dbt and Dagster**. Refer to the [dbt](https://docs.getdbt.com/dbt-cli/install/overview) and [Dagster](/getting-started/install) installation docs for more info.
-   - **The dbt-duckdb adapter.** This tutorial uses [DuckDB](https://docs.getdbt.com/reference/warehouse-profiles/duckdb-profile) as the database backing dbt. Run the following to install the adapter:
+
+  - **dbt and Dagster**. Refer to the [dbt](https://docs.getdbt.com/dbt-cli/install/overview) and [Dagster](/getting-started/install) installation docs for more info.
+
+  - **The dbt-duckdb adapter.** This tutorial uses [DuckDB](https://docs.getdbt.com/reference/warehouse-profiles/duckdb-profile) as the database backing dbt. Run the following to install the adapter:
 
     ```shell
     pip install dbt-duckdb
     ```
-   - **The dagster-dbt library.** This library allows you to integrate dbt with Dagster. Run the following to install the library:
 
-      ```shell
-      pip install dagster-dbt
-      ```
-   - **The pandas Python library.** This tutorial uses [pandas](https://pandas.pydata.org/docs/index.html) to fetch raw data. Run the following to install the library:
+  - **The dagster-dbt library.** This library allows you to integrate dbt with Dagster. Run the following to install the library:
 
-      ```shell
-      pip install pandas
-      ```
-   - **The plotly Python library**. This tutorial uses [plotly](https://plotly.com/python/) to create a histogram asset. Run the following to install the library:
+    ```shell
+    pip install dagster-dbt
+    ```
 
-   ```shell
-   pip install plotly
-   ```
+  - **The pandas Python library.** This tutorial uses [pandas](https://pandas.pydata.org/docs/index.html) to fetch raw data. Run the following to install the library:
+
+    ```shell
+    pip install pandas
+    ```
+
+  - **The plotly Python library**. This tutorial uses [plotly](https://plotly.com/python/) to create a histogram asset. Run the following to install the library:
+
+    ```shell
+    pip install plotly
+    ```
+
 - **An existing dbt project.** This tutorial uses dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project.
 
 ---
