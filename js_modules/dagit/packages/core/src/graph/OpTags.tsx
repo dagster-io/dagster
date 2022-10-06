@@ -26,9 +26,6 @@ function hueForTag(text = '') {
   if (text === 'pyspark' || text === 'spark') {
     return 30;
   }
-  if (text === 'noteable') {
-    return 181;
-  }
   if (text === 'Expand') {
     return 40;
   }
