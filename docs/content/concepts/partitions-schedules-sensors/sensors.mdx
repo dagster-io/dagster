@@ -185,7 +185,7 @@ def asset_a_and_b_sensor_with_skip_reason(context):
 
 ### Asset reconciliation sensor <Experimental />
 
-Dagster provides an out-of-box sensor that will monitor a provided set of assets and automatically materialize the assets if they should be updated. You can create this sensor using the <PyObject object="build_asset_reconciliation_sensor"/> function. You can specify if the sensor should materialize an asset when **any** of its parent assets have been materialized or after **all** of its parent assets have been materialized. This sensor can help you keep your assets up-to-date without needing to write custom schedules or sensors for each asset. To use an asset reconciliation sensor, simply add it to your repository:
+Dagster provides an out-of-box sensor that will monitor a provided set of assets and automatically materialize the assets if their upstream dependencies are materialized. You can create this sensor using the <PyObject object="build_asset_reconciliation_sensor"/> function. You can specify if the sensor should materialize an asset when **any** of its parent assets have been materialized or after **all** of its parent assets have been materialized. This sensor can help you keep your assets up-to-date without needing to write custom schedules or sensors for each asset. To use an asset reconciliation sensor, add it to your repository:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_reconciliation_sensor.py startafter=start_asset_reconciliation_sensor endbefore=end_asset_reconciliation_sensor
 @repository
@@ -203,7 +203,7 @@ def repository_1():
 
 This sensor will materialize `asset_b` whenever any of its parents materialize, and it will materialize `asset_c` whenever any of its parents materialize.
 
-By default the created sensor will materialize an asset in the `asset_selection` whenever any of its parents materializes. You can modify this behavior to wait until all parents have materialized:
+By default the created sensor will materialize an asset in the `asset_selection` whenever any of its parents materialize. You can modify this behavior to wait until all parents have materialized:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_reconciliation_sensor.py startafter=start_asset_reconciliation_sensor_wait_for_upstream endbefore=end_asset_reconciliation_sensor_wait_for_upstream
 @repository
@@ -237,7 +237,7 @@ def repository_3():
     ]
 ```
 
-**Note:** If you have an asset whose parents update frequently, you should consider also setting `wait_for_in_progress_runs=False` to avoid deadlock where the reconciliation sensor cannot materialize an asset because on of its parents is always materializing.
+**Note:** If you have an asset whose parents update frequently, you should consider setting `wait_for_in_progress_runs=False` to avoid a deadlock where the reconciliation sensor cannot materialize an asset because each time the sensor evaluates, there is a parent asset materializing. 
 
 ## Idempotence and Cursors
 
