@@ -11,7 +11,6 @@ from dagster import (
     asset,
     define_asset_job,
     executor,
-    file_relative_path,
     job,
     op,
     reconstructable,
@@ -305,8 +304,9 @@ def test_execute_verify_step():
 def test_execute_using_repository_data():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        recon_repo = ReconstructableRepository.for_file(
-            file_relative_path(__file__, "test_step_delegating_executor.py"), fn_name="pending_repo"
+        recon_repo = ReconstructableRepository.for_module(
+            "dagster_tests.execution_tests.engine_tests.test_step_delegating_executor",
+            fn_name="pending_repo",
         )
         recon_pipeline = ReconstructablePipeline(
             repository=recon_repo, pipeline_name="all_asset_job"
