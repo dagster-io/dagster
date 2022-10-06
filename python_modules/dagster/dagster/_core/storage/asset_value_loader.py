@@ -55,7 +55,9 @@ class AssetValueLoader:
     def load_asset_value(
         self,
         asset_key: CoercibleToAssetKey,
+        *,
         python_type: Optional[Type] = None,
+        partition_key: Optional[str] = None,
     ) -> object:
         """
         Loads the contents of an asset as a Python object.
@@ -66,6 +68,7 @@ class AssetValueLoader:
             asset_key (Union[AssetKey, Sequence[str], str]): The key of the asset to load.
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
+            partition_key (Optional[str]): The partition of the asset to load.
 
         Returns:
             The contents of an asset as a Python object.
@@ -91,9 +94,12 @@ class AssetValueLoader:
             name=None,
             asset_key=asset_key,
             dagster_type=resolve_dagster_type(python_type),
-            upstream_output=build_output_context(metadata=assets_def.metadata_by_key[asset_key]),
+            upstream_output=build_output_context(
+                metadata=assets_def.metadata_by_key[asset_key], asset_key=asset_key
+            ),
             resources=self._resource_instance_cache,
             resource_config=io_manager_config[io_manager_key].config,
+            partition_key=partition_key,
         )
 
         return io_manager.load_input(input_context)

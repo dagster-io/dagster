@@ -1363,8 +1363,10 @@ class RepositoryDefinition:
     def load_asset_value(
         self,
         asset_key: CoercibleToAssetKey,
+        *,
         python_type: Optional[Type] = None,
         instance: Optional[DagsterInstance] = None,
+        partition_key: Optional[str] = None,
     ) -> object:
         """
         Loads the contents of an asset as a Python object.
@@ -1379,6 +1381,7 @@ class RepositoryDefinition:
             asset_key (Union[AssetKey, Sequence[str], str]): The key of the asset to load.
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
+            partition_key (Optional[str]): The partition of the asset to load.
 
         Returns:
             The contents of an asset as a Python object.
@@ -1386,7 +1389,9 @@ class RepositoryDefinition:
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
         with AssetValueLoader(self._assets_defs_by_key, instance=instance) as loader:
-            return loader.load_asset_value(asset_key, python_type=python_type)
+            return loader.load_asset_value(
+                asset_key, python_type=python_type, partition_key=partition_key
+            )
 
     @public
     def get_asset_value_loader(
