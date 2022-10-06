@@ -139,6 +139,3 @@ class DagsterCloudOperator(DagsterOperator):
         deployment_name (Optional[str]): the name of the dagster cloud deployment
         user_token (Optional[str]): the dagster cloud user token to use
     """
-
-    # expose specific cloud operator for clarity
-    pass
