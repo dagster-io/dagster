@@ -1,0 +1,163 @@
+---
+title: "Using Dagster with dbt, part 2: Create Dagster assets"
+description: Dagster can orchestrate dbt alongside other technologies.
+---
+
+# Using dbt with Dagster, part two: Create Dagster assets
+
+<Note>
+  This is part two of the{" "}
+  <a href="/integrations/dbt/using-dbt-with-dagster">
+    Using dbt with Dagster software-defined assets
+  </a>{" "}
+  tutorial.
+</Note>
+
+At this point, you should have a [fully-configured dbt project](/integrations/dbt/using-dbt-with-dagster/part-one) that's ready to work with Dagster.
+
+In this step, you'll finally begin integrating dbt with Dagster! The Dagster assets you create will be upstream of the dbt models, responsible for fetching the data required to run the models. To do this, you'll:
+
+- [Create a new folder for your Dagster code](/integrations/dbt/using-dbt-with-dagster/part-two#step-1-create-a-folder-for-dagster-code)
+- [Create the upstream Dagster assets](/integrations/dbt/using-dbt-with-dagster/part-two#step-2-create-the-dagster-assets)
+- [Load the dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/part-two#step-3-load-the-dbt-models-as-assets)
+
+---
+
+## Step 1: Create a folder for Dagster code
+
+To get started, create a new folder in the `dbt_dagster_tutorial` to contain your Dagster code:
+
+```shell
+mkdir dagster_code
+```
+
+The folder structure should now be similar to the following:
+
+```yaml
+todo: INSERT STRUCTURE HERE
+```
+
+---
+
+## Step 2: Create the Dagster assets
+
+To fetch the data the dbt models require, we'll write two Dagster assets: one for `customers` and one for `orders`.
+
+1. In the `dagster_code` folder you created in the previous step, create a file named `assets.py`.
+
+2. In `assets.py`, add the following code:
+
+   ```python
+   import pandas as pd
+   from dagster import asset
+
+   @asset(key_prefix=["jaffle_shop"], group_name="staging")
+   def customers_raw() -> pd.DataFrame:
+       data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
+       return data
+
+   @asset(key_prefix=["jaffle_shop"], group_name="staging")
+   def orders_raw() -> pd.DataFrame:
+       data = pd.read_csv("https://docs.dagster.io/assets/orders.csv")
+       return data
+   ```
+
+Let's take a closer look at the arguments we've provided:
+
+- `group_name` - When Dagster loads the dbt models as assets, the assets will be placed in an asset group based on the name of the folder (`staging`) containing the models. Because we want the assets we add to be included in the same group, we defined this as `staging`.
+
+- `key_prefix` - When the assets are materialized, Dagster will store them in DuckDB in the schema defined by the last value in `key_prefix`. In this case, that's `jaffle_shop`. The tables will have the same names as the assets that produced them, which are `customers_raw` and `orders_raw`.
+
+  Because these tables will become the source data for the `stg_customers.sql` and `stg_orders.sql` models in the dbt project, the names of the assets must match the table names specified in `/dbt_dagster_tutorial/jaffle_shop/models/sources.yml`.
+
+---
+
+## Step 3: Load the dbt models as assets
+
+Next, we'll load the dbt models into Dagster as assets. This step requires the [`dagster-dbt`](/\_apidocs/libraries/dagster-dbt) library.
+
+1. In `assets.py`, add the following lines to the top of the file:
+
+   ```python
+   from dagster_dbt import load_assets_from_dbt_project
+   from dagster._utils import file_relative_path
+   ```
+
+   The file should now look like this:
+
+   ```python
+   import pandas as pd
+   from dagster import asset
+   from dagster_dbt import load_assets_from_dbt_project
+   from dagster._utils import file_relative_path
+   ```
+
+2. After the `orders_raw` asset in `assets.py`, add the following:
+
+   ```python
+   DBT_PROJECT_PATH = file_relative_path(__file__, "../jaffle_shop")
+   DBT_PROFILES = file_relative_path(__file__, "../jaffle_shop/config")
+
+   dbt_assets = load_assets_from_dbt_project(
+       project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+   )
+   ```
+
+Let's discuss what this example is doing, specifically the <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> function. This function loads dbt models into Dagster as assets, creating one Dagster asset for each model.
+
+When invoked, this function:
+
+1. Compiles your dbt project,
+2. Parses the metadata provided by dbt, and
+3. Generates a set of software-defined assets reflecting the models in the project. These assets share the same underlying operation, which will invoke dbt to run the models represented by the loaded assets.
+
+<Note>
+  <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> is one
+  of two ways you can load dbt models into Dagster, which we recommend for small
+  dbt projects. For larger projects, we recommend using a{" "}
+  <a href="TODO">
+    dbt <code>manifest.json</code>
+  </a>{" "}
+  file.
+</Note>
+
+Let's take a look at the arguments we've supplied:
+
+- `project_dir`, which is the path to the dbt project
+- `profiles_dir`, which is the path to the dbt project's connection profiles
+- `key_prefix`, which is a prefix to apply to all models in the dbt project
+
+At this point, `assets.py` should look like this:
+
+```python
+import pandas as pd
+from dagster import asset
+from dagster_dbt import load_assets_from_dbt_project
+from dagster._utils import file_relative_path
+
+
+@asset(key_prefix=["jaffle_shop"], group_name="staging")
+def customers_raw() -> pd.DataFrame:
+    data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
+    return data
+
+
+@asset(key_prefix=["jaffle_shop"], group_name="staging")
+def orders_raw() -> pd.DataFrame:
+    data = pd.read_csv("https://docs.dagster.io/assets/orders.csv")
+    return data
+
+
+DBT_PROJECT_PATH = file_relative_path(__file__, "../jaffle_shop")
+DBT_PROFILES = file_relative_path(__file__, "../jaffle_shop/config")
+
+dbt_assets = load_assets_from_dbt_project(
+    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+)
+```
+
+---
+
+## What's next?
+
+At this point, you have two upstream Dagster assets that are responsible for fetching the source data your dbt models depend on. The next step is to [materialize the assets using Dagit](/integrations/dbt/using-dbt-with-dagster/part-three).
