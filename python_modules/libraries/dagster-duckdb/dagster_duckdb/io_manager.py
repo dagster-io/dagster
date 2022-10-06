@@ -1,5 +1,6 @@
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import cast
+from typing import Dict, Generic, Optional, Sequence, Type, TypeVar, cast
 
 import duckdb
 import pandas as pd
@@ -10,59 +11,31 @@ from dagster import io_manager
 from dagster._seven.temp_dir import get_system_temp_directory
 from dagster._utils.backoff import backoff
 
+T = TypeVar("T")
 
-class DuckDBCSVIOManager(IOManager):
-    """Stores data in csv files and creates duckdb views over those files."""
 
-    def __init__(self, base_path):
-        self._base_path = base_path
+class DbTypeHandler(ABC, Generic[T]):
+    @abstractmethod
+    def handle_output(
+        self, context: OutputContext, obj: T, conn: duckdb.DuckDBPyConnection, base_path: str
+    ):
+        """Stores the given object at the provided filepath."""
 
-    def handle_output(self, context: OutputContext, obj: object):
-        if obj is not None:  # if this is a dbt output, then the value will be None
-            if not isinstance(obj, pd.DataFrame):
-                check.failed(f"Outputs of type {type(obj)} not supported.")
+    @abstractmethod
+    def load_input(self, context: InputContext, conn: duckdb.DuckDBPyConnection) -> T:
+        """Loads the return of the query as the correct type."""
 
-            con = self._connect_duckdb(context).cursor()
-            filepath = self._get_path(context)
-            # ensure path exists
-            filepath.parent.mkdir(parents=True, exist_ok=True)
-            # write df to csv file
-            obj.to_csv(filepath)
+    @abstractmethod
+    def _get_path(self, context: OutputContext, base_path: str) -> Path:
+        """Creates the path where the file should be stored."""
 
-            # create view over that file
-            con.execute(f"create schema if not exists {self._schema(context, context)};")
-            con.execute(
-                f"create or replace view {self._table_path(context, context)} as "
-                f"select * from '{filepath}';"
-            )
-            con.close()
+    @property
+    def supported_input_types(self) -> Sequence[Type]:
+        pass
 
-    def load_input(self, context: InputContext):
-        check.invariant(not context.has_asset_partitions, "Can't load partitioned inputs")
-
-        if context.dagster_type.typing_type == pd.DataFrame:
-            con = self._connect_duckdb(context).cursor()
-            ret = con.execute(
-                f"SELECT * FROM {self._table_path(context, cast(OutputContext, context.upstream_output))}"
-            ).fetchdf()
-            con.close()
-            return ret
-
-        check.failed(
-            f"Inputs of type {context.dagster_type} not supported. Please specify a valid type "
-            "for this input either on the argument of the @asset-decorated function."
-        )
-
-    def _get_path(self, context: OutputContext) -> Path:
-        if context.has_asset_key:
-            return Path(f"{self._base_path}/{'_'.join(context.asset_key.path)}.csv")
-        else:
-            keys = context.get_identifier()
-            run_id = keys[0]
-            output_identifiers = keys[1:]  # variable length because of mapping key
-
-            path = ["storage", run_id, "files", *output_identifiers]
-        return Path(f"{self._base_path}/{'_'.join(path)}.csv")
+    @property
+    def supported_output_types(self) -> Sequence[Type]:
+        pass
 
     def _schema(self, context, output_context: OutputContext):
         if context.has_asset_key:
@@ -86,6 +59,69 @@ class DuckDBCSVIOManager(IOManager):
     def _table_path(self, context, output_context: OutputContext):
         return f"{self._schema(context, output_context)}.{self._table(context, output_context)}"
 
+
+class DuckDBCSVIOManager(IOManager):
+    """Stores data in csv files and creates duckdb views over those files."""
+
+    def __init__(self, base_path, type_handlers: Sequence[DbTypeHandler]):
+        self._base_path = base_path
+
+        self._output_handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
+        self._input_handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
+        for type_handler in type_handlers:
+            print(type_handler.supported_output_types)
+            for handled_output_type in type_handler.supported_output_types:
+                check.invariant(
+                    handled_output_type not in self._output_handlers_by_type,
+                    "DuckDBIOManager provided with two handlers for the same type. "
+                    f"Type: '{handled_output_type}'. Handler classes: '{type(type_handler)}' and "
+                    f"'{type(self._output_handlers_by_type.get(handled_output_type))}'.",
+                )
+
+                self._output_handlers_by_type[handled_output_type] = type_handler
+
+            for handled_input_type in type_handler.supported_input_types:
+                check.invariant(
+                    handled_input_type not in self._input_handlers_by_type,
+                    "DuckDBIOManager provided with two handlers for the same type. "
+                    f"Type: '{handled_input_type}'. Handler classes: '{type(type_handler)}' and "
+                    f"'{type(self._input_handlers_by_type.get(handled_input_type))}'.",
+                )
+
+                self._input_handlers_by_type[handled_input_type] = type_handler
+
+    def handle_output(self, context: OutputContext, obj: object):
+        if obj is not None:  # if this is a dbt output, then the value will be None
+            obj_type = type(obj)
+            check.invariant(
+                obj_type in self._output_handlers_by_type,
+                f"DuckDBIOManager does not have a handler that supports outputs of type '{obj_type}'. Has handlers "
+                f"for types '{', '.join([str(handler_type) for handler_type in self._output_handlers_by_type.keys()])}'",
+            )
+            conn = self._connect_duckdb(context).cursor()
+            # type handler will store the output in duckdb
+            self._output_handlers_by_type[obj_type].handle_output(
+                context, obj=obj, conn=conn, base_path=self._base_path
+            )
+            conn.close()
+
+    def load_input(self, context: InputContext):
+        obj_type = context.dagster_type.typing_type
+        check.invariant(
+            obj_type in self._input_handlers_by_type,
+            f"DuckDBIOManager does not have a handler that supports inputs of type '{obj_type}'. Has handlers "
+            f"for types '{', '.join([str(handler_type) for handler_type in self._input_handlers_by_type.keys()])}'",
+        )
+
+        check.invariant(
+            not context.has_asset_partitions, "DuckDBIOManager can't load partitioned inputs"
+        )
+
+        conn = self._connect_duckdb(context).cursor()
+        ret = self._input_handlers_by_type[obj_type].load_input(context, conn=conn)
+        conn.close()
+        return ret
+
     def _connect_duckdb(self, context):
         return backoff(
             fn=duckdb.connect,
@@ -94,18 +130,47 @@ class DuckDBCSVIOManager(IOManager):
         )
 
 
-@io_manager(config_schema={"base_path": Field(str, is_required=False), "duckdb_path": str})
-def duckdb_io_manager(init_context):
-    """IO Manager for storing outputs in a DuckDB database
-
-    Supports storing and loading Pandas DataFrame objects. Converts the DataFrames to CSV and
-    creates DuckDB views over the files.
-
-    Assets will be stored in the schema and table name specified by their AssetKey.
-    Subsequent materializations of an asset will overwrite previous materializations of that asset.
-    Op outputs will be stored in the schema specified by output metadata (defaults to public) in a
-    table of the name of the output.
+def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]):
     """
-    return DuckDBCSVIOManager(
-        base_path=init_context.resource_config.get("base_path", get_system_temp_directory())
-    )
+    Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
+
+    Note that the DuckDBIOManager cannot load partitioned assets.
+
+    Args:
+        type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
+            DuckDB tables and an in-memory type - e.g. a Pandas DataFrame.
+
+    Returns:
+        IOManagerDefinition
+
+    Examples:
+
+        .. code-block:: python
+
+            from dagster_duckdb import build_duckdb_io_manager, DuckDBPandasTypeHandler
+
+            duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+
+            @job(resource_defs={'io_manager': snowflake_io_manager})
+            def my_job():
+                ...
+    """
+
+    @io_manager(config_schema={"base_path": Field(str, is_required=False), "duckdb_path": str})
+    def duckdb_io_manager(init_context):
+        """IO Manager for storing outputs in a DuckDB database
+
+        Supports storing and loading Pandas DataFrame objects. Converts the DataFrames to CSV and
+        creates DuckDB views over the files.
+
+        Assets will be stored in the schema and table name specified by their AssetKey.
+        Subsequent materializations of an asset will overwrite previous materializations of that asset.
+        Op outputs will be stored in the schema specified by output metadata (defaults to public) in a
+        table of the name of the output.
+        """
+        return DuckDBCSVIOManager(
+            base_path=init_context.resource_config.get("base_path", get_system_temp_directory()),
+            type_handlers=type_handlers,
+        )
+
+    return duckdb_io_manager

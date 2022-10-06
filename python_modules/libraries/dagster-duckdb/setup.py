@@ -37,5 +37,8 @@ if __name__ == "__main__":
             "duckdb",
             f"dagster{pin}",
         ],
+        extras_require={
+            "pandas": ["pandas"],
+        },
         zip_safe=False,
     )
