@@ -19,6 +19,8 @@ Dagster is a fully-featured orchestrator and does not require a system like Airf
 You can orchestrate Dagster job runs from airflow by using the `DagsterCloudOperator` or `DagsterOperator` operators in your existing airflow dags. For example, here's an airflow Dag:
 
 ```python file=/integrations/airflow/operator.py
+# pylint: disable=unused-variable
+
 from datetime import datetime
 
 from airflow import DAG
@@ -34,9 +36,10 @@ with DAG(
         task_id='new_dagster_assets',
         repostitory_location_name="example_location",
         repository_name="my_dagster_project",
-        job_name="all_assets_job"
+        job_name="all_assets_job",
     )
 ```
+
 In airflow 2.0+ you can create a dagster connection type to store configuration related to your dagster cloud organization, you can also pass this directly to the operator if you're using airflow 1.0.
 
 ## Exporting Dagster jobs to Airflow
