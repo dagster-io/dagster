@@ -9,7 +9,7 @@ from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.output import build_output_context
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance, is_dagster_home_set
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._utils import merge_dicts
 
@@ -32,8 +32,11 @@ class AssetValueLoader:
     ):
         self._assets_defs_by_key = assets_defs_by_key
         self._resource_instance_cache: Dict[str, object] = {}
-        self._instance = instance
         self._exit_stack: ExitStack = ExitStack().__enter__()
+        if not instance and is_dagster_home_set():
+            self._instance = self._exit_stack.enter_context(DagsterInstance.get())
+        else:
+            self._instance = instance
 
     def _ensure_resource_instances_in_cache(self, resource_defs: Mapping[str, ResourceDefinition]):
         for built_resource_key, built_resource in (
