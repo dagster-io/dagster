@@ -246,9 +246,20 @@ class MultiAssetSensorContextCursor:
     # Must call MultiAssetSensorEvaluationContext._update_cursor_after_evaluation at end of tick
     # to serialize the cursor.
     def __init__(self, cursor: Optional[str], context: "MultiAssetSensorEvaluationContext"):
-        self._cursor_component_by_asset_key: Dict[str, MultiAssetSensorAssetCursorComponent] = (
-            json.loads(cursor) if cursor else {}
-        )
+        loaded_cursor = json.loads(cursor) if cursor else {}
+
+        self._cursor_component_by_asset_key: Dict[str, MultiAssetSensorAssetCursorComponent] = {}
+
+        for str_asset_key, cursor_list in loaded_cursor.items():
+            partition_key, event_id, unevaluated_event_ids = cursor_list
+            self._cursor_component_by_asset_key[
+                str_asset_key
+            ] = MultiAssetSensorAssetCursorComponent(
+                latest_evaluated_event_partition=partition_key,
+                latest_evaluated_event_id=event_id,
+                unevaluated_event_ids=unevaluated_event_ids,
+            )
+
         check.dict_param(self._cursor_component_by_asset_key, "unpacked_cursor", key_type=str)
         self._context = context
 
