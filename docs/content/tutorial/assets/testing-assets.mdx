@@ -3,17 +3,30 @@ title: Testing Assets | Dagster
 description: Dagster enables you to unit-test individual assets and graphs of assets
 ---
 
-# Testing Assets
+# Testing assets
 
 Creating testable and verifiable data pipelines is one of the focuses of Dagster. We believe ensuring data quality is critical for managing the complexity of data systems. Here, we'll cover how to write unit tests for individual assets, as well as for graphs of assets together.
 
-## Testing the cereal asset definitions
+Let's go back to the assets we defined in the [prior section](/tutorial/assets/asset-graph#a-more-complex-asset-graph) and ensure that they work as expected by writing some unit tests.
 
-Let's go back to the assets we defined in the [prior section](/tutorial/assets/asset-graph#a-more-complex-asset-graph), and ensure that they work as expected by writing some unit tests.
+---
 
-We'll start by writing a test for the `nabisco_cereals` asset definition, which filters the larger list of cereals down to the those that were manufactured by Nabisco. To run the function that derives an asset from its upstream dependencies, we can invoke it directly, as if it's a regular Python function:
+## Testing the nabisco_cereals asset definition
+
+We'll start by writing a test for the `nabisco_cereals` asset definition, which filters the larger list of cereals down to the those that were manufactured by Nabisco. To run the function that derives an asset from its upstream dependencies, we can invoke it directly as if it's a regular Python function.
+
+To do this, you can either:
+
+- Add the test to the bottom of the `complex_asset_graph.py` file and **remove** the `from` statement in the following code
+- Create a new file and uncomment the `from` statement in the following code
 
 ```python file=/guides/dagster/asset_tutorial/complex_asset_graph_tests.py startafter=start_asset_test endbefore=end_asset_test
+# from complex_asset_graph import (
+#    cereals,
+#    nabisco_cereals,
+# )
+
+
 def test_nabisco_cereals():
     cereals = [
         {"name": "cereal1", "mfr": "N"},
@@ -24,9 +37,31 @@ def test_nabisco_cereals():
     assert result == [{"name": "cereal1", "mfr": "N"}]
 ```
 
-We'll also write a test for all the assets together. To do that, we can put them in a list and then pass it to the <PyObject object="materialize" /> function. That returns an <PyObject object="ExecuteInProcessResult" />, whose methods let us investigate, in detail, the success or failure of execution, the values produced by the computation, and other events associated with execution.
+Now you can use pytest or your test runner of choice to run the unit tests:
+
+```bash
+pytest test_complex_asset_graph.py
+```
+
+---
+
+## Testing all asset definitions
+
+We'll also write a test for all the assets together. To do that, we can put them in a list and then pass it to the <PyObject object="materialize" /> function. This returns an <PyObject object="ExecuteInProcessResult" /> object, whose methods let us investigate the success or failure of execution, the values produced by the computation, and other events associated with execution.
+
+To do this, you can either:
+
+- Add the test to the bottom of the `complex_asset_graph.py` file and **remove** the `from` statement in the following code
+- Create a new file and uncomment the `from` statement in the following code
 
 ```python file=/guides/dagster/asset_tutorial/complex_asset_graph_tests.py startafter=start_all_assets_test endbefore=end_all_assets_test
+# from complex_asset_graph import (
+#    cereals,
+#    cereal_protein_fractions,
+#    highest_protein_nabisco_cereal,
+#    nabisco_cereals,
+# )
+
 from dagster import materialize
 
 
@@ -43,19 +78,19 @@ def test_cereal_assets():
     assert result.output_for_node("highest_protein_nabisco_cereal") == "100% Bran"
 ```
 
-Now you can use pytest, or your test runner of choice, to run the unit tests.
+Now you can use pytest or your test runner of choice to run the unit tests:
 
 ```bash
 pytest test_complex_asset_graph.py
 ```
 
-Dagster is written to make testing easy in a domain where it has historically been very difficult. You can learn more about Testing in Dagster by reading the [Testing](/concepts/testing) page.
-
-<br />
+---
 
 ## Conclusion
 
 🎉 Congratulations! Having reached this far, you now have a working, tested set of software-defined assets.
+
+Dagster is written to make testing easy in a domain where it has been historically difficult. Refer to the [Testing docs](/concepts/testing) to learn more about testing in Dagster.
 
 What if you want to do more?
 
@@ -63,5 +98,3 @@ What if you want to do more?
 - **Partitioning assets** - This tutorial covered assets whose entire contents get re-computed and overwritten with every materialization. When assets are large, it’s common to [partition](/concepts/partitions-schedules-sensors/partitions) them, so that each run only materializes a single partition.
 - **Customizing asset storage** - The assets in this tutorial were materialized as pickle files on the local filesystem. [IO managers](/concepts/io-management/io-managers) let you customize how and where assets are stored - e.g. as tables in Snowflake or Parquet files in S3.
 - **Non-asset jobs** - This tutorial assumed that your only goal was producing assets. You can also build and run arbitrary [jobs](/concepts/ops-jobs-graphs/jobs#directly-from-ops), on top of the same [op](/concepts/ops-jobs-graphs/ops) and [graph](/concepts/ops-jobs-graphs/graphs) abstractions that underlie assets.
-
-<br />

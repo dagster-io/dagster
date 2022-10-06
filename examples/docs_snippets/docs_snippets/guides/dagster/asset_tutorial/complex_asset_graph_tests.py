@@ -8,6 +8,12 @@ from docs_snippets.guides.dagster.asset_tutorial.complex_asset_graph import (
 
 
 # start_asset_test
+# from complex_asset_graph import (
+#    cereals,
+#    nabisco_cereals,
+# )
+
+
 def test_nabisco_cereals():
     cereals = [
         {"name": "cereal1", "mfr": "N"},
@@ -21,6 +27,13 @@ def test_nabisco_cereals():
 # end_asset_test
 
 # start_all_assets_test
+# from complex_asset_graph import (
+#    cereals,
+#    cereal_protein_fractions,
+#    highest_protein_nabisco_cereal,
+#    nabisco_cereals,
+# )
+
 from dagster import materialize
 
 
