@@ -68,7 +68,7 @@ describe('TokenizingField', () => {
 
     const input = screen.getByRole('textbox');
     userEvent.click(input);
-    userEvent.type(input, 'pipeli');
+    await userEvent.type(input, 'pipeli');
 
     await waitFor(() => {
       expect(getItems()).toEqual([
@@ -80,7 +80,7 @@ describe('TokenizingField', () => {
     });
 
     userEvent.clear(input);
-    userEvent.type(input, 'pipeline');
+    await userEvent.type(input, 'pipeline');
 
     await waitFor(() => {
       expect(getItems()).toEqual([
@@ -92,7 +92,7 @@ describe('TokenizingField', () => {
     });
 
     userEvent.clear(input);
-    userEvent.type(input, 'pipeline:');
+    await userEvent.type(input, 'pipeline:');
 
     await waitFor(() => {
       expect(getItems()).toEqual([
@@ -108,7 +108,7 @@ describe('TokenizingField', () => {
 
     const input = screen.getByRole('textbox');
     userEvent.click(input);
-    userEvent.type(input, 'airline');
+    await userEvent.type(input, 'airline');
 
     await waitFor(() => {
       expect(getItems()).toEqual([
@@ -129,7 +129,7 @@ describe('TokenizingField', () => {
 
     const input = screen.getByRole('textbox');
     userEvent.click(input);
-    userEvent.type(input, 'aLl');
+    await userEvent.type(input, 'aLl');
 
     await waitFor(() => {
       expect(getItems()).toEqual(['all_sensors']);
@@ -147,7 +147,7 @@ describe('TokenizingField', () => {
 
     const input = screen.getByRole('textbox');
     userEvent.click(input);
-    userEvent.type(input, 'ALL');
+    await userEvent.type(input, 'ALL');
 
     await waitFor(() => {
       expect(getItems()).toEqual(['all']);
