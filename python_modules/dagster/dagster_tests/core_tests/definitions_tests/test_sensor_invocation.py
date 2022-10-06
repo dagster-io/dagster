@@ -810,17 +810,17 @@ def test_asset_selection_or_asset_keys_mandatory_on_context():
             )
 
 
-def test_multi_asset_sensor_skipped_events():
+def test_multi_asset_sensor_unevaluated_events():
     invocation_num = 0
 
     @multi_asset_sensor(asset_keys=[july_asset.key])
-    def test_skipped_events_sensor(context):
+    def test_unevaluated_events_sensor(context):
         if invocation_num == 0:
             events = context.materialization_records_for_key(july_asset.key, limit=3)
             assert len(events) == 3
             context.advance_cursor({july_asset.key: events[1]})  # advance to later materialization
         if invocation_num == 1:
-            # Should fetch skipped event
+            # Should fetch unevaluated event
             events = context.materialization_records_for_key(july_asset.key, limit=2)
             assert len(events) == 2
             context.advance_cursor({july_asset.key: events[0]})
@@ -832,7 +832,7 @@ def test_multi_asset_sensor_skipped_events():
     with instance_for_test() as instance:
         # Invocation 0:
         # Materialize partition 2022-07-05. Then materialize 2022-07-10 twice, updating cursor
-        # to the first 2022-07-10 materialization. The first 2022-07-05 materialization should be skipped.
+        # to the first 2022-07-10 materialization. The first 2022-07-05 materialization should be unevaluated.
         materialize(
             [july_asset],
             partition_key="2022-07-05",
@@ -851,56 +851,56 @@ def test_multi_asset_sensor_skipped_events():
         )
         assert len(event_records) == 3
         repeat_partition_first_materialization = event_records[1].storage_id
-        skipped_storage_id = event_records[0].storage_id
-        assert repeat_partition_first_materialization > skipped_storage_id
+        unevaluated_storage_id = event_records[0].storage_id
+        assert repeat_partition_first_materialization > unevaluated_storage_id
         assert repeat_partition_first_materialization < event_records[2].storage_id
 
         ctx = build_multi_asset_sensor_context(
             asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
         )
-        list(test_skipped_events_sensor(ctx))
+        list(test_unevaluated_events_sensor(ctx))
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
         assert repeat_partition_first_materialization == july_asset_cursor.latest_evaluated_event_id
         assert july_asset_cursor.latest_evaluated_event_partition == "2022-07-10"
-        # Second materialization for 2022-07-10 is after cursor so should not be skipped
-        assert july_asset_cursor.unevaluated_event_ids == [skipped_storage_id]
+        # Second materialization for 2022-07-10 is after cursor so should not be unevaluated
+        assert july_asset_cursor.unevaluated_event_ids == [unevaluated_storage_id]
 
         # Invocation 1:
-        # Confirm that the skipped event is fetched. After, the skipped event should
+        # Confirm that the unevaluated event is fetched. After, the unevaluated event should
         # no longer show up in the cursor. The storage ID of the cursor should stay the same.
         invocation_num += 1
-        list(test_skipped_events_sensor(ctx))
+        list(test_unevaluated_events_sensor(ctx))
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
         assert july_asset_cursor.latest_evaluated_event_partition == "2022-07-10"
         assert july_asset_cursor.unevaluated_event_ids == []
         assert july_asset_cursor.latest_evaluated_event_id == repeat_partition_first_materialization
 
         # Invocation 2:
-        # After a new materialization of 2022-07-10, confirm the skipped event should not be
+        # After a new materialization of 2022-07-10, confirm the unevaluated event should not be
         # fetched again. Advance the cursor to the second 2022-07-10 partition and confirm
         # that the original 2022-07-10 materialization left over from invocation 0 is advanced.
         # Calling "advance" on the latest materialization for a given partition should advance
         # through all of the prior materializations for that partition.
         invocation_num += 1
         materialize([july_asset], partition_key="2022-07-10", instance=instance)
-        list(test_skipped_events_sensor(ctx))
+        list(test_unevaluated_events_sensor(ctx))
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
         assert july_asset_cursor.latest_evaluated_event_partition == "2022-07-10"
         assert july_asset_cursor.unevaluated_event_ids == []
         assert july_asset_cursor.latest_evaluated_event_id > repeat_partition_first_materialization
 
 
-def test_advance_all_cursors_clears_skipped_events():
+def test_advance_all_cursors_clears_unevaluated_events():
     invocation_num = 0
 
     @multi_asset_sensor(asset_keys=[july_asset.key])
-    def test_skipped_events_sensor(context):
+    def test_unevaluated_events_sensor(context):
         if invocation_num == 0:
             events = context.materialization_records_for_key(july_asset.key, limit=2)
             assert len(events) == 2
             context.advance_cursor({july_asset.key: events[1]})  # advance to later materialization
         if invocation_num == 1:
-            # Should fetch skipped event
+            # Should fetch unevaluated event
             events = context.materialization_records_for_key(july_asset.key, limit=2)
             assert len(events) == 1
             context.advance_all_cursors()
@@ -908,7 +908,7 @@ def test_advance_all_cursors_clears_skipped_events():
     with instance_for_test() as instance:
         # Invocation 0:
         # Materialize partition 2022-07-05. Then materialize 2022-07-10, updating cursor
-        # to the 2022-07-10 materialization. The first 2022-07-05 materialization should be skipped.
+        # to the 2022-07-10 materialization. The first 2022-07-05 materialization should be unevaluated.
         materialize(
             [july_asset],
             partition_key="2022-07-05",
@@ -919,7 +919,7 @@ def test_advance_all_cursors_clears_skipped_events():
         ctx = build_multi_asset_sensor_context(
             asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
         )
-        list(test_skipped_events_sensor(ctx))
+        list(test_unevaluated_events_sensor(ctx))
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
         first_storage_id = july_asset_cursor.latest_evaluated_event_id
         assert first_storage_id
@@ -927,26 +927,26 @@ def test_advance_all_cursors_clears_skipped_events():
         assert len(july_asset_cursor.unevaluated_event_ids) == 1
 
         # Invocation 1:
-        # Confirm that the skipped event is fetched. After calling advance_all_cursors,
-        # all skipped events should be cleared. The storage ID of the cursor should stay the same.
+        # Confirm that the unevaluated event is fetched. After calling advance_all_cursors,
+        # all unevaluated events should be cleared. The storage ID of the cursor should stay the same.
         invocation_num += 1
-        list(test_skipped_events_sensor(ctx))
+        list(test_unevaluated_events_sensor(ctx))
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
         assert july_asset_cursor.latest_evaluated_event_partition == "2022-07-10"
         assert july_asset_cursor.unevaluated_event_ids == []
         assert july_asset_cursor.latest_evaluated_event_id == first_storage_id
 
 
-def test_error_when_max_num_skipped_events():
+def test_error_when_max_num_unevaluated_events():
     @multi_asset_sensor(asset_keys=[july_asset.key])
-    def test_skipped_events_sensor(context):
+    def test_unevaluated_events_sensor(context):
         latest_record = context.materialization_records_for_key(july_asset.key, limit=25)
         context.advance_cursor({july_asset.key: latest_record[-1]})
 
     with instance_for_test() as instance:
         # Invocation 0:
         # Materialize partition 2022-07-05. Then materialize 2022-07-10, updating cursor
-        # to the 2022-07-10 materialization. The first 2022-07-05 materialization should be skipped.
+        # to the 2022-07-10 materialization. The first 2022-07-05 materialization should be unevaluated.
         for num in range(1, 26):
             str_num = "0" + str(num) if num < 10 else str(num)
             materialize(
@@ -957,7 +957,7 @@ def test_error_when_max_num_skipped_events():
         ctx = build_multi_asset_sensor_context(
             asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
         )
-        list(test_skipped_events_sensor(ctx))
+        list(test_unevaluated_events_sensor(ctx))
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
         assert july_asset_cursor.latest_evaluated_event_id
         assert july_asset_cursor.latest_evaluated_event_partition == "2022-07-25"
@@ -971,21 +971,21 @@ def test_error_when_max_num_skipped_events():
             )
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="maximum number of skipped events",
+            match="maximum number of unevaluated events",
         ):
-            list(test_skipped_events_sensor(ctx))
+            list(test_unevaluated_events_sensor(ctx))
 
 
-def test_materialization_records_for_key_fetches_skipped_events():
+def test_materialization_records_for_key_fetches_unevaluated_events():
     invocation_num = 0
 
     @multi_asset_sensor(asset_keys=[july_asset.key])
-    def test_skipped_events_sensor(context):
+    def test_unevaluated_events_sensor(context):
         if invocation_num == 0:
             latest_record = context.materialization_records_for_key(july_asset.key, limit=3)
             context.advance_cursor({july_asset.key: latest_record[-1]})
         if invocation_num == 1:
-            # At this point, partitions 01, 02 are skipped and 04 is the latest materialization.
+            # At this point, partitions 01, 02 are unevaluated and 04 is the latest materialization.
             # Fetching only the two most recent materializations should return 02 and 04.
             records = context.materialization_records_for_key(july_asset.key, limit=2)
             assert len(records) == 2
@@ -994,13 +994,13 @@ def test_materialization_records_for_key_fetches_skipped_events():
                 "2022-07-04",
             ]
 
-            skipped = context.get_skipped_events(july_asset.key)
-            assert len(skipped) == 2
+            unevaluated = context.get_unevaluated_events(july_asset.key)
+            assert len(unevaluated) == 2
 
     with instance_for_test() as instance:
         # Invocation 0:
         # Materialize partition 2022-07-05. Then materialize 2022-07-10, updating cursor
-        # to the 2022-07-10 materialization. The first 2022-07-05 materialization should be skipped.
+        # to the 2022-07-10 materialization. The first 2022-07-05 materialization should be unevaluated.
         for date in ["01", "02", "03"]:
             materialize(
                 [july_asset],
@@ -1010,7 +1010,7 @@ def test_materialization_records_for_key_fetches_skipped_events():
         ctx = build_multi_asset_sensor_context(
             asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
         )
-        list(test_skipped_events_sensor(ctx))
+        list(test_unevaluated_events_sensor(ctx))
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
         assert july_asset_cursor.latest_evaluated_event_id
         assert july_asset_cursor.latest_evaluated_event_partition == "2022-07-03"
@@ -1022,14 +1022,14 @@ def test_materialization_records_for_key_fetches_skipped_events():
             partition_key="2022-07-04",
             instance=instance,
         )
-        list(test_skipped_events_sensor(ctx))
+        list(test_unevaluated_events_sensor(ctx))
 
 
-def test_latest_materialization_records_by_partition_fetches_skipped_events():
+def test_latest_materialization_records_by_partition_fetches_unevaluated_events():
     invocation_num = 0
 
     @multi_asset_sensor(asset_keys=[july_asset.key])
-    def test_skipped_events_sensor(context):
+    def test_unevaluated_events_sensor(context):
         if invocation_num == 0:
             context.advance_cursor(
                 {
@@ -1039,7 +1039,7 @@ def test_latest_materialization_records_by_partition_fetches_skipped_events():
                 }
             )
         if invocation_num == 1:
-            # At this point, partitions 01, 02 are skipped and 04 is the latest materialization.
+            # At this point, partitions 01, 02 are unevaluated and 04 is the latest materialization.
             # Because we return the latest materialization per partition in order of storage ID,
             # we expect to see materializations 01, 04, and 02 in that order.
             records_dict = context.latest_materialization_records_by_partition(july_asset.key)
@@ -1055,7 +1055,7 @@ def test_latest_materialization_records_by_partition_fetches_skipped_events():
 
     with instance_for_test() as instance:
         # Invocation 0:
-        # Materialize partition 01, 02, and 03, advancing the cursor to 03. 01 and 02 are skipped events.
+        # Materialize partition 01, 02, and 03, advancing the cursor to 03. 01 and 02 are unevaluated events.
         for date in ["01", "02", "03"]:
             materialize(
                 [july_asset],
@@ -1065,7 +1065,7 @@ def test_latest_materialization_records_by_partition_fetches_skipped_events():
         ctx = build_multi_asset_sensor_context(
             asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
         )
-        list(test_skipped_events_sensor(ctx))
+        list(test_unevaluated_events_sensor(ctx))
         first_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
         assert first_july_cursor.latest_evaluated_event_id
         assert first_july_cursor.latest_evaluated_event_partition == "2022-07-03"
@@ -1078,13 +1078,13 @@ def test_latest_materialization_records_by_partition_fetches_skipped_events():
                 partition_key=f"2022-07-{date}",
                 instance=instance,
             )
-        list(test_skipped_events_sensor(ctx))
+        list(test_unevaluated_events_sensor(ctx))
         second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
         assert second_july_cursor.latest_evaluated_event_partition == "2022-07-02"
         assert (
             second_july_cursor.latest_evaluated_event_id
             > first_july_cursor.latest_evaluated_event_id
         )
-        # We should remove the 2022-07-02 materialization from the skipped events list
+        # We should remove the 2022-07-02 materialization from the unevaluated events list
         # since we have advanced the cursor for a later materialization with that partition key.
         assert len(second_july_cursor.unevaluated_event_ids) == 0
