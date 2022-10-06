@@ -1,5 +1,3 @@
-# pylint: disable=unused-variable
-
 from datetime import datetime
 
 from airflow import DAG
@@ -11,7 +9,7 @@ with DAG(
     schedule_interval='*/5 * * * *',
     catchup=False,
 ) as dag:
-    run_dagster = DagsterCloudOperator(
+    DagsterCloudOperator(
         task_id='new_dagster_assets',
         repostitory_location_name="example_location",
         repository_name="my_dagster_project",
