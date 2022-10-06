@@ -136,6 +136,16 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
                 />
               ),
             },
+            {
+              key: 'Experimental "groups-only" asset graph zoom level',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagAssetGraphExperimentalZoom)}
+                  onChange={() => toggleFlag(FeatureFlag.flagAssetGraphExperimentalZoom)}
+                />
+              ),
+            },
           ]}
         />
       </Box>
