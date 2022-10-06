@@ -13,20 +13,22 @@ Let's go back to the assets we defined in the [prior section](/tutorial/assets/a
 
 ## Testing the nabisco_cereals asset definition
 
-We'll start by writing a test for the `nabisco_cereals` asset definition, which filters the larger list of cereals down to the those that were manufactured by Nabisco. To run the function that derives an asset from its upstream dependencies, we can invoke it directly as if it's a regular Python function.
+We'll start by writing a test for the `nabisco_cereals` asset definition, which filters the larger list of cereals down to the those that were manufactured by Nabisco.
 
-To do this, you can either:
+First, create a new file and name it `test_complex_asset_graph.py`.
 
-- Add the test to the bottom of the `complex_asset_graph.py` file and **remove** the `from` statement in the following code
-- Create a new file and uncomment the `from` statement in the following code
+At the top of the file, import the `cereals` and `nabisco_cereals` assets:
+
+```python
+from complex_asset_graph import (
+    cereals,
+    nabisco_cereals,
+)
+```
+
+To run the function that derives an asset from its upstream dependencies, we can invoke it directly as if it's a regular Python function. Paste the following code at the bottom of the file:
 
 ```python file=/guides/dagster/asset_tutorial/complex_asset_graph_tests.py startafter=start_asset_test endbefore=end_asset_test
-# from complex_asset_graph import (
-#    cereals,
-#    nabisco_cereals,
-# )
-
-
 def test_nabisco_cereals():
     cereals = [
         {"name": "cereal1", "mfr": "N"},
@@ -49,22 +51,26 @@ pytest test_complex_asset_graph.py
 
 We'll also write a test for all the assets together. To do that, we can put them in a list and then pass it to the <PyObject object="materialize" /> function. This returns an <PyObject object="ExecuteInProcessResult" /> object, whose methods let us investigate the success or failure of execution, the values produced by the computation, and other events associated with execution.
 
-To do this, you can either:
+In `test_complex_asset_graph.py`, add `cereal_protein_fractions` and `highest_protein_nabisco_cereal` to the list of imported assets:
 
-- Add the test to the bottom of the `complex_asset_graph.py` file and **remove** the `from` statement in the following code
-- Create a new file and uncomment the `from` statement in the following code
+```python
+from complex_asset_graph import (
+   cereals,
+   cereal_protein_fractions,
+   highest_protein_nabisco_cereal,
+   nabisco_cereals,
+)
+```
+
+Add a new line below the imported assets to import `materialize` from `dagster`:
+
+```python
+from dagster import materialize
+```
+
+Then add the following code to the bottom of the file:
 
 ```python file=/guides/dagster/asset_tutorial/complex_asset_graph_tests.py startafter=start_all_assets_test endbefore=end_all_assets_test
-# from complex_asset_graph import (
-#    cereals,
-#    cereal_protein_fractions,
-#    highest_protein_nabisco_cereal,
-#    nabisco_cereals,
-# )
-
-from dagster import materialize
-
-
 def test_cereal_assets():
     assets = [
         nabisco_cereals,
@@ -78,7 +84,7 @@ def test_cereal_assets():
     assert result.output_for_node("highest_protein_nabisco_cereal") == "100% Bran"
 ```
 
-Now you can use pytest or your test runner of choice to run the unit tests:
+Now you can use pytest or your test runner of choice to run the unit test:
 
 ```bash
 pytest test_complex_asset_graph.py
