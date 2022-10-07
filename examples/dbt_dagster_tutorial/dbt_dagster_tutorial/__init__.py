@@ -1,1 +1,1 @@
-from .repository import jaffle_shop_repository
+from .repository import dbt_dagster_tutorial

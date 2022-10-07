@@ -1,28 +1,19 @@
 import os
 
 from dagster_dbt import dbt_cli_resource
-from dbt_dagster_tutorial.assets import (
-    DBT_PROFILES,
-    DBT_PROJECT_PATH,
-    customers_raw,
-    dbt_assets,
-    order_count_chart,
-    orders_raw,
-)
+from dbt_dagster_tutorial import assets
+from dbt_dagster_tutorial.assets import DBT_PROFILES, DBT_PROJECT_PATH
+
+# TODO - replace with from dagster_duckdb import build_duckdb_io_manager, DuckDBPandasTypeHandler
 from dbt_dagster_tutorial.duckdb_resource import duckdb_io_manager
 
-from dagster import repository, with_resources
+from dagster import load_assets_from_package_module, repository, with_resources
 
 
 @repository
-def jaffle_shop_repository():
+def dbt_dagster_tutorial():
     return with_resources(
-        [
-            customers_raw,
-            orders_raw,
-            *dbt_assets,
-            order_count_chart,
-        ],  # we could swap this out with a fn that loads all assets from a file/module
+        load_assets_from_package_module(assets),
         {
             "dbt": dbt_cli_resource.configured(
                 {
