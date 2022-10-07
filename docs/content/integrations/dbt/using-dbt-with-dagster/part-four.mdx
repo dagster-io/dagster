@@ -1,0 +1,131 @@
+---
+title: "Using Dagster with dbt, part 4: Add a downstream asset"
+description: Dagster can orchestrate dbt alongside other technologies.
+---
+
+# Using dbt with Dagster, part four: Add a downstream asset
+
+<Note>
+  This is part three of the{" "}
+  <a href="/integrations/dbt/using-dbt-with-dagster">
+    Using dbt with Dagster software-defined assets
+  </a>{" "}
+  tutorial.
+</Note>
+
+By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-dagster/part-one), [created Dagster assets](/integrations/dbt/using-dbt-with-dagster/part-two), and [materialized the assets using Dagit](/integrations/dbt/using-dbt-with-dagster/part-three).
+
+In this step, you'll:
+
+- [Create a downstream asset that computes a histogram using plotly](#step-1-create-the-order_count_chart-histogram-asset)
+- [Update the Dagster repository to include the new asset](#step-2-update-the-dagster-repository)
+- [Materialize the order_count_chart asset](#step-3-materialize-the-order_count_chart-asset)
+
+---
+
+## Step 1: Create the order_count_chart histogram asset
+
+You've added upstream assets to your data pipeline, but nothing downstream - until now. In this step, you'll create a Dagster asset - called `order_count_chart` - that's downstream of the `customers_raw` and `orders_raw` assets. The `order_count_chart` asset computes a plotly histogram using the data from its upstream asset dependencies.
+
+1. In `assets.py`, add the following line to the top of the file:
+
+   ```python
+   import plotly.express as px
+   ```
+
+2. Additionally, update the `from dagster` import to include `AssetIn` and `MetadataValue`:
+
+   ```python
+   from dagster import AssetIn, MetadataValue, asset
+   ```
+
+   The file should now look like this:
+
+   ```python
+   import pandas as pd
+   import plotly.express as px
+   from dagster_dbt import load_assets_from_dbt_project
+
+   from dagster import AssetIn, MetadataValue, asset
+   from dagster._utils import file_relative_path
+   ```
+
+3. After <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" />, add the following:
+
+   ```python
+   @asset(
+       ins={"customers": AssetIn(key_prefix=["jaffle_shop"])},
+       group_name="staging",
+   )
+   def order_count_chart(context, customers: pd.DataFrame):
+       fig = px.histogram(customers, x="number_of_orders")
+       fig.update_layout(bargap=0.2)
+       save_chart_path = file_relative_path(__file__, "order_count_chart.html")
+       fig.write_html(save_chart_path, auto_open=True)
+
+       context.add_output_metadata({"plot_url": MetadataValue.url("file://" + save_chart_path)})
+   ```
+
+Let's discuss what's happening here:
+
+<TODO></TODO>
+
+---
+
+## Step 2: Update the Dagster repository
+
+To materialize the new `order_count_chart` asset, you'll need to update the Dagster repository to include it.
+
+Replace the contents of `repository.py` with the following:
+
+```python
+import os
+
+from dagster_dbt import dbt_cli_resource
+from dbt_dagster_tutorial.assets import (
+    DBT_PROFILES,
+    DBT_PROJECT_PATH,
+    customers_raw,
+    dbt_assets,
+    order_count_chart,
+    orders_raw,
+)
+from dbt_dagster_tutorial.duckdb_resource import duckdb_io_manager
+
+from dagster import repository, with_resources
+
+
+@repository
+def jaffle_shop_repository():
+    return with_resources(
+        [
+            customers_raw,
+            orders_raw,
+            *dbt_assets,
+            order_count_chart,
+        ],  # we could swap this out with a fn that loads all assets from a file/module
+        {
+            "dbt": dbt_cli_resource.configured(
+                {
+                    "project_dir": DBT_PROJECT_PATH,
+                    "profiles_dir": DBT_PROFILES,
+                },
+            ),
+            "io_manager": duckdb_io_manager.configured(
+                {"duckdb_path": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
+            ),
+        },
+    )
+```
+
+---
+
+## Step 3: Materialize the order_count_chart asset
+
+<TODO></TODO>
+
+---
+
+## What's next?
+
+<TODO></TODO>
