@@ -4,7 +4,7 @@
 # -- Path setup --------------------------------------------------------------
 
 # We add two kinds of packages to `sys.path`:
-# 
+#
 # - Targets for `autodoc` (referenced via e.g. `automodule` in our doc source rst files).
 #   `autodoc` runs in python and actually imports its targets, so they must be available on
 #   `sys.path`.
@@ -54,6 +54,7 @@ paths = [
     "../../python_modules/libraries/dagster-gcp",
     "../../python_modules/libraries/dagster-pyspark",
     "../../python_modules/libraries/dagster-databricks",
+    "../../python_modules/libraries/dagster-duckdb",
 
     ### autodoc_dagster extension
     "./_ext",

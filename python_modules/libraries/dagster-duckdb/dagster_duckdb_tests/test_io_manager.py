@@ -126,7 +126,7 @@ def b_df_spark() -> SparkDF:
 
 @asset(key_prefix=["my_schema"])
 def b_plus_one_spark(b_df_spark: pd.DataFrame):
-    return b_df + 1
+    return b_df_spark + 1
 
 
 def test_duckdb_io_manager_with_assets_spark(tmp_path):

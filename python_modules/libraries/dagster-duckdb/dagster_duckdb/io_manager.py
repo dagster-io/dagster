@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Generic, Optional, Sequence, Type, TypeVar, cast
+from typing import Dict, Generic, Optional, Sequence, Type, TypeVar
 
 import duckdb
-import pandas as pd
 
 from dagster import Field, IOManager, InputContext, OutputContext
 from dagster import _check as check
@@ -60,7 +59,7 @@ class DbTypeHandler(ABC, Generic[T]):
         return f"{self._schema(context, output_context)}.{self._table(context, output_context)}"
 
 
-class DuckDBCSVIOManager(IOManager):
+class DuckDBIOManager(IOManager):
     """Stores data in csv files and creates duckdb views over those files."""
 
     def __init__(self, base_path, type_handlers: Sequence[DbTypeHandler]):
@@ -69,7 +68,6 @@ class DuckDBCSVIOManager(IOManager):
         self._output_handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
         self._input_handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
         for type_handler in type_handlers:
-            print(type_handler.supported_output_types)
             for handled_output_type in type_handler.supported_output_types:
                 check.invariant(
                     handled_output_type not in self._output_handlers_by_type,
@@ -151,9 +149,19 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]):
 
             duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
-            @job(resource_defs={'io_manager': snowflake_io_manager})
+            @job(resource_defs={'io_manager': duck_io_manager})
             def my_job():
                 ...
+
+    You may configure the returned IO Manager as follows:
+
+    .. code-block:: YAML
+
+        resources:
+            io_manager:
+                config:
+                    base_path: path/to/store/files  # all data will be stored at this path
+                    duckdb_path: path/to/database.duckdb  # path to the duckdb database
     """
 
     @io_manager(config_schema={"base_path": Field(str, is_required=False), "duckdb_path": str})
@@ -168,7 +176,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]):
         Op outputs will be stored in the schema specified by output metadata (defaults to public) in a
         table of the name of the output.
         """
-        return DuckDBCSVIOManager(
+        return DuckDBIOManager(
             base_path=init_context.resource_config.get("base_path", get_system_temp_directory()),
             type_handlers=type_handlers,
         )
