@@ -224,12 +224,16 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         repository_name: Optional[str],
         repository_def: "RepositoryDefinition",
         asset_selection: AssetSelection,
+        asset_keys: Sequence[AssetKey],
         instance: Optional[DagsterInstance] = None,
     ):
         self._repository_def = repository_def
-        self._asset_keys = list(
-            asset_selection.resolve(list(set(self._repository_def._assets_defs_by_key.values())))
-        )
+        if asset_selection is not None:
+            self._asset_keys = list(
+                asset_selection.resolve(list(set(self._repository_def._assets_defs_by_key.values())))
+            )
+        else:
+            self._asset_keys = asset_keys
 
         self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
         for asset_key in self._asset_keys:
