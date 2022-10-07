@@ -1,14 +1,57 @@
 ---
-title: "Using Dagster with dbt"
+title: "Using dbt with Dagster"
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
 # Using dbt with Dagster
 
+<Note>
+  Using dbt Cloud? Check out the{" "}
+  <a href="/integrations/dbt-cloud">dbt Cloud with Dagster guide</a>!
+</Note>
+
 Dagster orchestrates dbt alongside other technologies, so you can combine dbt with Spark, Python, etc. in a single workflow. Dagster's [software-defined asset (SDA)](/concepts/assets/software-defined-assets) abstractions make it simple to define data assets that depend on specific dbt models, or to define the computation required to compute the sources that your dbt models depend on.
 
-This guide focuses on how to work with dbt models through the SDA framework, which we recommend for most use cases.
+---
 
-If you're using dbt Cloud, check out [Using dbt Cloud with Dagster](/integrations/dbt_cloud) instead!
+## Using dbt with Dagster software-defined assets
 
-TODO: ADD LINKS TO PAGES IN /INTEGRATIONS/DBT
+In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a DuckDB database.
+
+<ArticleList>
+  <ArticleListItem
+    title="Overview and prerequisites"
+    href="/integrations/dbt/using-dbt-with-dagster"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Part one: Set up a dbt project"
+    href="/integrations/dbt/using-dbt-with-dagster/part-one"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Part two: Create Dagster assets upstream of the dbt models"
+    href="/integrations/dbt/using-dbt-with-dagster/part-two"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Part three: Materialize the assets using Dagit"
+    href="/integrations/dbt/using-dbt-with-dagster/part-three"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Part four: Create a downstream asset"
+    href="/integrations/dbt/using-dbt-with-dagster/part-four"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## References
+
+<ArticleList>
+  <ArticleListItem
+    title="dagster-dbt integration reference"
+    href="/integrations/dbt/reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-dbt API reference"
+    href="/\_apidocs/libraries/dagster-dbt"
+  ></ArticleListItem>
+</ArticleList>
