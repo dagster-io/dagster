@@ -923,12 +923,12 @@ def create_repo_run(instance):
     ) as workspace_process_context:
         context = workspace_process_context.create_request_context()
         repo = context.repository_locations[0].get_repository("my_repo")
-        external_pipeline = repo.get_full_external_pipeline("my_job")
+        external_job = repo.get_full_external_job("my_job")
         run = create_run_for_test(
             instance,
             pipeline_name="my_job",
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_pipeline_origin=external_job.get_external_origin(),
+            pipeline_code_origin=external_job.get_python_origin(),
         )
         instance.launch_run(run.run_id, context)
     return run
@@ -949,7 +949,6 @@ def test_run_migrate_command():
 
         assert len(get_repo_runs(instance, old_repo_label)) == 1
         assert len(get_repo_runs(instance, new_repo_label)) == 0
-
         runner = CliRunner()
         runner.invoke(
             run_migrate_command,

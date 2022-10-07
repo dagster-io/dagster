@@ -101,7 +101,7 @@ def run_migrate_command(from_label, **kwargs):
 
     with DagsterInstance.get() as instance:
         with get_external_job_from_kwargs(
-            instance, version=dagster_version, kwargs=kwargs, using_job_op_graph_apis=True
+            instance, version=dagster_version, kwargs=kwargs
         ) as external_job:
             new_job_origin = external_job.get_external_origin()
             job_name = external_job.name
@@ -123,7 +123,7 @@ def run_migrate_command(from_label, **kwargs):
             return
 
         if not isinstance(instance.run_storage, SqlRunStorage):
-            raise
+            raise click.UsageError("Run migration only applies to SQL-based run storage")
 
         count = len(records)
         confirmation = click.prompt(
