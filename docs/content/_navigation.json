@@ -481,7 +481,35 @@
       },
       {
         "title": "dbt",
-        "path": "/integrations/dbt"
+        "path": "/integrations/dbt",
+        "children": [
+          {
+            "title": "dbt + Dagster tutorial",
+            "path": "/integrations/dbt/using-dbt-with-dagster",
+            "children": [
+              {
+                "title": "Set up dbt project",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-one"
+              },
+              {
+                "title": "Create Dagster assets",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-two"
+              },
+              {
+                "title": "Materialize the assets",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-three"
+              },
+              {
+                "title": "Create downstream asset",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-four"
+              }
+            ]
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/dbt/reference"
+          }
+        ]
       },
       {
         "title": "dbt Cloud",
