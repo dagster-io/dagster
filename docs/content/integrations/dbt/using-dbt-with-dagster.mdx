@@ -14,21 +14,38 @@ Using Dagster, you can combine dbt and the other technologies in your stack - Sp
 
 - Run your dbt models after ingesting data into your data warehouse
 - Selectively materialize dbt models and their dependencies
-- TODO: what else?
+
+<TODO></TODO>
 
 ---
 
 ## dbt models and Dagster software-defined assets
 
-Dagster’s [software-defined assets](/concepts/assets/software-defined-assets) (SDAs) bear a number of similarities to dbt models. At a high level, SDAs and dbt models both contain todo
+Dagster’s [software-defined assets](/concepts/assets/software-defined-assets) (SDAs) bear a number of similarities to dbt models. A software-defined asset contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project are similar to Dagster SDAs in that:
 
-Let’s take a look at a dbt model and an SDA, in code:
+- The asset key for a dbt model is (by default) the name of the model.
+- The upstream dependencies of a dbt model are defined with `ref` or `source` calls within the model's definition.
+- The computation required to compute the asset from its upstream dependencies is the SQL within the model's definition.
 
-<TODO>ADD CODE EXAMPLE</TODO>
+These similarities make it natural to interact with dbt models as SDAs. Let’s take a look at a dbt model and an SDA, in code:
+
+<Image
+alt="Comparison of a dbt model and Dagster asset in code"
+src="/images/integrations/dbt/asset-dbt-model-comparison.png"
+width={774}
+height={345}
+/>
 
 Here's what's happening in this example:
 
 <TODO></TODO>
+
+Dagster has built-in support for loading dbt models, seeds, and snapshots as SDAs, enabling you to:
+
+- Visualize and orchestrate a graph of dbt assets, and execute them with a single dbt invocation
+- View detailed historical metadata and logs for each asset
+- Define Python computations that depend directly on tables updated using dbt
+- Track data lineage through dbt and your other tools
 
 ---
 
@@ -56,18 +73,20 @@ To complete this tutorial, you'll need:
 
 - **To install the following libraries:**
 
-  - **The dbt-duckdb adapter.** This tutorial uses [DuckDB](https://docs.getdbt.com/reference/warehouse-profiles/duckdb-profile) as the database backing dbt.
+  - **dbt-duckdb.** This tutorial uses [DuckDB](https://docs.getdbt.com/reference/warehouse-profiles/duckdb-profile) as the database backing dbt.
 
-  - **The dagster-dbt library.** This library allows you to integrate dbt with Dagster.
+  - **dagster-dbt.** This library allows you to integrate dbt with Dagster.
 
-  - **The pandas Python library.** This tutorial uses [pandas](https://pandas.pydata.org/docs/index.html) to fetch raw data.
+  - **dagster-duckdb.** This library provides a resource that enables the materialization of Dagster assets.
 
-  - **The plotly Python library**. This tutorial uses [plotly](https://plotly.com/python/) to create a histogram asset.
+  - **pandas.** This tutorial uses [pandas](https://pandas.pydata.org/docs/index.html) to fetch raw data.
+
+  - **plotly**. This tutorial uses [plotly](https://plotly.com/python/) to create a histogram asset.
 
   To install everything, run the following:
 
   ```shell
-  pip install dbt-duckdb dagster-dbt pandas plotly
+  pip install dbt-duckdb dagster-dbt dagster-duckdb pandas plotly
   ```
 
 ---
