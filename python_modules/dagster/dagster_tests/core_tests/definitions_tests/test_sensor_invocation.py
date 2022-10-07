@@ -707,34 +707,6 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
         list(after_cursor_partitions_asset_sensor(ctx))
 
 
-def test_multi_asset_sensor_advance_cursor_no_update_on_older_materialization():
-    @multi_asset_sensor(asset_keys=[july_asset.key])
-    def after_cursor_partitions_asset_sensor(context):
-        events = context.materialization_records_for_key(july_asset.key, limit=2)
-
-        context.advance_cursor({july_asset.key: events[1]})  # advance to later materialization
-        context.advance_cursor(
-            {july_asset.key: events[0]}
-        )  # attempt to advance to earlier materialization
-
-        july_asset_cursor = context._get_cursor(july_asset.key)  # pylint: disable=protected-access
-        assert july_asset_cursor.latest_consumed_event_partition == "2022-07-10"
-        assert july_asset_cursor.latest_consumed_event_id == events[1].storage_id
-        assert july_asset_cursor.latest_consumed_event_id > events[0].storage_id
-
-    with instance_for_test() as instance:
-        materialize(
-            [july_asset],
-            partition_key="2022-07-05",
-            instance=instance,
-        )
-        materialize([july_asset], partition_key="2022-07-10", instance=instance)
-        ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
-        )
-        list(after_cursor_partitions_asset_sensor(ctx))
-
-
 def test_multi_asset_sensor_latest_materialization_records_by_partition_and_asset():
     @multi_asset_sensor(asset_keys=[july_asset.key, july_asset_2.key])
     def my_sensor(context):
