@@ -1,9 +1,26 @@
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Callable, Mapping, NamedTuple, Optional, Sequence, cast
+from types import TracebackType
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+)
 
+from dagster_graphql.schema.errors import GraphenePythonError
 from graphene import ResolveInfo
+from typing_extensions import ParamSpec, TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -11,10 +28,18 @@ from dagster._core.host_representation import GraphSelector, PipelineSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
+P = ParamSpec("P")
+T = TypeVar("T")
 
-def check_permission(permission):
-    def decorator(fn):
-        def _fn(self, graphene_info, *args, **kwargs):  # pylint: disable=unused-argument
+GrapheneResolverFn: TypeAlias = Callable[P, T]
+T_Callable = TypeVar("T_Callable", bound=Callable)
+
+
+def check_permission(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
+    def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
+        def _fn(
+            self, graphene_info, *args: P.args, **kwargs: P.kwargs
+        ):  # pylint: disable=unused-argument
             assert_permission(graphene_info, permission)
 
             return fn(self, graphene_info, *args, **kwargs)
@@ -32,16 +57,18 @@ def assert_permission(graphene_info: ResolveInfo, permission: str) -> None:
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
-def _noop(_):
+def _noop(_) -> None:
     pass
 
 
 class ErrorCapture:
     @staticmethod
-    def default_on_exception(exc_info):
+    def default_on_exception(
+        exc_info: Tuple[Type[BaseException], BaseException, TracebackType]
+    ) -> GraphenePythonError:
         from dagster_graphql.schema.errors import GraphenePythonError
 
-        # Transform exception in to PythonError to present to user
+        # Transform exception in to PythonErron to present to user
         return GraphenePythonError(serializable_error_info_from_exc_info(exc_info))
 
     # global behavior for how to handle unexpected exceptions
@@ -54,7 +81,7 @@ class ErrorCapture:
 
     @staticmethod
     @contextmanager
-    def watch(fn: Callable[[Exception], None]):
+    def watch(fn: Callable[[Exception], None]) -> Iterator[None]:
         token = ErrorCapture.observer.set(fn)
         try:
             yield
@@ -70,7 +97,7 @@ def capture_error(fn):
             return de_exception.error
         except Exception as exc:
             ErrorCapture.observer.get()(exc)
-            return ErrorCapture.on_exception(sys.exc_info())
+            return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
 
     return _fn
 
@@ -85,20 +112,24 @@ class UserFacingGraphQLError(Exception):
         super(UserFacingGraphQLError, self).__init__(message)
 
 
-def pipeline_selector_from_graphql(data):
-    asset_selection = data.get("assetSelection")
+def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> PipelineSelector:
+    asset_selection = cast(
+        List[Dict[str, List[str]]], check.list_elem(data, "assetSelection", of_type=dict)
+    )
     return PipelineSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
-        pipeline_name=data.get("pipelineName") or data.get("jobName"),
+        pipeline_name=check.not_none(data.get("pipelineName") or data.get("jobName")),
         solid_selection=data.get("solidSelection"),
-        asset_selection=[AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
+        asset_selection=[
+            check.not_none(AssetKey.from_graphql_input(asset_key)) for asset_key in asset_selection
+        ]
         if asset_selection
         else None,
     )
 
 
-def graph_selector_from_graphql(data):
+def graph_selector_from_graphql(data: Mapping[str, Any]) -> GraphSelector:
     return GraphSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
@@ -139,7 +170,7 @@ class ExecutionParams(
             step_keys=step_keys,
         )
 
-    def to_graphql_input(self):
+    def to_graphql_input(self) -> Mapping[str, Any]:
         return {
             "selector": self.selector.to_graphql_input(),
             "runConfigData": self.run_config,
@@ -175,7 +206,7 @@ class ExecutionMetadata(
             check.opt_str_param(parent_run_id, "parent_run_id"),
         )
 
-    def to_graphql_input(self):
+    def to_graphql_input(self) -> Mapping[str, Any]:
         return {
             "runId": self.run_id,
             "tags": [{"key": k, "value": v} for k, v in self.tags.items()],

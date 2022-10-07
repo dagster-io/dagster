@@ -1,4 +1,5 @@
 from math import isnan
+from typing import Any, Iterator, Sequence, cast
 
 from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
@@ -19,6 +20,7 @@ from dagster import (
     TextMetadataValue,
     UrlMetadataValue,
 )
+from dagster._core.event_api import EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import StepFailureData
@@ -28,7 +30,7 @@ MAX_INT = 2147483647
 MIN_INT = -2147483648
 
 
-def iterate_metadata_entries(metadata_entries):
+def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Iterator[Any]:
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
@@ -88,7 +90,7 @@ def iterate_metadata_entries(metadata_entries):
             float_val = metadata_entry.entry_data.value
 
             # coerce NaN to null
-            if isnan(float_val):
+            if float_val is not None and isnan(float_val):
                 float_val = None
 
             yield GrapheneFloatMetadataEntry(
@@ -99,7 +101,7 @@ def iterate_metadata_entries(metadata_entries):
         elif isinstance(metadata_entry.entry_data, IntMetadataValue):
             # coerce > 32 bit ints to null
             int_val = None
-            if MIN_INT <= metadata_entry.entry_data.value <= MAX_INT:
+            if MIN_INT <= cast(int, metadata_entry.entry_data.value) <= MAX_INT:
                 int_val = metadata_entry.entry_data.value
 
             yield GrapheneIntMetadataEntry(
@@ -155,11 +157,11 @@ def iterate_metadata_entries(metadata_entries):
             )
 
 
-def _to_metadata_entries(metadata_entries):
+def _to_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Sequence[Any]:
     return list(iterate_metadata_entries(metadata_entries) or [])
 
 
-def from_dagster_event_record(event_record, pipeline_name):
+def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
     from ..schema.errors import GraphenePythonError
     from ..schema.logs.events import (
         GrapheneAlertFailureEvent,
@@ -206,7 +208,7 @@ def from_dagster_event_record(event_record, pipeline_name):
     check.param_invariant(event_record.is_dagster_event, "event_record")
     check.str_param(pipeline_name, "pipeline_name")
 
-    dagster_event = event_record.dagster_event
+    dagster_event = check.not_none(event_record.dagster_event)
     basic_params = construct_basic_params(event_record)
     if dagster_event.event_type == DagsterEventType.STEP_START:
         return GrapheneExecutionStepStartEvent(**basic_params)
@@ -410,7 +412,7 @@ def from_dagster_event_record(event_record, pipeline_name):
         )
 
 
-def from_event_record(event_record, pipeline_name):
+def from_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
     from ..schema.logs.events import GrapheneLogMessageEvent
 
     check.inst_param(event_record, "event_record", EventLogEntry)
@@ -422,7 +424,7 @@ def from_event_record(event_record, pipeline_name):
         return GrapheneLogMessageEvent(**construct_basic_params(event_record))
 
 
-def construct_basic_params(event_record):
+def construct_basic_params(event_record: EventLogEntry) -> Any:
     from ..schema.logs.log_level import GrapheneLogLevel
 
     check.inst_param(event_record, "event_record", EventLogEntry)

@@ -120,7 +120,7 @@ class RepositoryLocation(AbstractContextManager):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
