@@ -103,10 +103,21 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
 
   const {name: repositoryName, location: repositoryLocationName} = repoAddress;
 
+  const assetSelection = sessionPresets?.assetSelection
+    ? sessionPresets?.assetSelection.map((a) => ({path: a.assetKey.path}))
+    : undefined;
+
+  const pipelineSelector = {
+    repositoryName,
+    repositoryLocationName,
+    pipelineName,
+    assetSelection,
+  };
+
   const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
     PIPELINE_EXECUTION_ROOT_QUERY,
     {
-      variables: {repositoryName, repositoryLocationName, pipelineName},
+      variables: {selector: pipelineSelector, pipelineName, repositoryName, repositoryLocationName},
       fetchPolicy: 'cache-and-network',
       partialRefetch: true,
     },
@@ -215,17 +226,12 @@ const EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT = gql`
 
 const PIPELINE_EXECUTION_ROOT_QUERY = gql`
   query LaunchpadRootQuery(
+    $selector: PipelineSelector!
     $pipelineName: String!
     $repositoryName: String!
     $repositoryLocationName: String!
   ) {
-    pipelineOrError(
-      params: {
-        pipelineName: $pipelineName
-        repositoryName: $repositoryName
-        repositoryLocationName: $repositoryLocationName
-      }
-    ) {
+    pipelineOrError(params: $selector) {
       ... on PipelineNotFoundError {
         message
       }

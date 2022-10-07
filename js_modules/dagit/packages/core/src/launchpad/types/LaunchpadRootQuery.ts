@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { PipelineSelector } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: LaunchpadRootQuery
 // ====================================================
@@ -109,6 +111,7 @@ export interface LaunchpadRootQuery {
 }
 
 export interface LaunchpadRootQueryVariables {
+  selector: PipelineSelector;
   pipelineName: string;
   repositoryName: string;
   repositoryLocationName: string;

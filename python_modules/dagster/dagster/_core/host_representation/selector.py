@@ -48,6 +48,7 @@ class PipelineSelector(
             "repositoryName": self.repository_name,
             "pipelineName": self.pipeline_name,
             "solidSelection": self.solid_selection,
+            "assetSelection": self.asset_selection,
         }
 
     def with_solid_selection(self, solid_selection):
@@ -58,7 +59,11 @@ class PipelineSelector(
             ),
         )
         return PipelineSelector(
-            self.location_name, self.repository_name, self.pipeline_name, solid_selection
+            self.location_name,
+            self.repository_name,
+            self.pipeline_name,
+            solid_selection,
+            self.asset_selection,
         )
 
 

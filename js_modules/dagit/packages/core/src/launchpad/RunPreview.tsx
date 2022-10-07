@@ -25,6 +25,7 @@ import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
 } from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+import {AssetKeyInput} from '../types/globalTypes';
 
 import {LaunchpadType} from './LaunchpadRoot';
 import {
@@ -210,6 +211,7 @@ interface RunPreviewProps {
   onRemoveExtraPaths: (paths: string[]) => void;
   onScaffoldMissingConfig: () => void;
   solidSelection: string[] | null;
+  assetSelection: {assetKey: AssetKeyInput; opNames: string[]}[] | null;
 }
 
 export const RunPreview: React.FC<RunPreviewProps> = (props) => {
@@ -220,6 +222,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     launchpadType,
     onRemoveExtraPaths,
     onScaffoldMissingConfig,
+    assetSelection,
     solidSelection,
     runConfigSchema,
   } = props;
@@ -304,11 +307,22 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
   const {resources, ops, solids, ...rest} = rootCompositeChildren;
   const hasOps = !!ops?.fields;
 
+  let allOpNames: string[] = [];
+  if (assetSelection) {
+    for (let i = 0; i < assetSelection.length; i++) {
+      allOpNames = [...allOpNames, ...assetSelection[i].opNames];
+    }
+  }
+
   const itemsIn = (parents: string[], items: {name: string; isRequired: boolean}[]) => {
     const boxes = items
       .map((item) => {
         // If a solid selection is in use, discard anything not in it.
         if (solidSelection?.length && !solidSelection?.includes(item.name)) {
+          return null;
+        }
+
+        if (assetSelection?.length && !allOpNames.includes(item.name)) {
           return null;
         }
 

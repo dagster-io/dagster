@@ -184,6 +184,9 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     ...repoAddressToSelector(repoAddress),
     pipelineName: pipeline.name,
     solidSelection: currentSession?.solidSelection || undefined,
+    assetSelection: currentSession?.assetSelection
+      ? currentSession.assetSelection.map((a) => ({path: a.assetKey.path}))
+      : undefined,
   };
 
   const configResult = useQuery<
@@ -709,6 +712,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
               document={previewedDocument}
               validation={preview ? preview.isPipelineConfigValid : null}
               solidSelection={currentSession.solidSelection}
+              assetSelection={currentSession.assetSelection}
               runConfigSchema={runConfigSchema}
               onHighlightPath={(path) => editor.current?.moveCursorToPath(path)}
               onRemoveExtraPaths={(paths) => onRemoveExtraPaths(paths)}

@@ -254,6 +254,9 @@ async function stateForLaunchingAssets(
         pipelineName: jobName,
         repositoryName: assets[0].repository.name,
         repositoryLocationName: assets[0].repository.location.name,
+        assetSelection: assets.map((asset) => ({
+          path: asset.assetKey.path,
+        })),
       },
     },
   });
