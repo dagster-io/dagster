@@ -18,7 +18,8 @@ from typing import (
 
 import yaml
 from dagster_airbyte.resources import AirbyteResource
-from dagster_airbyte.utils import generate_materializations
+from dagster_airbyte.types import AirbyteStreamMetadata
+from dagster_airbyte.utils import generate_materializations, generate_table_schema
 
 from dagster import AssetKey, AssetOut, Output, ResourceDefinition
 from dagster import _check as check
@@ -31,7 +32,14 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import with_group
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.execution.context.init import build_init_resource_context
+from dagster._serdes.serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
+from dagster._utils import merge_dicts
 
 
 def _build_airbyte_asset_defn_metadata(
@@ -41,6 +49,7 @@ def _build_airbyte_asset_defn_metadata(
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     upstream_assets: Optional[Iterable[AssetKey]] = None,
     group_name: Optional[str] = None,
+    schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
 ) -> AssetsDefinitionCacheableData:
 
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
@@ -54,6 +63,7 @@ def _build_airbyte_asset_defn_metadata(
             )
         )
     )
+
     outputs = {table: AssetKey(asset_key_prefix + [table]) for table in tables}
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
@@ -82,6 +92,16 @@ def _build_airbyte_asset_defn_metadata(
         group_name=group_name,
         key_prefix=asset_key_prefix,
         can_subset=False,
+        metadata_by_output_name={
+            table: {
+                "schema": serialize_dagster_namedtuple(
+                    MetadataValue.table_schema(schema_by_table_name[table])
+                )
+            }
+            for table in tables
+        }
+        if schema_by_table_name
+        else None,
         extra_metadata={
             "connection_id": connection_id,
             "group_name": group_name,
@@ -104,7 +124,18 @@ def _build_airbyte_assets_from_metadata(
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
         non_argument_deps=set((assets_defn_meta.keys_by_input_name or {}).values()),
-        outs={k: AssetOut(key=v) for k, v in (assets_defn_meta.keys_by_output_name or {}).items()},
+        outs={
+            k: AssetOut(
+                key=v,
+                metadata={
+                    k: deserialize_json_to_dagster_namedtuple(v)
+                    for k, v in assets_defn_meta.metadata_by_output_name.get(k, {}).items()
+                }
+                if assets_defn_meta.metadata_by_output_name
+                else None,
+            )
+            for k, v in (assets_defn_meta.keys_by_output_name or {}).items()
+        },
         internal_asset_deps={
             k: set(v) for k, v in (assets_defn_meta.internal_asset_deps or {}).items()
         },
@@ -147,6 +178,7 @@ def build_airbyte_assets(
     asset_key_prefix: Optional[List[str]] = None,
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     upstream_assets: Optional[Set[AssetKey]] = None,
+    schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
 ) -> List[AssetsDefinition]:
     """
     Builds a set of assets representing the tables created by an Airbyte sync operation.
@@ -172,7 +204,15 @@ def build_airbyte_assets(
     tables = chain.from_iterable(
         chain([destination_tables], normalization_tables.values() if normalization_tables else [])
     )
-    outputs = {table: AssetOut(key=AssetKey(asset_key_prefix + [table])) for table in tables}
+    outputs = {
+        table: AssetOut(
+            key=AssetKey(asset_key_prefix + [table]),
+            metadata={"schema": MetadataValue.table_schema(schema_by_table_name[table])}
+            if schema_by_table_name
+            else None,
+        )
+        for table in tables
+    }
 
     internal_deps = {}
 
@@ -242,7 +282,7 @@ def _get_sub_schemas(schema: Mapping[str, Any]) -> List[Mapping[str, Any]]:
 
 def _get_normalization_tables_for_schema(
     key: str, schema: Mapping[str, Any], prefix: str = ""
-) -> List[str]:
+) -> Dict[str, AirbyteStreamMetadata]:
     """
     Recursively traverses a schema, returning a list of table names that will be created by the Airbyte
     normalization process.
@@ -254,7 +294,7 @@ def _get_normalization_tables_for_schema(
     https://docs.airbyte.com/understanding-airbyte/basic-normalization/#nesting
     """
 
-    out = []
+    out: Dict[str, AirbyteStreamMetadata] = {}
     # Object types are broken into a new table, as long as they have children
 
     sub_schemas = _get_sub_schemas(schema)
@@ -265,15 +305,23 @@ def _get_normalization_tables_for_schema(
             continue
 
         if "object" in schema_types and len(sub_schema.get("properties", {})) > 0:
-            out.append(prefix + key)
+            out[prefix + key] = AirbyteStreamMetadata(
+                schema=generate_table_schema(sub_schema.get("properties", {}))
+            )
             for k, v in sub_schema["properties"].items():
-                out += _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
+                out = merge_dicts(
+                    out, _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
+                )
         # Array types are also broken into a new table
         elif "array" in schema_types:
-            out.append(prefix + key)
+            out[prefix + key] = AirbyteStreamMetadata(
+                schema=generate_table_schema(sub_schema.get("items", {}).get("properties", {}))
+            )
             if sub_schema.get("items", {}).get("properties"):
                 for k, v in sub_schema["items"]["properties"].items():
-                    out += _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
+                    out = merge_dicts(
+                        out, _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
+                    )
 
     return out
 
@@ -343,14 +391,14 @@ class AirbyteConnection(
 
     def parse_stream_tables(
         self, return_normalization_tables: bool = False
-    ) -> Mapping[str, Set[str]]:
+    ) -> Mapping[str, AirbyteStreamMetadata]:
         """
         Parses the stream data and returns a mapping, with keys representing destination
         tables associated with each enabled stream and values representing any affiliated
         tables created by Airbyte's normalization process, if enabled.
         """
 
-        tables: Dict[str, Set[str]] = {}
+        tables: Dict[str, AirbyteStreamMetadata] = {}
 
         enabled_streams = [
             stream for stream in self.stream_data if stream.get("config", {}).get("selected", False)
@@ -360,19 +408,23 @@ class AirbyteConnection(
             name = cast(str, stream.get("stream", {}).get("name"))
             prefixed_name = f"{self.stream_prefix}{name}"
 
-            tables[prefixed_name] = set()
+            schema = (
+                stream["stream"]["json_schema"]
+                if "json_schema" in stream["stream"]
+                else stream["stream"]["jsonSchema"]
+            )
+            normalization_tables: Dict[str, AirbyteStreamMetadata] = {}
             if self.has_basic_normalization and return_normalization_tables:
-                schema = (
-                    stream["stream"]["json_schema"]
-                    if "json_schema" in stream["stream"]
-                    else stream["stream"]["jsonSchema"]
-                )
                 for k, v in schema["properties"].items():
-                    for normalization_table_name in _get_normalization_tables_for_schema(
+                    for normalization_table_name, meta in _get_normalization_tables_for_schema(
                         k, v, f"{name}_"
-                    ):
+                    ).items():
                         prefixed_norm_table_name = f"{self.stream_prefix}{normalization_table_name}"
-                        tables[prefixed_name].add(prefixed_norm_table_name)
+                        normalization_tables[prefixed_norm_table_name] = meta
+            tables[prefixed_name] = AirbyteStreamMetadata(
+                schema=generate_table_schema(schema["properties"]),
+                normalization_tables=normalization_tables,
+            )
 
         return tables
 
@@ -443,18 +495,33 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
             )
             connection = AirbyteConnection.from_api_json(connection_json, operations_json)
 
-            table_mapping = connection.parse_stream_tables(
+            stream_table_metadata = connection.parse_stream_tables(
                 self._create_assets_for_normalization_tables
+            )
+            schema_by_table_name: Mapping[str, TableSchema] = dict(
+                chain.from_iterable(
+                    chain(
+                        [[(k, v.schema) for k, v in stream_table_metadata.items()]],
+                        [
+                            [(k, v.schema) for k, v in meta.normalization_tables.items()]
+                            for meta in stream_table_metadata.values()
+                        ],
+                    )
+                )
             )
 
             asset_data_for_conn = _build_airbyte_asset_defn_metadata(
                 connection_id=connection_id,
-                destination_tables=list(table_mapping.keys()),
-                normalization_tables=table_mapping,
+                destination_tables=list(stream_table_metadata.keys()),
+                normalization_tables={
+                    table: metadata.normalization_tables
+                    for table, metadata in stream_table_metadata.items()
+                },
                 asset_key_prefix=self._key_prefix,
                 group_name=self._connection_to_group_fn(connection.name)
                 if self._connection_to_group_fn
                 else None,
+                schema_by_table_name=schema_by_table_name,
             )
 
             asset_defn_data.append(asset_data_for_conn)
@@ -602,13 +669,30 @@ def load_assets_from_airbyte_project(
             state = yaml.safe_load(f.read())
             connection_id = state.get("resource_id")
 
-        table_mapping = connection.parse_stream_tables(create_assets_for_normalization_tables)
+        stream_table_metadata = connection.parse_stream_tables(
+            create_assets_for_normalization_tables
+        )
+        schema_by_table_name: Mapping[str, TableSchema] = dict(
+            chain.from_iterable(
+                chain(
+                    [[(k, v.schema) for k, v in stream_table_metadata.items()]],
+                    [
+                        [(k, v.schema) for k, v in meta.normalization_tables.items()]
+                        for meta in stream_table_metadata.values()
+                    ],
+                )
+            )
+        )
 
         assets_for_connection = build_airbyte_assets(
             connection_id=connection_id,
-            destination_tables=list(table_mapping.keys()),
-            normalization_tables=table_mapping,
+            destination_tables=list(stream_table_metadata.keys()),
+            normalization_tables={
+                table: metadata.normalization_tables
+                for table, metadata in stream_table_metadata.items()
+            },
             asset_key_prefix=key_prefix,
+            schema_by_table_name=schema_by_table_name,
         )
 
         if connection_to_group_fn:
