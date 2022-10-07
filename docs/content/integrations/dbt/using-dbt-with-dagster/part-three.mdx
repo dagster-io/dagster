@@ -65,14 +65,19 @@ In this step, you'll materialize the assets using Dagit.
 
 2. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the assets:
 
-   ![Asset graph in Dagit, containing dbt models and Dagster assets](/images/integrations/dbt/using-dbt-with-dagster/part-three-asset-graph.png)
+   <Image
+   alt="Asset graph in Dagit, containing dbt models and Dagster assets"
+   src="/images/integrations/dbt/using-dbt-with-dagster/part-three-asset-graph.png"
+   width={996}
+   height={810}
+   />
 
 3. Click the **Materialize all** button near the top right corner of the page, which will launch a run to materialize the assets.
 
 After the run completes, you can:
 
 - Click the **asset** to open a sidebar containing info about the asset, including its last materialization stats, a link to view the [**Asset details** page](/concepts/dagit/dagit#asset-details)
-- Click the ID of the **Latest Run** in an asset to view the [**Run details**](/concepts/dagit/dagit#viewing-a-single-run) page. This page contains detailed info about the run, including timing information, errors, and logs. 
+- Click the ID of the **Latest Run** in an asset to view the [**Run details**](/concepts/dagit/dagit#viewing-a-single-run) page. This page contains detailed info about the run, including timing information, errors, and logs.
 
 <TODO></TODO>
 
