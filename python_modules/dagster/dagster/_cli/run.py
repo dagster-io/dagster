@@ -2,10 +2,7 @@ import click
 from tqdm import tqdm
 
 from dagster import __version__ as dagster_version
-from dagster._cli.workspace.cli_target import (
-    get_external_pipeline_or_job_from_kwargs,
-    job_target_argument,
-)
+from dagster._cli.workspace.cli_target import get_external_job_from_kwargs, job_target_argument
 from dagster._core.instance import DagsterInstance
 
 
@@ -103,11 +100,11 @@ def run_migrate_command(from_label, **kwargs):
         )
 
     with DagsterInstance.get() as instance:
-        with get_external_pipeline_or_job_from_kwargs(
+        with get_external_job_from_kwargs(
             instance, version=dagster_version, kwargs=kwargs, using_job_op_graph_apis=True
-        ) as external_pipeline:
-            new_job_origin = external_pipeline.get_external_origin()
-            job_name = external_pipeline.name
+        ) as external_job:
+            new_job_origin = external_job.get_external_origin()
+            job_name = external_job.name
             to_label = new_job_origin.external_repository_origin.get_label()
 
         if not to_label:
