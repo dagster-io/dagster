@@ -861,7 +861,7 @@ def test_advance_all_cursors_clears_unconsumed_events():
         if invocation_num == 1:
             # Should fetch unconsumed event
             events = context.latest_materialization_records_by_partition(july_asset.key)
-            assert len(events) == 1
+            assert len(events) == 2
             context.advance_all_cursors()
 
     with instance_for_test() as instance:
@@ -889,11 +889,16 @@ def test_advance_all_cursors_clears_unconsumed_events():
         # Confirm that the unconsumed event is fetched. After calling advance_all_cursors,
         # all unconsumed events should be cleared. The storage ID of the cursor should stay the same.
         invocation_num += 1
+        materialize(
+            [july_asset],
+            partition_key="2022-07-06",
+            instance=instance,
+        )
         list(test_unconsumed_events_sensor(ctx))
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
-        assert july_asset_cursor.latest_consumed_event_partition == "2022-07-10"
+        assert july_asset_cursor.latest_consumed_event_partition == "2022-07-06"
         assert july_asset_cursor.trailing_unconsumed_partitioned_event_ids == {}
-        assert july_asset_cursor.latest_consumed_event_id == first_storage_id
+        assert july_asset_cursor.latest_consumed_event_id > first_storage_id
 
 
 def test_error_when_max_num_unconsumed_events():

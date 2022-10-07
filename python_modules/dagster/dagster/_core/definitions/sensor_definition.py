@@ -522,8 +522,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         """Updates the cursor after the sensor evaluation function has been called. This method
         should be called at most once per evaluation.
         """
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
 
         new_cursor = self._cursor_advance_state_mutation.get_new_cursor_after_tick_evaluation()
 
@@ -1027,13 +1025,11 @@ class MultiAssetSensorCursorStateMutation:
         latest_consumed_partition = self._partition_key_by_record_id[
             greatest_consumed_event_id_in_tick
         ]
-        if self._context._advance_all_cursors_called:
-            # If advance all cursors is called, all unconsumed events are removed from the cursor
-            latest_unconsumed_record_by_partition: Dict[str, int] = {}
-        else:
-            latest_unconsumed_record_by_partition: Dict[
-                str, int
-            ] = initial_cursor.trailing_unconsumed_partitioned_event_ids
+        latest_unconsumed_record_by_partition: Dict[str, int] = {}
+        if not self._context._advance_all_cursors_called:  # pylint: disable=protected-access
+            latest_unconsumed_record_by_partition = (
+                initial_cursor.trailing_unconsumed_partitioned_event_ids
+            )
 
             if greatest_consumed_event_id_in_tick != latest_consumed_event_id_at_tick_start:
                 events_between_initial_and_final_cursor = self._context.instance.get_event_records(
@@ -1735,8 +1731,9 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     yield result
 
                 if (
-                    runs_yielded and not context._cursor_has_been_updated
-                ):  # pylint: disable=protected-access
+                    runs_yielded
+                    and not context._cursor_has_been_updated  # pylint: disable=protected-access
+                ):
                     raise DagsterInvalidDefinitionError(
                         "Asset materializations have been handled in this sensor, "
                         "but the cursor was not updated. This means the same materialization events "
