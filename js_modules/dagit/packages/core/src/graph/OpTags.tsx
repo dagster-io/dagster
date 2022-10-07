@@ -1,4 +1,4 @@
-import {Colors, FontFamily, Tag} from '@dagster-io/ui';
+import {Colors, FontFamily, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -39,7 +39,7 @@ function hueForTag(text = '') {
 
 function getTag(tag: IOpTag) {
   if (tag.label === 'noteable') {
-    return <Tag icon="noteable_logo" key={tag.label} />;
+    return <Icon name="noteable_logo" />;
   } else {
     return (
       <div
