@@ -443,6 +443,12 @@ class PipelineRun(
 
         return self._replace(status=status)
 
+    def with_job_origin(self, origin):
+        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+
+        check.inst_param(origin, "origin", ExternalPipelineOrigin)
+        return self._replace(external_pipeline_origin=origin)
+
     def with_mode(self, mode):
         return self._replace(mode=mode)
 
