@@ -10,6 +10,9 @@ from dagster import (
     AssetSelection,
     BoolMetadataValue,
     DagsterEventType,
+    BoolMetadataValue,
+    DagsterEventType,
+    AssetSelection,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
@@ -709,7 +712,6 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
         list(after_cursor_partitions_asset_sensor(ctx))
 
 
-<<<<<<< HEAD
 def test_multi_asset_sensor_latest_materialization_records_by_partition_and_asset():
     @multi_asset_sensor(asset_keys=[july_asset.key, july_asset_2.key])
     def my_sensor(context):
@@ -1075,7 +1077,8 @@ def test_unfetched_partitioned_events_are_unconsumed():
             second_july_cursor.trailing_unconsumed_partitioned_event_ids["2022-07-04"]
             > first_july_cursor.trailing_unconsumed_partitioned_event_ids["2022-07-04"]
         )
-=======
+
+
 def test_execute_in_process_result_in_build_multi_asset_sensor_context():
     evaluated = False
 
@@ -1109,7 +1112,7 @@ def test_execute_in_process_result_in_build_multi_asset_sensor_context():
         assert records.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
-            [my_asset.key],
+            asset_keys=[my_asset.key],
             instance=instance,
             set_cursor_to_latest_materializations=True,
             repository_def=my_repo,
@@ -1120,9 +1123,6 @@ def test_execute_in_process_result_in_build_multi_asset_sensor_context():
 
         materialize([my_asset], instance=instance)
         list(my_sensor(ctx))
-<<<<<<< HEAD
->>>>>>> d1e8921922 (first stab + add test case)
-=======
 
 
 def test_build_multi_asset_context_multiple_execute_in_process():
@@ -1156,7 +1156,7 @@ def test_build_multi_asset_context_multiple_execute_in_process():
         my_asset_2_cursor = records[1].storage_id
 
         ctx = build_multi_asset_sensor_context(
-            [my_asset.key, my_asset_2.key],
+            asset_keys=[my_asset.key, my_asset_2.key],
             instance=instance,
             set_cursor_to_latest_materializations=True,
             repository_def=my_repo,
@@ -1178,7 +1178,9 @@ def test_error_exec_in_process_to_build_multi_asset_sensor_context():
         with instance_for_test() as instance:
             materialize([my_asset], instance=instance)
             build_multi_asset_sensor_context(
-                [my_asset.key], repository_def=my_repo, set_cursor_to_latest_materializations=True
+                asset_keys=[my_asset.key],
+                repository_def=my_repo,
+                set_cursor_to_latest_materializations=True,
             )
 
     with pytest.raises(
@@ -1188,9 +1190,8 @@ def test_error_exec_in_process_to_build_multi_asset_sensor_context():
         with instance_for_test() as instance:
             materialize([my_asset], instance=instance)
             build_multi_asset_sensor_context(
-                [my_asset.key],
+                asset_keys=[my_asset.key],
                 repository_def=my_repo,
                 set_cursor_to_latest_materializations=True,
                 cursor="alskdjalsjk",
             )
->>>>>>> 8102a26afe (test #2)
