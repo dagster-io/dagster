@@ -200,46 +200,69 @@ def _get_asset_key_from_event_log_record(event_log_record: "EventLogRecord") -> 
     )
 
 
-MAX_NUM_UNEVALUATED_EVENTS = 25
+MAX_NUM_UNCONSUMED_EVENTS = 25
 
 
 class MultiAssetSensorAssetCursorComponent(
     NamedTuple(
         "_MultiAssetSensorAssetCursorComponent",
         [
-            ("latest_evaluated_event_partition", Optional[str]),
-            ("latest_evaluated_event_id", Optional[int]),
-            ("unevaluated_partitioned_event_ids", List[int]),
+            ("latest_consumed_event_partition", Optional[str]),
+            ("latest_consumed_event_id", Optional[int]),
+            ("trailing_unconsumed_partitioned_event_ids", Dict[str, int]),
         ],
     )
 ):
     """A cursor component that is used to track the cursor for a particular asset in a multi-asset
     sensor.
 
+    Here's an illustration to help explain how this representation works:
+
+    partition_1  ---|----------a----
+    partition_2  -t-----|-x---------
+    partition_3  ----t------|---a---
+
+
+    The "|", "a", "t", and "x" characters represent materialization events.
+    The x-axis is storage_id, which is basically time. The cursor has been advanced to the "|" event
+    for each partition. latest_evaluated_event_partition would be "partition_3", and
+    "latest_evaluated_event_id" would be the storage_id of the "|" event for partition_3.
+
+    The "t" events aren't directly represented in the cursor, because they trail the event that the
+    the cursor for their partition has advanced to. The "a" events aren't directly represented
+    in the cursor, because they occurred after the "latest_evaluated_event_id".  The "x" event is
+    included in "unevaluated_partitioned_event_ids", because it's after the event that the cursor
+    for its partition has advanced to, but trails "latest_evaluated_event_id".
+
     Attributes:
-        latest_evaluated_event_partition (Optional[str]): The partition of the latest evaluated event
+        latest_consumed_event_partition (Optional[str]): The partition of the latest consumed event
             for this asset.
-        latest_evaluated_event_id (Optional[int]): The event ID of the latest evaluated event for this asset.
-        unevaluated_partitioned_event_ids (List[int]): The storage IDs of the partitioned events that have not yet been evaluated.
-            Only contains events with storage IDs less than latest_evaluated_event_id.
+        latest_consumed_event_id (Optional[int]): The event ID of the latest consumed event for
+            this asset.
+        trailing_unconsumed_partitioned_event_ids (Dict[str, int]): A mapping containing
+            the partition key mapped to the latest unconsumed materialization event for this
+            partition with an ID less than latest_consumed_event_id.
     """
 
     def __new__(
         cls,
-        latest_evaluated_event_partition,
-        latest_evaluated_event_id,
-        unevaluated_partitioned_event_ids,
+        latest_consumed_event_partition,
+        latest_consumed_event_id,
+        trailing_unconsumed_partitioned_event_ids,
     ):
         return super(MultiAssetSensorAssetCursorComponent, cls).__new__(
             cls,
-            latest_evaluated_event_partition=check.opt_str_param(
-                latest_evaluated_event_partition, "latest_evaluated_event_partition"
+            latest_consumed_event_partition=check.opt_str_param(
+                latest_consumed_event_partition, "latest_consumed_event_partition"
             ),
-            latest_evaluated_event_id=check.opt_int_param(
-                latest_evaluated_event_id, "latest_evaluated_event_id"
+            latest_consumed_event_id=check.opt_int_param(
+                latest_consumed_event_id, "latest_consumed_event_id"
             ),
-            unevaluated_partitioned_event_ids=check.list_param(
-                unevaluated_partitioned_event_ids, "unevaluated_partitioned_event_ids", of_type=int
+            trailing_unconsumed_partitioned_event_ids=check.dict_param(
+                trailing_unconsumed_partitioned_event_ids,
+                "trailing_unconsumed_partitioned_event_ids",
+                key_type=str,
+                value_type=int,
             ),
         )
 
@@ -252,8 +275,8 @@ class MultiAssetSensorContextCursor:
         loaded_cursor = json.loads(cursor) if cursor else {}
         self._cursor_component_by_asset_key: Dict[str, MultiAssetSensorAssetCursorComponent] = {}
 
-        # The initial latest evaluated event ID at the beginning of the tick
-        self.initial_latest_evaluated_event_ids_by_asset_key: Dict[str, Optional[int]] = {}
+        # The initial latest consumed event ID at the beginning of the tick
+        self.initial_latest_consumed_event_ids_by_asset_key: Dict[str, Optional[int]] = {}
 
         for str_asset_key, cursor_list in loaded_cursor.items():
             if len(cursor_list) != 3:
@@ -261,59 +284,58 @@ class MultiAssetSensorContextCursor:
                 # component. This cursor is maintained by the asset reconciliation sensor.
                 break
             else:
-                partition_key, event_id, unevaluated_partitioned_event_ids = cursor_list
+                partition_key, event_id, trailing_unconsumed_partitioned_event_ids = cursor_list
                 self._cursor_component_by_asset_key[
                     str_asset_key
                 ] = MultiAssetSensorAssetCursorComponent(
-                    latest_evaluated_event_partition=partition_key,
-                    latest_evaluated_event_id=event_id,
-                    unevaluated_partitioned_event_ids=unevaluated_partitioned_event_ids,
+                    latest_consumed_event_partition=partition_key,
+                    latest_consumed_event_id=event_id,
+                    trailing_unconsumed_partitioned_event_ids=trailing_unconsumed_partitioned_event_ids,
                 )
 
-                self.initial_latest_evaluated_event_ids_by_asset_key[str_asset_key] = event_id
+                self.initial_latest_consumed_event_ids_by_asset_key[str_asset_key] = event_id
 
         check.dict_param(self._cursor_component_by_asset_key, "unpacked_cursor", key_type=str)
         self._context = context
 
     def get_cursor_for_asset(self, asset_key: AssetKey) -> MultiAssetSensorAssetCursorComponent:
         return self._cursor_component_by_asset_key.get(
-            str(asset_key), MultiAssetSensorAssetCursorComponent(None, None, [])
+            str(asset_key), MultiAssetSensorAssetCursorComponent(None, None, {})
         )
 
     def advance(self, asset_key: AssetKey, materialization: "EventLogRecord") -> None:
         asset_cursor = self.get_cursor_for_asset(asset_key)
 
-        if materialization.storage_id in asset_cursor.unevaluated_partitioned_event_ids:
-            asset_cursor.unevaluated_partitioned_event_ids.remove(materialization.storage_id)
-
-        materialization_partition = _get_partition_key_from_event_log_record(materialization)
-
-        latest_evaluated_event_partition = asset_cursor.latest_evaluated_event_partition
-        latest_evaluated_event_id = asset_cursor.latest_evaluated_event_id
-        if (
-            latest_evaluated_event_id is None
-            or materialization.storage_id > latest_evaluated_event_id
-        ):
-            latest_evaluated_event_partition = materialization_partition
-            latest_evaluated_event_id = materialization.storage_id
-
-        # When we advance a partitioned materialization, remove any unevaluated event that is
+        # When we advance a partitioned materialization, remove any unconsumed event that is
         # from the same asset and partition
-        if materialization_partition:
-            for (
-                event
-            ) in self._context._get_unevaluated_events_with_ids(  # pylint: disable=protected-access
-                asset_cursor.unevaluated_partitioned_event_ids
+        materialization_partition = _get_partition_key_from_event_log_record(materialization)
+        if materialization_partition is not None:
+            if (
+                materialization_partition in asset_cursor.trailing_unconsumed_partitioned_event_ids
+                and asset_cursor.trailing_unconsumed_partitioned_event_ids[
+                    materialization_partition
+                ]
+                <= materialization.storage_id
             ):
-                if _get_partition_key_from_event_log_record(event) == materialization_partition:
-                    asset_cursor.unevaluated_partitioned_event_ids.remove(event.storage_id)
+                asset_cursor.trailing_unconsumed_partitioned_event_ids.pop(
+                    materialization_partition
+                )
+
+        latest_consumed_event_partition = asset_cursor.latest_consumed_event_partition
+        latest_consumed_event_id = asset_cursor.latest_consumed_event_id
+        if (
+            latest_consumed_event_id is None
+            or materialization.storage_id > latest_consumed_event_id
+        ):
+            latest_consumed_event_partition = materialization_partition
+            latest_consumed_event_id = materialization.storage_id
 
         self._cursor_component_by_asset_key.update(
             {
                 str(asset_key): MultiAssetSensorAssetCursorComponent(
-                    latest_evaluated_event_partition,
-                    latest_evaluated_event_id,
-                    asset_cursor.unevaluated_partitioned_event_ids,
+                    latest_consumed_event_partition,
+                    latest_consumed_event_id,
+                    asset_cursor.trailing_unconsumed_partitioned_event_ids,
                 )
             }
         )
@@ -321,8 +343,9 @@ class MultiAssetSensorContextCursor:
     def reset_cursors_to_materializations(
         self, latest_event_by_asset_key: Mapping[AssetKey, Optional["EventLogRecord"]]
     ) -> None:
-        # This method is called by MultiAssetSensorEvaluationContext.advance_all_cursors
-        # Clears all unevaluated events.
+        # This method accepts the latest materialization for each asset key. It
+        # advances the cursor to that latest materialization for each asset, and clears
+        # all unconsumed events.
         for asset_key, latest_event in latest_event_by_asset_key.items():
             if latest_event:
                 self._cursor_component_by_asset_key.update(
@@ -330,7 +353,7 @@ class MultiAssetSensorContextCursor:
                         str(asset_key): MultiAssetSensorAssetCursorComponent(
                             _get_partition_key_from_event_log_record(latest_event),
                             latest_event.storage_id,
-                            [],
+                            {},
                         )
                     }
                 )
@@ -341,41 +364,45 @@ class MultiAssetSensorContextCursor:
                 self._cursor_component_by_asset_key.update(
                     {
                         str(asset_key): MultiAssetSensorAssetCursorComponent(
-                            cursor_component.latest_evaluated_event_partition,
-                            cursor_component.latest_evaluated_event_id,
-                            [],
+                            cursor_component.latest_consumed_event_partition,
+                            cursor_component.latest_consumed_event_id,
+                            {},
                         )
                     }
                 )
 
-    def add_unevaluated_event_id(self, asset_key: AssetKey, storage_id: int):
+    def add_unconsumed_event_id(self, asset_key: AssetKey, storage_id: int, partition: str):
         # Method should only be called at the end of sensor evaluation
-        # If the unevaluated event ID >= to the cursor, then this event will already show
-        # up in the next sensor evaluation and we don't need to add it to the unevaluated events
+        # If the unconsumed event ID >= to the cursor, then this event will already show
+        # up in the next sensor evaluation and we don't need to add it to the unconsumed events
         cursor_component = self.get_cursor_for_asset(asset_key)
-        cursor_storage_id = cursor_component.latest_evaluated_event_id
-        unevaluated_partitioned_event_ids = cursor_component.unevaluated_partitioned_event_ids
+        cursor_storage_id = cursor_component.latest_consumed_event_id
+        trailing_unconsumed_partitioned_event_ids = (
+            cursor_component.trailing_unconsumed_partitioned_event_ids
+        )
 
         # If the cursor is currently None, do not add the event since it will
         # show up in the next sensor evaluation
         if (
             cursor_storage_id is not None
             and storage_id < cursor_storage_id
-            and storage_id not in unevaluated_partitioned_event_ids
+            and storage_id > trailing_unconsumed_partitioned_event_ids.get(partition, 0)
         ):
-            if len(unevaluated_partitioned_event_ids) >= MAX_NUM_UNEVALUATED_EVENTS:
+            if (
+                partition not in trailing_unconsumed_partitioned_event_ids
+                and len(trailing_unconsumed_partitioned_event_ids) >= MAX_NUM_UNCONSUMED_EVENTS
+            ):
                 raise DagsterInvariantViolationError(
                     f"""
-                    You have reached the maximum number of unevaluated events ({MAX_NUM_UNEVALUATED_EVENTS}) for asset {asset_key} and no more events can be added.
-                    You can access the unevaluated events by calling the `get_unevaluated_events` method on the sensor context, and
-                    mark events as evaluated by passing them to `advance_cursor`.
+                    You have reached the maximum number of unconsumed events ({MAX_NUM_UNCONSUMED_EVENTS}) for asset {asset_key} and no more events can be added.
+                    You can access the unconsumed events by calling the `get_unconsumed_events` method on the sensor context, and
+                    mark events as consumed by passing them to `advance_cursor`.
 
-                    Otherwise, you can clear all unevaluated events and reset the cursor to the latest
+                    Otherwise, you can clear all unconsumed events and reset the cursor to the latest
                     materialization for each asset by calling `advance_all_cursors`.
                     """
                 )
-
-            unevaluated_partitioned_event_ids.append(storage_id)
+            trailing_unconsumed_partitioned_event_ids[partition] = storage_id
 
     def get_stringified_cursor(self):
         return json.dumps(self._cursor_component_by_asset_key)
@@ -383,21 +410,25 @@ class MultiAssetSensorContextCursor:
 
 @experimental
 class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
-    """The context object available as the argument to the evaluation function of a :py:class:`dagster.MultiAssetSensorDefinition`.
+    """The context object available as the argument to the evaluation function of a
+    :py:class:`dagster.MultiAssetSensorDefinition`.
 
     Users should not instantiate this object directly. To construct a
     `MultiAssetSensorEvaluationContext` for testing purposes, use :py:func:`dagster.
     build_multi_asset_sensor_context`.
 
     The `MultiAssetSensorEvaluationContext` contains a cursor object that tracks the state of
-    evaluated event logs for each monitored asset. For each asset, the cursor stores the storage ID
-    of the latest materialization that has been marked as "evaluated" (via a call to `advance_cursor`).
+    consumed event logs for each monitored asset. For each asset, the cursor stores the storage ID
+    of the latest materialization that has been marked as "consumed" (via a call to `advance_cursor`).
 
-    For each monitored asset, the cursor will store up to 25 event IDs of partitioned materializations
-    before the latest evaluated event. These "unevaluated events" will show up in future context
-    calls to fetch materializations, until they are marked as evaluated.
+    For each monitored asset, the cursor will store the latest unconsumed event ID for up to 25
+    partitions. Each event ID must be before the latest_consumed_event_id field in the cursor,
+    which is the latest consumed event for the asset regardless of partition.
+    These "unconsumed events" will show up in future context calls to fetch materializations,
+    until they are marked as consumed.
 
-    To update the cursor to the latest materialization and clear the unevaluated events, call `advance_all_cursors`.
+    To update the cursor to the latest materialization and clear the unconsumed events, call
+    `advance_all_cursors`.
 
     Attributes:
         asset_keys (Sequence[AssetKey]): The asset keys that the sensor is configured to monitor.
@@ -405,8 +436,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
         cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
             the cursor attribute of SkipReason and RunRequest. Must be a dictionary of asset key
-            strings to a stringified tuple of (latest_event_partition, latest_event_storage_id, unevaluated_partitioned_event_ids).
-        last_completion_time (float): DEPRECATED The last time that the sensor was evaluated (UTC).
+            strings to a stringified tuple of (latest_event_partition, latest_event_storage_id,
+            trailing_unconsumed_partitioned_event_ids).
+        last_completion_time (float): DEPRECATED The last time that the sensor was consumed (UTC).
         last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
             sensor. Use the preferred `cursor` attribute instead.
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
@@ -470,8 +502,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._event_fetched_is_advanced: Dict[int, bool] = {}  # key is storage id
         self._event_ids_by_partition_key: Dict[str, List[int]] = defaultdict(list)
 
-        self._initial_unevaluated_events_by_id: Dict[int, EventLogRecord] = {}
-        self._fetched_initial_unevaluated_events = False
+        self._initial_unconsumed_events_by_id: Dict[int, EventLogRecord] = {}
+        self._fetched_initial_unconsumed_events = False
 
         super(MultiAssetSensorEvaluationContext, self).__init__(
             instance_ref=instance_ref,
@@ -482,53 +514,56 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             instance=instance,
         )
 
-    def _cache_initial_unevaluated_events(self) -> None:
+    def _cache_initial_unconsumed_events(self) -> None:
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        # This method should only be called once, the first time unevaluated events are fetched.
-        # This is used to cache the initial unevaluated events for each asset key. To generate the
-        # current unevaluated events, call get_unevaluated_events instead.
+        # This method caches the initial unconsumed events for each asset key. To generate the
+        # current unconsumed events, call get_unconsumed_events instead.
+        if self._fetched_initial_unconsumed_events:
+            return
 
         for asset_key in self._asset_keys:
             event_records = self.instance.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    storage_ids=self._get_cursor(asset_key).unevaluated_partitioned_event_ids,
+                    storage_ids=list(
+                        self._get_cursor(
+                            asset_key
+                        ).trailing_unconsumed_partitioned_event_ids.values()
+                    ),
                 )
             )
-            self._initial_unevaluated_events_by_id.update(
+            self._initial_unconsumed_events_by_id.update(
                 {event_record.storage_id: event_record for event_record in event_records}
             )
 
-        self._fetched_initial_unevaluated_events = True
+        self._fetched_initial_unconsumed_events = True
 
-    def _get_unevaluated_events_with_ids(self, event_ids: List[int]) -> Sequence["EventLogRecord"]:
-        if not self._fetched_initial_unevaluated_events:
-            self._cache_initial_unevaluated_events()
-
-        unevaluated_events = []
+    def _get_unconsumed_events_with_ids(self, event_ids: List[int]) -> Sequence["EventLogRecord"]:
+        self._cache_initial_unconsumed_events()
+        unconsumed_events = []
         for event_id in event_ids:
-            event = self._initial_unevaluated_events_by_id.get(event_id)
-            unevaluated_events.extend([event] if event else [])
+            event = self._initial_unconsumed_events_by_id.get(event_id)
+            unconsumed_events.extend([event] if event else [])
 
-        return unevaluated_events
+        return unconsumed_events
 
     @public
-    def get_unevaluated_events(self, asset_key: AssetKey) -> Sequence["EventLogRecord"]:
-        """Get the unevaluated events for a given asset key.
-        To mark an event as evaluated, pass the event to `advance_cursor`.
+    def get_unconsumed_events(self, asset_key: AssetKey) -> Sequence["EventLogRecord"]:
+        """Get the unconsumed events for a given asset key.
+        To mark an event as consumed, pass the event to `advance_cursor`.
 
         Args:
-            asset_key (AssetKey): The asset key to get unevaluated events for.
+            asset_key (AssetKey): The asset key to get unconsumed events for.
 
         Returns:
-            Sequence[EventLogRecord]: The unevaluated events for the given asset key.
+            Sequence[EventLogRecord]: The unconsumed events for the given asset key.
         """
         check.inst_param(asset_key, "asset_key", AssetKey)
 
-        return self._get_unevaluated_events_with_ids(
-            self._get_cursor(asset_key).unevaluated_partitioned_event_ids
+        return self._get_unconsumed_events_with_ids(
+            list(self._get_cursor(asset_key).trailing_unconsumed_partitioned_event_ids.values())
         )
 
     def _add_fetched_events(self, event: "EventLogRecord") -> None:
@@ -543,7 +578,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     def _get_partitions_after_cursor(self, asset_key: AssetKey) -> List[str]:
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
-        partition_key = self._get_cursor(asset_key).latest_evaluated_event_partition
+        partition_key = self._get_cursor(asset_key).latest_consumed_event_partition
 
         partitions_def = self._partitions_def_by_asset_key.get(asset_key)
 
@@ -574,11 +609,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         for asset_key in self._asset_keys:
             initial_cursor = (
-                self._unpacked_cursor.initial_latest_evaluated_event_ids_by_asset_key.get(
+                self._unpacked_cursor.initial_latest_consumed_event_ids_by_asset_key.get(
                     str(asset_key)
                 )
             )
-            final_cursor = self._get_cursor(asset_key).latest_evaluated_event_id
+            final_cursor = self._get_cursor(asset_key).latest_consumed_event_id
             if final_cursor != initial_cursor:
                 events_between_initial_and_final_cursor = self.instance.get_event_records(
                     EventRecordsFilter(
@@ -593,8 +628,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                     partition = _get_partition_key_from_event_log_record(event)
                     if partition is not None:  # Ignore unpartitioned events
                         if not self._event_fetched_is_advanced.get(event.storage_id, False):
-                            self._unpacked_cursor.add_unevaluated_event_id(
-                                asset_key, event.storage_id
+                            self._unpacked_cursor.add_unconsumed_event_id(
+                                asset_key, event.storage_id, partition
                             )
 
         self._cursor = self._unpacked_cursor.get_stringified_cursor()
@@ -616,7 +651,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        # Do not evaluate unevaluated events, only events newer than the cursor
+        # Do not evaluate unconsumed events, only events newer than the cursor
         # if there are no new events after the cursor, the cursor points to the most
         # recent event.
 
@@ -632,7 +667,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
                     asset_key=a,
-                    after_cursor=self._get_cursor(a).latest_evaluated_event_id,
+                    after_cursor=self._get_cursor(a).latest_consumed_event_id,
                 ),
                 ascending=False,
                 limit=1,
@@ -653,7 +688,12 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def materialization_records_for_key(
         self, asset_key: AssetKey, limit: int
     ) -> Iterable["EventLogRecord"]:
-        """Fetches asset materialization event records for asset_key, with the earliest event first.
+        """
+        Fetches asset materialization event records for asset_key, with the earliest event first.
+
+        Does not fetch unconsumed events. To fetch unconsumed events, use the
+        `latest_materialization_records_by_partition` or `latest_materialization_records_by_partition_and_asset`
+        methods instead.
 
         Args:
             asset_key (AssetKey): The asset to fetch materialization events for
@@ -671,7 +711,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
                     asset_key=asset_key,
-                    after_cursor=self._get_cursor(asset_key).latest_evaluated_event_id,
+                    after_cursor=self._get_cursor(asset_key).latest_consumed_event_id,
                 ),
                 ascending=True,
                 limit=limit,
@@ -681,40 +721,13 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         for event in events:
             self._add_fetched_events(event)
 
-        num_unevaluated_events_to_fetch = limit - len(events)
-        if num_unevaluated_events_to_fetch > 0:
-            # Unevaluted event IDs ordered in descending order, to fetch the last N unevaluated events
-            sorted_unevaluated_ids = sorted(
-                self._get_cursor(asset_key).unevaluated_partitioned_event_ids, reverse=True
-            )
-            if len(sorted_unevaluated_ids) > num_unevaluated_events_to_fetch:
-                sorted_unevaluated_ids = sorted_unevaluated_ids[:num_unevaluated_events_to_fetch]
-
-            unevaluted_events = list(
-                self._get_unevaluated_events_with_ids(sorted_unevaluated_ids[::-1])
-            )
-
-            events = unevaluted_events + events
-
         return events
 
     def _get_cursor(self, asset_key: AssetKey) -> MultiAssetSensorAssetCursorComponent:
         """
-        The cursor maps stringified AssetKeys (str(asset_key)) to Tuples. The first value in the
-        tuple is the partition of type str, representing the partition key. The second value in the
-        tuple is the storage_id (int) of the materialization event for the asset that has been most
-        recently processed by the sensor.
+        Returns the MultiAssetSensorAssetCursorComponent for the asset key.
 
-        For example, a multi_asset_sensor that monitors partitioned asset A would have a cursor:
-        {
-            str(asset_a.key): (partition_a, storage_id_a),
-        }
-        Where partition_a and storage_id_a are the partition and storage_id of the most recent
-        materialization processed by the sensor.
-
-        The cursor is stringified as a JSON object and then loaded as needed. This method accepts an
-        asset key and returns the tuple containing partition key and storage ID for that asset. If
-        no asset key is provided, the method returns back the unpacked cursor object.
+        For more information, view the docstring for the MultiAssetSensorAssetCursorComponent class.
         """
         check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -782,28 +795,28 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         # Retain ordering of materializations
         materialization_by_partition: Dict[str, EventLogRecord] = OrderedDict()
 
-        # Add unevaluated events to the materialization by partition dictionary
+        # Add unconsumed events to the materialization by partition dictionary
         # These events came before the cursor, so should be inserted in storage ID ascending order
-        for unevaluated_event in sorted(
-            self._get_unevaluated_events_with_ids(
-                self._get_cursor(asset_key).unevaluated_partitioned_event_ids
+        for unconsumed_event in sorted(
+            self._get_unconsumed_events_with_ids(
+                list(self._get_cursor(asset_key).trailing_unconsumed_partitioned_event_ids.values())
             )
         ):
-            partition = _get_partition_key_from_event_log_record(unevaluated_event)
+            partition = _get_partition_key_from_event_log_record(unconsumed_event)
             if isinstance(partition, str) and partition in partitions_to_fetch:
                 if partition in materialization_by_partition:
                     # Remove partition to ensure materialization_by_partition preserves
                     # the order of materializations
                     materialization_by_partition.pop(partition)
                 # Add partition and materialization to the end of the OrderedDict
-                materialization_by_partition[partition] = unevaluated_event
+                materialization_by_partition[partition] = unconsumed_event
 
         partition_materializations = self.instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
                 asset_partitions=partitions_to_fetch,
-                after_cursor=self._get_cursor(asset_key).latest_evaluated_event_id,
+                after_cursor=self._get_cursor(asset_key).latest_consumed_event_id,
             ),
             ascending=True,
         )
@@ -827,7 +840,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self,
     ) -> Mapping[str, Mapping[AssetKey, "EventLogRecord"]]:
         """
-        Finds the most recent unevaluated materialization for each partition for each asset
+        Finds the most recent unconsumed materialization for each partition for each asset
         monitored by the sensor. Aggregates all materializations into a mapping of partition key
         to a mapping of asset key to the materialization event for that partition.
 
@@ -871,9 +884,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 "Provided asset key must correspond to a provided asset"
             )
         if asset_key:
-            partition_key = self._get_cursor(asset_key).latest_evaluated_event_partition
+            partition_key = self._get_cursor(asset_key).latest_consumed_event_partition
         elif self._asset_keys is not None and len(self._asset_keys) == 1:
-            partition_key = self._get_cursor(self._asset_keys[0]).latest_evaluated_event_partition
+            partition_key = self._get_cursor(self._asset_keys[0]).latest_consumed_event_partition
         else:
             raise DagsterInvalidInvocationError(
                 "Asset key must be provided when multiple assets are defined"
@@ -1016,11 +1029,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self, materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]]
     ):
         """
-        Marks the provided materialization records as having been evaluated by the sensor. Future
+        Marks the provided materialization records as having been consumed by the sensor. Future
         context calls will not fetch these records again.
 
         Passing a partitioned materialization record into this function will mark prior materializations
-        with the same asset key and partition as having been evaluated.
+        with the same asset key and partition as having been consumed.
 
         Args:
             materialization_records_by_key (Mapping[AssetKey, Optional[EventLogRecord]]): Mapping of AssetKeys to EventLogRecord or None. If
@@ -1046,8 +1059,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         Updates the cursor to the most recent materialization event for all assets monitored by
         the multi_asset_sensor.
 
-        Removes all unevaluated events from the cursor and marks all materialization events as
-        evaluated by the sensor.
+        Removes all unconsumed events from the cursor and marks all materialization events as
+        consumed by the sensor.
         """
         materializations_by_key = self.latest_materialization_records_by_key()
 
@@ -1055,7 +1068,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._event_fetched_is_advanced: Dict[int, bool] = {}  # key is storage id
         self._event_ids_by_partition_key: Dict[str, List[int]] = defaultdict(list)
 
-        # Update cursor to the latest materialization for each asset and clears unevaluated events
+        # Update cursor to the latest materialization for each asset and clears unconsumed events
         self._unpacked_cursor.reset_cursors_to_materializations(materializations_by_key)
 
         self._cursor_has_been_updated = True
