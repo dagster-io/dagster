@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Page, PageHeader, Heading, Alert, ButtonLink, Colors, Group} from '@dagster-io/ui';
+import {Page, Alert, ButtonLink, Colors, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -13,7 +13,7 @@ import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {SchedulesNextTicks} from '../schedules/SchedulesNextTicks';
 import {Loading} from '../ui/Loading';
 
-import {RunListTabs} from './RunListTabs';
+import {RunsPageHeader} from './RunsPageHeader';
 import {SchedulerInfoQuery} from './types/SchedulerInfoQuery';
 
 export const ScheduledRunListRoot = () => {
@@ -26,11 +26,11 @@ export const ScheduledRunListRoot = () => {
     notifyOnNetworkStatusChange: true,
   });
 
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   return (
     <Page>
-      <PageHeader title={<Heading>Runs</Heading>} tabs={<RunListTabs />} />
+      <RunsPageHeader refreshStates={[refreshState]} />
       <Loading queryResult={queryResult}>
         {(result) => {
           const {repositoriesOrError, instance} = result;
@@ -60,10 +60,13 @@ export const ScheduledRunListRoot = () => {
             );
           }
           return (
-            <Group direction="column" spacing={24}>
-              <SchedulerInfo daemonHealth={instance.daemonHealth} />
+            <>
+              <SchedulerInfo
+                daemonHealth={instance.daemonHealth}
+                padding={{vertical: 16, horizontal: 24}}
+              />
               <SchedulesNextTicks repos={repositoriesOrError.nodes} />
-            </Group>
+            </>
           );
         }}
       </Loading>
