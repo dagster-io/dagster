@@ -157,7 +157,7 @@ Let's review what the repository is doing:
 
 - Supplies the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> to the dbt project. This resource executes dbt CLI commands TODO
 
-- Supplies the `duckdb_io_manager` resource to the assets in the repository. This resource contains an [I/O manager](/concepts/io-management/io-managers) that, when materialized, allows:
+- Supplies the `duckdb_io_manager` resource to the assets in the repository. This resource contains an [I/O manager](/concepts/io-management/io-managers) that, when assets are materialized, allows:
 
   - Upstream assets (`customers_raw`, `orders_raw`) to load data into DuckDB
   - Downstream assets to read data from DuckDB. We'll add the downstream asset in the next section.
