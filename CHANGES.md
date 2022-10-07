@@ -1,5 +1,57 @@
 # Changelog
 
+# 1.0.12 (core) / 0.16.12 (libraries)
+
+### New
+
+- The `multi_asset_sensor` (experimental) now accepts an `AssetSelection` of assets to monitor. There are also minor API updates for the multi-asset sensor context.
+- `AssetValueLoader`, the type returned by `RepositoryDefinition.get_asset_value_loader` is now part of Dagster’s public API.
+- `RepositoryDefinition.load_asset_value` and `AssetValueLoader.load_asset_value` now support a `partition_key` argument.
+- `RepositoryDefinition.load_asset_value` and `AssetValueLoader.load_asset_value` now work with I/O managers that invoke `context.upstream_output.asset_key`.
+- When running Dagster locally, the default amount of time that the system waits when importing user code has been increased from 60 seconds to 180 seconds, to avoid false positives when importing code with heavy dependencies or large numbers of assets. This timeout can be configured in `dagster.yaml` as follows:
+
+```yaml
+code_servers:
+  local_startup_timeout: 120
+```
+
+- [dagit] The “Status” section has been renamed to “Deployment”, to better reflect that this section of the app shows deployment-wide information.
+- [dagit] When viewing the compute logs for a run and choosing a step to filter on, there is now a search input to make it easier to find the step you’re looking for.
+- [dagster-aws] The EcsRunLauncher can now launch runs in ECS clusters using both Fargate and EC2 capacity providers. See the [Deploying to ECS docs](http://docs.dagster.io/deployment/guides/aws#customizing-the-launched-runs-task) for more information.
+- [dagster-airbyte] Added the `load_assets_from_airbyte_instance` function which automatically generates asset definitions from an Airbyte instance. For more details, see the [new Airbyte integration guide](https://docs.dagster.io/integrations/airbyte).
+- [dagster-airflow] Added the `DagsterCloudOperator` and `DagsterOperator` , which are airflow operators that enable orchestrating dagster jobs, running on either cloud or OSS dagit instances, from Apache Airflow.
+
+### Bugfixes
+
+- Fixed a bug where if resource initialization failed for a dynamic op, causing other dynamic steps to be skipped, those skipped dynamic steps would be ignored when retrying from failure.
+- Previously, some invocations within the Dagster framework would result in warnings about deprecated metadata APIs.  Now, users should only see warnings if their code uses deprecated metadata APIs.
+- How the daemon process manages its understanding of user code artifacts has been reworked to improve memory consumption.
+- [dagit] The partition selection UI in the Asset Materialization modal now allows for mouse selection and matches the UI used for partitioned op jobs.
+- [dagit] Sidebars in Dagit shrink more gracefully on small screens where headers and labels need to be truncated.
+- [dagit] Improved performance for loading runs with >10,000 logs
+- [dagster-airbyte] Previously, the `port` configuration in the `airbyte_resource` was marked as not required, but if it was not supplied, an error would occur. It is now marked as required.
+- [dagster-dbt] A change made to the manifest.json schema in dbt 1.3 would result in an error when using `load_assets_from_dbt_project` or `load_assets_from_manifest_json`. This has been fixed.
+- [dagster-postgres] connections that fail due to **`sqlalchemy.exc.TimeoutError`** now retry
+
+### Breaking Changes
+
+- [dagster-aws] The `redshift_resource` no longer accepts a `schema` configuration parameter.  Previously, this parameter would error whenever used, because Redshift connections do not support this parameter.
+
+### Deprecations
+
+- deprecations here
+
+### Community Contributions
+
+- We now reference the correct method in the "loading asset values outside of Dagster runs" example (thank you Peter A. I. Forsyth!)
+- We now reference the correct test directory in the “Create a New Project” documentation (thank you Peter A. I. Forsyth!)
+- [dagster-pyspark] dagster-pyspark now contains a `LazyPysparkResource` that only initializes a spark session once it’s accessed (thank you @zyd14!)
+
+### Experimental
+
+- The new `build_asset_reconciliation_sensor` function accepts a set of software-defined assets and returns a sensor that automatically materializes those assets after their parents  are materialized.
+- [dagit] A new "groups-only" asset graph feature flag allows you to zoom way out on the global asset graph, collapsing asset groups into smaller nodes you can double-click to expand.
+
 # 1.0.11 (core) / 0.16.11 (libraries)
 
 ### New
