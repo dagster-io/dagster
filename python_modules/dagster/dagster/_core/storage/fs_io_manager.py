@@ -41,7 +41,34 @@ def fs_io_manager(init_context):
 
     Example usage:
 
-    1. Specify a job-level IO manager using the reserved resource key ``"io_manager"``,
+
+    1. Attach an IO manager to a set of assets using the reserved resource key ``"io_manager"``.
+
+    .. code-block:: python
+
+        from dagster import asset, fs_io_manager, repository, with_resources
+
+        @asset
+        def asset1():
+            # create df ...
+            return df
+
+        @asset
+        def asset2(asset1):
+            return df[:5]
+
+        @repository
+        def repo():
+            return with_resources(
+                [asset1, asset2],
+                resource_defs={
+                    "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})
+                },
+            )
+        )
+
+
+    2. Specify a job-level IO manager using the reserved resource key ``"io_manager"``,
     which will set the given IO manager on all ops in a job.
 
     .. code-block:: python
@@ -66,7 +93,7 @@ def fs_io_manager(init_context):
             op_b(op_a())
 
 
-    2. Specify IO manager on :py:class:`Out`, which allows the user to set different IO managers on
+    3. Specify IO manager on :py:class:`Out`, which allows you to set different IO managers on
     different step outputs.
 
     .. code-block:: python
