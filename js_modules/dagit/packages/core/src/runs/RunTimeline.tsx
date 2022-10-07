@@ -24,7 +24,7 @@ import {mergeStatusToBackground} from './mergeStatusToBackground';
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;
 const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
-const EMPTY_STATE_HEIGHT = 140;
+const EMPTY_STATE_HEIGHT = 66;
 const LABEL_WIDTH = 320;
 const MIN_DATE_WIDTH_PCT = 10;
 
@@ -87,9 +87,11 @@ export const RunTimeline = (props: Props) => {
   const includesTicks = now <= end;
 
   if (!bucketByRepo) {
+    const anyJobs = jobs.length > 0;
     const height = ROW_HEIGHT * jobs.length;
+    const timelineHeight = DATE_TIME_HEIGHT + (anyJobs ? height : EMPTY_STATE_HEIGHT);
     return (
-      <Timeline $height={DATE_TIME_HEIGHT + height} ref={containerRef}>
+      <Timeline $height={timelineHeight} ref={containerRef}>
         <Box
           padding={{left: 24}}
           flex={{direction: 'column', justifyContent: 'center'}}
@@ -98,7 +100,7 @@ export const RunTimeline = (props: Props) => {
         >
           Jobs
         </Box>
-        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
+        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
         <div>
           {jobs.length ? (
             jobs.map((job, ii) => (
@@ -139,9 +141,11 @@ export const RunTimeline = (props: Props) => {
   const duplicateRepoNames = findDuplicateRepoNames(
     repoOrder.map((repoKey) => repoAddressFromPath(repoKey)?.name || ''),
   );
+  const anyJobs = repoOrder.length > 0;
+  const timelineHeight = DATE_TIME_HEIGHT + (anyJobs ? height : EMPTY_STATE_HEIGHT);
 
   return (
-    <Timeline $height={DATE_TIME_HEIGHT + height} ref={containerRef}>
+    <Timeline $height={timelineHeight} ref={containerRef}>
       <Box
         padding={{left: 24}}
         flex={{direction: 'column', justifyContent: 'center'}}
@@ -150,7 +154,7 @@ export const RunTimeline = (props: Props) => {
       >
         Jobs
       </Box>
-      <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
+      <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
       {repoOrder.length ? (
         repoOrder.map((repoKey) => {
           const name = repoAddressFromPath(repoKey)?.name;
@@ -491,7 +495,7 @@ const NowMarker = styled.div`
 `;
 
 const MIN_CHUNK_WIDTH = 2;
-const MIN_WIDTH_FOR_MULTIPLE = 16;
+const MIN_WIDTH_FOR_MULTIPLE = 12;
 
 const RunTimelineRow = ({
   job,
@@ -594,6 +598,7 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
 
   return (
     <Box
+      background={Colors.White}
       padding={{vertical: 24}}
       flex={{direction: 'row', justifyContent: 'center'}}
       border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}

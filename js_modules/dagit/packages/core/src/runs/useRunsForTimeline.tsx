@@ -126,7 +126,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
                     id: `${schedule.pipelineName}-future-run-${timestamp}`,
                     status: 'SCHEDULED',
                     startTime,
-                    endTime: startTime + 10 * 1000,
+                    endTime: startTime + 5 * 1000,
                   });
                 }
               });

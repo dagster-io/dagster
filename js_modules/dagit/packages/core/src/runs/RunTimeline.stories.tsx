@@ -216,7 +216,7 @@ export const BucketByRepo = () => {
   );
 };
 
-export const CandyStriping = () => {
+export const MultipleStatusesBatched = () => {
   const twoHoursAgo = React.useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
   const now = React.useMemo(() => Date.now(), []);
 
@@ -267,4 +267,69 @@ export const CandyStriping = () => {
   }, [twoHoursAgo, now]);
 
   return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
+};
+
+export const BatchThresholdTesting = () => {
+  const threeHoursAgo = React.useMemo(() => Date.now() - 3 * 60 * 60 * 1000, []);
+  const now = React.useMemo(() => Date.now(), []);
+
+  const jobs: TimelineJob[] = React.useMemo(() => {
+    const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
+    const repoAddress = makeRepoAddress();
+    return [
+      {
+        key: jobKey,
+        jobName: jobKey,
+        jobType: 'job',
+        path: `/${jobKey}`,
+        repoAddress,
+        runs: [
+          {
+            id: faker.datatype.uuid(),
+            status: 'SCHEDULED',
+            startTime: now,
+            endTime: now + 5 * 1000,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: 'SCHEDULED',
+            startTime: now + 60 * 2 * 1000,
+            endTime: now + 60 * 2 * 1000 + 5 * 1000,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: 'SCHEDULED',
+            startTime: now + 60 * 4 * 1000,
+            endTime: now + 60 * 4 * 1000 + 5 * 1000,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: 'SCHEDULED',
+            startTime: now + 60 * 6 * 1000,
+            endTime: now + 60 * 6 * 1000 + 5 * 1000,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: 'SCHEDULED',
+            startTime: now + 60 * 8 * 1000,
+            endTime: now + 60 * 8 * 1000 + 5 * 1000,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.SUCCESS,
+            startTime: threeHoursAgo + 24 * 60 * 1000,
+            endTime: threeHoursAgo + 26 * 60 * 1000,
+          },
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.FAILURE,
+            startTime: threeHoursAgo + 28 * 60 * 1000,
+            endTime: threeHoursAgo + 30 * 60 * 1000,
+          },
+        ],
+      },
+    ];
+  }, [threeHoursAgo, now]);
+
+  return <RunTimeline jobs={jobs} range={[threeHoursAgo, now + 60 * 60 * 1000]} />;
 };

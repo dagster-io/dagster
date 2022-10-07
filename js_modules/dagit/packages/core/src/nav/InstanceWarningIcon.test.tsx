@@ -2,6 +2,7 @@ import {waitFor} from '@testing-library/dom';
 import {render, screen} from '@testing-library/react';
 import * as React from 'react';
 
+import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {TestProvider} from '../testing/TestProvider';
 
 import {InstanceWarningIcon} from './InstanceWarningIcon';
@@ -10,7 +11,9 @@ describe('InstanceWarningIcon', () => {
   const Test: React.FC<{mocks: any}> = ({mocks}) => {
     return (
       <TestProvider apolloProps={{mocks}}>
-        <InstanceWarningIcon />
+        <DeploymentStatusProvider include={new Set<DeploymentStatusType>(['daemons'])}>
+          <InstanceWarningIcon />
+        </DeploymentStatusProvider>
       </TestProvider>
     );
   };

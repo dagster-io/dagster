@@ -1,16 +1,16 @@
-import {Page, PageHeader, Heading, Box, TextInput, ButtonGroup, Button} from '@dagster-io/ui';
+import {Page, PageHeader, Heading, Box, TextInput, Button, ButtonGroup} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
+import {QueryfulRunTimeline} from '../runs/QueryfulRunTimeline';
+import {useHourWindow, HourWindow} from '../runs/useHourWindow';
+import {makeJobKey} from '../runs/useRunsForTimeline';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {QueryfulRunTimeline} from './QueryfulRunTimeline';
-import {RunListTabs} from './RunListTabs';
-import {HourWindow, useHourWindow} from './useHourWindow';
-import {makeJobKey} from './useRunsForTimeline';
+import {OverviewTabs} from './OverviewTabs';
 
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
@@ -29,7 +29,7 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
   }
 };
 
-export const RunTimelineRoot = () => {
+export const OverviewTimelineRoot = () => {
   useTrackPageView();
   useDocumentTitle('Runs');
 
@@ -84,7 +84,7 @@ export const RunTimelineRoot = () => {
 
   return (
     <Page>
-      <PageHeader title={<Heading>Runs</Heading>} tabs={<RunListTabs />} />
+      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="timeline" />} />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{alignItems: 'center', justifyContent: 'space-between'}}

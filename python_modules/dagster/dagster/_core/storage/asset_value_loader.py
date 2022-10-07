@@ -9,7 +9,7 @@ from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.output import build_output_context
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance, is_dagster_home_set
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._utils import merge_dicts
 
@@ -32,8 +32,11 @@ class AssetValueLoader:
     ):
         self._assets_defs_by_key = assets_defs_by_key
         self._resource_instance_cache: Dict[str, object] = {}
-        self._instance = instance
         self._exit_stack: ExitStack = ExitStack().__enter__()
+        if not instance and is_dagster_home_set():
+            self._instance = self._exit_stack.enter_context(DagsterInstance.get())
+        else:
+            self._instance = instance
 
     def _ensure_resource_instances_in_cache(self, resource_defs: Mapping[str, ResourceDefinition]):
         for built_resource_key, built_resource in (
@@ -55,7 +58,9 @@ class AssetValueLoader:
     def load_asset_value(
         self,
         asset_key: CoercibleToAssetKey,
+        *,
         python_type: Optional[Type] = None,
+        partition_key: Optional[str] = None,
     ) -> object:
         """
         Loads the contents of an asset as a Python object.
@@ -66,6 +71,7 @@ class AssetValueLoader:
             asset_key (Union[AssetKey, Sequence[str], str]): The key of the asset to load.
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
+            partition_key (Optional[str]): The partition of the asset to load.
 
         Returns:
             The contents of an asset as a Python object.
@@ -91,9 +97,12 @@ class AssetValueLoader:
             name=None,
             asset_key=asset_key,
             dagster_type=resolve_dagster_type(python_type),
-            upstream_output=build_output_context(metadata=assets_def.metadata_by_key[asset_key]),
+            upstream_output=build_output_context(
+                metadata=assets_def.metadata_by_key[asset_key], asset_key=asset_key
+            ),
             resources=self._resource_instance_cache,
             resource_config=io_manager_config[io_manager_key].config,
+            partition_key=partition_key,
         )
 
         return io_manager.load_input(input_context)

@@ -26,6 +26,7 @@ import {CompatRouter} from 'react-router-dom-v5-compat';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
+import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
@@ -102,6 +103,7 @@ export interface AppProviderProps {
     origin: string;
     staticPathRoot?: string;
     telemetryEnabled?: boolean;
+    statusPolling?: Set<DeploymentStatusType>;
   };
 }
 
@@ -114,6 +116,7 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     origin,
     staticPathRoot = '/',
     telemetryEnabled = false,
+    statusPolling,
   } = config;
 
   const graphqlPath = `${basePath}/graphql`;
@@ -169,6 +172,12 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     [],
   );
 
+  // todo dish: Make `statusPolling` non-optional once Cloud defines it.
+  const deploymentStatuses = React.useMemo(
+    () => statusPolling || new Set<DeploymentStatusType>(['code-locations']),
+    [statusPolling],
+  );
+
   return (
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
@@ -186,15 +195,17 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
               <CompatRouter>
                 <TimezoneProvider>
                   <WorkspaceProvider>
-                    <CustomConfirmationProvider>
-                      <AnalyticsContext.Provider value={analytics}>
-                        <InstancePageContext.Provider value={instancePageValue}>
-                          <LayoutProvider>{props.children}</LayoutProvider>
-                        </InstancePageContext.Provider>
-                      </AnalyticsContext.Provider>
-                    </CustomConfirmationProvider>
-                    <CustomTooltipProvider />
-                    <CustomAlertProvider />
+                    <DeploymentStatusProvider include={deploymentStatuses}>
+                      <CustomConfirmationProvider>
+                        <AnalyticsContext.Provider value={analytics}>
+                          <InstancePageContext.Provider value={instancePageValue}>
+                            <LayoutProvider>{props.children}</LayoutProvider>
+                          </InstancePageContext.Provider>
+                        </AnalyticsContext.Provider>
+                      </CustomConfirmationProvider>
+                      <CustomTooltipProvider />
+                      <CustomAlertProvider />
+                    </DeploymentStatusProvider>
                   </WorkspaceProvider>
                 </TimezoneProvider>
               </CompatRouter>

@@ -2,10 +2,10 @@ import {Box, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
+import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
 
-import {InstanceWarningIcon, useDeploymentStatus} from './InstanceWarningIcon';
+import {InstanceWarningIcon} from './InstanceWarningIcon';
 import {WarningTooltip} from './WarningTooltip';
-import {useWorkspaceStatus} from './WorkspaceStatus';
 
 export const DeploymentStatusIcon = React.memo(() => {
   const {flagNewWorkspace} = useFeatureFlags();
@@ -13,26 +13,25 @@ export const DeploymentStatusIcon = React.memo(() => {
 });
 
 const CombinedStatusIcon = React.memo(() => {
-  const deploymentStatus = useDeploymentStatus();
-  const workspaceStatus = useWorkspaceStatus();
+  const {codeLocations, daemons} = React.useContext(DeploymentStatusContext);
 
-  if (workspaceStatus?.type === 'spinner') {
+  if (codeLocations?.type === 'spinner') {
     return (
-      <Tooltip content={workspaceStatus.content} placement="bottom">
+      <Tooltip content={codeLocations.content} placement="bottom">
         <Spinner purpose="body-text" fillColor={Colors.Gray300} />
       </Tooltip>
     );
   }
 
-  const anyWarning = deploymentStatus?.type === 'warning' || workspaceStatus?.type === 'warning';
+  const anyWarning = daemons?.type === 'warning' || codeLocations?.type === 'warning';
 
   if (anyWarning) {
     return (
       <WarningTooltip
         content={
           <Box flex={{direction: 'column', gap: 4}}>
-            {deploymentStatus?.content}
-            {workspaceStatus?.content}
+            {daemons?.content}
+            {codeLocations?.content}
           </Box>
         }
         position="bottom"
@@ -43,5 +42,5 @@ const CombinedStatusIcon = React.memo(() => {
     );
   }
 
-  return <div style={{width: '16px'}} />;
+  return null;
 });

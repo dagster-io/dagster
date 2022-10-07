@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {DeploymentStatusIcon} from '../nav/DeploymentStatus';
+import {DeploymentStatusIcon} from '../nav/DeploymentStatusIcon';
 import {VersionNumber} from '../nav/VersionNumber';
 import {WorkspaceStatus} from '../nav/WorkspaceStatus';
 import {SearchDialog} from '../search/SearchDialog';
@@ -24,16 +24,25 @@ export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPl
   const {flagNewWorkspace} = useFeatureFlags();
 
   const navLinks = () => {
-    const runHref = flagNewWorkspace ? '/instance/runs/timeline' : '/instance/runs';
+    const overviewItem = flagNewWorkspace ? (
+      <ShortcutHandler
+        key="overview"
+        onShortcut={() => history.push('/overview')}
+        shortcutLabel="⌥1"
+        shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
+      >
+        <TopNavLink to="/overview" data-cy="AppTopNav_StatusLink">
+          Overview
+        </TopNavLink>
+      </ShortcutHandler>
+    ) : null;
 
     const deploymentItem = (
       <ShortcutHandler
         key="deployment"
         onShortcut={() => history.push('/instance')}
-        shortcutLabel={flagNewWorkspace ? '⌥4' : '⌥3'}
-        shortcutFilter={(e) =>
-          flagNewWorkspace ? e.code === 'Digit4' && e.altKey : e.code === 'Digit3' && e.altKey
-        }
+        shortcutLabel={flagNewWorkspace ? '⌥5' : '⌥3'}
+        shortcutFilter={(e) => e.altKey && e.code === (flagNewWorkspace ? 'Digit5' : 'Digit3')}
       >
         <TopNavLink
           to="/instance"
@@ -59,15 +68,13 @@ export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPl
       <ShortcutHandler
         key="workspace"
         onShortcut={() => history.push('/workspace')}
-        shortcutLabel={flagNewWorkspace ? '⌥3' : '⌥4'}
-        shortcutFilter={(e) =>
-          flagNewWorkspace ? e.code === 'Digit3' && e.altKey : e.code === 'Digit4' && e.altKey
-        }
+        shortcutLabel="⌥4"
+        shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
       >
         <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
           <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
             Workspace
-            {flagNewWorkspace ? null : <WorkspaceStatus />}
+            {flagNewWorkspace ? null : <WorkspaceStatus placeholder />}
           </Box>
         </TopNavLink>
       </ShortcutHandler>
@@ -75,19 +82,20 @@ export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPl
 
     return (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+        {flagNewWorkspace ? overviewItem : null}
         <ShortcutHandler
-          onShortcut={() => history.push(runHref)}
-          shortcutLabel="⌥1"
-          shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
+          onShortcut={() => history.push('/instance/runs')}
+          shortcutLabel={flagNewWorkspace ? '⌥2' : '⌥1'}
+          shortcutFilter={(e) => e.altKey && e.code === (flagNewWorkspace ? 'Digit2' : 'Digit1')}
         >
-          <TopNavLink to={runHref} data-cy="AppTopNav_RunsLink">
+          <TopNavLink to="/instance/runs" data-cy="AppTopNav_RunsLink">
             Runs
           </TopNavLink>
         </ShortcutHandler>
         <ShortcutHandler
           onShortcut={() => history.push('/instance/assets')}
-          shortcutLabel="⌥2"
-          shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
+          shortcutLabel={flagNewWorkspace ? '⌥3' : '⌥2'}
+          shortcutFilter={(e) => e.altKey && e.code === (flagNewWorkspace ? 'Digit3' : 'Digit2')}
         >
           <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
             Assets
