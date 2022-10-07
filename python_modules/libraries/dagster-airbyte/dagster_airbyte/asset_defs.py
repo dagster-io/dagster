@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Union,
     cast,
 )
 
@@ -221,6 +222,20 @@ def build_airbyte_assets(
     return [_assets]
 
 
+def _get_schema_types(schema: Mapping[str, Any]) -> Union[str, List[str], None]:
+    """
+    Given a schema definition, return a list of data types that are valid for this schema.
+    """
+    return schema.get("types") or schema.get("type")
+
+
+def _get_sub_schemas(schema: Mapping[str, Any]) -> List[Mapping[str, Any]]:
+    """
+    Returns a list of sub-schema definitions for a given schema. This is used to handle union types.
+    """
+    return schema.get("anyOf") or schema.get("oneOf") or [schema]
+
+
 def _get_normalization_tables_for_schema(
     key: str, schema: Mapping[str, Any], prefix: str = ""
 ) -> List[str]:
@@ -237,19 +252,29 @@ def _get_normalization_tables_for_schema(
 
     out = []
     # Object types are broken into a new table, as long as they have children
-    if (
-        schema["type"] == "object"
-        or "object" in schema["type"]
-        and len(schema.get("properties", {})) > 0
-    ):
-        out.append(prefix + key)
-        for k, v in schema["properties"].items():
-            out += _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
-    # Array types are also broken into a new table
-    elif schema["type"] == "array" or "array" in schema["type"]:
-        out.append(prefix + key)
-        for k, v in schema["items"]["properties"].items():
-            out += _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
+
+    sub_schemas = _get_sub_schemas(schema)
+
+    for sub_schema in sub_schemas:
+        schema_type = _get_schema_types(sub_schema)
+        if not schema_type:
+            continue
+
+        if (
+            schema_type == "object"
+            or "object" in schema_type
+            and len(sub_schema.get("properties", {})) > 0
+        ):
+            out.append(prefix + key)
+            for k, v in sub_schema["properties"].items():
+                out += _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
+        # Array types are also broken into a new table
+        elif schema_type == "array" or "array" in schema_type:
+            out.append(prefix + key)
+            if sub_schema.get("items", {}).get("properties"):
+                for k, v in sub_schema["items"]["properties"].items():
+                    out += _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
+
     return out
 
 
