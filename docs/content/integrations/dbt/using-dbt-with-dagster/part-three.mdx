@@ -17,145 +17,26 @@ By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-da
 
 In this step, you'll:
 
-- [TODO: DuckDB resource]()
-- [Create a Dagster repository and supply resources](TODO)
-- [Materialize the assets using Dagit](#step-3-materialize-the-assets-using-dagit)
+- [Create a Dagster repository and supply resources](#step-1-update-the-dagster-repository-and-supply-resources)
+- [Materialize the assets using Dagit](#step-2-materialize-the-assets-using-dagit)
 
 ---
 
-## Step 1: Create a Dagster DuckDB resource
+## Step 1: Update the Dagster repository and supply resources
 
-TODO: Explain why this is needed, and why we're using an IO manager
+Next, you'll update the Dagster [repository](/concepts/repositories-workspaces/repositories) to supply resources to the assets from the [previous step](/integrations/dbt/using-dbt-with-dagster/part-two).
 
-<!-- high level is that the duckdb resource is only needed for the upstream and downstream assets. The dbt assets know how to store the models in dbt (that’s what the dbt adapter and profile do). but the upstream and downstream assets need a way to load data into duckdb (upstream assets) and read data from duckdb (downstream asset) -->
+In the `dbt_dagster_tutorial` folder, open the `repository.py` file and replace its contents with the following:
 
-```python file=../../dbt_dagster_tutorial/dbt_dagster_tutorial/duckdb_resource.py
-# This will be moved to a dagster-duckdb library
-import duckdb
-import pandas as pd
-
-from dagster import Field, IOManager
-from dagster import _check as check
-from dagster import io_manager
-from dagster._seven.temp_dir import get_system_temp_directory
-from dagster._utils.backoff import backoff
-
-
-class DuckDBCSVIOManager(IOManager):
-    """Stores data in csv files and creates duckdb views over those files."""
-
-    def __init__(self, base_path):
-        self._base_path = base_path
-
-    def handle_output(self, context, obj):
-        if obj is not None:  # if this is a dbt output, then the value will be None
-            if not isinstance(obj, pd.DataFrame):
-                check.failed(f"Outputs of type {type(obj)} not supported.")
-
-            con = self._connect_duckdb(context).cursor()
-            filepath = self._get_path(context)
-            # write df to csv file
-            obj.to_csv(filepath)
-
-            # create view over that file
-            con.execute(f"create schema if not exists {self._schema(context)};")
-            con.execute(
-                f"create or replace view {self._table_path(context)} as "
-                f"select * from '{filepath}';"
-            )
-            con.close()
-
-    def load_input(self, context):
-        check.invariant(not context.has_asset_partitions, "Can't load partitioned inputs")
-
-        if context.dagster_type.typing_type == pd.DataFrame:
-            con = self._connect_duckdb(context).cursor()
-            ret = con.execute(f"SELECT * FROM {self._table_path(context)}").fetchdf()
-            con.close()
-            return ret
-
-        check.failed(
-            f"Inputs of type {context.dagster_type} not supported. Please specify a valid type "
-            "for this input either on the argument of the @asset-decorated function."
-        )
-
-    def _get_path(self, context):
-        return f"{self._base_path}/{'_'.join(context.asset_key.path)}.csv"
-
-    def _schema(self, context):
-        # assume that the schema is the second to last component of the asset key, e.g.
-        # AssetKey([database, schema, tablename])
-        return context.asset_key.path[-2]
-
-    def _table(self, context):
-        # same as above, but for table
-        return context.asset_key.path[-1]
-
-    def _table_path(self, context):
-        return f"{self._schema(context)}.{self._table(context)}"
-
-    def _connect_duckdb(self, context):
-        return backoff(
-            fn=duckdb.connect,
-            retry_on=(RuntimeError,),
-            kwargs={"database": context.resource_config["duckdb_path"], "read_only": False},
-        )
-
-
-@io_manager(config_schema={"base_path": Field(str, is_required=False), "duckdb_path": str})
-def duckdb_io_manager(init_context):
-    return DuckDBCSVIOManager(
-        base_path=init_context.resource_config.get("base_path", get_system_temp_directory())
-    )
-```
-
----
-
-## Step 2: Create a Dagster repository and supply resources
-
-Next, you'll define a Dagster [repository](/concepts/repositories-workspaces/repositories). In the `dagster_code` folder, create a `repository.py` file that contains the following:
+<TODO></TODO>
 
 ```python
-import os
-
-from dagster_dbt import dbt_cli_resource
-from dagster_code.assets import (
-    DBT_PROFILES,
-    DBT_PROJECT_PATH,
-    customers_raw,
-    dbt_assets,
-    orders_raw,
-)
-from dagster_code.duckdb_resource import duckdb_io_manager
-
-from dagster import repository, with_resources
-
-
-@repository
-def jaffle_shop_repository():
-    return with_resources(
-        [
-            customers_raw,
-            orders_raw,
-            *dbt_assets,
-        ],
-        {
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": DBT_PROJECT_PATH,
-                    "profiles_dir": DBT_PROFILES,
-                },
-            ),
-            "io_manager": duckdb_io_manager.configured(
-                {"duckdb_path": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
-            ),
-        },
-    )
+REPLACE CODE SNIPPET
 ```
 
-Let's review what the repository is doing:
+Let's review what's happening here:
 
-- Supplies the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> to the dbt project. This resource executes dbt CLI commands TODO
+- The <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource supplies a dbt resource to the dbt project. This resource executes dbt CLI commands against the dbt project.
 
 - Supplies the `duckdb_io_manager` resource to the assets in the repository. This resource contains an [I/O manager](/concepts/io-management/io-managers) that, when assets are materialized, allows:
 
@@ -164,7 +45,7 @@ Let's review what the repository is doing:
 
 ---
 
-## Step 3: Materialize the assets using Dagit
+## Step 2: Materialize the assets using Dagit
 
 Now that you've created assets, resources, and a repository, it's time to materialize the assets! Materializing an asset runs the op it contains and saves the results to persistent storage. In this tutorial, we're saving asset outputs to DuckDB.
 
@@ -173,7 +54,7 @@ In this step, you'll materialize the assets using Dagit.
 1. To start Dagit, run the following:
 
    ```shell
-   dagit -f assets.py
+   dagit
    ```
 
    Which will result in output similar to:
@@ -184,16 +65,18 @@ In this step, you'll materialize the assets using Dagit.
 
 2. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the assets:
 
-   <PlaceholderImage></PlaceholderImage>
+   ![Asset graph in Dagit, containing dbt models and Dagster assets](/images/integrations/dbt/using-dbt-with-dagster/part-three-asset-graph.png)
 
-3. Click the **Materialize** button, which will launch a run to materialize the assets:
+3. Click the **Materialize all** button near the top right corner of the page, which will launch a run to materialize the assets.
 
-   <PlaceholderImage></PlaceholderImage>
+After the run completes, you can:
+
+- Click the **asset** to open a sidebar containing info about the asset, including its last materialization stats, a link to view the [**Asset details** page](/concepts/dagit/dagit#asset-details)
+- Click the ID of the **Latest Run** in an asset to view the [**Run details**](/concepts/dagit/dagit#viewing-a-single-run) page. This page contains detailed info about the run, including timing information, errors, and logs. 
 
 <TODO></TODO>
 
 - Should we show the final output of the assets in DuckDB?
-- Include info about logs and asset details?
 
 ---
 
