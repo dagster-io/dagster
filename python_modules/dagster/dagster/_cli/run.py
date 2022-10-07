@@ -126,7 +126,7 @@ def run_migrate_command(from_label, **kwargs):
             return
 
         if not isinstance(instance.run_storage, SqlRunStorage):
-            return
+            raise
 
         count = len(records)
         confirmation = click.prompt(
