@@ -37,10 +37,6 @@ code_servers:
 
 - [dagster-aws] The `redshift_resource` no longer accepts a `schema` configuration parameter.  Previously, this parameter would error whenever used, because Redshift connections do not support this parameter.
 
-### Deprecations
-
-- deprecations here
-
 ### Community Contributions
 
 - We now reference the correct method in the "loading asset values outside of Dagster runs" example (thank you Peter A. I. Forsyth!)
