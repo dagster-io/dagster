@@ -1,4 +1,14 @@
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, List, NamedTuple
+
+from dagster._core.definitions.metadata.table import TableSchema
+
+
+class AirbyteStreamMetadata:
+    def __init__(
+        self, schema: TableSchema, normalization_tables: Dict[str, "AirbyteStreamMetadata"] = None
+    ):
+        self.schema = schema
+        self.normalization_tables = normalization_tables
 
 
 class AirbyteOutput(
