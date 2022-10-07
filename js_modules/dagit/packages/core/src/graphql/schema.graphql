@@ -218,6 +218,11 @@ type DagitQuery {
   Retrieve event logs after applying a run id filter, cursor, and limit.
   """
   logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
+
+  """
+  Retrieve the captured log metadata for a given log key.
+  """
+  capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -540,6 +545,11 @@ type Run implements PipelineRun {
   Compute logs are the stdout/stderr logs for a given solid step computation
   """
   computeLogs(stepKey: String!): ComputeLogs!
+
+  """
+  Captured logs are the stdout/stderr logs for a given file key within the run
+  """
+  capturedLogs(fileKey: String!): CapturedLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
   runConfigYaml: String!
@@ -576,6 +586,11 @@ interface PipelineRun {
   Compute logs are the stdout/stderr logs for a given solid step computation
   """
   computeLogs(stepKey: String!): ComputeLogs!
+
+  """
+  Captured logs are the stdout/stderr logs for a given file key within the run
+  """
+  capturedLogs(fileKey: String!): CapturedLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
   runConfigYaml: String!
@@ -760,6 +775,13 @@ type ComputeLogFile {
   cursor: Int!
   size: Int!
   downloadUrl: String
+}
+
+type CapturedLogs {
+  logKey: [String!]!
+  stdout: String
+  stderr: String
+  cursor: String
 }
 
 type ExecutionPlan {
@@ -1243,6 +1265,7 @@ type LogsCapturedEvent implements MessageEvent {
   fileKey: String!
   logKey: String!
   stepKeys: [String!]
+  externalUrl: String
   pid: Int
 }
 
@@ -2191,6 +2214,7 @@ type Instance {
   daemonHealth: DaemonHealth!
   hasInfo: Boolean!
   dagitTelemetryEnabled: Boolean!
+  hasCapturedLogManager: Boolean!
 }
 
 type RunLauncher {
@@ -2278,6 +2302,13 @@ enum AssetComputeStatus {
 }
 
 union EventConnectionOrError = EventConnection | RunNotFoundError | PythonError
+
+type CapturedLogsMetadata {
+  stdoutDownloadUrl: String
+  stdoutLocation: String
+  stderrDownloadUrl: String
+  stderrLocation: String
+}
 
 """
 The root for all mutations to modify data in your Dagster instance.
@@ -2756,6 +2787,11 @@ type DagitSubscription {
   Retrieve real-time compute logs after applying a filter on run id, step name, log type, and cursor.
   """
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
+
+  """
+  Retrieve real-time compute logs.
+  """
+  capturedLogs(logKey: [String!]!, cursor: String): CapturedLogs!
 
   """
   Retrieve real-time events when a location in the workspace undergoes a state change.

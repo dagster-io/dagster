@@ -46,6 +46,7 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
+from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._serdes import (
     DefaultNamedTupleSerializer,
@@ -1362,31 +1363,32 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    def capture_logs(pipeline_context: IPlanContext, log_key: str, steps: List["ExecutionStep"]):
-        step_keys = [step.key for step in steps]
-        if len(step_keys) == 1:
-            message = f"Started capturing logs for step: {step_keys[0]}."
-        else:
-            message = f"Started capturing logs in process (pid: {os.getpid()})."
+    def legacy_compute_log_step_event(step_context: StepExecutionContext):
+        step_key = step_context.step.key
+        return DagsterEvent.from_step(
+            DagsterEventType.LOGS_CAPTURED,
+            step_context,
+            message=f"Started capturing logs for step: {step_key}.",
+            event_specific_data=ComputeLogsCaptureData(
+                step_keys=[step_key],
+                file_key=step_key,
+            ),
+        )
 
-        if isinstance(pipeline_context, StepExecutionContext):
-            return DagsterEvent.from_step(
-                DagsterEventType.LOGS_CAPTURED,
-                pipeline_context,
-                message=message,
-                event_specific_data=ComputeLogsCaptureData(
-                    step_keys=step_keys,
-                    file_key=log_key,
-                ),
-            )
-
+    @staticmethod
+    def capture_logs(
+        pipeline_context: IPlanContext,
+        step_keys: List[str],
+        log_key: List[str],
+        log_context: CapturedLogContext,
+    ):
+        file_key = log_key[-1]
         return DagsterEvent.from_pipeline(
             DagsterEventType.LOGS_CAPTURED,
             pipeline_context,
-            message=message,
+            message=f"Started capturing logs in process (pid: {os.getpid()}).",
             event_specific_data=ComputeLogsCaptureData(
-                step_keys=step_keys,
-                file_key=log_key,
+                step_keys=step_keys, file_key=file_key, external_url=log_context.external_url
             ),
         )
 
@@ -1727,14 +1729,16 @@ class ComputeLogsCaptureData(
         [
             ("file_key", List[str]),  # renamed log_key => file_key to avoid confusion
             ("step_keys", List[str]),
+            ("external_url", Optional[str]),
         ],
     )
 ):
-    def __new__(cls, file_key, step_keys):
+    def __new__(cls, file_key, step_keys, external_url=None):
         return super(ComputeLogsCaptureData, cls).__new__(
             cls,
             file_key=check.str_param(file_key, "file_key"),
             step_keys=check.opt_list_param(step_keys, "step_keys", of_type=str),
+            external_url=check.opt_str_param(external_url, "external_url"),
         )
 
 

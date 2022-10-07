@@ -78,9 +78,7 @@ def inner_plan_execution_iterator(
                     log_capture_error = e
 
                 if not log_capture_error:
-                    yield DagsterEvent.capture_logs(
-                        step_context, log_key=step_context.step.key, steps=[step_context.step]
-                    )
+                    yield DagsterEvent.legacy_compute_log_step_event(step_context)
 
                 for step_event in check.generator(dagster_event_sequence_for_step(step_context)):
                     check.inst(step_event, DagsterEvent)
