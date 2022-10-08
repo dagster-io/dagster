@@ -37,6 +37,9 @@ class K8sContainerContext(
             ("namespace", Optional[str]),
             ("resources", Dict[str, Any]),
             ("scheduler_name", Optional[str]),
+            ("tolerations", List[Dict[str, Any]]),
+            ("node_selector", Dict[str, Any]),
+            ("pod_security_context", Dict[str, Any]),
         ],
     )
 ):
@@ -59,6 +62,9 @@ class K8sContainerContext(
         namespace: Optional[str] = None,
         resources: Optional[Dict[str, Any]] = None,
         scheduler_name: Optional[str] = None,
+        tolerations: Optional[List[Dict[str, Any]]] = None,
+        node_selector: Optional[Dict[str, Any]] = None,
+        pod_security_context: Optional[Dict[str, Any]] = None,
     ):
         return super(K8sContainerContext, cls).__new__(
             cls,
@@ -80,6 +86,12 @@ class K8sContainerContext(
             namespace=check.opt_str_param(namespace, "namespace"),
             resources=check.opt_dict_param(resources, "resources"),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
+            tolerations=[
+                k8s_snake_case_dict(kubernetes.client.V1Toleration, toleration)
+                for toleration in check.opt_list_param(tolerations, "tolerations")
+            ],
+            node_selector=check.opt_dict_param(node_selector, "node_selector"),
+            pod_security_context=check.opt_dict_param(pod_security_context, "pod_security_context"),
         )
 
     def merge(self, other: "K8sContainerContext") -> "K8sContainerContext":
@@ -104,6 +116,11 @@ class K8sContainerContext(
             namespace=other.namespace if other.namespace else self.namespace,
             resources=other.resources if other.resources else self.resources,
             scheduler_name=other.scheduler_name if other.scheduler_name else self.scheduler_name,
+            tolerations=_dedupe_list(other.tolerations + self.tolerations),
+            node_selector=other.node_selector if other.node_selector else self.node_selector,
+            pod_security_context=other.pod_security_context
+            if other.pod_security_context
+            else self.pod_security_context,
         )
 
     def get_environment_dict(self) -> Dict[str, str]:
@@ -131,6 +148,9 @@ class K8sContainerContext(
                     namespace=run_launcher.job_namespace,
                     resources=run_launcher.resources,
                     scheduler_name=run_launcher.scheduler_name,
+                    tolerations=run_launcher.tolerations,
+                    node_selector=run_launcher.node_selector,
+                    pod_security_context=run_launcher.pod_security_context,
                 )
             )
 
@@ -188,6 +208,9 @@ class K8sContainerContext(
                 namespace=processed_context_value.get("namespace"),
                 resources=processed_context_value.get("resources"),
                 scheduler_name=processed_context_value.get("scheduler_name"),
+                tolerations=processed_context_value.get("tolerations"),
+                node_selector=processed_context_value.get("node_selector"),
+                pod_security_context=processed_context_value.get("pod_security_context"),
             )
         )
 
@@ -208,4 +231,7 @@ class K8sContainerContext(
             labels=self.labels,
             resources=self.resources,
             scheduler_name=self.scheduler_name,
+            tolerations=self.tolerations,
+            node_selector=self.node_selector,
+            pod_security_context=self.pod_security_context,
         )

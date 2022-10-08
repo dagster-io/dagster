@@ -1946,6 +1946,15 @@
                             "type": "null"
                         }
                     ]
+                },
+                "tolerations": {
+                    "$ref": "#/definitions/Tolerations"
+                },
+                "nodeSelector": {
+                    "$ref": "#/definitions/NodeSelector"
+                },
+                "podSecurityContext": {
+                    "$ref": "#/definitions/PodSecurityContext"
                 }
             },
             "required": [

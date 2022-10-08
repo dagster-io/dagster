@@ -55,6 +55,9 @@ def test_launcher_from_config(kubeconfig_file):
         assert run_launcher.fail_pod_on_run_failure is None
         assert run_launcher.resources == resources
         assert run_launcher.scheduler_name == None
+        assert run_launcher.tolerations == []
+        assert run_launcher.node_selector == {}
+        assert run_launcher.pod_security_context == {}
 
     with instance_for_test(
         overrides={
@@ -88,6 +91,13 @@ def test_launcher_with_container_context(kubeconfig_file):
             "limits": {"memory": "128Mi", "cpu": "500m"},
         },
         scheduler_name="test-scheduler",
+        tolerations=[
+            {
+                "key": "my_key1",
+                "operator": "my_operator1",
+                "effect": "my_effect1",
+            }
+        ],
     )
 
     container_context_config = {
@@ -98,6 +108,13 @@ def test_launcher_with_container_context(kubeconfig_file):
                 "requests": {"memory": "32Mi", "cpu": "125m"},
             },
             "scheduler_name": "test-scheduler-2",
+            "tolerations": [
+                {
+                    "key": "my_key2",
+                    "operator": "my_operator2",
+                    "effect": "my_effect2",
+                }
+            ],
         }
     }
 
@@ -156,6 +173,26 @@ def test_launcher_with_container_context(kubeconfig_file):
         }
 
         assert kwargs["body"].spec.template.spec.scheduler_name == "test-scheduler-2"
+
+        tolerations = kwargs["body"].spec.template.spec.tolerations
+        assert len(tolerations) == 2
+        tolerations = sorted(tolerations, key=lambda t: t.key)  # stabilize list order
+
+        assert tolerations[0].to_dict() == {
+            "key": "my_key1",
+            "operator": "my_operator1",
+            "effect": "my_effect1",
+            "toleration_seconds": None,
+            "value": None,
+        }
+
+        assert tolerations[1].to_dict() == {
+            "key": "my_key2",
+            "operator": "my_operator2",
+            "effect": "my_effect2",
+            "toleration_seconds": None,
+            "value": None,
+        }
 
         env_names = [env.name for env in container.env]
 

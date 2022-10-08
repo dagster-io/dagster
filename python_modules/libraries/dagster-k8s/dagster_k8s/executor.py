@@ -104,6 +104,9 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         namespace=exc_cfg.get("job_namespace"),  # type: ignore
         resources=exc_cfg.get("resources"),  # type: ignore
         scheduler_name=exc_cfg.get("scheduler_name"),  # type: ignore
+        tolerations=exc_cfg.get("tolerations"),  # type: ignore
+        node_selector=exc_cfg.get("node_selector"),  # type: ignore
+        pod_security_context=exc_cfg.get("pod_security_context"),  # type: ignore
     )
 
     return StepDelegatingExecutor(

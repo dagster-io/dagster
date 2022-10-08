@@ -124,7 +124,19 @@ config:
   {{- end }}
 
   {{- if $k8sRunLauncherConfig.schedulerName }}
-  schedulerName: {{ $k8sRunLauncherConfig.schedulerName | quote }}
+  scheduler_name: {{ $k8sRunLauncherConfig.schedulerName | quote }}
+  {{- end }}
+
+  {{- if $k8sRunLauncherConfig.tolerations }}
+  tolerations: {{ $k8sRunLauncherConfig.tolerations | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $k8sRunLauncherConfig.nodeSelector }}
+  node_selector: {{ $k8sRunLauncherConfig.nodeSelector | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $k8sRunLauncherConfig.podSecurityContext }}
+  pod_security_context: {{ $k8sRunLauncherConfig.podSecurityContext | toYaml | nindent 4 }}
   {{- end }}
 
 {{- end }}

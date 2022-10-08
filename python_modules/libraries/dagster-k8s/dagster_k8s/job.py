@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 import kubernetes
 
 import dagster._check as check
-from dagster import Array, BoolSource, Field, Noneable, StringSource
+from dagster import Array, BoolSource, Field, IntSource, Noneable, StringSource
 from dagster import __version__ as dagster_version
 from dagster._config import Permissive, Shape, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
@@ -210,7 +210,8 @@ class DagsterK8sJobConfig(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
         "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-        "volume_mounts volumes labels resources scheduler_name",
+        "volume_mounts volumes labels resources scheduler_name tolerations node_selector "
+        "pod_security_context",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -258,6 +259,12 @@ class DagsterK8sJobConfig(
             https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         scheduler_name (Optional[str]): Use a custom Kubernetes scheduler for launched Pods. See:
             https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
+        tolerations (Optional[List[Permissive]]): Specify tolerations for launched Pods. See:
+            https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+        node_selector (Optional[Dict[str, Any]]): Specify a node selector for launched Pods. See:
+            https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+        pod_security_context (Optional[Dict[str, Any]]): Specify a security context for launched Pods. See:
+            https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
     """
 
     def __new__(
@@ -277,6 +284,9 @@ class DagsterK8sJobConfig(
         labels=None,
         resources=None,
         scheduler_name=None,
+        tolerations=None,
+        node_selector=None,
+        pod_security_context=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
@@ -305,6 +315,9 @@ class DagsterK8sJobConfig(
             labels=check.opt_dict_param(labels, "labels", key_type=str, value_type=str),
             resources=check.opt_dict_param(resources, "resources", key_type=str),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
+            tolerations=check.opt_list_param(tolerations, "tolerations"),
+            node_selector=check.opt_dict_param(node_selector, "node_selector"),
+            pod_security_context=check.opt_dict_param(pod_security_context, "pod_security_context"),
         )
 
     @classmethod
@@ -478,6 +491,35 @@ class DagsterK8sJobConfig(
                 is_required=False,
                 description="Use a custom Kubernetes scheduler for launched Pods. See:"
                 "https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/",
+            ),
+            "tolerations": Field(
+                Array(
+                    Permissive(
+                        {
+                            "effect": Field(StringSource, is_required=False),
+                            "key": Field(StringSource, is_required=False),
+                            "operator": Field(StringSource, is_required=False),
+                            "toleration_seconds": Field(IntSource, is_required=False),
+                            "value": Field(StringSource, is_required=False),
+                        }
+                    )
+                ),
+                is_required=False,
+                default_value=[],
+                description="Tolerations to apply to all created pods. Default: ``[]``. See: "
+                "https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+            ),
+            "node_selector": Field(
+                dict,
+                is_required=False,
+                description="Node selector to apply to all created pods. See: "
+                "https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector",
+            ),
+            "pod_security_context": Field(
+                dict,
+                is_required=False,
+                description="Security context to apply to all created pods. See: "
+                "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod",
             ),
         }
 
@@ -666,6 +708,14 @@ def construct_dagster_k8s_job(
 
     scheduler_name = pod_spec_config.pop("scheduler_name", job_config.scheduler_name)
 
+    tolerations = pod_spec_config.pop("tolerations", job_config.tolerations)
+
+    node_selector = pod_spec_config.pop("node_selector", job_config.node_selector)
+
+    pod_security_context = pod_spec_config.pop(
+        "pod_security_context", job_config.pod_security_context
+    )
+
     user_defined_containers = pod_spec_config.pop("containers", [])
 
     template = {
@@ -688,6 +738,9 @@ def construct_dagster_k8s_job(
                 "volumes": volumes,
             },
             {"scheduler_name": scheduler_name} if scheduler_name else {},
+            {"tolerations": tolerations} if tolerations else {},
+            {"node_selector": node_selector} if node_selector else {},
+            {"security_context": pod_security_context} if pod_security_context else {},
         ),
     }
 

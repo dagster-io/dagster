@@ -37,6 +37,13 @@ def container_context_config():
                 "limits": {"memory": "128Mi", "cpu": "500m"},
             },
             "scheduler_name": "my_scheduler",
+            "tolerations": [
+                {
+                    "key": "my_key1",
+                    "operator": "my_operator1",
+                    "effect": "my_effect1",
+                }
+            ],
         },
     }
 
@@ -70,6 +77,16 @@ def other_container_context_config():
                 "limits": {"memory": "64Mi", "cpu": "250m"},
             },
             "scheduler_name": "my_other_scheduler",
+            "tolerations": [
+                {
+                    "key": "my_key2",
+                    "operator": "my_operator2",
+                    "effect": "my_effect2",
+                }
+            ],
+            "node_selector": {
+                "foo_label": "bar_value",
+            },
         },
     }
 
@@ -137,6 +154,9 @@ def test_empty_container_context(empty_container_context):
     assert empty_container_context.namespace is None
     assert empty_container_context.resources == {}
     assert empty_container_context.scheduler_name == None
+    assert empty_container_context.tolerations == []
+    assert empty_container_context.node_selector == {}
+    assert empty_container_context.pod_security_context == {}
 
 
 def test_invalid_config():
@@ -189,6 +209,14 @@ def test_merge(empty_container_context, container_context, other_container_conte
         "limits": {"memory": "128Mi", "cpu": "500m"},
     }
     assert container_context.scheduler_name == "my_scheduler"
+
+    assert container_context.tolerations == [
+        {
+            "key": "my_key1",
+            "operator": "my_operator1",
+            "effect": "my_effect1",
+        }
+    ]
 
     merged = container_context.merge(other_container_context)
 
@@ -256,6 +284,24 @@ def test_merge(empty_container_context, container_context, other_container_conte
         "limits": {"memory": "64Mi", "cpu": "250m"},
     }
     assert merged.scheduler_name == "my_other_scheduler"
+    _check_same_sorted(
+        merged.tolerations,
+        [
+            {
+                "key": "my_key1",
+                "operator": "my_operator1",
+                "effect": "my_effect1",
+            },
+            {
+                "key": "my_key2",
+                "operator": "my_operator2",
+                "effect": "my_effect2",
+            },
+        ],
+    )
+    assert merged.node_selector == {
+        "foo_label": "bar_value",
+    }
 
     assert container_context.merge(empty_container_context) == container_context
     assert empty_container_context.merge(container_context) == container_context

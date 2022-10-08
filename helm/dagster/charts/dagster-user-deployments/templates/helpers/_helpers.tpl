@@ -132,6 +132,15 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     {{- if .schedulerName }}
     scheduler_name: {{ .schedulerName }}
     {{- end }}
+    {{- if .tolerations }}
+    tolerations: {{- .tolerations | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if .nodeSelector }}
+    node_selector: {{- .nodeSelector | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if .podSecurityContext }}
+    pod_security_context: {{- .podSecurityContext | toYaml | nindent 6 }}
+    {{- end }}
     namespace: {{ $.Release.Namespace }}
     service_account_name: {{ include "dagsterUserDeployments.serviceAccountName" $ }}
   {{- end }}

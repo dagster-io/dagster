@@ -252,7 +252,92 @@ def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     run_launcher_config = instance["run_launcher"]
 
-    assert run_launcher_config["config"]["schedulerName"] == "my-scheduler"
+    assert run_launcher_config["config"]["scheduler_name"] == "my-scheduler"
+
+
+def test_k8s_run_launcher_tolerations(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    tolerations=[
+                        dict(
+                            key="key1",
+                        )
+                    ],
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["tolerations"][0]["key"] == "key1"
+
+
+def test_k8s_run_launcher_node_selector(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    nodeSelector=dict(
+                        label="value",
+                    ),
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["node_selector"]["label"] == "value"
+
+
+def test_k8s_run_launcher_pod_security_context(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    podSecurityContext=dict(
+                        runAsUser=1001,
+                        runAsGroup=1002,
+                    ),
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["pod_security_context"]["runAsUser"] == 1001
+    assert run_launcher_config["config"]["pod_security_context"]["runAsGroup"] == 1002
 
 
 def test_celery_k8s_run_launcher_config(template: HelmTemplate):
