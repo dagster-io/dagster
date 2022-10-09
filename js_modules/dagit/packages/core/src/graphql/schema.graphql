@@ -1240,6 +1240,7 @@ type LogsCapturedEvent implements MessageEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
+  fileKey: String!
   logKey: String!
   stepKeys: [String!]
   pid: Int

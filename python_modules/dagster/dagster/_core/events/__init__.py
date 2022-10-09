@@ -53,6 +53,7 @@ from dagster._serdes import (
     register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
+from dagster._serdes.serdes import replace_storage_keys
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
@@ -1375,7 +1376,7 @@ class DagsterEvent(
                 message=message,
                 event_specific_data=ComputeLogsCaptureData(
                     step_keys=step_keys,
-                    log_key=log_key,
+                    file_key=log_key,
                 ),
             )
 
@@ -1385,7 +1386,7 @@ class DagsterEvent(
             message=message,
             event_specific_data=ComputeLogsCaptureData(
                 step_keys=step_keys,
-                log_key=log_key,
+                file_key=log_key,
             ),
         )
 
@@ -1682,20 +1683,37 @@ class LoadedInputData(
         )
 
 
-@whitelist_for_serdes
+class ComputeLogsDataSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict,
+        klass,
+        args_for_class,
+        whitelist_map,
+        descent_path,
+    ):
+        storage_dict = replace_storage_keys(storage_dict, {"log_key": "file_key"})
+        return super().value_from_storage_dict(
+            storage_dict, klass, args_for_class, whitelist_map, descent_path
+        )
+
+
+@whitelist_for_serdes(serializer=ComputeLogsDataSerializer)
 class ComputeLogsCaptureData(
     NamedTuple(
         "_ComputeLogsCaptureData",
         [
-            ("log_key", str),
+            ("file_key", List[str]),  # renamed log_key => file_key to avoid confusion
             ("step_keys", List[str]),
+            # ("log_key", str),
         ],
     )
 ):
-    def __new__(cls, log_key, step_keys):
+    def __new__(cls, file_key, step_keys):
         return super(ComputeLogsCaptureData, cls).__new__(
             cls,
-            log_key=check.str_param(log_key, "log_key"),
+            file_key=check.str_param(file_key, "file_key"),
             step_keys=check.opt_list_param(step_keys, "step_keys", of_type=str),
         )
 

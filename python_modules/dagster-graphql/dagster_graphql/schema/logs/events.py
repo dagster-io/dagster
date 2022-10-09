@@ -289,6 +289,9 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent,)
         name = "LogsCapturedEvent"
 
+    fileKey = graphene.NonNull(graphene.String)
+    # legacy name for compute log file key... required for back-compat reasons, but has been
+    # renamed to fileKey for newer versions of dagit
     logKey = graphene.NonNull(graphene.String)
     stepKeys = graphene.List(graphene.NonNull(graphene.String))
     pid = graphene.Int()

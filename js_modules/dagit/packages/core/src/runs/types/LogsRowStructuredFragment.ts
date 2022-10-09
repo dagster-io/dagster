@@ -2157,7 +2157,7 @@ export interface LogsRowStructuredFragment_LogsCapturedEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
-  logKey: string;
+  fileKey: string;
   stepKeys: string[] | null;
 }
 
