@@ -7,12 +7,13 @@ if __name__ == "__main__":
         package_data={"assets_smoke_test": ["dbt_project/*"]},
         install_requires=[
             "dagster",
+            "dagster-pandas",
             "dagster-dbt",
             "pandas",
-            "numpy",
-            "scipy",
             "dbt-core",
-            "dbt-duckdb",
+            "dbt-snowflake",
+            "dagster-snowflake",
+            "dagster-snowflake-pandas",
         ],
         extras_require={"dev": ["dagit", "pytest"]},
     )

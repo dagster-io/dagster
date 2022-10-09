@@ -4,12 +4,12 @@ dbt_project:
   outputs:
     local:
       type: snowflake
-      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      account: some_account
 
-      user: "{{ env_var('SNOWFLAKE_USER') }}"
-      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      user: some_user
+      password: some_password
 
-      database: "{{ env_var('SNOWFLAKE_DATABASE') }}"
+      database: PROD
       schema: PUBLIC
       warehouse: ELEMENTL
       client_session_keep_alive: False
@@ -22,7 +22,7 @@ dbt_project:
       user: "{{ env_var('SNOWFLAKE_USER') }}"
       password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
 
-      database: "{{ env_var('SNOWFLAKE_DATABASE') }}"
+      database: "{{ env_var('SNOWFLAKE_SMOKE_TEST_DATABASE') }}"
       schema: PUBLIC
       warehouse: ELEMENTL
       client_session_keep_alive: False

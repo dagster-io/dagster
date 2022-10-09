@@ -7,12 +7,12 @@ raw_country_populations = SourceAsset(
     metadata={
         "column_schema": TableSchema.from_name_type_dict(
             {
-                "country": "str",
-                "continent": "str",
-                "region": "str",
+                "country": "string",
+                "continent": "string",
+                "region": "string",
                 "pop2018": "int",
                 "pop2019": "int",
-                "change": "str",
+                "change": "string",
             }
         ),
     },
