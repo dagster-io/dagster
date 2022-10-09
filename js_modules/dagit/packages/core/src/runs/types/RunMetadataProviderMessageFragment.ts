@@ -205,6 +205,7 @@ export interface RunMetadataProviderMessageFragment_LogsCapturedEvent {
   fileKey: string;
   stepKeys: string[] | null;
   pid: number | null;
+  externalUrl: string | null;
 }
 
 export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_ExecutionStepFailureEvent | RunMetadataProviderMessageFragment_ResourceInitFailureEvent | RunMetadataProviderMessageFragment_ObjectStoreOperationEvent | RunMetadataProviderMessageFragment_LogsCapturedEvent;

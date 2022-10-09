@@ -2159,6 +2159,7 @@ export interface LogsRowStructuredFragment_LogsCapturedEvent {
   stepKey: string | null;
   fileKey: string;
   stepKeys: string[] | null;
+  externalUrl: string | null;
 }
 
 export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_ResourceInitFailureEvent | LogsRowStructuredFragment_ResourceInitStartedEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_MaterializationEvent | LogsRowStructuredFragment_ObservationEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepUpForRetryEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_LogsCapturedEvent;
