@@ -224,16 +224,22 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         repository_name: Optional[str],
         repository_def: "RepositoryDefinition",
         asset_selection: AssetSelection,
-        asset_keys: Sequence[AssetKey],
+        # asset_keys: Sequence[AssetKey],
         instance: Optional[DagsterInstance] = None,
     ):
         self._repository_def = repository_def
         if asset_selection is not None:
+            repo_assets = self._repository_def._assets_defs_by_key.values()
+            repo_source_assets = self._repository_def.source_assets_by_key.values()
             self._asset_keys = list(
-                asset_selection.resolve(list(set(self._repository_def._assets_defs_by_key.values())))
+                asset_selection.resolve([*repo_assets, *repo_source_assets])
             )
+        # elif asset_keys is not None:
+        #     self._asset_keys = asset_keys
         else:
-            self._asset_keys = asset_keys
+            raise DagsterInvalidDefinitionError(
+                    f"MultiAssetSensorDefinition requires one of asset_selection or asset_keys"
+                )
 
         self._assets_by_key: Dict[AssetKey, AssetsDefinition] = {}
         for asset_key in self._asset_keys:
@@ -242,15 +248,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                     asset_key
                 )
             )
-            if assets_def is None:
-                raise DagsterInvalidDefinitionError(
-                    f"No asset with {asset_key} found in repository"
-                )
             self._assets_by_key[asset_key] = assets_def
 
         self._partitions_def_by_asset_key = {
             asset_key: asset_def.partitions_def
-            for asset_key, asset_def in self._assets_by_key.items()
+            for asset_key, asset_def in self._assets_by_key.items() if asset_def is not None
         }
 
         self.cursor_has_been_updated = False
@@ -1343,9 +1345,11 @@ class MultiAssetSensorDefinition(SensorDefinition):
             self._asset_selection = check.inst_param(
                 asset_selection, "asset_selection", AssetSelection
             )
+            # self._asset_keys = None
         else:  # asset keys provided
             asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
-            self._asset_selection = AssetSelection.keys(*asset_keys)
+            # self._asset_keys = asset_keys
+            # self._asset_selection = None
 
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
@@ -1438,3 +1442,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
     @property
     def asset_selection(self) -> AssetSelection:
         return self._asset_selection
+
+    @public
+    @property
+    def asset_keys(self) -> Sequence[AssetKey]:
+        return self._asset_keys

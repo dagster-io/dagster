@@ -32,6 +32,7 @@ from dagster import (
     multi_asset_sensor,
     repository,
     run_failure_sensor,
+    SourceAsset,
 )
 
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
@@ -623,6 +624,31 @@ def sleeper():
 def waits_on_sleep(sleeper, x):
     return sleeper + x
 
+@asset
+def a_source_asset():
+    return 1
+
+source_asset_source = SourceAsset(key=AssetKey("a_source_asset"))
+
+@asset
+def depends_on_source(a_source_asset):
+    return a_source_asset + 1
+
+@repository
+def with_source_asset_repo():
+    return [
+        a_source_asset
+    ]
+
+@multi_asset_sensor(
+    asset_keys=[AssetKey("a_source_asset")],
+    job=the_job
+)
+def monitor_source_asset_sensor(context):
+    asset_events = context.latest_materialization_records_by_key()
+    if all(asset_events.values()):
+        context.advance_all_cursors()
+        return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 @repository
 def asset_sensor_repo():
@@ -638,6 +664,10 @@ def asset_sensor_repo():
         i,
         sleeper,
         waits_on_sleep,
+        source_asset_source,
+        depends_on_source,
+        the_job,
+        monitor_source_asset_sensor,
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(y),
             name="just_y_OR",
@@ -725,6 +755,12 @@ def asset_sensor_repo():
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(waits_on_sleep),
             name="in_progress_condition_sensor",
+            wait_for_in_progress_runs=True,
+            wait_for_all_upstream=False,
+        ),
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(depends_on_source),
+            name="source_asset_sensor",
             wait_for_in_progress_runs=True,
             wait_for_all_upstream=False,
         ),
