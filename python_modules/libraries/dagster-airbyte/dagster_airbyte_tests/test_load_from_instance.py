@@ -4,6 +4,8 @@ from dagster_airbyte import airbyte_resource
 from dagster_airbyte.asset_defs import load_assets_from_airbyte_instance
 
 from dagster import AssetKey, build_init_resource_context, materialize
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 
 from .utils import (
     get_instance_connections_json,
@@ -82,6 +84,40 @@ def test_load_from_instance(use_normalization_tables, connection_to_group_fn, fi
         if use_normalization_tables
         else set()
     )
+
+    # Check schema metadata is added correctly to asset def
+
+    assert any(
+        out.metadata.get("schema")
+        == MetadataValue.table_schema(
+            TableSchema(
+                columns=[
+                    TableColumn(name="commit", type="['null', 'object']"),
+                    TableColumn(name="name", type="['null', 'string']"),
+                    TableColumn(name="node_id", type="['null', 'string']"),
+                    TableColumn(name="repository", type="['string']"),
+                    TableColumn(name="tarball_url", type="['null', 'string']"),
+                    TableColumn(name="zipball_url", type="['null', 'string']"),
+                ]
+            )
+        )
+        for out in ab_assets[0].node_def.output_defs
+    )
+    # Check schema metadata works for normalization tables too
+    if use_normalization_tables:
+        assert any(
+            out.metadata.get("schema")
+            == MetadataValue.table_schema(
+                TableSchema(
+                    columns=[
+                        TableColumn(name="sha", type="['null', 'string']"),
+                        TableColumn(name="url", type="['null', 'string']"),
+                    ]
+                )
+            )
+            for out in ab_assets[0].node_def.output_defs
+        )
+
     assert ab_assets[0].keys == {AssetKey(t) for t in tables}
     assert all(
         [
