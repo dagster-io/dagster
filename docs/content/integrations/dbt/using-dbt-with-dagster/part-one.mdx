@@ -46,8 +46,20 @@ In this part, you'll:
 
 The folder structure should now be similar to the following:
 
-```yaml file=/integrations/dbt/dbt_dagster_tutorial/project_structure.yaml startafter=initial_structure_start endbefore=initial_structure_end
-dbt_dagster_tutorial └── jaffle_shop ├── README.md ├── dbt_project.yml ├── models │  ├── customers.sql │  ├── orders.sql │  ├── schema.yml │  └── staging │     ├── schema.yml │     ├── stg_customers.sql │     └── stg_orders.sql └── seeds
+```markdown file=/integrations/dbt/dbt_dagster_tutorial/project_structure.yaml startafter=part_one_structure_start endbefore=part_one_structure_end
+- /dbt_dagster_tutorial
+  - /jaffle_shop
+    - README.md
+    - dbt_project.yml
+    - /models
+      - customers.sql
+      - orders.sql
+      - schema.yml
+      - /staging
+        - schema.yml
+        - stg_customers.sql
+        - stg_orders.sql
+    - /seeds
 ```
 
 ---

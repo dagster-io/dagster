@@ -1,18 +1,59 @@
 
-# initial_structure_start
+# part_one_structure_start
 
-dbt_dagster_tutorial
-└── jaffle_shop 
-	├── README.md 
-	├── dbt_project.yml
-	├── models 
-	│  ├── customers.sql 
-	│  ├── orders.sql
-	│  ├── schema.yml
-	│  └── staging
-	│     ├── schema.yml
-	│     ├── stg_customers.sql
-	│     └── stg_orders.sql 
-	└── seeds
+- /dbt_dagster_tutorial
+	- /jaffle_shop
+		- README.md
+		- dbt_project.yml
+		- /models
+			- customers.sql
+			- orders.sql
+			- schema.yml
+			- /staging
+				- schema.yml
+				- stg_customers.sql
+				- stg_orders.sql
+		- /seeds
 
-# initial_structure_end
+# part_one_structure_end
+
+# part_two_structure_start
+
+- /dbt_dagster_tutorial
+  - /dagster_code
+	- /jaffle_shop
+		- README.md
+		- dbt_project.yml
+		- /models
+			- customers.sql
+			- orders.sql
+			- schema.yml
+			- /staging
+				- schema.yml
+				- stg_customers.sql
+				- stg_orders.sql
+		- /seeds
+
+# part_two_structure_end
+
+
+# part_two_step_3_structure_start
+
+- /dbt_dagster_tutorial
+  - /dagster_code
+    - assets.py
+    - repository.py
+	- /jaffle_shop
+		- README.md
+		- dbt_project.yml
+		- /models
+			- customers.sql
+			- orders.sql
+			- schema.yml
+			- /staging
+				- schema.yml
+				- stg_customers.sql
+				- stg_orders.sql
+		- /seeds
+
+# part_two_step_3_structure_end
