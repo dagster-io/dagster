@@ -13,42 +13,30 @@ description: Dagster can orchestrate dbt alongside other technologies.
   tutorial.
 </Note>
 
-By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-dagster/part-one), [created Dagster assets](/integrations/dbt/using-dbt-with-dagster/part-two), and [materialized the assets using Dagit](/integrations/dbt/using-dbt-with-dagster/part-three).
+By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-dagster/part-one), [loaded dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/part-two), and [created and materialized upstream assets using Dagit](/integrations/dbt/using-dbt-with-dagster/part-three).
 
 In this step, you'll:
 
-- [Create a downstream asset that computes a histogram using plotly](#step-1-create-the-order_count_chart-histogram-asset)
+- [Create a downstream asset that computes a chart using plotly](#step-1-create-the-order_count_chart-asset)
 - [Update the Dagster repository to include the new asset](#step-2-update-the-dagster-repository)
 - [Materialize the order_count_chart asset](#step-3-materialize-the-order_count_chart-asset)
 
 ---
 
-## Step 1: Create the order_count_chart histogram asset
+## Step 1: Create the order_count_chart asset
 
 You've added upstream assets to your data pipeline, but nothing downstream - until now. Here's a quick refresher of what our graph of assets currently looks like:
 
 <Image
-alt="Asset graph in Dagit, containing dbt models and Dagster assets"
-src="/images/integrations/dbt/using-dbt-with-dagster/part-three-materialized-assets.png"
-width={998}
-height={808}
+alt="Asset graph in Dagit, showing materialized assets"
+src="/images/integrations/dbt/using-dbt-with-dagster/part-three-asset-graph-materialized.png"
+width={1091}
+height={896}
 />
 
 In this step, you'll create a Dagster asset - called `order_count_chart` - that's downstream of the `customers` asset produced by the `stg_orders` and `stg_customers` dbt models. The `order_count_chart` asset computes a plotly chart using the data from its upstream asset dependency.
 
-1. In `assets.py`, add the following line to the top of the file:
-
-   ```python
-   import plotly.express as px
-   ```
-
-2. Additionally, update the `from dagster` import to include `AssetIn` and `MetadataValue`:
-
-   ```python
-   from dagster import AssetIn, MetadataValue, asset
-   ```
-
-   The file should now look like this:
+1. In `assets.py`, replace the imports section with the following:
 
    ```python
    import pandas as pd
@@ -59,7 +47,7 @@ In this step, you'll create a Dagster asset - called `order_count_chart` - that'
    from dagster._utils import file_relative_path
    ```
 
-3. After <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" />, add the following:
+2. After the `customers_raw` and `orders_raw` assets, add the following:
 
    ```python
    @asset(
@@ -79,9 +67,9 @@ Let's review what's happening here:
 
 - `customers` is supplied as an argument to `ins`, defining it as an upstream asset dependency of the `order_count_chart` asset
 
-- We've also used <PyObject object="AssetIn" /> to explicitly define an upstream dependency. Just like in [part two of this tutorial](/integrations/dbt/using-dbt-with-dagster/part-two#step-2-create-the-dagster-assets), we've defined these as `jaffle_shop` and `staging`, respectively.
+- We've also used <PyObject object="AssetIn" /> to explicitly define an upstream dependency. Just like in [part three of this tutorial](/integrations/dbt/using-dbt-with-dagster/part-three#step-1-create-upstream-dagster-assets), we've defined these as `jaffle_shop` and `staging`, respectively.
 
-- Finally, the chart is saved as `order_count_chart.html` in `/dbt_dagster_tutorial/dbt_dagster_tutorial` and automatically opened in the browser.
+- Finally, the chart is saved as `order_count_chart.html` in `/dbt_dagster_tutorial/dagster_code` and automatically opened in the browser.
 
 ---
 
@@ -95,7 +83,7 @@ Replace the contents of `repository.py` with the following:
 import os
 
 from dagster_dbt import dbt_cli_resource
-from dbt_dagster_tutorial.assets import (
+from dagster_code.assets import (
     DBT_PROFILES,
     DBT_PROJECT_PATH,
     customers_raw,
@@ -103,7 +91,7 @@ from dbt_dagster_tutorial.assets import (
     order_count_chart,
     orders_raw,
 )
-from dbt_dagster_tutorial.duckdb_resource import duckdb_io_manager
+from dagster_code.duckdb_resource import duckdb_io_manager
 
 from dagster import repository, with_resources
 
@@ -116,7 +104,7 @@ def jaffle_shop_repository():
             orders_raw,
             *dbt_assets,
             order_count_chart,
-        ],  # we could swap this out with a fn that loads all assets from a file/module
+        ],
         {
             "dbt": dbt_cli_resource.configured(
                 {
@@ -148,9 +136,13 @@ In this step, you'll materialize the `order_count_chart_asset`. When successfull
    height={808}
    />
 
-2. Click the **Materialize all** button to kick off a run that materializes the assets.
+2. Click the `order_count_chart` asset to select it.
 
-That's it! When the run finishes successfully, the plotly chart will automatically open in your browser:
+3. Click **Materialize selected** to kick off a run that materializes the asset.
+
+4. Click the **Materialize all** button to kick off a run that materializes the assets.
+
+That's it! When the run successfully completes, the following chart will automatically open in your browser:
 
 <Image
 alt="plotly chart asset displayed in Chrome"
@@ -163,4 +155,11 @@ height={918}
 
 ## What's next?
 
-<TODO></TODO>
+That's the end of this tutorial - congratulations! By now, you should have a working dbt and Dagster integration and a handful of materialized Dagster assets.
+
+What's next? From here, you can:
+
+- Learn more about [software-defined assets](/concepts/assets/software-defined-assets)
+- Learn how to [build jobs that materialize dbt assets](integrations/dbt/reference#scheduling-dbt-jobs)
+- Get a [deeper understanding of Dagster's dbt integration](/integrations/dbt/reference)
+- Check out the [`dagster-dbt` API docs](/\_apidocs/libraries/dagster-dbt)
