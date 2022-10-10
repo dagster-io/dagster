@@ -1,10 +1,9 @@
-import {Box, Colors, Icon, IconWrapper, Spinner, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconWrapper, MiddleTruncate, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
-import {withMiddleTruncation} from '../app/Util';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -18,20 +17,13 @@ export const RepositoryLink: React.FC<{
 }> = ({repoAddress, showIcon = false, showRefresh = true}) => {
   const {location} = repoAddress;
   const {canReloadRepositoryLocation} = usePermissions();
-
-  const repoAddressTruncated = [
-    withMiddleTruncation(repoAddress.name, {maxLength: 19}),
-    withMiddleTruncation(repoAddress.location, {maxLength: 19}),
-  ].join('@');
+  const repoString = repoAddressAsString(repoAddress);
 
   return (
-    <Box
-      flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}
-      title={repoAddressAsString(repoAddress)}
-    >
+    <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}} title={repoString}>
       {showIcon && <Icon name="folder" style={{marginRight: 8}} color={Colors.Gray400} />}
-      <RepositoryName to={workspacePathFromAddress(repoAddress)}>
-        {repoAddressTruncated}
+      <RepositoryName to={workspacePathFromAddress(repoAddress)} style={{flex: 1}}>
+        <MiddleTruncate text={repoString} />
       </RepositoryName>
       {canReloadRepositoryLocation.enabled && showRefresh ? (
         <ReloadRepositoryLocationButton location={location}>
@@ -64,8 +56,7 @@ export const RepositoryLink: React.FC<{
 
 const RepositoryName = styled(Link)`
   max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 150px;
 `;
 
 const ReloadTooltip = styled(Tooltip)`
