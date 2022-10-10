@@ -479,6 +479,10 @@
     "icon": "Grid",
     "path": "/integrations",
     "children": [
+        {
+          "title": "Airbyte",
+          "path": "/integrations/airbyte"
+        },
       {
         "title": "Airflow",
         "path": "/integrations/airflow"

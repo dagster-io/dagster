@@ -11,7 +11,7 @@ from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     cleanup_test_instance,
-    create_test_daemon_workspace,
+    create_test_daemon_workspace_context,
     get_crash_signals,
     wait_for_futures,
 )
@@ -28,17 +28,16 @@ spawn_ctx = multiprocessing.get_context("spawn")
 def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime), create_test_daemon_workspace(
+            with pendulum.test(execution_datetime), create_test_daemon_workspace_context(
                 workspace_load_target=workspace_load_target(),
                 instance=instance,
-            ) as workspace:
+            ) as workspace_context:
                 logger = get_default_daemon_logger("SensorDaemon")
                 futures = {}
                 list(
                     execute_sensor_iteration(
-                        instance,
+                        workspace_context,
                         logger,
-                        workspace,
                         threadpool_executor=SingleThreadPoolExecutor(),
                         debug_crash_flags=debug_crash_flags,
                         sensor_tick_futures=futures,

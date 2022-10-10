@@ -996,6 +996,9 @@ def open_server_process(
     heartbeat_timeout=30,
     fixed_server_id=None,
     startup_timeout=20,
+    cwd=None,
+    log_level="WARNING",  # don't log INFO messages for automatically spun up servers
+    env=None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -1018,7 +1021,7 @@ def open_server_process(
         + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
         + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
         + (["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else [])
-        + (["--log-level", "WARNING"])  # don't log INFO messages for automatically spun up servers
+        + (["--log-level", log_level])
         # only use the Python environment if it has been explicitly set in the workspace
         + (["--use-python-environment-entry-point"] if executable_path else [])
     )
@@ -1026,7 +1029,7 @@ def open_server_process(
     if loadable_target_origin:
         subprocess_args += loadable_target_origin.get_cli_args()
 
-    server_process = open_ipc_subprocess(subprocess_args)
+    server_process = open_ipc_subprocess(subprocess_args, cwd=cwd, env=env)
 
     from dagster._grpc.client import DagsterGrpcClient
 
@@ -1054,6 +1057,9 @@ def open_server_process_on_dynamic_port(
     heartbeat_timeout=30,
     fixed_server_id=None,
     startup_timeout=20,
+    cwd=None,
+    log_level="WARNING",
+    env=None,
 ):
     server_process = None
     retries = 0
@@ -1069,6 +1075,9 @@ def open_server_process_on_dynamic_port(
                 heartbeat_timeout=heartbeat_timeout,
                 fixed_server_id=fixed_server_id,
                 startup_timeout=startup_timeout,
+                cwd=cwd,
+                log_level=log_level,
+                env=env,
             )
         except CouldNotBindGrpcServerToAddress:
             pass
@@ -1089,6 +1098,9 @@ class GrpcServerProcess:
         heartbeat_timeout=30,
         fixed_server_id=None,
         startup_timeout=20,
+        cwd=None,
+        log_level="WARNING",
+        env=None,
     ):
         self.port = None
         self.socket = None
@@ -1120,6 +1132,9 @@ class GrpcServerProcess:
                 heartbeat_timeout=heartbeat_timeout,
                 fixed_server_id=fixed_server_id,
                 startup_timeout=startup_timeout,
+                cwd=cwd,
+                log_level=log_level,
+                env=env,
             )
         else:
             self.socket = safe_tempfile_path_unmanaged()
@@ -1133,6 +1148,9 @@ class GrpcServerProcess:
                 heartbeat_timeout=heartbeat_timeout,
                 fixed_server_id=fixed_server_id,
                 startup_timeout=startup_timeout,
+                cwd=cwd,
+                log_level=log_level,
+                env=env,
             )
 
         if self.server_process is None:

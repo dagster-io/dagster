@@ -43,6 +43,7 @@ from .tags import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.repository_definition import RepositoryLoadData
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
 
@@ -222,6 +223,7 @@ def pipeline_run_from_storage(
     reexecution_config=None,  # pylint: disable=unused-argument
     external_pipeline_origin=None,
     pipeline_code_origin=None,
+    has_repository_load_data=None,
     **kwargs,
 ):
 
@@ -235,6 +237,7 @@ def pipeline_run_from_storage(
     # * renamed solid_subset -> solid_selection, added solids_to_execute
     # * renamed environment_dict -> run_config
     # * added asset_selection
+    # * added has_repository_load_data
 
     # back compat for environment dict => run_config
     if environment_dict:
@@ -305,6 +308,7 @@ def pipeline_run_from_storage(
         execution_plan_snapshot_id=execution_plan_snapshot_id,
         external_pipeline_origin=external_pipeline_origin,
         pipeline_code_origin=pipeline_code_origin,
+        has_repository_load_data=has_repository_load_data,
     )
 
 
@@ -328,6 +332,7 @@ class PipelineRun(
             ("execution_plan_snapshot_id", Optional[str]),
             ("external_pipeline_origin", Optional["ExternalPipelineOrigin"]),
             ("pipeline_code_origin", Optional[PipelinePythonOrigin]),
+            ("has_repository_load_data", bool),
         ],
     )
 ):
@@ -353,6 +358,7 @@ class PipelineRun(
         execution_plan_snapshot_id: Optional[str] = None,
         external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
         pipeline_code_origin: Optional[PipelinePythonOrigin] = None,
+        has_repository_load_data: Optional[bool] = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -418,6 +424,9 @@ class PipelineRun(
             pipeline_code_origin=check.opt_inst_param(
                 pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin
             ),
+            has_repository_load_data=check.opt_bool_param(
+                has_repository_load_data, "has_repository_load_data", default=False
+            ),
         )
 
     def with_status(self, status):
@@ -433,6 +442,12 @@ class PipelineRun(
             )
 
         return self._replace(status=status)
+
+    def with_job_origin(self, origin):
+        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+
+        check.inst_param(origin, "origin", ExternalPipelineOrigin)
+        return self._replace(external_pipeline_origin=origin)
 
     def with_mode(self, mode):
         return self._replace(mode=mode)

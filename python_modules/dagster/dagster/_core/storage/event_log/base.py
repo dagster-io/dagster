@@ -308,3 +308,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     def alembic_version(self):
         return None
+
+    @property
+    def is_run_sharded(self):
+        """Indicates that the EventLogStoarge is sharded"""
+        return False

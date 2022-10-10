@@ -3,7 +3,7 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {AssetConnectedEdges} from '../asset-graph/AssetEdges';
+import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
@@ -72,7 +72,7 @@ export const AssetNodeLineageGraph: React.FC<{
       {({scale}) => (
         <SVGContainer width={layout.width} height={layout.height}>
           {viewportEl.current && <SVGSaveZoomLevel scale={scale} />}
-          <AssetConnectedEdges highlighted={highlighted} edges={layout.edges} />
+          <AssetEdges highlighted={highlighted} edges={layout.edges} />
 
           {Object.values(layout.groups)
             .sort((a, b) => a.id.length - b.id.length)

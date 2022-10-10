@@ -112,7 +112,7 @@ def test_thread_die_daemon(monkeypatch):
 
         iteration_ran = {"ran": False}
 
-        def run_loop_error(_, _instance, _workspace):
+        def run_loop_error(_, _ctx):
             iteration_ran["ran"] = True
             raise KeyboardInterrupt
             yield  # pylint: disable=unreachable
@@ -188,7 +188,7 @@ def test_error_daemon(monkeypatch):
 
         error_count = {"count": 0}
 
-        def run_loop_error(_, _instance, _workspace):
+        def run_loop_error(_, _ctx):
             if should_raise_errors:
                 time.sleep(0.5)
                 error_count["count"] = error_count["count"] + 1
@@ -318,7 +318,7 @@ def test_multiple_error_daemon(monkeypatch):
     with instance_for_test() as instance:
         from dagster._daemon.daemon import SensorDaemon
 
-        def run_loop_error(_, _instance, _workspace):
+        def run_loop_error(_, _ctx):
             # ?message stack cls_name cause"
             yield SerializableErrorInfo("foobar", None, None, None)
             yield SerializableErrorInfo("bizbuz", None, None, None)

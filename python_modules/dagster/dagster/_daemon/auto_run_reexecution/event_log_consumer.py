@@ -6,7 +6,7 @@ from dagster import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
-from dagster._core.workspace.workspace import IWorkspace
+from dagster._core.workspace.context import IWorkspaceProcessContext
 
 from ..daemon import IntervalDaemon
 from .auto_run_reexecution import consume_new_runs_for_automatic_reexecution
@@ -33,13 +33,14 @@ class EventLogConsumerDaemon(IntervalDaemon):
     @property
     def handle_updated_runs_fns(
         self,
-    ) -> List[Callable[[DagsterInstance, IWorkspace, List[RunRecord]], Iterator]]:
+    ) -> List[Callable[[IWorkspaceProcessContext, List[RunRecord]], Iterator]]:
         """
         List of functions that will be called with the list of run records that have new events.
         """
         return [consume_new_runs_for_automatic_reexecution]
 
-    def run_iteration(self, instance: DagsterInstance, workspace: IWorkspace):
+    def run_iteration(self, workspace_process_context: IWorkspaceProcessContext):
+        instance = workspace_process_context.instance
         # get the persisted cursor for each event type
         persisted_cursors = _fetch_persisted_cursors(instance, DAGSTER_EVENT_TYPES, self._logger)
 
@@ -80,7 +81,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
             # call each handler with the list of runs that have events
             for fn in self.handle_updated_runs_fns:
                 try:
-                    yield from fn(instance, workspace, run_records)
+                    yield from fn(workspace_process_context, run_records)
                 except Exception:
                     self._logger.exception(
                         "Error calling event event log consumer handler: {handler_fn}".format(

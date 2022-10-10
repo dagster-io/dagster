@@ -2,18 +2,23 @@ import json
 
 import pytest
 
-from dagster import Any, AssetKey, DependencyDefinition, Int, NodeInvocation, String
+from dagster import (
+    Any,
+    AssetKey,
+    DependencyDefinition,
+    GraphDefinition,
+    In,
+    Int,
+    JobDefinition,
+    NodeInvocation,
+    Out,
+    String,
+    op,
+)
 from dagster._core.definitions import AssetMaterialization, Node, create_run_config_schema
 from dagster._core.definitions.dependency import NodeHandle, SolidOutputHandle
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import (
-    CompositeSolidDefinition,
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    lambda_solid,
-    solid,
-)
+from dagster._legacy import InputDefinition
 
 
 def test_deps_equal():
@@ -25,29 +30,29 @@ def test_deps_equal():
 
 
 def test_solid_def():
-    @lambda_solid
+    @op
     def produce_string():
         return "foo"
 
-    @solid(
-        input_defs=[InputDefinition("input_one", String)],
-        output_defs=[OutputDefinition(Any)],
+    @op(
+        ins={"input_one": In(String)},
+        out=Out(Any),
         config_schema={"another_field": Int},
     )
-    def solid_one(_context, input_one):
+    def op_one(_context, input_one):
         raise Exception("should not execute")
 
-    pipeline_def = PipelineDefinition(
-        solid_defs=[produce_string, solid_one],
+    pipeline_def = GraphDefinition(
+        node_defs=[produce_string, op_one],
         name="test",
-        dependencies={"solid_one": {"input_one": DependencyDefinition("produce_string")}},
+        dependencies={"op_one": {"input_one": DependencyDefinition("produce_string")}},
     )
 
     assert len(pipeline_def.solids[0].output_handles()) == 1
 
-    assert isinstance(pipeline_def.solid_named("solid_one"), Node)
+    assert isinstance(pipeline_def.solid_named("op_one"), Node)
 
-    solid_one_solid = pipeline_def.solid_named("solid_one")
+    solid_one_solid = pipeline_def.solid_named("op_one")
 
     assert solid_one_solid.has_input("input_one")
 
@@ -57,28 +62,26 @@ def test_solid_def():
     assert len(solid_one_solid.output_dict) == 1
 
     assert str(solid_one_solid.input_handle("input_one")) == (
-        "SolidInputHandle(input_name=\"'input_one'\", solid_name=\"'solid_one'\")"
+        "SolidInputHandle(input_name=\"'input_one'\", solid_name=\"'op_one'\")"
     )
 
     assert repr(solid_one_solid.input_handle("input_one")) == (
-        "SolidInputHandle(input_name=\"'input_one'\", solid_name=\"'solid_one'\")"
+        "SolidInputHandle(input_name=\"'input_one'\", solid_name=\"'op_one'\")"
     )
 
     assert str(solid_one_solid.output_handle("result")) == (
-        "SolidOutputHandle(output_name=\"'result'\", solid_name=\"'solid_one'\")"
+        "SolidOutputHandle(output_name=\"'result'\", solid_name=\"'op_one'\")"
     )
 
     assert repr(solid_one_solid.output_handle("result")) == (
-        "SolidOutputHandle(output_name=\"'result'\", solid_name=\"'solid_one'\")"
+        "SolidOutputHandle(output_name=\"'result'\", solid_name=\"'op_one'\")"
     )
 
     assert solid_one_solid.output_handle("result") == SolidOutputHandle(
         solid_one_solid, solid_one_solid.output_dict["result"]
     )
 
-    assert (
-        len(pipeline_def.dependency_structure.input_to_upstream_outputs_for_solid("solid_one")) == 1
-    )
+    assert len(pipeline_def.dependency_structure.input_to_upstream_outputs_for_solid("op_one")) == 1
 
     assert (
         len(
@@ -95,42 +98,44 @@ def test_solid_def():
 def test_solid_def_bad_input_name():
     with pytest.raises(DagsterInvalidDefinitionError, match='"context" is not a valid name'):
         # pylint: disable=unused-variable
-        @solid(input_defs=[InputDefinition("context", String)])
-        def solid_one(_, _context):
+        @op(ins={"context": In(String)})
+        def op_one(_, _context):
             pass
 
 
 def test_solid_def_receives_version():
-    @solid
-    def solid_no_version(_):
+    @op
+    def op_no_version(_):
         pass
 
-    assert solid_no_version.version is None
+    assert op_no_version.version is None
 
-    @solid(version="42")
-    def solid_with_version(_):
+    @op(version="42")
+    def op_with_version(_):
         pass
 
-    assert solid_with_version.version == "42"
+    assert op_with_version.version == "42"
 
 
 def test_pipeline_types():
-    @lambda_solid
+    @op
     def produce_string():
         return "foo"
 
-    @solid(
-        input_defs=[InputDefinition("input_one", String)],
-        output_defs=[OutputDefinition(Any)],
+    @op(
+        ins={"input_one": In(String)},
+        out=Out(Any),
         config_schema={"another_field": Int},
     )
-    def solid_one(_context, input_one):
+    def op_one(_context, input_one):
         raise Exception("should not execute")
 
-    pipeline_def = PipelineDefinition(
-        solid_defs=[produce_string, solid_one],
-        name="test",
-        dependencies={"solid_one": {"input_one": DependencyDefinition("produce_string")}},
+    pipeline_def = JobDefinition(
+        graph_def=GraphDefinition(
+            node_defs=[produce_string, op_one],
+            name="test",
+            dependencies={"op_one": {"input_one": DependencyDefinition("produce_string")}},
+        )
     )
 
     run_config_schema = create_run_config_schema(pipeline_def)
@@ -141,15 +146,15 @@ def test_pipeline_types():
 
 
 def test_mapper_errors():
-    @lambda_solid
-    def solid_a():
+    @op
+    def op_a():
         return 1
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_1:
-        PipelineDefinition(
-            solid_defs=[solid_a],
+        GraphDefinition(
+            node_defs=[op_a],
             name="test",
-            dependencies={"solid_b": {"arg_a": DependencyDefinition("solid_a")}},
+            dependencies={"solid_b": {"arg_a": DependencyDefinition("op_a")}},
         )
     assert (
         str(excinfo_1.value)
@@ -157,13 +162,11 @@ def test_mapper_errors():
     )
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_2:
-        PipelineDefinition(
-            solid_defs=[solid_a],
+        GraphDefinition(
+            node_defs=[op_a],
             name="test",
             dependencies={
-                NodeInvocation("solid_b", alias="solid_c"): {
-                    "arg_a": DependencyDefinition("solid_a")
-                }
+                NodeInvocation("solid_b", alias="solid_c"): {"arg_a": DependencyDefinition("op_a")}
             },
         )
     assert (
@@ -220,17 +223,17 @@ def test_rehydrate_solid_handle():
 
 
 def test_cycle_detect():
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @lambda_solid
+    @op
     def add(a, b):
         return a + b
 
     with pytest.raises(DagsterInvalidDefinitionError, match="Circular dependencies exist"):
-        PipelineDefinition(
-            solid_defs=[return_one, add],
+        GraphDefinition(
+            node_defs=[return_one, add],
             name="test",
             dependencies={
                 NodeInvocation("add", alias="first"): {
@@ -245,9 +248,9 @@ def test_cycle_detect():
         )
 
     with pytest.raises(DagsterInvalidDefinitionError, match="Circular dependencies exist"):
-        CompositeSolidDefinition(
+        GraphDefinition(
             name="circletron",
-            solid_defs=[return_one, add],
+            node_defs=[return_one, add],
             dependencies={
                 NodeInvocation("add", alias="first"): {
                     "a": DependencyDefinition("return_one"),
@@ -262,18 +265,18 @@ def test_cycle_detect():
 
 
 def test_composite_mapping_collision():
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @lambda_solid
+    @op
     def add(a, b):
         return a + b
 
     with pytest.raises(DagsterInvalidDefinitionError, match="already satisfied by output"):
-        CompositeSolidDefinition(
+        GraphDefinition(
             name="add_one",
-            solid_defs=[return_one, add],
+            node_defs=[return_one, add],
             input_mappings=[InputDefinition("val").mapping_to("add", "a")],
             dependencies={
                 "add": {

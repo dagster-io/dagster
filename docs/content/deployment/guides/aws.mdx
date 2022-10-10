@@ -40,7 +40,7 @@ The Deploying on ECS example on GitHub demonstrates how to configure the [Docker
 
 ### Launching Runs in ECS
 
-The <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> launches an ECS task per run. It assumes that the rest of our Dagster deployment is also running in ECS on a Fargate compatible cluster.
+The <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> launches an ECS task per run. It assumes that the rest of your Dagster deployment is also running in ECS.
 
 By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the process that launches the run but overrides its container definition with a new command to launch a Dagster run. When using the <PyObject module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via Dagit or GraphQL inherit their task definitions from the Dagit task; runs launched from a sensor or schedule inherit their task definitions from the Daemon task.
 
@@ -57,7 +57,7 @@ run_launcher:
 
 ### Customizing CPU and Memory in ECS
 
-You can use job tags to customize the run's CPU and Memory:
+You can use job tags to customize the CPU and memory of every run for a job:
 
 ```py
 from dagster import job, op
@@ -77,6 +77,26 @@ def my_job():
 ```
 
 [Fargate tasks only support certain combinations of CPU and Memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
+
+### Customizing the Launched Run's Task
+
+The <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> creates a new task for each run, using the current ECS task to determine network configuration. For example, the launched run will use the same ECS cluster, subnets, security groups, and launch type (e.g. Fargate or EC2).
+
+To adjust the configuration of the launched run's task, set the `run_launcher.config.run_task_kwargs` field to a dictionary with additional key-value pairs that should be passed into the `run_task` boto3 API call. For example, to launch new runs in EC2 from a task running in Fargate, you could apply this configuration:
+
+```yaml
+run_launcher:
+  module: "dagster_aws.ecs"
+  class: "EcsRunLauncher"
+  config:
+    run_task_kwargs:
+      launchType: "EC2"
+```
+
+Refer to the [boto3 docs](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.run_task) for the full set of available arguments to `run_task`. Additionally, note that:
+
+- Keys are in `camelCase` as they correspond to arguments in boto's API
+- All arguments with the exception of `taskDefinition` and `overrides` can be used in `run_launcher.config.run_task_kwargs`. `taskDefinition` can be overridden by configuring the `run_launcher.config.task_definition` field instead.
 
 ### Secrets Management in ECS
 

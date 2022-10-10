@@ -5,6 +5,7 @@ from typing import Dict
 from dagster import DagsterEvent, DagsterEventType
 from dagster import _check as check
 from dagster._core.instance import DagsterInstance
+from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
@@ -12,7 +13,7 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
 )
 from dagster._core.storage.tags import PRIORITY_TAG
-from dagster._core.workspace.context import IWorkspace
+from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.daemon import IntervalDaemon
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -99,9 +100,13 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def daemon_type(cls):
         return "QUEUED_RUN_COORDINATOR"
 
-    def run_iteration(self, instance, workspace):
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(workspace, "workspace", IWorkspace)
+    def run_iteration(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+    ):
+        instance = workspace_process_context.instance
+        if not isinstance(instance.run_coordinator, QueuedRunCoordinator):
+            check.failed(f"Expected QueuedRunCoordinator, got {instance.run_coordinator}")
 
         run_queue_config = instance.run_coordinator.get_run_queue_config()
 
@@ -149,7 +154,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             error_info = None
 
             try:
-                self._dequeue_run(instance, run, workspace)
+                self._dequeue_run(instance, run, workspace_process_context)
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
@@ -197,7 +202,12 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         # sorted is stable, so fifo is maintained
         return sorted(runs, key=get_priority, reverse=True)
 
-    def _dequeue_run(self, instance, run, workspace):
+    def _dequeue_run(
+        self,
+        instance: DagsterInstance,
+        run: PipelineRun,
+        workspace_process_context: IWorkspaceProcessContext,
+    ):
         # double check that the run is still queued before dequeing
         reloaded_run = instance.get_run_by_id(run.run_id)
 
@@ -214,4 +224,4 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             pipeline_name=run.pipeline_name,
         )
         instance.report_dagster_event(dequeued_event, run_id=run.run_id)
-        instance.launch_run(run.run_id, workspace)
+        instance.launch_run(run.run_id, workspace_process_context.create_request_context())

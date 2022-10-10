@@ -1,13 +1,12 @@
 import json
 import warnings
 from collections import namedtuple
-from contextlib import suppress
 from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
 
-from dagster import Array, Field, Noneable, ScalarUnion, StringSource
+from dagster import Array, Field, Noneable, Permissive, ScalarUnion, StringSource
 from dagster import _check as check
 from dagster._core.events import EngineEventData, MetadataEntry
 from dagster._core.launcher.base import (
@@ -22,7 +21,13 @@ from dagster._serdes import ConfigurableClass
 
 from ..secretsmanager import get_secrets_from_arns
 from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
-from .tasks import default_ecs_task_definition, default_ecs_task_metadata
+from .tasks import (
+    DagsterEcsTaskDefinitionConfig,
+    get_current_ecs_task,
+    get_current_ecs_task_metadata,
+    get_task_definition_dict_from_current_task,
+    get_task_kwargs_from_current_task,
+)
 from .utils import sanitize_family
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
@@ -51,6 +56,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         secrets_tag="dagster",
         env_vars=None,
         include_sidecars=False,
+        use_current_ecs_task_config: bool = True,
+        run_task_kwargs: Optional[Dict[str, Any]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -94,6 +101,33 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 f"'{self.task_definition}' because the container is not defined.",
             )
             self.task_definition = task_definition["taskDefinition"]["taskDefinitionArn"]
+
+        self.use_current_ecs_task_config = check.opt_bool_param(
+            use_current_ecs_task_config, "use_current_ecs_task_config"
+        )
+
+        self.run_task_kwargs = check.opt_dict_param(run_task_kwargs, "run_task_kwargs")
+        if run_task_kwargs:
+            check.invariant(
+                "taskDefinition" not in run_task_kwargs,
+                "Use the `taskDefinition` config field to pass in a task definition to run.",
+            )
+            check.invariant(
+                "overrides" not in run_task_kwargs,
+                "Task overrides are set by the run launcher and cannot be set in run_task_kwargs.",
+            )
+
+            expected_keys = [
+                key for key in self.ecs.meta.service_model.shape_for("RunTaskRequest").members
+            ]
+
+            for key in run_task_kwargs:
+                check.invariant(
+                    key in expected_keys, f"Found an unexpected key {key} in run_task_kwargs"
+                )
+
+        self._current_task_metadata = None
+        self._current_task = None
 
     @property
     def inst_data(self):
@@ -151,6 +185,33 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     "Defaults to False."
                 ),
             ),
+            "use_current_ecs_task_config": Field(
+                bool,
+                is_required=False,
+                default_value=True,
+                description=(
+                    "Whether to use the run launcher's current ECS task in order to determine "
+                    "the cluster and networking configuration for the launched task. Defaults to "
+                    "True. Should only be called if the run launcher is running within an ECS "
+                    "task."
+                ),
+            ),
+            "run_task_kwargs": Field(
+                Permissive(
+                    {
+                        "cluster": Field(
+                            StringSource,
+                            is_required=False,
+                            description="Name of the ECS cluster to launch ECS tasks in.",
+                        ),
+                    }
+                ),
+                is_required=False,
+                description="Additional arguments to include while running the task. See "
+                "https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.run_task "
+                "for the available parameters. The overrides and taskDefinition arguments will always "
+                "be set by the run launcher.",
+            ),
             **SHARED_ECS_SCHEMA,
         }
 
@@ -165,9 +226,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         except ClientError:
             pass
 
-    def _set_run_tags(self, run_id, task_arn):
-        cluster = self._task_metadata().cluster
-        tags = {"ecs/task_arn": task_arn, "ecs/cluster": cluster}
+    def _set_run_tags(self, run_id: str, cluster: str, task_arn: str):
+        tags = {
+            "ecs/task_arn": task_arn,
+            "ecs/cluster": cluster,
+        }
         self._instance.add_run_tags(run_id, tags)
 
     def _get_run_tags(self, run_id):
@@ -184,24 +247,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         """
         Launch a run in an ECS task.
-
-        Currently, Fargate is the only supported launchType and awsvpc is the
-        only supported networkMode. These are the defaults that are set up by
-        docker-compose when you use the Dagster ECS reference deployment.
         """
         run = context.pipeline_run
-        family = sanitize_family(
-            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name  # type: ignore
-        )
-
         container_context = EcsContainerContext.create_for_run(run, self)
 
-        metadata = self._task_metadata()
         pipeline_origin = check.not_none(context.pipeline_code_origin)
         image = pipeline_origin.repository_origin.container_image
-        task_definition = self._task_definition(family, metadata, image, container_context)[
-            "family"
-        ]
 
         # ECS limits overrides to 8192 characters including json formatting
         # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
@@ -224,6 +275,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         )
         command = args.get_command_args()
 
+        run_task_kwargs = self._run_task_kwargs(run, image, container_context)
+
         # Set cpu or memory overrides
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
         cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(run)
@@ -239,7 +292,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             }
         ]
 
-        overrides: Dict[str, Any] = {
+        run_task_kwargs["overrides"] = {
             "containerOverrides": container_overrides,
             # taskOverrides expects cpu/memory as strings
             **cpu_and_memory_overrides,
@@ -249,17 +302,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         # Run a task using the same network configuration as this processes's
         # task.
         response = self.ecs.run_task(
-            taskDefinition=task_definition,
-            cluster=metadata.cluster,
-            overrides=overrides,
-            networkConfiguration={
-                "awsvpcConfiguration": {
-                    "subnets": metadata.subnets,
-                    "assignPublicIp": metadata.assign_public_ip,
-                    "securityGroups": metadata.security_groups,
-                }
-            },
-            launchType="FARGATE",
+            **run_task_kwargs,
         )
 
         tasks = response["tasks"]
@@ -275,9 +318,10 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             raise Exception(exceptions)
 
         arn = tasks[0]["taskArn"]
-        self._set_run_tags(run.run_id, task_arn=arn)
+        cluster_arn = tasks[0]["clusterArn"]
+        self._set_run_tags(run.run_id, cluster=cluster_arn, task_arn=arn)
         self._set_ecs_tags(run.run_id, task_arn=arn)
-        self.report_launch_events(run, arn, metadata.cluster)
+        self.report_launch_events(run, arn, cluster_arn)
 
     def report_launch_events(
         self, run: PipelineRun, arn: Optional[str] = None, cluster: Optional[str] = None
@@ -333,75 +377,102 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.ecs.stop_task(task=tags.arn, cluster=tags.cluster)
         return True
 
-    def _task_definition(self, family, metadata, image, container_context):
-        """
-        Return the launcher's task definition if it's configured.
+    def _get_current_task_metadata(self):
+        if self._current_task_metadata == None:
+            self._current_task_metadata = get_current_ecs_task_metadata()
+        return self._current_task_metadata
 
-        Otherwise, a new task definition revision is registered for every run.
-        First, the process that calls this method finds its own task
-        definition. Next, it creates a new task definition based on its own
-        but it overrides the image with the pipeline origin's image.
-        """
-        if self.task_definition:
-            task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
-            return task_definition["taskDefinition"]
+    def _get_current_task(self):
+        if self._current_task == None:
+            current_task_metadata = self._get_current_task_metadata()
+            self._current_task = get_current_ecs_task(
+                self.ecs, current_task_metadata.task_arn, current_task_metadata.cluster
+            )
 
-        environment = [
+        return self._current_task
+
+    def _run_task_kwargs(self, run, image, container_context) -> Dict[str, Any]:
+        """
+        Return a dictionary of args to launch the ECS task, registering a new task
+        definition if needed.
+        """
+        environment = self._environment(container_context)
+        secrets = self._secrets(container_context)
+
+        if container_context.task_definition_arn:
+            task_definition = container_context.task_definition_arn
+        else:
+            family = sanitize_family(
+                run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name  # type: ignore
+            )
+            task_definition_dict = get_task_definition_dict_from_current_task(
+                self.ecs,
+                family,
+                self._get_current_task(),
+                image,
+                self.container_name,
+                environment=environment,
+                secrets=secrets if secrets else {},
+                include_sidecars=self.include_sidecars,
+            )
+
+            task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+                task_definition_dict,
+                self.container_name,
+            )
+
+            if not self._reuse_task_definition(
+                task_definition_config,
+            ):
+                self.ecs.register_task_definition(**task_definition_dict)
+
+            task_definition = family
+
+        if self.use_current_ecs_task_config:
+            current_task_metadata = get_current_ecs_task_metadata()
+            current_task = get_current_ecs_task(
+                self.ecs, current_task_metadata.task_arn, current_task_metadata.cluster
+            )
+            task_kwargs = get_task_kwargs_from_current_task(
+                self.ec2,
+                current_task_metadata.cluster,
+                current_task,
+            )
+        else:
+            task_kwargs = {}
+
+        return {**task_kwargs, **self.run_task_kwargs, "taskDefinition": task_definition}
+
+    def _reuse_task_definition(
+        self, desired_task_definition_config: DagsterEcsTaskDefinitionConfig
+    ):
+        family = desired_task_definition_config.family
+
+        try:
+            existing_task_definition = self.ecs.describe_task_definition(taskDefinition=family)[
+                "taskDefinition"
+            ]
+        except ClientError:
+            # task definition does not exist, do not reuse
+            return False
+
+        existing_task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            existing_task_definition, self.container_name
+        )
+
+        return existing_task_definition_config == desired_task_definition_config
+
+    def _environment(self, container_context):
+        return [
             {"name": key, "value": value}
             for key, value in container_context.get_environment_dict().items()
         ]
 
+    def _secrets(self, container_context):
         secrets = container_context.get_secrets_dict(self.secrets_manager)
-        secrets_definition = (
-            {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
-            if secrets
-            else {}
+        return (
+            [{"name": key, "valueFrom": value} for key, value in secrets.items()] if secrets else []
         )
-
-        task_definition = {}
-        with suppress(ClientError):
-            task_definition = self.ecs.describe_task_definition(taskDefinition=family)[
-                "taskDefinition"
-            ]
-        secrets = secrets_definition.get("secrets", [])
-        if self._reuse_task_definition(task_definition, metadata, image, secrets, environment):
-            return task_definition
-
-        return default_ecs_task_definition(
-            self.ecs,
-            family,
-            metadata,
-            image,
-            self.container_name,
-            environment=environment,
-            secrets=secrets_definition,
-            include_sidecars=self.include_sidecars,
-        )
-
-    def _reuse_task_definition(self, task_definition, metadata, image, secrets, environment):
-        container_definitions_match = False
-        task_definitions_match = False
-
-        container_definitions = task_definition.get("containerDefinitions", [{}])
-        # Only check for diffs to the primary container. This ignores changes to sidecars.
-        for container_definition in container_definitions:
-            if (
-                container_definition.get("image") == image
-                and container_definition.get("name") == self.container_name
-                and container_definition.get("secrets") == secrets
-                and ((not environment) or container_definition.get("environment") == environment)
-            ):
-                container_definitions_match = True
-
-        if task_definition.get("executionRoleArn") == metadata.task_definition.get(
-            "executionRoleArn"
-        ) and task_definition.get("taskRoleArn") == metadata.task_definition.get("taskRoleArn"):
-            task_definitions_match = True
-
-        return container_definitions_match & task_definitions_match
-
-    def _task_metadata(self):
-        return default_ecs_task_metadata(self.ec2, self.ecs)
 
     @property
     def supports_check_run_worker_health(self):

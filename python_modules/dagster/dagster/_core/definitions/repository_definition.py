@@ -10,6 +10,7 @@ from typing import (
     Generic,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -24,8 +25,10 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector import parse_solid_selection
-from dagster._utils import merge_dicts
+from dagster._serdes import whitelist_for_serdes
+from dagster._utils import make_readonly_value, merge_dicts
 
+from .cacheable_assets import AssetsDefinitionCacheableData
 from .events import AssetKey, CoercibleToAssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
@@ -41,6 +44,7 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetGroup, AssetsDefinition
+    from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
@@ -59,6 +63,41 @@ RepositoryLevelDefinition = TypeVar(
     ScheduleDefinition,
     SensorDefinition,
 )
+
+RepositoryListDefinition = Union[
+    "AssetsDefinition",
+    "AssetGroup",
+    GraphDefinition,
+    PartitionSetDefinition,
+    PipelineDefinition,
+    ScheduleDefinition,
+    SensorDefinition,
+    SourceAsset,
+    UnresolvedAssetJobDefinition,
+]
+
+
+@whitelist_for_serdes
+class RepositoryLoadData(
+    NamedTuple(
+        "_RepositoryLoadData",
+        [
+            ("cached_data_by_key", Mapping[str, Sequence[AssetsDefinitionCacheableData]]),
+        ],
+    )
+):
+    def __new__(cls, cached_data_by_key: Mapping[str, Sequence[AssetsDefinitionCacheableData]]):
+        return super(RepositoryLoadData, cls).__new__(
+            cls,
+            cached_data_by_key=make_readonly_value(
+                check.mapping_param(
+                    cached_data_by_key,
+                    "cached_data_by_key",
+                    key_type=str,
+                    value_type=list,
+                )
+            ),
+        )
 
 
 class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
@@ -654,17 +693,7 @@ class CachingRepositoryData(RepositoryData):
     @classmethod
     def from_list(
         cls,
-        repository_definitions: List[
-            Union[
-                PipelineDefinition,
-                PartitionSetDefinition,
-                ScheduleDefinition,
-                SensorDefinition,
-                "AssetGroup",
-                GraphDefinition,
-                UnresolvedAssetJobDefinition,
-            ]
-        ],
+        repository_definitions: Sequence[RepositoryListDefinition],
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     ) -> "CachingRepositoryData":
@@ -1089,7 +1118,7 @@ class CachingRepositoryData(RepositoryData):
                     raise DagsterInvalidDefinitionError(
                         (
                             f"Conflicting definitions found in repository with name '{solid_def.name}'. "
-                            "Op/Graph/Solid definition names must be unique within a "
+                            "Op/Graph definition names must be unique within a "
                             f"repository. {solid_def.__class__.__name__} is defined in {pipeline.target_type} "
                             f"'{first_name}' and in {pipeline.target_type} '{second_name}'."
                         )
@@ -1151,10 +1180,18 @@ class RepositoryDefinition:
         *,
         repository_data,
         description=None,
+        repository_load_data=None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
         self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
+        self._repository_load_data = check.opt_inst_param(
+            repository_load_data, "repository_load_data", RepositoryLoadData
+        )
+
+    @property
+    def repository_load_data(self) -> Optional[RepositoryLoadData]:
+        return self._repository_load_data
 
     @public  # type: ignore
     @property
@@ -1326,8 +1363,10 @@ class RepositoryDefinition:
     def load_asset_value(
         self,
         asset_key: CoercibleToAssetKey,
+        *,
         python_type: Optional[Type] = None,
         instance: Optional[DagsterInstance] = None,
+        partition_key: Optional[str] = None,
     ) -> object:
         """
         Loads the contents of an asset as a Python object.
@@ -1342,6 +1381,7 @@ class RepositoryDefinition:
             asset_key (Union[AssetKey, Sequence[str], str]): The key of the asset to load.
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
+            partition_key (Optional[str]): The partition of the asset to load.
 
         Returns:
             The contents of an asset as a Python object.
@@ -1349,7 +1389,9 @@ class RepositoryDefinition:
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
         with AssetValueLoader(self._assets_defs_by_key, instance=instance) as loader:
-            return loader.load_asset_value(asset_key, python_type=python_type)
+            return loader.load_asset_value(
+                asset_key, python_type=python_type, partition_key=partition_key
+            )
 
     @public
     def get_asset_value_loader(
@@ -1378,6 +1420,91 @@ class RepositoryDefinition:
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.
     def __call__(self, *args, **kwargs):
         return self
+
+
+class PendingRepositoryDefinition:
+    def __init__(
+        self,
+        name: str,
+        repository_definitions: Sequence[
+            Union[RepositoryListDefinition, "CacheableAssetsDefinition"]
+        ],
+        description: Optional[str] = None,
+        default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+        default_executor_def: Optional[ExecutorDefinition] = None,
+    ):
+        self._repository_definitions = check.list_param(
+            repository_definitions,
+            "repository_definition",
+            additional_message="PendingRepositoryDefinition supports only list-based repository data at this time.",
+        )
+        self._name = name
+        self._description = description
+        self._default_logger_defs = default_logger_defs
+        self._default_executor_def = default_executor_def
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    def _compute_repository_load_data(self) -> RepositoryLoadData:
+        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+
+        return RepositoryLoadData(
+            cached_data_by_key={
+                defn.unique_id: defn.compute_cacheable_data()
+                for defn in self._repository_definitions
+                if isinstance(defn, CacheableAssetsDefinition)
+            }
+        )
+
+    def _get_repository_definition(
+        self, repository_load_data: RepositoryLoadData
+    ) -> RepositoryDefinition:
+
+        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+
+        resolved_definitions: List[RepositoryListDefinition] = []
+        for defn in self._repository_definitions:
+            if isinstance(defn, CacheableAssetsDefinition):
+                # should always have metadata for each cached defn at this point
+                check.invariant(
+                    defn.unique_id in repository_load_data.cached_data_by_key,
+                    f"No metadata found for CacheableAssetsDefinition with unique_id {defn.unique_id}.",
+                )
+                # use the emtadata to generate definitions
+                resolved_definitions.extend(
+                    defn.build_definitions(
+                        data=repository_load_data.cached_data_by_key[defn.unique_id]
+                    )
+                )
+            else:
+                resolved_definitions.append(defn)
+
+        repository_data = CachingRepositoryData.from_list(
+            resolved_definitions,
+            default_executor_def=self._default_executor_def,
+            default_logger_defs=self._default_logger_defs,
+        )
+
+        return RepositoryDefinition(
+            self._name,
+            repository_data=repository_data,
+            description=self._description,
+            repository_load_data=repository_load_data,
+        )
+
+    def reconstruct_repository_definition(
+        self, repository_load_data: RepositoryLoadData
+    ) -> RepositoryDefinition:
+        """Use the provided RepositoryLoadData to construct and return a RepositoryDefinition"""
+        check.inst_param(repository_load_data, "repository_load_data", RepositoryLoadData)
+        return self._get_repository_definition(repository_load_data)
+
+    def compute_repository_definition(self) -> RepositoryDefinition:
+        """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition"""
+        repository_load_data = self._compute_repository_load_data()
+        return self._get_repository_definition(repository_load_data)
 
 
 def _process_and_validate_target(

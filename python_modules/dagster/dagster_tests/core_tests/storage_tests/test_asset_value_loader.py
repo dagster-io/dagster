@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from dagster import (
     AssetKey,
     DagsterInstance,
+    DailyPartitionsDefinition,
     IOManager,
     ResourceDefinition,
     asset,
@@ -15,19 +16,22 @@ from dagster import (
 
 
 def test_single_asset():
+    @asset(io_manager_key="my_io_manager", metadata={"a": "b"})
+    def asset1():
+        ...
+
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             assert False
 
         def load_input(self, context):
             assert context.asset_key == AssetKey("asset1")
+            assert context.upstream_output.asset_key == AssetKey("asset1")
             assert context.upstream_output.metadata["a"] == "b"
+            assert context.upstream_output.op_def == asset1.op
+            assert context.upstream_output.name == "result"
             assert context.dagster_type.typing_type == int
             return 5
-
-    @asset(io_manager_key="my_io_manager", metadata={"a": "b"})
-    def asset1():
-        ...
 
     happenings = set()
 
@@ -156,3 +160,29 @@ def test_default_io_manager():
             assert value == 5
 
     assert repo.load_asset_value(AssetKey("asset1"), python_type=int, instance=instance) == 5
+
+
+def test_partition_key():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert context.partition_key == "2020-05-05"
+            return 5
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
+    def asset1():
+        ...
+
+    @repository
+    def repo():
+        return with_resources([asset1], resource_defs={"io_manager": my_io_manager})
+
+    with repo.get_asset_value_loader() as loader:
+        value = loader.load_asset_value(AssetKey("asset1"), partition_key="2020-05-05")
+        assert value == 5
