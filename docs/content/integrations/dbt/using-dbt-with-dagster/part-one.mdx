@@ -47,19 +47,7 @@ In this part, you'll:
 The folder structure should now be similar to the following:
 
 ```yaml file=/integrations/dbt/dbt_dagster_tutorial/project_structure.yaml startafter=initial_structure_start endbefore=initial_structure_end
-dbt_dagster_tutorial
-└── jaffle_shop 
-  ├── README.md 
-  ├── dbt_project.yml
-  ├── models 
-  │  ├── customers.sql 
-  │  ├── orders.sql
-  │  ├── schema.yml
-  │  └── staging
-  │     ├── schema.yml
-  │     ├── stg_customers.sql
-  │     └── stg_orders.sql 
-  └── seeds
+dbt_dagster_tutorial └── jaffle_shop ├── README.md ├── dbt_project.yml ├── models │  ├── customers.sql │  ├── orders.sql │  ├── schema.yml │  └── staging │     ├── schema.yml │     ├── stg_customers.sql │     └── stg_orders.sql └── seeds
 ```
 
 ---
@@ -129,7 +117,6 @@ Next, you'll tell the models in your dbt project where the source data they depe
          id as customer_id,
          first_name,
          last_name
-
      from {{ source('jaffle_shop', 'customers_raw') }}
      ```
 
@@ -141,7 +128,6 @@ Next, you'll tell the models in your dbt project where the source data they depe
          user_id as customer_id,
          order_date,
          status
-
      from {{ source('jaffle_shop', 'orders_raw') }}
      ```
 

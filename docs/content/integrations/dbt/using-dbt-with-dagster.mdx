@@ -15,7 +15,12 @@ Using Dagster, you can combine dbt and the other technologies in your stack - Sp
 - Run your dbt models after ingesting data into your data warehouse
 - Selectively materialize dbt models and their dependencies
 
-<TODO></TODO>
+Dagster has built-in support for loading dbt models, seeds, and snapshots as [software-defined assets](/concepts/assets/software-defined-assets), enabling you to:
+
+- Visualize and orchestrate a graph of dbt assets, and execute them with a single dbt invocation
+- View detailed historical metadata and logs for each asset
+- Define Python computations that depend directly on tables updated using dbt
+- Track data lineage through dbt and your other tools
 
 ---
 
@@ -40,18 +45,11 @@ Here's what's happening in this example:
 
 <TODO></TODO>
 
-Dagster has built-in support for loading dbt models, seeds, and snapshots as SDAs, enabling you to:
-
-- Visualize and orchestrate a graph of dbt assets, and execute them with a single dbt invocation
-- View detailed historical metadata and logs for each asset
-- Define Python computations that depend directly on tables updated using dbt
-- Track data lineage through dbt and your other tools
-
 ---
 
 ## In this tutorial
 
-In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a DuckDB database. By the end of this tutorial, you will:
+In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a [DuckDB database](https://duckdb.org/). By the end of this tutorial, you will:
 
 - Understand how dbt models and Dagster [software-defined assets](/concepts/assets/software-defined-assets) (or SDAs) work together
 - [Set up a dbt project](/integrations/dbt/using-dbt-with-dagster/part-one)

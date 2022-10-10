@@ -109,16 +109,16 @@ When invoked, this function:
 
 1. Compiles your dbt project,
 2. Parses the metadata provided by dbt, and
-3. Generates a set of software-defined assets reflecting the models in the project. These assets share the same underlying operation, which will invoke dbt to run the models represented by the loaded assets.
+3. Generates a set of software-defined assets reflecting the models in the project. These assets share the same underlying [op](/concepts/ops-jobs-graphs/ops), which will invoke dbt to run the models represented by the loaded assets.
 
 <Note>
   <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> is one
   of two ways you can load dbt models into Dagster, which we recommend for small
-  dbt projects. For larger projects, we recommend using a{" "}
-  <a href="/integrations/dbt/reference#loading-dbt-models-from-a-dbt-project">
-    dbt <code>manifest.json</code>
-  </a>{" "}
-  file.
+  dbt projects. For larger projects, we recommend using
+  <a href="/integrations/dbt/reference#loading-models-using-load_assets_from_dbt_manifest">
+    <code>load_assets_from_dbt_manifest</code> to load models from a dbt{" "}
+    <code>manifest.json</code> file
+  </a>.
 </Note>
 
 Let's take a look at the arguments we've supplied:
