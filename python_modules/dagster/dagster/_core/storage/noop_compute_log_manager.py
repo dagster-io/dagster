@@ -1,10 +1,25 @@
+from contextlib import contextmanager
+from typing import IO, Generator, List, Optional
+
 import dagster._check as check
+from dagster._core.storage.captured_log_manager import (
+    CapturedLogContext,
+    CapturedLogData,
+    CapturedLogManager,
+    CapturedLogMetadata,
+    CapturedLogSubscription,
+)
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
-from .compute_log_manager import MAX_BYTES_FILE_READ, ComputeLogFileData, ComputeLogManager
+from .compute_log_manager import (
+    MAX_BYTES_FILE_READ,
+    ComputeIOType,
+    ComputeLogFileData,
+    ComputeLogManager,
+)
 
 
-class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
+class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableClass):
     def __init__(self, inst_data=None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -47,4 +62,39 @@ class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
         pass
 
     def on_unsubscribe(self, subscription):
+        pass
+
+    @contextmanager
+    def capture_logs(self, log_key: List[str]) -> Generator[CapturedLogContext, None, None]:
+        yield CapturedLogContext(log_key=log_key)
+
+    def is_capture_complete(self, log_key: List[str]):
+        return True
+
+    @contextmanager
+    def open_log_stream(
+        self, log_key: List[str], io_type: ComputeIOType
+    ) -> Generator[Optional[IO], None, None]:
+        yield None
+
+    def get_log_data(
+        self,
+        log_key: List[str],
+        cursor: Optional[str] = None,
+        max_bytes: Optional[int] = None,
+    ) -> CapturedLogData:
+        return CapturedLogData(log_key=log_key)
+
+    def get_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
+        return CapturedLogMetadata()
+
+    def delete_logs(self, log_key: List[str]):
+        pass
+
+    def subscribe(
+        self, log_key: List[str], cursor: Optional[str] = None
+    ) -> CapturedLogSubscription:
+        return CapturedLogSubscription(self, log_key, cursor)
+
+    def unsubscribe(self, subscription: CapturedLogSubscription):
         pass
