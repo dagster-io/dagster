@@ -72,7 +72,7 @@ class SqlPollingAssetEventWatcherThread(threading.Thread):
         self._callback_fn_list_lock: threading.Lock = threading.Lock()
         self._callback_fn_list: List[Callable] = []
         self._should_thread_exit = threading.Event()
-        self.name = "mysql-event-watch-assets"
+        self.name = "polling-event-watch-assets"
 
     @property
     def should_thread_exit(self) -> threading.Event:

@@ -7,6 +7,7 @@ from .roots.subscription import GrapheneDagitSubscription
 
 def types():
     from .asset_key import GrapheneAssetKey
+    from .asset_subscription import types as asset_subscription_types
     from .backfill import GrapheneLaunchBackfillResult, GrapheneLaunchBackfillSuccess
     from .config_type_or_error import GrapheneConfigTypeOrError
     from .config_types import types as config_types
@@ -46,6 +47,7 @@ def types():
         + [GrapheneAssetKey]
         + [GrapheneLaunchBackfillResult, GrapheneLaunchBackfillSuccess]
         + [GrapheneConfigTypeOrError]
+        + asset_subscription_types
         + config_types
         + dagster_types_types
         + errors_types

@@ -32,6 +32,8 @@ class AssetLogsEventsSubscribe:
 
         for event in new_events:
             d_event = event.dagster_event
+            if not d_event:
+                continue
             step_hash = f"{d_event.pipeline_name}-{d_event.step_key}"
             asset_hash = d_event.asset_key.to_string() if d_event.asset_key else None
             if step_hash in self.asset_match_set or asset_hash in self.asset_match_set:
