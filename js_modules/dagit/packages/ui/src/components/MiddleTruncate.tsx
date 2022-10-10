@@ -3,6 +3,8 @@ import debounce from 'lodash/debounce';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {calculateMiddleTruncation} from './calculateMiddleTruncation';
+
 interface Props {
   text: string;
 }
@@ -98,27 +100,14 @@ const useFixedSpan = (text: string, targetStyle: TargetStyle | null) => {
     ctx.font = font;
     body.appendChild(canvas);
 
-    // Binary search to find the maximum middle-truncated width that will fit within
-    // the container.
-    let start = 1;
-    const half = Math.floor(text.length / 2);
-    let end = half;
-    let truncatedText = text;
-    let measuredWidth;
-
-    while (start <= end) {
-      const mid = Math.floor((start + end) / 2);
-      truncatedText = `${text.slice(0, mid)}…${text.slice(-mid)}`;
-      measuredWidth = ctx.measureText(truncatedText).width;
-      if (measuredWidth < targetWidth) {
-        start = mid + 1;
-      } else {
-        end = mid - 1;
-      }
-    }
+    const truncated = calculateMiddleTruncation(
+      text,
+      targetWidth,
+      (value: string) => ctx.measureText(value).width,
+    );
 
     // If the `end` mark is half the string, we don't need to truncate it.
-    setTruncated(end >= half ? text : `${text.slice(0, end)}…${text.slice(-end)}`);
+    setTruncated(truncated);
     body.removeChild(canvas);
   }, [targetStyle, text]);
 
