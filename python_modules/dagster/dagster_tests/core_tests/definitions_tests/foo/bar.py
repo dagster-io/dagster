@@ -1,8 +1,8 @@
-from dagster._legacy import pipeline
+from dagster import job
 
-from .baz import baz_solid  # pylint: disable=import-error
+from .baz import baz_op  # pylint: disable=import-error
 
 
-@pipeline
-def bar_pipeline():
-    baz_solid()
+@job
+def bar_job():
+    baz_op()
