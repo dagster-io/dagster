@@ -21,10 +21,12 @@ from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
+from ..implementation.fetch_instigators import get_tick_log_events
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick
 from ..implementation.loader import RepositoryScopedBatchLoader
 from .errors import GrapheneError, GraphenePythonError
+from .logs.log_level import GrapheneLogLevel
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import non_null_list
@@ -94,6 +96,24 @@ class GrapheneInstigationTypeSpecificData(graphene.Union):
         name = "InstigationTypeSpecificData"
 
 
+class GrapheneInstigationEvent(graphene.ObjectType):
+    class Meta:
+        name = "InstigationEvent"
+
+    message = graphene.NonNull(graphene.String)
+    timestamp = graphene.NonNull(graphene.String)
+    level = graphene.NonNull(GrapheneLogLevel)
+
+
+class GrapheneInstigationEventConnection(graphene.ObjectType):
+    class Meta:
+        name = "InstigationEventConnection"
+
+    events = non_null_list(GrapheneInstigationEvent)
+    cursor = graphene.NonNull(graphene.String)
+    hasMore = graphene.NonNull(graphene.Boolean)
+
+
 class GrapheneInstigationTick(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     status = graphene.NonNull(GrapheneInstigationTickStatus)
@@ -105,6 +125,11 @@ class GrapheneInstigationTick(graphene.ObjectType):
     cursor = graphene.String()
     runs = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
     originRunIds = non_null_list(graphene.String)
+    logKey = graphene.List(graphene.NonNull(graphene.String))
+    logEvents = graphene.Field(
+        graphene.NonNull(GrapheneInstigationEventConnection),
+        cursor=graphene.Argument(graphene.String),
+    )
 
     class Meta:
         name = "InstigationTick"
@@ -121,6 +146,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             skipReason=tick.skip_reason,
             originRunIds=tick.origin_run_ids,
             cursor=tick.cursor,
+            logKey=tick.log_key,
         )
 
     def resolve_id(self, _):
@@ -140,6 +166,9 @@ class GrapheneInstigationTick(graphene.ObjectType):
         }
 
         return [GrapheneRun(records_by_id[run_id]) for run_id in run_ids if run_id in records_by_id]
+
+    def resolve_logEvents(self, graphene_info, cursor=None):
+        return get_tick_log_events(graphene_info, self._tick, cursor)
 
 
 class GrapheneFutureInstigationTick(graphene.ObjectType):

@@ -1,7 +1,13 @@
+from json import JSONDecodeError
+
+from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
+
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.host_representation import InstigatorSelector
 from dagster._core.scheduler.instigation import InstigatorStatus
+from dagster._core.storage.captured_log_manager import CapturedLogManager
+from dagster._seven import json
 
 from .utils import capture_error
 
@@ -63,3 +69,36 @@ def get_instigator_state_or_error(graphene_info, selector):
         return GrapheneInstigationStateNotFoundError(selector.name)
 
     return GrapheneInstigationState(current_state)
+
+
+def get_tick_log_events(graphene_info, tick, cursor=None):
+    from ..schema.instigation import GrapheneInstigationEvent, GrapheneInstigationEventConnection
+
+    compute_log_manager = graphene_info.context.instance.compute_log_manager
+
+    if not tick.log_key:
+        return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
+
+    if not isinstance(compute_log_manager, CapturedLogManager):
+        return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
+
+    log_data = compute_log_manager.get_log_data(tick.log_key, cursor)
+    raw_logs = log_data.stderr.decode("utf-8") if log_data.stderr else ""
+    events = []
+    for line in raw_logs.split("\n"):
+        if not line:
+            continue
+
+        try:
+            record_dict = json.loads(line)
+            events.append(
+                GrapheneInstigationEvent(
+                    message=record_dict["msg"],
+                    level=GrapheneLogLevel.from_level(record_dict["levelno"]),
+                    timestamp=int(record_dict["created"] * 1000),
+                )
+            )
+        except JSONDecodeError:
+            continue
+
+    return GrapheneInstigationEventConnection(events=events, cursor=log_data.cursor, hasMore=False)

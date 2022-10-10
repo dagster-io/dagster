@@ -19,6 +19,7 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {TickLogDialog} from '../TickLogDialog';
 import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ONE_MONTH, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -130,6 +131,7 @@ export const TicksTable = ({
     query: JOB_TICK_HISTORY_QUERY,
     pageSize: PAGE_SIZE,
   });
+  const [logTick, setLogTick] = React.useState<InstigationTick>();
   const {data} = queryResult;
 
   if (!data) {
@@ -166,6 +168,13 @@ export const TicksTable = ({
 
   return (
     <>
+      {logTick ? (
+        <TickLogDialog
+          tick={logTick}
+          instigationSelector={instigationSelector}
+          onClose={() => setLogTick(undefined)}
+        />
+      ) : null}
       <Box margin={{vertical: 8, horizontal: 24}}>
         <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
           {tabs}
@@ -187,6 +196,7 @@ export const TicksTable = ({
                 <th style={{width: 120}}>Cursor</th>
               ) : null}
               <th style={{width: 180}}>Runs</th>
+              <th style={{width: 180}}>Logs</th>
             </tr>
           </thead>
           <tbody>
@@ -235,6 +245,9 @@ export const TicksTable = ({
                   ) : (
                     <>&mdash;</>
                   )}
+                </td>
+                <td>
+                  {tick.logKey ? <a onClick={() => setLogTick(tick)}>View logs</a> : <>&mdash;</>}
                 </td>
               </tr>
             ))}
@@ -376,6 +389,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
           error {
             ...PythonErrorFragment
           }
+          logKey
           ...TickTagFragment
         }
       }

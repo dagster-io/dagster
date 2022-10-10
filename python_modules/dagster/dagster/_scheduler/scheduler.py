@@ -74,6 +74,9 @@ class _ScheduleLaunchContext:
     def add_run_info(self, run_id=None, run_key=None):
         self._tick = self._tick.with_run_info(run_id, run_key)
 
+    def add_log_key(self, log_key):
+        self._tick = self._tick.with_log_info(log_key)
+
     def _write(self):
         self._instance.update_tick(self._tick)
 
@@ -575,6 +578,9 @@ def _schedule_runs_at_time(
         scheduled_execution_time=schedule_time,
     )
     yield None
+
+    if schedule_execution_data.captured_log_key:
+        tick_context.add_log_key(schedule_execution_data.captured_log_key)
 
     if not schedule_execution_data.run_requests:
         if schedule_execution_data.skip_message:

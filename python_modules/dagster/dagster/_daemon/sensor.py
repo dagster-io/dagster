@@ -122,6 +122,9 @@ class SensorLaunchContext:
     def add_run_info(self, run_id=None, run_key=None):
         self._tick = self._tick.with_run_info(run_id, run_key)
 
+    def add_log_info(self, log_key):
+        self._tick = self._tick.with_log_info(log_key)
+
     def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool):
         self._should_update_cursor_on_failure = should_update_cursor_on_failure
 
@@ -547,6 +550,9 @@ def _evaluate_sensor(
     )
 
     yield
+
+    if sensor_runtime_data.captured_log_key:
+        context.add_log_info(sensor_runtime_data.captured_log_key)
 
     assert isinstance(sensor_runtime_data, SensorExecutionData)
     if not sensor_runtime_data.run_requests:

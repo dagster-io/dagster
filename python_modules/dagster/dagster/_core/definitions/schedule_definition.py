@@ -21,6 +21,7 @@ from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen, merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
@@ -104,10 +105,23 @@ class ScheduleEvaluationContext:
 
     """
 
-    __slots__ = ["_instance_ref", "_scheduled_execution_time", "_exit_stack", "_instance"]
+    __slots__ = [
+        "_instance_ref",
+        "_scheduled_execution_time",
+        "_exit_stack",
+        "_instance",
+        "_log_key",
+        "_logger",
+        "_repository_name",
+        "_schedule_name",
+    ]
 
     def __init__(
-        self, instance_ref: Optional[InstanceRef], scheduled_execution_time: Optional[datetime]
+        self,
+        instance_ref: Optional[InstanceRef],
+        scheduled_execution_time: Optional[datetime],
+        repository_name: Optional[str] = None,
+        schedule_name: Optional[str] = None,
     ):
         self._exit_stack = ExitStack()
         self._instance = None
@@ -116,8 +130,18 @@ class ScheduleEvaluationContext:
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )
+        self._log_key = None
+        self._logger = None
+        self._repository_name = repository_name
+        self._schedule_name = schedule_name
 
     def __enter__(self):
+        if self._repository_name and self._schedule_name and self._scheduled_execution_time:
+            self._log_key = [
+                self._repository_name,
+                self._schedule_name,
+                self._scheduled_execution_time.strftime("%Y%m%d_%H%M%S"),
+            ]
         return self
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
@@ -142,6 +166,27 @@ class ScheduleEvaluationContext:
     @property
     def scheduled_execution_time(self) -> Optional[datetime]:
         return self._scheduled_execution_time
+
+    @property
+    def log(self) -> InstigationLogger:
+        if self._logger:
+            return self._logger
+
+        if not self._instance_ref:
+            self._logger = self._exit_stack.enter_context(InstigationLogger(self._log_key))
+            return cast(InstigationLogger, self._logger)
+
+        self._logger = self._exit_stack.enter_context(
+            InstigationLogger(self._log_key, self.instance)
+        )
+        return cast(InstigationLogger, self._logger)
+
+    def has_captured_logs(self):
+        return self._logger and self._logger.has_captured_logs()
+
+    @property
+    def log_key(self) -> Optional[List[str]]:
+        return self._log_key
 
 
 class DecoratedScheduleFunction(NamedTuple):
@@ -195,6 +240,7 @@ def build_schedule_context(
 class ScheduleExecutionData(NamedTuple):
     run_requests: Optional[Sequence[RunRequest]]
     skip_message: Optional[str]
+    captured_log_key: Optional[Sequence[str]]
 
 
 class ScheduleDefinition:
@@ -541,7 +587,9 @@ class ScheduleDefinition:
         ]
 
         return ScheduleExecutionData(
-            run_requests=run_requests_with_schedule_tags, skip_message=skip_message
+            run_requests=run_requests_with_schedule_tags,
+            skip_message=skip_message,
+            captured_log_key=context.log_key if context.has_captured_logs() else None,
         )
 
     def has_loadable_target(self):

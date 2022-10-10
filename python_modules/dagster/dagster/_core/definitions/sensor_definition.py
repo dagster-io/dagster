@@ -13,10 +13,12 @@ from typing import (
     cast,
 )
 
+import pendulum
 from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -86,6 +88,7 @@ class SensorEvaluationContext:
         cursor: Optional[str],
         repository_name: Optional[str],
         instance: Optional[DagsterInstance] = None,
+        sensor_name: Optional[str] = None,
     ):
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -96,8 +99,17 @@ class SensorEvaluationContext:
         self._cursor = check.opt_str_param(cursor, "cursor")
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
+        self._log_key = None
+        self._logger: Optional[InstigationLogger] = None
+        self._sensor_name = sensor_name
 
     def __enter__(self):
+        if self._repository_name and self._sensor_name:
+            self._log_key = [
+                self._repository_name,
+                self._sensor_name,
+                pendulum.now("UTC").strftime("%Y%m%d_%H%M%S"),
+            ]
         return self
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
@@ -151,6 +163,27 @@ class SensorEvaluationContext:
     @property
     def repository_name(self) -> Optional[str]:
         return self._repository_name
+
+    @property
+    def log(self) -> InstigationLogger:
+        if self._logger:
+            return self._logger
+
+        if not self._instance_ref:
+            self._logger = self._exit_stack.enter_context(InstigationLogger(self._log_key))
+            return cast(InstigationLogger, self._logger)
+
+        self._logger = self._exit_stack.enter_context(
+            InstigationLogger(self._log_key, self.instance)
+        )
+        return cast(InstigationLogger, self._logger)
+
+    def has_captured_logs(self):
+        return self._logger and self._logger.has_captured_logs()
+
+    @property
+    def log_key(self) -> Optional[List[str]]:
+        return self._log_key
 
 
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
@@ -348,6 +381,7 @@ class SensorDefinition:
         """
 
         context = check.inst_param(context, "context", SensorEvaluationContext)
+
         result = list(self._evaluation_fn(context))
 
         skip_message: Optional[str] = None
@@ -395,6 +429,7 @@ class SensorDefinition:
             skip_message,
             context.cursor,
             pipeline_run_reactions,
+            captured_log_key=context.log_key if context.has_captured_logs() else None,
         )
 
     def has_loadable_targets(self) -> bool:
@@ -464,6 +499,7 @@ class SensorExecutionData(
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
             ("pipeline_run_reactions", Optional[Sequence[PipelineRunReaction]]),
+            ("captured_log_key", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -473,11 +509,13 @@ class SensorExecutionData(
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
         pipeline_run_reactions: Optional[Sequence[PipelineRunReaction]] = None,
+        captured_log_key: Optional[Sequence[str]] = None,
     ):
         check.opt_list_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
         check.opt_list_param(pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction)
+        check.opt_list_param(captured_log_key, "captured_log_key", str)
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -487,6 +525,7 @@ class SensorExecutionData(
             skip_message=skip_message,
             cursor=cursor,
             pipeline_run_reactions=pipeline_run_reactions,
+            captured_log_key=captured_log_key,
         )
 
 
@@ -522,6 +561,7 @@ def build_sensor_context(
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
+    sensor_name: Optional[str] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -553,4 +593,5 @@ def build_sensor_context(
         cursor=cursor,
         repository_name=repository_name,
         instance=instance,
+        sensor_name=sensor_name,
     )

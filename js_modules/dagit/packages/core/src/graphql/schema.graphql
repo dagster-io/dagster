@@ -1611,6 +1611,8 @@ type InstigationTick {
   cursor: String
   runs: [Run!]!
   originRunIds: [String!]!
+  logKey: [String!]
+  logEvents(cursor: String): InstigationEventConnection!
 }
 
 enum InstigationTickStatus {
@@ -1618,6 +1620,18 @@ enum InstigationTickStatus {
   SKIPPED
   SUCCESS
   FAILURE
+}
+
+type InstigationEventConnection {
+  events: [InstigationEvent!]!
+  cursor: String!
+  hasMore: Boolean!
+}
+
+type InstigationEvent {
+  message: String!
+  timestamp: String!
+  level: LogLevel!
 }
 
 type FutureInstigationTick {
