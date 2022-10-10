@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple
+from typing import Any, Dict, NamedTuple
 
 from dagster._core.definitions.metadata.table import TableSchema
 

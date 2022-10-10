@@ -1,6 +1,6 @@
 from typing import Any, Dict, Iterator, List, Mapping
 
-from dagster_airbyte.types import AirbyteOutput, AirbyteStreamMetadata
+from dagster_airbyte.types import AirbyteOutput
 
 from dagster import AssetMaterialization, MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
