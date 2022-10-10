@@ -7,7 +7,7 @@ from dagster import _seven
 from dagster._config import Field
 from dagster._core.definitions.logger_definition import LoggerDefinition, logger
 from dagster._core.utils import coerce_valid_log_level
-from dagster._utils.log import default_date_format_string, default_format_string
+from dagster._utils.log import create_console_logger
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.logger import InitLoggerContext
@@ -38,20 +38,10 @@ def colored_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
     """This logger provides support for sending Dagster logs to stdout in a colored format. It is
     included by default on jobs which do not otherwise specify loggers.
     """
-    level = coerce_valid_log_level(init_context.logger_config["log_level"])
-    name = init_context.logger_config["name"]
-
-    klass = logging.getLoggerClass()
-    logger_ = klass(name, level=level)
-    coloredlogs.install(
-        logger=logger_,
-        level=level,
-        fmt=default_format_string(),
-        datefmt=default_date_format_string(),
-        field_styles={"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
-        level_styles={"debug": {}, "error": {"color": "red"}},
+    return create_console_logger(
+        name=init_context.logger_config["name"],
+        level=coerce_valid_log_level(init_context.logger_config["log_level"]),
     )
-    return logger_
 
 
 @logger(

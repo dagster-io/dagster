@@ -1,4 +1,5 @@
 import inspect
+import logging
 from contextlib import ExitStack
 from enum import Enum
 from typing import (
@@ -13,10 +14,12 @@ from typing import (
     cast,
 )
 
+import pendulum
 from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -90,6 +93,7 @@ class SensorEvaluationContext:
         repository_name: Optional[str],
         repository_def: Optional["RepositoryDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
+        sensor_name: Optional[str] = None,
     ):
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -101,12 +105,24 @@ class SensorEvaluationContext:
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
         self._repository_def = repository_def
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
+        self._sensor_name = sensor_name
+        self._log_key = (
+            [
+                repository_name,
+                sensor_name,
+                pendulum.now("UTC").strftime("%Y%m%d_%H%M%S"),
+            ]
+            if repository_name and sensor_name
+            else None
+        )
+        self._logger: Optional[InstigationLogger] = None
 
     def __enter__(self):
         return self
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._exit_stack.close()
+        self._logger = None
 
     @public  # type: ignore
     @property
@@ -165,6 +181,38 @@ class SensorEvaluationContext:
     @property
     def repository_def(self) -> Optional["RepositoryDefinition"]:
         return self._repository_def
+
+    @property
+    def log(self) -> logging.Logger:
+        if self._logger:
+            return self._logger
+
+        if not self._instance_ref:
+            self._logger = self._exit_stack.enter_context(
+                InstigationLogger(
+                    self._log_key,
+                    repository_name=self._repository_name,
+                    name=self._sensor_name,
+                )
+            )
+            return cast(logging.Logger, self._logger)
+
+        self._logger = self._exit_stack.enter_context(
+            InstigationLogger(
+                self._log_key,
+                self.instance,
+                repository_name=self._repository_name,
+                name=self._sensor_name,
+            )
+        )
+        return cast(logging.Logger, self._logger)
+
+    def has_captured_logs(self):
+        return self._logger and self._logger.has_captured_logs()
+
+    @property
+    def log_key(self) -> Optional[List[str]]:
+        return self._log_key
 
 
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
@@ -373,6 +421,7 @@ class SensorDefinition:
         """
 
         context = check.inst_param(context, "context", SensorEvaluationContext)
+
         result = list(self._evaluation_fn(context))
 
         skip_message: Optional[str] = None
@@ -425,6 +474,7 @@ class SensorDefinition:
             skip_message,
             context.cursor,
             pipeline_run_reactions,
+            captured_log_key=context.log_key if context.has_captured_logs() else None,
         )
 
     def has_loadable_targets(self) -> bool:
@@ -498,6 +548,7 @@ class SensorExecutionData(
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
             ("pipeline_run_reactions", Optional[Sequence[PipelineRunReaction]]),
+            ("captured_log_key", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -507,6 +558,7 @@ class SensorExecutionData(
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
         pipeline_run_reactions: Optional[Sequence[PipelineRunReaction]] = None,
+        captured_log_key: Optional[Sequence[str]] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -514,6 +566,7 @@ class SensorExecutionData(
         check.opt_sequence_param(
             pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction
         )
+        check.opt_list_param(captured_log_key, "captured_log_key", str)
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -523,6 +576,7 @@ class SensorExecutionData(
             skip_message=skip_message,
             cursor=cursor,
             pipeline_run_reactions=pipeline_run_reactions,
+            captured_log_key=captured_log_key,
         )
 
 
@@ -559,6 +613,7 @@ def build_sensor_context(
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
     repository_def: Optional["RepositoryDefinition"] = None,
+    sensor_name: Optional[str] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -592,6 +647,7 @@ def build_sensor_context(
         repository_name=repository_name,
         instance=instance,
         repository_def=repository_def,
+        sensor_name=sensor_name,
     )
 
 

@@ -303,6 +303,32 @@ query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickSt
 }
 """
 
+GET_TICK_LOGS_QUERY = """
+query TickLogsQuery($sensorSelector: SensorSelector!) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensor {
+      id
+      sensorState {
+        id
+        ticks {
+          id
+          logEvents {
+            events {
+              message
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 
 class TestSensors(NonLaunchableGraphQLContextTestMatrix):
     def test_get_sensors(self, graphql_context, snapshot):
@@ -757,3 +783,34 @@ def test_unloadable_sensor(graphql_context):
         stop_result.data["stopSensor"]["instigationState"]["status"]
         == InstigatorStatus.STOPPED.value
     )
+
+
+def test_sensor_tick_logs(graphql_context):
+    instance = graphql_context.instance
+    external_repository = graphql_context.get_repository_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+
+    sensor_name = "logging_sensor"
+    external_sensor = external_repository.get_external_sensor(sensor_name)
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    # turn the sensor on
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+        )
+    )
+
+    _create_tick(graphql_context)
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_TICK_LOGS_QUERY,
+        variables={"sensorSelector": sensor_selector},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
+    tick = result.data["sensorOrError"]["sensorState"]["ticks"][0]
+    log_messages = tick["logEvents"]["events"]
+    assert len(log_messages) == 1
+    assert log_messages[0]["message"] == "hello hello"

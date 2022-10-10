@@ -276,7 +276,9 @@ def get_external_schedule_execution(
         else None
     )
 
-    with ScheduleEvaluationContext(instance_ref, scheduled_execution_time) as schedule_context:
+    with ScheduleEvaluationContext(
+        instance_ref, scheduled_execution_time, repo_def.name, schedule_name
+    ) as schedule_context:
         try:
             with user_code_error_boundary(
                 ScheduleExecutionError,
@@ -309,6 +311,7 @@ def get_external_sensor_execution(
                 cursor=cursor,
                 repository_name=repo_def.name,
                 repository_def=repo_def,
+                sensor_name=sensor_name,
             )
         )
 

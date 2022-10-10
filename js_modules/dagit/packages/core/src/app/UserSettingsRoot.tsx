@@ -135,6 +135,16 @@ export function getFeatureFlagRows(
         />
       ),
     },
+    {
+      key: 'Experimental schedule/sensor logging view',
+      value: (
+        <Checkbox
+          format="switch"
+          checked={flags.includes(FeatureFlag.flagSensorScheduleLogging)}
+          onChange={() => toggleFlag(FeatureFlag.flagSensorScheduleLogging)}
+        />
+      ),
+    },
   ];
 }
 
