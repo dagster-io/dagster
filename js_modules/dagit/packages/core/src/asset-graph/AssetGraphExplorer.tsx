@@ -75,40 +75,45 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     applyingEmptyDefault,
   } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
 
-  const {liveDataRefreshState, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
+  const {liveDataRefreshState, liveDataByNode, runWatchers} = useLiveDataForAssetKeys(
+    graphAssetKeys,
+  );
 
   return (
-    <Loading allowStaleData queryResult={fetchResult}>
-      {() => {
-        if (!assetGraphData || !allAssetKeys) {
-          return <NonIdealState icon="error" title="Query Error" />;
-        }
+    <>
+      {runWatchers}
+      <Loading allowStaleData queryResult={fetchResult}>
+        {() => {
+          if (!assetGraphData || !allAssetKeys) {
+            return <NonIdealState icon="error" title="Query Error" />;
+          }
 
-        const hasCycles = graphHasCycles(assetGraphData);
+          const hasCycles = graphHasCycles(assetGraphData);
 
-        if (hasCycles) {
+          if (hasCycles) {
+            return (
+              <NonIdealState
+                icon="error"
+                title="Cycle detected"
+                description="Assets dependencies form a cycle"
+              />
+            );
+          }
           return (
-            <NonIdealState
-              icon="error"
-              title="Cycle detected"
-              description="Assets dependencies form a cycle"
+            <AssetGraphExplorerWithData
+              key={props.explorerPath.pipelineName}
+              assetGraphData={assetGraphData}
+              allAssetKeys={allAssetKeys}
+              graphQueryItems={graphQueryItems}
+              applyingEmptyDefault={applyingEmptyDefault}
+              liveDataRefreshState={liveDataRefreshState}
+              liveDataByNode={liveDataByNode}
+              {...props}
             />
           );
-        }
-        return (
-          <AssetGraphExplorerWithData
-            key={props.explorerPath.pipelineName}
-            assetGraphData={assetGraphData}
-            allAssetKeys={allAssetKeys}
-            graphQueryItems={graphQueryItems}
-            applyingEmptyDefault={applyingEmptyDefault}
-            liveDataRefreshState={liveDataRefreshState}
-            liveDataByNode={liveDataByNode}
-            {...props}
-          />
-        );
-      }}
-    </Loading>
+        }}
+      </Loading>
+    </>
   );
 };
 

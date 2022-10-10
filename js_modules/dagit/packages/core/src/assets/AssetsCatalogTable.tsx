@@ -127,7 +127,9 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     () => displayed.map<AssetKey>((a) => ({path: a.key.path})),
     [displayed],
   );
-  const {liveDataByNode, liveDataRefreshState} = useLiveDataForAssetKeys(displayedKeys);
+  const {liveDataByNode, liveDataRefreshState, runWatchers} = useLiveDataForAssetKeys(
+    displayedKeys,
+  );
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(query, FIFTEEN_SECONDS),
@@ -166,6 +168,7 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
 
   return (
     <Wrapper>
+      {runWatchers}
       <StickyTableContainer $top={0}>
         <AssetTable
           view={view}

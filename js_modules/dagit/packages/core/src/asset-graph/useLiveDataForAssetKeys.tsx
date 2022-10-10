@@ -5,7 +5,8 @@ import {
   useQuery,
   useSubscription,
 } from '@apollo/client';
-import React from 'react';
+import uniq from 'lodash/uniq';
+import React, {useEffect} from 'react';
 
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDidLaunchEvent} from '../runs/RunUtils';
@@ -14,6 +15,7 @@ import {AssetKeyInput} from '../types/globalTypes';
 import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {buildLiveData} from './Utils';
 import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
+import {AssetLiveRunLogsSubscription} from './types/AssetLiveRunLogsSubscription';
 import {AssetLogEventsSubscription} from './types/AssetLogEventsSubscription';
 
 const SUBSCRIPTION_IDLE_POLL_RATE = 60 * 1000;
@@ -52,6 +54,29 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
   );
 
   const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const onRefreshDebounced = React.useCallback(() => {
+    // This is a basic `throttle`, except that if it fires and finds the live query
+    // is already refreshing it debounces again.
+    const refetch = liveResult.refetch;
+    const fire = () => {
+      if (fetching.current) {
+        timerRef.current = setTimeout(fire, SUBSCRIPTION_MAX_POLL_RATE);
+      } else {
+        timerRef.current = null;
+        refetch();
+      }
+    };
+    if (!timerRef.current) {
+      timerRef.current = setTimeout(fire, SUBSCRIPTION_MAX_POLL_RATE);
+    }
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [timerRef, liveResult.refetch]);
+
   const onSubscriptionData = React.useCallback(
     (data: OnSubscriptionDataOptions<AssetLogEventsSubscription>) => {
       const assetLogEvents = data.subscriptionData.data?.assetLogEvents;
@@ -61,28 +86,9 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
       if (assetLogEvents.__typename !== 'AssetLogEventsSubscriptionSuccess') {
         setSubscriptionSupported(false);
       }
-
-      // This is a basic `throttle`, except that if it fires and finds the live query
-      // is already refreshing it debounces again.
-      const refetch = liveResult.refetch;
-      const fire = () => {
-        if (fetching.current) {
-          timerRef.current = setTimeout(fire, SUBSCRIPTION_MAX_POLL_RATE);
-        } else {
-          timerRef.current = null;
-          refetch();
-        }
-      };
-      if (!timerRef.current) {
-        timerRef.current = setTimeout(fire, SUBSCRIPTION_MAX_POLL_RATE);
-      }
-      return () => {
-        if (timerRef.current) {
-          clearTimeout(timerRef.current);
-        }
-      };
+      onRefreshDebounced();
     },
-    [timerRef, liveResult.refetch],
+    [onRefreshDebounced],
   );
 
   useSubscription<AssetLogEventsSubscription>(ASSET_LOG_EVENTS_SUBSCRIPTION, {
@@ -104,13 +110,56 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
     }
   });
 
+  const runInProgressId = uniq(
+    Object.values(liveDataByNode).flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
+  ).sort();
+
+  const runWatchers = (
+    <>
+      {runInProgressId.map((runId) => (
+        <RunLogObserver runId={runId} key={runId} callback={onRefreshDebounced} />
+      ))}
+    </>
+  );
+
   return {
     liveResult,
     liveDataByNode,
     liveDataRefreshState,
+    runWatchers,
     assetKeys,
   };
 }
+
+const RunLogObserver: React.FC<{runId: string; callback: () => void}> = React.memo(
+  ({runId, callback}) => {
+    useEffect(() => {
+      console.log(`Subscribed to run ID: ${runId}`);
+      return () => console.log(`Unsubscribed from run ID: ${runId}`);
+    }, [runId]);
+
+    useSubscription<AssetLiveRunLogsSubscription>(ASSET_LIVE_RUN_LOGS_SUBSCRIPTION, {
+      fetchPolicy: 'no-cache',
+      variables: {runId},
+      onSubscriptionData: (data) => {
+        const logs = data.subscriptionData.data?.pipelineRunLogs;
+        if (
+          logs?.__typename === 'PipelineRunLogsSubscriptionSuccess' &&
+          logs.messages.some(
+            (m) =>
+              m.__typename === 'ExecutionStepFailureEvent' ||
+              m.__typename === 'ExecutionStepStartEvent',
+          )
+        ) {
+          console.log(`Run ${runId} Step Event Seen`);
+          callback();
+        }
+      },
+    });
+
+    return <span />;
+  },
+);
 
 export const ASSET_LATEST_INFO_FRAGMENT = gql`
   fragment AssetLatestInfoFragment on AssetLatestInfo {
@@ -140,6 +189,19 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
 
   ${ASSET_NODE_LIVE_FRAGMENT}
   ${ASSET_LATEST_INFO_FRAGMENT}
+`;
+
+const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = gql`
+  subscription AssetLiveRunLogsSubscription($runId: ID!) {
+    pipelineRunLogs(runId: $runId) {
+      __typename
+      ... on PipelineRunLogsSubscriptionSuccess {
+        messages {
+          __typename
+        }
+      }
+    }
+  }
 `;
 
 const ASSET_LOG_EVENTS_SUBSCRIPTION = gql`

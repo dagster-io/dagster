@@ -89,7 +89,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   );
 
   const {upstream, downstream} = useNeighborsFromGraph(assetGraphData, assetKey);
-  const {liveDataRefreshState, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
+  const {liveDataRefreshState, liveDataByNode, runWatchers} = useLiveDataForAssetKeys(
+    graphAssetKeys,
+  );
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
@@ -107,6 +109,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
+      {runWatchers}
       <AssetPageHeader
         assetKey={assetKey}
         tags={

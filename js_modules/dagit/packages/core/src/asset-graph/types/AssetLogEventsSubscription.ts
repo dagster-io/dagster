@@ -10,7 +10,7 @@ import { AssetKeyInput } from "./../../types/globalTypes";
 // ====================================================
 
 export interface AssetLogEventsSubscription_assetLogEvents_AssetLogEventsSubscriptionSuccess_events {
-  __typename: "MaterializationEvent" | "ObservationEvent" | "AssetMaterializationPlannedEvent" | "ExecutionStepStartEvent" | "ExecutionStepFailureEvent";
+  __typename: "MaterializationEvent" | "ObservationEvent" | "AssetMaterializationPlannedEvent";
 }
 
 export interface AssetLogEventsSubscription_assetLogEvents_AssetLogEventsSubscriptionSuccess {

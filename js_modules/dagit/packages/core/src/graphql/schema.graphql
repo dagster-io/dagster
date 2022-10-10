@@ -2811,8 +2811,6 @@ union AssetLogEventsSubscriptionEvent =
     MaterializationEvent
   | ObservationEvent
   | AssetMaterializationPlannedEvent
-  | ExecutionStepStartEvent
-  | ExecutionStepFailureEvent
 
 type AssetLogEventsSubscriptionFailure {
   message: String!
