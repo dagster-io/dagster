@@ -33,13 +33,10 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import with_group
-from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.metadata import MetadataValue, TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.execution.context.init import build_init_resource_context
-from dagster._serdes.serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-)
+from dagster._serdes.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster._utils import merge_dicts
 
 
@@ -129,7 +126,7 @@ def _build_airbyte_assets_from_metadata(
             k: AssetOut(
                 key=v,
                 metadata={
-                    k: deserialize_json_to_dagster_namedtuple(v)
+                    k: deserialize_as(cast(str, v), TableSchemaMetadataValue)
                     for k, v in assets_defn_meta.metadata_by_output_name.get(k, {}).items()
                 }
                 if assets_defn_meta.metadata_by_output_name
@@ -430,6 +427,28 @@ class AirbyteConnectionMetadata(
         return tables
 
 
+def _get_schema_by_table_name(
+    stream_table_metadata: Mapping[str, AirbyteStreamMetadata]
+) -> Dict[str, TableSchema]:
+
+    schema_by_base_table_name = [(k, v.schema) for k, v in stream_table_metadata.items()]
+    schema_by_normalization_table_name = list(
+        chain.from_iterable(
+            [
+                [
+                    (k, v.schema)
+                    for k, v in cast(
+                        Dict[str, AirbyteStreamMetadata], meta.normalization_tables
+                    ).items()
+                ]
+                for meta in stream_table_metadata.values()
+            ]
+        )
+    )
+
+    return dict(schema_by_normalization_table_name + schema_by_base_table_name)
+
+
 class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
     def __init__(
         self,
@@ -506,23 +525,13 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
             stream_table_metadata = connection.parse_stream_tables(
                 self._create_assets_for_normalization_tables
             )
-            schema_by_table_name: Mapping[str, TableSchema] = dict(
-                chain.from_iterable(
-                    chain(
-                        [[(k, v.schema) for k, v in stream_table_metadata.items()]],
-                        [
-                            [(k, v.schema) for k, v in meta.normalization_tables.items()]
-                            for meta in stream_table_metadata.values()
-                        ],
-                    )
-                )
-            )
+            schema_by_table_name = _get_schema_by_table_name(stream_table_metadata)
 
             asset_data_for_conn = _build_airbyte_asset_defn_metadata(
                 connection_id=connection_id,
                 destination_tables=list(stream_table_metadata.keys()),
                 normalization_tables={
-                    table: metadata.normalization_tables
+                    table: set(metadata.normalization_tables.keys())
                     for table, metadata in stream_table_metadata.items()
                 },
                 asset_key_prefix=self._key_prefix,
@@ -724,23 +733,13 @@ def load_assets_from_airbyte_project(
         stream_table_metadata = connection.parse_stream_tables(
             create_assets_for_normalization_tables
         )
-        schema_by_table_name: Mapping[str, TableSchema] = dict(
-            chain.from_iterable(
-                chain(
-                    [[(k, v.schema) for k, v in stream_table_metadata.items()]],
-                    [
-                        [(k, v.schema) for k, v in meta.normalization_tables.items()]
-                        for meta in stream_table_metadata.values()
-                    ],
-                )
-            )
-        )
+        schema_by_table_name = _get_schema_by_table_name(stream_table_metadata)
 
         assets_for_connection = build_airbyte_assets(
             connection_id=connection_id,
             destination_tables=list(stream_table_metadata.keys()),
             normalization_tables={
-                table: metadata.normalization_tables
+                table: set(metadata.normalization_tables.keys())
                 for table, metadata in stream_table_metadata.items()
             },
             asset_key_prefix=key_prefix,
