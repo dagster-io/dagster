@@ -289,7 +289,7 @@ def _make_sensor(
 
         if len(should_materialize) > 0:
             context.update_cursor(json.dumps(cursor_update_dict))
-            context.cursor_has_been_updated = True
+            context._cursor_has_been_updated = True  # pylint: disable=protected-access
             return RunRequest(run_key=f"{context.cursor}", asset_selection=list(should_materialize))
 
     return MultiAssetSensorDefinition(
