@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Colors} from '@dagster-io/ui';
+import {Box, Caption, Colors, MiddleTruncate} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -71,7 +71,9 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}}>
             <span style={{fontWeight: 500}}>
-              <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>{name}</Link>
+              <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>
+                <MiddleTruncate text={name} />
+              </Link>
             </span>
             {sensorData?.targets && sensorData.targets.length ? (
               <Caption>

@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Colors} from '@dagster-io/ui';
+import {Box, Caption, Colors, MiddleTruncate} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -65,8 +65,10 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
     <Row $height={height} $start={start}>
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <RowCell>
-          <div style={{whiteSpace: 'nowrap'}}>
-            <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>{name}</Link>
+          <div style={{whiteSpace: 'nowrap', fontWeight: 500}}>
+            <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>
+              <MiddleTruncate text={name} />
+            </Link>
           </div>
           <div
             style={{

@@ -1,4 +1,15 @@
-import {Box, Colors, Popover, Mono, FontFamily, Tooltip, Tag, Icon, Spinner} from '@dagster-io/ui';
+import {
+  Box,
+  Colors,
+  Popover,
+  Mono,
+  FontFamily,
+  Tooltip,
+  Tag,
+  Icon,
+  Spinner,
+  MiddleTruncate,
+} from '@dagster-io/ui';
 import moment from 'moment-timezone';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -25,7 +36,8 @@ const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;
 const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
 const EMPTY_STATE_HEIGHT = 66;
-const LABEL_WIDTH = 320;
+const LEFT_SIDE_SPACE_ALLOTTED = 320;
+const LABEL_WIDTH = 268;
 const MIN_DATE_WIDTH_PCT = 10;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
@@ -432,7 +444,7 @@ const TimeDividers = (props: TimeDividersProps) => {
 const DividerContainer = styled.div`
   position: absolute;
   top: 0;
-  left: ${LABEL_WIDTH}px;
+  left: ${LEFT_SIDE_SPACE_ALLOTTED}px;
   right: 0;
   font-family: ${FontFamily.monospace};
   color: ${Colors.Gray800};
@@ -508,9 +520,8 @@ const RunTimelineRow = ({
   range: [number, number];
   width: number;
 }) => {
-  // const {jobKey, jobLabel, jobPath, runs, top, range, width: containerWidth} = props;
   const [start, end] = range;
-  const width = containerWidth - LABEL_WIDTH;
+  const width = containerWidth - LEFT_SIDE_SPACE_ALLOTTED;
   const {runs} = job;
 
   // Batch overlapping runs in this row.
@@ -535,11 +546,17 @@ const RunTimelineRow = ({
     <Row $top={top}>
       <JobName>
         <Icon name={job.jobType === 'asset' ? 'asset' : 'job'} />
-        {job.jobType === 'asset' ? (
-          <span style={{color: Colors.Gray900}}>{job.jobName}</span>
-        ) : (
-          <Link to={job.path}>{job.jobName}</Link>
-        )}
+        <div style={{width: LABEL_WIDTH}}>
+          {job.jobType === 'asset' ? (
+            <span style={{color: Colors.Gray900}}>
+              <MiddleTruncate text={job.jobName} />
+            </span>
+          ) : (
+            <Link to={job.path}>
+              <MiddleTruncate text={job.jobName} />
+            </Link>
+          )}
+        </div>
       </JobName>
       <RunChunks>
         {batched.map((batch) => {
@@ -647,7 +664,6 @@ const JobName = styled.div`
   padding: 0 12px 0 24px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  width: ${LABEL_WIDTH}px;
 `;
 
 const RunChunks = styled.div`
