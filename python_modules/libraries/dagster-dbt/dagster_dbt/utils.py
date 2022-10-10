@@ -144,7 +144,14 @@ def result_to_events(
             if node_info is None:
                 continue
             upstream_asset_key = node_info_to_asset_key(node_info)
-            yield AssetObservation(asset_key=upstream_asset_key, metadata=metadata)
+            yield AssetObservation(
+                asset_key=upstream_asset_key,
+                metadata={
+                    "Test ID": result["unique_id"],
+                    "Test Status": status,
+                    "Test Message": result.get("message", ""),
+                },
+            )
 
 
 def generate_events(
