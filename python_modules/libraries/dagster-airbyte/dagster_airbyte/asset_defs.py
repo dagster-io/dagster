@@ -13,7 +13,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Union,
     cast,
 )
 
@@ -222,11 +221,16 @@ def build_airbyte_assets(
     return [_assets]
 
 
-def _get_schema_types(schema: Mapping[str, Any]) -> Union[str, List[str], None]:
+def _get_schema_types(schema: Mapping[str, Any]) -> List[str]:
     """
     Given a schema definition, return a list of data types that are valid for this schema.
     """
-    return schema.get("types") or schema.get("type")
+    types = schema.get("types") or schema.get("type")
+    if not types:
+        return []
+    if isinstance(types, str):
+        return [types]
+    return types
 
 
 def _get_sub_schemas(schema: Mapping[str, Any]) -> List[Mapping[str, Any]]:
@@ -256,20 +260,16 @@ def _get_normalization_tables_for_schema(
     sub_schemas = _get_sub_schemas(schema)
 
     for sub_schema in sub_schemas:
-        schema_type = _get_schema_types(sub_schema)
-        if not schema_type:
+        schema_types = _get_schema_types(sub_schema)
+        if not schema_types:
             continue
 
-        if (
-            schema_type == "object"
-            or "object" in schema_type
-            and len(sub_schema.get("properties", {})) > 0
-        ):
+        if "object" in schema_types and len(sub_schema.get("properties", {})) > 0:
             out.append(prefix + key)
             for k, v in sub_schema["properties"].items():
                 out += _get_normalization_tables_for_schema(k, v, f"{prefix}{key}_")
         # Array types are also broken into a new table
-        elif schema_type == "array" or "array" in schema_type:
+        elif "array" in schema_types:
             out.append(prefix + key)
             if sub_schema.get("items", {}).get("properties"):
                 for k, v in sub_schema["items"]["properties"].items():
