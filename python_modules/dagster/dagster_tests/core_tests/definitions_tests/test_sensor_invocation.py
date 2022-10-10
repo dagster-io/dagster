@@ -10,9 +10,6 @@ from dagster import (
     AssetSelection,
     BoolMetadataValue,
     DagsterEventType,
-    BoolMetadataValue,
-    DagsterEventType,
-    AssetSelection,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
@@ -1079,7 +1076,43 @@ def test_unfetched_partitioned_events_are_unconsumed():
         )
 
 
-def test_execute_in_process_result_in_build_multi_asset_sensor_context():
+def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_materializations():
+    @asset
+    def my_asset():
+        pass
+
+    @multi_asset_sensor(asset_keys=[my_asset.key])
+    def my_sensor(context):
+        my_asset_cursor = context._get_cursor(my_asset.key)  # pylint: disable=protected-access
+        assert my_asset_cursor.latest_consumed_event_id is not None
+
+    @repository
+    def my_repo():
+        return [my_asset, my_sensor]
+
+    with instance_for_test() as instance:
+        result = materialize([my_asset], instance=instance)
+        records = list(
+            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
+        )[0]
+        assert records.event_log_entry.run_id == result.run_id
+
+        ctx = build_multi_asset_sensor_context(
+            asset_selection=AssetSelection.groups("default"),
+            instance=instance,
+            cursor_from_latest_materializations=True,
+            repository_def=my_repo,
+        )
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset.key
+            ).latest_consumed_event_id
+            == records.storage_id
+        )
+        list(my_sensor(ctx))
+
+
+def test_build_multi_asset_sensor_context_set_to_latest_materializations():
     evaluated = False
 
     @asset
@@ -1114,10 +1147,15 @@ def test_execute_in_process_result_in_build_multi_asset_sensor_context():
         ctx = build_multi_asset_sensor_context(
             asset_keys=[my_asset.key],
             instance=instance,
-            set_cursor_to_latest_materializations=True,
+            cursor_from_latest_materializations=True,
             repository_def=my_repo,
         )
-        assert ctx._get_cursor(my_asset.key)[1] == records.storage_id
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset.key
+            ).latest_consumed_event_id
+            == records.storage_id
+        )
         list(my_sensor(ctx))
         evaluated = True
 
@@ -1125,7 +1163,7 @@ def test_execute_in_process_result_in_build_multi_asset_sensor_context():
         list(my_sensor(ctx))
 
 
-def test_build_multi_asset_context_multiple_execute_in_process():
+def test_build_multi_asset_context_set_after_multiple_materializations():
     @asset
     def my_asset():
         return 1
@@ -1158,11 +1196,21 @@ def test_build_multi_asset_context_multiple_execute_in_process():
         ctx = build_multi_asset_sensor_context(
             asset_keys=[my_asset.key, my_asset_2.key],
             instance=instance,
-            set_cursor_to_latest_materializations=True,
+            cursor_from_latest_materializations=True,
             repository_def=my_repo,
         )
-        assert ctx._get_cursor(my_asset.key)[1] == my_asset_cursor
-        assert ctx._get_cursor(my_asset_2.key)[1] == my_asset_2_cursor
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset.key
+            ).latest_consumed_event_id
+            == my_asset_cursor
+        )
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset_2.key
+            ).latest_consumed_event_id
+            == my_asset_2_cursor
+        )
 
 
 def test_error_exec_in_process_to_build_multi_asset_sensor_context():
@@ -1180,18 +1228,18 @@ def test_error_exec_in_process_to_build_multi_asset_sensor_context():
             build_multi_asset_sensor_context(
                 asset_keys=[my_asset.key],
                 repository_def=my_repo,
-                set_cursor_to_latest_materializations=True,
+                cursor_from_latest_materializations=True,
             )
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Cannot provide both cursor and set_cursor_to_latest_materializations",
+        match="Cannot provide both cursor and cursor_from_latest_materializations",
     ):
         with instance_for_test() as instance:
             materialize([my_asset], instance=instance)
             build_multi_asset_sensor_context(
                 asset_keys=[my_asset.key],
                 repository_def=my_repo,
-                set_cursor_to_latest_materializations=True,
+                cursor_from_latest_materializations=True,
                 cursor="alskdjalsjk",
             )

@@ -51,7 +51,6 @@ from .utils import check_valid_name
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.storage.event_log.base import EventLogRecord
 
 
@@ -1489,7 +1488,7 @@ def get_cursor_from_latest_materializations(
     from dagster._core.events import DagsterEventType
     from dagster._core.storage.event_log.base import EventRecordsFilter
 
-    cursor_dict: Dict[str, Tuple[Optional[str], int]] = {}
+    cursor_dict: Dict[str, MultiAssetSensorAssetCursorComponent] = {}
 
     for asset_key in asset_keys:
         materializations = instance.get_event_records(
@@ -1502,9 +1501,10 @@ def get_cursor_from_latest_materializations(
         if materializations:
             last_materialization = list(materializations)[-1]
 
-            cursor_dict[str(asset_key)] = (
+            cursor_dict[str(asset_key)] = MultiAssetSensorAssetCursorComponent(
                 _get_partition_key_from_event_log_record(last_materialization),
                 last_materialization.storage_id,
+                {},
             )
 
     cursor_str = json.dumps(cursor_dict)
@@ -1519,7 +1519,7 @@ def build_multi_asset_sensor_context(
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
-    set_cursor_to_latest_materializations: bool = False,
+    cursor_from_latest_materializations: bool = False,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context for testing purposes using the provided parameters.
 
@@ -1537,6 +1537,8 @@ def build_multi_asset_sensor_context(
         cursor (Optional[str]): A string cursor to provide to the evaluation of the sensor. Must be
             a dictionary of asset key strings to ints that has been converted to a json string
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
+        cursor_from_latest_materializations (bool): If True, the cursor will be set to the latest
+            materialization for each monitored asset. By default, set to False.
 
     Examples:
 
@@ -1548,30 +1550,43 @@ def build_multi_asset_sensor_context(
 
     """
     from dagster._core.definitions import RepositoryDefinition
-    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
     check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
+
     if asset_selection:
         asset_selection = check.inst_param(asset_selection, "asset_selection", AssetSelection)
+        asset_keys = None
     else:  # asset keys provided
         asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
+        check.invariant(len(asset_keys) > 0, "Must provide at least one asset key")
         asset_selection = AssetSelection.keys(*asset_keys)
 
-    check.bool_param(set_cursor_to_latest_materializations, "set_cursor_to_latest_materializations")
+    check.bool_param(cursor_from_latest_materializations, "cursor_from_latest_materializations")
 
-    if set_cursor_to_latest_materializations:
+    if cursor_from_latest_materializations:
         if cursor:
             raise DagsterInvalidInvocationError(
-                "Cannot provide both cursor and set_cursor_to_latest_materializations objects. Dagster will override "
-                "the provided cursor based on the set_cursor_to_latest_materializations object."
+                "Cannot provide both cursor and cursor_from_latest_materializations objects. Dagster will override "
+                "the provided cursor based on the cursor_from_latest_materializations object."
             )
         if not instance:
             raise DagsterInvalidInvocationError(
-                "Cannot provide set_cursor_to_latest_materializations object without a Dagster instance."
+                "Cannot provide cursor_from_latest_materializations object without a Dagster instance."
+            )
+
+        if asset_keys is None:
+            asset_keys = list(
+                asset_selection.resolve(
+                    list(
+                        set(
+                            repository_def._assets_defs_by_key.values()  # pylint: disable=protected-access
+                        )
+                    )
+                )
             )
 
         cursor = get_cursor_from_latest_materializations(asset_keys, instance)
