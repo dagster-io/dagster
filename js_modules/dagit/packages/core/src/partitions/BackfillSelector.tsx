@@ -32,16 +32,15 @@ import {
   LaunchPartitionBackfillVariables,
 } from '../instance/types/LaunchPartitionBackfill';
 import {LaunchButton} from '../launchpad/LaunchButton';
-import {TagContainer, TagEditor} from '../launchpad/TagEditor';
+import {TagEditor, TagContainer} from '../launchpad/TagEditor';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
-import {RunStatus} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {PartitionRangeInput} from './PartitionRangeInput';
-import {PartitionStatus} from './PartitionStatus';
+import {PartitionRangeWizard} from './PartitionRangeWizard';
+import {PartitionState} from './PartitionStatus';
 import {BackfillSelectorQuery, BackfillSelectorQueryVariables} from './types/BackfillSelectorQuery';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
@@ -54,7 +53,7 @@ interface BackfillOptions {
 export const BackfillPartitionSelector: React.FC<{
   partitionSetName: string;
   partitionNames: string[];
-  partitionData: {[name: string]: RunStatus | null};
+  partitionData: {[name: string]: PartitionState};
   pipelineName: string;
   onLaunch?: (backfillId: string, stepQuery: string) => void;
   onCancel?: () => void;
@@ -73,7 +72,7 @@ export const BackfillPartitionSelector: React.FC<{
   const history = useHistory();
   const [selected, _setSelected] = React.useState<string[]>(
     Object.keys(partitionData).filter(
-      (k) => !partitionData[k] || partitionData[k] === RunStatus.FAILURE,
+      (k) => !partitionData[k] || partitionData[k] === PartitionState.FAILURE,
     ),
   );
   const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
@@ -144,15 +143,9 @@ export const BackfillPartitionSelector: React.FC<{
 
   const usingDefaultRunLauncher = instance.runLauncher?.name === DEFAULT_RUN_LAUNCHER_NAME;
 
-  const isFailed = (name: string) =>
-    partitionData[name] === RunStatus.FAILURE ||
-    partitionData[name] === RunStatus.CANCELED ||
-    partitionData[name] === RunStatus.CANCELING;
+  const isFailed = (name: string) => partitionData[name] === PartitionState.FAILURE;
   const failedPartitions = partitionNames.filter(isFailed);
-  const missingPartitions = partitionNames.filter((name: string) => !partitionData[name]);
-  const successPartitions = partitionNames.filter(
-    (name: string) => partitionData[name] === RunStatus.SUCCESS,
-  );
+
   const setSelected = (selection: string[]) => {
     const selectionSet = new Set(selection);
     // first order the partition names, according to the order given by partition names, which
@@ -168,82 +161,12 @@ export const BackfillPartitionSelector: React.FC<{
       <DialogBody>
         <Box flex={{direction: 'column', gap: 32}}>
           <Section title="Partitions">
-            <Box>
-              Select the set of partitions to include in the backfill. You can specify a range using
-              the text selector, or by dragging a range selection in the status indicator.
-            </Box>
-            <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-                {successPartitions.length ? (
-                  <Checkbox
-                    style={{marginBottom: 0, marginLeft: 10}}
-                    checked={successPartitions.every((x) => selected.includes(x))}
-                    label="Succeeded"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      if (e.target.checked) {
-                        setSelected(Array.from(new Set(selected.concat(successPartitions))));
-                      } else {
-                        setSelected(selected.filter((x) => !successPartitions.includes(x)));
-                      }
-                    }}
-                  />
-                ) : null}
-                {failedPartitions.length ? (
-                  <Checkbox
-                    style={{marginBottom: 0, marginLeft: 10}}
-                    checked={failedPartitions.every((x) => selected.includes(x))}
-                    label="Failed"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      if (e.target.checked) {
-                        setSelected(Array.from(new Set(selected.concat(failedPartitions))));
-                      } else {
-                        setSelected(selected.filter((x) => !failedPartitions.includes(x)));
-                      }
-                    }}
-                  />
-                ) : null}
-                {missingPartitions.length ? (
-                  <Checkbox
-                    style={{marginBottom: 0, marginLeft: 10}}
-                    checked={missingPartitions.every((x) => selected.includes(x))}
-                    label="Missing"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      if (e.target.checked) {
-                        setSelected(Array.from(new Set(selected.concat(missingPartitions))));
-                      } else {
-                        setSelected(selected.filter((x) => !missingPartitions.includes(x)));
-                      }
-                    }}
-                  />
-                ) : null}
-              </Box>
-              <Button
-                icon={<Icon name="close" />}
-                disabled={!partitionNames.length}
-                style={{marginBottom: 0, marginLeft: 10}}
-                small={true}
-                onClick={() => {
-                  setSelected([]);
-                }}
-              >
-                Clear selection
-              </Button>
-            </Box>
-            <PartitionRangeInput
-              value={selected}
-              partitionNames={partitionNames}
-              onChange={setSelected}
+            <PartitionRangeWizard
+              selected={selected}
+              setSelected={setSelected}
+              all={partitionNames}
+              partitionData={partitionData}
             />
-            <Box margin={{top: 8}}>
-              <PartitionStatus
-                partitionNames={partitionNames}
-                partitionData={partitionData}
-                selected={selected}
-                onSelect={(partitionNames: string[]) => {
-                  setSelected(partitionNames);
-                }}
-              />
-            </Box>
           </Section>
 
           {failedPartitions.length ? (

@@ -10,6 +10,7 @@ export enum FeatureFlag {
   flagDisableWebsockets = 'flagDisableWebsockets',
   flagNewWorkspace = 'flagNewWorkspace',
   flagRunBucketing = 'flagRunBucketing',
+  flagAssetGraphExperimentalZoom = 'flagAssetGraphExperimentalZoom',
 }
 
 export const getFeatureFlags: () => FeatureFlag[] = memoize(

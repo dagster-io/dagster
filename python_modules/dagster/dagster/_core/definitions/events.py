@@ -716,7 +716,7 @@ class Failure(Exception):
         self,
         description: Optional[str] = None,
         metadata_entries: Optional[List[MetadataEntry]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         allow_retries: Optional[bool] = None,
     ):
         metadata_entries = check.opt_list_param(

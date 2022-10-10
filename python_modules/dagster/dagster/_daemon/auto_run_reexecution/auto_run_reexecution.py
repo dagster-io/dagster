@@ -7,7 +7,7 @@ from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun, RunRecord
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG, RETRY_STRATEGY_TAG
-from dagster._core.workspace.workspace import IWorkspace
+from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 DEFAULT_REEXECUTION_POLICY = ReexecutionStrategy.FROM_FAILURE
@@ -80,15 +80,14 @@ def get_reexecution_strategy(
 def retry_run(
     failed_run: DagsterRun,
     retry_number: int,
-    instance: DagsterInstance,
-    workspace: IWorkspace,
+    workspace_context: IWorkspaceProcessContext,
 ) -> None:
     """
     Submit a retry as a re-execute from failure
     """
-
+    instance = workspace_context.instance
     tags = {RETRY_NUMBER_TAG: str(retry_number)}
-
+    workspace = workspace_context.create_request_context()
     if not failed_run.external_pipeline_origin:
         instance.report_engine_event(
             "Run does not have an external pipeline origin, unable to retry the run.",
@@ -150,8 +149,7 @@ def retry_run(
 
 
 def consume_new_runs_for_automatic_reexecution(
-    instance: DagsterInstance,
-    workspace: IWorkspace,
+    workspace_process_context: IWorkspaceProcessContext,
     run_records: List[RunRecord],
 ) -> Iterator[None]:
     """
@@ -164,17 +162,17 @@ def consume_new_runs_for_automatic_reexecution(
 
     for run, retry_number in filter_runs_to_should_retry(
         [cast(DagsterRun, run_record.pipeline_run) for run_record in run_records],
-        instance,
-        instance.run_retries_max_retries,
+        workspace_process_context.instance,
+        workspace_process_context.instance.run_retries_max_retries,
     ):
 
         yield
 
         try:
-            retry_run(run, retry_number, instance, workspace)
+            retry_run(run, retry_number, workspace_process_context)
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            instance.report_engine_event(
+            workspace_process_context.instance.report_engine_event(
                 "Failed to retry run",
                 run,
                 engine_event_data=EngineEventData(error=error_info),

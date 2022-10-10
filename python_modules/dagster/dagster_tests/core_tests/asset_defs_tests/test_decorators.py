@@ -14,7 +14,7 @@ from dagster import (
     String,
 )
 from dagster import _check as check
-from dagster import build_op_context, io_manager, resource
+from dagster import build_op_context, io_manager, materialize_to_memory, resource
 from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,
@@ -23,6 +23,7 @@ from dagster._core.definitions import (
     multi_asset,
 )
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.types.dagster_type import resolve_dagster_type
 
 
@@ -59,18 +60,24 @@ def test_asset_with_inputs():
 
 def test_asset_with_config_schema():
     @asset(config_schema={"foo": int})
-    def my_asset(arg1):
-        return arg1
+    def my_asset(context):
+        assert context.op_config["foo"] == 5
 
-    assert my_asset.op.config_schema
+    materialize_to_memory([my_asset], run_config={"ops": {"my_asset": {"config": {"foo": 5}}}})
+
+    with pytest.raises(DagsterInvalidConfigError):
+        materialize_to_memory([my_asset])
 
 
 def test_multi_asset_with_config_schema():
     @multi_asset(outs={"o1": AssetOut()}, config_schema={"foo": int})
-    def my_asset(arg1):
-        return arg1
+    def my_asset(context):
+        assert context.op_config["foo"] == 5
 
-    assert my_asset.op.config_schema
+    materialize_to_memory([my_asset], run_config={"ops": {"my_asset": {"config": {"foo": 5}}}})
+
+    with pytest.raises(DagsterInvalidConfigError):
+        materialize_to_memory([my_asset])
 
 
 def test_asset_with_compute_kind():

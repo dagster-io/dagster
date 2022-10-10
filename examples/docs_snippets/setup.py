@@ -20,6 +20,7 @@ if __name__ == "__main__":
             "dagit",
             "dagster",
             "dagstermill",
+            "dagster-airbyte",
             "dagster-airflow",
             "dagster-aws",
             "dagster-celery",

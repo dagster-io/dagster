@@ -2,7 +2,7 @@ import warnings
 from abc import ABC
 from typing import Any, Mapping, Optional, Sequence
 
-from dagster import Failure, MetadataEntry
+from dagster import Failure, MetadataValue
 from dagster import _check as check
 
 
@@ -19,10 +19,10 @@ class DagsterDbtCliUnexpectedOutputError(DagsterDbtError):
         check.list_param(invalid_line_nos, "invalid_line_nos", int)
         line_nos_str = ", ".join(map(str, invalid_line_nos))
         description = f"dbt CLI emitted unexpected output on lines {line_nos_str}"
-        metadata_entries = [
-            MetadataEntry("Invalid CLI Output Line Numbers", value={"line_nos": invalid_line_nos})
-        ]
-        super().__init__(description, metadata_entries)
+        metadata = {
+            "Invalid CLI Output Line Numbers": MetadataValue.json({"line_nos": invalid_line_nos})
+        }
+        super().__init__(description, metadata=metadata)
         self.invalid_line_nos = invalid_line_nos
 
 
@@ -44,8 +44,8 @@ class DagsterDbtCliRuntimeError(DagsterDbtError, ABC):
             warnings.warn(
                 "`raw_output` is a deprecated argument to DagsterDbtCliRuntimeError and will be discarded"
             )
-        metadata_entries = [MetadataEntry("Parsed CLI Messages", value="\n".join(messages or []))]
-        super().__init__(description, metadata_entries)
+        metadata = {"Parsed CLI Messages": "\n".join(messages or [])}
+        super().__init__(description, metadata=metadata)
 
 
 class DagsterDbtCliHandledRuntimeError(DagsterDbtCliRuntimeError):

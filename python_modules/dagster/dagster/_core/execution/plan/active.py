@@ -398,6 +398,15 @@ class ActiveExecution:
         step_key = cast(str, dagster_event.step_key)
         if dagster_event.is_step_failure:
             self.mark_failed(step_key)
+        elif dagster_event.is_resource_init_failure:
+            # Resources are only initialized without a step key in the
+            # in-process case, and resource initalization happens before the
+            # ActiveExecution object is created.
+            check.invariant(
+                dagster_event.step_key is not None,
+                "Resource init failure was reported during execution without a step key.",
+            )
+            self.mark_failed(step_key)
         elif dagster_event.is_step_success:
             self.mark_success(step_key)
         elif dagster_event.is_step_skipped:

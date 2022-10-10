@@ -36,6 +36,7 @@ class AirbyteResource:
         use_https: bool,
         request_max_retries: int = 3,
         request_retry_delay: float = 0.25,
+        request_timeout: int = 15,
         log: logging.Logger = get_dagster_logger(),
         forward_logs: bool = True,
     ):
@@ -44,6 +45,7 @@ class AirbyteResource:
         self._use_https = use_https
         self._request_max_retries = request_max_retries
         self._request_retry_delay = request_retry_delay
+        self._request_timeout = request_timeout
 
         self._log = log
 
@@ -81,7 +83,7 @@ class AirbyteResource:
                     url=self.api_base_url + endpoint,
                     headers=headers,
                     json=data,
-                    timeout=15,
+                    timeout=self._request_timeout,
                 )
                 response.raise_for_status()
                 if response.status_code == 204:
@@ -217,7 +219,7 @@ class AirbyteResource:
         ),
         "port": Field(
             StringSource,
-            is_required=False,
+            is_required=True,
             description="Port for the Airbyte Server.",
         ),
         "use_https": Field(
@@ -235,6 +237,11 @@ class AirbyteResource:
             float,
             default_value=0.25,
             description="Time (in seconds) to wait between each request retry.",
+        ),
+        "request_timeout": Field(
+            int,
+            default_value=15,
+            description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
         ),
         "forward_logs": Field(
             bool,
@@ -281,6 +288,7 @@ def airbyte_resource(context) -> AirbyteResource:
         use_https=context.resource_config["use_https"],
         request_max_retries=context.resource_config["request_max_retries"],
         request_retry_delay=context.resource_config["request_retry_delay"],
+        request_timeout=context.resource_config["request_timeout"],
         log=context.log,
         forward_logs=context.resource_config["forward_logs"],
     )

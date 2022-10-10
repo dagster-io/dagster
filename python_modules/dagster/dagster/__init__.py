@@ -330,6 +330,10 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.definitions.unresolved_asset_job_definition import (
     define_asset_job as define_asset_job,
 )
+
+from dagster._core.definitions.asset_reconciliation_sensor import (
+    build_asset_reconciliation_sensor as build_asset_reconciliation_sensor,
+)
 from dagster._core.definitions.utils import (
     config_from_files as config_from_files,
     config_from_pkg_resources as config_from_pkg_resources,
@@ -452,6 +456,9 @@ from dagster._core.event_api import (
     EventRecordsFilter as EventRecordsFilter,
     RunShardedEventsCursor as RunShardedEventsCursor,
 )
+from dagster._core.storage.asset_value_loader import (
+    AssetValueLoader as AssetValueLoader,
+)
 from dagster._core.storage.file_manager import (
     FileHandle as FileHandle,
     LocalFileHandle as LocalFileHandle,
@@ -471,6 +478,7 @@ from dagster._core.storage.io_manager import (
     io_manager as io_manager,
 )
 from dagster._core.storage.mem_io_manager import (
+    InMemoryIOManager as InMemoryIOManager,
     mem_io_manager as mem_io_manager,
 )
 from dagster._core.storage.memoizable_io_manager import (

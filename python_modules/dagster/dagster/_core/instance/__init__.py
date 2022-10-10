@@ -822,6 +822,7 @@ class DagsterInstance:
         asset_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
+        repository_load_data=None,
     ):
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
@@ -874,6 +875,7 @@ class DagsterInstance:
                 mode=mode,
                 instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,
+                repository_load_data=repository_load_data,
             )
 
         return self.create_run(
@@ -963,6 +965,8 @@ class DagsterInstance:
             execution_plan_snapshot_id=execution_plan_snapshot_id,
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
+            has_repository_load_data=execution_plan_snapshot is not None
+            and execution_plan_snapshot.repository_load_data is not None,
         )
 
     def _ensure_persisted_pipeline_snapshot(self, pipeline_snapshot, parent_pipeline_snapshot):

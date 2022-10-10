@@ -10,7 +10,7 @@ from .utils import get_project_connection_json, get_project_job_json
 
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
-@pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x}_group"])
+@pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
 def test_load_from_project(use_normalization_tables, connection_to_group_fn):
 
     ab_resource = airbyte_resource(

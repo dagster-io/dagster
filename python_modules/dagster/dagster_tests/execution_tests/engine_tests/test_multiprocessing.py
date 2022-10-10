@@ -1,10 +1,20 @@
+# pylint: disable=unused-argument
 import os
 import sys
 import time
 
 import pytest
 
-from dagster import Failure, Field, MetadataEntry, Nothing, Output, String, reconstructable
+from dagster import (
+    Failure,
+    Field,
+    MetadataEntry,
+    Nothing,
+    Output,
+    String,
+    multiprocess_executor,
+    reconstructable,
+)
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.compute_log_manager import ComputeIOType
@@ -19,6 +29,12 @@ from dagster._legacy import (
     solid,
 )
 from dagster._utils import safe_tempfile_path, segfault
+
+from .retry_jobs import (
+    assert_expected_failure_behavior,
+    get_dynamic_job_op_failure,
+    get_dynamic_job_resource_init_failure,
+)
 
 
 def test_diamond_simple_execution():
@@ -505,3 +521,31 @@ def test_crash_hard_multiprocessing():
         #     ).data
         #     is None
         # )
+
+
+def get_dynamic_resource_init_failure_job():
+    return get_dynamic_job_resource_init_failure(multiprocess_executor)[0]
+
+
+def get_dynamic_op_failure_job():
+    return get_dynamic_job_op_failure(multiprocess_executor)[0]
+
+
+# Tests identical retry behavior when a job fails because of resource
+# initialization of a dynamic step, and failure during op runtime of a
+# dynamic step.
+@pytest.mark.parametrize(
+    "job_fn,config_fn",
+    [
+        (
+            get_dynamic_resource_init_failure_job,
+            get_dynamic_job_resource_init_failure(multiprocess_executor)[1],
+        ),
+        (
+            get_dynamic_op_failure_job,
+            get_dynamic_job_op_failure(multiprocess_executor)[1],
+        ),
+    ],
+)
+def test_dynamic_failure_retry(job_fn, config_fn):
+    assert_expected_failure_behavior(job_fn, config_fn)
