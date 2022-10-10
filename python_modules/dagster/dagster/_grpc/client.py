@@ -3,7 +3,7 @@ import subprocess
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Iterator, List, Optional, Tuple
 
 import grpc
 from grpc_health.v1 import health_pb2
@@ -53,13 +53,22 @@ def client_heartbeat_thread(client, shutdown_event):
 
 
 class DagsterGrpcClient:
-    def __init__(self, port=None, socket=None, host="localhost", use_ssl=False):
+    def __init__(
+        self,
+        port=None,
+        socket=None,
+        host="localhost",
+        use_ssl=False,
+        metadata: Optional[List[Tuple[str, str]]] = None,
+    ):
         self.port = check.opt_int_param(port, "port")
         self.socket = check.opt_str_param(socket, "socket")
         self.host = check.opt_str_param(host, "host")
         self._use_ssl = check.bool_param(use_ssl, "use_ssl")
 
         self._ssl_creds = grpc.ssl_channel_credentials() if use_ssl else None
+
+        self._metadata = check.opt_list_param(metadata, "metadata")
 
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
@@ -78,6 +87,10 @@ class DagsterGrpcClient:
             self._server_address = host + ":" + str(port)
         else:
             self._server_address = "unix:" + os.path.abspath(socket)
+
+    @property
+    def metadata(self) -> List[Tuple[str, str]]:
+        return self._metadata
 
     @property
     def use_ssl(self) -> bool:
@@ -105,21 +118,50 @@ class DagsterGrpcClient:
         ) as channel:
             yield channel
 
-    def _query(self, method, request_type, timeout=DEFAULT_GRPC_TIMEOUT, **kwargs):
+    def _get_response(
+        self,
+        method,
+        request,
+        timeout=DEFAULT_GRPC_TIMEOUT,
+    ):
+        with self._channel() as channel:
+            stub = DagsterApiStub(channel)
+            return getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
+
+    def _query(
+        self,
+        method,
+        request_type,
+        timeout=DEFAULT_GRPC_TIMEOUT,
+        **kwargs,
+    ):
         try:
-            with self._channel() as channel:
-                stub = DagsterApiStub(channel)
-                response = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
-            return response
+            return self._get_response(method, request=request_type(**kwargs), timeout=timeout)
         except Exception as e:
             raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
 
-    def _streaming_query(self, method, request_type, timeout=DEFAULT_GRPC_TIMEOUT, **kwargs):
+    def _get_streaming_response(
+        self,
+        method,
+        request,
+        timeout=DEFAULT_GRPC_TIMEOUT,
+    ):
+
+        with self._channel() as channel:
+            stub = DagsterApiStub(channel)
+            yield from getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
+
+    def _streaming_query(
+        self,
+        method,
+        request_type,
+        timeout=DEFAULT_GRPC_TIMEOUT,
+        **kwargs,
+    ):
         try:
-            with self._channel() as channel:
-                stub = DagsterApiStub(channel)
-                response_stream = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
-                yield from response_stream
+            yield from self._get_streaming_response(
+                method, request=request_type(**kwargs), timeout=timeout
+            )
         except Exception as e:
             raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
 
