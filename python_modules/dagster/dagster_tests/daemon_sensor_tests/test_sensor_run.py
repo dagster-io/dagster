@@ -22,6 +22,7 @@ from dagster import (
     JobSelector,
     Output,
     RepositorySelector,
+    SourceAsset,
     WeeklyPartitionsDefinition,
     asset,
     build_asset_reconciliation_sensor,
@@ -32,7 +33,6 @@ from dagster import (
     multi_asset_sensor,
     repository,
     run_failure_sensor,
-    SourceAsset,
 )
 
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
@@ -624,31 +624,32 @@ def sleeper():
 def waits_on_sleep(sleeper, x):
     return sleeper + x
 
+
 @asset
 def a_source_asset():
     return 1
 
+
 source_asset_source = SourceAsset(key=AssetKey("a_source_asset"))
+
 
 @asset
 def depends_on_source(a_source_asset):
     return a_source_asset + 1
 
+
 @repository
 def with_source_asset_repo():
-    return [
-        a_source_asset
-    ]
+    return [a_source_asset]
 
-@multi_asset_sensor(
-    asset_keys=[AssetKey("a_source_asset")],
-    job=the_job
-)
+
+@multi_asset_sensor(asset_keys=[AssetKey("a_source_asset")], job=the_job)
 def monitor_source_asset_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
         context.advance_all_cursors()
         return RunRequest(run_key=f"{context.cursor}", run_config={})
+
 
 @repository
 def asset_sensor_repo():

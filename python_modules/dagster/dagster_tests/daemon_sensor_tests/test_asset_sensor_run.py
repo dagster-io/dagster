@@ -8,8 +8,12 @@ from dagster import AssetKey, materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
-from .test_run_status_sensors import instance_with_sensors, instance_with_multiple_repos_with_sensors
+from .test_run_status_sensors import (
+    instance_with_multiple_repos_with_sensors,
+    instance_with_sensors,
+)
 from .test_sensor_run import (
+    a_source_asset,
     d,
     e,
     evaluate_sensors,
@@ -23,7 +27,6 @@ from .test_sensor_run import (
     x,
     y,
     z,
-    a_source_asset
 )
 
 
@@ -985,6 +988,7 @@ def test_materialization_of_parent_and_child(executor):
                 TickStatus.SKIPPED,
             )
 
+
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_materialization_of_source_asset(executor):
     """Asset graph:
@@ -1038,12 +1042,13 @@ def test_materialization_of_source_asset(executor):
             assert run_request.pipeline_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("depends_on_source")}
 
+
 ### Multi Asset Sensor Tests
+
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_monitor_source_asset_sensor(executor):
-    """Tests a multi asset sensor that monitors an asset in another repo
-    """
+    """Tests a multi asset sensor that monitors an asset in another repo"""
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
@@ -1084,5 +1089,4 @@ def test_monitor_source_asset_sensor(executor):
                 TickStatus.SUCCESS,
             )
             run_request = instance.get_runs(limit=1)[0]
-            # assert run_request.pipeline_name == "the_job"
-            # assert run_request.asset_selection == {AssetKey("depends_on_source")}
+            assert run_request.pipeline_name == "the_graph"

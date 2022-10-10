@@ -876,4 +876,3 @@ def test_instance_run_status_sensor(executor):
                 freeze_datetime,
                 TickStatus.SUCCESS,
             )
-
