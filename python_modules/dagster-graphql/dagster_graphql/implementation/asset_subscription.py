@@ -4,16 +4,9 @@ from dagster import EventLogEntry
 
 
 class AssetLogsEventsSubscribe:
-    def __init__(self, instance, asset_nodes):
+    def __init__(self, instance, asset_keys):
         self.instance = instance
-        self.asset_nodes = asset_nodes
-        self.asset_match_set = set()
-        for node in asset_nodes:
-            self.asset_match_set.add(node.asset_key.to_string())
-            for job_name in node.job_names:
-                for op_name in node.op_names:
-                    self.asset_match_set.add(f"{job_name}-{op_name}")
-
+        self.asset_keys = asset_keys
         self.observer = None
 
     def __call__(self, observer):
@@ -32,11 +25,9 @@ class AssetLogsEventsSubscribe:
 
         for event in new_events:
             d_event = event.dagster_event
-            if not d_event:
+            if not d_event or not d_event.asset_key:
                 continue
-            step_hash = f"{d_event.pipeline_name}-{d_event.step_key}"
-            asset_hash = d_event.asset_key.to_string() if d_event.asset_key else None
-            if step_hash in self.asset_match_set or asset_hash in self.asset_match_set:
+            if d_event.asset_key in self.asset_keys:
                 filtered.append(event)
 
         if filtered:

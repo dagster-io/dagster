@@ -121,8 +121,6 @@ class SqlPollingAssetEventWatcherThread(threading.Thread):
                     DagsterEventType.ASSET_MATERIALIZATION,
                     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
                     DagsterEventType.ASSET_OBSERVATION,
-                    DagsterEventType.STEP_START,
-                    DagsterEventType.STEP_FAILURE,
                 },
                 limit=1 if cursor == None else _EVENT_LOG_FETCH_LIMIT,
             )

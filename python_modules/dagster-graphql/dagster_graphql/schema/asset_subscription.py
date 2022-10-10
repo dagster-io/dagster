@@ -1,11 +1,8 @@
 import graphene
 from dagster_graphql.implementation.asset_subscription import AssetLogsEventsSubscribe
 from dagster_graphql.implementation.events import from_dagster_event_record
-from dagster_graphql.implementation.fetch_assets import asset_node_iter
 from dagster_graphql.schema.logs.events import (
     GrapheneAssetMaterializationPlannedEvent,
-    GrapheneExecutionStepFailureEvent,
-    GrapheneExecutionStepStartEvent,
     GrapheneMaterializationEvent,
     GrapheneObservationEvent,
 )
@@ -22,8 +19,6 @@ class GrapheneAssetLogEventsSubscriptionEvent(graphene.Union):
             GrapheneMaterializationEvent,
             GrapheneObservationEvent,
             GrapheneAssetMaterializationPlannedEvent,
-            GrapheneExecutionStepStartEvent,
-            GrapheneExecutionStepFailureEvent,
         )
         name = "AssetLogEventsSubscriptionEvent"
 
@@ -53,11 +48,8 @@ class GrapheneAssetLogEventsSubscriptionPayload(graphene.Union):
 
 def get_asset_log_events_observable(graphene_info, asset_keys):
     instance = graphene_info.context.instance
-    asset_nodes = [
-        node for _, _, node in asset_node_iter(graphene_info) if node.asset_key in asset_keys
-    ]
 
-    if not asset_nodes:
+    if not asset_keys:
 
         def _get_error_observable(observer):
             observer.on_next(
@@ -86,7 +78,7 @@ def get_asset_log_events_observable(graphene_info, asset_keys):
         )
 
     # pylint: disable=E1101
-    return Observable.create(AssetLogsEventsSubscribe(instance, asset_nodes)).map(_handle_events)
+    return Observable.create(AssetLogsEventsSubscribe(instance, asset_keys)).map(_handle_events)
 
 
 types = [
