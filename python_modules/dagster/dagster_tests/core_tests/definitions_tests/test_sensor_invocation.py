@@ -862,6 +862,9 @@ def test_advance_all_cursors_clears_unconsumed_events():
             # Should fetch unconsumed event
             events = context.latest_materialization_records_by_partition(july_asset.key)
             assert len(events) == 2
+            unconsumed_events = context.get_trailing_unconsumed_events(july_asset.key)
+            assert len(unconsumed_events) == 1
+            assert events["2022-07-05"] == unconsumed_events[0]
             context.advance_all_cursors()
 
     with instance_for_test() as instance:
@@ -935,7 +938,7 @@ def test_error_when_max_num_unconsumed_events():
             )
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="maximum number of unconsumed events",
+            match="maximum number of trailing unconsumed events",
         ):
             list(test_unconsumed_events_sensor(ctx))
 
@@ -1001,7 +1004,7 @@ def test_latest_materialization_records_by_partition_fetches_unconsumed_events()
         )
         # We should remove the 2022-07-02 materialization from the unconsumed events list
         # since we have advanced the cursor for a later materialization with that partition key.
-        assert len(second_july_cursor.trailing_unconsumed_partitioned_event_ids) == 0
+        assert len(second_july_cursor.trailing_unconsumed_partitioned_event_ids.keys()) == 0
 
 
 def test_unfetched_partitioned_events_are_unconsumed():

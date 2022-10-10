@@ -304,38 +304,7 @@ class MultiAssetSensorContextCursor:
             str(asset_key), MultiAssetSensorAssetCursorComponent(None, None, {})
         )
 
-    def reset_cursors_to_materializations(
-        self, latest_event_by_asset_key: Mapping[AssetKey, Optional["EventLogRecord"]]
-    ) -> None:
-        # This method accepts the latest materialization for each asset key. It
-        # advances the cursor to that latest materialization for each asset, and clears
-        # all unconsumed events.
-        for asset_key, latest_event in latest_event_by_asset_key.items():
-            if latest_event:
-                self._cursor_component_by_asset_key.update(
-                    {
-                        str(asset_key): MultiAssetSensorAssetCursorComponent(
-                            _get_partition_key_from_event_log_record(latest_event),
-                            latest_event.storage_id,
-                            {},
-                        )
-                    }
-                )
-            # If latest_event == None, then there are no newer materializations after the cursor
-            # so we do not update the cursor.
-            else:
-                cursor_component = self.get_cursor_for_asset(asset_key)
-                self._cursor_component_by_asset_key.update(
-                    {
-                        str(asset_key): MultiAssetSensorAssetCursorComponent(
-                            cursor_component.latest_consumed_event_partition,
-                            cursor_component.latest_consumed_event_id,
-                            {},
-                        )
-                    }
-                )
-
-    def get_stringified_cursor(self):
+    def get_stringified_cursor(self) -> str:
         return json.dumps(self._cursor_component_by_asset_key)
 
 
@@ -430,11 +399,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         # cursor.
         self._unpacked_cursor = MultiAssetSensorContextCursor(cursor, self)
         self._cursor_has_been_updated = False
-
-        self._cursor_advance_state_mutation = MultiAssetSensorCursorStateMutation(
-            self, self._unpacked_cursor
-        )
-        self._advance_all_cursors_called = False
+        self._cursor_advance_state_mutation = MultiAssetSensorCursorAdvances()
 
         self._initial_unconsumed_events_by_id: Dict[int, EventLogRecord] = {}
         self._fetched_initial_unconsumed_events = False
@@ -453,7 +418,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
         # This method caches the initial unconsumed events for each asset key. To generate the
-        # current unconsumed events, call get_unconsumed_events instead.
+        # current unconsumed events, call get_trailing_unconsumed_events instead.
         if self._fetched_initial_unconsumed_events:
             return
 
@@ -477,16 +442,17 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def _get_unconsumed_events_with_ids(self, event_ids: List[int]) -> Sequence["EventLogRecord"]:
         self._cache_initial_unconsumed_events()
         unconsumed_events = []
-        for event_id in event_ids:
+        for event_id in sorted(event_ids):
             event = self._initial_unconsumed_events_by_id.get(event_id)
             unconsumed_events.extend([event] if event else [])
 
         return unconsumed_events
 
     @public
-    def get_unconsumed_events(self, asset_key: AssetKey) -> Sequence["EventLogRecord"]:
-        """Fetches the unconsumed events for a given asset key.
-        To mark an event as consumed, pass the event to `advance_cursor`.
+    def get_trailing_unconsumed_events(self, asset_key: AssetKey) -> Sequence["EventLogRecord"]:
+        """Fetches the unconsumed events for a given asset key. Returns only events
+        before the latest consumed event ID for the given asset. To mark an event as consumed,
+        pass the event to `advance_cursor`. Returns events in ascending order by storage ID.
 
         Args:
             asset_key (AssetKey): The asset key to get unconsumed events for.
@@ -523,12 +489,15 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         should be called at most once per evaluation.
         """
 
-        new_cursor = self._cursor_advance_state_mutation.get_new_cursor_after_tick_evaluation()
+        new_cursor = self._cursor_advance_state_mutation.get_cursor_with_advances(
+            self, self._unpacked_cursor
+        )
 
         if new_cursor != None:
             # Cursor was not updated by this context object, so we do not need to update it
             self._cursor = new_cursor
             self._unpacked_cursor = MultiAssetSensorContextCursor(new_cursor, self)
+            self._cursor_advance_state_mutation = MultiAssetSensorCursorAdvances()
 
     @public
     def latest_materialization_records_by_key(
@@ -948,8 +917,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         materializations_by_key = self.latest_materialization_records_by_key()
 
         self._cursor_advance_state_mutation.add_advanced_records(materializations_by_key)
-        self._advance_all_cursors_called = True
-
+        self._cursor_advance_state_mutation.advance_all_cursors_called = True
         self._cursor_has_been_updated = True
 
     @public  # type: ignore
@@ -963,17 +931,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         return self._asset_keys
 
 
-class MultiAssetSensorCursorStateMutation:
-    def __init__(
-        self,
-        context: MultiAssetSensorEvaluationContext,
-        initial_cursor: MultiAssetSensorContextCursor,
-    ):
-        self._context = check.inst_param(context, "context", MultiAssetSensorEvaluationContext)
-        self._initial_cursor = initial_cursor
-
+class MultiAssetSensorCursorAdvances:
+    def __init__(self):
         self._advanced_record_ids_by_key: Dict[AssetKey, Set[int]] = defaultdict(set)
         self._partition_key_by_record_id: Dict[int, Optional[str]] = {}
+        self.advance_all_cursors_called = False
 
     def add_advanced_records(
         self, materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]]
@@ -986,22 +948,35 @@ class MultiAssetSensorCursorStateMutation:
                     materialization.storage_id
                 ] = _get_partition_key_from_event_log_record(materialization)
 
-    def get_new_cursor_after_tick_evaluation(self) -> Optional[str]:
-        # Returns the new cursor after tick evaluation
-        # If the cursor has not been updated, returns None
+    def get_cursor_with_advances(
+        self,
+        context: MultiAssetSensorEvaluationContext,
+        initial_cursor: MultiAssetSensorContextCursor,
+    ) -> Optional[str]:
+        """
+        Given the multi asset sensor context and the cursor at the start of the tick,
+        returns the cursor that should be used in the next tick.
+
+        If the cursor has not been updated, returns None
+        """
         if len(self._advanced_record_ids_by_key) == 0:
             # No events marked as advanced
             return None
 
         return json.dumps(
             {
-                str(asset_key): self.get_new_asset_cursor_after_tick_evaluation(asset_key)
-                for asset_key in self._context.asset_keys
+                str(asset_key): self.get_asset_cursor_with_advances(
+                    asset_key, context, initial_cursor
+                )
+                for asset_key in context.asset_keys
             }
         )
 
-    def get_new_asset_cursor_after_tick_evaluation(
-        self, asset_key: AssetKey
+    def get_asset_cursor_with_advances(
+        self,
+        asset_key: AssetKey,
+        context: MultiAssetSensorEvaluationContext,
+        initial_cursor: MultiAssetSensorContextCursor,
     ) -> MultiAssetSensorAssetCursorComponent:
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
@@ -1009,30 +984,24 @@ class MultiAssetSensorCursorStateMutation:
         advanced_records: Set[int] = self._advanced_record_ids_by_key.get(asset_key, set())
         if len(advanced_records) == 0:
             # No events marked as advanced for this asset key
-            return self._initial_cursor.get_cursor_for_asset(asset_key)
+            return initial_cursor.get_cursor_for_asset(asset_key)
 
-        initial_cursor = self._initial_cursor.get_cursor_for_asset(asset_key)
+        initial_asset_cursor = initial_cursor.get_cursor_for_asset(asset_key)
 
-        latest_consumed_event_id_at_tick_start = initial_cursor.latest_consumed_event_id
+        latest_consumed_event_id_at_tick_start = initial_asset_cursor.latest_consumed_event_id
 
-        greatest_consumed_event_id_in_tick = max(self._advanced_record_ids_by_key[asset_key])
-
-        check.invariant(
-            greatest_consumed_event_id_in_tick >= (latest_consumed_event_id_at_tick_start or 0),
-            "Cannot advance cursor to a previous event",
-        )
-
-        latest_consumed_partition = self._partition_key_by_record_id[
+        greatest_consumed_event_id_in_tick = max(advanced_records)
+        latest_consumed_partition_in_tick = self._partition_key_by_record_id[
             greatest_consumed_event_id_in_tick
         ]
         latest_unconsumed_record_by_partition: Dict[str, int] = {}
-        if not self._context._advance_all_cursors_called:  # pylint: disable=protected-access
-            latest_unconsumed_record_by_partition = (
-                initial_cursor.trailing_unconsumed_partitioned_event_ids
-            )
 
-            if greatest_consumed_event_id_in_tick != latest_consumed_event_id_at_tick_start:
-                events_between_initial_and_final_cursor = self._context.instance.get_event_records(
+        if not self.advance_all_cursors_called:
+            latest_unconsumed_record_by_partition = (
+                initial_asset_cursor.trailing_unconsumed_partitioned_event_ids
+            )
+            unconsumed_events = list(context.get_trailing_unconsumed_events(asset_key)) + list(
+                context.instance.get_event_records(
                     EventRecordsFilter(
                         event_type=DagsterEventType.ASSET_MATERIALIZATION,
                         asset_key=asset_key,
@@ -1041,24 +1010,35 @@ class MultiAssetSensorCursorStateMutation:
                     ),
                     ascending=True,
                 )
+                if greatest_consumed_event_id_in_tick
+                > (latest_consumed_event_id_at_tick_start or 0)
+                else []
+            )
 
-                # Iterate through events in ascending order, storing the latest unconsumed
-                # event for each partition. If an advanced event exists for a partition, clear
-                # the prior unconsumed event for that partition.
-                for event in events_between_initial_and_final_cursor:
-                    partition = _get_partition_key_from_event_log_record(event)
-                    if partition is not None:  # Ignore unpartitioned events
-                        if not event.storage_id in advanced_records:
-                            latest_unconsumed_record_by_partition[partition] = event.storage_id
-                        elif partition in latest_unconsumed_record_by_partition:
-                            latest_unconsumed_record_by_partition.pop(partition)
+            # Iterate through events in ascending order, storing the latest unconsumed
+            # event for each partition. If an advanced event exists for a partition, clear
+            # the prior unconsumed event for that partition.
+            for event in unconsumed_events:
+                partition = _get_partition_key_from_event_log_record(event)
+                if partition is not None:  # Ignore unpartitioned events
+                    if not event.storage_id in advanced_records:
+                        latest_unconsumed_record_by_partition[partition] = event.storage_id
+                    elif partition in latest_unconsumed_record_by_partition:
+                        latest_unconsumed_record_by_partition.pop(partition)
 
-            if len(latest_unconsumed_record_by_partition) >= MAX_NUM_UNCONSUMED_EVENTS:
+            if (
+                latest_consumed_partition_in_tick is not None
+                and latest_consumed_partition_in_tick in latest_unconsumed_record_by_partition
+            ):
+                latest_unconsumed_record_by_partition.pop(latest_consumed_partition_in_tick)
+
+            if len(latest_unconsumed_record_by_partition.keys()) >= MAX_NUM_UNCONSUMED_EVENTS:
                 raise DagsterInvariantViolationError(
                     f"""
-                    You have reached the maximum number of unconsumed events ({MAX_NUM_UNCONSUMED_EVENTS})
-                    for asset {asset_key} and no more events can be added. You can access the unconsumed
-                    events by calling the `get_unconsumed_events` method on the sensor context, and
+                    You have reached the maximum number of trailing unconsumed events
+                    ({MAX_NUM_UNCONSUMED_EVENTS}) for asset {asset_key} and no more events can be
+                    added. You can access the unconsumed events by calling the
+                    `get_trailing_unconsumed_events` method on the sensor context, and
                     mark events as consumed by passing them to `advance_cursor`.
 
                     Otherwise, you can clear all unconsumed events and reset the cursor to the latest
@@ -1066,15 +1046,13 @@ class MultiAssetSensorCursorStateMutation:
                     """
                 )
 
-            if (
-                latest_consumed_partition is not None
-                and latest_consumed_partition in latest_unconsumed_record_by_partition
-            ):
-                latest_unconsumed_record_by_partition.pop(latest_consumed_partition)
-
         return MultiAssetSensorAssetCursorComponent(
-            latest_consumed_event_partition=latest_consumed_partition,
-            latest_consumed_event_id=greatest_consumed_event_id_in_tick,
+            latest_consumed_event_partition=latest_consumed_partition_in_tick
+            if greatest_consumed_event_id_in_tick > (latest_consumed_event_id_at_tick_start or 0)
+            else initial_asset_cursor.latest_consumed_event_partition,
+            latest_consumed_event_id=greatest_consumed_event_id_in_tick
+            if greatest_consumed_event_id_in_tick > (latest_consumed_event_id_at_tick_start or 0)
+            else latest_consumed_event_id_at_tick_start,
             trailing_unconsumed_partitioned_event_ids=latest_unconsumed_record_by_partition,
         )
 
