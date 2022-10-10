@@ -87,9 +87,10 @@ export const SensorsRoot = (props: Props) => {
             return (
               <>
                 {sensorsOrError.results.length > 0 && (
-                  <Box padding={{horizontal: 24, vertical: 16}}>
-                    <SensorInfo daemonHealth={instance.daemonHealth} />
-                  </Box>
+                  <SensorInfo
+                    daemonHealth={instance.daemonHealth}
+                    padding={{horizontal: 24, vertical: 16}}
+                  />
                 )}
                 <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
                 <UnloadableSensors sensorStates={unloadableInstigationStatesOrError.results} />

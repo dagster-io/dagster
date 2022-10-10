@@ -66,9 +66,7 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
 
   const sensorDefinitionsSection = withSensors.length ? (
     <>
-      <Box padding={{horizontal: 24, vertical: 16}}>
-        <SensorInfo daemonHealth={instance.daemonHealth} />
-      </Box>
+      <SensorInfo daemonHealth={instance.daemonHealth} padding={{horizontal: 24, vertical: 16}} />
       {withSensors.map((repository) =>
         repository.sensors.length ? (
           <React.Fragment key={repository.name}>
