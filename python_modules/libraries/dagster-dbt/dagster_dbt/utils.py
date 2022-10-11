@@ -149,7 +149,7 @@ def result_to_events(
                 metadata={
                     "Test ID": result["unique_id"],
                     "Test Status": status,
-                    "Test Message": result.get("message", ""),
+                    "Test Message": result.get("message") or "",
                 },
             )
 
