@@ -40,7 +40,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         row_count = obj.count()
-        obj.write.parquet(path=filepath, mode="overwrite")
+        obj.write.parquet(path=str(filepath), mode="overwrite")
 
         if context.has_asset_partitions:
             to_scan = Path(filepath.parent, "*.pq", "*.parquet")
