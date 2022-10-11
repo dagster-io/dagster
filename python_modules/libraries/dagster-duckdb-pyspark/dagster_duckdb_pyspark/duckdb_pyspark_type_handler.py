@@ -46,9 +46,9 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
             to_scan = Path(filepath.parent, "*.pq", "*.parquet")
         else:
             to_scan = filepath
-        conn.execute(f"create schema if not exists {self._schema(context)};")
+        conn.execute(f"create schema if not exists {self._schema(context, context)};")
         conn.execute(
-            f"create or replace view {self._table_path(context)} as "
+            f"create or replace view {self._table_path(context, context)} as "
             f"select * from parquet_scan('{to_scan}');"
         )
 
@@ -63,15 +63,23 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         )
 
     def _get_path(self, context: OutputContext, base_path: str):
-        key = context.asset_key.path[-1]  # type: ignore
+        if context.has_asset_key:
+            key = context.asset_key.path[-1]  # type: ignore
 
-        if context.has_asset_partitions:
-            start, end = context.asset_partitions_time_window
-            dt_format = "%Y%m%d%H%M%S"
-            partition_str = start.strftime(dt_format) + "_" + end.strftime(dt_format)
-            return Path(base_path, key, f"{partition_str}.pq")
+            if context.has_asset_partitions:
+                start, end = context.asset_partitions_time_window
+                dt_format = "%Y%m%d%H%M%S"
+                partition_str = start.strftime(dt_format) + "_" + end.strftime(dt_format)
+                return Path(base_path, key, f"{partition_str}.pq")
+            else:
+                return Path(base_path, f"{key}.pq")
         else:
-            return Path(base_path, f"{key}.pq")
+            keys = context.get_identifier()
+            run_id = keys[0]
+            output_identifiers = keys[1:]  # variable length because of mapping key
+
+            path = ["storage", run_id, "files", *output_identifiers]
+            return Path(f"{base_path}/{'_'.join(path)}.pq")
 
     @property
     def supported_output_types(self):
