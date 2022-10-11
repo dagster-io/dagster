@@ -1554,6 +1554,7 @@ def build_multi_asset_sensor_context(
     else:  # asset keys provided
         asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
         check.invariant(len(asset_keys) > 0, "Must provide at least one asset key")
+        asset_selection = None
 
     check.bool_param(cursor_from_latest_materializations, "cursor_from_latest_materializations")
 
@@ -1568,16 +1569,22 @@ def build_multi_asset_sensor_context(
                 "Cannot provide cursor_from_latest_materializations object without a Dagster instance."
             )
 
-        if asset_keys is None:
-            asset_keys = list(
-                asset_selection.resolve(
-                    list(
-                        set(
-                            repository_def._assets_defs_by_key.values()  # pylint: disable=protected-access
+        if asset_selection:
+            asset_keys = cast(
+                List[AssetKey],
+                list(
+                    asset_selection.resolve(
+                        list(
+                            set(
+                                repository_def._assets_defs_by_key.values()  # pylint: disable=protected-access
+                            )
                         )
                     )
-                )
+                ),
             )
+
+        if asset_keys is None:
+            asset_keys = []
 
         cursor = get_cursor_from_latest_materializations(asset_keys, instance)
 
