@@ -64,7 +64,7 @@ def my_repo():
         upstream_daily_1,
         upstream_daily_2,
         trigger_daily_asset_if_both_upstream_partitions_materialized,
-        trigger_daily_asset_when_any_upstream_partitions_replaced,
+        trigger_daily_asset_when_any_upstream_partitions_have_new_materializations,
         downstream_daily_asset,
         downstream_weekly_asset,
     ]
@@ -82,15 +82,28 @@ def test_multi_asset_sensor_AND():
             instance=instance,
             repository_def=my_repo,
         )
-        run_requests = list(trigger_daily_asset_if_both_upstream_partitions_materialized(and_ctx))
+        run_requests = list(
+            trigger_daily_asset_if_both_upstream_partitions_materialized(and_ctx)
+        )
         assert len(run_requests) == 1
         assert run_requests[0].tags["dagster/partition"] == "2022-08-01"
 
         materialize([upstream_daily_1], instance=instance, partition_key="2022-08-02")
-        assert len(list(trigger_daily_asset_if_both_upstream_partitions_materialized(and_ctx))) == 0
+        assert (
+            len(
+                list(
+                    trigger_daily_asset_if_both_upstream_partitions_materialized(
+                        and_ctx
+                    )
+                )
+            )
+            == 0
+        )
 
         materialize([upstream_daily_2], instance=instance, partition_key="2022-08-02")
-        run_requests = list(trigger_daily_asset_if_both_upstream_partitions_materialized(and_ctx))
+        run_requests = list(
+            trigger_daily_asset_if_both_upstream_partitions_materialized(and_ctx)
+        )
         assert len(run_requests) == 1
         assert run_requests[0].tags["dagster/partition"] == "2022-08-02"
 
@@ -107,12 +120,20 @@ def test_multi_asset_sensor_OR():
             instance=instance,
             repository_def=my_repo,
         )
-        run_requests = list(trigger_daily_asset_when_any_upstream_partitions_replaced(or_ctx))
+        run_requests = list(
+            trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(
+                or_ctx
+            )
+        )
         assert len(run_requests) == 1
         assert run_requests[0].tags["dagster/partition"] == "2022-08-01"
 
         materialize([upstream_daily_1], instance=instance, partition_key="2022-08-01")
-        run_requests = list(trigger_daily_asset_when_any_upstream_partitions_replaced(or_ctx))
+        run_requests = list(
+            trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(
+                or_ctx
+            )
+        )
         assert len(run_requests) == 1
         assert run_requests[0].tags["dagster/partition"] == "2022-08-01"
 
