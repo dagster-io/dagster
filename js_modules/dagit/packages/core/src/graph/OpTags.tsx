@@ -40,6 +40,8 @@ function hueForTag(text = '') {
 function getTag(tag: IOpTag) {
   if (tag.label === 'noteable') {
     return <Icon name="noteable_logo" />;
+  } else if (tag.label === 'airbyte') {
+    return <Icon name="airbyte_logo" />;
   } else {
     return (
       <div

@@ -5,6 +5,7 @@ import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
 import add from '../icon-svgs/add.svg';
 import add_circle from '../icon-svgs/add_circle.svg';
+import airbyte_logo from '../icon-svgs/airbyte_logo.svg';
 import alternate_email from '../icon-svgs/alternate_email.svg';
 import arrow_back from '../icon-svgs/arrow_back.svg';
 import arrow_downward from '../icon-svgs/arrow_downward.svg';
@@ -263,10 +264,11 @@ export const Icons = {
   zoom_out,
 
   // Integration icons
+  airbyte_logo,
   noteable_logo,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([slack, noteable_logo]);
+const SVGS_WITH_COLORS = new Set([slack, noteable_logo, airbyte_logo]);
 
 export type IconName = keyof typeof Icons;
 
