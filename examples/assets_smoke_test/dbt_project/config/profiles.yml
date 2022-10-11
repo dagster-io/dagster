@@ -1,0 +1,28 @@
+dbt_project:
+  target: local
+
+  outputs:
+    local:
+      type: snowflake
+      account: some_account
+
+      user: some_user
+      password: some_password
+
+      database: PROD
+      schema: PUBLIC
+      warehouse: ELEMENTL
+      client_session_keep_alive: False
+
+
+    smoke_test:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+
+      database: "{{ env_var('SNOWFLAKE_SMOKE_TEST_DATABASE') }}"
+      schema: PUBLIC
+      warehouse: ELEMENTL
+      client_session_keep_alive: False

@@ -98,7 +98,10 @@ class AssetValueLoader:
             asset_key=asset_key,
             dagster_type=resolve_dagster_type(python_type),
             upstream_output=build_output_context(
-                metadata=assets_def.metadata_by_key[asset_key], asset_key=asset_key
+                name=assets_def.get_output_name_for_asset_key(asset_key),
+                metadata=assets_def.metadata_by_key[asset_key],
+                asset_key=asset_key,
+                op_def=assets_def.get_op_def_for_asset_key(asset_key),
             ),
             resources=self._resource_instance_cache,
             resource_config=io_manager_config[io_manager_key].config,

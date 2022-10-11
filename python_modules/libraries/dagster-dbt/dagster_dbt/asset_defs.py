@@ -303,6 +303,7 @@ def _dbt_nodes_to_assets(
     select: str,
     exclude: str,
     selected_unique_ids: AbstractSet[str],
+    project_id: str,
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ] = None,
@@ -321,8 +322,6 @@ def _dbt_nodes_to_assets(
 
     group_names_by_key: Dict[AssetKey, str] = {}
     fqns_by_output_name: Dict[str, str] = {}
-
-    package_name: str = ""
 
     if use_build_command:
         deps = _get_deps(
@@ -354,8 +353,6 @@ def _dbt_nodes_to_assets(
             ),
         )
 
-        package_name = node_info.get("package_name", package_name)
-
         group_name = node_info_to_group_fn(node_info)
         if group_name is not None:
             group_names_by_key[asset_key] = group_name
@@ -372,7 +369,7 @@ def _dbt_nodes_to_assets(
                 asset_ins[parent_asset_key] = (input_name, In(Nothing))
 
     # prevent op name collisions between multiple dbt multi-assets
-    op_name = f"run_dbt_{package_name}"
+    op_name = f"run_dbt_{project_id}"
     if select != "*" or exclude:
         op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
 
@@ -581,6 +578,7 @@ def load_assets_from_dbt_manifest(
         select=select,
         exclude=exclude,
         selected_unique_ids=selected_unique_ids,
+        project_id=manifest_json["metadata"]["project_id"][:5],
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
         partitions_def=partitions_def,

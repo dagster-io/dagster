@@ -389,6 +389,29 @@ class DagsterUserCodeProcessError(DagsterError):
         super(DagsterUserCodeProcessError, self).__init__(*args, **kwargs)
 
 
+class DagsterMaxRetriesExceededError(DagsterError):
+    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised."""
+
+    def __init__(self, *args, **kwargs):
+        from dagster._utils.error import SerializableErrorInfo
+
+        self.user_code_process_error_infos = check.list_param(
+            kwargs.pop("user_code_process_error_infos"),
+            "user_code_process_error_infos",
+            SerializableErrorInfo,
+        )
+        super(DagsterMaxRetriesExceededError, self).__init__(*args, **kwargs)
+
+    @staticmethod
+    def from_error_info(error_info):
+        from dagster._utils.error import SerializableErrorInfo
+
+        check.inst_param(error_info, "error_info", SerializableErrorInfo)
+        return DagsterMaxRetriesExceededError(
+            error_info.to_string(), user_code_process_error_infos=[error_info]
+        )
+
+
 class DagsterRepositoryLocationNotFoundError(DagsterError):
     pass
 
