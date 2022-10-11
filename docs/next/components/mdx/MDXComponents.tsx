@@ -21,6 +21,7 @@ import Link from '../Link';
 import 'react-medium-image-zoom/dist/styles.css';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
+import DbtModelAssetExplanation from './includes/dagster/integrations/DbtModelAssetExplanation.mdx';
 
 export const SearchIndexContext = React.createContext(null);
 
@@ -618,6 +619,7 @@ export default {
   ReferenceTableItem,
   GenerateAgentToken,
   BDCreateConfigureAgent,
+  DbtModelAssetExplanation,
   ArticleList,
   ArticleListItem,
   ExampleItemSmall,

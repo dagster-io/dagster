@@ -26,24 +26,7 @@ Dagster has built-in support for loading dbt models, seeds, and snapshots as [so
 
 ## dbt models and Dagster software-defined assets
 
-Dagster’s [software-defined assets](/concepts/assets/software-defined-assets) (SDAs) bear a number of similarities to dbt models. A software-defined asset contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project are similar to Dagster SDAs in that:
-
-- The asset key for a dbt model is (by default) the name of the model.
-- The upstream dependencies of a dbt model are defined with `ref` or `source` calls within the model's definition.
-- The computation required to compute the asset from its upstream dependencies is the SQL within the model's definition.
-
-These similarities make it natural to interact with dbt models as SDAs. Let’s take a look at a dbt model and an SDA, in code:
-
-<Image
-alt="Comparison of a dbt model and Dagster asset in code"
-src="/images/integrations/dbt/using-dbt-with-dagster/asset-dbt-model-comparison.png"
-width={774}
-height={345}
-/>
-
-Here's what's happening in this example:
-
-<TODO></TODO>
+<DbtModelAssetExplanation />
 
 ---
 
