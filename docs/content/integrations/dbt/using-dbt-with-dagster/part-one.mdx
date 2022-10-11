@@ -32,7 +32,7 @@ Let's get started by downloading the [`dbt_dagster_tutorial` example](https://gi
 
    ```shell
    dagster project from-example --name dbt_dagster_tutorial --example dbt_dagster_tutorial
-   ````
+   ```
 
 2. Navigate into the `dbt_dagster_tutorial` folder:
 
@@ -70,7 +70,7 @@ In this step, you'll add a DuckDB profile to the dbt project. This will allow yo
 
 ## Step 3: Configure the dbt_project.yml file
 
-In this step, you'll verify that your dbt project's `dbt_project.yml` file is correctly configured. 
+In this step, you'll verify that your dbt project's `dbt_project.yml` file is correctly configured.
 
 1. Open the `dbt_project.yml` file, located in `/tutorial_template/jaffle_shop`.
 
@@ -110,7 +110,7 @@ Next, you'll tell the models in your dbt project where the source data they depe
          - name: customers_raw
    ```
 
-2. Update the models in `/tutorial_template/jaffle_shop/models/staging` to [select data from the sources you just declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#selecting-from-a-source).
+3. Update the models in `/tutorial_template/jaffle_shop/models/staging` to [select data from the sources you just declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#selecting-from-a-source).
 
    To do this, update the models' `FROM` statement to use the [`{{ source()}}` function](https://docs.getdbt.com/reference/dbt-jinja-functions/source). When finished, the files should look like the following:
 
