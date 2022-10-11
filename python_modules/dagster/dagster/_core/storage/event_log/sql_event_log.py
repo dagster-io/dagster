@@ -1259,6 +1259,8 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
+        # asdkljasldkj
+
         materialization_count_by_partition: Dict[AssetKey, Dict[str, int]] = {
             asset_key: {} for asset_key in asset_keys
         }
