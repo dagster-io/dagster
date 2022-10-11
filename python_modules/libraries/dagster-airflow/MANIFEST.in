@@ -1,3 +1,4 @@
 include README.md
 include LICENSE
 include dagster_airflow/py.typed
+recursive-include dagster_airflow *.py

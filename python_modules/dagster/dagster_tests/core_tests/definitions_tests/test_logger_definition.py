@@ -1,20 +1,20 @@
 import logging
 
-from dagster import Enum, EnumValue, Field, Int, configured, logger
+from dagster import Enum, EnumValue, Field, Int, configured, job, logger
 from dagster._core.utils import coerce_valid_log_level
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
-def assert_pipeline_runs_with_logger(logger_def, logger_config):
-    @pipeline(mode_defs=[ModeDefinition(logger_defs={"test_logger": logger_def})])
-    def pass_pipeline():
+def assert_job_runs_with_logger(logger_def, logger_config):
+    @job(logger_defs={"test_logger": logger_def})
+    def pass_job():
         pass
 
     # give us an opportunity to try an empty dict here
     config_value = {"config": logger_config} if logger_config else {}
 
-    result = execute_pipeline(pass_pipeline, {"loggers": {"test_logger": config_value}})
-    assert result.success
+    assert pass_job.execute_in_process(
+        run_config={"loggers": {"test_logger": config_value}}
+    ).success
 
 
 def test_dagster_type_logger_decorator_config():
@@ -44,7 +44,7 @@ def test_logger_using_configured():
 
     test_logger_configured = configured(test_logger)("secret testing value!!")
 
-    assert_pipeline_runs_with_logger(test_logger_configured, {})
+    assert_job_runs_with_logger(test_logger_configured, {})
     assert it["ran"]
 
 
@@ -78,7 +78,7 @@ def test_logger_with_enum_in_schema_using_configured():
         it["ran pick_different_enum_value"] = True
         return {"enum": "OTHER" if config["enum"] == TestPythonEnum.VALUE_ONE else "VALUE_ONE"}
 
-    assert_pipeline_runs_with_logger(pick_different_enum_value, {"enum": "VALUE_ONE"})
+    assert_job_runs_with_logger(pick_different_enum_value, {"enum": "VALUE_ONE"})
 
     assert it["ran test_logger"]
     assert it["ran pick_different_enum_value"]

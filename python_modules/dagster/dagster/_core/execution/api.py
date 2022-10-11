@@ -18,6 +18,7 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import IPipeline, JobDefinition, PipelineDefinition
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructablePipeline
@@ -438,6 +439,7 @@ def execute_job(
     raise_on_error: bool = False,
     op_selection: Optional[List[str]] = None,
     reexecution_options: Optional[ReexecutionOptions] = None,
+    asset_selection: Optional[Sequence[AssetKey]] = None,
 ) -> ExecuteJobResult:
     """Execute a job synchronously.
 
@@ -534,6 +536,7 @@ def execute_job(
 
     check.inst_param(job, "job", ReconstructablePipeline)
     check.inst_param(instance, "instance", DagsterInstance)
+    check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
 
     # get the repository load data here because we call job.get_definition() later in this fn
     job, _ = _pipeline_with_repository_load_data(job)
@@ -567,6 +570,7 @@ def execute_job(
             tags=tags,
             solid_selection=op_selection,
             raise_on_error=raise_on_error,
+            asset_selection=asset_selection,
         )
 
     # We use PipelineExecutionResult to construct the JobExecutionResult.
@@ -646,6 +650,7 @@ def _logged_execute_pipeline(
     tags: Optional[Dict[str, Any]] = None,
     solid_selection: Optional[List[str]] = None,
     raise_on_error: bool = True,
+    asset_selection: Optional[Sequence[AssetKey]] = None,
 ) -> PipelineExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -680,6 +685,7 @@ def _logged_execute_pipeline(
             pipeline.get_python_origin() if isinstance(pipeline, ReconstructablePipeline) else None
         ),
         repository_load_data=repository_load_data,
+        asset_selection=frozenset(asset_selection) if asset_selection else None,
     )
 
     return execute_run(
