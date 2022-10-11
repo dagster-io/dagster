@@ -36,15 +36,14 @@ height={896}
 
 In this step, you'll create a Dagster asset - called `order_count_chart` - that's downstream of the `customers` asset produced by the `stg_orders` and `stg_customers` dbt models. The `order_count_chart` asset computes a plotly chart using the data from its upstream asset dependency.
 
-1. In `assets.py`, replace the imports section with the following:
+1. In `/assets/__init__.py`, replace the imports section with the following:
 
    ```python
    import pandas as pd
    import plotly.express as px
    from dagster_dbt import load_assets_from_dbt_project
 
-   from dagster import AssetIn, MetadataValue, asset
-   from dagster._utils import file_relative_path
+   from dagster import AssetIn, MetadataValue, asset, file_relative_path
    ```
 
 2. After the `customers_raw` and `orders_raw` assets, add the following:
@@ -69,7 +68,7 @@ Let's review what's happening here:
 
 - We've also used <PyObject object="AssetIn" /> to explicitly define an upstream dependency. Just like in [part three of this tutorial](/integrations/dbt/using-dbt-with-dagster/part-three#step-1-create-upstream-dagster-assets), we've defined these as `jaffle_shop` and `staging`, respectively.
 
-- Finally, the chart is saved as `order_count_chart.html` in `/dbt_dagster_tutorial/dagster_code` and automatically opened in the browser.
+- Finally, the chart is saved as `order_count_chart.html` in `/tutorial_template/dbt_dagster_sda_tutorial` and automatically opened in the browser.
 
 ---
 
@@ -83,7 +82,7 @@ Replace the contents of `repository.py` with the following:
 import os
 
 from dagster_dbt import dbt_cli_resource
-from dagster_code.assets import (
+from dbt_dagster_sda_tutorial.assets import (
     DBT_PROFILES,
     DBT_PROJECT_PATH,
     customers_raw,
@@ -91,7 +90,7 @@ from dagster_code.assets import (
     order_count_chart,
     orders_raw,
 )
-from dagster_code.duckdb_resource import duckdb_io_manager
+from dbt_dagster_sda_tutorial.duckdb_resource import duckdb_io_manager
 
 from dagster import repository, with_resources
 

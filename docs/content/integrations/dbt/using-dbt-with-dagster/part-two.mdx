@@ -17,57 +17,29 @@ At this point, you should have a [fully-configured dbt project](/integrations/db
 
 In this step, you'll finally begin integrating dbt with Dagster! To do this, you'll:
 
-- [Create a new folder for your Dagster code](#step-1-create-a-folder-for-dagster-code)
-- [Load the dbt models into Dagster as assets](#step-2-load-the-dbt-models-as-assets)
-- [Add a Dagster repository and supply a dbt resource](#step-3-add-a-dagster-repository-and-supply-a-dbt-resource)
-- [View the assets in Dagit](#step-4-view-the-assets-in-dagit)
+- [Load the dbt models into Dagster as assets](#step-1-load-the-dbt-models-as-assets)
+- [Add a Dagster repository and supply a dbt resource](#step-2-add-a-dagster-repository-and-supply-a-dbt-resource)
+- [View the assets in Dagit](#step-3-view-the-assets-in-dagit)
 
 ---
 
-## Step 1: Create a folder for Dagster code
+## Step 1: Load the dbt models as assets
 
-To get started, create a new folder in the `dbt_dagster_tutorial` folder to contain your Dagster code:
+In this step, you'll load the dbt models into Dagster as assets. This step requires the [`dagster-dbt`](/\_apidocs/libraries/dagster-dbt) library.
 
-```shell
-mkdir dagster_code
-```
-
-The folder structure should now be similar to the following:
-
-```markdown file=/integrations/dbt/dbt_dagster_tutorial/project_structure.yaml startafter=part_two_structure_start endbefore=part_two_structure_end
-- /dbt_dagster_tutorial
-  - /dagster_code
-  - /jaffle_shop
-    - README.md
-    - dbt_project.yml
-    - /models
-      - customers.sql
-      - orders.sql
-      - schema.yml
-      - /staging
-        - schema.yml
-        - stg_customers.sql
-        - stg_orders.sql
-    - /seeds
-```
-
----
-
-## Step 2: Load the dbt models as assets
-
-Next, we'll load the dbt models into Dagster as assets. This step requires the [`dagster-dbt`](/\_apidocs/libraries/dagster-dbt) library.
-
-In the `dagster_code` folder, create an `assets.py` file that contains the following code:
+Open the `__init__.py` file, located in `/tutorial_template/dbt_dagster_sda_tutorial/assets`, and add the following code:
 
 ```python
 from dagster_dbt import load_assets_from_dbt_project
-from dagster._utils import file_relative_path
 
-DBT_PROJECT_PATH = file_relative_path(__file__, "../jaffle_shop")
-DBT_PROFILES = file_relative_path(__file__, "../jaffle_shop/config")
+from dagster import file_relative_path
+
+
+DBT_PROJECT_PATH = file_relative_path(__file__, "../../jaffle_shop")
+DBT_PROFILES = file_relative_path(__file__, "../../jaffle_shop/config")
 
 dbt_assets = load_assets_from_dbt_project(
-   project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
 )
 ```
 
@@ -97,20 +69,20 @@ Let's take a look at the arguments we've supplied:
 
 ---
 
-## Step 3: Add a Dagster repository and supply a dbt resource
+## Step 2: Add a Dagster repository and supply a dbt resource
 
 Next, you'll create a Dagster [repository](/concepts/repositories-workspaces/repositories) to supply resources to the dbt assets from the previous step.
 
 Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. Using the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource, we can supply a dbt resource to the dbt project.
 
-In the `dagster_code` folder, create a `repository.py` file that contains the following code:
+Open the `repository.py` file, located in `/tutorial_template/dbt_dagster_sda_tutorial`, and add the following code:
 
 ```python
 import os
 
 from dagster_dbt import dbt_cli_resource
 
-from dagster_code.assets import (
+from dbt_dagster_sda_tutorial.assets import (
     DBT_PROFILES,
     DBT_PROJECT_PATH,
     dbt_assets,
@@ -135,37 +107,15 @@ def jaffle_shop_repository():
             ),
         },
     )
-
-```
-
-At this point, the folder structure of your project should look like this:
-
-```markdown file=/integrations/dbt/dbt_dagster_tutorial/project_structure.yaml startafter=part_two_step_3_structure_start endbefore=part_two_step_3_structure_end
-- /dbt_dagster_tutorial
-  - /dagster_code
-    - assets.py
-    - repository.py
-  - /jaffle_shop
-    - README.md
-    - dbt_project.yml
-    - /models
-      - customers.sql
-      - orders.sql
-      - schema.yml
-      - /staging
-        - schema.yml
-        - stg_customers.sql
-        - stg_orders.sql
-    - /seeds
 ```
 
 ---
 
-## Step 4: View the assets in Dagit
+## Step 3: View the assets in Dagit
 
 In this step you'll start Dagit, Dagster's web interface.
 
-1. To start Dagit, run the following in the `dbt_dagster_tutorial` folder:
+1. To start Dagit, run the following in the `tutorial_template` folder:
 
    ```shell
    dagit

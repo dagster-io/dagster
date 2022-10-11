@@ -52,21 +52,11 @@ Let's get started by downloading the [`dbt_dagster_tutorial` example](https://gi
 
 In this step, you'll add a DuckDB profile to the dbt project. This will allow you to connect dbt to the DuckDB database.
 
-1. Navigate into the `jaffle_shop` folder:
+1. Open the `profile.yml` file, located in `/tutorial_template/jaffle_shop/config`.
 
-   ```shell
-   cd jaffle_shop
-   ```
+2. Add the following code to the file:
 
-2. Create a folder named `config`:
-
-   ```shell
-   mkdir config
-   ```
-
-3. In the `config` folder, create a `profile.yml` file that contains the following:
-
-   ```yaml file=../../dbt_dagster_tutorial/jaffle_shop/config/profiles.yml
+   ```yaml
    jaffle_shop:
      target: local
      outputs:
@@ -80,21 +70,25 @@ In this step, you'll add a DuckDB profile to the dbt project. This will allow yo
 
 ## Step 3: Configure the dbt_project.yml file
 
-In this step, you'll verify that your dbt project's `dbt_project.yml` file is correctly configured. To work with this tutorial, this file must:
+In this step, you'll verify that your dbt project's `dbt_project.yml` file is correctly configured. 
 
-- Specify `jaffle_shop` as the `profile`:
+1. Open the `dbt_project.yml` file, located in `/tutorial_template/jaffle_shop`.
 
-  ```yaml
-  profile: "jaffle_shop"
-  ```
+2. Verify the following:
 
-- Specify that `jaffle_shop` models are materialized into tables:
+   - That the `profile` is defined as `jaffle_shop` :
 
-  ```yaml
-  models:
-    jaffle_shop:
-      +materialized: table
-  ```
+     ```yaml
+     profile: "jaffle_shop"
+     ```
+
+   - That the `jaffle_shop` models are set to materialize into tables:
+
+     ```yaml
+     models:
+       jaffle_shop:
+         +materialized: table
+     ```
 
 ---
 
@@ -102,9 +96,11 @@ In this step, you'll verify that your dbt project's `dbt_project.yml` file is co
 
 Next, you'll tell the models in your dbt project where the source data they depend on will be located. There isn't any data yet - in the next section, we'll create Dagster assets that fetch and provide data to the dbt models.
 
-1. [Declare a source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source) by creating a `sources.yml` file in `/dbt_dagster_tutorial/jaffle_shop/models`. This defines the location of tables containing source data:
+1. Open the `sources.yml` file, located in `/tutorial_template/jaffle_shop/models`.
 
-   ```yaml file=../../dbt_dagster_tutorial/jaffle_shop/models/sources.yml
+2. Add the following code to the file to [declare a source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source), which will define the location of tables containing source data:
+
+   ```yaml
    version: 2
 
    sources:
@@ -114,13 +110,13 @@ Next, you'll tell the models in your dbt project where the source data they depe
          - name: customers_raw
    ```
 
-2. Update the models in `dbt_dagster_tutorial/jaffle_shop/models/staging` to [select data from the sources you just declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#selecting-from-a-source).
+2. Update the models in `/tutorial_template/jaffle_shop/models/staging` to [select data from the sources you just declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#selecting-from-a-source).
 
    To do this, update the models' `FROM` statement to use the [`{{ source()}}` function](https://docs.getdbt.com/reference/dbt-jinja-functions/source). When finished, the files should look like the following:
 
    - For `stg_customers.sql`:
 
-     ```sql file=../../dbt_dagster_tutorial/jaffle_shop/models/staging/stg_customers.sql
+     ```sql
      select
          id as customer_id,
          first_name,
@@ -130,7 +126,7 @@ Next, you'll tell the models in your dbt project where the source data they depe
 
    - For `stg_orders.sql`:
 
-     ```sql file=../../dbt_dagster_tutorial/jaffle_shop/models/staging/stg_orders.sql
+     ```sql
      select
          id as order_id,
          user_id as customer_id,
@@ -143,4 +139,4 @@ Next, you'll tell the models in your dbt project where the source data they depe
 
 ## What's next?
 
-At this point, you should have a fully-configured dbt project that's ready to work with Dagster. The next step is to [create Dagster assets and load the dbt models into Dagster](/integrations/dbt/using-dbt-with-dagster/part-two).
+At this point, you should have a fully-configured dbt project that's ready to work with Dagster. The next step is to [load the dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/part-two).
