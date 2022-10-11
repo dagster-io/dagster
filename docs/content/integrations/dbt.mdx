@@ -1,5 +1,5 @@
 ---
-title: "Using dbt with Dagster"
+title: "dbt + Dagster"
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
@@ -10,7 +10,17 @@ description: Dagster can orchestrate dbt alongside other technologies.
   <a href="/integrations/dbt-cloud">dbt Cloud with Dagster guide</a>!
 </Note>
 
-Dagster orchestrates dbt alongside other technologies, so you can combine dbt with Spark, Python, etc. in a single workflow. Dagster's [software-defined asset](/concepts/assets/software-defined-assets) abstractions make it simple to define data assets that depend on specific dbt models, or to define the computation required to compute the sources that your dbt models depend on.
+Dagster orchestrates dbt alongside other technologies, so you can combine dbt with Spark, Python, etc. in a single workflow. Dagster's [software-defined asset](/concepts/assets/software-defined-assets) abstractions make it simple to define data assets that depend on specific dbt models, or to define the computation required to compute the sources that your dbt models depend on. You could, for example:
+
+- Run your dbt models after ingesting data into your data warehouse
+- Selectively materialize dbt models and their dependencies
+
+Dagster has built-in support for loading dbt models, seeds, and snapshots as software-defined assets, enabling you to:
+
+- Visualize and orchestrate a graph of dbt assets, and execute them with a single dbt invocation
+- View detailed historical metadata and logs for each asset
+- Define Python computations that depend directly on tables updated using dbt
+- Track data lineage through dbt and your other tools
 
 ---
 
@@ -22,7 +32,7 @@ Dagster orchestrates dbt alongside other technologies, so you can combine dbt wi
 
 ## dbt and Dagster software-defined assets tutorial
 
-In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a DuckDB database.
+In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a [DuckDB database](https://duckdb.org/).
 
 <ArticleList>
   <ArticleListItem

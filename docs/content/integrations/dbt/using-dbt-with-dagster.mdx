@@ -10,35 +10,21 @@ description: Dagster can orchestrate dbt alongside other technologies.
   <a href="/integrations/dbt-cloud">dbt Cloud with Dagster guide</a>!
 </Note>
 
-Using Dagster, you can combine dbt and the other technologies in your stack - Spark, Python, and so on - into a single data pipeline. You could, for example:
+In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a [DuckDB database](https://duckdb.org/).
 
-- Run your dbt models after ingesting data into your data warehouse
-- Selectively materialize dbt models and their dependencies
-
-Dagster has built-in support for loading dbt models, seeds, and snapshots as [software-defined assets](/concepts/assets/software-defined-assets), enabling you to:
-
-- Visualize and orchestrate a graph of dbt assets, and execute them with a single dbt invocation
-- View detailed historical metadata and logs for each asset
-- Define Python computations that depend directly on tables updated using dbt
-- Track data lineage through dbt and your other tools
-
----
-
-## dbt models and Dagster software-defined assets
-
-<DbtModelAssetExplanation />
-
----
-
-## In this tutorial
-
-In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a [DuckDB database](https://duckdb.org/). By the end of this tutorial, you will:
+By the end of this tutorial, you will:
 
 - Understand how dbt models and Dagster [software-defined assets](/concepts/assets/software-defined-assets) (or SDAs) work together
 - [Set up a dbt project](/integrations/dbt/using-dbt-with-dagster/part-one)
 - [Load the dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/part-two)
 - [Create and materialize upstream Dagster assets](/integrations/dbt/using-dbt-with-dagster/part-three)
 - [Create and materialize a downstream asset](/integrations/dbt/using-dbt-with-dagster/part-four) that outputs a histogram chart using plotly
+
+---
+
+## dbt models and Dagster software-defined assets
+
+<DbtModelAssetExplanation />
 
 ---
 
