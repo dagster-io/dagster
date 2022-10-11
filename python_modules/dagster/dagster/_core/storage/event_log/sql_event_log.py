@@ -1248,6 +1248,8 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                     ),
                     SqlEventLogStorageTable.c.partition != None,
+                    SqlEventLogStorageTable.c.dagster_event_type
+                    == DagsterEventType.ASSET_MATERIALIZATION.value,
                 )
             )
             .group_by(SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition)
@@ -1258,8 +1260,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
-
-        # asdkljasldkj
 
         materialization_count_by_partition: Dict[AssetKey, Dict[str, int]] = {
             asset_key: {} for asset_key in asset_keys
