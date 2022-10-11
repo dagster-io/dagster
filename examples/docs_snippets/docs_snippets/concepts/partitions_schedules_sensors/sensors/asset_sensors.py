@@ -1,12 +1,10 @@
 from dagster import (
-    AssetKey,
     AssetSelection,
     DailyPartitionsDefinition,
     RunRequest,
     SkipReason,
     WeeklyPartitionsDefinition,
     asset,
-    asset_sensor,
     define_asset_job,
     job,
     multi_asset_sensor,
@@ -89,6 +87,16 @@ daily_partitions_def = DailyPartitionsDefinition(start_date="2022-08-01")
 
 
 @asset(partitions_def=daily_partitions_def)
+def upstream_daily_1():
+    return 1
+
+
+@asset(partitions_def=daily_partitions_def)
+def upstream_daily_2():
+    return 1
+
+
+@asset(partitions_def=daily_partitions_def)
 def downstream_daily_asset():
     return 1
 
@@ -116,18 +124,18 @@ weekly_asset_job = define_asset_job(
 # start_daily_asset_to_weekly_asset
 
 
-@multi_asset_sensor(asset_keys=[AssetKey("upstream_daily_asset")], job=weekly_asset_job)
+@multi_asset_sensor(asset_keys=[AssetKey("upstream_daily_1")], job=weekly_asset_job)
 def trigger_weekly_asset_from_daily_asset(context):
-    run_requests = []
+    run_requests_by_partition = {}
     materializations_by_partition = context.latest_materialization_records_by_partition(
-        AssetKey("upstream_daily_asset")
+        AssetKey("upstream_daily_1")
     )
 
     # Get all corresponding weekly partitions for any materialized daily partitions
     for partition, materialization in materializations_by_partition.items():
         weekly_partitions = context.get_downstream_partition_keys(
             partition,
-            from_asset_key=AssetKey("upstream_daily_asset"),
+            from_asset_key=AssetKey("upstream_daily_1"),
             to_asset_key=AssetKey("downstream_weekly_asset"),
         )
 
@@ -136,19 +144,17 @@ def trigger_weekly_asset_from_daily_asset(context):
             daily_partitions_in_week = context.get_downstream_partition_keys(
                 weekly_partitions[0],
                 from_asset_key=AssetKey("downstream_weekly_asset"),
-                to_asset_key=AssetKey("upstream_daily_asset"),
+                to_asset_key=AssetKey("upstream_daily_1"),
             )
             if context.all_partitions_materialized(
-                AssetKey("upstream_daily_asset"), daily_partitions_in_week
+                AssetKey("upstream_daily_1"), daily_partitions_in_week
             ):
-                run_requests.append(
-                    weekly_asset_job.run_request_for_partition(weekly_partitions[0])
-                )
+                run_requests_by_partition[
+                    weekly_partitions[0]
+                ] = weekly_asset_job.run_request_for_partition(weekly_partitions[0])
                 # Advance the cursor so we only check event log records past the cursor
-                context.advance_cursor(
-                    {AssetKey("upstream_daily_asset"): materialization}
-                )
-    return run_requests
+                context.advance_cursor({AssetKey("upstream_daily_1"): materialization})
+    return list(run_requests_by_partition.values())
 
 
 # end_daily_asset_to_weekly_asset
