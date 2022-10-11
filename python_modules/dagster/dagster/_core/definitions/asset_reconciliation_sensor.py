@@ -385,7 +385,7 @@ def build_asset_reconciliation_sensor(
 
             .. code-block:: python
 
-                x   source_asset
+                x   external_data_source
                  \       /
                      y
 
@@ -400,7 +400,7 @@ def build_asset_reconciliation_sensor(
                     wait_for_in_progress_runs=True
                 )
 
-            ``y`` will never be updated because ``source_asset`` is never considered "materialized. In this case you should create the
+            ``y`` will never be updated because ``external_data_source`` is never considered "materialized. In this case you should create the
             sensor
 
             .. code-block:: python
