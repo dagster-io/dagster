@@ -13,54 +13,38 @@ description: Dagster can orchestrate dbt alongside other technologies.
   tutorial.
 </Note>
 
-First, you'll set up the dbt project for the tutorial. We're using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project as well.
+First, you'll download Dagster's `dbt_dagster_tutorial` example and configure the dbt project it contains. The example uses dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project as well.
 
 In this part, you'll:
 
-- [Clone the jaffle_shop dbt project](#step-1-clone-the-jaffle_shop-dbt-project)
+- [Download the `dbt_dagster_tutorial` example](#step-1-download-the-dbt_dagster_tutorial-example)
 - [Create a DuckDB connection profile](#step-2-create-a-duckdb-profile)
 - [Configure the project's `dbt_project.yml` file](#step-3-configure-the-dbt_projectyml-file)
 - [Configure dbt model data sources](#step-4-configure-dbt-model-data-sources)
 
 ---
 
-## Step 1: Clone the jaffle_shop dbt project
+## Step 1: Download the dbt_dagster_tutorial example
 
-1. In the terminal, create a folder named `dbt_dagster_tutorial`:
+Let's get started by downloading the [`dbt_dagster_tutorial` example](https://github.com/dagster-io/dagster/tree/master/examples/dbt_dagster_tutorial).
+
+1. In the terminal, run the following to download the example:
 
    ```shell
-   mkdir dbt_dagster_tutorial
-   ```
+   dagster project from-example --name dbt_dagster_tutorial --example dbt_dagster_tutorial
+   ````
 
-2. Navigate into the new folder:
+2. Navigate into the `dbt_dagster_tutorial` folder:
 
    ```shell
    cd dbt_dagster_tutorial
    ```
 
-3. In the `dbt_dagster_tutorial` folder, clone the `jaffle_shop` dbt project:
+3. Run the following to install the project's dependencies:
 
    ```shell
-   git clone https://github.com/dbt-labs/jaffle_shop.git
+   pip install -e ".[dev]"
    ```
-
-The folder structure should now be similar to the following:
-
-```markdown file=/integrations/dbt/dbt_dagster_tutorial/project_structure.yaml startafter=part_one_structure_start endbefore=part_one_structure_end
-- /dbt_dagster_tutorial
-  - /jaffle_shop
-    - README.md
-    - dbt_project.yml
-    - /models
-      - customers.sql
-      - orders.sql
-      - schema.yml
-      - /staging
-        - schema.yml
-        - stg_customers.sql
-        - stg_orders.sql
-    - /seeds
-```
 
 ---
 

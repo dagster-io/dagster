@@ -34,27 +34,25 @@ To complete this tutorial, you'll need:
 
 - **To install dbt and Dagster**. Refer to the [dbt](https://docs.getdbt.com/dbt-cli/install/overview) and [Dagster](/getting-started/install) installation docs for more info.
 
-- **An existing dbt project.** This tutorial uses dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project.
+- **To download the [`dbt_dagster_tutorial`](https://github.com/dagster-io/dagster/tree/master/examples/dbt_dagster_tutorial) Dagster example.** We'll walk you through this in the first step. This example includes:
 
-  **Note**: If you choose to use a different project, you won't be able to use the code examples in this tutorial as-is, but you can still follow along conceptually.
+  - **dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop).** You can follow along using a different dbt project, but you won't be able to use the code examples in this tutorial as-is.
 
-- **To install the following libraries:**
+  - **A blank template version of the tutorial project**, which you can use to follow along with the tutorial.
 
-  - **dagster-dbt.** This library allows you to integrate dbt with Dagster.
+  - **A finished version of the tutorial project,** which you can use to check out the final version of the work you'll do in the tutorial.
 
-  - **dbt-duckdb.** This tutorial uses [DuckDB](https://docs.getdbt.com/reference/warehouse-profiles/duckdb-profile) as the database backing dbt.
+  - **Dependencies for the following libraries**:
 
-  - **dagster-duckdb.** This library provides a resource that enables the materialization of Dagster assets.
+    - **dagster-dbt.** This library allows you to integrate dbt with Dagster.
 
-  - **pandas.** This tutorial uses [pandas](https://pandas.pydata.org/docs/index.html) to fetch raw data.
+    - **dbt-duckdb.** This tutorial uses [DuckDB](https://docs.getdbt.com/reference/warehouse-profiles/duckdb-profile) as the database backing dbt.
 
-  - **plotly**. This tutorial uses [plotly](https://plotly.com/python/) to create a histogram asset.
+    - **dagster-duckdb.** This library provides a resource that enables the materialization of Dagster assets.
 
-  To install everything, run the following:
+    - **pandas.** This tutorial uses [pandas](https://pandas.pydata.org/docs/index.html) to fetch raw data.
 
-  ```shell
-  pip install dagster-dbt dbt-duckdb dagster-duckdb pandas plotly
-  ```
+    - **plotly**. This tutorial uses [plotly](https://plotly.com/python/) to create a histogram asset.
 
 ---
 
