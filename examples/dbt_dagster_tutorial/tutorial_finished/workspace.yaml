@@ -1,2 +1,2 @@
 load_from:
-  - python_package: dbt_dagster
+  - python_package: dbt_dagster_sda_tutorial

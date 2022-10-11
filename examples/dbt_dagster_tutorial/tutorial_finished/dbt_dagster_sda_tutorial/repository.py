@@ -1,11 +1,11 @@
 import os
 
 from dagster_dbt import dbt_cli_resource
-from dbt_dagster import assets
-from dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
+from dbt_dagster_sda_tutorial import assets
+from dbt_dagster_sda_tutorial.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
 # TODO - replace with from dagster_duckdb import build_duckdb_io_manager, DuckDBPandasTypeHandler
-from dbt_dagster.duckdb_resource import duckdb_io_manager
+from dbt_dagster_sda_tutorial.duckdb_resource import duckdb_io_manager
 
 from dagster import load_assets_from_package_module, repository, with_resources
 
