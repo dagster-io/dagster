@@ -8,6 +8,5 @@ This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ d
 
 .. autofunction:: build_duckdb_io_manager
 
-.. autoclass:: DuckDBPandasTypeHandler
+.. autoclass:: DbTypeHandler
 
-.. autoclass:: DuckDBPySparkTypeHandler

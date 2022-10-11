@@ -145,7 +145,8 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
 
         .. code-block:: python
 
-            from dagster_duckdb import build_duckdb_io_manager, DuckDBPandasTypeHandler
+            from dagster_duckdb import build_duckdb_io_manager
+            from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 
             duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 

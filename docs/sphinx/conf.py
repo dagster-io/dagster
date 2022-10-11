@@ -55,6 +55,8 @@ paths = [
     "../../python_modules/libraries/dagster-pyspark",
     "../../python_modules/libraries/dagster-databricks",
     "../../python_modules/libraries/dagster-duckdb",
+    "../../python_modules/libraries/dagster-duckdb-pandas",
+    "../../python_modules/libraries/dagster-duckdb-pyspark",
 
     ### autodoc_dagster extension
     "./_ext",
