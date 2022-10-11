@@ -3,14 +3,20 @@ title: "Using dbt with Dagster"
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
-# Using dbt with Dagster
+# dbt + Dagster
 
 <Note>
   Using dbt Cloud? Check out the{" "}
   <a href="/integrations/dbt-cloud">dbt Cloud with Dagster guide</a>!
 </Note>
 
-Dagster orchestrates dbt alongside other technologies, so you can combine dbt with Spark, Python, etc. in a single workflow. Dagster's [software-defined asset (SDA)](/concepts/assets/software-defined-assets) abstractions make it simple to define data assets that depend on specific dbt models, or to define the computation required to compute the sources that your dbt models depend on.
+Dagster orchestrates dbt alongside other technologies, so you can combine dbt with Spark, Python, etc. in a single workflow. Dagster's [software-defined asset](/concepts/assets/software-defined-assets) abstractions make it simple to define data assets that depend on specific dbt models, or to define the computation required to compute the sources that your dbt models depend on.
+
+---
+
+## Using dbt with Dagster
+
+<DbtModelAssetExplanation />
 
 ---
 
