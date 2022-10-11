@@ -8,12 +8,14 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
+    BoolMetadataValue,
     DagsterEventType,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
     DailyPartitionsDefinition,
     EventRecordsFilter,
+    Output,
     PartitionKeyRange,
     PartitionMapping,
     PartitionsDefinition,
@@ -1075,3 +1077,172 @@ def test_unfetched_partitioned_events_are_unconsumed():
             second_july_cursor.trailing_unconsumed_partitioned_event_ids["2022-07-04"]
             > first_july_cursor.trailing_unconsumed_partitioned_event_ids["2022-07-04"]
         )
+
+
+def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_materializations():
+    @asset
+    def my_asset():
+        pass
+
+    @multi_asset_sensor(asset_keys=[my_asset.key])
+    def my_sensor(context):
+        my_asset_cursor = context._get_cursor(my_asset.key)  # pylint: disable=protected-access
+        assert my_asset_cursor.latest_consumed_event_id is not None
+
+    @repository
+    def my_repo():
+        return [my_asset, my_sensor]
+
+    with instance_for_test() as instance:
+        result = materialize([my_asset], instance=instance)
+        records = list(
+            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
+        )[0]
+        assert records.event_log_entry.run_id == result.run_id
+
+        ctx = build_multi_asset_sensor_context(
+            asset_selection=AssetSelection.groups("default"),
+            instance=instance,
+            cursor_from_latest_materializations=True,
+            repository_def=my_repo,
+        )
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset.key
+            ).latest_consumed_event_id
+            == records.storage_id
+        )
+        list(my_sensor(ctx))
+
+
+def test_build_multi_asset_sensor_context_set_to_latest_materializations():
+    evaluated = False
+
+    @asset
+    def my_asset():
+        return Output(1, metadata={"evaluated": evaluated})
+
+    @multi_asset_sensor(asset_keys=[my_asset.key])
+    def my_sensor(context):
+        if not evaluated:
+            assert context.latest_materialization_records_by_key()[my_asset.key] == None
+        else:
+            # Test that materialization exists
+            assert context.latest_materialization_records_by_key()[
+                my_asset.key
+            ].event_log_entry.dagster_event.step_materialization_data.materialization.metadata_entries[
+                0
+            ].entry_data == BoolMetadataValue(
+                value=True
+            )
+
+    @repository
+    def my_repo():
+        return [my_asset, my_sensor]
+
+    with instance_for_test() as instance:
+        result = materialize([my_asset], instance=instance)
+        records = list(
+            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
+        )[0]
+        assert records.event_log_entry.run_id == result.run_id
+
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[my_asset.key],
+            instance=instance,
+            cursor_from_latest_materializations=True,
+            repository_def=my_repo,
+        )
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset.key
+            ).latest_consumed_event_id
+            == records.storage_id
+        )
+        list(my_sensor(ctx))
+        evaluated = True
+
+        materialize([my_asset], instance=instance)
+        list(my_sensor(ctx))
+
+
+def test_build_multi_asset_context_set_after_multiple_materializations():
+    @asset
+    def my_asset():
+        return 1
+
+    @asset
+    def my_asset_2():
+        return 1
+
+    @repository
+    def my_repo():
+        return [my_asset, my_asset_2]
+
+    with instance_for_test() as instance:
+        materialize([my_asset], instance=instance)
+        materialize([my_asset_2], instance=instance)
+
+        records = sorted(
+            list(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+            ),
+            key=lambda x: x.storage_id,
+        )
+        assert len(records) == 2
+
+        my_asset_cursor = records[0].storage_id
+        my_asset_2_cursor = records[1].storage_id
+
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[my_asset.key, my_asset_2.key],
+            instance=instance,
+            cursor_from_latest_materializations=True,
+            repository_def=my_repo,
+        )
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset.key
+            ).latest_consumed_event_id
+            == my_asset_cursor
+        )
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset_2.key
+            ).latest_consumed_event_id
+            == my_asset_2_cursor
+        )
+
+
+def test_error_exec_in_process_to_build_multi_asset_sensor_context():
+    @asset
+    def my_asset():
+        return 1
+
+    @repository
+    def my_repo():
+        return [my_asset]
+
+    with pytest.raises(DagsterInvalidInvocationError, match="Dagster instance"):
+        with instance_for_test() as instance:
+            materialize([my_asset], instance=instance)
+            build_multi_asset_sensor_context(
+                asset_keys=[my_asset.key],
+                repository_def=my_repo,
+                cursor_from_latest_materializations=True,
+            )
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Cannot provide both cursor and cursor_from_latest_materializations",
+    ):
+        with instance_for_test() as instance:
+            materialize([my_asset], instance=instance)
+            build_multi_asset_sensor_context(
+                asset_keys=[my_asset.key],
+                repository_def=my_repo,
+                cursor_from_latest_materializations=True,
+                cursor="alskdjalsjk",
+            )
