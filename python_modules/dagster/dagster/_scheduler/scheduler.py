@@ -2,8 +2,11 @@ import datetime
 import logging
 import os
 import sys
+import threading
 import time
 from collections import defaultdict
+from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import ExitStack
 from typing import Dict, List, Optional, cast
 
 import pendulum
@@ -100,44 +103,69 @@ def execute_scheduler_iteration_loop(
     max_catchup_runs: int,
     max_tick_retries: int,
 ):
-    last_verbose_time = None
-    while True:
-        start_time = pendulum.now("UTC").timestamp()
-        end_datetime_utc = pendulum.now("UTC")
+    schedule_state_lock = threading.Lock()
+    scheduler_run_futures: Dict[str, Future] = {}
 
-        # occasionally enable verbose logging (doing it always would be too much)
-        verbose_logs_iteration = (
-            last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
-        )
-        yield from launch_scheduled_runs(
-            workspace_process_context,
-            logger,
-            end_datetime_utc=end_datetime_utc,
-            max_catchup_runs=max_catchup_runs,
-            max_tick_retries=max_tick_retries,
-            log_verbose_checks=verbose_logs_iteration,
-        )
-        end_time = pendulum.now("UTC").timestamp()
+    with ExitStack() as stack:
+        settings = workspace_process_context.instance.get_settings("schedules")
+        if settings.get("use_threads"):
+            threadpool_executor = stack.enter_context(
+                ThreadPoolExecutor(
+                    max_workers=settings.get("num_workers"),
+                    thread_name_prefix="schedule_daemon_worker",
+                )
+            )
+        else:
+            threadpool_executor = None
 
-        if verbose_logs_iteration:
-            last_verbose_time = end_time
+        last_verbose_time = None
+        while True:
+            start_time = pendulum.now("UTC").timestamp()
+            end_datetime_utc = pendulum.now("UTC")
 
-        loop_duration = end_time - start_time
-        sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-        time.sleep(sleep_time)
-        yield
+            # occasionally enable verbose logging (doing it always would be too much)
+            verbose_logs_iteration = (
+                last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
+            )
+            yield from launch_scheduled_runs(
+                workspace_process_context,
+                logger,
+                end_datetime_utc=end_datetime_utc,
+                threadpool_executor=threadpool_executor,
+                scheduler_run_futures=scheduler_run_futures,
+                schedule_state_lock=schedule_state_lock,
+                max_catchup_runs=max_catchup_runs,
+                max_tick_retries=max_tick_retries,
+                log_verbose_checks=verbose_logs_iteration,
+            )
+            end_time = pendulum.now("UTC").timestamp()
+
+            if verbose_logs_iteration:
+                last_verbose_time = end_time
+
+            loop_duration = end_time - start_time
+            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
+            time.sleep(sleep_time)
+            yield
 
 
 def launch_scheduled_runs(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     end_datetime_utc: datetime.datetime,
+    threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    scheduler_run_futures: Optional[Dict[str, Future]] = None,
+    schedule_state_lock: Optional[threading.Lock] = None,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries: int = 0,
     debug_crash_flags=None,
     log_verbose_checks: bool = True,
 ):
     instance = workspace_process_context.instance
+
+    if not schedule_state_lock:
+        schedule_state_lock = threading.Lock()
+
     workspace_snapshot = {
         location_entry.origin.location_name: location_entry
         for location_entry in workspace_process_context.create_request_context()
@@ -257,22 +285,56 @@ def launch_scheduled_runs(
                 )
                 instance.add_instigator_state(schedule_state)
 
-            yield from launch_scheduled_runs_for_schedule(
-                workspace_process_context,
-                logger,
-                external_schedule,
-                schedule_state,
-                end_datetime_utc,
-                max_catchup_runs,
-                max_tick_retries,
-                tick_retention_settings,
-                (
-                    debug_crash_flags.get(schedule_state.instigator_name)
-                    if debug_crash_flags
-                    else None
-                ),
-                log_verbose_checks=log_verbose_checks,
+            schedule_debug_crash_flags = (
+                debug_crash_flags.get(schedule_state.instigator_name) if debug_crash_flags else None
             )
+
+            if threadpool_executor:
+                if scheduler_run_futures is None:
+                    check.failed(
+                        "scheduler_run_futures dict must be passed with threadpool_executor"
+                    )
+
+                # only allow one tick per schedule to be in flight
+                if (
+                    external_schedule.selector_id in scheduler_run_futures
+                    and not scheduler_run_futures[external_schedule.selector_id].done()
+                ):
+                    continue
+
+                future = threadpool_executor.submit(
+                    launch_scheduled_runs_for_schedule,
+                    workspace_process_context,
+                    logger,
+                    external_schedule,
+                    schedule_state,
+                    schedule_state_lock,
+                    end_datetime_utc,
+                    max_catchup_runs,
+                    max_tick_retries,
+                    tick_retention_settings,
+                    schedule_debug_crash_flags,
+                    log_verbose_checks=log_verbose_checks,
+                )
+                scheduler_run_futures[external_schedule.selector_id] = future
+                yield
+
+            else:
+                # evaluate the sensors in a loop, synchronously, yielding to allow the sensor daemon to
+                # heartbeat
+                yield from launch_scheduled_runs_for_schedule_iterator(
+                    workspace_process_context,
+                    logger,
+                    external_schedule,
+                    schedule_state,
+                    schedule_state_lock,
+                    end_datetime_utc,
+                    max_catchup_runs,
+                    max_tick_retries,
+                    tick_retention_settings,
+                    schedule_debug_crash_flags,
+                    log_verbose_checks=log_verbose_checks,
+                )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
@@ -286,20 +348,55 @@ def launch_scheduled_runs_for_schedule(
     logger: logging.Logger,
     external_schedule: ExternalSchedule,
     schedule_state: InstigatorState,
+    schedule_state_lock: threading.Lock,
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
     max_tick_retries: int,
     tick_retention_settings,
-    debug_crash_flags=None,
-    log_verbose_checks=True,
+    schedule_debug_crash_flags,
+    log_verbose_checks,
+):
+    # evaluate the tick immediately, but from within a thread.  The main thread should be able to
+    # heartbeat to keep the daemon alive
+    list(
+        launch_scheduled_runs_for_schedule_iterator(
+            workspace_process_context,
+            logger,
+            external_schedule,
+            schedule_state,
+            schedule_state_lock,
+            end_datetime_utc,
+            max_catchup_runs,
+            max_tick_retries,
+            tick_retention_settings,
+            schedule_debug_crash_flags,
+            log_verbose_checks,
+        )
+    )
+
+
+def launch_scheduled_runs_for_schedule_iterator(
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
+    external_schedule: ExternalSchedule,
+    schedule_state: InstigatorState,
+    schedule_state_lock: threading.Lock,
+    end_datetime_utc: datetime.datetime,
+    max_catchup_runs: int,
+    max_tick_retries: int,
+    tick_retention_settings,
+    schedule_debug_crash_flags,
+    log_verbose_checks,
 ):
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
 
-    instigator_origin_id = external_schedule.get_external_origin_id()
-    ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
-    latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
+    with schedule_state_lock:
+
+        instigator_origin_id = external_schedule.get_external_origin_id()
+        ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
+        latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
 
     instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)
     start_timestamp_utc = instigator_data.start_timestamp if schedule_state else None
@@ -384,13 +481,13 @@ def launch_scheduled_runs_for_schedule(
                 )
             )
 
-            _check_for_debug_crash(debug_crash_flags, "TICK_CREATED")
+            _check_for_debug_crash(schedule_debug_crash_flags, "TICK_CREATED")
 
         with _ScheduleLaunchContext(
             external_schedule, tick, instance, logger, tick_retention_settings
         ) as tick_context:
             try:
-                _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
+                _check_for_debug_crash(schedule_debug_crash_flags, "TICK_HELD")
 
                 yield from _schedule_runs_at_time(
                     workspace_process_context,
@@ -398,7 +495,7 @@ def launch_scheduled_runs_for_schedule(
                     external_schedule,
                     schedule_time,
                     tick_context,
-                    debug_crash_flags,
+                    schedule_debug_crash_flags,
                 )
             except Exception as e:
                 if isinstance(e, DagsterUserCodeUnreachableError):
@@ -416,7 +513,8 @@ def launch_scheduled_runs_for_schedule(
                             # or the schedule is turned off
                             failure_count=tick_context.failure_count,
                         )
-                        raise  # Raise the wrapped DagsterSchedulerError exception
+                        yield error_data
+                        return
 
                 else:
                     error_data = serializable_error_info_from_exc_info(sys.exc_info())
@@ -425,7 +523,8 @@ def launch_scheduled_runs_for_schedule(
                         error=error_data,
                         failure_count=tick_context.failure_count + 1,
                     )
-                    raise
+                    yield error_data
+                    return
 
 
 def _check_for_debug_crash(debug_crash_flags, key):
