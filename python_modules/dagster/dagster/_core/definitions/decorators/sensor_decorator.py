@@ -214,7 +214,8 @@ def multi_asset_sensor(
 
     Args:
         asset_keys (Optional[Sequence[AssetKey]]): The asset keys this sensor monitors. If not
-            provided, asset_selection argument must be provided.
+            provided, asset_selection argument must be provided. To monitor SourceAssets, you must
+            use asset_keys.
         asset_selection (Optional[AssetSelection]): The asset selection this sensor monitors. If not
             provided, asset_keys argument must be provided.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated

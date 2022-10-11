@@ -38,7 +38,7 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
-from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import SensorExecutionContext
 
@@ -315,25 +315,6 @@ def test_multi_asset_sensor():
         assert list(a_and_b_sensor(ctx))[0].run_config == {}
 
 
-def test_multi_asset_nonexistent_key():
-    @multi_asset_sensor(asset_keys=[AssetKey("nonexistent_key")])
-    def failing_sensor(context):  # pylint: disable=unused-argument
-        pass
-
-    @repository
-    def my_repo():
-        return [failing_sensor]
-
-    with pytest.raises(DagsterInvalidSubsetError):
-        list(
-            failing_sensor(
-                build_multi_asset_sensor_context(
-                    asset_keys=[AssetKey("nonexistent_key")], repository_def=my_repo
-                )
-            )
-        )
-
-
 def test_multi_asset_sensor_selection():
     @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
     def two_assets():
@@ -373,7 +354,7 @@ def test_multi_asset_sensor_has_assets():
     def my_repo():
         return [two_assets, passing_sensor]
 
-    assert passing_sensor.asset_selection.children == (AssetKey("asset_a"), AssetKey("asset_b"))
+    assert passing_sensor.asset_keys == [AssetKey("asset_a"), AssetKey("asset_b")]
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(
             asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
