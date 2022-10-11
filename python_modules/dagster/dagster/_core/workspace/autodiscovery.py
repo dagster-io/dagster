@@ -1,6 +1,6 @@
 import inspect
 from types import ModuleType
-from typing import Callable, List, NamedTuple, Optional, Sequence, Type
+from typing import Callable, List, NamedTuple, Optional, Sequence, Tuple, Type, Union
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -10,6 +10,7 @@ from dagster import (
 )
 from dagster._core.code_pointer import load_python_file, load_python_module
 from dagster._core.definitions import AssetGroup
+from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._legacy import PipelineDefinition
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
@@ -52,7 +53,10 @@ def loadable_targets_from_python_package(
 
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
-    loadable_repos = _loadable_targets_of_type(module, RepositoryDefinition)
+
+    loadable_repos = _loadable_targets_of_type(
+        module, (RepositoryDefinition, PendingRepositoryDefinition)
+    )
     if loadable_repos:
         return loadable_repos
 
@@ -123,7 +127,9 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     )
 
 
-def _loadable_targets_of_type(module: ModuleType, klass: Type) -> Sequence[LoadableTarget]:
+def _loadable_targets_of_type(
+    module: ModuleType, klass: Union[Type, Tuple[Type, ...]]
+) -> Sequence[LoadableTarget]:
     loadable_targets = []
     for name, value in inspect.getmembers(module):
         if isinstance(value, klass):

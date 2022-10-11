@@ -37,6 +37,7 @@ if __name__ == "__main__":
             f"dagster{pin}",
             "celery>=4.3.0",
             "click>=5.0,<9.0",
+            "importlib_metadata<5.0.0; python_version<'3.8'",  # https://github.com/celery/celery/issues/7783
         ],
         extras_require={
             "flower": ["flower"],

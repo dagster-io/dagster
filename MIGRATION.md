@@ -200,7 +200,7 @@ Dagster’s metadata API has undergone a signficant overhaul. Changes include:
 ## Migrating to 0.13.0
 
 Jobs, ops, and graphs have replaced pipelines, solids, modes, and presets as the stable core of the
-system. [Here](https://docs.dagster.io/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs. 0.13.0 is still compatible with the pipeline, solid, mode, and preset APIs, which means that you don't need to migrate your code to upgrade to 0.13.0.
+system. [Here](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs. 0.13.0 is still compatible with the pipeline, solid, mode, and preset APIs, which means that you don't need to migrate your code to upgrade to 0.13.0.
 
 ## Migrating to 0.12.0
 
@@ -295,7 +295,7 @@ Instead of relying on system cron or k8s cron jobs, the `DaemonScheduler` uses t
 `dagster-daemon` service to run schedules. This requires running the `dagster-daemon` service as a
 part of your deployment.
 
-Refer to our [deployment documentation](https://docs.dagster.io/deploying) for a guides on how to
+Refer to our [deployment documentation](https://docs.dagster.io/deployment) for a guides on how to
 set up and run the daemon process for local development, Docker, or Kubernetes deployments.
 
 **If you are currently using the SystemCronScheduler or K8sScheduler:**
@@ -314,7 +314,7 @@ set up and run the daemon process for local development, Docker, or Kubernetes d
    the `DagsterDaemonScheduler` is automatically used as the default scheduler.
 
 3. Start the `dagster-daemon` process. Guides can be found in our
-   [deployment documentations](https://docs.dagster.io/deploying).
+   [deployment documentations](https://docs.dagster.io/deployment).
 
 See our [schedules troubleshooting guide](https://docs.dagster.io/troubleshooting/schedules) for
 help if you experience any problems with the new scheduler.
@@ -328,7 +328,7 @@ upgrading to 0.10.0.
 
 We have deprecated the intermediate storage machinery in favor of the new IO manager abstraction,
 which offers finer-grained control over how inputs and outputs are serialized and persisted. Check
-out the [IO Managers Overview](https://docs.dagster.io/0.10.0/overview/io-managers/io-managers) for
+out the [IO Managers Overview](https://docs.dagster.io/concepts/io-management/io-managers) for
 more information.
 
 #### Steps to Migrate

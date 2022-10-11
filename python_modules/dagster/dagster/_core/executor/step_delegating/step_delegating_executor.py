@@ -218,7 +218,11 @@ class StepDelegatingExecutor(Executor):
                         active_execution.verify_complete(plan_context, dagster_event.step_key)
                     else:
                         active_execution.handle_event(dagster_event)
-                        if dagster_event.is_step_success or dagster_event.is_step_failure:
+                        if (
+                            dagster_event.is_step_success
+                            or dagster_event.is_step_failure
+                            or dagster_event.is_resource_init_failure
+                        ):
                             assert isinstance(dagster_event.step_key, str)
                             del running_steps[dagster_event.step_key]
                             active_execution.verify_complete(plan_context, dagster_event.step_key)

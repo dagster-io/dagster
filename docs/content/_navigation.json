@@ -165,6 +165,10 @@
             "path": "/concepts/partitions-schedules-sensors/sensors"
           },
           {
+            "title": "Asset Sensors",
+            "path": "/concepts/partitions-schedules-sensors/asset-sensors"
+          },
+          {
             "title": "Partitions",
             "path": "/concepts/partitions-schedules-sensors/partitions"
           },
@@ -475,6 +479,10 @@
     "icon": "Grid",
     "path": "/integrations",
     "children": [
+        {
+          "title": "Airbyte",
+          "path": "/integrations/airbyte"
+        },
       {
         "title": "Airflow",
         "path": "/integrations/airflow"

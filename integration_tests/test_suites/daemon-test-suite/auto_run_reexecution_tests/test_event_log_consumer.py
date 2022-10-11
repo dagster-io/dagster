@@ -25,7 +25,7 @@ class TestEventLogConsumerDaemon(EventLogConsumerDaemon):
 
     @property
     def handle_updated_runs_fns(self):
-        def stash_run_records(_instance, _workspace, run_records):
+        def stash_run_records(_ctx, run_records):
             self.run_records = run_records
             yield
 
@@ -51,39 +51,39 @@ def _create_success_event(instance, run):
     instance.handle_new_event(event_record)
 
 
-def test_daemon(instance: DagsterInstance, empty_workspace):
+def test_daemon(instance: DagsterInstance, empty_workspace_context):
     daemon = TestEventLogConsumerDaemon()
 
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert daemon.run_records == []
 
     run = create_run_for_test(instance, "test_pipeline")
     instance.report_run_failed(run)
 
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert [record.pipeline_run.run_id for record in daemon.run_records] == [run.run_id]
 
     # not called again for same event
     daemon.run_records = []  # reset this since it will keep the value from the last call
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert daemon.run_records == []
 
 
-def test_events_exceed_limit(instance: DagsterInstance, empty_workspace):
+def test_events_exceed_limit(instance: DagsterInstance, empty_workspace_context):
     daemon = TestEventLogConsumerDaemon()
 
     for _ in range(TEST_EVENT_LOG_FETCH_LIMIT + 1):
         run = create_run_for_test(instance, "test_pipeline")
         instance.report_run_failed(run)
 
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert len(daemon.run_records) == TEST_EVENT_LOG_FETCH_LIMIT
 
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert len(daemon.run_records) == 1
 
 
-def test_success_and_failure_events(instance: DagsterInstance, empty_workspace):
+def test_success_and_failure_events(instance: DagsterInstance, empty_workspace_context):
     daemon = TestEventLogConsumerDaemon()
 
     for _ in range(TEST_EVENT_LOG_FETCH_LIMIT + 1):
@@ -93,10 +93,10 @@ def test_success_and_failure_events(instance: DagsterInstance, empty_workspace):
         run = create_run_for_test(instance, "foo")
         _create_success_event(instance, run)
 
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert len(daemon.run_records) == TEST_EVENT_LOG_FETCH_LIMIT * 2
 
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert len(daemon.run_records) == 2
 
 
@@ -104,9 +104,9 @@ FAILURE_KEY = "EVENT_LOG_CONSUMER_CURSOR-PIPELINE_FAILURE"
 SUCCESS_KEY = "EVENT_LOG_CONSUMER_CURSOR-PIPELINE_SUCCESS"
 
 
-def test_cursors(instance: DagsterInstance, empty_workspace):
+def test_cursors(instance: DagsterInstance, empty_workspace_context):
     daemon = TestEventLogConsumerDaemon()
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
 
     assert instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY}) == {}
 
@@ -116,19 +116,19 @@ def test_cursors(instance: DagsterInstance, empty_workspace):
     instance.report_run_failed(run1)
     instance.report_run_failed(run2)
 
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert len(daemon.run_records) == 2
 
     cursors = instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY})
 
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY}) == cursors
 
     for _ in range(5):
         instance.report_engine_event("foo", run1)
         instance.report_engine_event("foo", run2)
 
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY}) == {
         FAILURE_KEY: str(int(cursors[FAILURE_KEY]) + 10),
         SUCCESS_KEY: str(int(cursors[SUCCESS_KEY]) + 10),
@@ -140,7 +140,7 @@ def test_cursors(instance: DagsterInstance, empty_workspace):
     instance.report_run_failed(run3)
     instance.report_run_failed(run4)
 
-    list(daemon.run_iteration(instance, empty_workspace))
+    list(daemon.run_iteration(empty_workspace_context))
     assert len(daemon.run_records) == 2
 
 

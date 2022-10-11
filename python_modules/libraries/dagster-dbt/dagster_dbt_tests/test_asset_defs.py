@@ -192,7 +192,7 @@ def test_basic(
             test_project_dir, dbt_config_dir, use_build_command=use_build
         )
 
-    assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project"
+    assert dbt_assets[0].op.name == "run_dbt_5ad73"
 
     result = build_assets_job(
         "test_job",
@@ -336,7 +336,7 @@ def test_select_from_project(
         for suffix in (["sort_by_calories"], ["subdir_schema", "least_caloric"])
     }
 
-    assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project_e4753"
+    assert dbt_assets[0].op.name == "run_dbt_5ad73_e4753"
 
     result = build_assets_job(
         "test_job",
@@ -516,12 +516,12 @@ def test_subsetting(
 
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
 
-    @asset
-    def hanger1(sort_by_calories):
+    @asset(non_argument_deps={AssetKey("sort_by_calories")})
+    def hanger1():
         return None
 
-    @asset(ins={"least_caloric": AssetIn(key_prefix="subdir_schema")})
-    def hanger2(least_caloric):
+    @asset(non_argument_deps={AssetKey(["subdir_schema", "least_caloric"])})
+    def hanger2():
         return None
 
     result = (

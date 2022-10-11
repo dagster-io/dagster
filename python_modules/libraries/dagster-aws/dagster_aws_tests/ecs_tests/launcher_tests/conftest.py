@@ -139,6 +139,25 @@ def instance(instance_cm):
 
 
 @pytest.fixture
+def instance_dont_use_current_task(instance_cm, subnet):
+    with instance_cm(
+        config={
+            "use_current_ecs_task_config": False,
+            "run_task_kwargs": {
+                "cluster": "my_cluster",
+                "networkConfiguration": {
+                    "awsvpcConfiguration": {
+                        "subnets": [subnet.id],
+                        "assignPublicIp": "ENABLED",
+                    },
+                },
+            },
+        }
+    ) as dagster_instance:
+        yield dagster_instance
+
+
+@pytest.fixture
 def workspace(instance, image):
     with in_process_test_workspace(
         instance,

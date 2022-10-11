@@ -1,5 +1,81 @@
 # Changelog
 
+# 1.0.12 (core) / 0.16.12 (libraries)
+
+### New
+
+- The `multi_asset_sensor` (experimental) now accepts an `AssetSelection` of assets to monitor. There are also minor API updates for the multi-asset sensor context.
+- `AssetValueLoader`, the type returned by `RepositoryDefinition.get_asset_value_loader` is now part of Dagster’s public API.
+- `RepositoryDefinition.load_asset_value` and `AssetValueLoader.load_asset_value` now support a `partition_key` argument.
+- `RepositoryDefinition.load_asset_value` and `AssetValueLoader.load_asset_value` now work with I/O managers that invoke `context.upstream_output.asset_key`.
+- When running Dagster locally, the default amount of time that the system waits when importing user code has been increased from 60 seconds to 180 seconds, to avoid false positives when importing code with heavy dependencies or large numbers of assets. This timeout can be configured in `dagster.yaml` as follows:
+
+```yaml
+code_servers:
+  local_startup_timeout: 120
+```
+
+- [dagit] The “Status” section has been renamed to “Deployment”, to better reflect that this section of the app shows deployment-wide information.
+- [dagit] When viewing the compute logs for a run and choosing a step to filter on, there is now a search input to make it easier to find the step you’re looking for.
+- [dagster-aws] The EcsRunLauncher can now launch runs in ECS clusters using both Fargate and EC2 capacity providers. See the [Deploying to ECS docs](http://docs.dagster.io/deployment/guides/aws#customizing-the-launched-runs-task) for more information.
+- [dagster-airbyte] Added the `load_assets_from_airbyte_instance` function which automatically generates asset definitions from an Airbyte instance. For more details, see the [new Airbyte integration guide](https://docs.dagster.io/integrations/airbyte).
+- [dagster-airflow] Added the `DagsterCloudOperator` and `DagsterOperator` , which are airflow operators that enable orchestrating dagster jobs, running on either cloud or OSS dagit instances, from Apache Airflow.
+
+### Bugfixes
+
+- Fixed a bug where if resource initialization failed for a dynamic op, causing other dynamic steps to be skipped, those skipped dynamic steps would be ignored when retrying from failure.
+- Previously, some invocations within the Dagster framework would result in warnings about deprecated metadata APIs.  Now, users should only see warnings if their code uses deprecated metadata APIs.
+- How the daemon process manages its understanding of user code artifacts has been reworked to improve memory consumption.
+- [dagit] The partition selection UI in the Asset Materialization modal now allows for mouse selection and matches the UI used for partitioned op jobs.
+- [dagit] Sidebars in Dagit shrink more gracefully on small screens where headers and labels need to be truncated.
+- [dagit] Improved performance for loading runs with >10,000 logs
+- [dagster-airbyte] Previously, the `port` configuration in the `airbyte_resource` was marked as not required, but if it was not supplied, an error would occur. It is now marked as required.
+- [dagster-dbt] A change made to the manifest.json schema in dbt 1.3 would result in an error when using `load_assets_from_dbt_project` or `load_assets_from_manifest_json`. This has been fixed.
+- [dagster-postgres] connections that fail due to **`sqlalchemy.exc.TimeoutError`** now retry
+
+### Breaking Changes
+
+- [dagster-aws] The `redshift_resource` no longer accepts a `schema` configuration parameter.  Previously, this parameter would error whenever used, because Redshift connections do not support this parameter.
+
+### Community Contributions
+
+- We now reference the correct method in the "loading asset values outside of Dagster runs" example (thank you Peter A. I. Forsyth!)
+- We now reference the correct test directory in the “Create a New Project” documentation (thank you Peter A. I. Forsyth!)
+- [dagster-pyspark] dagster-pyspark now contains a `LazyPysparkResource` that only initializes a spark session once it’s accessed (thank you @zyd14!)
+
+### Experimental
+
+- The new `build_asset_reconciliation_sensor` function accepts a set of software-defined assets and returns a sensor that automatically materializes those assets after their parents  are materialized.
+- [dagit] A new "groups-only" asset graph feature flag allows you to zoom way out on the global asset graph, collapsing asset groups into smaller nodes you can double-click to expand.
+
+# 1.0.11 (core) / 0.16.11 (libraries)
+
+### New
+
+* `RepositoryDefinition` now exposes a `load_asset_value` method, which accepts an asset key and invokes the asset’s I/O manager’s `load_input` function to load the asset as a Python object. This can be used in notebooks to do exploratory data analysis on assets.
+* Methods to fetch a list of partition keys from an input/output `PartitionKeyRange` now exist on the op execution context and input/output context.
+* [dagit] On the Instance Overview page, batched runs in the run timeline view will now proportionally reflect the status of the runs in the batch instead of reducing all run statuses to a single color.
+* [dagster-dbt] [dagster-snowflake] You can now use the Snowflake IO manager with dbt assets, which allows them to be loaded from Snowflake into Pandas DataFrames in downstream steps.
+* The dagster package’s pin of the alembic package is now much less restrictive.
+
+### Bugfixes
+
+* The sensor daemon when using threads will no longer evaluate the next tick for a sensor if the previous one is still in flight. This resolves a memory leak in the daemon process.
+* The scheduler will no longer remove tracked state for automatically running schedules when they are absent due to a workspace load error.
+* The way user code severs manage repository definitions has been changed to more efficiently serve requests.
+* The `@multi_asset` decorator now respects its `config_schema` parameter.
+* [dagit] Config supplied to `define_asset_job` is now prefilled in the modal that pops up when you click the Materialize button on an asset job page, so you can quickly adjust the defaults.
+* [dagster-dbt] Previously, `DagsterDbtCliError`s produced from the dagster-dbt library would contain large serialized objects representing the raw unparsed logs from the relevant cli command. Now, these messages will contain only the parsed version of these messages.
+* Fixed an issue where the `deploy_ecs` example didn’t work when built and deployed on an M1 Mac.
+
+### Community Contributions
+
+* [dagster-fivetran] The `resync_parameters` configuration on the `fivetran_resync_op` is now optional, enabling triggering historical re*syncs for connectors. Thanks @dwallace0723!
+
+### Documentation
+
+* Improved API documentation for the Snowflake resource.
+
 # 1.0.10 (core) / 0.16.10 (libraries)
 
 ### New
@@ -2110,7 +2186,7 @@ def my_job():
 
 ### Major Changes
 
-- The job, op, and graph APIs now represent the stable core of the system, and replace pipelines, solids, composite solids, modes, and presets as Dagster’s core abstractions. All of Dagster’s documentation - tutorials, examples, table of contents - is in terms of these new core APIs. Pipelines, modes, presets, solids, and composite solids are still supported, but are now considered “Legacy APIs”. We will maintain backcompatibility with the legacy APIs for some time, however, we believe the new APIs represent an elegant foundation for Dagster going forward. As time goes on, we will be adding new features that only apply to the new core. All in all, the new APIs provide increased clarity - they unify related concepts, make testing more lightweight, and simplify operational workflows in Dagit. For comprehensive instructions on how to transition to the new APIs, refer to the [migration guide](https://docs.dagster.io/guides/dagster/graph_job_op).
+- The job, op, and graph APIs now represent the stable core of the system, and replace pipelines, solids, composite solids, modes, and presets as Dagster’s core abstractions. All of Dagster’s documentation - tutorials, examples, table of contents - is in terms of these new core APIs. Pipelines, modes, presets, solids, and composite solids are still supported, but are now considered “Legacy APIs”. We will maintain backcompatibility with the legacy APIs for some time, however, we believe the new APIs represent an elegant foundation for Dagster going forward. As time goes on, we will be adding new features that only apply to the new core. All in all, the new APIs provide increased clarity - they unify related concepts, make testing more lightweight, and simplify operational workflows in Dagit. For comprehensive instructions on how to transition to the new APIs, refer to the [migration guide](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op).
 - Dagit has received a complete makeover. This includes a refresh to the color palette and general design patterns, as well as functional changes that make common Dagit workflows more elegant. These changes are designed to go hand in hand with the new set of core APIs to represent a stable core for the system going forward.
 - You no longer have to pass a context object around to do basic logging. Many updates have been made to our logging system to make it more compatible with the python logging module. You can now capture logs produced by standard python loggers, set a global python log level, and set python log handlers that will be applied to every log message emitted from the Dagster framework. Check out the docs [here](https://docs.dagster.io/concepts/logging/python-logging)!
 - The Dagit “playground” has been re-named into the Dagit “launchpad”. This reflects a vision of the tool closer to how our users actually interact with it - not just a testing/development tool, but also as a first-class starting point for many one-off workflows.
@@ -2594,7 +2670,7 @@ def my_root_manager(_):
 
 ### Documentation
 
-- Added a guide to migrating from the existing Pipeline, Mode, Preset, and Solid APIs to the new experimental Graph, Job, and Op APIs. Check out the guide [here](https://docs.dagster.io/guides/dagster/graph_job_op)!
+- Added a guide to migrating from the existing Pipeline, Mode, Preset, and Solid APIs to the new experimental Graph, Job, and Op APIs. Check out the guide [here](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op)!
 
 # 0.12.1
 
@@ -2758,7 +2834,7 @@ def my_root_manager(_):
 
 ### Documentation
 
-- Added docs section on testing hooks. https://docs.dagster.io/master/concepts/solids-pipelines/solid-hooks#experimental-testing-hooks
+- Added docs section on testing hooks. https://docs.dagster.io/0.11.16/concepts/solids-pipelines/solid-hooks#experimental-testing-hooks
 
 # 0.11.14
 
@@ -2783,8 +2859,8 @@ def my_root_manager(_):
 
 ### Documentation
 
-- Added section on testing resources ([link](https://docs.dagster.io/master/concepts/modes-resources#experimental-testing-resource-initialization)).
-- Revamped IO manager testing section to use `build_input_context` and `build_output_context` APIs ([link](https://docs.dagster.io/master/concepts/io-management/io-managers#testing-an-io-manager)).
+- Added section on testing resources ([link](https://docs.dagster.io/0.11.16/concepts/modes-resources#experimental-testing-resource-initialization)).
+- Revamped IO manager testing section to use `build_input_context` and `build_output_context` APIs ([link](https://docs.dagster.io/0.11.16/concepts/io-management/io-managers#testing-an-io-manager)).
 
 # 0.11.13
 
@@ -3625,7 +3701,7 @@ load_from:
 
 **Documentation**
 
-- Added an example of how to trigger a Dagster pipeline in GraphQL at https://docs.dagster.io/examples/trigger_pipeline.
+- Added an example of how to trigger a Dagster pipeline in GraphQL at https://github.com/dagster-io/dagster/tree/0.10.6/examples/trigger_pipeline.
 - Added better documentation for customizing sensor intervals at https://docs.dagster.io/overview/schedules-sensors/sensors.
 
 ## 0.10.5
@@ -3746,7 +3822,7 @@ This changes the interval at which the daemon checks for sensors which haven't r
 
 **Documentation**
 
-- Added new [troubleshooting guide](https://docs.dagster.io/troubleshooting) for problems encountered while using the `QueuedRunCoordinator` to limit run concurrency.
+- Added new [troubleshooting guide](https://legacy-docs.dagster.io/troubleshooting) for problems encountered while using the `QueuedRunCoordinator` to limit run concurrency.
 - Added documentation for the sensor command-line interface.
 
 ## 0.10.0 "The Edge of Glory"
@@ -4383,7 +4459,7 @@ opt_in:
 - Added step-level run history for partitioned schedules on the schedule view
 - Added great_expectations integration, through the `dagster_ge` library. Example usage is under a new example, called `ge_example`, and documentation for the library can be found under the libraries section of the api docs.
 - `PythonObjectDagsterType` can now take a tuple of types as well as a single type, more closely mirroring `isinstance` and allowing Union types to be represented in Dagster.
-- The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the [configuration documentation](https://docs.dagster.io/overview/configuration).
+- The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the [configuration documentation](https://legacy-docs.dagster.io/overview/configuration/configured).
 - Updated Helm chart to include auto-generated user code configmap in user code deployment by default
 
 **Bugfixes**

@@ -1,3 +1,4 @@
+import logging
 import sys
 import time
 
@@ -7,9 +8,11 @@ from dagster._core.events import DagsterEventType
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
+    PipelineRun,
     PipelineRunStatus,
     RunsFilter,
 )
+from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
@@ -39,7 +42,12 @@ def count_resume_run_attempts(instance: DagsterInstance, run_id: str):
     return len([event for event in events if event.message == RESUME_RUN_LOG_MESSAGE])
 
 
-def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
+def monitor_started_run(
+    instance: DagsterInstance,
+    workspace: IWorkspace,
+    run: PipelineRun,
+    logger: logging.Logger,
+):
     check.invariant(run.status == PipelineRunStatus.STARTED)
     check_health_result = instance.run_launcher.check_run_worker_health(run)
     if check_health_result.status not in [WorkerStatus.RUNNING, WorkerStatus.SUCCESS]:
@@ -82,7 +90,12 @@ def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
             instance.report_run_failed(run, msg)
 
 
-def execute_monitoring_iteration(instance, workspace, logger, _debug_crash_flags=None):
+def execute_monitoring_iteration(
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
+    _debug_crash_flags=None,
+):
+    instance = workspace_process_context.instance
     check.invariant(
         instance.run_launcher.supports_check_run_worker_health, "Must use a supported run launcher"
     )
@@ -90,8 +103,11 @@ def execute_monitoring_iteration(instance, workspace, logger, _debug_crash_flags
     # TODO: consider limiting number of runs to fetch
     runs = instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
-    logger.info(f"Collected {len(runs)} runs for monitoring")
+    if not runs:
+        return
 
+    logger.info(f"Collected {len(runs)} runs for monitoring")
+    workspace = workspace_process_context.create_request_context()
     for run in runs:
         try:
             logger.info(f"Checking run {run.run_id}")
@@ -99,6 +115,7 @@ def execute_monitoring_iteration(instance, workspace, logger, _debug_crash_flags
             if run.status == PipelineRunStatus.STARTING:
                 monitor_starting_run(instance, run, logger)
             elif run.status == PipelineRunStatus.STARTED:
+
                 monitor_started_run(instance, workspace, run, logger)
             elif run.status == PipelineRunStatus.CANCELING:
                 # TODO: implement canceling timeouts

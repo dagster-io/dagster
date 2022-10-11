@@ -1,9 +1,10 @@
 import datetime
+import logging
 import os
 import sys
 import time
 from collections import defaultdict
-from typing import cast
+from typing import Dict, List, Optional, cast
 
 import pendulum
 
@@ -13,10 +14,13 @@ from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation import ExternalSchedule, PipelineSelector
+from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
+    InstigatorTick,
     InstigatorType,
     ScheduleInstigatorData,
     TickData,
@@ -26,7 +30,7 @@ from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterS
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
-from dagster._core.workspace.context import IWorkspace
+from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils import merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -34,7 +38,14 @@ from dagster._utils.log import default_date_format_string
 
 
 class _ScheduleLaunchContext:
-    def __init__(self, external_schedule, tick, instance, logger, tick_retention_settings):
+    def __init__(
+        self,
+        external_schedule: ExternalSchedule,
+        tick: InstigatorTick,
+        instance: DagsterInstance,
+        logger: logging.Logger,
+        tick_retention_settings,
+    ):
         self._external_schedule = external_schedule
         self._instance = instance
         self._logger = logger
@@ -80,56 +91,58 @@ class _ScheduleLaunchContext:
 
 
 MIN_INTERVAL_LOOP_TIME = 5
-RELOAD_WORKSPACE = 60
+VERBOSE_LOGS_INTERVAL = 60
 
 
 def execute_scheduler_iteration_loop(
-    instance, workspace, logger, max_catchup_runs, max_tick_retries
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
+    max_catchup_runs: int,
+    max_tick_retries: int,
 ):
-    workspace_loaded_time = pendulum.now("UTC").timestamp()
-
-    workspace_iteration = 0
-    start_time = pendulum.now("UTC").timestamp()
+    last_verbose_time = None
     while True:
         start_time = pendulum.now("UTC").timestamp()
-        if start_time - workspace_loaded_time > RELOAD_WORKSPACE:
-            workspace.cleanup(cleanup_locations=True)
-            workspace_loaded_time = pendulum.now("UTC").timestamp()
-            workspace_iteration = 0
-
         end_datetime_utc = pendulum.now("UTC")
+
+        # occasionally enable verbose logging (doing it always would be too much)
+        verbose_logs_iteration = (
+            last_verbose_time is None or start_time - last_verbose_time > VERBOSE_LOGS_INTERVAL
+        )
         yield from launch_scheduled_runs(
-            instance,
-            workspace,
+            workspace_process_context,
             logger,
             end_datetime_utc=end_datetime_utc,
             max_catchup_runs=max_catchup_runs,
             max_tick_retries=max_tick_retries,
-            log_verbose_checks=(workspace_iteration == 0),
+            log_verbose_checks=verbose_logs_iteration,
         )
-        loop_duration = pendulum.now("UTC").timestamp() - start_time
+        end_time = pendulum.now("UTC").timestamp()
+
+        if verbose_logs_iteration:
+            last_verbose_time = end_time
+
+        loop_duration = end_time - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
         time.sleep(sleep_time)
         yield
-        workspace_iteration += 1
 
 
 def launch_scheduled_runs(
-    instance,
-    workspace,
-    logger,
-    end_datetime_utc,
-    max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
-    max_tick_retries=0,
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
+    end_datetime_utc: datetime.datetime,
+    max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
+    max_tick_retries: int = 0,
     debug_crash_flags=None,
-    log_verbose_checks=True,
+    log_verbose_checks: bool = True,
 ):
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(workspace, "workspace", IWorkspace)
-
+    instance = workspace_process_context.instance
     workspace_snapshot = {
         location_entry.origin.location_name: location_entry
-        for location_entry in workspace.get_workspace_snapshot().values()
+        for location_entry in workspace_process_context.create_request_context()
+        .get_workspace_snapshot()
+        .values()
     }
 
     all_schedule_states = {
@@ -139,7 +152,8 @@ def launch_scheduled_runs(
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SCHEDULE)
 
-    schedules = {}
+    schedules: Dict[str, ExternalSchedule] = {}
+    error_locations = set()
     for location_entry in workspace_snapshot.values():
         repo_location = location_entry.repository_location
         if repo_location:
@@ -150,10 +164,12 @@ def launch_scheduled_runs(
                         all_schedule_states.get(selector_id)
                     ).is_running:
                         schedules[selector_id] = schedule
-        elif location_entry.load_error and log_verbose_checks:
-            logger.warning(
-                f"Could not load location {location_entry.origin.location_name} to check for schedules due to the following error: {location_entry.load_error}"
-            )
+        elif location_entry.load_error:
+            if log_verbose_checks:
+                logger.warning(
+                    f"Could not load location {location_entry.origin.location_name} to check for schedules due to the following error: {location_entry.load_error}"
+                )
+            error_locations.add(location_entry.origin.location_name)
 
     # Remove any schedule states that were previously created with AUTOMATICALLY_RUNNING
     # and can no longer be found in the workspace (so that if they are later added
@@ -165,9 +181,16 @@ def launch_scheduled_runs(
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
     }
     for state in states_to_delete:
-        instance.schedule_storage.delete_instigator_state(
-            state.instigator_origin_id, state.selector_id
+        location_name = (
+            state.origin.external_repository_origin.repository_location_origin.location_name
         )
+        # don't clean up auto running state if its location is an error state
+        if location_name not in error_locations:
+            logger.info(
+                f"Removing state for automatically running schedule {state.instigator_name} "
+                f"that is no longer present in {location_name}."
+            )
+            instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
     if log_verbose_checks:
         unloadable_schedule_states = {
@@ -193,9 +216,9 @@ def launch_scheduled_runs(
                     f"{repo_location_name} that can no longer be found in the workspace. You can "
                     "turn off this schedule in the Dagit UI from the Status tab."
                 )
-            elif not workspace_snapshot[
-                repo_location_origin.location_name
-            ].repository_location.has_repository(repo_name):
+            elif not check.not_none(  # checked in case above
+                workspace_snapshot[repo_location_origin.location_name].repository_location
+            ).has_repository(repo_name):
                 logger.warning(
                     f"Could not find repository {repo_name} in location {repo_location_name} to "
                     + f"run schedule {schedule_name}. If this repository no longer exists, you can "
@@ -235,11 +258,10 @@ def launch_scheduled_runs(
                 instance.add_instigator_state(schedule_state)
 
             yield from launch_scheduled_runs_for_schedule(
-                instance,
+                workspace_process_context,
                 logger,
                 external_schedule,
                 schedule_state,
-                workspace,
                 end_datetime_utc,
                 max_catchup_runs,
                 max_tick_retries,
@@ -260,25 +282,24 @@ def launch_scheduled_runs(
 
 
 def launch_scheduled_runs_for_schedule(
-    instance,
-    logger,
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
     external_schedule: ExternalSchedule,
     schedule_state: InstigatorState,
-    workspace,
     end_datetime_utc: datetime.datetime,
-    max_catchup_runs,
-    max_tick_retries,
+    max_catchup_runs: int,
+    max_tick_retries: int,
     tick_retention_settings,
     debug_crash_flags=None,
     log_verbose_checks=True,
 ):
-    instance = check.inst_param(instance, "instance", DagsterInstance)
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
+    instance = workspace_process_context.instance
 
     instigator_origin_id = external_schedule.get_external_origin_id()
     ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
-    latest_tick = ticks[0] if ticks else None
+    latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
 
     instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)
     start_timestamp_utc = instigator_data.start_timestamp if schedule_state else None
@@ -314,7 +335,7 @@ def launch_scheduled_runs_for_schedule(
                 "an execution_timezone in its definition."
             )
 
-    tick_times = []
+    tick_times: List[datetime.datetime] = []
     for next_time in external_schedule.execution_time_iterator(start_timestamp_utc):
         if next_time.timestamp() > end_datetime_utc.timestamp():
             break
@@ -323,7 +344,7 @@ def launch_scheduled_runs_for_schedule(
 
     if not tick_times:
         if log_verbose_checks:
-            logger.info(f"No new runs for {schedule_name}")
+            logger.info(f"No new tick times to evaluate for {schedule_name}")
         return
 
     if not external_schedule.partition_set_name and len(tick_times) > 1:
@@ -372,9 +393,8 @@ def launch_scheduled_runs_for_schedule(
                 _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
 
                 yield from _schedule_runs_at_time(
-                    instance,
+                    workspace_process_context,
                     logger,
-                    workspace,
                     external_schedule,
                     schedule_time,
                     tick_context,
@@ -422,16 +442,15 @@ def _check_for_debug_crash(debug_crash_flags, key):
 
 
 def _schedule_runs_at_time(
-    instance,
-    logger,
-    workspace,
-    external_schedule,
-    schedule_time,
-    tick_context,
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
+    external_schedule: ExternalSchedule,
+    schedule_time: datetime.datetime,
+    tick_context: _ScheduleLaunchContext,
     debug_crash_flags,
 ):
     schedule_name = external_schedule.name
-
+    instance = workspace_process_context.instance
     schedule_origin = external_schedule.get_external_origin()
     repository_handle = external_schedule.handle.repository_handle
 
@@ -442,7 +461,7 @@ def _schedule_runs_at_time(
         solid_selection=external_schedule.solid_selection,
     )
 
-    repo_location = workspace.get_repository_location(
+    repo_location = workspace_process_context.create_request_context().get_repository_location(
         schedule_origin.external_repository_origin.repository_location_origin.location_name
     )
 
@@ -454,7 +473,7 @@ def _schedule_runs_at_time(
         schedule_name=external_schedule.name,
         scheduled_execution_time=schedule_time,
     )
-    yield
+    yield None
 
     if not schedule_execution_data.run_requests:
         if schedule_execution_data.skip_message:
@@ -482,7 +501,7 @@ def _schedule_runs_at_time(
                     f"Run {run.run_id} already completed for this execution of {external_schedule.name}"
                 )
                 tick_context.add_run_info(run_id=run.run_id, run_key=run_request.run_key)
-                yield
+                yield None
                 continue
             else:
                 logger.info(
@@ -502,7 +521,7 @@ def _schedule_runs_at_time(
 
         if run.status != PipelineRunStatus.FAILURE:
             try:
-                instance.submit_run(run.run_id, workspace)
+                instance.submit_run(run.run_id, workspace_process_context.create_request_context())
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -557,12 +576,12 @@ def _get_existing_run_for_request(
 
 
 def _create_scheduler_run(
-    instance,
-    schedule_time,
-    repo_location,
-    external_schedule,
-    external_pipeline,
-    run_request,
+    instance: DagsterInstance,
+    schedule_time: datetime.datetime,
+    repo_location: RepositoryLocation,
+    external_schedule: ExternalSchedule,
+    external_pipeline: ExternalPipeline,
+    run_request: RunRequest,
 ):
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
@@ -578,8 +597,10 @@ def _create_scheduler_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    pipeline_tags = validate_tags(external_pipeline.tags, allow_reserved_tags=False) or {}
-    tags = merge_dicts(pipeline_tags, schedule_tags)
+    tags = merge_dicts(
+        validate_tags(external_pipeline.tags, allow_reserved_tags=False) or {},
+        schedule_tags,
+    )
 
     tags[SCHEDULED_EXECUTION_TIME_TAG] = to_timezone(schedule_time, "UTC").isoformat()
     if run_request.run_key:

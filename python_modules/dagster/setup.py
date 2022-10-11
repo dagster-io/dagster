@@ -54,9 +54,8 @@ if __name__ == "__main__":
             "Jinja2",
             "PyYAML>=5.1",
             # core (not explicitly expressed atm)
-            # alembic 1.6.3 broke our migrations: https://github.com/sqlalchemy/alembic/issues/848
-            # alembic 1.7.0 is a breaking change
-            "alembic>=1.2.1,!=1.6.3,<1.7.0",
+            # pin around issues in specific versions of alembic that broke our migrations
+            "alembic>=1.2.1,!=1.6.3,!=1.7.0",
             "croniter>=0.3.34",
             # grpcio 1.48.1 has hanging/crashing issues: https://github.com/grpc/grpc/issues/30843
             # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
@@ -85,6 +84,7 @@ if __name__ == "__main__":
         extras_require={
             "docker": ["docker"],
             "test": [
+                "buildkite-test-collector ; python_version>='3.8'",
                 "coverage==5.3",
                 "docker",
                 "grpcio-tools>=1.32.0,<1.44.0",  # related to above grpcio pins

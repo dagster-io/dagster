@@ -1,8 +1,8 @@
+import logging
 import os
 import sys
 import time
 
-import dagster._check as check
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.backfill import (
     BulkActionStatus,
@@ -12,7 +12,7 @@ from dagster._core.execution.backfill import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.workspace.context import IWorkspace
+from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
@@ -34,16 +34,20 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=None):
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(workspace, "workspace", IWorkspace)
-
+def execute_backfill_iteration(
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
+    debug_crash_flags=None,
+):
+    instance = workspace_process_context.instance
     backfill_jobs = instance.get_backfills(status=BulkActionStatus.REQUESTED)
 
     if not backfill_jobs:
         logger.debug("No backfill jobs requested.")
         yield
         return
+
+    workspace = workspace_process_context.create_request_context()
 
     for backfill_job in backfill_jobs:
         backfill_id = backfill_job.backfill_id
@@ -120,8 +124,12 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
             yield error_info
 
 
-def _get_partitions_chunk(instance, logger, backfill_job, chunk_size):
-    check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
+def _get_partitions_chunk(
+    instance: DagsterInstance,
+    logger: logging.Logger,
+    backfill_job: PartitionBackfill,
+    chunk_size: int,
+):
     partition_names = backfill_job.partition_names
     checkpoint = backfill_job.last_submitted_partition_name
 

@@ -7,7 +7,6 @@ from dagster import (
     SkipReason,
     asset,
     define_asset_job,
-    multi_asset_sensor,
     JobSelector,
     RepositorySelector,
     DagsterRunStatus,
@@ -179,76 +178,6 @@ def my_directory_sensor_with_skip_reasons():
 
 
 # end_skip_sensors_marker
-
-# start_asset_sensor_marker
-from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
-
-
-@asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
-def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
-    yield RunRequest(
-        run_key=context.cursor,
-        run_config={
-            "ops": {
-                "read_materialization": {
-                    "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,
-                    }
-                }
-            }
-        },
-    )
-
-
-# end_asset_sensor_marker
-
-# start_multi_asset_sensor_marker
-
-
-@multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-    job=my_job,
-)
-def asset_a_and_b_sensor(context):
-    asset_events = context.latest_materialization_records_by_key()
-    if all(asset_events.values()):
-        logger_str = (
-            f"Assets {asset_events[AssetKey('asset_a')].event_log_entry.dagster_event.asset_key.path} "
-            f"and {asset_events[AssetKey('asset_b')].event_log_entry.dagster_event.asset_key.path} materialized"
-        )
-        context.advance_all_cursors()
-        return RunRequest(
-            run_key=f"{context.cursor}",
-            run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
-        )
-
-
-# end_multi_asset_sensor_marker
-
-# start_multi_asset_sensor_w_skip_reason
-
-
-@multi_asset_sensor(
-    asset_keys=[AssetKey("asset_c")],
-    job=my_job,
-)
-def every_fifth_asset_c_sensor(context):
-    # this sensor will return a run request every fifth materialization of asset_c
-    asset_events = context.materialization_records_for_key(
-        asset_key=AssetKey("asset_c"), limit=5
-    )
-    if len(asset_events) == 5:
-        context.advance_cursor({AssetKey("asset_c"): asset_events[-1]})
-        return RunRequest(run_key=f"{context.cursor}")
-    else:
-        # you can optionally return a SkipReason
-        # we don't update the cursor here since we want to keep fetching the same events until we
-        # fetch 5 events
-        return SkipReason(f"asset_c only materialized {len(asset_events)} times.")
-
-
-# end_multi_asset_sensor_w_skip_reason
-
 
 # start_s3_sensors_marker
 from dagster_aws.s3.sensor import get_s3_keys

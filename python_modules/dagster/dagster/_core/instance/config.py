@@ -141,7 +141,7 @@ def python_logs_config_schema():
     )
 
 
-DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 60
+DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 180
 
 
 def get_default_tick_retention_settings(

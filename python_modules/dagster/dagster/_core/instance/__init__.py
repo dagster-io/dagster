@@ -97,7 +97,12 @@ if TYPE_CHECKING:
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler
-    from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick, TickStatus
+    from dagster._core.scheduler.instigation import (
+        InstigatorState,
+        InstigatorTick,
+        TickData,
+        TickStatus,
+    )
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.event_log import EventLogStorage
@@ -817,6 +822,7 @@ class DagsterInstance:
         asset_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
+        repository_load_data=None,
     ):
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
@@ -869,6 +875,7 @@ class DagsterInstance:
                 mode=mode,
                 instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,
+                repository_load_data=repository_load_data,
             )
 
         return self.create_run(
@@ -958,6 +965,8 @@ class DagsterInstance:
             execution_plan_snapshot_id=execution_plan_snapshot_id,
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
+            has_repository_load_data=execution_plan_snapshot is not None
+            and execution_plan_snapshot.repository_load_data is not None,
         )
 
     def _ensure_persisted_pipeline_snapshot(self, pipeline_snapshot, parent_pipeline_snapshot):
@@ -1406,6 +1415,11 @@ class DagsterInstance:
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
         return self._event_storage.get_latest_materialization_events(asset_keys)
+
+    @public
+    @traced
+    def get_latest_materialization_event(self, asset_key: AssetKey) -> Optional["EventLogEntry"]:
+        return self._event_storage.get_latest_materialization_events([asset_key]).get(asset_key)
 
     @public
     @traced
@@ -1978,11 +1992,11 @@ class DagsterInstance:
             origin_id, selector_id, before=before, after=after, limit=limit, statuses=statuses
         )
 
-    def create_tick(self, tick_data):
-        return self._schedule_storage.create_tick(tick_data)
+    def create_tick(self, tick_data: "TickData") -> "InstigatorTick":
+        return check.not_none(self._schedule_storage).create_tick(tick_data)
 
-    def update_tick(self, tick):
-        return self._schedule_storage.update_tick(tick)
+    def update_tick(self, tick: "InstigatorTick"):
+        return check.not_none(self._schedule_storage).update_tick(tick)
 
     def purge_ticks(self, origin_id, selector_id, before, tick_statuses=None):
         self._schedule_storage.purge_ticks(origin_id, selector_id, before, tick_statuses)

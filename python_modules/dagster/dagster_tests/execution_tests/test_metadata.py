@@ -332,6 +332,15 @@ def test_complex_table_schema():
     )
 
 
+def test_table_schema_from_name_type_dict():
+    assert TableSchema.from_name_type_dict({"foo": "customtype", "bar": "string"}) == TableSchema(
+        columns=[
+            TableColumn(name="foo", type="customtype"),
+            TableColumn(name="bar", type="string"),
+        ],
+    )
+
+
 def test_bool_metadata_value():
     @solid(output_defs=[])
     def the_solid():

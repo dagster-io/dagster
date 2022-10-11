@@ -20,6 +20,7 @@ if __name__ == "__main__":
             "dagit",
             "dagster",
             "dagstermill",
+            "dagster-airbyte",
             "dagster-airflow",
             "dagster-aws",
             "dagster-celery",
@@ -49,6 +50,7 @@ if __name__ == "__main__":
                 "scikit-learn",
                 "slack_sdk",
                 "snapshottest",
+                "dagit[test]",
             ]
         },
     )

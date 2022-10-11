@@ -14,7 +14,7 @@ from .test_scheduler_run import (
 )
 
 
-def test_non_utc_timezone_run(instance, workspace, external_repo):
+def test_non_utc_timezone_run(instance, workspace_context, external_repo):
     # Verify that schedule runs at the expected time in a non-UTC timezone
     freeze_datetime = to_timezone(
         create_pendulum_time(2019, 2, 27, 23, 59, 59, tz="US/Central"), "US/Pacific"
@@ -32,8 +32,7 @@ def test_non_utc_timezone_run(instance, workspace, external_repo):
 
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -46,8 +45,7 @@ def test_non_utc_timezone_run(instance, workspace, external_repo):
     with pendulum.test(freeze_datetime):
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -80,8 +78,7 @@ def test_non_utc_timezone_run(instance, workspace, external_repo):
         # Verify idempotence
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -92,7 +89,7 @@ def test_non_utc_timezone_run(instance, workspace, external_repo):
         assert ticks[0].status == TickStatus.SUCCESS
 
 
-def test_differing_timezones(instance, workspace, external_repo):
+def test_differing_timezones(instance, workspace_context, external_repo):
     # Two schedules, one using US/Central, the other on US/Eastern
     freeze_datetime = to_timezone(
         create_pendulum_time(2019, 2, 27, 23, 59, 59, tz="US/Eastern"), "US/Pacific"
@@ -118,8 +115,7 @@ def test_differing_timezones(instance, workspace, external_repo):
 
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -136,8 +132,7 @@ def test_differing_timezones(instance, workspace, external_repo):
     with pendulum.test(freeze_datetime):
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -176,8 +171,7 @@ def test_differing_timezones(instance, workspace, external_repo):
 
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -213,8 +207,7 @@ def test_differing_timezones(instance, workspace, external_repo):
         # Verify idempotence
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -231,7 +224,7 @@ def test_differing_timezones(instance, workspace, external_repo):
 
 # Verify that a schedule that runs in US/Central late enough in the day that it executes on
 # a different day in UTC still runs and creates its partition names based on the US/Central time
-def test_different_days_in_different_timezones(instance, workspace, external_repo):
+def test_different_days_in_different_timezones(instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(2019, 2, 27, 22, 59, 59, tz="US/Central"), "US/Pacific"
     )
@@ -247,8 +240,7 @@ def test_different_days_in_different_timezones(instance, workspace, external_rep
 
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -261,8 +253,7 @@ def test_different_days_in_different_timezones(instance, workspace, external_rep
     with pendulum.test(freeze_datetime):
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -295,8 +286,7 @@ def test_different_days_in_different_timezones(instance, workspace, external_rep
         # Verify idempotence
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -307,7 +297,7 @@ def test_different_days_in_different_timezones(instance, workspace, external_rep
         assert ticks[0].status == TickStatus.SUCCESS
 
 
-def test_hourly_dst_spring_forward(instance, workspace, external_repo):
+def test_hourly_dst_spring_forward(instance, workspace_context, external_repo):
     # Verify that an hourly schedule still runs hourly during the spring DST transition
     # 1AM CST
     freeze_datetime = to_timezone(
@@ -330,8 +320,7 @@ def test_hourly_dst_spring_forward(instance, workspace, external_repo):
     with pendulum.test(freeze_datetime):
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -371,8 +360,7 @@ def test_hourly_dst_spring_forward(instance, workspace, external_repo):
         # Verify idempotence
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -382,7 +370,7 @@ def test_hourly_dst_spring_forward(instance, workspace, external_repo):
         assert len(ticks) == 3
 
 
-def test_hourly_dst_fall_back(instance, workspace, external_repo):
+def test_hourly_dst_fall_back(instance, workspace_context, external_repo):
     # Verify that an hourly schedule still runs hourly during the fall DST transition
     # 12:30 AM CST
     freeze_datetime = to_timezone(
@@ -405,8 +393,7 @@ def test_hourly_dst_fall_back(instance, workspace, external_repo):
     with pendulum.test(freeze_datetime):
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -459,8 +446,7 @@ def test_hourly_dst_fall_back(instance, workspace, external_repo):
         # Verify idempotence
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -470,7 +456,7 @@ def test_hourly_dst_fall_back(instance, workspace, external_repo):
         assert len(ticks) == 4
 
 
-def test_daily_dst_spring_forward(instance, workspace, external_repo):
+def test_daily_dst_spring_forward(instance, workspace_context, external_repo):
     # Verify that a daily schedule still runs once per day during the spring DST transition
     # Night before DST
     freeze_datetime = to_timezone(
@@ -491,8 +477,7 @@ def test_daily_dst_spring_forward(instance, workspace, external_repo):
     with pendulum.test(freeze_datetime):
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -537,8 +522,7 @@ def test_daily_dst_spring_forward(instance, workspace, external_repo):
         # Verify idempotence
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -548,7 +532,7 @@ def test_daily_dst_spring_forward(instance, workspace, external_repo):
         assert len(ticks) == 3
 
 
-def test_daily_dst_fall_back(instance, workspace, external_repo):
+def test_daily_dst_fall_back(instance, workspace_context, external_repo):
     # Verify that a daily schedule still runs once per day during the fall DST transition
     # Night before DST
     freeze_datetime = to_timezone(
@@ -569,8 +553,7 @@ def test_daily_dst_fall_back(instance, workspace, external_repo):
     with pendulum.test(freeze_datetime):
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -615,8 +598,7 @@ def test_daily_dst_fall_back(instance, workspace, external_repo):
         # Verify idempotence
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -626,7 +608,7 @@ def test_daily_dst_fall_back(instance, workspace, external_repo):
         assert len(ticks) == 3
 
 
-def test_execute_during_dst_transition_spring_forward(instance, workspace, external_repo):
+def test_execute_during_dst_transition_spring_forward(instance, workspace_context, external_repo):
     # Verify that a daily schedule that is supposed to execute at a time that is skipped
     # by the DST transition does not execute for that day
     # Day before DST
@@ -650,8 +632,7 @@ def test_execute_during_dst_transition_spring_forward(instance, workspace, exter
     with pendulum.test(freeze_datetime):
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -703,8 +684,7 @@ def test_execute_during_dst_transition_spring_forward(instance, workspace, exter
         # Verify idempotence
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -714,7 +694,7 @@ def test_execute_during_dst_transition_spring_forward(instance, workspace, exter
         assert len(ticks) == 3
 
 
-def test_execute_during_dst_transition_fall_back(instance, workspace, external_repo):
+def test_execute_during_dst_transition_fall_back(instance, workspace_context, external_repo):
     # A schedule that runs daily during a time that occurs twice during a fall DST transition
     # only executes once for that day
     freeze_datetime = to_timezone(
@@ -737,8 +717,7 @@ def test_execute_during_dst_transition_fall_back(instance, workspace, external_r
     with pendulum.test(freeze_datetime):
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )
@@ -781,8 +760,7 @@ def test_execute_during_dst_transition_fall_back(instance, workspace, external_r
         # Verify idempotence
         list(
             launch_scheduled_runs(
-                instance,
-                workspace,
+                workspace_context,
                 logger(),
                 pendulum.now("UTC"),
             )

@@ -111,6 +111,9 @@ def test_backcompat_asset_materializations():
             b_mat = storage.get_latest_materialization_events([b]).get(b)
             _validate_materialization(b, b_mat)
 
+            b_mat = instance.get_latest_materialization_event(b)
+            _validate_materialization(b, b_mat)
+
             c_mat = storage.get_latest_materialization_events([c]).get(c)
             _validate_materialization(c, c_mat)
 
