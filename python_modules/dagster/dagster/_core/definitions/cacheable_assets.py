@@ -1,10 +1,12 @@
-from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Callable, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import frozendict, frozenlist, make_readonly_value
 
@@ -85,7 +87,7 @@ class AssetsDefinitionCacheableData(
         )
 
 
-class CacheableAssetsDefinition:
+class CacheableAssetsDefinition(ResourceAddable):
     def __init__(self, unique_id: str):
         self._unique_id = unique_id
 
@@ -104,3 +106,56 @@ class CacheableAssetsDefinition:
     ) -> Sequence[AssetsDefinition]:
         """For a given set of AssetsDefinitionMetadata, return a list of AssetsDefinitions"""
         raise NotImplementedError()
+
+    def with_resources(
+        self, resource_defs: Mapping[str, ResourceDefinition]
+    ) -> "CacheableAssetsDefinition":
+        return WrappedCacheableAssetsDefinition(
+            self._unique_id,
+            self,
+            lambda assets: AssetsDefinition.with_resources(assets, resource_defs),
+        )
+
+    def with_prefix_or_group(
+        self,
+        output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
+        input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
+        group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
+    ) -> "CacheableAssetsDefinition":
+        return WrappedCacheableAssetsDefinition(
+            self._unique_id,
+            self,
+            lambda assets: AssetsDefinition.with_prefix_or_group(
+                assets,
+                output_asset_key_replacements=output_asset_key_replacements,
+                input_asset_key_replacements=input_asset_key_replacements,
+                group_names_by_key=group_names_by_key,
+            ),
+        )
+
+
+class WrappedCacheableAssetsDefinition(CacheableAssetsDefinition):
+    """
+    Wraps an instance of CacheableAssetsDefinition and applies a function to the
+    generated AssetsDefinition objects. This lets e.g. users define resources on
+    the cacheable assets at repo creation time which are not actually bound until
+    the assets themselves are created.
+    """
+
+    def __init__(
+        self,
+        unique_id: str,
+        wrapped: CacheableAssetsDefinition,
+        fn: Callable[[AssetsDefinition], AssetsDefinition],
+    ):
+        super().__init__(unique_id)
+        self._wrapped = wrapped
+        self._fn = fn
+
+    def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
+        return self._wrapped.compute_cacheable_data()
+
+    def build_definitions(
+        self, data: Sequence[AssetsDefinitionCacheableData]
+    ) -> Sequence[AssetsDefinition]:
+        return [self._fn(assets) for assets in self._wrapped.build_definitions(data)]
