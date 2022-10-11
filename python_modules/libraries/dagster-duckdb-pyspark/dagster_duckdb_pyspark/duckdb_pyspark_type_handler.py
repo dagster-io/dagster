@@ -40,6 +40,8 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         row_count = obj.count()
+        print("HERE IT IS")
+        print(obj)
         obj.write.parquet(path=str(filepath), mode="overwrite")
 
         if not filepath.is_file():
