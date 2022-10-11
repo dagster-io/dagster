@@ -1,11 +1,14 @@
-from dagster import IOManager, io_manager, AssetIn, asset, with_resources, repository
-from .asset_input_managers import (
-    store_pandas_dataframe,
-    load_pandas_dataframe,
-    load_numpy_array,
-)
 import os
+
 import pandas as pd
+
+from dagster import AssetIn, IOManager, asset, io_manager, repository, with_resources
+
+from .asset_input_managers import (
+    load_numpy_array,
+    load_pandas_dataframe,
+    store_pandas_dataframe,
+)
 
 # start_numpy_example
 

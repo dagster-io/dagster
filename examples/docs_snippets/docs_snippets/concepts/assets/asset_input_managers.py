@@ -1,8 +1,6 @@
-import os
-
 import pandas as pd
 
-from dagster import AssetIn, IOManager, asset, io_manager, repository, with_resources
+from dagster import AssetIn, asset, repository, with_resources
 
 
 def store_pandas_dataframe(*_args, **_kwargs):
