@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import pytest
 from dagster_duckdb.io_manager import build_duckdb_io_manager
-from dagster_duckdb.type_handlers import DuckDBPandasTypeHandler, DuckDBParquetTypeHandler
+from dagster_duckdb.type_handlers import DuckDBPandasTypeHandler, DuckDBPySparkTypeHandler
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import SparkSession
 
@@ -103,7 +103,7 @@ def add_one_to_dataframe_spark():
 
 def test_duckdb_io_manager_with_ops_spark(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager(
-        [DuckDBPandasTypeHandler(), DuckDBParquetTypeHandler()]
+        [DuckDBPandasTypeHandler(), DuckDBPySparkTypeHandler()]
     )
     resource_defs = {
         "io_manager": duckdb_io_manager.configured(
@@ -131,7 +131,7 @@ def b_plus_one_spark(b_df_spark: pd.DataFrame):
 
 def test_duckdb_io_manager_with_assets_spark(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager(
-        [DuckDBPandasTypeHandler(), DuckDBParquetTypeHandler()]
+        [DuckDBPandasTypeHandler(), DuckDBPySparkTypeHandler()]
     )
     resource_defs = {
         "io_manager": duckdb_io_manager.configured(

@@ -729,6 +729,10 @@
             "path": "/_apidocs/libraries/dagster-docker"
           },
           {
+            "title": "DuckDB (dagster-duckdb)",
+            "path": "/_apidocs/libraries/dagster-duckdb"
+          },
+          {
             "title": "Fivetran (dagster-fivetran)",
             "path": "/_apidocs/libraries/dagster-fivetran"
           },

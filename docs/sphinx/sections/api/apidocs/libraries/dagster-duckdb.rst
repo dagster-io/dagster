@@ -10,4 +10,4 @@ This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ d
 
 .. autoclass:: DuckDBPandasTypeHandler
 
-.. autoclass:: DuckDBParquetTypeHandler
+.. autoclass:: DuckDBPySparkTypeHandler

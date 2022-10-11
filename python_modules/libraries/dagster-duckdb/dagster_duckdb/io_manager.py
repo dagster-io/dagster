@@ -4,7 +4,7 @@ from typing import Dict, Generic, Optional, Sequence, Type, TypeVar
 
 import duckdb
 
-from dagster import Field, IOManager, InputContext, OutputContext
+from dagster import Field, IOManager, IOManagerDefinition, InputContext, OutputContext
 from dagster import _check as check
 from dagster import io_manager
 from dagster._seven.temp_dir import get_system_temp_directory
@@ -128,7 +128,7 @@ class DuckDBIOManager(IOManager):
         )
 
 
-def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]):
+def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
 
@@ -149,7 +149,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]):
 
             duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
-            @job(resource_defs={'io_manager': duck_io_manager})
+            @job(resource_defs={'io_manager': duckdb_io_manager})
             def my_job():
                 ...
 

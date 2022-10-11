@@ -10,7 +10,22 @@ from .io_manager import DbTypeHandler
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler):
-    """Stores and loads Pandas DataFrames in DuckDB."""
+    """Stores and loads Pandas DataFrames in DuckDB.
+
+    To use this type handler, pass it to ``build_duckdb_io_manager``
+
+    Example:
+        .. code-block:: python
+
+            from dagster_duckdb import build_duckdb_io_manager, DuckDBPandasTypeHandler
+
+            duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+
+            @job(resource_defs={'io_manager': duckdb_io_manager})
+            def my_job():
+                ...
+
+    """
 
     import pandas as pd
 
@@ -70,9 +85,23 @@ class DuckDBPandasTypeHandler(DbTypeHandler):
         return Path(f"{base_path}/{'_'.join(path)}.csv")
 
 
-class DuckDBParquetTypeHandler(DbTypeHandler):
-    """Stores Parquet files in DuckDB.
+class DuckDBPySparkTypeHandler(DbTypeHandler):
+    """Stores PySpark DataFrames in DuckDB.
+
     **Note:** This type handler can only store outputs. It cannot currently load inputs.
+
+    To use this type handler, pass it to ``build_duckdb_io_manager``
+
+    Example:
+        .. code-block:: python
+
+            from dagster_duckdb import build_duckdb_io_manager, DuckDBPySparkTypeHandler
+
+            duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()])
+
+            @job(resource_defs={'io_manager': duckdb_io_manager})
+            def my_job():
+                ...
     """
 
     import pyspark
