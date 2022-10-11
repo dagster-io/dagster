@@ -36,7 +36,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         base_path: str,
     ):
         """Stores the given object at the provided filepath."""
-        filepath = self._get_path(context)
+        filepath = self._get_path(context, base_path=base_path)
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         row_count = obj.count()
@@ -52,7 +52,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
             f"select * from parquet_scan('{to_scan}');"
         )
 
-        context.add_output_metadata({"row_count": row_count, "path": filepath})
+        context.add_output_metadata({"row_count": row_count, "path": str(filepath)})
 
     def load_input(self, context: InputContext, conn: duckdb.DuckDBPyConnection):
         """Loads the return of the query as the correct type."""

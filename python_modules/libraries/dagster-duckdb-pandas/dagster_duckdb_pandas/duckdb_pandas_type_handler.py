@@ -52,7 +52,7 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             f"select * from '{filepath}';"
         )
 
-        context.add_output_metadata({"row_count": obj.shape[0], "path": filepath})
+        context.add_output_metadata({"row_count": obj.shape[0], "path": str(filepath)})
 
     def load_input(self, context: InputContext, conn: duckdb.DuckDBPyConnection) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
