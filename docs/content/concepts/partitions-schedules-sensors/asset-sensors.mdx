@@ -1,6 +1,6 @@
 ---
 title: Asset Sensors | Dagster
-description: Asset sensors allow you to instigate runs when materializations occur.
+description: Asset sensors allow you to instigate runs when asset materializations occur.
 ---
 
 # Asset Sensors
@@ -9,20 +9,21 @@ Asset sensors allow you to instigate runs when materializations occur.
 
 ## Relevant APIs
 
-| Name                                                      | Description                                                                                                                                                                                                                                                                                                                                                             |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="RunRequest" />                          | The sensor evaluation function can yield one or more run requests. Each run request creates a job run.                                                                                                                                                                                                                                                                  |
-| <PyObject object="SkipReason" />                          | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                                                                                                                                                                                            |
-| <PyObject object="asset_sensor" decorator />              | The decorator used to define an asset sensor. The decorated function is an evaluation function that takes in a <PyObject object="SensorEvaluationContext" /> and an asset materialization event. The decorator returns an <PyObject object="AssetSensorDefinition" />                                                                                                   |
-| <PyObject object="AssetSensorDefinition"  />              | A special sensor definition class for asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="asset_sensor" decorator /> which returns a <PyObject object="AssetSensorDefinition"  />                                                                                                                 |
-| <PyObject object="multi_asset_sensor" decorator />        | The decorator used to define an asset sensor that can monitor multiple assets at a time. The decorated function is an evaluation function that takes in a <PyObject object="MultiAssetSensorEvaluationContext" /> which has methods to fetch materialization events for the monitored assets. The decorator returns an <PyObject object="MultiAssetSensorDefinition" /> |
-| <PyObject object="MultiAssetSensorDefinition"  />         | A special sensor definition class for multi asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="multi_asset_sensor" decorator /> which returns a <PyObject object="MultiAssetSensorDefinition"  />                                                                                                |
-| <PyObject object="MultiSensorEvaluationContext"  />       | The context object passed to a multi asset sensor evaluation function. Has methods for fetching materialization events for assets                                                                                                                                                                                                                                       |
-| <PyObject object="build_multi_asset_sensor_context"    /> | A function that constructs an instance of <PyObject object="MultiAssetSensorEvaluationContext" />, This is intended to be used to test a multi asset sensor.                                                                                                                                                                                                            |
+| Name                                                       | Description                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="RunRequest" />                           | The sensor evaluation function can yield one or more run requests. Each run request creates a job run.                                                                                                                                                                                                                                                                  |
+| <PyObject object="SkipReason" />                           | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                                                                                                                                                                                            |
+| <PyObject object="asset_sensor" decorator />               | The decorator used to define an asset sensor. The decorated function is an evaluation function that takes in a <PyObject object="SensorEvaluationContext" /> and an asset materialization event. The decorator returns an <PyObject object="AssetSensorDefinition" />                                                                                                   |
+| <PyObject object="AssetSensorDefinition"  />               | A special sensor definition class for asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="asset_sensor" decorator /> which returns a <PyObject object="AssetSensorDefinition"  />                                                                                                                 |
+| <PyObject object="multi_asset_sensor" decorator />         | The decorator used to define an asset sensor that can monitor multiple assets at a time. The decorated function is an evaluation function that takes in a <PyObject object="MultiAssetSensorEvaluationContext" /> which has methods to fetch materialization events for the monitored assets. The decorator returns an <PyObject object="MultiAssetSensorDefinition" /> |
+| <PyObject object="MultiAssetSensorDefinition"  />          | A special sensor definition class for multi asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="multi_asset_sensor" decorator /> which returns a <PyObject object="MultiAssetSensorDefinition"  />                                                                                                |
+| <PyObject object="MultiSensorEvaluationContext"  />        | The context object passed to a multi asset sensor evaluation function. Has methods for fetching materialization events for assets                                                                                                                                                                                                                                       |
+| <PyObject object="build_multi_asset_sensor_context"    />  | A function that constructs an instance of <PyObject object="MultiAssetSensorEvaluationContext" />, This is intended to be used to test a multi asset sensor.                                                                                                                                                                                                            |
+| <PyObject object="build_asset_reconciliation_sensor"    /> | A function that constructs a sensor that will automatically keep a set of assets updated when their parents are materialized.                                                                                                                                                                                                                                           |
 
 ## Asset sensors
 
-A useful pattern is to create a sensor that checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
+An asset sensor checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
 
 One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job that caused it.
 
@@ -48,7 +49,7 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
     )
 ```
 
-## Multi-asset sensors <Experimental />
+## Multi-asset sensors (Experimental)
 
 ### Triggering runs upon materializations
 
@@ -153,16 +154,16 @@ At the end of each tick, the cursor object evaluates the set of consumed materia
 
 The events in `trailing_unconsumed_partitioned_event_ids` will appear in future context calls until they are marked as consumed via a call to `advance_cursor`. A call to `advance_all_cursors` will also mark all existing events as consumed.
 
-#### When any partitions are replaced
+#### When any partitions have new materializations
 
-The following example monitors two upstream daily-partitioned assets, kicking off materializations of the corresponding partition in the downstream daily-partitioned asset. After a partition has been materialized for both upstream assets, the downstream asset can then be materialized and the sensor kicks off a partitioned run. Replacing either upstream partition thereafter will yield a run request for the downstream asset.
+The following example monitors two upstream daily-partitioned assets, kicking off materializations of the corresponding partition in the downstream daily-partitioned asset. After a partition has been materialized for both upstream assets, the downstream asset can then be materialized and the sensor kicks off a partitioned run. Thereafter, whenever either upstream partition has a new materialization, the sensor will yield a run request for the downstream asset.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_multi_asset_sensor_OR endbefore=end_multi_asset_sensor_OR
 @multi_asset_sensor(
     asset_keys=[AssetKey("upstream_daily_1"), AssetKey("upstream_daily_2")],
     job=downstream_daily_job,
 )
-def trigger_daily_asset_when_any_upstream_partitions_replaced(context):
+def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(context):
     run_requests = []
     for (
         partition,
@@ -183,21 +184,73 @@ def trigger_daily_asset_when_any_upstream_partitions_replaced(context):
     return run_requests
 ```
 
-If the <PyObject object="PartitionsDefinition"/> of the monitored assets differs from the triggered asset, you can use the <PyObject object="MultiAssetSensorEvaluationContext" method="get_downstream_partition_keys"/> method to map a partition key from one asset to another. This method accepts a partition key from the upstream asset and uses the existing <PyObject object="PartitionMapping"/> object on the downstream asset to fetch the corresponding partitions in the downstream asset.
-
-If a partition mapping is not defined, Dagster will use the default partition mapping, which is the <PyObject object="TimeWindowPartitionMapping"/> for time window partitions definitions and the <PyObject object="IdentityPartitionMapping"/> for other partitions definitions. The <PyObject object="TimeWindowPartitionMapping"/> will map an upstream partition to the downstream partitions that overlap with it.
-
 <Note>
   Looking for more? The examples section features another{" "}
   <a href="#monitoring-daily-assets-to-materialize-a-weekly-asset">example</a>{" "}
   of updating a weekly asset when upstream daily assets are materialized.
 </Note>
 
+## Asset reconciliation sensor <Experimental />
+
+Dagster provides an out-of-box sensor that will monitor a provided set of assets and automatically materialize the assets if their upstream dependencies are materialized. You can create this sensor using the <PyObject object="build_asset_reconciliation_sensor"/> function. You can specify if the sensor should materialize an asset when **any** of its parent assets have been materialized or after **all** of its parent assets have been materialized. This sensor can help you keep your assets up-to-date without needing to write custom schedules or sensors for each asset. To use an asset reconciliation sensor, add it to your repository:
+
+```python file=/concepts/partitions_schedules_sensors/sensors/asset_reconciliation_sensor.py startafter=start_asset_reconciliation_sensor endbefore=end_asset_reconciliation_sensor
+@repository
+def repository_1():
+    return [
+        asset_a,
+        asset_b,
+        asset_c,
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(asset_b, asset_c),
+            name="asset_reconciliation_sensor",
+        ),
+    ]
+```
+
+This sensor will materialize `asset_b` whenever any of its parents materialize, and it will materialize `asset_c` whenever any of its parents materialize.
+
+By default the created sensor will materialize an asset in the `asset_selection` whenever any of its parents materialize. You can modify this behavior to wait until all parents have materialized:
+
+```python file=/concepts/partitions_schedules_sensors/sensors/asset_reconciliation_sensor.py startafter=start_asset_reconciliation_sensor_wait_for_upstream endbefore=end_asset_reconciliation_sensor_wait_for_upstream
+@repository
+def repository_2():
+    return [
+        asset_a,
+        asset_b,
+        asset_c,
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(asset_b, asset_c),
+            name="asset_reconciliation_sensor",
+            wait_for_all_upstream=True,
+        ),
+    ]
+```
+
+To try to avoid unnecessary materializations of assets, the reconciliation sensor will wait to materialize an asset if one of its parents is currently materializing. You can override this so that the sensor will materialize the asset even if a parent is currently materializing:
+
+```python file=/concepts/partitions_schedules_sensors/sensors/asset_reconciliation_sensor.py startafter=start_asset_reconciliation_sensor_wait_for_in_progress endbefore=end_asset_reconciliation_sensor_wait_for_in_progress
+@repository
+def repository_3():
+    return [
+        asset_a,
+        asset_b,
+        asset_c,
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(asset_b, asset_c),
+            name="asset_reconciliation_sensor",
+            wait_for_in_progress_runs=False,
+        ),
+    ]
+```
+
+**Note:** By default, the asset reconciliation sensor does not materialize any asset whose parent is currently materializing. To avoid a deadlock for an asset whose parents update frequently, you can set `wait_for_in_progress_runs=False` to kick off a materialization regardless of whether any run in progress exists for a parent asset.
+
 ## Examples
 
 ### Monitoring daily assets to materialize a weekly asset
 
-The following code example monitors an upstream daily-partitioned asset, kicking off materializations of a downstream weekly-partitioned asset whenever a daily partition is materialized and all daily partitions in the week have existing materializations. Every time a daily partition is replaced, the weekly partition will materialize.
+The following code example monitors an upstream daily-partitioned asset, kicking off materializations of a downstream weekly-partitioned asset whenever a daily partition is materialized and all daily partitions in the week have existing materializations. Every time a daily partition has a new materialization, the weekly partition will materialize.
 
 <PyObject
 object="MultiAssetSensorEvaluationContext"
@@ -205,6 +258,10 @@ method="all_partitions_materialized"
 /> is a utility method accepts a list of partitions and checks if every provided
 partition has been materialized. This method ignores the cursor, so it searches through
 all existing materializations.
+
+If the <PyObject object="PartitionsDefinition"/> of the monitored assets differs from the triggered asset, you can use the <PyObject object="MultiAssetSensorEvaluationContext" method="get_downstream_partition_keys"/> method to map a partition key from one asset to another. This method accepts a partition key from the upstream asset and uses the existing <PyObject object="PartitionMapping"/> object on the downstream asset to fetch the corresponding partitions in the downstream asset.
+
+If a partition mapping is not defined, Dagster will use the default partition mapping, which is the <PyObject object="TimeWindowPartitionMapping"/> for time window partitions definitions and the <PyObject object="IdentityPartitionMapping"/> for other partitions definitions. The <PyObject object="TimeWindowPartitionMapping"/> will map an upstream partition to the downstream partitions that overlap with it.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_daily_asset_to_weekly_asset endbefore=end_daily_asset_to_weekly_asset
 @multi_asset_sensor(asset_keys=[AssetKey("upstream_daily_1")], job=weekly_asset_job)

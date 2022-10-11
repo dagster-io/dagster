@@ -1,15 +1,3 @@
-from docs_snippets.concepts.partitions_schedules_sensors.sensors.asset_sensors import (
-    asset_a_and_b_sensor,
-    asset_a_and_b_sensor_with_skip_reason,
-    downstream_weekly_asset,
-    upstream_daily_1,
-    upstream_daily_2,
-    trigger_daily_asset_if_both_upstream_partitions_materialized,
-    trigger_daily_asset_when_any_upstream_partitions_replaced,
-    downstream_daily_asset,
-    trigger_weekly_asset_from_daily_asset,
-    downstream_weekly_asset,
-)
 from dagster import (
     AssetKey,
     DagsterInstance,
@@ -20,6 +8,17 @@ from dagster import (
     repository,
 )
 from dagster._core.test_utils import instance_for_test
+from docs_snippets.concepts.partitions_schedules_sensors.sensors.asset_sensors import (
+    asset_a_and_b_sensor,
+    asset_a_and_b_sensor_with_skip_reason,
+    downstream_daily_asset,
+    downstream_weekly_asset,
+    trigger_daily_asset_if_both_upstream_partitions_materialized,
+    trigger_daily_asset_when_any_upstream_partitions_have_new_materializations,
+    trigger_weekly_asset_from_daily_asset,
+    upstream_daily_1,
+    upstream_daily_2,
+)
 
 
 def test_asset_sensors():

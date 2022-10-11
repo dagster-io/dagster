@@ -189,7 +189,7 @@ def trigger_daily_asset_if_both_upstream_partitions_materialized(context):
     asset_keys=[AssetKey("upstream_daily_1"), AssetKey("upstream_daily_2")],
     job=downstream_daily_job,
 )
-def trigger_daily_asset_when_any_upstream_partitions_replaced(context):
+def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(context):
     run_requests = []
     for (
         partition,
