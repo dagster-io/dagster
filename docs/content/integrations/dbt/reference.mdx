@@ -259,9 +259,7 @@ def my_downstream_asset(my_dbt_model):
 
 #### Defining an I/O manager
 
-<TODO></TODO>
-
-- Add explanation for why this is required for downstream dependencies
+To materialize your dbt assets, you need to tell Dagster how to handle the assets' inputs and outputs. You can do this using an [I/O manager](/concepts/io-management/io-managers) manager.
 
 The implementation of your I/O manager depends on:
 
