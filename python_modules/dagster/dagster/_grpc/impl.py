@@ -3,7 +3,7 @@
 import os
 import sys
 from contextlib import ExitStack
-from typing import Generator, List, Optional, Sequence
+from typing import Generator, Optional, Sequence
 
 import pendulum
 
@@ -86,6 +86,14 @@ def core_execute_run(
 
     # try to load the pipeline definition early
     try:
+        # add in cached metadata to load repository more efficiently
+        if pipeline_run.has_repository_load_data:
+            execution_plan_snapshot = instance.get_execution_plan_snapshot(
+                pipeline_run.execution_plan_snapshot_id
+            )
+            recon_pipeline = recon_pipeline.with_repository_load_data(
+                execution_plan_snapshot.repository_load_data,
+            )
         recon_pipeline.get_definition()
     except Exception:
         yield instance.report_engine_event(
@@ -219,8 +227,8 @@ def start_run_in_subprocess(
 def get_external_pipeline_subset_result(
     repo_def: RepositoryDefinition,
     job_name: str,
-    solid_selection: Optional[List[str]],
-    asset_selection: Optional[List[AssetKey]],
+    solid_selection: Optional[Sequence[str]],
+    asset_selection: Optional[Sequence[AssetKey]],
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
@@ -407,6 +415,7 @@ def get_external_execution_plan_snapshot(
                 step_keys_to_execute=args.step_keys_to_execute,
                 known_state=args.known_state,
                 instance_ref=args.instance_ref,
+                repository_load_data=repo_def.repository_load_data,
             ),
             args.pipeline_snapshot_id,
         )

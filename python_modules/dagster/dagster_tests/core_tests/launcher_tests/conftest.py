@@ -24,3 +24,17 @@ def workspace(instance):
         ),
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
+
+
+@pytest.fixture(scope="module")
+def pending_workspace(instance):
+    with WorkspaceProcessContext(
+        instance,
+        PythonFileTarget(
+            python_file=file_relative_path(__file__, "pending_repository.py"),
+            attribute="pending",
+            working_directory=None,
+            location_name="test2",
+        ),
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()

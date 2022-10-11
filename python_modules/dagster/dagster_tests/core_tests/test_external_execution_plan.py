@@ -5,14 +5,26 @@ import re
 import pytest
 
 from dagster import (
+    AssetKey,
+    AssetsDefinition,
     DagsterEventType,
     DagsterExecutionStepNotFoundError,
     DependencyDefinition,
     Int,
+    asset,
+    define_asset_job,
+    file_relative_path,
+    op,
     reconstructable,
+    repository,
+)
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
 )
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.execution.api import execute_plan
+from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
@@ -256,3 +268,98 @@ def test_using_file_system_for_subplan_invalid_step():
             instance,
             pipeline_run=pipeline_run,
         )
+
+
+def test_using_repository_data():
+    with instance_for_test() as instance:
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = pending_repo.compute_repository_definition()
+        pipeline_def = repository_def.get_job("all_asset_job")
+        repository_load_data = repository_def.repository_load_data
+
+        assert (
+            instance.run_storage.kvs_get({"get_definitions_called"}).get("get_definitions_called")
+            == "1"
+        )
+
+        recon_repo = ReconstructableRepository.for_file(
+            file_relative_path(__file__, "test_external_execution_plan.py"), fn_name="pending_repo"
+        )
+        recon_pipeline = ReconstructablePipeline(
+            repository=recon_repo, pipeline_name="all_asset_job"
+        )
+
+        execution_plan = create_execution_plan(
+            recon_pipeline, repository_load_data=repository_load_data
+        )
+
+        # need to get the definitions from metadata when creating the plan
+        assert (
+            instance.run_storage.kvs_get({"get_definitions_called"}).get("get_definitions_called")
+            == "2"
+        )
+
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def, execution_plan=execution_plan
+        )
+
+        execute_plan(
+            execution_plan=execution_plan,
+            pipeline=recon_pipeline,
+            pipeline_run=pipeline_run,
+            instance=instance,
+        )
+
+        assert (
+            instance.run_storage.kvs_get({"compute_cacheable_data_called"}).get(
+                "compute_cacheable_data_called"
+            )
+            == "1"
+        )
+        # should not have needed to get_definitions again after creating the plan
+        assert (
+            instance.run_storage.kvs_get({"get_definitions_called"}).get("get_definitions_called")
+            == "2"
+        )
+
+
+class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
+    _cacheable_data = AssetsDefinitionCacheableData(keys_by_output_name={"result": AssetKey("foo")})
+
+    def compute_cacheable_data(self):
+        # used for tracking how many times this function gets called over an execution
+        instance = DagsterInstance.get()
+        kvs_key = "compute_cacheable_data_called"
+        compute_cacheable_data_called = int(
+            instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0")
+        )
+        instance.run_storage.kvs_set({kvs_key: str(compute_cacheable_data_called + 1)})
+        return [self._cacheable_data]
+
+    def build_definitions(self, data):
+        assert len(data) == 1
+        assert data == [self._cacheable_data]
+
+        # used for tracking how many times this function gets called over an execution
+        instance = DagsterInstance.get()
+        kvs_key = "get_definitions_called"
+        get_definitions_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
+        instance.run_storage.kvs_set({kvs_key: str(get_definitions_called + 1)})
+
+        @op
+        def _op():
+            return 1
+
+        return [
+            AssetsDefinition.from_op(_op, keys_by_output_name=cd.keys_by_output_name) for cd in data
+        ]
+
+
+@asset
+def bar(foo):
+    return foo + 1
+
+
+@repository
+def pending_repo():
+    return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]

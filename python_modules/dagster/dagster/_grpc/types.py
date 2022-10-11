@@ -1,4 +1,4 @@
-from typing import Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional
+from typing import Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -425,26 +425,26 @@ class PipelineSubsetSnapshotArgs(
         "_PipelineSubsetSnapshotArgs",
         [
             ("pipeline_origin", ExternalPipelineOrigin),
-            ("solid_selection", Optional[List[str]]),
-            ("asset_selection", Optional[List[AssetKey]]),
+            ("solid_selection", Optional[Sequence[str]]),
+            ("asset_selection", Optional[Sequence[AssetKey]]),
         ],
     )
 ):
     def __new__(
         cls,
         pipeline_origin: ExternalPipelineOrigin,
-        solid_selection: List[str],
-        asset_selection: Optional[List[AssetKey]] = None,
+        solid_selection: Sequence[str],
+        asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
         return super(PipelineSubsetSnapshotArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
                 pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
             ),
-            solid_selection=check.list_param(solid_selection, "solid_selection", of_type=str)
+            solid_selection=check.sequence_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,
-            asset_selection=check.opt_list_param(
+            asset_selection=check.opt_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
         )

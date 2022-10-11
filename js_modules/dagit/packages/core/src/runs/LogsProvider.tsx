@@ -192,11 +192,28 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
   const {nodes, counts, cursor, loading} = state;
 
+  const {availability, disabled, status} = React.useContext(WebSocketContext);
+  const lostWebsocket = !disabled && availability === 'available' && status === WebSocket.CLOSED;
+  const currentInitialCursorRef = React.useRef<string | null>(cursor);
+
+  if (lostWebsocket) {
+    // Record the cursor we're at when disconnecting so that our subscription
+    // picks up where we left off.
+    currentInitialCursorRef.current = cursor;
+  }
+  const currentInitialCursor = currentInitialCursorRef.current;
+
+  const variables = React.useMemo(() => {
+    return {
+      runId,
+      cursor: currentInitialCursor,
+    };
+  }, [runId, currentInitialCursor]);
+
   const subscriptionComponent = React.useMemo(
     () => (
       <SubscriptionComponent
-        runId={runId}
-        cursor={cursor}
+        variables={variables}
         onSubscriptionData={({subscriptionData}) => {
           const logs = subscriptionData.data?.pipelineRunLogs;
           if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
@@ -211,7 +228,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
         }}
       />
     ),
-    [runId, cursor, throttledSetNodes],
+    [variables, throttledSetNodes],
   );
 
   return React.useMemo(
@@ -229,19 +246,20 @@ const useLogsProviderWithSubscription = (runId: string) => {
  * https://stackoverflow.com/questions/61876931/how-to-prevent-re-rendering-with-usesubscription
  */
 const SubscriptionComponent = ({
-  runId,
-  cursor,
+  variables,
   onSubscriptionData,
 }: {
-  runId: string;
-  cursor: string | null;
+  variables: {
+    runId: string;
+    cursor: string | null;
+  };
   onSubscriptionData: (options: OnSubscriptionDataOptions<PipelineRunLogsSubscription>) => void;
 }) => {
   useSubscription<PipelineRunLogsSubscription, PipelineRunLogsSubscriptionVariables>(
     PIPELINE_RUN_LOGS_SUBSCRIPTION,
     {
       fetchPolicy: 'no-cache',
-      variables: {runId, cursor},
+      variables,
       onSubscriptionData,
     },
   );

@@ -25,6 +25,7 @@ from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
     MetadataEntry,
+    MetadataMapping,
     MetadataValue,
     PartitionMetadataEntry,
     RawMetadataValue,
@@ -481,6 +482,12 @@ class AssetMaterialization(
             metadata={"path": MetadataValue.path(path)},
         )
 
+    @public  # type: ignore
+    @property
+    def metadata(self) -> MetadataMapping:
+        # PartitionMetadataEntry (unstable API) case is unhandled
+        return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
+
 
 class MaterializationSerializer(DefaultNamedTupleSerializer):
     @classmethod
@@ -716,7 +723,7 @@ class Failure(Exception):
         self,
         description: Optional[str] = None,
         metadata_entries: Optional[List[MetadataEntry]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         allow_retries: Optional[bool] = None,
     ):
         metadata_entries = check.opt_list_param(

@@ -41,7 +41,7 @@ if __name__ == "__main__":
         extras_require={
             "yarn": ["dask-yarn"],
             "pbs": ["dask-jobqueue"],
-            "kube": ["dask-kubernetes"],
+            "kube": ["dask-kubernetes<=2022.9.0"],
             # we need `pyarrow` for testing read/write parquet files.
             "test": ["pyarrow"],
         },

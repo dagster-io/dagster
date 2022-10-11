@@ -564,11 +564,3 @@ dt > a.reference.internal {
 .ais-SearchBox-input {
   width: 100%;
 }
-
-pre[class="noop"] {
-    background-color: transparent;
-    padding: 0 !important;
-    border: none !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-}

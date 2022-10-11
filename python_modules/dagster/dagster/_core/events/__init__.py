@@ -559,6 +559,11 @@ class DagsterEvent(
 
     @public  # type: ignore
     @property
+    def is_resource_init_failure(self) -> bool:
+        return self.event_type == DagsterEventType.RESOURCE_INIT_FAILURE
+
+    @public  # type: ignore
+    @property
     def is_step_skipped(self) -> bool:
         return self.event_type == DagsterEventType.STEP_SKIPPED
 

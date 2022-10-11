@@ -407,7 +407,8 @@ def test_linear_backoff():
     def linear_backoff():
         throws.with_retry_policy(RetryPolicy(max_retries=3, delay=delay, backoff=Backoff.LINEAR))()
 
-    execute_pipeline(linear_backoff)
+    result = execute_pipeline(linear_backoff, raise_on_error=False)
+    assert not result.success
     assert len(logged_times) == 4
     assert (logged_times[1] - logged_times[0]) > delay
     assert (logged_times[2] - logged_times[1]) > (delay * 2)
@@ -429,7 +430,8 @@ def test_expo_backoff():
             RetryPolicy(max_retries=3, delay=delay, backoff=Backoff.EXPONENTIAL)
         )()
 
-    execute_pipeline(expo_backoff)
+    result = execute_pipeline(expo_backoff, raise_on_error=False)
+    assert not result.success
     assert len(logged_times) == 4
     assert (logged_times[1] - logged_times[0]) > delay
     assert (logged_times[2] - logged_times[1]) > (delay * 3)

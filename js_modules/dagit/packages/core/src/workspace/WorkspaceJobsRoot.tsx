@@ -6,7 +6,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -137,28 +136,4 @@ export const WORKSPACE_JOBS_QUERY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const RECENT_RUNS_PER_JOB_QUERY = gql`
-  query RecentRunsPerJobQuery($selector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $selector) {
-      ... on Repository {
-        id
-        name
-        pipelines {
-          id
-          name
-          isJob
-          runs(limit: 5) {
-            id
-            ...RunTimeFragment
-          }
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
-  ${RUN_TIME_FRAGMENT}
 `;

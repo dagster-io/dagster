@@ -50,6 +50,7 @@ def test_get_repository_location():
         process_context=mock.MagicMock(),
         version=None,
         source=None,
+        read_only=True,
     )
 
     assert context.get_repository_location("loaded_loc") == mock_loc

@@ -1,4 +1,15 @@
-import {Box, Colors, Popover, Mono, FontFamily, Tooltip, Tag, Icon, Spinner} from '@dagster-io/ui';
+import {
+  Box,
+  Colors,
+  Popover,
+  Mono,
+  FontFamily,
+  Tooltip,
+  Tag,
+  Icon,
+  Spinner,
+  MiddleTruncate,
+} from '@dagster-io/ui';
 import moment from 'moment-timezone';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -24,8 +35,9 @@ import {mergeStatusToBackground} from './mergeStatusToBackground';
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;
 const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
-const EMPTY_STATE_HEIGHT = 140;
-const LABEL_WIDTH = 320;
+const EMPTY_STATE_HEIGHT = 66;
+const LEFT_SIDE_SPACE_ALLOTTED = 320;
+const LABEL_WIDTH = 268;
 const MIN_DATE_WIDTH_PCT = 10;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
@@ -87,9 +99,11 @@ export const RunTimeline = (props: Props) => {
   const includesTicks = now <= end;
 
   if (!bucketByRepo) {
+    const anyJobs = jobs.length > 0;
     const height = ROW_HEIGHT * jobs.length;
+    const timelineHeight = DATE_TIME_HEIGHT + (anyJobs ? height : EMPTY_STATE_HEIGHT);
     return (
-      <Timeline $height={DATE_TIME_HEIGHT + height} ref={containerRef}>
+      <Timeline $height={timelineHeight} ref={containerRef}>
         <Box
           padding={{left: 24}}
           flex={{direction: 'column', justifyContent: 'center'}}
@@ -98,7 +112,7 @@ export const RunTimeline = (props: Props) => {
         >
           Jobs
         </Box>
-        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
+        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
         <div>
           {jobs.length ? (
             jobs.map((job, ii) => (
@@ -139,9 +153,11 @@ export const RunTimeline = (props: Props) => {
   const duplicateRepoNames = findDuplicateRepoNames(
     repoOrder.map((repoKey) => repoAddressFromPath(repoKey)?.name || ''),
   );
+  const anyJobs = repoOrder.length > 0;
+  const timelineHeight = DATE_TIME_HEIGHT + (anyJobs ? height : EMPTY_STATE_HEIGHT);
 
   return (
-    <Timeline $height={DATE_TIME_HEIGHT + height} ref={containerRef}>
+    <Timeline $height={timelineHeight} ref={containerRef}>
       <Box
         padding={{left: 24}}
         flex={{direction: 'column', justifyContent: 'center'}}
@@ -150,7 +166,7 @@ export const RunTimeline = (props: Props) => {
       >
         Jobs
       </Box>
-      <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
+      <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
       {repoOrder.length ? (
         repoOrder.map((repoKey) => {
           const name = repoAddressFromPath(repoKey)?.name;
@@ -428,7 +444,7 @@ const TimeDividers = (props: TimeDividersProps) => {
 const DividerContainer = styled.div`
   position: absolute;
   top: 0;
-  left: ${LABEL_WIDTH}px;
+  left: ${LEFT_SIDE_SPACE_ALLOTTED}px;
   right: 0;
   font-family: ${FontFamily.monospace};
   color: ${Colors.Gray800};
@@ -491,7 +507,7 @@ const NowMarker = styled.div`
 `;
 
 const MIN_CHUNK_WIDTH = 2;
-const MIN_WIDTH_FOR_MULTIPLE = 16;
+const MIN_WIDTH_FOR_MULTIPLE = 12;
 
 const RunTimelineRow = ({
   job,
@@ -504,9 +520,8 @@ const RunTimelineRow = ({
   range: [number, number];
   width: number;
 }) => {
-  // const {jobKey, jobLabel, jobPath, runs, top, range, width: containerWidth} = props;
   const [start, end] = range;
-  const width = containerWidth - LABEL_WIDTH;
+  const width = containerWidth - LEFT_SIDE_SPACE_ALLOTTED;
   const {runs} = job;
 
   // Batch overlapping runs in this row.
@@ -531,11 +546,17 @@ const RunTimelineRow = ({
     <Row $top={top}>
       <JobName>
         <Icon name={job.jobType === 'asset' ? 'asset' : 'job'} />
-        {job.jobType === 'asset' ? (
-          <span style={{color: Colors.Gray900}}>{job.jobName}</span>
-        ) : (
-          <Link to={job.path}>{job.jobName}</Link>
-        )}
+        <div style={{width: LABEL_WIDTH}}>
+          {job.jobType === 'asset' ? (
+            <span style={{color: Colors.Gray900}}>
+              <MiddleTruncate text={job.jobName} />
+            </span>
+          ) : (
+            <Link to={job.path}>
+              <MiddleTruncate text={job.jobName} />
+            </Link>
+          )}
+        </div>
       </JobName>
       <RunChunks>
         {batched.map((batch) => {
@@ -594,6 +615,7 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
 
   return (
     <Box
+      background={Colors.White}
       padding={{vertical: 24}}
       flex={{direction: 'row', justifyContent: 'center'}}
       border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
@@ -642,7 +664,6 @@ const JobName = styled.div`
   padding: 0 12px 0 24px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  width: ${LABEL_WIDTH}px;
 `;
 
 const RunChunks = styled.div`
