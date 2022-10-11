@@ -18,7 +18,7 @@ from typing import (
 
 import yaml
 from dagster_airbyte.resources import AirbyteResource
-from dagster_airbyte.types import AirbyteStreamMetadata
+from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import generate_materializations, generate_table_schema
 
 from dagster import AssetKey, AssetOut, Output, ResourceDefinition
@@ -279,7 +279,7 @@ def _get_sub_schemas(schema: Mapping[str, Any]) -> List[Mapping[str, Any]]:
 
 def _get_normalization_tables_for_schema(
     key: str, schema: Mapping[str, Any], prefix: str = ""
-) -> Dict[str, AirbyteStreamMetadata]:
+) -> Dict[str, AirbyteTableMetadata]:
     """
     Recursively traverses a schema, returning a list of table names that will be created by the Airbyte
     normalization process.
@@ -291,7 +291,7 @@ def _get_normalization_tables_for_schema(
     https://docs.airbyte.com/understanding-airbyte/basic-normalization/#nesting
     """
 
-    out: Dict[str, AirbyteStreamMetadata] = {}
+    out: Dict[str, AirbyteTableMetadata] = {}
     # Object types are broken into a new table, as long as they have children
 
     sub_schemas = _get_sub_schemas(schema)
@@ -302,7 +302,7 @@ def _get_normalization_tables_for_schema(
             continue
 
         if "object" in schema_types and len(sub_schema.get("properties", {})) > 0:
-            out[prefix + key] = AirbyteStreamMetadata(
+            out[prefix + key] = AirbyteTableMetadata(
                 schema=generate_table_schema(sub_schema.get("properties", {}))
             )
             for k, v in sub_schema["properties"].items():
@@ -311,7 +311,7 @@ def _get_normalization_tables_for_schema(
                 )
         # Array types are also broken into a new table
         elif "array" in schema_types:
-            out[prefix + key] = AirbyteStreamMetadata(
+            out[prefix + key] = AirbyteTableMetadata(
                 schema=generate_table_schema(sub_schema.get("items", {}).get("properties", {}))
             )
             if sub_schema.get("items", {}).get("properties"):
@@ -388,14 +388,14 @@ class AirbyteConnection(
 
     def parse_stream_tables(
         self, return_normalization_tables: bool = False
-    ) -> Mapping[str, AirbyteStreamMetadata]:
+    ) -> Mapping[str, AirbyteTableMetadata]:
         """
         Parses the stream data and returns a mapping, with keys representing destination
         tables associated with each enabled stream and values representing any affiliated
         tables created by Airbyte's normalization process, if enabled.
         """
 
-        tables: Dict[str, AirbyteStreamMetadata] = {}
+        tables: Dict[str, AirbyteTableMetadata] = {}
 
         enabled_streams = [
             stream for stream in self.stream_data if stream.get("config", {}).get("selected", False)
@@ -410,7 +410,7 @@ class AirbyteConnection(
                 if "json_schema" in stream["stream"]
                 else stream["stream"]["jsonSchema"]
             )
-            normalization_tables: Dict[str, AirbyteStreamMetadata] = {}
+            normalization_tables: Dict[str, AirbyteTableMetadata] = {}
             if self.has_basic_normalization and return_normalization_tables:
                 for k, v in schema["properties"].items():
                     for normalization_table_name, meta in _get_normalization_tables_for_schema(
@@ -418,7 +418,7 @@ class AirbyteConnection(
                     ).items():
                         prefixed_norm_table_name = f"{self.stream_prefix}{normalization_table_name}"
                         normalization_tables[prefixed_norm_table_name] = meta
-            tables[prefixed_name] = AirbyteStreamMetadata(
+            tables[prefixed_name] = AirbyteTableMetadata(
                 schema=generate_table_schema(schema["properties"]),
                 normalization_tables=normalization_tables,
             )
@@ -427,7 +427,7 @@ class AirbyteConnection(
 
 
 def _get_schema_by_table_name(
-    stream_table_metadata: Mapping[str, AirbyteStreamMetadata]
+    stream_table_metadata: Mapping[str, AirbyteTableMetadata]
 ) -> Dict[str, TableSchema]:
 
     schema_by_base_table_name = [(k, v.schema) for k, v in stream_table_metadata.items()]
@@ -437,7 +437,7 @@ def _get_schema_by_table_name(
                 [
                     (k, v.schema)
                     for k, v in cast(
-                        Dict[str, AirbyteStreamMetadata], meta.normalization_tables
+                        Dict[str, AirbyteTableMetadata], meta.normalization_tables
                     ).items()
                 ]
                 for meta in stream_table_metadata.values()
