@@ -34,6 +34,8 @@ Dagster has built-in support for loading dbt models, seeds, and snapshots as sof
 
 In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a [DuckDB database](https://duckdb.org/).
 
+By the end of the tutorial, you'll have a working dbt and Dagster integration and a handful of materialized Dagster assets, including a plotly chart powered by data computed from your dbt models.
+
 <ArticleList>
   <ArticleListItem
     title="Overview and prerequisites"
@@ -44,15 +46,15 @@ In this tutorial, we'll walk you through integrating dbt with Dagster using dbt'
     href="/integrations/dbt/using-dbt-with-dagster/part-one"
   ></ArticleListItem>
   <ArticleListItem
-    title="Part two: Create Dagster assets upstream of the dbt models"
+    title="Part two: Load dbt models as Dagster assets"
     href="/integrations/dbt/using-dbt-with-dagster/part-two"
   ></ArticleListItem>
   <ArticleListItem
-    title="Part three: Materialize the assets using Dagit"
+    title="Part three: Create and materialize upstream Dagster assets"
     href="/integrations/dbt/using-dbt-with-dagster/part-three"
   ></ArticleListItem>
   <ArticleListItem
-    title="Part four: Create a downstream asset"
+    title="Part four: Create and materialize a downstream asset"
     href="/integrations/dbt/using-dbt-with-dagster/part-four"
   ></ArticleListItem>
 </ArticleList>
