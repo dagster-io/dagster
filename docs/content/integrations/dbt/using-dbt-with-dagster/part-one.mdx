@@ -68,17 +68,29 @@ The folder structure should now be similar to the following:
 
 In this step, you'll add a DuckDB profile to the dbt project. This will allow you to connect dbt to the DuckDB database.
 
-In our example code (viewable [here](TODO)), we've created this file in `/dbt_dagster_tutorial/jaffle_shop/config/profiles.yml`:
+1. Navigate into the `jaffle_shop` folder:
 
-```yaml file=../../dbt_dagster_tutorial/jaffle_shop/config/profiles.yml
-jaffle_shop:
-  target: local
-  outputs:
-    local:
-      type: duckdb
-      path: tutorial.duckdb
-      schema: jaffle_shop
-```
+   ```shell
+   cd jaffle_shop
+   ```
+
+2. Create a folder named `config`:
+
+   ```shell
+   mkdir config
+   ```
+
+3. In the `config` folder, create a `profile.yml` file that contains the following:
+
+   ```yaml file=../../dbt_dagster_tutorial/jaffle_shop/config/profiles.yml
+   jaffle_shop:
+     target: local
+     outputs:
+       local:
+         type: duckdb
+         path: tutorial.duckdb
+         schema: jaffle_shop
+   ```
 
 ---
 
