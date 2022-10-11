@@ -192,7 +192,7 @@ def test_basic(
             test_project_dir, dbt_config_dir, use_build_command=use_build
         )
 
-    assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project"
+    assert dbt_assets[0].op.name == "run_dbt_5ad73"
 
     result = build_assets_job(
         "test_job",
@@ -336,7 +336,7 @@ def test_select_from_project(
         for suffix in (["sort_by_calories"], ["subdir_schema", "least_caloric"])
     }
 
-    assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project_e4753"
+    assert dbt_assets[0].op.name == "run_dbt_5ad73_e4753"
 
     result = build_assets_job(
         "test_job",

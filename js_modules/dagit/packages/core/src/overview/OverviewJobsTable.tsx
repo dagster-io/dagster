@@ -1,8 +1,8 @@
-import {Tag, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {Container, Inner} from '../ui/VirtualizedTable';
+import {Container, HeaderCell, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {VirtualizedJobRow} from '../workspace/VirtualizedJobRow';
@@ -62,40 +62,60 @@ export const OverviewJobsTable: React.FC<Props> = ({repos}) => {
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <Container ref={parentRef}>
-      <Inner $totalHeight={totalHeight}>
-        {items.map(({index, key, size, start}) => {
-          const row: RowType = flattened[index];
-          const type = row!.type;
-          return type === 'header' ? (
-            <RepoRow
-              repoAddress={row.repoAddress}
-              key={key}
-              height={size}
-              start={start}
-              onToggle={onToggle}
-              showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-              rightElement={
-                <Tooltip
-                  content={row.jobCount === 1 ? '1 job' : `${row.jobCount} jobs`}
-                  placement="top"
-                >
-                  <Tag intent="primary">{row.jobCount}</Tag>
-                </Tooltip>
-              }
-            />
-          ) : (
-            <VirtualizedJobRow
-              key={key}
-              name={row.name}
-              isJob={row.isJob}
-              repoAddress={row.repoAddress}
-              height={size}
-              start={start}
-            />
-          );
-        })}
-      </Inner>
-    </Container>
+    <>
+      <Box
+        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '34% 30% 20% 8% 8%',
+          height: '32px',
+          fontSize: '12px',
+          color: Colors.Gray600,
+        }}
+      >
+        <HeaderCell>Job name</HeaderCell>
+        <HeaderCell>Schedules/sensors</HeaderCell>
+        <HeaderCell>Latest run</HeaderCell>
+        <HeaderCell>Run history</HeaderCell>
+        <HeaderCell>Actions</HeaderCell>
+      </Box>
+      <div style={{overflow: 'hidden'}}>
+        <Container ref={parentRef}>
+          <Inner $totalHeight={totalHeight}>
+            {items.map(({index, key, size, start}) => {
+              const row: RowType = flattened[index];
+              const type = row!.type;
+              return type === 'header' ? (
+                <RepoRow
+                  repoAddress={row.repoAddress}
+                  key={key}
+                  height={size}
+                  start={start}
+                  onToggle={onToggle}
+                  showLocation={duplicateRepoNames.has(row.repoAddress.name)}
+                  rightElement={
+                    <Tooltip
+                      content={row.jobCount === 1 ? '1 job' : `${row.jobCount} jobs`}
+                      placement="top"
+                    >
+                      <Tag intent="primary">{row.jobCount}</Tag>
+                    </Tooltip>
+                  }
+                />
+              ) : (
+                <VirtualizedJobRow
+                  key={key}
+                  name={row.name}
+                  isJob={row.isJob}
+                  repoAddress={row.repoAddress}
+                  height={size}
+                  start={start}
+                />
+              );
+            })}
+          </Inner>
+        </Container>
+      </div>
+    </>
   );
 };

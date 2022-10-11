@@ -1,7 +1,7 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, cast
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr, experimental, public
 from dagster._serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 # ########################
@@ -119,6 +119,17 @@ class TableSchema(
             constraints=check.opt_inst_param(
                 constraints, "constraints", TableConstraints, default=_DEFAULT_TABLE_CONSTRAINTS
             ),
+        )
+
+    @public
+    @staticmethod
+    def from_name_type_dict(name_type_dict: Mapping[str, str]):
+        """
+        Constructs a TableSchema from a dictionary whose keys are column names and values are the
+        names of data types of those columns.
+        """
+        return TableSchema(
+            columns=[TableColumn(name=name, type=type) for name, type in name_type_dict.items()]
         )
 
 

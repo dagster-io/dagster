@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from typing import Any, Dict, Optional
 
@@ -36,6 +37,18 @@ class DagsterHook(BaseHook):
                 "host": "prod",
             },
         }
+
+    def get_conn(self) -> None:
+        pass
+
+    def get_pandas_df(self, _sql) -> None:
+        pass
+
+    def get_records(self, _sql) -> None:
+        pass
+
+    def run(self, _sql) -> None:
+        pass
 
     def __init__(
         self,
@@ -91,7 +104,7 @@ class DagsterHook(BaseHook):
         repository_name: str = "my_dagster_project",
         repostitory_location_name: str = "example_location",
         job_name: str = "all_assets_job",
-        run_config: Optional[Dict[str, Any]] = {},
+        run_config: Optional[Dict[str, Any]] = None,
     ) -> str:
         query = """
 mutation LaunchJobExecution($executionParams: ExecutionParams!) {
@@ -136,7 +149,7 @@ fragment PythonErrorFragment on PythonError {
         """
         variables = {
             "executionParams": {
-                "runConfigData": json.dumps(run_config),
+                "runConfigData": json.dumps({} if run_config == None else run_config),
                 "selector": {
                     "repositoryName": repository_name,
                     "repositoryLocationName": repostitory_location_name,
@@ -154,7 +167,7 @@ fragment PythonErrorFragment on PythonError {
         response_json = response.json()
         if response_json["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess":
             run = response_json["data"]["launchPipelineExecution"]["run"]
-            print(f"Run {run['id']} launched successfully")
+            logging.info(f"Run {run['id']} launched successfully")
             return run["id"]
         else:
             raise AirflowException(
@@ -215,7 +228,7 @@ fragment PythonErrorFragment on PythonError {
                 )
 
             if status == PipelineRunStatus.SUCCESS.value:
-                print(f"Run {run_id} completed successfully")
+                logging.info(f"Run {run_id} completed successfully")
             elif status == PipelineRunStatus.FAILURE.value:
                 raise AirflowException(f"Run {run_id} failed")
             elif status == PipelineRunStatus.CANCELED.value:

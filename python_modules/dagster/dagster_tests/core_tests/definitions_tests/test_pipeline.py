@@ -3,19 +3,15 @@ import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
     DependencyDefinition,
+    GraphDefinition,
+    In,
     Int,
+    Out,
     Output,
+    graph,
+    job,
+    op,
     usable_as_dagster_type,
-)
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    composite_solid,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
 )
 
 
@@ -23,51 +19,51 @@ def builder(graph):
     return graph.add_one(graph.return_one())
 
 
-@lambda_solid
+@op
 def return_one():
     return 1
 
 
-@lambda_solid
+@op
 def return_two():
     return 2
 
 
-@lambda_solid
+@op
 def return_three():
     return 3
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@op(ins={"num": In()})
 def add_one(num):
     return num + 1
 
 
 def test_basic_use_case():
-    pipeline_def = PipelineDefinition(
+    graph_def = GraphDefinition(
         name="basic",
-        solid_defs=[return_one, add_one],
+        node_defs=[return_one, add_one],
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
 
-    assert execute_pipeline(pipeline_def).result_for_solid("add_one").output_value() == 2
+    assert graph_def.execute_in_process().output_for_node("add_one") == 2
 
 
 def test_basic_use_case_with_dsl():
-    @pipeline
+    @job
     def test():
         add_one(num=return_one())
 
-    assert execute_pipeline(test).result_for_solid("add_one").output_value() == 2
+    assert test.execute_in_process().output_for_node("add_one") == 2
 
 
 def test_two_inputs_without_dsl():
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @op(ins={"num_one": In(), "num_two": In()})
     def subtract(num_one, num_two):
         return num_one - num_two
 
-    pipeline_def = PipelineDefinition(
-        solid_defs=[subtract, return_two, return_three],
+    graph_def = GraphDefinition(
+        node_defs=[subtract, return_two, return_three],
         name="test",
         dependencies={
             "subtract": {
@@ -77,95 +73,90 @@ def test_two_inputs_without_dsl():
         },
     )
 
-    assert execute_pipeline(pipeline_def).result_for_solid("subtract").output_value() == -1
+    assert graph_def.execute_in_process().output_for_node("subtract") == -1
 
 
 def test_two_inputs_with_dsl():
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @op(ins={"num_one": In(), "num_two": In()})
     def subtract(num_one, num_two):
         return num_one - num_two
 
-    @pipeline
+    @job
     def test():
         subtract(num_one=return_two(), num_two=return_three())
 
-    assert execute_pipeline(test).result_for_solid("subtract").output_value() == -1
+    assert test.execute_in_process().output_for_node("subtract") == -1
 
 
 def test_basic_aliasing_with_dsl():
-    @pipeline
+    @job
     def test():
         add_one.alias("renamed")(num=return_one())
 
-    assert execute_pipeline(test).result_for_solid("renamed").output_value() == 2
+    assert test.execute_in_process().output_for_node("renamed") == 2
 
 
 def test_diamond_graph():
-    @solid(
-        output_defs=[
-            OutputDefinition(name="value_one"),
-            OutputDefinition(name="value_two"),
-        ]
-    )
+    @op(out={"value_one": Out(), "value_two": Out()})
     def emit_values(_context):
         yield Output(1, "value_one")
         yield Output(2, "value_two")
 
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @op(ins={"num_one": In(), "num_two": In()})
     def subtract(num_one, num_two):
         return num_one - num_two
 
-    @pipeline
-    def diamond_pipeline():
+    @job
+    def diamond_job():
         value_one, value_two = emit_values()
         subtract(
             num_one=add_one(num=value_one),
             num_two=add_one.alias("renamed")(num=value_two),
         )
 
-    result = execute_pipeline(diamond_pipeline)
+    result = diamond_job.execute_in_process()
 
-    assert result.result_for_solid("subtract").output_value() == -1
+    assert result.output_for_node("subtract") == -1
 
 
 def test_two_cliques():
-    @pipeline
-    def diamond_pipeline():
+    @job
+    def diamond_job():
         return_one()
         return_two()
 
-    result = execute_pipeline(diamond_pipeline)
+    result = diamond_job.execute_in_process()
 
-    assert result.result_for_solid("return_one").output_value() == 1
-    assert result.result_for_solid("return_two").output_value() == 2
+    assert result.output_for_node("return_one") == 1
+    assert result.output_for_node("return_two") == 2
 
 
 def test_deep_graph():
-    @solid(config_schema=Int)
+    @op(config_schema=Int)
     def download_num(context):
-        return context.solid_config
+        return context.op_config
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def unzip_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def ingest_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def subsample_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def load_num(num):
         return num + 3
 
-    @pipeline
+    @job
     def test():
         load_num(
             num=canonicalize_num(
@@ -173,9 +164,9 @@ def test_deep_graph():
             )
         )
 
-    result = execute_pipeline(test, {"solids": {"download_num": {"config": 123}}})
-    assert result.result_for_solid("canonicalize_num").output_value() == 123
-    assert result.result_for_solid("load_num").output_value() == 126
+    result = test.execute_in_process(run_config={"ops": {"download_num": {"config": 123}}})
+    assert result.output_for_node("canonicalize_num") == 123
+    assert result.output_for_node("load_num") == 126
 
 
 def test_unconfigurable_inputs_pipeline():
@@ -183,140 +174,133 @@ def test_unconfigurable_inputs_pipeline():
     class NewType:
         pass
 
-    @lambda_solid(input_defs=[InputDefinition("_", NewType)])
-    def noop(_):
+    @op(ins={"_unused": In(NewType)})
+    def noop(_unused):
         pass
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Input '_' of solid 'noop' has no way of being resolved. Must "
-        "provide a resolution to this input via another op/graph, or via a "
-        "direct input value mapped from the top-level graph.",
+        match="Input '_unused' of op 'noop' has no way of being resolved",
     ):
 
-        @pipeline
+        @job
         def _bad_inputs():
             noop()
 
 
 def test_dupe_defs_fail():
-    @lambda_solid(name="same")
+    @op(name="same")
     def noop():
         pass
 
-    @lambda_solid(name="same")
+    @op(name="same")
     def noop2():
         pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @pipeline
+        @job
         def _dupes():
             noop()
             noop2()
 
     with pytest.raises(DagsterInvalidDefinitionError):
-        PipelineDefinition(name="dupes", solid_defs=[noop, noop2])
+        GraphDefinition(name="dupes", node_defs=[noop, noop2]).to_job()
 
 
 def test_composite_dupe_defs_fail():
-    @lambda_solid
+    @op
     def noop():
         pass
 
-    @composite_solid(name="same")
-    def composite_noop():
+    @graph(name="same")
+    def graph_noop():
         noop()
         noop()
         noop()
 
-    @composite_solid(name="same")
-    def composite_noop2():
+    @graph(name="same")
+    def graph_noop2():
         noop()
 
-    @composite_solid
+    @graph
     def wrapper():
-        composite_noop2()
+        graph_noop2()
 
-    @composite_solid
+    @graph
     def top():
         wrapper()
-        composite_noop()
+        graph_noop()
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @pipeline
+        @job
         def _dupes():
-            composite_noop()
-            composite_noop2()
+            graph_noop()
+            graph_noop2()
 
     with pytest.raises(DagsterInvalidDefinitionError):
-        PipelineDefinition(name="dupes", solid_defs=[top])
+        GraphDefinition(name="dupes", node_defs=[top]).to_job()
 
 
 def test_two_inputs_with_reversed_input_defs_and_dsl():
-    @solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
+    @op(ins={"num_two": In(), "num_one": In()})
     def subtract_ctx(_context, num_one, num_two):
         return num_one - num_two
 
-    @lambda_solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
+    @op(ins={"num_two": In(), "num_one": In()})
     def subtract(num_one, num_two):
         return num_one - num_two
 
-    @pipeline
+    @job
     def test():
         two = return_two()
         three = return_three()
         subtract(two, three)
         subtract_ctx(two, three)
 
-    assert execute_pipeline(test).result_for_solid("subtract").output_value() == -1
-    assert execute_pipeline(test).result_for_solid("subtract_ctx").output_value() == -1
+    result = test.execute_in_process()
+    assert result.output_for_node("subtract") == -1
+    assert result.output_for_node("subtract_ctx") == -1
 
 
 def test_single_non_positional_input_use():
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_one_kw(**kwargs):
         return kwargs["num"] + 1
 
-    @pipeline
+    @job
     def test():
         # the decorated solid fn doesn't define args
         # but since there is only one it is unambiguous
         add_one_kw(return_two())
 
-    assert execute_pipeline(test).result_for_solid("add_one_kw").output_value() == 3
+    assert test.execute_in_process().output_for_node("add_one_kw") == 3
 
 
 def test_single_positional_single_kwarg_input_use():
-    @lambda_solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
+    @op(ins={"num_two": In(), "num_one": In()})
     def subtract_kw(num_one, **kwargs):
         return num_one - kwargs["num_two"]
 
-    @pipeline
+    @job
     def test():
         # the decorated solid fn only defines one positional arg
         # and one kwarg so passing two by position is unambiguous
         # since the second argument must be the one kwarg
         subtract_kw(return_two(), return_three())
 
-    assert execute_pipeline(test).result_for_solid("subtract_kw").output_value() == -1
+    assert test.execute_in_process().output_for_node("subtract_kw") == -1
 
 
 def test_bad_positional_input_use():
-    @lambda_solid(
-        input_defs=[
-            InputDefinition("num_two"),
-            InputDefinition("num_one"),
-            InputDefinition("num_three"),
-        ]
-    )
+    @op(ins={"num_two": In(), "num_one": In(), "num_three": In()})
     def add_kw(num_one, **kwargs):
         return num_one + kwargs["num_two"] + kwargs["num_three"]
 
     with pytest.raises(DagsterInvalidDefinitionError, match="Use keyword args instead"):
 
-        @pipeline
+        @job
         def _fail():
             # the decorated solid fn only defines one positional arg
             # so the two remaining have no positions and this is

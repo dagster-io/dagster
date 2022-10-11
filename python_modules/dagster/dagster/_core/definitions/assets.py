@@ -527,6 +527,21 @@ class AssetsDefinition(ResourceAddable):
                 else AllPartitionMapping(),
             )
 
+    def get_output_name_for_asset_key(self, key: AssetKey) -> str:
+        for output_name, asset_key in self.keys_by_output_name.items():
+            if key == asset_key:
+                return output_name
+
+        check.failed(f"Asset key {key.to_user_string()} not found in AssetsDefinition")
+
+    def get_op_def_for_asset_key(self, key: AssetKey) -> OpDefinition:
+        """
+        If this is an op-backed asset, returns the op def. If it's a graph-backed asset,
+        returns the op def within the graph that produces the given asset key.
+        """
+        output_name = self.get_output_name_for_asset_key(key)
+        return cast(OpDefinition, self.node_def.resolve_output_to_origin_op_def(output_name))
+
     def with_prefix_or_group(
         self,
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
@@ -747,13 +762,10 @@ class AssetsDefinition(ResourceAddable):
             return result
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
-        for output_name, asset_key in self.keys_by_output_name.items():
-            if key == asset_key:
-                return self.node_def.resolve_output_to_origin(
-                    output_name, NodeHandle(self.node_def.name, parent=None)
-                )[0].io_manager_key
-
-        check.failed(f"Asset key {key.to_user_string()} not found in AssetsDefinition")
+        output_name = self.get_output_name_for_asset_key(key)
+        return self.node_def.resolve_output_to_origin(
+            output_name, NodeHandle(self.node_def.name, parent=None)
+        )[0].io_manager_key
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
         yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]

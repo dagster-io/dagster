@@ -1,5 +1,15 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Button, Caption, Colors, Icon, Menu, Popover, Tooltip} from '@dagster-io/ui';
+import {
+  Box,
+  Button,
+  Caption,
+  Colors,
+  Icon,
+  Menu,
+  MiddleTruncate,
+  Popover,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -79,7 +89,9 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}}>
             <span style={{fontWeight: 500}}>
-              <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
+              <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>
+                <MiddleTruncate text={name} />
+              </Link>
             </span>
             {scheduleData ? (
               <Caption>

@@ -1,4 +1,3 @@
-import datetime
 from collections import defaultdict
 from typing import Sequence
 
@@ -8,10 +7,11 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
     DailyPartitionsDefinition,
+    GraphDefinition,
     IOManager,
     JobDefinition,
+    OpDefinition,
     ResourceDefinition,
     SensorDefinition,
     SourceAsset,
@@ -32,38 +32,29 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.executor_definition import (
-    default_executors,
-    multi_or_in_process_executor,
-)
+from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import (
-    AssetGroup,
-    PipelineDefinition,
-    SolidDefinition,
-    daily_schedule,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import AssetGroup
 from dagster._loggers import default_loggers
 
 # pylint: disable=comparison-with-callable
 
 
-def create_single_node_pipeline(name, called):
+def create_single_node_job(name, called):
     called[name] = called[name] + 1
-    return PipelineDefinition(
-        name=name,
-        solid_defs=[
-            SolidDefinition(
-                name=name + "_solid",
-                input_defs=[],
-                output_defs=[],
-                compute_fn=lambda *_args, **_kwargs: None,
-            )
-        ],
+    return JobDefinition(
+        graph_def=GraphDefinition(
+            name=name,
+            node_defs=[
+                OpDefinition(
+                    name=name + "_op",
+                    ins={},
+                    outs={},
+                    compute_fn=lambda *_args, **_kwargs: None,
+                )
+            ],
+        )
     )
 
 
@@ -73,89 +64,93 @@ def test_repo_lazy_definition():
     @repository
     def lazy_repo():
         return {
-            "pipelines": {
-                "foo": lambda: create_single_node_pipeline("foo", called),
-                "bar": lambda: create_single_node_pipeline("bar", called),
+            "jobs": {
+                "foo": lambda: create_single_node_job("foo", called),
+                "bar": lambda: create_single_node_job("bar", called),
             }
         }
 
-    foo_pipeline = lazy_repo.get_pipeline("foo")
-    assert isinstance(foo_pipeline, PipelineDefinition)
-    assert foo_pipeline.name == "foo"
+    foo_job = lazy_repo.get_job("foo")
+    assert isinstance(foo_job, JobDefinition)
+    assert foo_job.name == "foo"
 
     assert "foo" in called
     assert called["foo"] == 1
     assert "bar" not in called
 
-    bar_pipeline = lazy_repo.get_pipeline("bar")
-    assert isinstance(bar_pipeline, PipelineDefinition)
-    assert bar_pipeline.name == "bar"
+    bar_job = lazy_repo.get_job("bar")
+    assert isinstance(bar_job, JobDefinition)
+    assert bar_job.name == "bar"
 
     assert "foo" in called
     assert called["foo"] == 1
     assert "bar" in called
     assert called["bar"] == 1
 
-    foo_pipeline = lazy_repo.get_pipeline("foo")
-    assert isinstance(foo_pipeline, PipelineDefinition)
-    assert foo_pipeline.name == "foo"
+    foo_job = lazy_repo.get_job("foo")
+    assert isinstance(foo_job, JobDefinition)
+    assert foo_job.name == "foo"
 
     assert "foo" in called
     assert called["foo"] == 1
 
-    pipelines = lazy_repo.get_all_pipelines()
+    jobs = lazy_repo.get_all_jobs()
 
-    assert set(["foo", "bar"]) == {pipeline.name for pipeline in pipelines}
+    assert set(["foo", "bar"]) == {job.name for job in jobs}
 
 
-def test_dupe_solid_repo_definition():
-    @lambda_solid(name="same")
+def test_dupe_op_repo_definition():
+    @op(name="same")
     def noop():
         pass
 
-    @lambda_solid(name="same")
+    @op(name="same")
     def noop2():
         pass
 
     @repository
     def error_repo():
         return {
-            "pipelines": {
-                "first": lambda: PipelineDefinition(name="first", solid_defs=[noop]),
-                "second": lambda: PipelineDefinition(name="second", solid_defs=[noop2]),
+            "jobs": {
+                "first": lambda: JobDefinition(
+                    graph_def=GraphDefinition(name="first", node_defs=[noop])
+                ),
+                "second": lambda: JobDefinition(
+                    graph_def=GraphDefinition(name="second", node_defs=[noop2])
+                ),
             }
         }
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Conflicting definitions found in repository with name 'same'. Op/Graph/Solid definition names must be unique within a repository.",
+        match="Conflicting definitions found in repository with name 'same'. Op/Graph definition names must be unique within a repository.",
     ):
-        error_repo.get_all_pipelines()
+        error_repo.get_all_jobs()
 
 
-def test_non_lazy_pipeline_dict():
+def test_non_lazy_job_dict():
     called = defaultdict(int)
 
     @repository
     def some_repo():
         return [
-            create_single_node_pipeline("foo", called),
-            create_single_node_pipeline("bar", called),
+            create_single_node_job("foo", called),
+            create_single_node_job("bar", called),
         ]
 
-    assert some_repo.get_pipeline("foo").name == "foo"
-    assert some_repo.get_pipeline("bar").name == "bar"
+    assert some_repo.get_job("foo").name == "foo"
+    assert some_repo.get_job("bar").name == "bar"
 
 
 def test_conflict():
     called = defaultdict(int)
-    with pytest.raises(Exception, match="Duplicate pipeline definition found for pipeline 'foo'"):
+    with pytest.raises(Exception, match="Duplicate job definition found for job 'foo'"):
 
         @repository
         def _some_repo():
             return [
-                create_single_node_pipeline("foo", called),
-                create_single_node_pipeline("foo", called),
+                create_single_node_job("foo", called),
+                create_single_node_job("foo", called),
             ]
 
 
@@ -164,44 +159,24 @@ def test_key_mismatch():
 
     @repository
     def some_repo():
-        return {"pipelines": {"foo": lambda: create_single_node_pipeline("bar", called)}}
+        return {"jobs": {"foo": lambda: create_single_node_job("bar", called)}}
 
-    with pytest.raises(Exception, match="name in PipelineDefinition does not match"):
-        some_repo.get_pipeline("foo")
+    with pytest.raises(Exception, match="name in JobDefinition does not match"):
+        some_repo.get_job("foo")
 
 
-def test_non_pipeline_in_pipelines():
+def test_non_job_in_jobs():
     with pytest.raises(DagsterInvalidDefinitionError, match="all elements of list must be of type"):
 
         @repository
         def _some_repo():
-            return ["not-a-pipeline"]
-
-
-def test_schedule_partitions():
-    @daily_schedule(
-        pipeline_name="foo",
-        start_date=datetime.datetime(2020, 1, 1),
-    )
-    def daily_foo(_date):
-        return {}
-
-    @repository
-    def some_repo():
-        return {
-            "pipelines": {"foo": lambda: create_single_node_pipeline("foo", defaultdict(int))},
-            "schedules": {"daily_foo": lambda: daily_foo},
-        }
-
-    assert len(some_repo.schedule_defs) == 1
-    assert len(some_repo.partition_set_defs) == 1
-    assert some_repo.get_partition_set_def("daily_foo_partitions")
+            return ["not-a-job"]
 
 
 def test_bad_schedule():
-    @daily_schedule(
-        pipeline_name="foo",
-        start_date=datetime.datetime(2020, 1, 1),
+    @schedule(
+        cron_schedule="* * * * *",
+        job_name="foo",
     )
     def daily_foo(_date):
         return {}
@@ -234,7 +209,7 @@ def test_bad_sensor():
 
 
 def test_direct_schedule_target():
-    @solid
+    @op
     def wow():
         return "wow"
 
@@ -275,7 +250,7 @@ def test_direct_schedule_unresolved_target():
 
 
 def test_direct_sensor_target():
-    @solid
+    @op
     def wow():
         return "wow"
 
@@ -316,7 +291,7 @@ def test_direct_sensor_unresolved_target():
 
 
 def test_target_dupe_job():
-    @solid
+    @op
     def wow():
         return "wow"
 
@@ -358,7 +333,7 @@ def test_target_dupe_unresolved():
 
 
 def test_bare_graph():
-    @solid
+    @op
     def ok():
         return "sure"
 
@@ -371,7 +346,7 @@ def test_bare_graph():
         return [bare]
 
     # should get updated once "executable" exists
-    assert test.get_pipeline("bare")
+    assert test.get_job("bare")
     assert test.get_job("bare")
 
 
@@ -389,11 +364,11 @@ def test_unresolved_job():
         return [foo_group, unresolved_job]
 
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
-    assert isinstance(test.get_pipeline("unresolved_job"), JobDefinition)
+    assert isinstance(test.get_job("unresolved_job"), JobDefinition)
 
 
 def test_bare_graph_with_resources():
-    @solid(required_resource_keys={"stuff"})
+    @op(required_resource_keys={"stuff"})
     def needy(context):
         return context.resources.stuff
 
@@ -408,7 +383,7 @@ def test_bare_graph_with_resources():
             return [bare]
 
 
-def test_sensor_no_pipeline_name():
+def test_sensor_no_job_name():
     foo_system_sensor = SensorDefinition(name="foo", evaluation_fn=lambda x: x)
 
     @repository
@@ -419,7 +394,7 @@ def test_sensor_no_pipeline_name():
 
 
 def test_job_with_partitions():
-    @solid
+    @op
     def ok():
         return "sure"
 
@@ -442,19 +417,19 @@ def test_job_with_partitions():
     assert test.get_partition_set_def("bare_partition_set")
     # do it twice to make sure we don't overwrite cache on second time
     assert test.get_partition_set_def("bare_partition_set")
-    assert test.has_pipeline("bare")
-    assert test.get_pipeline("bare")
+    assert test.has_job("bare")
+    assert test.get_job("bare")
     assert test.has_job("bare")
     assert test.get_job("bare")
 
 
 def test_dupe_graph_defs():
-    @solid
+    @op
     def noop():
         pass
 
-    @pipeline(name="foo")
-    def pipe_foo():
+    @job(name="foo")
+    def job_foo():
         noop()
 
     @graph(name="foo")
@@ -464,33 +439,33 @@ def test_dupe_graph_defs():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         # expect to change as migrate to graph/job
-        match="Duplicate pipeline definition found for pipeline 'foo'",
+        match="Duplicate job definition found for job 'foo'",
     ):
 
         @repository
-        def _pipe_collide():
-            return [graph_foo, pipe_foo]
+        def _job_collide():
+            return [graph_foo, job_foo]
 
     def get_collision_repo():
         @repository
         def graph_collide():
             return [
                 graph_foo.to_job(name="bar"),
-                pipe_foo,
+                job_foo,
             ]
 
         return graph_collide
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Op/Graph/Solid definition names must be unique within a repository",
+        match="Op/Graph definition names must be unique within a repository",
     ):
 
-        get_collision_repo().get_all_pipelines()
+        get_collision_repo().get_all_jobs()
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Op/Graph/Solid definition names must be unique within a repository",
+        match="Op/Graph definition names must be unique within a repository",
     ):
 
         get_collision_repo().get_all_jobs()
@@ -540,7 +515,7 @@ def test_dupe_unresolved_job_defs():
         match="Duplicate definition found for unresolved job 'bar'",
     ):
 
-        get_collision_repo().get_all_pipelines()
+        get_collision_repo().get_all_jobs()
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -550,55 +525,16 @@ def test_dupe_unresolved_job_defs():
         get_collision_repo().get_all_jobs()
 
 
-def test_job_pipeline_collision():
-    @solid
-    def noop():
-        pass
-
-    @pipeline(name="foo")
-    def my_pipeline():
-        noop()
-
-    @job(name="foo")
-    def my_job():
-        noop()
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Duplicate pipeline definition found for pipeline 'foo'",
-    ):
-
-        @repository
-        def _some_repo():
-            return [my_job, my_pipeline]
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Duplicate job definition found for job 'foo'",
-    ):
-
-        @repository
-        def _some_repo():
-            return [my_pipeline, my_job]
-
-
 def test_job_validation():
-    @solid
-    def noop():
-        pass
-
-    @pipeline
-    def my_pipeline():
-        noop()
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Object mapped to my_pipeline is not an instance of JobDefinition or GraphDefinition.",
+        match="Object mapped to my_job is not an instance of JobDefinition or GraphDefinition.",
     ):
 
         @repository
         def _my_repo():
-            return {"jobs": {"my_pipeline": my_pipeline}}
+            return {"jobs": {"my_job": "blah"}}
 
 
 def test_dict_jobs():
@@ -616,8 +552,8 @@ def test_dict_jobs():
             }
         }
 
-    assert jobs.get_pipeline("my_graph")
-    assert jobs.get_pipeline("other_graph")
+    assert jobs.get_job("my_graph")
+    assert jobs.get_job("other_graph")
     assert jobs.has_job("my_graph")
     assert jobs.get_job("my_graph")
     assert jobs.get_job("other_graph")
@@ -640,9 +576,9 @@ def test_lazy_jobs():
             }
         }
 
-    assert jobs.get_pipeline("my_graph")
-    assert jobs.get_pipeline("my_job")
-    assert jobs.get_pipeline("other_job")
+    assert jobs.get_job("my_graph")
+    assert jobs.get_job("my_job")
+    assert jobs.get_job("other_job")
 
     assert jobs.has_job("my_graph")
     assert jobs.get_job("my_job")
@@ -667,7 +603,7 @@ def test_lazy_graph():
         CheckError,
         match="Invariant failed. Description: Bad constructor for job my_graph: must return JobDefinition",
     ):
-        assert jobs.get_pipeline("my_graph")
+        assert jobs.get_job("my_graph")
 
 
 def test_list_dupe_graph():
@@ -683,21 +619,6 @@ def test_list_dupe_graph():
         @repository
         def _jobs():
             return [foo.to_job(name="foo"), foo]
-
-
-def test_job_cannot_select_pipeline():
-    @pipeline
-    def my_pipeline():
-        pass
-
-    @repository
-    def my_repo():
-        return [my_pipeline]
-
-    assert my_repo.get_pipeline("my_pipeline")
-
-    with pytest.raises(DagsterInvariantViolationError, match="Could not find job 'my_pipeline'."):
-        my_repo.get_job("my_pipeline")
 
 
 def test_job_scheduled_partitions():
@@ -731,25 +652,6 @@ def test_job_scheduled_partitions():
     assert len(schedule_job_repo.partition_set_defs) == 1
     assert schedule_job_repo.get_partition_set_def("my_graph_partition_set")
     assert len(schedule_job_repo.job_names) == 1
-
-
-def test_bad_job_pipeline():
-    @pipeline
-    def foo():
-        pass
-
-    @graph
-    def bar():
-        pass
-
-    with pytest.raises(DagsterInvalidDefinitionError, match="Conflicting"):
-
-        @repository
-        def _fails():
-            return {
-                "pipelines": {"foo": foo},
-                "jobs": {"foo": bar.to_job(name="foo")},
-            }
 
 
 def test_bad_coerce():
@@ -1056,14 +958,6 @@ def _create_job_with_name(name):
     return _the_job
 
 
-def _create_pipeline_with_name(name):
-    @pipeline(name=name)
-    def _the_pipeline():
-        pass
-
-    return _the_pipeline
-
-
 def _create_schedule_from_target(target):
     @schedule(job=target, cron_schedule="* * * * *")
     def _the_schedule():
@@ -1195,84 +1089,39 @@ def test_duplicate_job_target_invalid():
             return [the_job, _create_schedule_from_target(other_job)]
 
 
-def test_dupe_pipelines_valid():
-    the_pipeline = _create_pipeline_with_name("foo")
+def test_dupe_jobs_valid():
+    the_job = _create_job_with_name("foo")
 
     @repository
-    def the_repo_dupe_pipelines_valid():
+    def the_repo_dupe_jobs_valid():
         return [
-            the_pipeline,
-            _create_schedule_from_target(the_pipeline),
-            _create_sensor_from_target(the_pipeline),
+            the_job,
+            _create_schedule_from_target(the_job),
+            _create_sensor_from_target(the_job),
         ]
 
 
-def test_dupe_pipelines_invalid():
-    the_pipeline = _create_pipeline_with_name("foo")
-    other_pipeline = _create_pipeline_with_name("foo")
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="schedule '_the_schedule' targets pipeline 'foo', but a different pipeline with the same name was provided.",
-    ):
-
-        @repository
-        def the_repo_dupe_pipelines_invalid_schedule():
-            return [the_pipeline, _create_schedule_from_target(other_pipeline)]
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="sensor '_the_sensor' targets pipeline 'foo', but a different pipeline with the same name was provided.",
-    ):
-
-        @repository
-        def the_repo_dupe_pipelines_invalid_sensor():
-            return [the_pipeline, _create_sensor_from_target(other_pipeline)]
-
-
-def test_dupe_jobs_pipelines_invalid():
+def test_dupe_jobs_invalid():
     the_job = _create_job_with_name("foo")
-    the_pipeline = _create_pipeline_with_name("foo")
-
-    the_schedule = _create_schedule_from_target(the_pipeline)
-    the_sensor = _create_sensor_from_target(the_pipeline)
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="schedule '_the_schedule' targets pipeline 'foo', but a different job with the same name was provided.",
-    ):
-
-        @repository
-        def the_repo_dupe_job_pipeline_invalid_schedule_job():
-            return [the_job, the_schedule]
+    other_job = _create_job_with_name("foo")
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="sensor '_the_sensor' targets pipeline 'foo', but a different job with the same name was provided.",
+        match="schedule '_the_schedule' targets job 'foo', but a different job with the same name was provided.",
     ):
 
         @repository
-        def the_repo_dupe_job_pipeline_invalid_sensor_job():
-            return [the_job, the_sensor]
-
-    the_graph = _create_graph_with_name("foo")
+        def the_repo_dupe_jobs_invalid_schedule():
+            return [the_job, _create_schedule_from_target(other_job)]
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="sensor '_the_sensor' targets pipeline 'foo', but a different graph with the same name was provided.",
+        match="sensor '_the_sensor' targets job 'foo', but a different job with the same name was provided.",
     ):
 
         @repository
-        def the_repo_dupe_graph_pipeline_invalid_sensor_graph():
-            return [the_graph, the_sensor]
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="schedule '_the_schedule' targets pipeline 'foo', but a different graph with the same name was provided.",
-    ):
-
-        @repository
-        def the_repo_dupe_graph_pipeline_invalid_schedule_graph():
-            return [the_graph, the_schedule]
+        def the_repo_dupe_jobs_invalid_sensor():
+            return [the_job, _create_sensor_from_target(other_job)]
 
 
 def test_default_executor_repo():
@@ -1300,7 +1149,7 @@ def test_default_executor_assets_repo():
     assert the_repo.get_job("no_executor_provided").executor_def == in_process_executor
 
 
-def test_default_executor_jobs_and_pipelines():
+def test_default_executor_jobs():
     @asset
     def the_asset():
         pass
@@ -1327,8 +1176,8 @@ def test_default_executor_jobs_and_pipelines():
     def job_explicitly_specifies_default_executor():
         pass
 
-    @pipeline
-    def the_pipeline():
+    @job
+    def the_job():
         pass
 
     @repository(default_executor_def=other_custom_executor)
@@ -1338,13 +1187,8 @@ def test_default_executor_jobs_and_pipelines():
             op_job_with_executor,
             op_job_no_executor,
             unresolved_job,
-            the_pipeline,
             job_explicitly_specifies_default_executor,
         ]
-
-    assert (
-        the_repo.get_pipeline("the_pipeline").mode_definitions[0].executor_defs == default_executors
-    )
 
     assert the_repo.get_job("asset_job").executor_def == other_custom_executor
 
@@ -1520,7 +1364,7 @@ def test_default_loggers_assets_repo():
     assert the_repo.get_job("no_logger_provided").loggers == {"foo": basic}
 
 
-def test_default_loggers_jobs_and_pipelines():
+def test_default_loggers_jobs_and_jobs():
     @asset
     def the_asset():
         pass
@@ -1547,10 +1391,6 @@ def test_default_loggers_jobs_and_pipelines():
     def job_explicitly_specifies_default_loggers():
         pass
 
-    @pipeline
-    def the_pipeline():
-        pass
-
     @repository(default_logger_defs={"foo": other_custom_logger})
     def the_repo():
         return [
@@ -1558,11 +1398,8 @@ def test_default_loggers_jobs_and_pipelines():
             op_job_with_loggers,
             op_job_no_loggers,
             unresolved_job,
-            the_pipeline,
             job_explicitly_specifies_default_loggers,
         ]
-
-    assert the_repo.get_pipeline("the_pipeline").mode_definitions[0].loggers == default_loggers()
 
     assert the_repo.get_job("asset_job").loggers == {"foo": other_custom_logger}
 
