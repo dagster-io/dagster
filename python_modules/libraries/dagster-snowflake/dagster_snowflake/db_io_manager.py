@@ -94,6 +94,7 @@ class DbIOManager(IOManager):
             )
 
             self._db_client.delete_table_slice(context, table_slice)
+
             handler_metadata = (
                 self._handlers_by_type[obj_type].handle_output(context, table_slice, obj) or {}
             )

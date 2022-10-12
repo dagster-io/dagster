@@ -1,1 +1,1 @@
-from .repository import dbt_dagster_tutorial
+from .repository import dbt_dagster_sda_tutorial

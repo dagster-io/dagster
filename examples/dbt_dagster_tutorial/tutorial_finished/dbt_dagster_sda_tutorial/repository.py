@@ -10,7 +10,7 @@ from dagster import load_assets_from_package_module, repository, with_resources
 
 
 @repository
-def dbt_dagster_tutorial():
+def dbt_dagster_sda_tutorial():
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
     return with_resources(

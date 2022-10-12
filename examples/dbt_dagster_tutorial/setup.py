@@ -12,6 +12,7 @@ if __name__ == "__main__":
             "dbt-duckdb",
             "dagster-duckdb",
             "dagster-duckdb-pandas",
+            "plotly",
         ],
         extras_require={"dev": ["dagit", "pytest"]},
     )
