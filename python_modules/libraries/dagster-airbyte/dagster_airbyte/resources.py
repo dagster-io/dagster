@@ -1,7 +1,8 @@
 import logging
 import sys
 import time
-from typing import Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
+from dagster._config.field_utils import Permissive
 
 import requests
 from dagster_airbyte.types import AirbyteOutput
@@ -10,6 +11,7 @@ from requests.exceptions import RequestException
 from dagster import Failure, Field, StringSource, __version__
 from dagster import _check as check
 from dagster import get_dagster_logger, resource
+from dagster._utils.merger import deep_merge_dicts
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
@@ -37,6 +39,7 @@ class AirbyteResource:
         request_max_retries: int = 3,
         request_retry_delay: float = 0.25,
         request_timeout: int = 15,
+        request_additional_params: Optional[Dict[str, Any]] = None,
         log: logging.Logger = get_dagster_logger(),
         forward_logs: bool = True,
     ):
@@ -46,6 +49,7 @@ class AirbyteResource:
         self._request_max_retries = request_max_retries
         self._request_retry_delay = request_retry_delay
         self._request_timeout = request_timeout
+        self._additional_request_params = request_additional_params or dict()
 
         self._log = log
 
@@ -79,11 +83,16 @@ class AirbyteResource:
         while True:
             try:
                 response = requests.request(
-                    method="POST",
-                    url=self.api_base_url + endpoint,
-                    headers=headers,
-                    json=data,
-                    timeout=self._request_timeout,
+                    **deep_merge_dicts(
+                        dict(
+                            method="POST",
+                            url=self.api_base_url + endpoint,
+                            headers=headers,
+                            json=data,
+                            timeout=self._request_timeout,
+                        ),
+                        self._additional_request_params,
+                    ),
                 )
                 response.raise_for_status()
                 if response.status_code == 204:
@@ -243,6 +252,10 @@ class AirbyteResource:
             default_value=15,
             description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
         ),
+        "request_additional_params": Field(
+            Permissive(),
+            description="Any additional kwargs to pass to the requests library when making requests to Airbyte.",
+        ),
         "forward_logs": Field(
             bool,
             default_value=True,
@@ -289,6 +302,7 @@ def airbyte_resource(context) -> AirbyteResource:
         request_max_retries=context.resource_config["request_max_retries"],
         request_retry_delay=context.resource_config["request_retry_delay"],
         request_timeout=context.resource_config["request_timeout"],
+        request_additional_params=context.resource_config["request_additional_params"],
         log=context.log,
         forward_logs=context.resource_config["forward_logs"],
     )
