@@ -110,9 +110,7 @@ Next, you'll tell the models in your dbt project where the source data they depe
          - name: customers_raw
    ```
 
-3. Update the models in `/tutorial_template/jaffle_shop/models/staging` to [select data from the sources you just declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#selecting-from-a-source).
-
-   To do this, update the models' `FROM` statement to use the [`{{ source()}}` function](https://docs.getdbt.com/reference/dbt-jinja-functions/source).
+3. Update the models in `/tutorial_template/jaffle_shop/models/staging` to [select data from the sources you just declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#selecting-from-a-source). To do this, update the models' `FROM` statement to use the [`{{ source()}}` function](https://docs.getdbt.com/reference/dbt-jinja-functions/source).
 
    - In `stg_customers.sql`, replace its contents with the following:
 
