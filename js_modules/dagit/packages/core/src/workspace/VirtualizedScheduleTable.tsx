@@ -1,10 +1,9 @@
-import {Box, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {Container, HeaderCell, Inner} from '../ui/VirtualizedTable';
+import {Container, Inner} from '../ui/VirtualizedTable';
 
-import {VirtualizedScheduleRow} from './VirtualizedScheduleRow';
+import {VirtualizedScheduleHeader, VirtualizedScheduleRow} from './VirtualizedScheduleRow';
 import {RepoAddress} from './types';
 
 type Schedule = {name: string};
@@ -29,23 +28,7 @@ export const VirtualizedScheduleTable: React.FC<Props> = ({repoAddress, schedule
 
   return (
     <>
-      <Box
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '76px 28% 30% 10% 20% 10%',
-          height: '32px',
-          fontSize: '12px',
-          color: Colors.Gray600,
-        }}
-      >
-        <HeaderCell />
-        <HeaderCell>Schedule name</HeaderCell>
-        <HeaderCell>Schedule</HeaderCell>
-        <HeaderCell>Last tick</HeaderCell>
-        <HeaderCell>Last run</HeaderCell>
-        <HeaderCell>Actions</HeaderCell>
-      </Box>
+      <VirtualizedScheduleHeader />
       <div style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>

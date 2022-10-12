@@ -81,11 +81,11 @@ export interface SingleSensorQuery_sensorOrError_Sensor_sensorState {
 export interface SingleSensorQuery_sensorOrError_Sensor {
   __typename: "Sensor";
   id: string;
+  description: string | null;
   name: string;
   targets: SingleSensorQuery_sensorOrError_Sensor_targets[] | null;
   metadata: SingleSensorQuery_sensorOrError_Sensor_metadata;
   minIntervalSeconds: number;
-  description: string | null;
   sensorState: SingleSensorQuery_sensorOrError_Sensor_sensorState;
   jobOriginId: string;
 }
