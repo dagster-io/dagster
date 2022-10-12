@@ -58,7 +58,10 @@ class DagsterHook(BaseHook):
         url: str = "",
         user_token: Optional[str] = None,
     ) -> None:
-        super().__init__(source=None)
+        if airflow_version >= "2.0.0":
+            super().__init__()
+        else:
+            super().__init__(source=None)
         self.url = url
         self.user_token = user_token
         self.organization_id = organization_id
