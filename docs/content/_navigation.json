@@ -465,6 +465,10 @@
                 "path": "/dagster-cloud/developing-testing/branch-deployments"
               },
               {
+                "title": "Secret management",
+                "path": "/dagster-cloud/developing-testing/using-environment-variables-and-secrets-in-dagster-cloud"
+              },
+              {
                 "title": "Environment variables",
                 "path": "/dagster-cloud/developing-testing/environment-variables"
               }
@@ -537,6 +541,10 @@
           {
             "title": "Software-defined assets with Pandas & PySpark",
             "path": "/guides/dagster/software-defined-assets"
+          },
+          {
+            "title": "Using environment variables and secrets",
+            "path": "/guides/dagster/using-environment-variables-and-secrets-in-dagster-os"
           },
           {
             "title": "Re-executing jobs",
