@@ -18,11 +18,7 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   const notebookPath = metadata.find((m) => m.key === 'notebook_path');
   const repoLocName = props.repoAddress?.location;
 
-  if (!notebookPath) {
-    return <span />;
-  }
-
-  const value = notebookPath.value;
+  const value = notebookPath?.value || '';
   const url = React.useMemo(() => {
     try {
       const url = new URL(value);
@@ -32,6 +28,10 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
       return null;
     }
   }, [value]);
+
+  if (!notebookPath) {
+    return <span />;
+  }
 
   if (url) {
     return <ExternalAnchorButton href={url}>View Notebook</ExternalAnchorButton>;
