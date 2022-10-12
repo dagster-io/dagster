@@ -1,7 +1,12 @@
-from typing import AbstractSet, Any, Callable, Mapping, NamedTuple, Optional, Sequence
+import hashlib
+import inspect
+import json
+from abc import abstractmethod
+from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import MetadataUserInput
@@ -110,11 +115,8 @@ class CacheableAssetsDefinition(ResourceAddable):
     def with_resources(
         self, resource_defs: Mapping[str, ResourceDefinition]
     ) -> "CacheableAssetsDefinition":
-        return WrappedCacheableAssetsDefinition(
-            self._unique_id,
-            self,
-            lambda assets: AssetsDefinition.with_resources(assets, resource_defs),
-        )
+
+        return ResourceWrappedCacheableAssetsDefinition(self, resource_defs)
 
     def with_prefix_or_group(
         self,
@@ -122,21 +124,18 @@ class CacheableAssetsDefinition(ResourceAddable):
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
     ) -> "CacheableAssetsDefinition":
-        return WrappedCacheableAssetsDefinition(
-            self._unique_id,
+
+        return PrefixOrGroupWrappedCacheableAssetsDefinition(
             self,
-            lambda assets: AssetsDefinition.with_prefix_or_group(
-                assets,
-                output_asset_key_replacements=output_asset_key_replacements,
-                input_asset_key_replacements=input_asset_key_replacements,
-                group_names_by_key=group_names_by_key,
-            ),
+            output_asset_key_replacements=output_asset_key_replacements,
+            input_asset_key_replacements=input_asset_key_replacements,
+            group_names_by_key=group_names_by_key,
         )
 
 
 class WrappedCacheableAssetsDefinition(CacheableAssetsDefinition):
     """
-    Wraps an instance of CacheableAssetsDefinition and applies a function to the
+    Wraps an instance of CacheableAssetsDefinition, applying modify_assets to the
     generated AssetsDefinition objects. This lets e.g. users define resources on
     the cacheable assets at repo creation time which are not actually bound until
     the assets themselves are created.
@@ -146,11 +145,9 @@ class WrappedCacheableAssetsDefinition(CacheableAssetsDefinition):
         self,
         unique_id: str,
         wrapped: CacheableAssetsDefinition,
-        fn: Callable[[AssetsDefinition], AssetsDefinition],
     ):
         super().__init__(unique_id)
         self._wrapped = wrapped
-        self._fn = fn
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
         return self._wrapped.compute_cacheable_data()
@@ -158,4 +155,117 @@ class WrappedCacheableAssetsDefinition(CacheableAssetsDefinition):
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
-        return [self._fn(assets) for assets in self._wrapped.build_definitions(data)]
+        return [self.modify_assets(assets) for assets in self._wrapped.build_definitions(data)]
+
+    @abstractmethod
+    def modify_assets(self, assets: AssetsDefinition) -> AssetsDefinition:
+        raise NotImplementedError()
+
+
+def _map_to_hashable(map: Mapping[Any, Any]) -> bytes:
+    return json.dumps(
+        {json.dumps(k, sort_keys=True): (v) for k, v in map.items()},
+        sort_keys=True,
+    ).encode("utf-8")
+
+
+class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefinition):
+    """
+    Represents a CacheableAssetsDefinition that has been wrapped with an asset
+    prefix mapping or group name mapping.
+    """
+
+    def __init__(
+        self,
+        wrapped: CacheableAssetsDefinition,
+        output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]],
+        input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]],
+        group_names_by_key: Optional[Mapping[AssetKey, str]],
+    ):
+        self._output_asset_key_replacements = output_asset_key_replacements
+        self._input_asset_key_replacements = input_asset_key_replacements
+        self._group_names_by_key = group_names_by_key
+
+        super().__init__(
+            unique_id=f"{wrapped._unique_id}_prefix_or_group_{self._get_hash()}",
+            wrapped=wrapped,
+        )
+
+    def _get_hash(self) -> str:
+        """
+        Generate a stable hash of the various prefix/group mappings.
+        """
+        contents = hashlib.sha1()
+        if self._output_asset_key_replacements:
+            contents.update(
+                _map_to_hashable(
+                    {
+                        tuple(k.path): tuple(v.path)
+                        for k, v in self._output_asset_key_replacements.items()
+                    }
+                )
+            )
+        if self._input_asset_key_replacements:
+            contents.update(
+                _map_to_hashable(
+                    {
+                        tuple(k.path): tuple(v.path)
+                        for k, v in self._input_asset_key_replacements.items()
+                    }
+                )
+            )
+        if self._group_names_by_key:
+            contents.update(
+                _map_to_hashable(
+                    {tuple(k.path): v for k, v in self._group_names_by_key.items()},
+                )
+            )
+        return contents.hexdigest()
+
+    def modify_assets(self, assets: AssetsDefinition) -> AssetsDefinition:
+        return assets.with_prefix_or_group(
+            output_asset_key_replacements=self._output_asset_key_replacements,
+            input_asset_key_replacements=self._input_asset_key_replacements,
+            group_names_by_key=self._group_names_by_key,
+        )
+
+
+class ResourceWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefinition):
+    """
+    Represents a CacheableAssetsDefinition that has been wrapped with resources.
+    """
+
+    def __init__(
+        self,
+        wrapped: CacheableAssetsDefinition,
+        resource_defs: Mapping[str, ResourceDefinition],
+    ):
+        self._resource_defs = resource_defs
+
+        super().__init__(
+            unique_id=f"{wrapped._unique_id}_resources_{self._get_hash()}",
+            wrapped=wrapped,
+        )
+
+    def _get_hash(self) -> str:
+        """
+        Generate a stable hash of the resource_defs, including the key, config, fn implementation, and description.
+        """
+        contents = hashlib.sha1()
+        contents.update(
+            _map_to_hashable(
+                {
+                    k: (
+                        compute_fields_hash({"root": v.config_schema.as_field()}, v.description),
+                        inspect.getsource(v.resource_fn),
+                    )
+                    for k, v in self._resource_defs.items()
+                }
+            )
+        )
+        return contents.hexdigest()
+
+    def modify_assets(self, assets: AssetsDefinition) -> AssetsDefinition:
+        return assets.with_resources(
+            resource_defs=self._resource_defs,
+        )
