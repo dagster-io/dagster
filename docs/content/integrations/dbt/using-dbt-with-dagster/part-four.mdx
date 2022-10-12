@@ -18,8 +18,7 @@ By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-da
 In this step, you'll:
 
 - [Create a downstream asset that computes a chart using plotly](#step-1-create-the-order_count_chart-asset)
-- [Update the Dagster repository to include the new asset](#step-2-update-the-dagster-repository)
-- [Materialize the `order_count_chart` asset](#step-3-materialize-the-order_count_chart-asset)
+- [Materialize the `order_count_chart` asset](#step-2-materialize-the-order_count_chart-asset)
 
 ---
 
@@ -117,55 +116,7 @@ def order_count_chart(context, customers: pd.DataFrame):
 
 ---
 
-## Step 2: Update the Dagster repository
-
-To materialize the new `order_count_chart` asset, you'll need to update the Dagster repository to include it.
-
-Replace the contents of `/tutorial_template/dbt_dagster_sda_tutorial/repository.py` with the following:
-
-```python
-import os
-
-from dagster_dbt import dbt_cli_resource
-from dbt_dagster_sda_tutorial.assets import (
-    DBT_PROFILES,
-    DBT_PROJECT_PATH,
-    customers_raw,
-    dbt_assets,
-    order_count_chart,
-    orders_raw,
-)
-from dbt_dagster_sda_tutorial.duckdb_resource import duckdb_io_manager
-
-from dagster import repository, with_resources
-
-
-@repository
-def jaffle_shop_repository():
-    return with_resources(
-        [
-            customers_raw,
-            orders_raw,
-            *dbt_assets,
-            order_count_chart,
-        ],
-        {
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": DBT_PROJECT_PATH,
-                    "profiles_dir": DBT_PROFILES,
-                },
-            ),
-            "io_manager": duckdb_io_manager.configured(
-                {"duckdb_path": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
-            ),
-        },
-    )
-```
-
----
-
-## Step 3: Materialize the order_count_chart asset
+## Step 2: Materialize the order_count_chart asset
 
 In this step, you'll materialize the `order_count_chart_asset`. When successfully materialized, a new tab containing the plotly chart will automatically open in your browser.
 

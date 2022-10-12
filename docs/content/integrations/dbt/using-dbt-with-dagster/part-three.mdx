@@ -108,28 +108,21 @@ In `/tutorial_template/dbt_dagster_sda_tutorial/repository.py`, replace its cont
 import os
 
 from dagster_dbt import dbt_cli_resource
+from dbt_dagster_sda_tutorial import assets
+from dbt_dagster_sda_tutorial.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
-from dbt_dagster_sda_tutorial.assets import (
-    DBT_PROFILES,
-    DBT_PROJECT_PATH,
-    customers_raw,
-    orders_raw,
-    dbt_assets,
-)
+from dagster_duckdb import build_duckdb_io_manager
+from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 
-from dbt_dagster_sda_tutorial.duckdb_resource import duckdb_io_manager
-
-from dagster import repository, with_resources
+from dagster import load_assets_from_package_module, repository, with_resources
 
 
 @repository
-def jaffle_shop_repository():
+def dbt_dagster_tutorial():
+    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+    
     return with_resources(
-        [
-            customers_raw,
-            orders_raw,
-            *dbt_assets,
-        ],
+        load_assets_from_package_module(assets),
         {
             "dbt": dbt_cli_resource.configured(
                 {
