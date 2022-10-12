@@ -5,7 +5,6 @@ from dagster_dbt import load_assets_from_dbt_project
 from dagster import AssetIn, MetadataValue, asset, file_relative_path
 
 
-# These assets would be part of the first stage of the tutorial
 @asset(key_prefix=["jaffle_shop"], group_name="staging")
 def customers_raw() -> pd.DataFrame:
     data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
@@ -27,9 +26,7 @@ dbt_assets = load_assets_from_dbt_project(
     project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
 )
 
-# end first stage of tutorial - at this point you can run dagit and launch a materialization
 
-# This asset would be the second stage of the tutorial
 @asset(ins={"customers": AssetIn(key_prefix=["jaffle_shop"])}, group_name="staging")
 def order_count_chart(context, customers: pd.DataFrame):
     fig = px.histogram(customers, x="number_of_orders")

@@ -48,7 +48,7 @@ To add the `order_count_chart` asset:
    from dagster import AssetIn, MetadataValue, asset, file_relative_path
    ```
 
-2. After the `customers_raw` and `orders_raw` assets, add the following:
+2. At the bottom of the file, add the following:
 
    ```python
    @asset(
@@ -82,14 +82,6 @@ from dagster_dbt import load_assets_from_dbt_project
 from dagster import AssetIn, MetadataValue, asset, file_relative_path
 
 
-DBT_PROJECT_PATH = file_relative_path(__file__, "../../jaffle_shop")
-DBT_PROFILES = file_relative_path(__file__, "../../jaffle_shop/config")
-
-dbt_assets = load_assets_from_dbt_project(
-    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
-)
-
-
 @asset(key_prefix=["jaffle_shop"], group_name="staging")
 def customers_raw() -> pd.DataFrame:
    data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
@@ -100,6 +92,14 @@ def customers_raw() -> pd.DataFrame:
 def orders_raw() -> pd.DataFrame:
    data = pd.read_csv("https://docs.dagster.io/assets/orders.csv")
    return data
+
+
+DBT_PROJECT_PATH = file_relative_path(__file__, "../../jaffle_shop")
+DBT_PROFILES = file_relative_path(__file__, "../../jaffle_shop/config")
+
+dbt_assets = load_assets_from_dbt_project(
+    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+)
 
 
 @asset(
