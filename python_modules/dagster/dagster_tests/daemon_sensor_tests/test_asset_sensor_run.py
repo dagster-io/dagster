@@ -510,7 +510,7 @@ def test_layered_sensor(executor):
                 TickStatus.SUCCESS,
             )
 
-            wait_for_all_runs_to_finish(instance)
+            wait_for_all_runs_to_finish(instance, timeout=20)
             run_request = instance.get_runs(limit=1)[0]
             assert run_request.pipeline_name == "__ASSET_JOB"
             assert run_request.asset_selection == {AssetKey("d"), AssetKey("f"), AssetKey("g")}
