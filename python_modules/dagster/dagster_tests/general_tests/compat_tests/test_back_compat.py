@@ -1015,3 +1015,24 @@ def test_add_kvs_table():
 
             assert not "kvs" in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "kvs") == []
+
+
+def test_add_asset_event_tags_table():
+    src_dir = file_relative_path(__file__, "snapshot_1_0_12_pre_add_asset_event_tags_table/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert not "asset_event_tags" in get_sqlite3_tables(db_path)
+            assert get_sqlite3_indexes(db_path, "asset_event_tags") == []
+
+            instance.upgrade()
+
+            assert "asset_event_tags" in get_sqlite3_tables(db_path)
+            assert get_sqlite3_indexes(db_path, "asset_event_tags") == ["idx_asset_event_tags"]
+
+            instance._run_storage._alembic_downgrade(rev="5e139331e376")
+
+            assert not "asset_event_tags" in get_sqlite3_tables(db_path)
+            assert get_sqlite3_indexes(db_path, "asset_event_tags") == []

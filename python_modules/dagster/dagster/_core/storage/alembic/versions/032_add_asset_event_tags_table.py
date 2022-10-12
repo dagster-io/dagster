@@ -22,7 +22,7 @@ def upgrade():
         op.create_table(
             "asset_event_tags",
             db.Column("id", db.Integer, primary_key=True, autoincrement=True),
-            db.Column("event_id", None, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
+            db.Column("event_id", db.Integer, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
             db.Column("key", db.Text),
             db.Column("value", db.Text),
         )
