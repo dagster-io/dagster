@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional, Set
 
 import dagster._check as check
 from dagster import Permissive, resource
+from dagster._annotations import public
 from dagster._utils.merger import merge_dicts
 
 from ..dbt_resource import DbtResource
@@ -58,6 +59,7 @@ class DbtCliResource(DbtResource):
         """
         return {"models", "exclude", "select"}
 
+    @public
     def cli(self, command: str, **kwargs) -> DbtCliOutput:
         """
         Executes a dbt CLI command. Params passed in as keyword arguments will be merged with the
@@ -98,6 +100,7 @@ class DbtCliResource(DbtResource):
             capture_logs=self._capture_logs,
         )
 
+    @public
     def compile(
         self,
         models: Optional[List[str]] = None,
@@ -119,6 +122,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("compile", models=models, exclude=exclude, select=select, **kwargs)
 
+    @public
     def run(
         self,
         models: Optional[List[str]] = None,
@@ -140,6 +144,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("run", models=models, exclude=exclude, select=select, **kwargs)
 
+    @public
     def snapshot(
         self, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
     ) -> DbtCliOutput:
@@ -156,6 +161,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("snapshot", select=select, exclude=exclude, **kwargs)
 
+    @public
     def test(
         self,
         models: Optional[List[str]] = None,
@@ -194,6 +200,7 @@ class DbtCliResource(DbtResource):
             **kwargs,
         )
 
+    @public
     def seed(
         self,
         show: bool = False,
@@ -216,6 +223,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("seed", show=show, select=select, exclude=exclude, **kwargs)
 
+    @public
     def ls(
         self,
         select: Optional[List[str]] = None,
@@ -237,6 +245,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("ls", select=select, models=models, exclude=exclude, **kwargs)
 
+    @public
     def build(self, select: Optional[List[str]] = None, **kwargs) -> DbtCliOutput:
         """
         Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -250,6 +259,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("build", select=select, **kwargs)
 
+    @public
     def freshness(self, select: Optional[List[str]] = None, **kwargs) -> DbtCliOutput:
         """
         Run the ``source snapshot-freshness`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -263,6 +273,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("source snapshot-freshness", select=select, **kwargs)
 
+    @public
     def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtCliOutput:
         """
         Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -276,6 +287,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("docs generate", compile=compile_project, **kwargs)
 
+    @public
     def run_operation(
         self, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs
     ) -> DbtCliOutput:
@@ -293,6 +305,7 @@ class DbtCliResource(DbtResource):
 
         return self.cli(f"run-operation {macro}", args=args, **kwargs)
 
+    @public
     def get_run_results_json(self, **kwargs) -> Optional[Dict[str, Any]]:
         """
         Get a parsed version of the run_results.json file for the relevant dbt project.
@@ -305,6 +318,7 @@ class DbtCliResource(DbtResource):
         target_path = kwargs.get("target_path", self._target_path)
         return parse_run_results(project_dir, target_path)
 
+    @public
     def remove_run_results_json(self, **kwargs):
         """
         Remove the run_results.json file from previous runs (if it exists).
@@ -313,6 +327,7 @@ class DbtCliResource(DbtResource):
         target_path = kwargs.get("target_path", self._target_path)
         remove_run_results(project_dir, target_path)
 
+    @public
     def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
         """
         Get a parsed version of the manifest.json file for the relevant dbt project.
