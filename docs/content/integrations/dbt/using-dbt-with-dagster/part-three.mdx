@@ -27,7 +27,7 @@ In this step, you'll:
 
 To fetch the data the dbt models require, we'll write two Dagster assets: one for `customers` and one for `orders`.
 
-In `/assets/__init__.py`:
+In `/tutorial_template/dbt_dagster_sda_tutorial/assets/__init__.py`:
 
 1. Replace the import section at the top of the file with the following:
 
@@ -62,18 +62,46 @@ Let's take a closer look at the arguments we've provided:
 
 - `group_name` - When Dagster loads the dbt models as assets, the assets will be placed in an asset group based on the name of the folder (`staging`) containing the models. Because we want the assets we add to be included in the same group, we defined this as `staging`.
 
+At this point, the `/tutorial_template/dbt_dagster_sda_tutorial/assets__init__.py` file should look like this:
+
+```python
+import pandas as pd
+from dagster_dbt import load_assets_from_dbt_project
+
+from dagster import asset, file_relative_path
+
+
+DBT_PROJECT_PATH = file_relative_path(__file__, "../../jaffle_shop")
+DBT_PROFILES = file_relative_path(__file__, "../../jaffle_shop/config")
+
+dbt_assets = load_assets_from_dbt_project(
+    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+)
+
+
+@asset(key_prefix=["jaffle_shop"], group_name="staging")
+def customers_raw() -> pd.DataFrame:
+   data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
+   return data
+
+@asset(key_prefix=["jaffle_shop"], group_name="staging")
+def orders_raw() -> pd.DataFrame:
+   data = pd.read_csv("https://docs.dagster.io/assets/orders.csv")
+   return data
+```
+
 ---
 
 ## Step 2: Add an I/O manager to the Dagster repository
 
-To materialize the assets, we need to tell Dagster how to handle the assets' inputs and outputs. We can do this using an [I/O manager](/concepts/io-management/io-managers) manager.
+To materialize the assets, we need to tell Dagster how to handle the assets' inputs and outputs. We can do this using an [I/O manager](/concepts/io-management/io-managers).
 
-In this step, we'll update the `repository.py` file to supply the `duckdb_io_manager` to the assets in the repository. This resource contains an [I/O manager](/concepts/io-management/io-managers) that, when assets are materialized, allows:
+In this step, we'll update the Dagster repository to supply the `duckdb_io_manager` to the assets in the repository. This resource contains an [I/O manager](/concepts/io-management/io-managers) that, when assets are materialized, allows:
 
 - Upstream assets (`customers_raw`, `orders_raw`) to load data into DuckDB
 - Downstream assets to read data from DuckDB. We'll add the downstream asset in the next section.
 
-In `repository.py`, replace its contents with the following:
+In `/tutorial_template/dbt_dagster_sda_tutorial/repository.py`, replace its contents with the following:
 
 ```python
 import os
@@ -124,7 +152,7 @@ Now that you've created assets, resources, and a repository, it's time to materi
 
 1. In Dagit, click the **Reload definitions** button. This ensures that Dagit picks up the changes you made in the previous steps.
 
-   At this point, the `customers_raw` and `orders_raw` assets should display above `stg_customers` and `stg_orderse` as upstream dependencies:
+   At this point, the `customers_raw` and `orders_raw` assets should display above `stg_customers` and `stg_orders` as upstream dependencies:
 
    <Image
    alt="Asset graph in Dagit, showing dbt models and unmaterialized assets"
@@ -137,8 +165,8 @@ Now that you've created assets, resources, and a repository, it's time to materi
 
 After the run completes, you can:
 
-- Click the **asset** to open a sidebar containing info about the asset, including its last materialization stats, a link to view the [**Asset details** page](/concepts/dagit/dagit#asset-details)
-- Click the ID of the **Latest Run** in an asset to view the [**Run details**](/concepts/dagit/dagit#viewing-a-single-run) page. This page contains detailed info about the run, including timing information, errors, and logs.
+- Click the **asset** to open a sidebar containing info about the asset, including its last materialization stats and a link to view the [**Asset details** page](/concepts/dagit/dagit#asset-details)
+- Click the ID of the **Latest Run** - in the following image, that's `651489a2` - in an asset to view the [**Run details**](/concepts/dagit/dagit#viewing-a-single-run) page. This page contains detailed info about the run, including timing information, errors, and logs.
 
 <Image
 alt="Asset graph in Dagit, showing materialized assets"
@@ -151,4 +179,4 @@ height={896}
 
 ## What's next?
 
-At this point, you've built and materialized two upstream Dagster assets, providing source data to your dbt models. In the next section, we'll show you how to add a [downstream asset to the pipeline](/integrations/dbt/using-dbt-with-dagster/part-four).
+At this point, you've built and materialized two upstream Dagster assets, providing source data to your dbt models. In the last section of the tutorial, we'll show you how to add a [downstream asset to the pipeline](/integrations/dbt/using-dbt-with-dagster/part-four).
