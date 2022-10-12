@@ -90,11 +90,7 @@ def _build_airbyte_asset_defn_metadata(
         key_prefix=asset_key_prefix,
         can_subset=False,
         metadata_by_output_name={
-            table: {
-                "schema": serialize_dagster_namedtuple(
-                    MetadataValue.table_schema(schema_by_table_name[table])
-                )
-            }
+            table: {"schema": MetadataValue.table_schema(schema_by_table_name[table])}
             for table in tables
         }
         if schema_by_table_name
@@ -125,7 +121,7 @@ def _build_airbyte_assets_from_metadata(
             k: AssetOut(
                 key=v,
                 metadata={
-                    k: deserialize_as(cast(str, v), TableSchemaMetadataValue)
+                    k: cast(TableSchemaMetadataValue, v)
                     for k, v in assets_defn_meta.metadata_by_output_name.get(k, {}).items()
                 }
                 if assets_defn_meta.metadata_by_output_name
@@ -281,7 +277,7 @@ def _get_normalization_tables_for_schema(
     key: str, schema: Mapping[str, Any], prefix: str = ""
 ) -> Dict[str, AirbyteTableMetadata]:
     """
-    Recursively traverses a schema, returning a list of table names that will be created by the Airbyte
+    Recursively traverses a schema, returning metadata for the tables that will be created by the Airbyte
     normalization process.
 
     For example, a table `cars` with a nested object field `limited_editions` will produce the tables
