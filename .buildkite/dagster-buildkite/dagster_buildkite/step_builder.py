@@ -17,9 +17,9 @@ AWS_ECR_REGION = "us-west-2"
 
 
 class BuildkiteQueue(Enum):
-    DOCKER = "docker-p"
-    MEDIUM = "buildkite-medium-v5-0-1"
-    WINDOWS = "windows-medium"
+    DOCKER = os.getenv("BUILDKITE_DOCKER_QUEUE")
+    MEDIUM = os.getenv("BUILDKITE_MEDIUM_QUEUE")
+    WINDOWS = os.getenv("BUILDKITE_WINDOWS_QUEUE")
 
     @classmethod
     def contains(cls, value: object) -> bool:
