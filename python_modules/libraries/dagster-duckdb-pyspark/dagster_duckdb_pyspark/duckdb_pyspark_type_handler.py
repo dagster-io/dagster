@@ -40,17 +40,9 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         row_count = obj.count()
-        print("HERE IT IS")
-        print(obj)
         obj.write.parquet(path=str(filepath), mode="overwrite")
 
-        if not filepath.is_file():
-            raise Exception(f"filepath {filepath} not created")
-
-        if context.has_asset_partitions:
-            to_scan = Path(filepath.parent, "*.pq", "*.parquet")
-        else:
-            to_scan = filepath
+        to_scan = Path(filepath, "*.parquet")
         conn.execute(f"create schema if not exists {self._schema(context, context)};")
         conn.execute(
             f"create or replace view {self._table_path(context, context)} as "
@@ -68,6 +60,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         )
 
     def _get_path(self, context: OutputContext, base_path: str):
+        # this returns a directory where parquet files will be written
         if context.has_asset_key:
             key = context.asset_key.path[-1]  # type: ignore
 
@@ -75,9 +68,9 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
                 start, end = context.asset_partitions_time_window
                 dt_format = "%Y%m%d%H%M%S"
                 partition_str = start.strftime(dt_format) + "_" + end.strftime(dt_format)
-                return Path(base_path, key, f"{partition_str}.pq")
+                return Path(base_path, key, partition_str)
             else:
-                return Path(base_path, f"{key}.pq")
+                return Path(base_path, key)
         else:
             keys = context.get_identifier()
             run_id = keys[0]
