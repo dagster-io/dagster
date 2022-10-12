@@ -96,42 +96,42 @@ In this step, you'll verify that your dbt project's `dbt_project.yml` file is co
 
 Next, you'll tell the models in your dbt project where the source data they depend on will be located. There isn't any data yet - we'll create Dagster assets that fetch and provide data to the dbt models later in the tutorial.
 
-1. Open the `sources.yml` file, located in `/tutorial_template/jaffle_shop/models`.
+In dbt, [sources are declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source) using `sources.yml` files. We've provided this file for you in `/tutorial_template/jaffle_shop/models`, which defines the location of tables containing source data:
 
-2. Add the following code to the file to [declare a source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source), which will define the location of tables containing source data:
+```yaml
+version: 2
 
-   ```yaml
-   version: 2
+sources:
+  - name: jaffle_shop
+    tables:
+      - name: orders_raw
+      - name: customers_raw
+```
 
-   sources:
-     - name: jaffle_shop
-       tables:
-         - name: orders_raw
-         - name: customers_raw
+The Dagster assets you build in [part three of this tutorial](/integrations/dbt/using-dbt-with-dagster/part-three) will create `orders_raw` and `customers_raw` tables when materialized. To have the dbt models select data from these tables, you'll need to update the models in the project.
+
+In `/tutorial_template/jaffle_shop/models/staging`, update the `stg_customers.sql` and `stg_orders.sql` models to use the [`{{ source()}}` function](https://docs.getdbt.com/reference/dbt-jinja-functions/source). This function tells the dbt model to select data from the defined source. In this example, that's the `customers_raw` and `orders_raw` tables in the DuckDB database:
+
+1. In `stg_customers.sql`, replace its contents with the following:
+
+   ```sql
+   select
+       id as customer_id,
+       first_name,
+       last_name
+   from {{ source('jaffle_shop', 'customers_raw') }}
    ```
 
-3. Update the models in `/tutorial_template/jaffle_shop/models/staging` to [select data from the sources you just declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#selecting-from-a-source). To do this, update the models' `FROM` statement to use the [`{{ source()}}` function](https://docs.getdbt.com/reference/dbt-jinja-functions/source).
+2. In `stg_orders.sql`, replace its contents with the following:
 
-   - In `stg_customers.sql`, replace its contents with the following:
-
-     ```sql
-     select
-         id as customer_id,
-         first_name,
-         last_name
-     from {{ source('jaffle_shop', 'customers_raw') }}
-     ```
-
-   - In `stg_orders.sql`, replace its contents with the following:
-
-     ```sql
-     select
-         id as order_id,
-         user_id as customer_id,
-         order_date,
-         status
-     from {{ source('jaffle_shop', 'orders_raw') }}
-     ```
+   ```sql
+   select
+       id as order_id,
+       user_id as customer_id,
+       order_date,
+       status
+   from {{ source('jaffle_shop', 'orders_raw') }}
+   ```
 
 ---
 
