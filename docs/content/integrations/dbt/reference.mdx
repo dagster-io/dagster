@@ -10,7 +10,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
   <a href="/integrations/dbt-cloud">dbt Cloud with Dagster guide</a>!
 </Note>
 
-This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/concepts/assets/software-defined-assets) framework.
+This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/concepts/assets/software-defined-assets) framework using the [`dagster-dbt` integration library](/\_apidocs/libraries/dagster-dbt).
 
 For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster software-defined assets tutorial](/integrations/dbt/using-dbt-with-dagster).
 
@@ -141,7 +141,7 @@ In Dagster, each asset has an asset key to identify it. Dagster automatically ge
 
 ### For dbt models, seeds, and snapshots
 
-For models, seeds, and snapshots, the default asset key will be the configured schema for that node (if any), concatenated with the name of the node.
+For [models](https://docs.getdbt.com/docs/building-a-dbt-project/building-models), [seeds](https://docs.getdbt.com/docs/building-a-dbt-project/seeds), and [snapshots](https://docs.getdbt.com/docs/building-a-dbt-project/snapshots), the default asset key will be the configured schema for that node (if any), concatenated with the name of the node.
 
 For example, if you have configured a [custom schema](https://docs.getdbt.com/docs/building-a-dbt-project/building-models/using-custom-schemas) for a subdirectory in your `dbt_project.yml` file:
 
@@ -152,11 +152,11 @@ models:
       +schema: marketing
 ```
 
-Then the asset key for a model named `some_model` will be `marketing/some_model`. If you have not configured a custom schema, then the asset key will simply be `some_model`.
+Then the asset key for a model named `some_model` will be `marketing/some_model`. If you haven't configured a custom schema, then the asset key will be `some_model`.
 
 ### For dbt sources
 
-For sources, the default asset key will be the name of the source concatenated with the name of the source table.
+For [sources](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), the default asset key will be the name of the source concatenated with the name of the source table.
 
 For example, the source table defined in the following `sources.yaml` will be `jaffle_shop/orders`:
 
@@ -199,16 +199,17 @@ dbt_assets = load_assets_from_dbt_project(
 ### Upstream dependencies
 
 <Note>
-  Check out{" "}
-  <a href="/integrations/dbt/using-dbt-with-dagster/part-two">
-    part two of the dbt + Dagster tutorial
+  Check out parts{" "}
+  <a href="/integrations/dbt/using-dbt-with-dagster/part-two">two</a> and{" "}
+  <a href="/integrations/dbt/using-dbt-with-dagster/part-three">
+    three of the dbt + Dagster tutorial
   </a>{" "}
   to see this concept in context.
 </Note>
 
 Dagster parses information about assets that are upstream of specific dbt models from the dbt project itself. Whenever a model is downstream of a [dbt source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), that source will be parsed as an upstream asset.
 
-For example, if you a source defined in your `sources.yml` file like this:
+For example, if you defined a source in your `sources.yml` file like this:
 
 ```yaml
 sources:
@@ -220,11 +221,14 @@ sources:
 and use it in a model:
 
 ```sql
-select * from {{source("jaffle_shop", "orders")}}
-where foo=1
+select *
+  from {{ source("jaffle_shop", "orders") }}
+ where foo=1
 ```
 
-Then the asset created for that model will be given an upstream asset key of `jaffle_shop/orders`. In many cases, this upstream asset might also be managed by Dagster. If you add an asset definition to your repository which produces `jaffle_shop/orders`, then this asset will be upstream of your dbt model.
+Then the asset created for that model will be given an upstream asset key of `jaffle_shop/orders`. In many cases, this upstream asset might also be managed by Dagster.
+
+If you add an asset definition to your repository which produces `jaffle_shop/orders`, then this asset will be upstream of your dbt model:
 
 ```python startafter=start_upstream_asset endbefore=end_upstream_asset file=/integrations/dbt/dbt.py dedent=4
 @asset(key_prefix="jaffle_shop")
@@ -259,12 +263,12 @@ def my_downstream_asset(my_dbt_model):
 
 #### Defining an I/O manager
 
-To materialize your dbt assets, you need to tell Dagster how to handle the assets' inputs and outputs. You can do this using an [I/O manager](/concepts/io-management/io-managers) manager.
+To materialize your dbt assets, you need to tell Dagster how to handle the assets' inputs and outputs. You can do this using an [I/O manager](/concepts/io-management/io-managers).
 
 The implementation of your I/O manager depends on:
 
 - The Python object you want to use to represent your table, and
-- The database that dbt is writing tables to
+- The database that dbt writes tables to
 
 A simple I/O manager implementation that loads data from a dbt-managed table into a Pandas dataframe would look something like the following:
 
