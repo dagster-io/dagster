@@ -16,6 +16,10 @@ from dagster import (
 
 
 def test_single_asset():
+    @asset(io_manager_key="my_io_manager", metadata={"a": "b"})
+    def asset1():
+        ...
+
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             assert False
@@ -24,12 +28,10 @@ def test_single_asset():
             assert context.asset_key == AssetKey("asset1")
             assert context.upstream_output.asset_key == AssetKey("asset1")
             assert context.upstream_output.metadata["a"] == "b"
+            assert context.upstream_output.op_def == asset1.op
+            assert context.upstream_output.name == "result"
             assert context.dagster_type.typing_type == int
             return 5
-
-    @asset(io_manager_key="my_io_manager", metadata={"a": "b"})
-    def asset1():
-        ...
 
     happenings = set()
 

@@ -114,7 +114,7 @@ run_launcher:
     secrets_tag: "my-tag-name"
 ```
 
-Any secret tagged with `my-tag-name` will be included in the environment.
+Any secret tagged with `my-tag-name` will be included as an environment variable with the name and value as that secret.
 
 Additionally, you can pass specific secrets using the [same structure as the ECS API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html):
 

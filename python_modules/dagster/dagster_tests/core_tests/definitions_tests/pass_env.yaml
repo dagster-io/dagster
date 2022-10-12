@@ -1,4 +1,4 @@
-solids:
+ops:
   can_fail:
     config:
       error: false

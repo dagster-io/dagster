@@ -1,4 +1,3 @@
-import json
 from typing import Optional
 from unittest import mock
 
@@ -9,10 +8,14 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
+    BoolMetadataValue,
+    DagsterEventType,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
     DailyPartitionsDefinition,
+    EventRecordsFilter,
+    Output,
     PartitionKeyRange,
     PartitionMapping,
     PartitionsDefinition,
@@ -35,7 +38,7 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
-from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import SensorExecutionContext
 
@@ -312,25 +315,6 @@ def test_multi_asset_sensor():
         assert list(a_and_b_sensor(ctx))[0].run_config == {}
 
 
-def test_multi_asset_nonexistent_key():
-    @multi_asset_sensor(asset_keys=[AssetKey("nonexistent_key")])
-    def failing_sensor(context):  # pylint: disable=unused-argument
-        pass
-
-    @repository
-    def my_repo():
-        return [failing_sensor]
-
-    with pytest.raises(DagsterInvalidSubsetError):
-        list(
-            failing_sensor(
-                build_multi_asset_sensor_context(
-                    asset_keys=[AssetKey("nonexistent_key")], repository_def=my_repo
-                )
-            )
-        )
-
-
 def test_multi_asset_sensor_selection():
     @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
     def two_assets():
@@ -370,7 +354,7 @@ def test_multi_asset_sensor_has_assets():
     def my_repo():
         return [two_assets, passing_sensor]
 
-    assert passing_sensor.asset_selection.children == (AssetKey("asset_a"), AssetKey("asset_b"))
+    assert passing_sensor.asset_keys == [AssetKey("asset_a"), AssetKey("asset_b")]
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(
             asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
@@ -462,88 +446,77 @@ def test_partitions_multi_asset_sensor_context():
         assert ctx.get_cursor_partition(AssetKey("daily_partitions_asset")) == "2022-08-01"
 
 
+@asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
+def july_asset():
+    return 1
+
+
+@asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
+def july_asset_2():
+    return 1
+
+
+@asset(partitions_def=DailyPartitionsDefinition("2022-08-01"))
+def august_asset():
+    return 1
+
+
+@repository
+def my_repo():
+    return [july_asset, july_asset_2, august_asset]
+
+
 def test_invalid_partition_mapping():
-    partitions_july = DailyPartitionsDefinition("2022-07-01")
-
-    @asset(partitions_def=partitions_july)
-    def july_daily_partitions():
-        return 1
-
-    @asset(partitions_def=DailyPartitionsDefinition("2022-08-01"))
-    def august_daily_partitions():
-        return 1
-
-    @repository
-    def my_repo():
-        return [july_daily_partitions, august_daily_partitions]
-
-    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
+    @multi_asset_sensor(asset_keys=[july_asset.key])
     def asset_sensor(context):
         partition = next(
-            iter(
-                context.latest_materialization_records_by_partition(
-                    july_daily_partitions.key
-                ).keys()
-            )
+            iter(context.latest_materialization_records_by_partition(july_asset.key).keys())
         )
 
         # Line errors because we're trying to map to a partition that doesn't exist
         context.get_downstream_partition_keys(
             partition,
-            to_asset_key=august_daily_partitions.key,
-            from_asset_key=july_daily_partitions.key,
+            to_asset_key=august_asset.key,
+            from_asset_key=july_asset.key,
         )
 
     with instance_for_test() as instance:
         materialize(
-            [july_daily_partitions],
+            [july_asset],
             partition_key="2022-07-01",
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_daily_partitions.key], instance=instance, repository_def=my_repo
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
         )
         with pytest.warns(UserWarning):
             list(asset_sensor(ctx))
 
 
 def test_multi_asset_sensor_after_cursor_partition_flag():
-    partitions_july = DailyPartitionsDefinition("2022-07-01")
-
-    @asset(partitions_def=partitions_july)
-    def july_daily_partitions():
-        return 1
-
-    @repository
-    def my_repo():
-        return [july_daily_partitions]
-
-    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
+    @multi_asset_sensor(asset_keys=[july_asset.key])
     def after_cursor_partitions_asset_sensor(context):
-        events = context.latest_materialization_records_by_key(
-            [july_daily_partitions.key], after_cursor_partition=True
-        )
+        events = context.latest_materialization_records_by_key([july_asset.key])
 
         if (
-            events[july_daily_partitions.key]
-            and events[july_daily_partitions.key].event_log_entry.dagster_event.partition
-            == "2022-07-10"
+            events[july_asset.key]
+            and events[july_asset.key].event_log_entry.dagster_event.partition == "2022-07-10"
         ):  # first sensor invocation
             context.advance_all_cursors()
         else:  # second sensor invocation
-            assert context.get_cursor_partition(july_daily_partitions.key) == "2022-07-10"
+            assert context.get_cursor_partition(july_asset.key) == "2022-07-10"
             materializations_by_key = context.latest_materialization_records_by_key()
-            later_materialization = materializations_by_key.get(july_daily_partitions.key)
+            later_materialization = materializations_by_key.get(july_asset.key)
             assert later_materialization
             assert later_materialization.event_log_entry.dagster_event.partition == "2022-07-05"
 
             materializations_by_partition = context.latest_materialization_records_by_partition(
-                july_daily_partitions.key
+                july_asset.key
             )
             assert list(materializations_by_partition.keys()) == ["2022-07-05"]
 
             materializations_by_partition = context.latest_materialization_records_by_partition(
-                july_daily_partitions.key, after_cursor_partition=True
+                july_asset.key, after_cursor_partition=True
             )
             # The cursor is set to the 2022-07-10 partition. Future searches with the default
             # after_cursor_partition=True will only return materializations with partitions after
@@ -552,52 +525,40 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
 
     with instance_for_test() as instance:
         materialize(
-            [july_daily_partitions],
+            [july_asset],
             partition_key="2022-07-10",
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_daily_partitions.key], instance=instance, repository_def=my_repo
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
         )
         list(after_cursor_partitions_asset_sensor(ctx))
-        materialize([july_daily_partitions], partition_key="2022-07-05", instance=instance)
+        materialize([july_asset], partition_key="2022-07-05", instance=instance)
         list(after_cursor_partitions_asset_sensor(ctx))
 
 
 def test_multi_asset_sensor_all_partitions_materialized():
-    partitions_july = DailyPartitionsDefinition("2022-07-01")
-
-    @asset(partitions_def=partitions_july)
-    def july_daily_partitions():
-        return 1
-
-    @repository
-    def my_repo():
-        return [july_daily_partitions]
-
-    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
+    @multi_asset_sensor(asset_keys=[july_asset.key])
     def asset_sensor(context):
-        assert context.all_partitions_materialized(july_daily_partitions.key) == False
+        assert context.all_partitions_materialized(july_asset.key) == False
         assert (
-            context.all_partitions_materialized(
-                july_daily_partitions.key, ["2022-07-10", "2022-07-11"]
-            )
+            context.all_partitions_materialized(july_asset.key, ["2022-07-10", "2022-07-11"])
             == True
         )
 
     with instance_for_test() as instance:
         materialize(
-            [july_daily_partitions],
+            [july_asset],
             partition_key="2022-07-10",
             instance=instance,
         )
         materialize(
-            [july_daily_partitions],
+            [july_asset],
             partition_key="2022-07-11",
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_daily_partitions.key], instance=instance, repository_def=my_repo
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
         )
         list(asset_sensor(ctx))
 
@@ -670,24 +631,11 @@ def test_multi_asset_sensor_custom_partition_mapping():
 
 def test_multi_asset_sensor_retains_ordering_and_fetches_latest_per_partition():
     partition_ordering = ["2022-07-15", "2022-07-14", "2022-07-13", "2022-07-12", "2022-07-15"]
-    partitions_july = DailyPartitionsDefinition("2022-07-01")
 
-    @asset(partitions_def=partitions_july)
-    def july_daily_partitions():
-        return 1
-
-    @repository
-    def my_repo():
-        return [july_daily_partitions]
-
-    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
+    @multi_asset_sensor(asset_keys=[july_asset.key])
     def asset_sensor(context):
         assert (
-            list(
-                context.latest_materialization_records_by_partition(
-                    july_daily_partitions.key
-                ).keys()
-            )
+            list(context.latest_materialization_records_by_partition(july_asset.key).keys())
             == partition_ordering[
                 1:
             ]  # 2022-07-15 is duplicated, so we fetch the later materialization and ignore the first materialization
@@ -696,29 +644,17 @@ def test_multi_asset_sensor_retains_ordering_and_fetches_latest_per_partition():
     with instance_for_test() as instance:
         for partition in partition_ordering:
             materialize(
-                [july_daily_partitions],
+                [july_asset],
                 partition_key=partition,
                 instance=instance,
             )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_daily_partitions.key], instance=instance, repository_def=my_repo
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
         )
         list(asset_sensor(ctx))
 
 
 def test_multi_asset_sensor_update_cursor_no_overwrite():
-    @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
-    def july_asset():
-        return 1
-
-    @asset(partitions_def=DailyPartitionsDefinition("2022-08-01"))
-    def august_asset():
-        return 1
-
-    @repository
-    def my_repo():
-        return [july_asset, august_asset]
-
     @multi_asset_sensor(asset_keys=[july_asset.key, august_asset.key])
     def after_cursor_partitions_asset_sensor(context):
         events = context.latest_materialization_records_by_key()
@@ -733,9 +669,12 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
             assert materialization
             context.advance_cursor({august_asset.key: materialization})
 
-            cursor = json.loads(context.cursor)
-            partition, _ = cursor[str(july_asset.key)]
-            assert partition == "2022-07-10"
+            assert (
+                context._get_cursor(  # pylint: disable=protected-access
+                    july_asset.key
+                ).latest_consumed_event_partition
+                == "2022-07-10"
+            )
 
     with instance_for_test() as instance:
         materialize(
@@ -751,56 +690,7 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
         list(after_cursor_partitions_asset_sensor(ctx))
 
 
-def test_multi_asset_sensor_advance_cursor_no_update_on_older_materialization():
-    @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
-    def july_asset():
-        return 1
-
-    @repository
-    def my_repo():
-        return [july_asset]
-
-    @multi_asset_sensor(asset_keys=[july_asset.key])
-    def after_cursor_partitions_asset_sensor(context):
-        events = context.materialization_records_for_key(july_asset.key, limit=2)
-
-        context.advance_cursor({july_asset.key: events[1]})  # advance to later materialization
-        context.advance_cursor(
-            {july_asset.key: events[0]}
-        )  # attempt to advance to earlier materialization
-
-        cursor = json.loads(context.cursor)
-        partition, storage_id = cursor[str(july_asset.key)]
-        assert partition == "2022-07-10"
-        assert storage_id == events[1].storage_id
-        assert storage_id > events[0].storage_id
-
-    with instance_for_test() as instance:
-        materialize(
-            [july_asset],
-            partition_key="2022-07-05",
-            instance=instance,
-        )
-        materialize([july_asset], partition_key="2022-07-10", instance=instance)
-        ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
-        )
-        list(after_cursor_partitions_asset_sensor(ctx))
-
-
 def test_multi_asset_sensor_latest_materialization_records_by_partition_and_asset():
-    @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
-    def july_asset():
-        return 1
-
-    @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
-    def july_asset_2():
-        return 1
-
-    @repository
-    def my_repo():
-        return [july_asset, july_asset_2]
-
     @multi_asset_sensor(asset_keys=[july_asset.key, july_asset_2.key])
     def my_sensor(context):
         events = context.latest_materialization_records_by_partition_and_asset()
@@ -871,4 +761,469 @@ def test_asset_selection_or_asset_keys_mandatory_on_context():
             build_multi_asset_sensor_context(
                 instance=instance,
                 repository_def=my_repo,
+            )
+
+
+def test_multi_asset_sensor_unconsumed_events():
+    invocation_num = 0
+
+    @multi_asset_sensor(asset_keys=[july_asset.key])
+    def test_unconsumed_events_sensor(context):
+        if invocation_num == 0:
+            events = context.latest_materialization_records_by_partition(july_asset.key)
+            assert len(events) == 2
+            context.advance_cursor(
+                {july_asset.key: events["2022-07-10"]}
+            )  # advance to later materialization
+        if invocation_num == 1:
+            # Should fetch unconsumed 2022-07-05 event
+            events = context.latest_materialization_records_by_partition(july_asset.key)
+            assert len(events) == 1
+            context.advance_cursor({july_asset.key: events["2022-07-05"]})
+
+    with instance_for_test() as instance:
+        # Invocation 0:
+        # Materialize partition 2022-07-05. Then materialize 2022-07-10 twice, updating cursor
+        # to the later 2022-07-10 materialization. The first 2022-07-05 materialization should be unconsumed.
+        materialize(
+            [july_asset],
+            partition_key="2022-07-05",
+            instance=instance,
+        )
+        materialize([july_asset], partition_key="2022-07-10", instance=instance)
+        materialize([july_asset], partition_key="2022-07-10", instance=instance)
+
+        event_records = list(
+            instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION), ascending=True
+            )
+        )
+        assert len(event_records) == 3
+        first_2022_07_10_mat = event_records[1].storage_id
+        unconsumed_storage_id = event_records[0].storage_id
+        assert first_2022_07_10_mat > unconsumed_storage_id
+        assert first_2022_07_10_mat < event_records[2].storage_id
+
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(test_unconsumed_events_sensor(ctx))
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        assert first_2022_07_10_mat < july_asset_cursor.latest_consumed_event_id
+        assert july_asset_cursor.latest_consumed_event_partition == "2022-07-10"
+        # Second materialization for 2022-07-10 is after cursor so should not be unconsumed
+        assert july_asset_cursor.trailing_unconsumed_partitioned_event_ids == {
+            "2022-07-05": unconsumed_storage_id
+        }
+
+        # Invocation 1:
+        # Confirm that the unconsumed event is fetched. After, the unconsumed event should
+        # no longer show up in the cursor. The storage ID of the cursor should stay the same.
+        invocation_num += 1
+        list(test_unconsumed_events_sensor(ctx))
+        second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        assert second_july_cursor.latest_consumed_event_partition == "2022-07-10"
+        assert (
+            second_july_cursor.latest_consumed_event_id
+            == july_asset_cursor.latest_consumed_event_id
+        )
+        assert second_july_cursor.trailing_unconsumed_partitioned_event_ids == {}
+
+
+def test_advance_all_cursors_clears_unconsumed_events():
+    invocation_num = 0
+
+    @multi_asset_sensor(asset_keys=[july_asset.key])
+    def test_unconsumed_events_sensor(context):
+        if invocation_num == 0:
+            events = context.latest_materialization_records_by_partition(july_asset.key)
+            assert len(events) == 2
+            context.advance_cursor(
+                {july_asset.key: events["2022-07-10"]}
+            )  # advance to later materialization
+        if invocation_num == 1:
+            # Should fetch unconsumed event
+            events = context.latest_materialization_records_by_partition(july_asset.key)
+            assert len(events) == 2
+            unconsumed_events = context.get_trailing_unconsumed_events(july_asset.key)
+            assert len(unconsumed_events) == 1
+            assert events["2022-07-05"] == unconsumed_events[0]
+            context.advance_all_cursors()
+
+    with instance_for_test() as instance:
+        # Invocation 0:
+        # Materialize partition 2022-07-05. Then materialize 2022-07-10, updating cursor
+        # to the 2022-07-10 materialization. The first 2022-07-05 materialization should be unconsumed.
+        materialize(
+            [july_asset],
+            partition_key="2022-07-05",
+            instance=instance,
+        )
+        materialize([july_asset], partition_key="2022-07-10", instance=instance)
+
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(test_unconsumed_events_sensor(ctx))
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        first_storage_id = july_asset_cursor.latest_consumed_event_id
+        assert first_storage_id
+        assert july_asset_cursor.latest_consumed_event_partition == "2022-07-10"
+        assert len(july_asset_cursor.trailing_unconsumed_partitioned_event_ids) == 1
+
+        # Invocation 1:
+        # Confirm that the unconsumed event is fetched. After calling advance_all_cursors,
+        # all unconsumed events should be cleared. The storage ID of the cursor should stay the same.
+        invocation_num += 1
+        materialize(
+            [july_asset],
+            partition_key="2022-07-06",
+            instance=instance,
+        )
+        list(test_unconsumed_events_sensor(ctx))
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        assert july_asset_cursor.latest_consumed_event_partition == "2022-07-06"
+        assert july_asset_cursor.trailing_unconsumed_partitioned_event_ids == {}
+        assert july_asset_cursor.latest_consumed_event_id > first_storage_id
+
+
+def test_error_when_max_num_unconsumed_events():
+    @multi_asset_sensor(asset_keys=[july_asset.key])
+    def test_unconsumed_events_sensor(context):
+        latest_record = context.materialization_records_for_key(july_asset.key, limit=25)
+        context.advance_cursor({july_asset.key: latest_record[-1]})
+
+    with instance_for_test() as instance:
+        # Invocation 0:
+        # Materialize partition 2022-07-05. Then materialize 2022-07-10, updating cursor
+        # to the 2022-07-10 materialization. The first 2022-07-05 materialization should be unconsumed.
+        for num in range(1, 26):
+            str_num = "0" + str(num) if num < 10 else str(num)
+            materialize(
+                [july_asset],
+                partition_key=f"2022-07-{str_num}",
+                instance=instance,
+            )
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(test_unconsumed_events_sensor(ctx))
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        assert july_asset_cursor.latest_consumed_event_id
+        assert july_asset_cursor.latest_consumed_event_partition == "2022-07-25"
+        assert len(july_asset_cursor.trailing_unconsumed_partitioned_event_ids) == 24
+
+        for date in ["26", "27", "28"]:
+            materialize(
+                [july_asset],
+                partition_key=f"2022-07-{date}",
+                instance=instance,
+            )
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="maximum number of trailing unconsumed events",
+        ):
+            list(test_unconsumed_events_sensor(ctx))
+
+
+def test_latest_materialization_records_by_partition_fetches_unconsumed_events():
+    invocation_num = 0
+
+    @multi_asset_sensor(asset_keys=[july_asset.key])
+    def test_unconsumed_events_sensor(context):
+        if invocation_num == 0:
+            context.advance_cursor(
+                {
+                    july_asset.key: context.latest_materialization_records_by_partition(
+                        july_asset.key
+                    )["2022-07-03"]
+                }
+            )
+        if invocation_num == 1:
+            # At this point, partitions 01, 02 are unconsumed and 04 is the latest materialization.
+            # Because we return the latest materialization per partition in order of storage ID,
+            # we expect to see materializations 01, 04, and 02 in that order.
+            records_dict = context.latest_materialization_records_by_partition(july_asset.key)
+
+            ordered_records = list(enumerate(records_dict))
+            get_partition_key_from_ordered_record = lambda record: record[1]
+            assert [
+                get_partition_key_from_ordered_record(record) for record in ordered_records
+            ] == ["2022-07-01", "2022-07-04", "2022-07-02"]
+
+            for _, event_log_entry in records_dict.items():
+                context.advance_cursor({july_asset.key: event_log_entry})
+
+    with instance_for_test() as instance:
+        # Invocation 0:
+        # Materialize partition 01, 02, and 03, advancing the cursor to 03. 01 and 02 are unconsumed events.
+        for date in ["01", "02", "03"]:
+            materialize(
+                [july_asset],
+                partition_key=f"2022-07-{date}",
+                instance=instance,
+            )
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(test_unconsumed_events_sensor(ctx))
+        first_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        assert first_july_cursor.latest_consumed_event_id
+        assert first_july_cursor.latest_consumed_event_partition == "2022-07-03"
+        assert len(first_july_cursor.trailing_unconsumed_partitioned_event_ids) == 2
+
+        invocation_num += 1
+        for date in ["04", "02"]:
+            materialize(
+                [july_asset],
+                partition_key=f"2022-07-{date}",
+                instance=instance,
+            )
+        list(test_unconsumed_events_sensor(ctx))
+        second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        assert second_july_cursor.latest_consumed_event_partition == "2022-07-02"
+        assert (
+            second_july_cursor.latest_consumed_event_id > first_july_cursor.latest_consumed_event_id
+        )
+        # We should remove the 2022-07-02 materialization from the unconsumed events list
+        # since we have advanced the cursor for a later materialization with that partition key.
+        assert len(second_july_cursor.trailing_unconsumed_partitioned_event_ids.keys()) == 0
+
+
+def test_unfetched_partitioned_events_are_unconsumed():
+    @multi_asset_sensor(asset_keys=[july_asset.key])
+    def test_unconsumed_events_sensor(context):
+        context.advance_cursor(
+            {
+                july_asset.key: context.latest_materialization_records_by_partition(july_asset.key)[
+                    "2022-07-05"
+                ]
+            }
+        )
+
+    with instance_for_test() as instance:
+        for _ in range(5):
+            materialize(
+                [july_asset],
+                partition_key="2022-07-04",
+                instance=instance,
+            )
+            materialize(
+                [july_asset],
+                partition_key="2022-07-05",
+                instance=instance,
+            )
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(test_unconsumed_events_sensor(ctx))
+        first_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        assert first_july_cursor.latest_consumed_event_id
+        assert first_july_cursor.latest_consumed_event_partition == "2022-07-05"
+
+        mats_2022_07_04 = list(
+            instance.get_event_records(
+                EventRecordsFilter(
+                    DagsterEventType.ASSET_MATERIALIZATION, asset_partitions=["2022-07-04"]
+                )
+            )
+        )
+        # Assert that the unconsumed event points to the most recent 2022_07_04 materialization.
+        assert (
+            first_july_cursor.trailing_unconsumed_partitioned_event_ids["2022-07-04"]
+            == mats_2022_07_04[0].storage_id
+        )
+
+        materialize(
+            [july_asset],
+            partition_key="2022-07-04",
+            instance=instance,
+        )
+        materialize(
+            [july_asset],
+            partition_key="2022-07-05",
+            instance=instance,
+        )
+
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+        )
+        list(test_unconsumed_events_sensor(ctx))
+        second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        assert (
+            second_july_cursor.latest_consumed_event_id > first_july_cursor.latest_consumed_event_id
+        )
+        assert second_july_cursor.latest_consumed_event_partition == "2022-07-05"
+        assert (
+            second_july_cursor.trailing_unconsumed_partitioned_event_ids["2022-07-04"]
+            > first_july_cursor.trailing_unconsumed_partitioned_event_ids["2022-07-04"]
+        )
+
+
+def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_materializations():
+    @asset
+    def my_asset():
+        pass
+
+    @multi_asset_sensor(asset_keys=[my_asset.key])
+    def my_sensor(context):
+        my_asset_cursor = context._get_cursor(my_asset.key)  # pylint: disable=protected-access
+        assert my_asset_cursor.latest_consumed_event_id is not None
+
+    @repository
+    def my_repo():
+        return [my_asset, my_sensor]
+
+    with instance_for_test() as instance:
+        result = materialize([my_asset], instance=instance)
+        records = list(
+            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
+        )[0]
+        assert records.event_log_entry.run_id == result.run_id
+
+        ctx = build_multi_asset_sensor_context(
+            asset_selection=AssetSelection.groups("default"),
+            instance=instance,
+            cursor_from_latest_materializations=True,
+            repository_def=my_repo,
+        )
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset.key
+            ).latest_consumed_event_id
+            == records.storage_id
+        )
+        list(my_sensor(ctx))
+
+
+def test_build_multi_asset_sensor_context_set_to_latest_materializations():
+    evaluated = False
+
+    @asset
+    def my_asset():
+        return Output(1, metadata={"evaluated": evaluated})
+
+    @multi_asset_sensor(asset_keys=[my_asset.key])
+    def my_sensor(context):
+        if not evaluated:
+            assert context.latest_materialization_records_by_key()[my_asset.key] == None
+        else:
+            # Test that materialization exists
+            assert context.latest_materialization_records_by_key()[
+                my_asset.key
+            ].event_log_entry.dagster_event.step_materialization_data.materialization.metadata_entries[
+                0
+            ].entry_data == BoolMetadataValue(
+                value=True
+            )
+
+    @repository
+    def my_repo():
+        return [my_asset, my_sensor]
+
+    with instance_for_test() as instance:
+        result = materialize([my_asset], instance=instance)
+        records = list(
+            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION))
+        )[0]
+        assert records.event_log_entry.run_id == result.run_id
+
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[my_asset.key],
+            instance=instance,
+            cursor_from_latest_materializations=True,
+            repository_def=my_repo,
+        )
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset.key
+            ).latest_consumed_event_id
+            == records.storage_id
+        )
+        list(my_sensor(ctx))
+        evaluated = True
+
+        materialize([my_asset], instance=instance)
+        list(my_sensor(ctx))
+
+
+def test_build_multi_asset_context_set_after_multiple_materializations():
+    @asset
+    def my_asset():
+        return 1
+
+    @asset
+    def my_asset_2():
+        return 1
+
+    @repository
+    def my_repo():
+        return [my_asset, my_asset_2]
+
+    with instance_for_test() as instance:
+        materialize([my_asset], instance=instance)
+        materialize([my_asset_2], instance=instance)
+
+        records = sorted(
+            list(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+            ),
+            key=lambda x: x.storage_id,
+        )
+        assert len(records) == 2
+
+        my_asset_cursor = records[0].storage_id
+        my_asset_2_cursor = records[1].storage_id
+
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[my_asset.key, my_asset_2.key],
+            instance=instance,
+            cursor_from_latest_materializations=True,
+            repository_def=my_repo,
+        )
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset.key
+            ).latest_consumed_event_id
+            == my_asset_cursor
+        )
+        assert (
+            ctx._get_cursor(  # pylint: disable=protected-access
+                my_asset_2.key
+            ).latest_consumed_event_id
+            == my_asset_2_cursor
+        )
+
+
+def test_error_exec_in_process_to_build_multi_asset_sensor_context():
+    @asset
+    def my_asset():
+        return 1
+
+    @repository
+    def my_repo():
+        return [my_asset]
+
+    with pytest.raises(DagsterInvalidInvocationError, match="Dagster instance"):
+        with instance_for_test() as instance:
+            materialize([my_asset], instance=instance)
+            build_multi_asset_sensor_context(
+                asset_keys=[my_asset.key],
+                repository_def=my_repo,
+                cursor_from_latest_materializations=True,
+            )
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Cannot provide both cursor and cursor_from_latest_materializations",
+    ):
+        with instance_for_test() as instance:
+            materialize([my_asset], instance=instance)
+            build_multi_asset_sensor_context(
+                asset_keys=[my_asset.key],
+                repository_def=my_repo,
+                cursor_from_latest_materializations=True,
+                cursor="alskdjalsjk",
             )

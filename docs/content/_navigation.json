@@ -165,6 +165,10 @@
             "path": "/concepts/partitions-schedules-sensors/sensors"
           },
           {
+            "title": "Asset Sensors",
+            "path": "/concepts/partitions-schedules-sensors/asset-sensors"
+          },
+          {
             "title": "Partitions",
             "path": "/concepts/partitions-schedules-sensors/partitions"
           },
@@ -759,6 +763,18 @@
           {
             "title": "Docker (dagster-docker)",
             "path": "/_apidocs/libraries/dagster-docker"
+          },
+          {
+            "title": "DuckDB (dagster-duckdb)",
+            "path": "/_apidocs/libraries/dagster-duckdb"
+          },
+          {
+            "title": "DuckDB + Pandas (dagster-duckdb-pandas)",
+            "path": "/_apidocs/libraries/dagster-duckdb-pandas"
+          },
+          {
+            "title": "DuckDB + PySpark (dagster-duckdb-pyspark)",
+            "path": "/_apidocs/libraries/dagster-duckdb-pyspark"
           },
           {
             "title": "Fivetran (dagster-fivetran)",

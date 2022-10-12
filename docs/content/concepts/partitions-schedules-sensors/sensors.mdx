@@ -9,25 +9,17 @@ Sensors allow you to instigate runs based on any external state change.
 
 ## Relevant APIs
 
-| Name                                                      | Description                                                                                                                                                                                                                                                                                                                                                             |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="sensor" decorator />                    | The decorator used to define a sensor. The decorated function is called the sensor's evaluation function. The decorator returns a <PyObject object="SensorDefinition" />.                                                                                                                                                                                               |
-| <PyObject object="RunRequest" />                          | The sensor evaluation function can yield one or more run requests. Each run request creates a job run.                                                                                                                                                                                                                                                                  |
-| <PyObject object="SkipReason" />                          | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                                                                                                                                                                                            |
-| <PyObject object="SensorDefinition"  />                   | Class for sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="sensor" decorator /> decorator, which returns a <PyObject object="SensorDefinition"  />                                                                                                                                                   |
-| <PyObject object="SensorEvaluationContext"  />            | The context object passed to a sensor evaluation function.                                                                                                                                                                                                                                                                                                              |
-| <PyObject object="build_sensor_context"    />             | A function that constructs an instance of <PyObject object="SensorEvaluationContext" />, This is intended to be used to test a sensor.                                                                                                                                                                                                                                  |
-| <PyObject object="asset_sensor" decorator />              | The decorator used to define an asset sensor. The decorated function is an evaluation function that takes in a <PyObject object="SensorEvaluationContext" /> and an asset materialization event. The decorator returns an <PyObject object="AssetSensorDefinition" />                                                                                                   |
-| <PyObject object="AssetSensorDefinition"  />              | A special sensor definition class for asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="asset_sensor" decorator /> which returns a <PyObject object="AssetSensorDefinition"  />                                                                                                                 |
-| <PyObject object="multi_asset_sensor" decorator />        | The decorator used to define an asset sensor that can monitor multiple assets at a time. The decorated function is an evaluation function that takes in a <PyObject object="MultiAssetSensorEvaluationContext" /> which has methods to fetch materialization events for the monitored assets. The decorator returns an <PyObject object="MultiAssetSensorDefinition" /> |
-| <PyObject object="MultiAssetSensorDefinition"  />         | A special sensor definition class for multi asset sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="multi_asset_sensor" decorator /> which returns a <PyObject object="MultiAssetSensorDefinition"  />                                                                                                |
-| <PyObject object="MultiSensorEvaluationContext"  />       | The context object passed to a multi asset sensor evaluation function. Has methods for fetching materialization events for assets                                                                                                                                                                                                                                       |
-| <PyObject object="build_multi_asset_sensor_context"    /> | A function that constructs an instance of <PyObject object="MultiAssetSensorEvaluationContext" />, This is intended to be used to test a multi asset sensor.                                                                                                                                                                                                            |
-| <PyObject object="run_status_sensor" decorator />         | The decorator used to define a run status sensor. The decorator returns a <PyObject object="RunStatusSensorDefinition" />                                                                                                                                                                                                                                               |
-| <PyObject object="run_failure_sensor" decorator />        | The decorator used to define a run failure sensor. The run failure sensor, is a special case of a run status sensor specifically to detect run failures.                                                                                                                                                                                                                |
-| <PyObject object="RunStatusSensorDefinition" />           | Class for run status sensors. You almost never want to initialize this class directly. Instead, you should use the <PyObject object="run_status_sensor" decorator /> or <PyObject object="run_failure_sensor" decorator />                                                                                                                                              |
-| <PyObject object="RunStatusSensorContext" />              | The context object passed to a run status sensor evaluation.                                                                                                                                                                                                                                                                                                            |
-| <PyObject object="build_run_status_sensor_context" />     | A function that constructs an instance of <PyObject object="RunStatusSensorContext" />. This is intended to be used to test a run status sensor.                                                                                                                                                                                                                        |
+| Name                                                  | Description                                                                                                                                                                                                                |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="sensor" decorator />                | The decorator used to define a sensor. The decorated function is called the sensor's evaluation function. The decorator returns a <PyObject object="SensorDefinition" />.                                                  |
+| <PyObject object="SensorDefinition"  />               | Class for sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="sensor" decorator /> decorator, which returns a <PyObject object="SensorDefinition"  />      |
+| <PyObject object="SensorEvaluationContext"  />        | The context object passed to a sensor evaluation function.                                                                                                                                                                 |
+| <PyObject object="build_sensor_context"    />         | A function that constructs an instance of <PyObject object="SensorEvaluationContext" />, This is intended to be used to test a sensor.                                                                                     |
+| <PyObject object="run_status_sensor" decorator />     | The decorator used to define a run status sensor. The decorator returns a <PyObject object="RunStatusSensorDefinition" />                                                                                                  |
+| <PyObject object="run_failure_sensor" decorator />    | The decorator used to define a run failure sensor. The run failure sensor, is a special case of a run status sensor specifically to detect run failures.                                                                   |
+| <PyObject object="RunStatusSensorDefinition" />       | Class for run status sensors. You almost never want to initialize this class directly. Instead, you should use the <PyObject object="run_status_sensor" decorator /> or <PyObject object="run_failure_sensor" decorator /> |
+| <PyObject object="RunStatusSensorContext" />          | The context object passed to a run status sensor evaluation.                                                                                                                                                               |
+| <PyObject object="build_run_status_sensor_context" /> | A function that constructs an instance of <PyObject object="RunStatusSensorContext" />. This is intended to be used to test a run status sensor.                                                                           |
 
 ## Overview
 
@@ -109,79 +101,6 @@ def my_running_sensor():
 If you manually start or stop a sensor in Dagit, that will override any default status that is set in code.
 
 Once your sensor is started, if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the sensor will begin executing immediately, without needing to restart the dagster-daemon process.
-
-## Asset sensors
-
-A useful pattern is to create a sensor that checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
-
-One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job that caused it.
-
-Dagster provides a special asset sensor definition format for sensors that fire a single <PyObject object="RunRequest"/> based on a single asset materialization. Here is an example of a sensor that generates a <PyObject object="RunRequest"/> for every materialization for the asset key `my_table`:
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_sensor_marker endbefore=end_asset_sensor_marker
-from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
-
-
-@asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
-def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
-    yield RunRequest(
-        run_key=context.cursor,
-        run_config={
-            "ops": {
-                "read_materialization": {
-                    "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,
-                    }
-                }
-            }
-        },
-    )
-```
-
-### Multi-asset sensors <Experimental />
-
-Multi-asset sensors, which can trigger job executions based on multiple asset materialization event streams, can be handled using the <PyObject object="multi_asset_sensor" decorator/> decorator.
-
-In the body of the sensor, you have access to the materialization event records for each asset via the context. <PyObject object="MultiAssetSensorEvaluationContext" method="latest_materialization_records_by_key" /> returns a dictionary mapping the `AssetKey` for each monitored asset to the most recent materialization record. If there is no materialization event, the mapped value will be `None`. <PyObject object="MultiAssetSensorEvaluationContext" method="materialization_records_for_key" /> returns a list of materialization event records for a specified `AssetKey`. Both methods only return materializations after the latest cursor.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
-@multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-    job=my_job,
-)
-def asset_a_and_b_sensor(context):
-    asset_events = context.latest_materialization_records_by_key()
-    if all(asset_events.values()):
-        context.advance_all_cursors()
-        return RunRequest()
-```
-
-Note the `context.advance_all_cursors` call near the end of the sensor. The cursor helps keep track of which materialization events have been processed by the sensor so that the next time the sensor runs, only newer events are fetched. Since `multi_asset_sensor`s provide flexibility to determine what conditions should result in `RunRequest`s, the sensor must manually update the cursor if a <PyObject object="RunRequest" /> is returned.
-
-You can also return a <PyObject object="SkipReason" /> to document why the sensor didn't launch a run.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_w_skip_reason endbefore=end_multi_asset_sensor_w_skip_reason
-@multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-    job=my_job,
-)
-def asset_a_and_b_sensor_with_skip_reason(context):
-    asset_events = context.latest_materialization_records_by_key()
-    if all(asset_events.values()):
-        context.advance_all_cursors()
-        return RunRequest()
-    elif any(asset_events.values()):
-        materialized_asset_key_strs = [
-            key.to_user_string() for key, value in asset_events.items() if value
-        ]
-        not_materialized_asset_key_strs = [
-            key.to_user_string() for key, value in asset_events.items() if not value
-        ]
-        return SkipReason(
-            f"Observed materializations for {materialized_asset_key_strs}, "
-            f"but not for {not_materialized_asset_key_strs}"
-        )
-```
 
 ## Idempotence and Cursors
 

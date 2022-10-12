@@ -1,8 +1,9 @@
 import os
 
 from assets_dbt_python.assets import forecasting, raw_data
-from assets_dbt_python.resources import duckdb_io_manager
 from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
+from dagster_duckdb import build_duckdb_io_manager
+from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 
 from dagster import (
     ScheduleDefinition,
@@ -47,6 +48,7 @@ forecast_job = define_asset_job("refresh_forecast_model_job", selection="*order_
 
 @repository
 def assets_dbt_python():
+    duckdb_io_manager = build_duckdb_io_manager(type_handlers=[DuckDBPandasTypeHandler()])
     return with_resources(
         dbt_assets + raw_data_assets + forecasting_assets,
         resource_defs={

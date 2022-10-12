@@ -69,6 +69,7 @@ def _select_unique_ids_from_manifest_json(
         import dbt.graph.cli as graph_cli
         import dbt.graph.selector as graph_selector
         from dbt.contracts.graph.manifest import Manifest
+        from dbt.graph import SelectionSpec
         from networkx import DiGraph
     except ImportError as e:
         raise check.CheckError(
@@ -88,17 +89,17 @@ def _select_unique_ids_from_manifest_json(
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=manifest_json["child_map"]))
     manifest = Manifest(
         # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
-        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
+        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},  # type: ignore
         sources={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()  # type: ignore
         },
         metrics={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
         },
     )
 
     # create a parsed selection from the select string
-    parsed_spec = graph_cli.parse_union([select], True)
+    parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:
         parsed_spec = graph_cli.SelectionDifference(
@@ -303,6 +304,7 @@ def _dbt_nodes_to_assets(
     select: str,
     exclude: str,
     selected_unique_ids: AbstractSet[str],
+    project_id: str,
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ] = None,
@@ -321,8 +323,6 @@ def _dbt_nodes_to_assets(
 
     group_names_by_key: Dict[AssetKey, str] = {}
     fqns_by_output_name: Dict[str, str] = {}
-
-    package_name: str = ""
 
     if use_build_command:
         deps = _get_deps(
@@ -354,8 +354,6 @@ def _dbt_nodes_to_assets(
             ),
         )
 
-        package_name = node_info.get("package_name", package_name)
-
         group_name = node_info_to_group_fn(node_info)
         if group_name is not None:
             group_names_by_key[asset_key] = group_name
@@ -372,7 +370,7 @@ def _dbt_nodes_to_assets(
                 asset_ins[parent_asset_key] = (input_name, In(Nothing))
 
     # prevent op name collisions between multiple dbt multi-assets
-    op_name = f"run_dbt_{package_name}"
+    op_name = f"run_dbt_{project_id}"
     if select != "*" or exclude:
         op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
 
@@ -581,6 +579,7 @@ def load_assets_from_dbt_manifest(
         select=select,
         exclude=exclude,
         selected_unique_ids=selected_unique_ids,
+        project_id=manifest_json["metadata"]["project_id"][:5],
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
         partitions_def=partitions_def,
