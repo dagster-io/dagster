@@ -1843,6 +1843,7 @@ class TestEventLogStorage:
         def materialize():
             yield AssetMaterialization(b)
             yield AssetMaterialization(c, partition="a")
+            yield AssetObservation(a, partition="a")
             yield Output(None)
 
         @op
