@@ -19,8 +19,7 @@ In this part, you'll:
 
 - [Download the `dbt_dagster_tutorial` example](#step-1-download-the-dbt_dagster_tutorial-example)
 - [Create a DuckDB connection profile](#step-2-create-a-duckdb-profile)
-- [Configure the project's `dbt_project.yml` file](#step-3-configure-the-dbt_projectyml-file)
-- [Configure dbt model data sources](#step-4-configure-dbt-model-data-sources)
+- [Configure dbt model data sources](#step-3-configure-dbt-model-data-sources)
 
 ---
 
@@ -68,31 +67,7 @@ In this step, you'll add a DuckDB profile to the dbt project. This will allow yo
 
 ---
 
-## Step 3: Configure the dbt_project.yml file
-
-In this step, you'll verify that your dbt project's `dbt_project.yml` file is correctly configured.
-
-1. Open the `dbt_project.yml` file, located in `/tutorial_template/jaffle_shop`.
-
-2. Verify the following:
-
-   - That the `profile` is defined as `jaffle_shop` :
-
-     ```yaml
-     profile: "jaffle_shop"
-     ```
-
-   - That the `jaffle_shop` models are set to materialize into tables:
-
-     ```yaml
-     models:
-       jaffle_shop:
-         +materialized: table
-     ```
-
----
-
-## Step 4: Configure dbt model data sources
+## Step 3: Configure dbt model data sources
 
 Next, you'll tell the models in your dbt project where the source data they depend on will be located. There isn't any data yet - we'll create Dagster assets that fetch and provide data to the dbt models later in the tutorial.
 

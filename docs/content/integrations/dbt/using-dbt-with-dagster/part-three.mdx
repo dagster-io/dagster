@@ -58,7 +58,7 @@ Let's take a closer look at the arguments we've provided:
 
 - `key_prefix` - When the assets are materialized, Dagster will store them in DuckDB in the schema defined by the last value in `key_prefix`. In this case, that's `jaffle_shop`. The tables will have the same names as the assets that produced them, which are `customers_raw` and `orders_raw`.
 
-  Because these tables will become the source data for the `stg_customers.sql` and `stg_orders.sql` models in the dbt project, the names of the assets must match the table names specified in `/tutorial_template/jaffle_shop/models/sources.yml`, which you configured in [part one of this tutorial](/integrations/dbt/using-dbt-with-dagster/part-one#step-4-configure-dbt-model-data-sources).
+  Because these tables will become the source data for the `stg_customers.sql` and `stg_orders.sql` models in the dbt project, the names of the assets must match the table names specified in `/tutorial_template/jaffle_shop/models/sources.yml`, which you configured in [part one of this tutorial](/integrations/dbt/using-dbt-with-dagster/part-one#step-3-configure-dbt-model-data-sources).
 
 - `group_name` - When Dagster loads the dbt models as assets, the assets will be placed in an asset group based on the name of the folder (`staging`) containing the models. Because we want the assets we add to be included in the same group, we defined this as `staging`.
 
