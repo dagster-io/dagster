@@ -737,6 +737,18 @@
             "path": "/_apidocs/libraries/dagster-docker"
           },
           {
+            "title": "DuckDB (dagster-duckdb)",
+            "path": "/_apidocs/libraries/dagster-duckdb"
+          },
+          {
+            "title": "DuckDB + Pandas (dagster-duckdb-pandas)",
+            "path": "/_apidocs/libraries/dagster-duckdb-pandas"
+          },
+          {
+            "title": "DuckDB + PySpark (dagster-duckdb-pyspark)",
+            "path": "/_apidocs/libraries/dagster-duckdb-pyspark"
+          },
+          {
             "title": "Fivetran (dagster-fivetran)",
             "path": "/_apidocs/libraries/dagster-fivetran"
           },
