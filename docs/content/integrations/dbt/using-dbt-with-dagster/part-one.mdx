@@ -52,7 +52,7 @@ Let's get started by downloading the [`dbt_dagster_tutorial` example](https://gi
 
 In this step, you'll add a DuckDB profile to the dbt project. This will allow you to connect dbt to the DuckDB database.
 
-1. Open the `profile.yml` file, located in `/tutorial_template/jaffle_shop/config`.
+1. Open the `profiles.yml` file, located in `/tutorial_template/jaffle_shop/config`.
 
 2. Add the following code to the file:
 
@@ -94,7 +94,7 @@ In this step, you'll verify that your dbt project's `dbt_project.yml` file is co
 
 ## Step 4: Configure dbt model data sources
 
-Next, you'll tell the models in your dbt project where the source data they depend on will be located. There isn't any data yet - in the next section, we'll create Dagster assets that fetch and provide data to the dbt models.
+Next, you'll tell the models in your dbt project where the source data they depend on will be located. There isn't any data yet - we'll create Dagster assets that fetch and provide data to the dbt models later in the tutorial.
 
 1. Open the `sources.yml` file, located in `/tutorial_template/jaffle_shop/models`.
 
@@ -112,9 +112,9 @@ Next, you'll tell the models in your dbt project where the source data they depe
 
 3. Update the models in `/tutorial_template/jaffle_shop/models/staging` to [select data from the sources you just declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#selecting-from-a-source).
 
-   To do this, update the models' `FROM` statement to use the [`{{ source()}}` function](https://docs.getdbt.com/reference/dbt-jinja-functions/source). When finished, the files should look like the following:
+   To do this, update the models' `FROM` statement to use the [`{{ source()}}` function](https://docs.getdbt.com/reference/dbt-jinja-functions/source).
 
-   - For `stg_customers.sql`:
+   - In `stg_customers.sql`, replace its contents with the following:
 
      ```sql
      select
@@ -124,7 +124,7 @@ Next, you'll tell the models in your dbt project where the source data they depe
      from {{ source('jaffle_shop', 'customers_raw') }}
      ```
 
-   - For `stg_orders.sql`:
+   - In `stg_orders.sql`, replace its contents with the following:
 
      ```sql
      select
