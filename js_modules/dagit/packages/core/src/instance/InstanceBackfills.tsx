@@ -14,7 +14,7 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {RunListTabs} from '../runs/RunListTabs';
+import {OverviewTabs} from '../overview/OverviewTabs';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 
@@ -59,10 +59,10 @@ export const InstanceBackfills = () => {
   return (
     <>
       <PageHeader
-        title={<Heading>{flagNewWorkspace ? 'Runs' : pageTitle}</Heading>}
+        title={<Heading>{flagNewWorkspace ? 'Overview' : pageTitle}</Heading>}
         tabs={
           flagNewWorkspace ? (
-            <RunListTabs />
+            <OverviewTabs tab="backfills" refreshState={refreshState} />
           ) : (
             <InstanceTabs tab="backfills" refreshState={refreshState} />
           )

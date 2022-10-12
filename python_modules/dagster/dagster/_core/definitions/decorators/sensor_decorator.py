@@ -214,9 +214,11 @@ def multi_asset_sensor(
 
     Args:
         asset_keys (Optional[Sequence[AssetKey]]): The asset keys this sensor monitors. If not
-            provided, asset_selection argument must be provided.
+            provided, asset_selection argument must be provided. To monitor assets that aren't defined
+            in the repository that this sensor is part of, you must use asset_keys.
         asset_selection (Optional[AssetSelection]): The asset selection this sensor monitors. If not
-            provided, asset_keys argument must be provided.
+            provided, asset_keys argument must be provided. If you use asset_selection, all assets that
+            are part of the selection must be in the repository that this sensor is part of.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse

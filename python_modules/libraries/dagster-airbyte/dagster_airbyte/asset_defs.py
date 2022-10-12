@@ -466,10 +466,24 @@ def load_assets_from_airbyte_instance(
         key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
         create_assets_for_normalization_tables (bool): If True, assets will be created for tables
             created by Airbyte's normalization feature. If False, only the destination tables
-            will be created.
+            will be created. Defaults to True.
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_instance
+
+        airbyte_instance = airbyte_resource.configured(
+            {
+                "host": "localhost",
+                "port": "8000",
+            }
+        )
+        airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
     """
 
     if isinstance(key_prefix, str):
@@ -507,10 +521,20 @@ def load_assets_from_airbyte_project(
         key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
         create_assets_for_normalization_tables (bool): If True, assets will be created for tables
             created by Airbyte's normalization feature. If False, only the destination tables
-            will be created.
+            will be created. Defaults to True.
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        from dagster_airbyte import load_assets_from_airbyte_project
+
+        airbyte_assets = load_assets_from_airbyte_project(
+            project_dir="path/to/airbyte/project"
+        )
     """
 
     if isinstance(key_prefix, str):

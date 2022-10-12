@@ -1418,6 +1418,11 @@ class DagsterInstance:
 
     @public
     @traced
+    def get_latest_materialization_event(self, asset_key: AssetKey) -> Optional["EventLogEntry"]:
+        return self._event_storage.get_latest_materialization_events([asset_key]).get(asset_key)
+
+    @public
+    @traced
     def get_event_records(
         self,
         event_records_filter: "EventRecordsFilter",

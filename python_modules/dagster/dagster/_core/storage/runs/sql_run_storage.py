@@ -20,13 +20,19 @@ from dagster._core.errors import (
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.bulk_actions import BulkActionType
+from dagster._core.host_representation.origin import ExternalPipelineOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
-from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, ROOT_RUN_ID_TAG
+from dagster._core.storage.tags import (
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    REPOSITORY_LABEL_TAG,
+    ROOT_RUN_ID_TAG,
+)
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import (
     deserialize_as,
@@ -1077,6 +1083,24 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     .where(KeyValueStoreTable.c.key.in_(pairs.keys()))
                     .values(value=db.sql.case(pairs, value=KeyValueStoreTable.c.key))
                 )
+
+    # Migrating run history
+    def replace_job_origin(self, run: PipelineRun, job_origin: ExternalPipelineOrigin):
+        new_label = job_origin.external_repository_origin.get_label()
+        with self.connect() as conn:
+            conn.execute(
+                RunsTable.update()  # pylint: disable=no-value-for-parameter
+                .where(RunsTable.c.run_id == run.run_id)
+                .values(
+                    run_body=serialize_dagster_namedtuple(run.with_job_origin(job_origin)),
+                )
+            )
+            conn.execute(
+                RunTagsTable.update()  # pylint: disable=no-value-for-parameter
+                .where(RunTagsTable.c.run_id == run.run_id)
+                .where(RunTagsTable.c.key == REPOSITORY_LABEL_TAG)
+                .values(value=new_label)
+            )
 
 
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"

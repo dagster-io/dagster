@@ -22,8 +22,8 @@ class AssetSelection(ABC):
     """
     An AssetSelection defines a query over a set of assets, normally all the assets in a repository.
 
-    You can use the "|" and "&" operators to create unions and intersections of asset selections,
-    respectively.
+    You can use the "|", "&", and "-" operators to create unions, intersections, and differences of
+    asset selections, respectively.
 
     AssetSelections are typically used with :py:func:`define_asset_job`.
 
@@ -39,6 +39,9 @@ class AssetSelection(ABC):
 
             # Select all assets in group "marketing" that are downstream of asset "leads":
             AssetSelection.groups("marketing") & AssetSelection.keys("leads").downstream()
+
+            # Select all assets except for those in group "marketing"
+            AssetSelection.all() - AssetSelection.groups("marketing")
     """
 
     @public  # type: ignore

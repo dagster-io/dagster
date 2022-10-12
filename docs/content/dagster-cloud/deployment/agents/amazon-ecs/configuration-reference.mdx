@@ -1,0 +1,214 @@
+---
+title: Amazon ECS agent configuration reference | Dagster Docs
+
+platform_type: "cloud"
+---
+
+# Amazon ECS agent configuration reference
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+This reference describes the various configuration options Dagster Cloud currently supports for [Amazon ECS agents](/dagster-cloud/deployment/agents/amazon-ecs).
+
+---
+
+## Per-location configuration: Secrets and environment variables
+
+When [adding a code location](/dagster-cloud/developing-testing/code-locations) to Dagster Cloud with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location. If you're using the Dagster Cloud Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file.
+
+The following example `dagster_cloud.yaml` file illustrates the available fields:
+
+```yaml
+locations:
+  - location_name: cloud-examples
+    image: dagster/dagster-cloud-examples:latest
+    code_source:
+      package_name: dagster_cloud_examples
+    container_context:
+      ecs:
+        env_vars:
+          - FOO_ENV_VAR=foo_value
+          - BAR_ENV_VAR
+        secrets:
+          - name: "MY_API_TOKEN"
+            valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::"
+          - name: "MY_PASSWORD"
+            valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::"
+        secrets_tags:
+          - "my_tag_name"
+```
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="container_context.ecs.env_vars">
+    A list of keys or key-value pairs to include in the task. If a value is not
+    specified, the value will be pulled from the agent task.
+    <br />
+    In the example above, <code>FOO_ENV_VAR</code> will be set to{" "}
+    <code>foo_value</code> and <code>BAR_ENV_VAR</code> will be set to whatever
+    value it has in the agent task.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="container_context.ecs.secrets">
+    Individual secrets specified using the{" "}
+    <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html">
+      same structure as the ECS API
+    </a>
+    .
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="container_context.ecs.secrets_tags">
+    A list of tag names. Each secret tagged with any of those tag names in AWS
+    Secrets Manager will be included in the launched tasks as environment
+    variables. The name of the environment variable will be the name of the
+    secret, and the value of the environment variable will be the value of the
+    secret.
+  </ReferenceTableItem>
+</ReferenceTable>
+
+---
+
+## Per-job configuration: Resource limits
+
+You can use job tags to customize the CPU and memory of every run for that job:
+
+```py
+from dagster import job, op
+
+@op()
+def my_op(context):
+  context.log.info('running')
+
+@job(
+  tags = {
+    "ecs/cpu": "256",
+    "ecs/memory": "512",
+  }
+)
+def my_job():
+  my_op()
+```
+
+[Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
+
+---
+
+## Per-deployment configuration
+
+This section describes the properties of the `dagster.yaml` configuration file used by Amazon ECS agents. Typically, this file is created by the CloudFormation template that deploys the agent and can be found within the agent task definition's command.
+
+To change these properties, edit the CloudFormation template and redeploy the CloudFormation stack.
+
+```yaml
+instance_class:
+  module: dagster_cloud
+  class: DagsterCloudAgentInstance
+
+dagster_cloud_api:
+  agent_token: <Agent Token String>
+  deployment: <Deployment Name>
+  branch_deployments: <true|false>
+
+user_code_launcher:
+  module: dagster_cloud.workspace.ecs
+  class: EcsUserCodeLauncher
+  config:
+    cluster: <Cluster Name>
+    subnets:
+      - <Subnet Id 1>
+      - <Subnet Id 2>
+    security_group_ids:
+      - <Security Group ID>
+    service_discovery_namespace_id: <Service Discovery Namespace Id>
+    execution_role_arn: <Task Execution Role Arn>
+    task_role_arn: <Task Role Arn>
+    log_group: <Log Group Name>
+    launch_type: <"FARGATE"|"EC2">
+    server_process_startup_timeout: <Timeout in seconds>
+```
+
+### dagster_cloud_api properties
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="dagster_cloud_api.agent_token">
+    An agent token for the agent to use for authentication.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="dagster_cloud_api.deployment">
+    The name of a full deployment for the agent to serve.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="dagster_cloud_api.branch_deployments">
+    Whether the agent should serve all branch deployments.
+  </ReferenceTableItem>
+</ReferenceTable>
+
+### user_code_launcher properties
+
+<ReferenceTable>
+  <ReferenceTableItem
+  propertyName="config.cluster"
+  >
+  The name of an <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create_cluster.html" target="_blank">ECS cluster</a> with a <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-capacity-providers.html" target="_blank">Fargate or EC2 capacity provider</a>.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.launch_type"
+  >
+  An <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html" target="blank">ECS launch type</a> to use for your launched ECS tasks. The following are currently supported:
+  <ul>
+    <li><code>FARGATE</code></li>
+    <li><code>EC2</code> - <strong>Note:</strong> Using this launch type requires you to have an EC2 capacity provider installed and additional operational overhead to run the agent.</li>
+  </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.subnets">
+  <strong>At least one subnet is required</strong>. Dagster Cloud tasks require a route to the internet so they can access our API server. How this requirement is satisfied depends on the type of subnet provided:
+
+   <ul>
+    <li>
+     <strong>Public subnets</strong> - The ECS agent will assign each task a public IP address. Note that <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-networking-awsvpc.html">ECS tasks on EC2</a> launched within public subnets do not have access to the internet, so a public subnet will only work for Fargate tasks.
+    </li>
+    <li>
+     <strong>Private subnets</strong> - The ECS agent assumes you've configured a NAT gateway with an attached NAT gateway. Tasks will <strong>not</strong> be assigned a public IP address.
+    </li>
+    </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.security_group_ids"
+  >
+  A list of <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html" target="_blank">security groups</a> to use for tasks launched by the agent.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.service_discovery_namespace_id"
+  >
+  The name of a <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-servicediscovery-privatednsnamespace.html" target="_blank">private DNS namespace</a>.
+
+   <p>
+    The ECS agent launches each code location as its own ECS service. The agent communicates with these services via <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-discovery.html" target="_blank">AWS CloudMap service discovery</a>.
+   </p>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.execution_role_arn">
+  The ARN of the <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html" target="_blank">Amazon ECS task execution IAM role</a>. This role allows ECS to interact with AWS resources on your behalf, such as getting an image from ECR or pushing logs to CloudWatch.
+
+   <p>
+    <strong>Note:</strong> This role must include a trust relationship that allows ECS to use it.
+   </p>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.task_role_arn">
+  The ARN of the <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html" target="_blank">Amazon ECS task IAM role</a>. This role allows the containers running in the ECS task to interact with AWS.
+
+   <p>
+    <strong>Note:</strong> This role must include a trust relationship that allows ECS to use it.
+   </p>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.log_group">
+  The name of a CloudWatch <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html#Create-Log-Group" target="_blank">log group</a>.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.server_process_startup_timeout">
+  The amount of time, in seconds, to wait for code to import when launching a new service for a code location. If your code takes an unusually long time to load and results in timeouts in the <strong>Workspace</strong> tab, you can increase this setting above the default. <strong>Note</strong> This setting isn't applicable to the time it takes for a job to execute.
+  <ul>
+  <li><strong>Default</strong> - 180 (seconds)</li>
+  </ul>
+  </ReferenceTableItem>
+</ReferenceTable>
+
+---

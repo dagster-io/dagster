@@ -59,6 +59,9 @@ Partition Mapping (Experimental)
 .. autoclass:: TimeWindowPartitionMapping
     :members:
 
+.. autoclass:: IdentityPartitionMapping
+    :members:
+
 .. autoclass:: AllPartitionMapping
     :members:
 

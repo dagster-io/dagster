@@ -49,7 +49,7 @@ def assets_and_source_assets_from_modules(
     source_assets: List[SourceAsset] = list(
         check.opt_sequence_param(extra_source_assets, "extra_source_assets", of_type=SourceAsset)
     )
-    assets: List[AssetsDefinition] = []
+    assets: Dict[AssetKey, AssetsDefinition] = {}
     for module in modules:
         for asset in _find_assets_in_module(module):
             if id(asset) not in asset_ids:
@@ -58,16 +58,23 @@ def assets_and_source_assets_from_modules(
                 for key in keys:
                     if key in asset_keys:
                         modules_str = ", ".join(set([asset_keys[key].__name__, module.__name__]))
-                        raise DagsterInvalidDefinitionError(
-                            f"Asset key {key} is defined multiple times. Definitions found in modules: {modules_str}."
-                        )
+                        error_str = f"Asset key {key} is defined multiple times. Definitions found in modules: {modules_str}. "
+
+                        if key in assets and isinstance(asset, AssetsDefinition):
+                            if assets[key].node_def == asset.node_def:
+                                error_str += (
+                                    "One possible cause of this bug is a call to with_resources outside of "
+                                    "a repository definition, causing a duplicate asset definition."
+                                )
+
+                        raise DagsterInvalidDefinitionError(error_str)
                     else:
                         asset_keys[key] = module
+                        if isinstance(asset, AssetsDefinition):
+                            assets[key] = asset
                 if isinstance(asset, SourceAsset):
                     source_assets.append(asset)
-                else:
-                    assets.append(asset)
-    return assets, source_assets
+    return list(set(assets.values())), source_assets
 
 
 def load_assets_from_modules(

@@ -3,13 +3,13 @@ from typing import Generator, Iterable, Iterator
 
 import pytest
 
-from dagster import AssetKey, DynamicOutput, Output
+from dagster import AssetKey, DynamicOut, DynamicOutput, In, Out, Output, op
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import DynamicOutputDefinition, InputDefinition, OutputDefinition, solid
+from dagster._legacy import InputDefinition, OutputDefinition
 
 
 def test_flex_inputs():
-    @solid(input_defs=[InputDefinition("arg_b", metadata={"explicit": True})])
+    @op(ins={"arg_b": In(metadata={"explicit": True})})
     def partial(_context, arg_a, arg_b):
         return arg_a + arg_b
 
@@ -19,7 +19,7 @@ def test_flex_inputs():
 
 
 def test_merge_type():
-    @solid(input_defs=[InputDefinition("arg_b", metadata={"explicit": True})])
+    @op(ins={"arg_b": In(metadata={"explicit": True})})
     def merged(_context, arg_b: int):
         return arg_b
 
@@ -30,7 +30,7 @@ def test_merge_type():
 
 
 def test_merge_desc():
-    @solid(input_defs=[InputDefinition("arg_b", metadata={"explicit": True})])
+    @op(ins={"arg_b": In(metadata={"explicit": True})})
     def merged(_context, arg_a, arg_b, arg_c):
         """
         Testing
@@ -46,7 +46,7 @@ def test_merge_desc():
 
 
 def test_merge_default_val():
-    @solid(input_defs=[InputDefinition("arg_b", dagster_type=int, metadata={"explicit": True})])
+    @op(ins={"arg_b": In(dagster_type=int, metadata={"explicit": True})})
     def merged(_context, arg_a: int, arg_b=3, arg_c=0):
         return arg_a + arg_b + arg_c
 
@@ -58,10 +58,9 @@ def test_merge_default_val():
 
 
 def test_precedence():
-    @solid(
-        input_defs=[
-            InputDefinition(
-                "arg_b",
+    @op(
+        ins={
+            "arg_b": In(
                 dagster_type=str,
                 default_value="hi",
                 description="legit",
@@ -70,7 +69,7 @@ def test_precedence():
                 asset_key=AssetKey("table_1"),
                 asset_partitions={"0"},
             )
-        ]
+        }
     )
     def precedence(_context, arg_a: int, arg_b: int, arg_c: int):
         """
@@ -95,7 +94,7 @@ def test_precedence():
 
 
 def test_output_merge():
-    @solid(output_defs=[OutputDefinition(name="four")])
+    @op(out={"four": Out()})
     def foo(_) -> int:
         return 4
 
@@ -104,26 +103,26 @@ def test_output_merge():
 
 
 def test_iter_out():
-    @solid(output_defs=[OutputDefinition(name="A")])
+    @op(out={"A": Out()})
     def _ok(_) -> Iterator[Output]:
         yield Output("a", output_name="A")
 
-    @solid
+    @op
     def _also_ok(_) -> Iterator[Output]:
         yield Output("a", output_name="A")
 
-    @solid
+    @op
     def _gen_too(_) -> Generator[Output, None, None]:
         yield Output("a", output_name="A")
 
-    @solid(output_defs=[OutputDefinition(name="A"), OutputDefinition(name="B")])
+    @op(out={"A": Out(), "B": Out()})
     def _multi_fine(_) -> Iterator[Output]:
         yield Output("a", output_name="A")
         yield Output("b", output_name="B")
 
 
 def test_dynamic():
-    @solid(output_defs=[DynamicOutputDefinition(dagster_type=int)])
+    @op(out=DynamicOut(dagster_type=int))
     def dyn_desc(_) -> Iterator[DynamicOutput]:
         """
         Returns:
@@ -146,7 +145,7 @@ def test_not_type_input():
         match=r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue or explicitly set the dagster_type",
     ):
 
-        @solid
+        @op
         def _create(
             _context,
             # invalid since Iterator is not a python type or DagsterType
@@ -159,7 +158,7 @@ def test_not_type_input():
         match=r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue or explicitly set the dagster_type",
     ):
 
-        @solid(input_defs=[InputDefinition("arg_b")])
+        @op(ins={"arg_b": In()})
         def _combine(
             _context,
             # invalid since Iterator is not a python type or DagsterType
@@ -172,6 +171,6 @@ def test_not_type_input():
         match=r"Problem using type '.*' from return type annotation, correct the issue or explicitly set the dagster_type",
     ):
 
-        @solid
+        @op
         def _out(_context) -> Iterable[int]:
             return [1]

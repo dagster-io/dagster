@@ -7,7 +7,6 @@ from dagster import (
     SkipReason,
     asset,
     define_asset_job,
-    multi_asset_sensor,
     JobSelector,
     RepositorySelector,
     DagsterRunStatus,
@@ -179,72 +178,6 @@ def my_directory_sensor_with_skip_reasons():
 
 
 # end_skip_sensors_marker
-
-# start_asset_sensor_marker
-from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
-
-
-@asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
-def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
-    yield RunRequest(
-        run_key=context.cursor,
-        run_config={
-            "ops": {
-                "read_materialization": {
-                    "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,
-                    }
-                }
-            }
-        },
-    )
-
-
-# end_asset_sensor_marker
-
-# start_multi_asset_sensor_marker
-
-
-@multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-    job=my_job,
-)
-def asset_a_and_b_sensor(context):
-    asset_events = context.latest_materialization_records_by_key()
-    if all(asset_events.values()):
-        context.advance_all_cursors()
-        return RunRequest()
-
-
-# end_multi_asset_sensor_marker
-
-# start_multi_asset_sensor_w_skip_reason
-
-
-@multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-    job=my_job,
-)
-def asset_a_and_b_sensor_with_skip_reason(context):
-    asset_events = context.latest_materialization_records_by_key()
-    if all(asset_events.values()):
-        context.advance_all_cursors()
-        return RunRequest()
-    elif any(asset_events.values()):
-        materialized_asset_key_strs = [
-            key.to_user_string() for key, value in asset_events.items() if value
-        ]
-        not_materialized_asset_key_strs = [
-            key.to_user_string() for key, value in asset_events.items() if not value
-        ]
-        return SkipReason(
-            f"Observed materializations for {materialized_asset_key_strs}, "
-            f"but not for {not_materialized_asset_key_strs}"
-        )
-
-
-# end_multi_asset_sensor_w_skip_reason
-
 
 # start_s3_sensors_marker
 from dagster_aws.s3.sensor import get_s3_keys

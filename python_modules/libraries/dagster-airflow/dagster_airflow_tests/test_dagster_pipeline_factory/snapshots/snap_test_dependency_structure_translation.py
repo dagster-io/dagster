@@ -7,8 +7,8 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots[
-    'test_complex_dag 1'
-] = '''{
+    "test_complex_dag 1"
+] = """{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -877,11 +877,11 @@ snapshots[
       "tags": {}
     }
   ]
-}'''
+}"""
 
 snapshots[
-    'test_diamond_task_dag 1'
-] = '''{
+    "test_diamond_task_dag 1"
+] = """{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -968,11 +968,11 @@ snapshots[
       "tags": {}
     }
   ]
-}'''
+}"""
 
 snapshots[
-    'test_multi_leaf_dag 1'
-] = '''{
+    "test_multi_leaf_dag 1"
+] = """{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -1054,11 +1054,11 @@ snapshots[
       "tags": {}
     }
   ]
-}'''
+}"""
 
 snapshots[
-    'test_multi_root_dag 1'
-] = '''{
+    "test_multi_root_dag 1"
+] = """{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -1138,11 +1138,11 @@ snapshots[
       "tags": {}
     }
   ]
-}'''
+}"""
 
 snapshots[
-    'test_one_task_dag 1'
-] = '''{
+    "test_one_task_dag 1"
+] = """{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -1161,11 +1161,11 @@ snapshots[
       "tags": {}
     }
   ]
-}'''
+}"""
 
 snapshots[
-    'test_two_task_dag_no_dep 1'
-] = '''{
+    "test_two_task_dag_no_dep 1"
+] = """{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -1199,11 +1199,11 @@ snapshots[
       "tags": {}
     }
   ]
-}'''
+}"""
 
 snapshots[
-    'test_two_task_dag_with_dep 1'
-] = '''{
+    "test_two_task_dag_with_dep 1"
+] = """{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -1243,4 +1243,4 @@ snapshots[
       "tags": {}
     }
   ]
-}'''
+}"""

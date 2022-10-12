@@ -289,7 +289,7 @@ def _make_sensor(
 
         if len(should_materialize) > 0:
             context.update_cursor(json.dumps(cursor_update_dict))
-            context.cursor_has_been_updated = True
+            context._cursor_has_been_updated = True  # pylint: disable=protected-access
             return RunRequest(run_key=f"{context.cursor}", asset_selection=list(should_materialize))
 
     return MultiAssetSensorDefinition(
@@ -385,7 +385,7 @@ def build_asset_reconciliation_sensor(
 
             .. code-block:: python
 
-                x   source_asset
+                x   external_data_source
                  \       /
                      y
 
@@ -400,7 +400,7 @@ def build_asset_reconciliation_sensor(
                     wait_for_in_progress_runs=True
                 )
 
-            ``y`` will never be updated because ``source_asset`` is never considered "materialized. In this case you should create the
+            ``y`` will never be updated because ``external_data_source`` is never considered "materialized. In this case you should create the
             sensor
 
             .. code-block:: python
