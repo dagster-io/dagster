@@ -186,7 +186,7 @@ def test_resolve_no_resources():
                     ),
                 ]
 
-            repo = resource_dependent_repo_no_resources.compute_repository_definition()
+            resource_dependent_repo_no_resources.compute_repository_definition()
         except DagsterInvalidDefinitionError as e:
             # Make sure we get an error for the cacheable asset in particular
             assert "res_midstream" in str(e)
