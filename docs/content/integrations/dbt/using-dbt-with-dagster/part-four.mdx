@@ -19,13 +19,15 @@ In this step, you'll:
 
 - [Create a downstream asset that computes a chart using plotly](#step-1-create-the-order_count_chart-asset)
 - [Update the Dagster repository to include the new asset](#step-2-update-the-dagster-repository)
-- [Materialize the order_count_chart asset](#step-3-materialize-the-order_count_chart-asset)
+- [Materialize the `order_count_chart` asset](#step-3-materialize-the-order_count_chart-asset)
 
 ---
 
 ## Step 1: Create the order_count_chart asset
 
-You've added upstream assets to your data pipeline, but nothing downstream - until now. Here's a quick refresher of what our graph of assets currently looks like:
+You've added upstream assets to your data pipeline, but nothing downstream - until now. In this step, you'll create a Dagster asset called `order_count_chart` that's downstream of the `customers` asset produced by the `stg_orders` and `stg_customers` dbt models. The `order_count_chart` asset computes a plotly chart using the data from its upstream asset dependency.
+
+Here's a quick refresher of what our graph of assets currently looks like:
 
 <Image
 alt="Asset graph in Dagit, showing materialized assets"
@@ -34,9 +36,9 @@ width={1091}
 height={896}
 />
 
-In this step, you'll create a Dagster asset - called `order_count_chart` - that's downstream of the `customers` asset produced by the `stg_orders` and `stg_customers` dbt models. The `order_count_chart` asset computes a plotly chart using the data from its upstream asset dependency.
+To add the `order_count_chart` asset:
 
-1. In `/assets/__init__.py`, replace the imports section with the following:
+1. In `/tutorial_template/dbt_dagster_sda_tutorial/assets/__init__.py`, replace the imports section with the following:
 
    ```python
    import pandas as pd
@@ -68,7 +70,50 @@ Let's review what's happening here:
 
 - We've also used <PyObject object="AssetIn" /> to explicitly define an upstream dependency. Just like in [part three of this tutorial](/integrations/dbt/using-dbt-with-dagster/part-three#step-1-create-upstream-dagster-assets), we've defined these as `jaffle_shop` and `staging`, respectively.
 
-- Finally, the chart is saved as `order_count_chart.html` in `/tutorial_template/dbt_dagster_sda_tutorial` and automatically opened in the browser.
+- Finally, the chart is saved as `order_count_chart.html` in `/tutorial_template/dbt_dagster_sda_tutorial` and automatically opened in the browser upon successful materialization.
+
+At this point, `/tutorial_template/dbt_dagster_sda_tutorial/assets/__init__.py` should look like this:
+
+```python
+import pandas as pd
+import plotly.express as px
+from dagster_dbt import load_assets_from_dbt_project
+
+from dagster import AssetIn, MetadataValue, asset, file_relative_path
+
+
+DBT_PROJECT_PATH = file_relative_path(__file__, "../../jaffle_shop")
+DBT_PROFILES = file_relative_path(__file__, "../../jaffle_shop/config")
+
+dbt_assets = load_assets_from_dbt_project(
+    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+)
+
+
+@asset(key_prefix=["jaffle_shop"], group_name="staging")
+def customers_raw() -> pd.DataFrame:
+   data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
+   return data
+
+
+@asset(key_prefix=["jaffle_shop"], group_name="staging")
+def orders_raw() -> pd.DataFrame:
+   data = pd.read_csv("https://docs.dagster.io/assets/orders.csv")
+   return data
+
+
+@asset(
+   ins={"customers": AssetIn(key_prefix=["jaffle_shop"])},
+   group_name="staging",
+)
+def order_count_chart(context, customers: pd.DataFrame):
+   fig = px.histogram(customers, x="number_of_orders")
+   fig.update_layout(bargap=0.2)
+   save_chart_path = file_relative_path(__file__, "order_count_chart.html")
+   fig.write_html(save_chart_path, auto_open=True)
+
+   context.add_output_metadata({"plot_url": MetadataValue.url("file://" + save_chart_path)})
+```
 
 ---
 
@@ -76,7 +121,7 @@ Let's review what's happening here:
 
 To materialize the new `order_count_chart` asset, you'll need to update the Dagster repository to include it.
 
-Replace the contents of `repository.py` with the following:
+Replace the contents of `/tutorial_template/dbt_dagster_sda_tutorial/repository.py` with the following:
 
 ```python
 import os
@@ -124,7 +169,7 @@ def jaffle_shop_repository():
 
 In this step, you'll materialize the `order_count_chart_asset`. When successfully materialized, a new tab containing the plotly chart will automatically open in your browser.
 
-1. Back in Dagit on the asset graph, click **Reload definitions**. This will ensure that Dagit picks up the changes you made in steps one and two.
+1. Back in Dagit on the asset graph, click **Reload definitions**. This ensures that Dagit picks up the changes you made in the previous steps.
 
    At this point, the `order_count_chart` asset should display below `customers` as a downstream dependency:
 
@@ -139,15 +184,13 @@ In this step, you'll materialize the `order_count_chart_asset`. When successfull
 
 3. Click **Materialize selected** to kick off a run that materializes the asset.
 
-4. Click the **Materialize all** button to kick off a run that materializes the assets.
-
 That's it! When the run successfully completes, the following chart will automatically open in your browser:
 
 <Image
 alt="plotly chart asset displayed in Chrome"
 src="/images/integrations/dbt/using-dbt-with-dagster/part-four-order-count-chart.png"
-width={995}
-height={918}
+width={1156}
+height={645}
 />
 
 ---
