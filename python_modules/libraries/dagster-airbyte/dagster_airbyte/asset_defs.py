@@ -286,7 +286,7 @@ def _clean_name(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower())
 
 
-class AirbyteConnection(
+class AirbyteConnectionMetadata(
     NamedTuple(
         "_AirbyteConnection",
         [
@@ -310,7 +310,7 @@ class AirbyteConnection(
     @classmethod
     def from_api_json(
         cls, contents: Mapping[str, Any], operations: Mapping[str, Any]
-    ) -> "AirbyteConnection":
+    ) -> "AirbyteConnectionMetadata":
         return cls(
             name=contents["name"],
             stream_prefix=contents.get("prefix", ""),
@@ -324,7 +324,7 @@ class AirbyteConnection(
         )
 
     @classmethod
-    def from_config(cls, contents: Mapping[str, Any]) -> "AirbyteConnection":
+    def from_config(cls, contents: Mapping[str, Any]) -> "AirbyteConnectionMetadata":
         config_contents = cast(Mapping[str, Any], contents.get("configuration"))
         check.invariant(
             config_contents is not None, "Airbyte connection config is missing 'configuration' key"
@@ -386,7 +386,7 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
         key_prefix: List[str],
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
-        connection_filter: Optional[Callable[[str], bool]],
+        connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
     ):
         self._airbyte_resource_def = airbyte_resource_def
         self._airbyte_instance: AirbyteResource = airbyte_resource_def(
@@ -435,10 +435,6 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
 
         asset_defn_data: List[AssetsDefinitionCacheableData] = []
         for connection_json in connections:
-            # Filter out connections that don't match the filter function
-            if self._connection_filter and not self._connection_filter(connection_json["name"]):
-                continue
-
             connection_id = cast(str, connection_json.get("connectionId"))
 
             operations_json = cast(
@@ -450,7 +446,10 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
                     )
                 ),
             )
-            connection = AirbyteConnection.from_api_json(connection_json, operations_json)
+            connection = AirbyteConnectionMetadata.from_api_json(connection_json, operations_json)
+            # Filter out connections that don't match the filter function
+            if self._connection_filter and not self._connection_filter(connection):
+                continue
 
             table_mapping = connection.parse_stream_tables(
                 self._create_assets_for_normalization_tables
@@ -486,7 +485,7 @@ def load_assets_from_airbyte_instance(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
-    connection_filter: Optional[Callable[[str], bool]] = None,
+    connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
@@ -505,8 +504,8 @@ def load_assets_from_airbyte_instance(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
-        connection_filter (Optional[Callable[[str], bool]]): Optional function which takes in a connection
-            name and returns False if the connection should be excluded from the output assets.
+        connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which takes
+            in a connection name and returns False if the connection should be excluded from the output assets.
 
     **Examples:**
 
@@ -563,7 +562,7 @@ def load_assets_from_airbyte_project(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
-    connection_filter: Optional[Callable[[str], bool]] = None,
+    connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
 ) -> List[AssetsDefinition]:
     """
     Loads an Airbyte project into a set of Dagster assets.
@@ -583,8 +582,8 @@ def load_assets_from_airbyte_project(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
-        connection_filter (Optional[Callable[[str], bool]]): Optional function which takes in a connection
-            name and returns False if the connection should be excluded from the output assets.
+        connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which
+            takes in a connection name and returns False if the connection should be excluded from the output assets.
 
     **Examples:**
 
@@ -618,13 +617,14 @@ def load_assets_from_airbyte_project(
 
     connections_dir = os.path.join(project_dir, "connections")
     for connection_name in os.listdir(connections_dir):
-        # Filter out connections that don't match the filter function
-        if connection_filter and not connection_filter(connection_name):
-            continue
 
         connection_dir = os.path.join(connections_dir, connection_name)
         with open(os.path.join(connection_dir, "configuration.yaml"), encoding="utf-8") as f:
-            connection = AirbyteConnection.from_config(yaml.safe_load(f.read()))
+            connection = AirbyteConnectionMetadata.from_config(yaml.safe_load(f.read()))
+
+        # Filter out connections that don't match the filter function
+        if connection_filter and not connection_filter(connection):
+            continue
 
         if workspace_id:
             state_file = f"state_{workspace_id}.yaml"
