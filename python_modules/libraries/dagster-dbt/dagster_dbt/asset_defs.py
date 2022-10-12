@@ -69,6 +69,7 @@ def _select_unique_ids_from_manifest_json(
         import dbt.graph.cli as graph_cli
         import dbt.graph.selector as graph_selector
         from dbt.contracts.graph.manifest import Manifest
+        from dbt.graph import SelectionSpec
         from networkx import DiGraph
     except ImportError as e:
         raise check.CheckError(
@@ -88,17 +89,17 @@ def _select_unique_ids_from_manifest_json(
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=manifest_json["child_map"]))
     manifest = Manifest(
         # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
-        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
+        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},  # type: ignore
         sources={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()  # type: ignore
         },
         metrics={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
         },
     )
 
     # create a parsed selection from the select string
-    parsed_spec = graph_cli.parse_union([select], True)
+    parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:
         parsed_spec = graph_cli.SelectionDifference(
