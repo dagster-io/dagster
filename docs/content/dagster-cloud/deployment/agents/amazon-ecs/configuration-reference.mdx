@@ -56,8 +56,10 @@ locations:
   </ReferenceTableItem>
   <ReferenceTableItem propertyName="container_context.ecs.secrets_tags">
     A list of tag names. Each secret tagged with any of those tag names in AWS
-    Secrets Manager will be included in the launched tasks. These secrets must
-    be key-value dictionaries.
+    Secrets Manager will be included in the launched tasks as environment
+    variables. The name of the environment variable will be the name of the
+    secret, and the value of the environment variable will be the value of the
+    secret.
   </ReferenceTableItem>
 </ReferenceTable>
 
