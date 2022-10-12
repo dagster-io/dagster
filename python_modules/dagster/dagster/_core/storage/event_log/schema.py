@@ -52,6 +52,15 @@ AssetKeyTable = db.Table(
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
+AssetEventTagsTable = db.Table(
+    "asset_event_tags",
+    SqlEventLogStorageMetadata,
+    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column("event_id", None, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
+    db.Column("key", db.Text),
+    db.Column("value", db.Text),
+)
+
 db.Index("idx_run_id", SqlEventLogStorageTable.c.run_id)
 db.Index(
     "idx_step_key",
@@ -74,4 +83,7 @@ db.Index(
     SqlEventLogStorageTable.c.dagster_event_type,
     SqlEventLogStorageTable.c.id,
     mysql_length={"dagster_event_type": 64},
+)
+db.Index(
+    "idx_asset_event_tags", AssetEventTagsTable.c.key, AssetEventTagsTable.c.value, mysql_length=64
 )
