@@ -15,6 +15,7 @@ import {
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
@@ -40,6 +41,8 @@ export const OverviewSchedulesRoot = () => {
     notifyOnNetworkStatusChange: true,
   });
   const {data, loading} = queryResultOverview;
+
+  const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const repoBuckets = useRepoBuckets(data);
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
@@ -100,7 +103,10 @@ export const OverviewSchedulesRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="schedules" />} />
+      <PageHeader
+        title={<Heading>Overview</Heading>}
+        tabs={<OverviewTabs tab="schedules" refreshState={refreshState} />}
+      />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}

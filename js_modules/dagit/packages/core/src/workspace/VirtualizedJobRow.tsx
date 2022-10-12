@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
@@ -41,6 +42,8 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
   );
 
   useDelayedRowQuery(queryJob);
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+
   const {data} = queryResult;
 
   const {schedules, sensors} = React.useMemo(() => {
