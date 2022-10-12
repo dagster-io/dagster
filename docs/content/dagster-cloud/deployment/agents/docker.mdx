@@ -102,6 +102,26 @@ height={320}
 
 ---
 
+## Credential Helpers
+
+If your images are stored in a private registry, configuring a [Docker credentials helper](https://docs.docker.com/engine/reference/commandline/login/#credential-helpers) allows the agent to log in to your registry. The agent image comes with several popular credentials helpers preinstalled:
+
+- `[docker-credential-ecr-login](https://github.com/awslabs/amazon-ecr-credential-helper)`
+- `[docker-credential-gcr](https://github.com/GoogleCloudPlatform/docker-credential-gcr)`
+
+These credential helpers generally are configured in `~/.docker.config.json`. To use one, make sure you mount that file as a volume when you start your agent:
+
+```shell
+  docker run \
+    --network=dagster_cloud_agent \
+    --volume $PWD/dagster.yaml:/opt/dagster/app/dagster.yaml:ro \
+    --volume /var/run/docker.sock:/var/run/docker.sock \
+    --volume ~/.docker/config.json:/root/.docker:ro \
+    --restart on-failure \
+    -it docker.io/dagster/dagster-cloud-agent:latest \
+    dagster-cloud agent run /opt/dagster/app
+```
+
 ## Next steps
 
 Now that you've got your agent running, what's next?
