@@ -108,6 +108,7 @@ def retry_pg_connection_fn(fn, retry_limit=5, retry_wait=0.2):
             psycopg2.OperationalError,
             sqlalchemy.exc.DatabaseError,
             sqlalchemy.exc.OperationalError,
+            sqlalchemy.exc.TimeoutError,
         ) as exc:
             logging.warning("Retrying failed database connection: %s", exc)
             if attempt_num > retry_limit:

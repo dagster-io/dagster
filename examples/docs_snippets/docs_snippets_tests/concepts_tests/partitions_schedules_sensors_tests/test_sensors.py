@@ -1,17 +1,6 @@
 from unittest import mock
 
-from dagster import (
-    AssetKey,
-    DagsterInstance,
-    RunRequest,
-    asset,
-    build_multi_asset_sensor_context,
-    build_sensor_context,
-    job,
-    materialize,
-    op,
-    repository,
-)
+from dagster import build_sensor_context, job, op, repository
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
     email_on_run_failure,
     my_slack_on_run_failure,
@@ -19,8 +8,6 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert im
     slack_on_run_failure,
 )
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
-    asset_a_and_b_sensor,
-    asset_a_and_b_sensor_with_skip_reason,
     log_file_job,
     my_directory_sensor,
     my_s3_sensor,
@@ -96,40 +83,3 @@ def test_s3_sensor():
         run_requests = my_s3_sensor(context)
         assert len(list(run_requests)) == 5
         assert context.cursor == "e"
-
-
-def test_asset_sensors():
-    @asset
-    def asset_a():
-        return 1
-
-    @asset
-    def asset_b():
-        return 2
-
-    @asset
-    def asset_c():
-        return 3
-
-    @repository
-    def my_repo():
-        return [asset_a, asset_b, asset_c]
-
-    instance = DagsterInstance.ephemeral()
-    materialize([asset_a, asset_b], instance=instance)
-    ctx = build_multi_asset_sensor_context(
-        asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
-        instance=instance,
-        repository_def=my_repo,
-    )
-    assert isinstance(list(asset_a_and_b_sensor(ctx))[0], RunRequest)
-
-    for _ in range(5):
-        materialize([asset_c], instance=instance)
-
-    ctx = build_multi_asset_sensor_context(
-        asset_keys=[AssetKey("asset_c")],
-        instance=instance,
-        repository_def=my_repo,
-    )
-    assert list(asset_a_and_b_sensor_with_skip_reason(ctx))[0].run_config == {}

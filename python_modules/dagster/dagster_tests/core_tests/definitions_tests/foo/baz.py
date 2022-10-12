@@ -1,6 +1,6 @@
-from dagster._legacy import solid
+from dagster import op
 
 
-@solid
-def baz_solid(_):
+@op
+def baz_op(_):
     return
