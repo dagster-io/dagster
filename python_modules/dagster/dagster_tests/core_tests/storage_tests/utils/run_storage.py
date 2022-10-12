@@ -6,7 +6,7 @@ import pendulum
 import pytest
 
 from dagster import _seven, job, op
-from dagster._core.definitions import PipelineDefinition
+from dagster._core.definitions import JobDefinition, PipelineDefinition
 from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunNotFoundError,
@@ -1299,6 +1299,14 @@ class TestRunStorage:
         storage.add_snapshot(ep_snapshot, snapshot_id=new_ep_snapshot_id)
         assert not storage.has_snapshot(ep_snapshot_id)
         assert storage.has_snapshot(new_ep_snapshot_id)
+
+    def test_snapshot_conflict(self, storage):
+        job_def = JobDefinition(name="some_job", op_defs=[])
+
+        snapshot = job_def.get_pipeline_snapshot()
+        storage.add_snapshot(snapshot)
+        # multiple calls dont throw
+        storage.add_snapshot(snapshot)
 
     def test_run_record_stats(self, storage):
         assert storage
