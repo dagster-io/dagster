@@ -496,15 +496,15 @@
                 "path": "/integrations/dbt/using-dbt-with-dagster/part-one"
               },
               {
-                "title": "Create Dagster assets",
+                "title": "Load dbt models as assets",
                 "path": "/integrations/dbt/using-dbt-with-dagster/part-two"
               },
               {
-                "title": "Materialize the assets",
+                "title": "Create and materialize upstream assets",
                 "path": "/integrations/dbt/using-dbt-with-dagster/part-three"
               },
               {
-                "title": "Create downstream asset",
+                "title": "Create and materialize downstream asset",
                 "path": "/integrations/dbt/using-dbt-with-dagster/part-four"
               }
             ]
