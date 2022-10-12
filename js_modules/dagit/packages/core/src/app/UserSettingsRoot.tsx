@@ -117,7 +117,7 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
               ),
             },
             {
-              key: 'New Workspace page',
+              key: 'New workspace pages, overview pages, and top navigation',
               value: (
                 <Checkbox
                   format="switch"
