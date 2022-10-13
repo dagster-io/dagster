@@ -33,6 +33,7 @@ class CommandStep(TypedDict, total=False):
     plugins: List[Dict[str, object]]
     retry: Dict[str, object]
     timeout_in_minutes: int
+    skip: str
 
 
 class GroupStep(TypedDict):
