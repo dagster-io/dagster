@@ -1166,7 +1166,7 @@ class TestEventLogStorage:
         assert len(step_stats) == 1
         assert step_stats[0].step_key == "foo_solid"
         assert step_stats[0].status == StepEventStatus.SUCCESS
-        assert step_stats[0].end_time > step_stats[0].start_time
+        assert step_stats[0].end_time >= step_stats[0].start_time
         assert len(step_stats[0].markers) == 1
         assert step_stats[0].markers[0].end_time >= step_stats[0].markers[0].start_time + 0.1
 
