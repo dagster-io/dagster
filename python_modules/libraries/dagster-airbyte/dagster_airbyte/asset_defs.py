@@ -91,7 +91,7 @@ def _build_airbyte_asset_defn_metadata(
         key_prefix=asset_key_prefix,
         can_subset=False,
         metadata_by_output_name={
-            table: {"schema": MetadataValue.table_schema(schema_by_table_name[table])}
+            table: {"table_schema": MetadataValue.table_schema(schema_by_table_name[table])}
             for table in tables
         }
         if schema_by_table_name
@@ -201,7 +201,7 @@ def build_airbyte_assets(
     outputs = {
         table: AssetOut(
             key=AssetKey(asset_key_prefix + [table]),
-            metadata={"schema": MetadataValue.table_schema(schema_by_table_name[table])}
+            metadata={"table_schema": MetadataValue.table_schema(schema_by_table_name[table])}
             if schema_by_table_name
             else None,
         )
