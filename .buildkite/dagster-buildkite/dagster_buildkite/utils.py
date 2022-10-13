@@ -193,7 +193,7 @@ def skip_if_no_python_changes():
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
 
-    if any(path.endswith(".py") for path in get_changed_files()):
+    if any(path.suffix == ".py" for path in get_changed_files()):
         return "No python changes"
 
     return None
