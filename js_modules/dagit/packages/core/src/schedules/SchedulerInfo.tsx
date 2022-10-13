@@ -1,12 +1,14 @@
-import {Alert} from '@dagster-io/ui';
+import {Alert, Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {DaemonHealthFragment} from '../instance/types/DaemonHealthFragment';
 
-export const SchedulerInfo: React.FC<{
+type Props = React.ComponentPropsWithRef<typeof Box> & {
   daemonHealth: DaemonHealthFragment | undefined;
-}> = ({daemonHealth}) => {
-  let healthy = false;
+};
+
+export const SchedulerInfo: React.FC<Props> = ({daemonHealth, ...boxProps}) => {
+  let healthy = undefined;
 
   if (daemonHealth) {
     const schedulerHealths = daemonHealth.allDaemonStatuses.filter(
@@ -18,21 +20,23 @@ export const SchedulerInfo: React.FC<{
     }
   }
 
-  if (!healthy) {
+  if (healthy === false) {
     return (
-      <Alert
-        intent="warning"
-        title="The scheduler daemon is not running."
-        description={
-          <div>
-            See the{' '}
-            <a href="https://docs.dagster.io/deployment/dagster-daemon">
-              dagster-daemon documentation
-            </a>{' '}
-            for more information on how to deploy the dagster-daemon process.
-          </div>
-        }
-      />
+      <Box {...boxProps}>
+        <Alert
+          intent="warning"
+          title="The scheduler daemon is not running."
+          description={
+            <div>
+              See the{' '}
+              <a href="https://docs.dagster.io/deployment/dagster-daemon">
+                dagster-daemon documentation
+              </a>{' '}
+              for more information on how to deploy the dagster-daemon process.
+            </div>
+          }
+        />
+      </Box>
     );
   }
 

@@ -17,9 +17,11 @@ import * as React from 'react';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
+import {SensorInfo} from '../sensors/SensorInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
@@ -27,7 +29,7 @@ import {RepoAddress} from '../workspace/types';
 import {OverviewSensorTable} from './OverviewSensorsTable';
 import {OverviewTabs} from './OverviewTabs';
 import {OverviewSensorsQuery} from './types/OverviewSensorsQuery';
-import {UnloadableSchedulesQuery} from './types/UnloadableSchedulesQuery';
+import {UnloadableSensorsQuery} from './types/UnloadableSensorsQuery';
 
 export const OverviewSensorsRoot = () => {
   useTrackPageView();
@@ -131,6 +133,11 @@ export const OverviewSensorsRoot = () => {
               count={data.unloadableInstigationStatesOrError.results.length}
             />
           ) : null}
+          <SensorInfo
+            daemonHealth={data?.instance.daemonHealth}
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+          />
           {content()}
         </>
       )}
@@ -191,7 +198,7 @@ const UnloadableSensorsAlert: React.FC<{
 };
 
 const UnloadableSensorDialog: React.FC = () => {
-  const {data} = useQuery<UnloadableSchedulesQuery>(UNLOADABLE_SENSORS_QUERY);
+  const {data} = useQuery<UnloadableSensorsQuery>(UNLOADABLE_SENSORS_QUERY);
   if (!data) {
     return <Spinner purpose="section" />;
   }
@@ -279,9 +286,13 @@ const OVERVIEW_SENSORS_QUERY = gql`
         }
       }
     }
+    instance {
+      ...InstanceHealthFragment
+    }
   }
 
   ${PYTHON_ERROR_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
 `;
 
 const UNLOADABLE_SENSORS_QUERY = gql`

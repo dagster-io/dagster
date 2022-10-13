@@ -17,9 +17,11 @@ import * as React from 'react';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
+import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
@@ -131,6 +133,12 @@ export const OverviewSchedulesRoot = () => {
               count={data.unloadableInstigationStatesOrError.results.length}
             />
           ) : null}
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+          >
+            <SchedulerInfo daemonHealth={data?.instance.daemonHealth} />
+          </Box>
           {content()}
         </>
       )}
@@ -279,9 +287,13 @@ const OVERVIEW_SCHEDULES_QUERY = gql`
         }
       }
     }
+    instance {
+      ...InstanceHealthFragment
+    }
   }
 
   ${PYTHON_ERROR_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
 `;
 
 const UNLOADABLE_SCHEDULES_QUERY = gql`

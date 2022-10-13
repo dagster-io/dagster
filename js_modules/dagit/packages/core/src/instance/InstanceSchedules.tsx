@@ -69,9 +69,10 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
 
   const loadedSchedulesSection = withSchedules.length ? (
     <>
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <SchedulerInfo daemonHealth={instance.daemonHealth} />
-      </Box>
+      <SchedulerInfo
+        daemonHealth={instance.daemonHealth}
+        padding={{vertical: 16, horizontal: 24}}
+      />
       {withSchedules.map((repository) => (
         <React.Fragment key={repository.name}>
           <Box

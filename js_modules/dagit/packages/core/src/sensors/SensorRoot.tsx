@@ -74,9 +74,10 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
               refreshState={refreshState}
             />
             {showDaemonWarning ? (
-              <Box padding={{vertical: 16, horizontal: 24}}>
-                <SensorInfo daemonHealth={instance.daemonHealth} />
-              </Box>
+              <SensorInfo
+                daemonHealth={instance.daemonHealth}
+                padding={{vertical: 16, horizontal: 24}}
+              />
             ) : null}
             <TickHistoryTimeline repoAddress={repoAddress} name={sensorOrError.name} />
             {selectedTab === 'ticks' ? (
