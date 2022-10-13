@@ -2,7 +2,6 @@ import logging
 import sys
 import time
 from typing import Any, Dict, List, Optional, cast
-from dagster._config.field_utils import Permissive
 
 import requests
 from dagster_airbyte.types import AirbyteOutput
@@ -11,6 +10,7 @@ from requests.exceptions import RequestException
 from dagster import Failure, Field, StringSource, __version__
 from dagster import _check as check
 from dagster import get_dagster_logger, resource
+from dagster._config.field_utils import Permissive
 from dagster._utils.merger import deep_merge_dicts
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
