@@ -102,6 +102,11 @@ def tutorial_dbt_dagster():
     )
 ```
 
+Let's take a look at what's happening here:
+
+- Using <PyObject object="with_resources"/>, we've provided resources to the assets in the repository. In this example, that's the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource.
+- Using <PyObject object="load_assets_from_package_module" />, we've imported all assets in the `assets` module into the repository. This approach allows any new assets we create to be automatically added to the repository instead of needing to manually add them one by one.
+
 ---
 
 ## Step 3: View the assets in Dagit
