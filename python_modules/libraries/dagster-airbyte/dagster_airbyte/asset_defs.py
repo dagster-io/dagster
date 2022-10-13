@@ -537,7 +537,7 @@ def load_assets_from_airbyte_instance(
         )
         airbyte_assets = load_assets_from_airbyte_instance(
             airbyte_instance,
-            connection_filter=lambda name: "snowflake" in name,
+            connection_filter=lambda meta: "snowflake" in meta.name,
         )
     """
 
@@ -605,7 +605,7 @@ def load_assets_from_airbyte_project(
 
         airbyte_assets = load_assets_from_airbyte_project(
             project_dir="path/to/airbyte/project",
-            connection_filter=lambda name: "snowflake" in name,
+            connection_filter=lambda meta: "snowflake" in meta.name,
         )
     """
 
