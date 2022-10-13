@@ -1,4 +1,4 @@
-import {Button, DialogBody, DialogFooter, Dialog, Icon} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog, Icon, ExternalAnchorButton} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
@@ -18,10 +18,28 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   const notebookPath = metadata.find((m) => m.key === 'notebook_path');
   const repoLocName = props.repoAddress?.location;
 
+  const value = notebookPath?.value || '';
+  const url = React.useMemo(() => {
+    try {
+      const url = new URL(value);
+      return url.toString();
+    } catch (e) {
+      // Not a full valid URL
+      return null;
+    }
+  }, [value]);
+
   if (!notebookPath) {
     return <span />;
   }
 
+  if (url) {
+    return (
+      <ExternalAnchorButton href={url} icon={<Icon name="open_in_new" />}>
+        View Notebook
+      </ExternalAnchorButton>
+    );
+  }
   return (
     <div>
       <Button icon={<Icon name="content_copy" />} onClick={() => setOpen(true)}>

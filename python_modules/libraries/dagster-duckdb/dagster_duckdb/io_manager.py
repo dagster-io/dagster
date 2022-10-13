@@ -123,7 +123,7 @@ class DuckDBIOManager(IOManager):
     def _connect_duckdb(self, context):
         return backoff(
             fn=duckdb.connect,
-            retry_on=(RuntimeError,),
+            retry_on=(RuntimeError, duckdb.IOException),
             kwargs={"database": context.resource_config["duckdb_path"], "read_only": False},
         )
 
