@@ -1,3 +1,4 @@
+import functools
 import logging
 import os
 import subprocess
@@ -185,6 +186,7 @@ def get_commit(rev):
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
 
+@functools.cache
 def get_changed_files():
     subprocess.call(["git", "fetch", "origin", "master"])
     origin = get_commit("origin/master")
