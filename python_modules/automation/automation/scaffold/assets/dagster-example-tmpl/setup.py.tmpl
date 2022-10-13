@@ -1,0 +1,12 @@
+from setuptools import find_packages, setup
+
+if __name__ == "__main__":
+    setup(
+        name="{{EXAMPLE_NAME}}",
+        packages=find_packages(exclude=["{{EXAMPLE_NAME}}_tests*"]),
+        package_data={"{{EXAMPLE_NAME}}": ["{{EXAMPLE_NAME}}/*"]},
+        install_requires=[
+            "dagster",
+        ],
+        extras_require={"dev": ["dagit", "pytest"]},
+    )
