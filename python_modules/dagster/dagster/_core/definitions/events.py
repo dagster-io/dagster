@@ -431,8 +431,8 @@ class AssetMaterialization(
         description: Optional[str] = None,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -491,8 +491,7 @@ class AssetMaterialization(
         # PartitionMetadataEntry (unstable API) case is unhandled
         return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
 
-    def with_tags(self, tags):
-        return self._replace(tags=tags)
+    # probably create a static method to create with tags
 
 
 class MaterializationSerializer(DefaultNamedTupleSerializer):

@@ -140,6 +140,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventLogEntry)
         insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
         with self._connect() as conn:
+            # this could tell us the return id
             result = conn.execute(
                 insert_event_statement.returning(
                     SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id
@@ -161,9 +162,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             )
             and event.dagster_event.asset_key
         ):
-            self.store_asset_event(event)
+            self.store_asset_event(event, res[1])
 
-    def store_asset_event(self, event):
+    def store_asset_event(self, event: EventLogEntry, event_id: int):
         check.inst_param(event, "event", EventLogEntry)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return

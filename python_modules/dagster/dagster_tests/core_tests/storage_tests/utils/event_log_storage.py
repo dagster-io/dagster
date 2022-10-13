@@ -2306,3 +2306,79 @@ class TestEventLogStorage:
             )
 
         assert storage.get_maximum_record_id() == index + 10
+
+    def test_get_materialization_tag(self, storage):
+        key = AssetKey("hello")
+
+        @op
+        def my_op():
+            yield AssetMaterialization(
+                asset_key=key,
+                tags={"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+            )
+            yield Output(5)
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events, _ = _synthesize_events(lambda: my_op(), instance=instance)
+
+            for event in events:
+                storage.store_event(event)
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+            )
+            assert len(materializations) == 1
+
+            asset_event_tags = storage.get_asset_event_tags()
+            assert asset_event_tags == [
+                ('dagster/partition/country', {'US'}),
+                ('dagster/partition/date', {'2022-10-13'}),
+            ]
+
+    def test_event_record_filter_tags(self, storage):
+        key = AssetKey("hello")
+
+        @op
+        def my_op():
+            yield AssetMaterialization(
+                asset_key=key,
+                tags={"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+            )
+            yield Output(5)
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events, _ = _synthesize_events(lambda: my_op(), instance=instance)
+
+            for event in events:
+                storage.store_event(event)
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(
+                    DagsterEventType.ASSET_MATERIALIZATION, tags={"dagster/partition/country": "US"}
+                )
+            )
+            assert len(materializations) == 1
+            assert materializations[
+                0
+            ].event_log_entry.dagster_event.step_materialization_data.materialization.tags == {
+                "dagster/partition/country": "US",
+                "dagster/partition/date": "2022-10-13",
+            }
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(
+                    DagsterEventType.ASSET_MATERIALIZATION, tags={"nonexistent": "tag"}
+                )
+            )
+            assert len(materializations) == 0
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+            )
+            assert len(materializations) == 1

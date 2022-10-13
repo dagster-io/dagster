@@ -121,7 +121,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         MySQLEventLogStorage.wipe_storage(conn_string)
         return MySQLEventLogStorage(conn_string)
 
-    def store_asset_event(self, event):
+    def store_asset_event(self, event, event_id: int):
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
         # See SqlEventLogStorage.store_asset_event method for more details
 

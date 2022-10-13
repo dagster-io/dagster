@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, NamedTuple, Optional, Union
+from typing import List, NamedTuple, Optional, Union, Mapping
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -43,6 +43,7 @@ class EventRecordsFilter(
             ("after_timestamp", Optional[float]),
             ("before_timestamp", Optional[float]),
             ("storage_ids", Optional[List[int]]),
+            ("tags", Optional[Mapping[str, Union[str, List[str]]]]),
         ],
     )
 ):
@@ -79,6 +80,7 @@ class EventRecordsFilter(
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
         storage_ids: Optional[List[int]] = None,
+        tags: Optional[Mapping[str, Union[str, List[str]]]] = None,
     ):
         check.opt_list_param(asset_partitions, "asset_partitions", of_type=str)
         check.inst_param(event_type, "event_type", DagsterEventType)
@@ -98,4 +100,5 @@ class EventRecordsFilter(
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
             storage_ids=check.opt_list_param(storage_ids, "storage_ids", of_type=int),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str),
         )

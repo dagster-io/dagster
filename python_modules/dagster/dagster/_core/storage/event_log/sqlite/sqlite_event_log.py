@@ -235,14 +235,15 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
             # mirror the event in the cross-run index database
             with self.index_connection() as conn:
-                conn.execute(insert_event_statement)
+                result = conn.execute(insert_event_statement)
+                event_id = result.inserted_primary_key[0]
 
             if (
                 event.dagster_event.is_step_materialization
                 or event.dagster_event.is_asset_observation
                 or event.dagster_event.is_asset_materialization_planned
             ):
-                self.store_asset_event(event)
+                self.store_asset_event(event, event_id)
 
     def get_event_records(
         self,
