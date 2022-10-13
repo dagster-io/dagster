@@ -397,6 +397,7 @@ class AssetMaterialization(
             ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("partition", PublicAttr[Optional[str]]),
+            ("tags", Optional[Mapping[str, str]]),
         ],
     )
 ):
@@ -431,6 +432,7 @@ class AssetMaterialization(
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -454,6 +456,7 @@ class AssetMaterialization(
             description=check.opt_str_param(description, "description"),
             metadata_entries=normalize_metadata(metadata, metadata_entries),
             partition=check.opt_str_param(partition, "partition"),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
     @property
@@ -488,6 +491,9 @@ class AssetMaterialization(
         # PartitionMetadataEntry (unstable API) case is unhandled
         return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
 
+    def with_tags(self, tags):
+        return self._replace(tags=tags)
+
 
 class MaterializationSerializer(DefaultNamedTupleSerializer):
     @classmethod
@@ -510,6 +516,7 @@ class Materialization(
         ],
     )
 ):
+    # Need to add tags field here for backwards compatibility?
     """Event indicating that an op has materialized a value.
 
     Solid compute functions may yield events of this type whenever they wish to indicate to the

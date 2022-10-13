@@ -1,7 +1,18 @@
 import base64
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
+from typing import (
+    Callable,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    Tuple,
+)
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
@@ -291,6 +302,23 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
         pass
+
+    @abstractmethod
+    def get_asset_event_tags(self) -> List[Tuple[str, Set[str]]]:
+        """Get a list of tag keys and the values that have been associated with them.
+
+        Returns:
+            List[Tuple[str, Set[str]]]
+        """
+
+    @abstractmethod
+    def add_asset_event_tags(self, event_id: int, new_tags: Mapping[str, str]):
+        """Add additional tags for an asset event.
+
+        Args:
+            event_id (str)
+            new_tags (Mapping[str, str])
+        """
 
     @abstractmethod
     def get_asset_run_ids(self, asset_key: AssetKey) -> Iterable[str]:
