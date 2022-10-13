@@ -17,7 +17,8 @@ from .utils import (
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
 @pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
-def test_load_from_instance(use_normalization_tables, connection_to_group_fn):
+@pytest.mark.parametrize("filter_connection", [True, False])
+def test_load_from_instance(use_normalization_tables, connection_to_group_fn, filter_connection):
 
     ab_resource = airbyte_resource(
         build_init_resource_context(
@@ -57,13 +58,19 @@ def test_load_from_instance(use_normalization_tables, connection_to_group_fn):
             ab_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
+            connection_filter=(lambda _: False) if filter_connection else None,
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
             ab_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
+            connection_filter=(lambda _: False) if filter_connection else None,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
+
+    if filter_connection:
+        assert len(ab_assets) == 0
+        return
 
     tables = {"dagster_releases", "dagster_tags", "dagster_teams"} | (
         {
