@@ -11,13 +11,26 @@ DEFAULT_CONNECTION_ID = "02087b3c-2037-4db9-ae7b-4a8e45dc20b1"
     "forward_logs",
     [True, False],
 )
-def test_airbyte_sync_op(forward_logs):
+@pytest.mark.parametrize(
+    "additional_request_params",
+    [False, True],
+)
+def test_airbyte_sync_op(forward_logs, additional_request_params):
 
     ab_host = "some_host"
     ab_port = "8000"
     ab_url = f"http://{ab_host}:{ab_port}/api/v1"
     ab_resource = airbyte_resource.configured(
-        {"host": ab_host, "port": ab_port, "forward_logs": forward_logs}
+        {
+            "host": ab_host,
+            "port": ab_port,
+            "forward_logs": forward_logs,
+            **(
+                {"request_additional_params": {"headers": {"my-cool-header": "foo"}}}
+                if additional_request_params
+                else {}
+            ),
+        }
     )
 
     @op
@@ -68,3 +81,7 @@ def test_airbyte_sync_op(forward_logs):
             job_details={"job": {"id": 1, "status": "succeeded"}},
             connection_details={"name": "some_connection"},
         )
+
+        if additional_request_params:
+            for call in rsps.calls:
+                assert "my-cool-header" in call.request.headers
