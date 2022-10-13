@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import hashlib
 import inspect
 import os
