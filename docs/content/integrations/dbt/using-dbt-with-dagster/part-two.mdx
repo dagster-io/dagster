@@ -1,0 +1,141 @@
+---
+title: "Using Dagster with dbt, part 2: Load dbt models as Dagster assets"
+description: Dagster can orchestrate dbt alongside other technologies.
+---
+
+# Using dbt with Dagster, part two: Load dbt models as Dagster assets
+
+<Note>
+  This is part two of the{" "}
+  <a href="/integrations/dbt/using-dbt-with-dagster">
+    Using dbt with Dagster software-defined assets
+  </a>{" "}
+  tutorial.
+</Note>
+
+At this point, you should have a [fully-configured dbt project](/integrations/dbt/using-dbt-with-dagster/part-one) that's ready to work with Dagster.
+
+In this step, you'll finally begin integrating dbt with Dagster! To do this, you'll:
+
+- [Load the dbt models into Dagster as assets](#step-1-load-the-dbt-models-as-assets)
+- [Add a Dagster repository and supply a dbt resource](#step-2-add-a-dagster-repository-and-supply-a-dbt-resource)
+- [View the assets in Dagit](#step-3-view-the-assets-in-dagit)
+
+---
+
+## Step 1: Load the dbt models as assets
+
+In this step, you'll load the dbt models into Dagster as assets using the [`dagster-dbt`](/\_apidocs/libraries/dagster-dbt) library.
+
+Open the `__init__.py` file, located in `/tutorial_template/tutorial_dbt_dagster/assets`, and add the following code:
+
+```python
+from dagster_dbt import load_assets_from_dbt_project
+
+from dagster import file_relative_path
+
+
+DBT_PROJECT_PATH = file_relative_path(__file__, "../../jaffle_shop")
+DBT_PROFILES = file_relative_path(__file__, "../../jaffle_shop/config")
+
+dbt_assets = load_assets_from_dbt_project(
+    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+)
+```
+
+Let's discuss what this example is doing, specifically the <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> function. This function loads dbt models into Dagster as assets, creating one Dagster asset for each model.
+
+When invoked, this function:
+
+1. Compiles your dbt project,
+2. Parses the metadata provided by dbt, and
+3. Generates a set of software-defined assets reflecting the models in the project. These assets share the same underlying [op](/concepts/ops-jobs-graphs/ops), which will invoke dbt to run the models represented by the loaded assets.
+
+<Note>
+  <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> is one
+  of two ways you can load dbt models into Dagster, which we recommend for small
+  dbt projects. For larger projects, we recommend using
+  <a href="/integrations/dbt/reference#loading-models-using-load_assets_from_dbt_manifest">
+    <code>load_assets_from_dbt_manifest</code> to load models from a dbt{" "}
+    <code>manifest.json</code> file
+  </a>.
+</Note>
+
+Let's take a look at the arguments we've supplied:
+
+- `project_dir`, which is the path to the dbt project
+- `profiles_dir`, which is the path to the dbt project's connection profiles
+- `key_prefix`, which is a prefix to apply to all models in the dbt project
+
+---
+
+## Step 2: Add a Dagster repository and supply a dbt resource
+
+Next, you'll create a Dagster [repository](/concepts/repositories-workspaces/repositories) to supply resources to the dbt assets from the previous step.
+
+Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. Using the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource, we can supply a dbt resource to the dbt project.
+
+Open the `repository.py` file, located in `/tutorial_template/tutorial_dbt_dagster`, and add the following code:
+
+```python
+import os
+
+from dagster_dbt import dbt_cli_resource
+from tutorial_dbt_dagster import assets
+from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
+
+from dagster import load_assets_from_package_module, repository, with_resources
+
+
+@repository
+def tutorial_dbt_dagster():
+    return with_resources(
+        load_assets_from_package_module(assets),
+        {
+            "dbt": dbt_cli_resource.configured(
+                {
+                    "project_dir": DBT_PROJECT_PATH,
+                    "profiles_dir": DBT_PROFILES,
+                },
+            ),
+        },
+    )
+```
+
+Let's take a look at what's happening here:
+
+- Using <PyObject object="with_resources"/>, we've provided resources to the assets in the repository. In this example, that's the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource.
+- Using <PyObject object="load_assets_from_package_module" />, we've imported all assets in the `assets` module into the repository. This approach allows any new assets we create to be automatically added to the repository instead of needing to manually add them one by one.
+
+---
+
+## Step 3: View the assets in Dagit
+
+In this step you'll start Dagit, Dagster's web interface.
+
+1. To start Dagit, run the following in `/tutorial_template`:
+
+   ```shell
+   dagit
+   ```
+
+   Which will result in output similar to:
+
+   ```shell
+   Serving dagit on http://127.0.0.1:3000 in process 70635
+   ```
+
+2. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the assets:
+
+   <Image
+   alt="Asset graph in Dagit, containing dbt models loaded as Dagster assets"
+   src="/images/integrations/dbt/using-dbt-with-dagster/part-two-dbt-asset-graph.png"
+   width={1090}
+   height={894}
+   />
+
+---
+
+## What's next?
+
+At this point, you've loaded your dbt models into Dagster as assets, supplied them with a dbt resource, and viewed them in Dagit's asset graph. The next step is to [add upstream Dagster assets and kick off a run that materializes them](/integrations/dbt/using-dbt-with-dagster/part-three).

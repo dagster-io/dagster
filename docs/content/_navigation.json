@@ -489,11 +489,39 @@
       },
       {
         "title": "dbt",
-        "path": "/integrations/dbt"
+        "path": "/integrations/dbt",
+        "children": [
+          {
+            "title": "dbt + Dagster tutorial",
+            "path": "/integrations/dbt/using-dbt-with-dagster",
+            "children": [
+              {
+                "title": "Set up dbt project",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-one"
+              },
+              {
+                "title": "Load dbt models as assets",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-two"
+              },
+              {
+                "title": "Create and materialize upstream assets",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-three"
+              },
+              {
+                "title": "Create and materialize downstream asset",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-four"
+              }
+            ]
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/dbt/reference"
+          }
+        ]
       },
       {
         "title": "dbt Cloud",
-        "path": "/integrations/dbt_cloud"
+        "path": "/integrations/dbt-cloud"
       },
       {
         "title": "Great Expectations",
