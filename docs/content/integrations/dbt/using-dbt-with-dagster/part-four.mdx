@@ -37,7 +37,7 @@ height={896}
 
 To add the `order_count_chart` asset:
 
-1. In `/tutorial_template/dbt_dagster_sda_tutorial/assets/__init__.py`, replace the imports section with the following:
+1. In `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py`, replace the imports section with the following:
 
    ```python
    import pandas as pd
@@ -69,9 +69,9 @@ Let's review what's happening here:
 
 - We've also used <PyObject object="AssetIn" /> to explicitly define an upstream dependency. Just like in [part three of this tutorial](/integrations/dbt/using-dbt-with-dagster/part-three#step-1-create-upstream-dagster-assets), we've defined these as `jaffle_shop` and `staging`, respectively.
 
-- Finally, the chart is saved as `order_count_chart.html` in `/tutorial_template/dbt_dagster_sda_tutorial` and automatically opened in the browser upon successful materialization.
+- Finally, the chart is saved as `order_count_chart.html` in `/tutorial_template/tutorial_dbt_dagster` and automatically opened in the browser upon successful materialization.
 
-At this point, `/tutorial_template/dbt_dagster_sda_tutorial/assets/__init__.py` should look like this:
+At this point, `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py` should look like this:
 
 ```python
 import pandas as pd

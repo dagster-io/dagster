@@ -27,7 +27,7 @@ In this step, you'll finally begin integrating dbt with Dagster! To do this, you
 
 In this step, you'll load the dbt models into Dagster as assets. This step requires the [`dagster-dbt`](/\_apidocs/libraries/dagster-dbt) library.
 
-Open the `__init__.py` file, located in `/tutorial_template/dbt_dagster_sda_tutorial/assets`, and add the following code:
+Open the `__init__.py` file, located in `/tutorial_template/tutorial_dbt_dagster/assets`, and add the following code:
 
 ```python
 from dagster_dbt import load_assets_from_dbt_project
@@ -75,20 +75,20 @@ Next, you'll create a Dagster [repository](/concepts/repositories-workspaces/rep
 
 Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. Using the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource, we can supply a dbt resource to the dbt project.
 
-Open the `repository.py` file, located in `/tutorial_template/dbt_dagster_sda_tutorial`, and add the following code:
+Open the `repository.py` file, located in `/tutorial_template/tutorial_dbt_dagster`, and add the following code:
 
 ```python
 import os
 
 from dagster_dbt import dbt_cli_resource
-from dbt_dagster_sda_tutorial import assets
-from dbt_dagster_sda_tutorial.assets import DBT_PROFILES, DBT_PROJECT_PATH
+from tutorial_dbt_dagster import assets
+from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
 from dagster import load_assets_from_package_module, repository, with_resources
 
 
 @repository
-def dbt_dagster_sda_tutorial():
+def tutorial_dbt_dagster():
     return with_resources(
         load_assets_from_package_module(assets),
         {

@@ -3,14 +3,14 @@ import os
 from dagster_dbt import dbt_cli_resource
 from dagster_duckdb import build_duckdb_io_manager
 from dagster_duckdb_pandas import DuckDBPandasTypeHandler
-from dbt_dagster_sda_tutorial import assets
-from dbt_dagster_sda_tutorial.assets import DBT_PROFILES, DBT_PROJECT_PATH
+from tutorial_dbt_dagster import assets
+from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
 from dagster import load_assets_from_package_module, repository, with_resources
 
 
 @repository
-def dbt_dagster_sda_tutorial():
+def tutorial_dbt_dagster():
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
     return with_resources(

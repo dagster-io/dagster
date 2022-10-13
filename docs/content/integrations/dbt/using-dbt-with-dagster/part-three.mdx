@@ -27,7 +27,7 @@ In this step, you'll:
 
 To fetch the data the dbt models require, we'll write two Dagster assets: one for `customers` and one for `orders`.
 
-In `/tutorial_template/dbt_dagster_sda_tutorial/assets/__init__.py`:
+In `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py`:
 
 1. Replace the import section at the top of the file with the following:
 
@@ -62,7 +62,7 @@ Let's take a closer look at the arguments we've provided:
 
 - `group_name` - When Dagster loads the dbt models as assets, the assets will be placed in an asset group based on the name of the folder (`staging`) containing the models. Because we want the assets we add to be included in the same group, we defined this as `staging`.
 
-At this point, the `/tutorial_template/dbt_dagster_sda_tutorial/assets__init__.py` file should look like this:
+At this point, the `/tutorial_template/tutorial_dbt_dagster/assets__init__.py` file should look like this:
 
 ```python
 import pandas as pd
@@ -102,14 +102,14 @@ In this step, we'll update the Dagster repository to supply the `duckdb_io_manag
 - Upstream assets (`customers_raw`, `orders_raw`) to load data into DuckDB
 - Downstream assets to read data from DuckDB. We'll add the downstream asset in the next section.
 
-In `/tutorial_template/dbt_dagster_sda_tutorial/repository.py`, replace its contents with the following:
+In `/tutorial_template/tutorial_dbt_dagster/repository.py`, replace its contents with the following:
 
 ```python
 import os
 
 from dagster_dbt import dbt_cli_resource
-from dbt_dagster_sda_tutorial import assets
-from dbt_dagster_sda_tutorial.assets import DBT_PROFILES, DBT_PROJECT_PATH
+from tutorial_dbt_dagster import assets
+from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
 from dagster_duckdb import build_duckdb_io_manager
 from dagster_duckdb_pandas import DuckDBPandasTypeHandler
@@ -118,7 +118,7 @@ from dagster import load_assets_from_package_module, repository, with_resources
 
 
 @repository
-def dbt_dagster_sda_tutorial():
+def tutorial_dbt_dagster():
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
     return with_resources(
