@@ -169,9 +169,9 @@ class WrappedCacheableAssetsDefinition(CacheableAssetsDefinition):
         raise NotImplementedError()
 
 
-def _map_to_hashable(map: Mapping[Any, Any]) -> bytes:
+def _map_to_hashable(mapping: Mapping[Any, Any]) -> bytes:
     return json.dumps(
-        {json.dumps(k, sort_keys=True): (v) for k, v in map.items()},
+        {json.dumps(k, sort_keys=True): (v) for k, v in mapping.items()},
         sort_keys=True,
     ).encode("utf-8")
 
