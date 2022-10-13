@@ -1,11 +1,9 @@
-from types import ModuleType
-from typing import List
-import click
-
-
 import importlib.util
 import sys
+from types import ModuleType
+from typing import List
 
+import click
 from dagster_managed_stacks.types import ManagedStackDiff, ManagedStackReconciler
 
 MODULE_NAME = "usercode"
