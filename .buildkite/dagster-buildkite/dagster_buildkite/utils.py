@@ -182,7 +182,7 @@ def parse_package_version(version_str: str) -> packaging.version.Version:
 
 
 def get_commit(rev):
-    return subprocess.checkoutput(["git", "rev-parse", "--short", rev]).strip()
+    return subprocess.check_output(["git", "rev-parse", "--short", rev]).strip()
 
 
 def get_changed_files():
