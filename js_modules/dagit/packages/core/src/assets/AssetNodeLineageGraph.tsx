@@ -102,7 +102,7 @@ export const AssetNodeLineageGraph: React.FC<{
                 {!graphNode || !graphNode.definition.opNames.length ? (
                   <SourceAssetNode
                     assetKey={{path}}
-                    versioned={graphNode.definition.versioned || false}
+                    versioned={graphNode.definition.isVersioned || false}
                     selected={graphNode.id === assetGraphId}
                   />
                 ) : scale < MINIMAL_SCALE ? (

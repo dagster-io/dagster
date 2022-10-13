@@ -45,6 +45,8 @@ const GROUP_NODE_PREFIX = 'group__';
 export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
 
+  console.log("COMPUTING LAYOUT");
+
   g.setGraph({
     rankdir: 'TB',
     marginx: opts.margin,
@@ -63,7 +65,8 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       node.definition.groupName,
     ].join('__');
 
-  const shouldRender = (node?: GraphNode) => node && node.definition.opNames.length > 0;
+  // const shouldRender = (node?: GraphNode) => node && node.definition.opNames.length > 0;
+  const shouldRender = (node?: GraphNode) => node;
   const renderedNodes = Object.values(graphData.nodes).filter(shouldRender);
 
   const groups: {[id: string]: GroupLayout} = {};

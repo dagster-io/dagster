@@ -15,8 +15,7 @@ export const SourceAssetNode: React.FC<{
     <AssetNodeBox $selected={selected}>
       <SourceAssetNodeLink style={{backgroundColor}}>
         <span className="label">{displayNameForAssetKey(assetKey)}</span>
-        {versioned ? <VersionedBadge>V</VersionedBadge> : null}
-        <VersionedBadge>V</VersionedBadge>
+        {versioned ? <VersionedBadge $isSource={true} $isStale={false}>V</VersionedBadge> : null}
         <Icon name="open_in_new" color={Colors.Gray500} />
       </SourceAssetNodeLink>
     </AssetNodeBox>

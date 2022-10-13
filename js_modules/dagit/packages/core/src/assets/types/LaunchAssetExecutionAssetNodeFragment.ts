@@ -7,11 +7,6 @@
 // GraphQL fragment: LaunchAssetExecutionAssetNodeFragment
 // ====================================================
 
-export interface LaunchAssetExecutionAssetNodeFragment_partitionDefinition {
-  __typename: "PartitionDefinition";
-  description: string;
-}
-
 export interface LaunchAssetExecutionAssetNodeFragment_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -563,8 +558,8 @@ export interface LaunchAssetExecutionAssetNodeFragment {
   opNames: string[];
   jobNames: string[];
   graphName: string | null;
-  partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
-  versioned: boolean | null;
+  partitionDefinition: string | null;
+  isVersioned: boolean;
   isSource: boolean;
   assetKey: LaunchAssetExecutionAssetNodeFragment_assetKey;
   dependencyKeys: LaunchAssetExecutionAssetNodeFragment_dependencyKeys[];

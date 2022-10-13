@@ -42,18 +42,17 @@ export interface AssetGraphQuery_assetNodes {
   id: string;
   groupName: string | null;
   repository: AssetGraphQuery_assetNodes_repository;
-  currentLogicalVersion: string | null;
-  projectedLogicalVersion: string | null;
   dependencyKeys: AssetGraphQuery_assetNodes_dependencyKeys[];
   dependedByKeys: AssetGraphQuery_assetNodes_dependedByKeys[];
   graphName: string | null;
   jobNames: string[];
   opNames: string[];
+  opVersion: string | null;
   description: string | null;
   computeKind: string | null;
   isSource: boolean;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
-  versioned: boolean | null;
+  isVersioned: boolean;
 }
 
 export interface AssetGraphQuery {

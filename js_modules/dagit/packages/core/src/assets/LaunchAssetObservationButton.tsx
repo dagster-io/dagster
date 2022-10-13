@@ -44,9 +44,7 @@ export const LaunchAssetObservationButton: React.FC<{
   const confirm = useConfirmation();
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
-  const label = `Observe source assets${
-    context === 'all' ? ` all${count}` : context === 'selected' ? ` selected${count}` : count
-  }`;
+  const label = `Observe source ${count}`;
 
   if (!assetKeys.length || !canLaunchPipelineExecution.enabled) {
     return (
@@ -129,9 +127,8 @@ async function stateForObservingAssets(
     };
   }
 
-  console.log(assets);
-  console.log("VERSIONED", assets[0].versioned);
-  if (assets.some((x) => !x.versioned)) {
+  console.log("VERSIONED", assets[0].isVersioned);
+  if (assets.some((x) => !x.isVersioned)) {
     return {
       type: 'error',
       error: 'One or more of the selected source assets are unversioned and cannot be observed.',

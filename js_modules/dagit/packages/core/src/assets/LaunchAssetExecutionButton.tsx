@@ -68,7 +68,7 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
   const label = `Materialize${
-    context === 'all' ? ` all${count}` : context === 'selected' ? ` selected${count}` : count
+    context === 'all' ? ` stale${count}` : context === 'selected' ? ` selected${count}` : count
   }`;
 
   const {onClick, loading, launchpadElement} = useMaterializationAction(
@@ -370,6 +370,7 @@ export function executionParamsForAssetJob(
   assets: {assetKey: AssetKey; opNames: string[]}[],
   tags: {key: string; value: string}[],
 ): LaunchPipelineExecutionVariables['executionParams'] {
+  console.log("ASSET SELECTION: ", assets.map((asset) => ({ path: asset.assetKey.path })));
   return {
     mode: 'default',
     executionMetadata: {
@@ -431,7 +432,7 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     }
 =======
     partitionDefinition
-    versioned
+    isVersioned
     isSource
 >>>>>>> 67236d04f1 (updates)
     assetKey {
