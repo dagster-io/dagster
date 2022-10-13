@@ -2,6 +2,7 @@ from dagster._core.utils import check_dagster_package_version
 
 try:
     import dagster_managed_stacks
+
     from . import managed
 except ImportError:
     pass
