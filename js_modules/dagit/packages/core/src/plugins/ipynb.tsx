@@ -34,7 +34,11 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   }
 
   if (url) {
-    return <ExternalAnchorButton href={url}>View Notebook</ExternalAnchorButton>;
+    return (
+      <ExternalAnchorButton href={url} icon={<Icon name="open_in_new" />}>
+        View Notebook
+      </ExternalAnchorButton>
+    );
   }
   return (
     <div>
