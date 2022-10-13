@@ -1,3 +1,5 @@
+import functools
+import logging
 import os
 import subprocess
 from pathlib import Path
@@ -33,6 +35,7 @@ class CommandStep(TypedDict, total=False):
     plugins: List[Dict[str, object]]
     retry: Dict[str, object]
     timeout_in_minutes: int
+    skip: str
 
 
 class GroupStep(TypedDict):
@@ -179,11 +182,32 @@ def parse_package_version(version_str: str) -> packaging.version.Version:
     return parsed_version
 
 
+def get_commit(rev):
+    return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
+
+
+@functools.lru_cache(maxsize=None)
 def get_changed_files():
+    subprocess.call(["git", "fetch", "origin", "master"])
+    origin = get_commit("origin/master")
+    head = get_commit("HEAD")
+    logging.info(f"Changed files between origin/master ({origin}) and HEAD ({head}):")
     paths = (
         subprocess.check_output(["git", "diff", "origin/master...HEAD", "--name-only"])
         .decode("utf-8")
         .strip()
         .split("\n")
     )
+    for path in paths:
+        logging.info(path)
     return [Path(path) for path in paths]
+
+
+def skip_if_no_python_changes():
+    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        return None
+
+    if not any(path.suffix == ".py" for path in get_changed_files()):
+        return "No python changes"
+
+    return None
