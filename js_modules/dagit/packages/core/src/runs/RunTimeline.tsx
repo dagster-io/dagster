@@ -60,7 +60,6 @@ export type TimelineJob = {
 
 interface Props {
   loading?: boolean;
-  bucketByRepo?: boolean;
   jobs: TimelineJob[];
   range: [number, number];
 }
@@ -68,7 +67,7 @@ interface Props {
 const EXPANSION_STATE_STORAGE_KEY = 'timeline-expansion-state';
 
 export const RunTimeline = (props: Props) => {
-  const {loading = false, bucketByRepo = false, jobs, range} = props;
+  const {loading = false, jobs, range} = props;
   const [width, setWidth] = React.useState<number | null>(null);
   const {expandedKeys, onToggle} = useRepoExpansionState(EXPANSION_STATE_STORAGE_KEY);
 
@@ -97,40 +96,6 @@ export const RunTimeline = (props: Props) => {
   const now = Date.now();
   const [_, end] = range;
   const includesTicks = now <= end;
-
-  if (!bucketByRepo) {
-    const anyJobs = jobs.length > 0;
-    const height = ROW_HEIGHT * jobs.length;
-    const timelineHeight = DATE_TIME_HEIGHT + (anyJobs ? height : EMPTY_STATE_HEIGHT);
-    return (
-      <Timeline $height={timelineHeight} ref={containerRef}>
-        <Box
-          padding={{left: 24}}
-          flex={{direction: 'column', justifyContent: 'center'}}
-          style={{fontSize: '16px', height: DATE_TIME_HEIGHT}}
-          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-        >
-          Jobs
-        </Box>
-        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
-        <div>
-          {jobs.length ? (
-            jobs.map((job, ii) => (
-              <RunTimelineRow
-                key={job.key}
-                job={job}
-                top={ii * ROW_HEIGHT + DATE_TIME_HEIGHT}
-                range={range}
-                width={width}
-              />
-            ))
-          ) : (
-            <RunsEmptyOrLoading loading={loading} includesTicks={includesTicks} />
-          )}
-        </div>
-      </Timeline>
-    );
-  }
 
   const buckets = jobs.reduce((accum, job) => {
     const {repoAddress} = job;
@@ -664,6 +629,7 @@ const JobName = styled.div`
   padding: 0 12px 0 24px;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: ${LEFT_SIDE_SPACE_ALLOTTED}px;
 `;
 
 const RunChunks = styled.div`

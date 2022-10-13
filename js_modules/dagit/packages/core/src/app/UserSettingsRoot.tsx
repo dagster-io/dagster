@@ -127,16 +127,6 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
               ),
             },
             {
-              key: 'Bucket run timeline and jobs page by repo',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagRunBucketing)}
-                  onChange={() => toggleFlag(FeatureFlag.flagRunBucketing)}
-                />
-              ),
-            },
-            {
               key: 'Experimental "groups-only" asset graph zoom level',
               value: (
                 <Checkbox
