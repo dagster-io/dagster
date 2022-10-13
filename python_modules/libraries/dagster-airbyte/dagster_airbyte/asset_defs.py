@@ -288,7 +288,7 @@ def _clean_name(name: str) -> str:
 
 class AirbyteConnectionMetadata(
     NamedTuple(
-        "_AirbyteConnection",
+        "_AirbyteConnectionMetadata",
         [
             ("name", str),
             ("stream_prefix", str),
@@ -505,7 +505,7 @@ def load_assets_from_airbyte_instance(
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
         connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which takes
-            in a connection name and returns False if the connection should be excluded from the output assets.
+            in connection metadata and returns False if the connection should be excluded from the output assets.
 
     **Examples:**
 
@@ -583,7 +583,7 @@ def load_assets_from_airbyte_project(
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
         connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which
-            takes in a connection name and returns False if the connection should be excluded from the output assets.
+            takes in connection metadata and returns False if the connection should be excluded from the output assets.
 
     **Examples:**
 
