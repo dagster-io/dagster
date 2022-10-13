@@ -33,6 +33,7 @@ def upgrade():
             "asset_event_tags",
             ["key", "value"],
             unique=False,
+            mysql_length={"key": 64, "value": 64},
         )
 
 
