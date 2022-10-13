@@ -99,7 +99,7 @@ To materialize the assets, we need to tell Dagster how to handle the assets' inp
 
 In this step, we'll update the Dagster repository to supply the `duckdb_io_manager` to the assets in the repository. This resource contains an I/O manager that, when assets are materialized, allows:
 
-- Upstream assets (`customers_raw`, `orders_raw`) to load data into DuckDB
+- Upstream assets (`customers_raw`, `orders_raw`) to load data into DuckDB. In this example, the `duckdb_io_manager` uses <PyObject module="dagster_duckdb_pandas" object="DuckDBPandasTypeHandler" /> to store the pandas DataFrames used in our assets as CSVs and load them into DuckDB.
 - Downstream assets to read data from DuckDB. We'll add the downstream asset in the next section.
 
 In `/tutorial_template/tutorial_dbt_dagster/repository.py`, replace its contents with the following:
