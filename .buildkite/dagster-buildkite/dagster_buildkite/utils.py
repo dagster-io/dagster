@@ -181,14 +181,20 @@ def parse_package_version(version_str: str) -> packaging.version.Version:
     return parsed_version
 
 
+def get_commit(rev):
+    return subprocess.checkoutput(["git", "rev-parse", "--short", rev]).strip()
+
+
 def get_changed_files():
+    origin = get_commit("origin/master")
+    head = get_commit("HEAD")
+    logging.info(f"Changed files between origin/master ({origin}) and HEAD ({head}):")
     paths = (
         subprocess.check_output(["git", "diff", "origin/master...HEAD", "--name-only"])
         .decode("utf-8")
         .strip()
         .split("\n")
     )
-    logging.info("Changed files:")
     for path in paths:
         logging.info(path)
     return [Path(path) for path in paths]
