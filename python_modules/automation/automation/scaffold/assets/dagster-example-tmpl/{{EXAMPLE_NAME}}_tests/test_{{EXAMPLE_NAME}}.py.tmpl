@@ -4,4 +4,4 @@ from {{EXAMPLE_NAME}}.repository import my_job
 
 
 def test_{{EXAMPLE_NAME}}():
-    assert execute_job(my_job).success
+    assert my_job.execute_in_process().success

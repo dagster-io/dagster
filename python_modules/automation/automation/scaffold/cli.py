@@ -106,7 +106,7 @@ def example(name):
                 shutil.move(fpath, new_fpath)
                 print("Created {path}".format(path=new_fpath))
 
-            new_dname = dname.replace("example-tmpl", name)
+            new_dname = dname.replace("example-tmpl", name).replace("{{EXAMPLE_NAME}}", name)
             shutil.move(dname, new_dname)
 
         print("Example created at {path}".format(path=new_template_example_path))
