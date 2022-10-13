@@ -21,10 +21,10 @@
 
 ### Bugfixes
 
+- Previously, if retries were exceeded when running with `execute_in_process`, no error would be raised. Now, a `DagsterMaxRetriesExceededError` will be launched off.
 - [dagster-airbyte] Fixed generating assets for Airbyte normalization tables corresponding with nested union types.
 - [dagster-dbt] When running assets with `load_assets_from_...(..., use_build=True)`, AssetObservation events would be emitted for each test. These events would have metadata fields which shared names with the fields added to the AssetMaterialization events, causing confusing historical graphs for fields such as Compilation Time. This has been fixed.
 - [dagster-dbt] The name for the underlying op for `load_assets_from_...` was generated in a way which was non-deterministic for dbt projects which pulled in external packages, leading to errors when executing across multiple processes. This has been fixed.
-- Previously, if retries were exceeded when running with `execute_in_process`, no error would be raised. Now, a DagsterMaxRetriesExceededError will be launched off.
 
 ### Dependency changes
 
@@ -39,12 +39,12 @@
 
 ### Documentation
 
-- Added a step-by-step tutorial for using dbt models with Dagster software-defined assets
-- Added documentation for running the Dagster Cloud Docker agent with Docker credential helpers.
 - Added an example, underneath examples/assets_smoke_test, that shows how to write a smoke test that feeds empty data to all the transformations in a data pipeline.
 - Added documentation for `build_asset_reconciliation_sensor`.
 - Added documentation for monitoring partitioned materializations using the `multi_asset_sensor` and kicking off subsequent partitioned runs.
+- [dagster-cloud] Added documentation for running the Dagster Cloud Docker agent with Docker credential helpers.
 - [dagster-dbt] The class methods of the dbt_cli_resource are now visible in the API docs for the dagster-dbt library.
+- [dagster-dbt] Added a step-by-step tutorial for using dbt models with Dagster software-defined assets
 
 
 # 1.0.12 (core) / 0.16.12 (libraries)
