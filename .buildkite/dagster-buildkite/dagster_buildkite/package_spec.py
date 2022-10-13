@@ -1,5 +1,9 @@
 import os
+from distutils.core import run_setup  # pylint: disable=deprecated-module
+from pathlib import Path
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
+
+from setuptools.dist import Distribution
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
@@ -263,3 +267,11 @@ class PackageSpec(
                 steps=steps,
             )
         ]
+
+    @property
+    def distribution(self):
+        setup = Path(self.directory) / "setup.py"
+        if setup.exists():
+            return run_setup(Path(self.directory) / "setup.py")
+        else:
+            return Distribution()
