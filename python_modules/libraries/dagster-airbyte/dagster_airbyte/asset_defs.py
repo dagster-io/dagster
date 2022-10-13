@@ -514,7 +514,7 @@ class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefiniti
         key_prefix: List[str],
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
-        connection_filter: Optional[Callable[[str], bool]],
+        connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -590,7 +590,7 @@ class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
         key_prefix: List[str],
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
-        connection_filter: Optional[Callable[[str], bool]],
+        connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
     ):
         super().__init__(
             key_prefix=key_prefix,
