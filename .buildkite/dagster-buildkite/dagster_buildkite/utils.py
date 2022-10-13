@@ -187,9 +187,9 @@ def get_changed_files():
         .strip()
         .split("\n")
     )
-    print("Changed files:")
+    logging.info("Changed files:")
     for path in paths:
-        print(path)
+        logging.info(path)
     return [Path(path) for path in paths]
 
 
