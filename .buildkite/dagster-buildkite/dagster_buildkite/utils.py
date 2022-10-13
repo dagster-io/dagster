@@ -187,3 +187,13 @@ def get_changed_files():
         .split("\n")
     )
     return [Path(path) for path in paths]
+
+
+def skip_if_no_python_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.endswith(".py") for path in get_changed_files()):
+        return "No python changes"
+
+    return None
