@@ -1,0 +1,1061 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 14.5
+-- Dumped by pg_dump version 14.5
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.alembic_version (
+    version_num character varying(32) NOT NULL
+);
+
+
+ALTER TABLE public.alembic_version OWNER TO test;
+
+--
+-- Name: asset_keys; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.asset_keys (
+    id integer NOT NULL,
+    asset_key character varying(512),
+    last_materialization text,
+    last_run_id character varying(255),
+    asset_details text,
+    wipe_timestamp timestamp without time zone,
+    last_materialization_timestamp timestamp without time zone,
+    tags text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.asset_keys OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.asset_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.asset_keys_id_seq OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.asset_keys_id_seq OWNED BY public.asset_keys.id;
+
+
+--
+-- Name: bulk_actions; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.bulk_actions (
+    id integer NOT NULL,
+    key character varying(32) NOT NULL,
+    status character varying(255) NOT NULL,
+    "timestamp" timestamp without time zone NOT NULL,
+    body text,
+    action_type character varying(32),
+    selector_id text
+);
+
+
+ALTER TABLE public.bulk_actions OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.bulk_actions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.bulk_actions_id_seq OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.bulk_actions_id_seq OWNED BY public.bulk_actions.id;
+
+
+--
+-- Name: daemon_heartbeats; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.daemon_heartbeats (
+    daemon_type character varying(255) NOT NULL,
+    daemon_id character varying(255),
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.daemon_heartbeats OWNER TO test;
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key text,
+    asset_key text,
+    partition text
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: instance_info; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.instance_info (
+    run_storage_id text
+);
+
+
+ALTER TABLE public.instance_info OWNER TO test;
+
+--
+-- Name: instigators; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.instigators (
+    id integer NOT NULL,
+    selector_id character varying(255),
+    repository_selector_id character varying(255),
+    status character varying(63),
+    instigator_type character varying(63),
+    instigator_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.instigators OWNER TO test;
+
+--
+-- Name: instigators_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.instigators_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.instigators_id_seq OWNER TO test;
+
+--
+-- Name: instigators_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.instigators_id_seq OWNED BY public.instigators.id;
+
+
+--
+-- Name: job_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.job_ticks (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    selector_id character varying(255),
+    status character varying(63),
+    type character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.job_ticks OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.job_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.job_ticks_id_seq OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.job_ticks_id_seq OWNED BY public.job_ticks.id;
+
+
+--
+-- Name: jobs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.jobs (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    selector_id character varying(255),
+    repository_origin_id character varying(255),
+    status character varying(63),
+    job_type character varying(63),
+    job_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.jobs OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.jobs_id_seq OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
+
+
+--
+-- Name: kvs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.kvs (
+    key text NOT NULL,
+    value text
+);
+
+
+ALTER TABLE public.kvs OWNER TO test;
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key text,
+    value text
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    snapshot_id character varying(255),
+    pipeline_name text,
+    mode text,
+    status character varying(63),
+    run_body text,
+    partition text,
+    partition_set text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    start_time double precision,
+    end_time double precision
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: secondary_indexes; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.secondary_indexes (
+    id integer NOT NULL,
+    name character varying(512),
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    migration_completed timestamp without time zone
+);
+
+
+ALTER TABLE public.secondary_indexes OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.secondary_indexes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.secondary_indexes_id_seq OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.secondary_indexes_id_seq OWNED BY public.secondary_indexes.id;
+
+
+--
+-- Name: snapshots; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.snapshots (
+    id integer NOT NULL,
+    snapshot_id character varying(255) NOT NULL,
+    snapshot_body bytea NOT NULL,
+    snapshot_type character varying(63) NOT NULL
+);
+
+
+ALTER TABLE public.snapshots OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.snapshots_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.snapshots_id_seq OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.snapshots_id_seq OWNED BY public.snapshots.id;
+
+
+--
+-- Name: asset_keys id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys ALTER COLUMN id SET DEFAULT nextval('public.asset_keys_id_seq'::regclass);
+
+
+--
+-- Name: bulk_actions id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions ALTER COLUMN id SET DEFAULT nextval('public.bulk_actions_id_seq'::regclass);
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: instigators id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.instigators ALTER COLUMN id SET DEFAULT nextval('public.instigators_id_seq'::regclass);
+
+
+--
+-- Name: job_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks ALTER COLUMN id SET DEFAULT nextval('public.job_ticks_id_seq'::regclass);
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: secondary_indexes id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes ALTER COLUMN id SET DEFAULT nextval('public.secondary_indexes_id_seq'::regclass);
+
+
+--
+-- Name: snapshots id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots ALTER COLUMN id SET DEFAULT nextval('public.snapshots_id_seq'::regclass);
+
+
+--
+-- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.alembic_version (version_num) FROM stdin;
+5e139331e376
+\.
+
+
+--
+-- Data for Name: asset_keys; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.asset_keys (id, asset_key, last_materialization, last_run_id, asset_details, wipe_timestamp, last_materialization_timestamp, tags, create_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: bulk_actions; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.bulk_actions (id, key, status, "timestamp", body, action_type, selector_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: daemon_heartbeats; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.daemon_heartbeats (daemon_type, daemon_id, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key, asset_key, partition) FROM stdin;
+1	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_STARTING", "logging_tags": {}, "message": null, "pid": null, "pipeline_name": "succeeds_job", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": null, "timestamp": 1665619791.7340128, "user_message": ""}	PIPELINE_STARTING	2022-10-13 00:09:51.734013	\N	\N	\N
+2	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "64856"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Started process for run (pid: 64856).", "pid": null, "pipeline_name": "succeeds_job", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": null, "timestamp": 1665619793.4486232, "user_message": ""}	ENGINE_EVENT	2022-10-13 00:09:53.448623	\N	\N	\N
+3	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of run for \\"succeeds_job\\".", "pid": 64856, "pipeline_name": "succeeds_job", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": null, "timestamp": 1665619796.019179, "user_message": "Started execution of run for \\"succeeds_job\\"."}	PIPELINE_START	2022-10-13 00:09:56.019179	\N	\N	\N
+4	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "64856"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['succeeds']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps using multiprocess executor: parent process (pid: 64856)", "pid": 64856, "pipeline_name": "succeeds_job", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": null, "timestamp": 1665619796.093468, "user_message": "Executing steps using multiprocess executor: parent process (pid: 64856)"}	ENGINE_EVENT	2022-10-13 00:09:56.093468	\N	\N	\N
+5	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "step_process_start", "metadata_entries": []}, "event_type_value": "STEP_WORKER_STARTING", "logging_tags": {"pipeline_name": "succeeds_job", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmplz8aiibf\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "solid_name": "succeeds", "step_key": "succeeds"}, "message": "Launching subprocess for \\"succeeds\\".", "pid": 64856, "pipeline_name": "succeeds_job", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "succeeds", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}}, "step_key": "succeeds", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": "succeeds", "timestamp": 1665619796.104007, "user_message": "Launching subprocess for \\"succeeds\\"."}	STEP_WORKER_STARTING	2022-10-13 00:09:56.104007	succeeds	\N	\N
+6	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "step_process_start", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "64882"}, "label": "pid"}]}, "event_type_value": "STEP_WORKER_STARTED", "logging_tags": {}, "message": "Executing step \\"succeeds\\" in subprocess.", "pid": 64882, "pipeline_name": "succeeds_job", "solid_handle": null, "step_handle": null, "step_key": "succeeds", "step_kind_value": null}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": "succeeds", "timestamp": 1665619799.623569, "user_message": "Executing step \\"succeeds\\" in subprocess."}	STEP_WORKER_STARTED	2022-10-13 00:09:59.623569	succeeds	\N	\N
+7	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "RESOURCE_INIT_STARTED", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 64882, "pipeline_name": "succeeds_job", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "succeeds", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}}, "step_key": "succeeds", "step_kind_value": null}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": "succeeds", "timestamp": 1665619799.6432981, "user_message": "Starting initialization of resources [io_manager]."}	RESOURCE_INIT_STARTED	2022-10-13 00:09:59.643298	succeeds	\N	\N
+8	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster._core.storage.fs_io_manager", "name": "PickledObjectFilesystemIOManager"}, "label": "io_manager"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "0.12ms"}, "label": "io_manager:init_time"}]}, "event_type_value": "RESOURCE_INIT_SUCCESS", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 64882, "pipeline_name": "succeeds_job", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "succeeds", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}}, "step_key": "succeeds", "step_kind_value": null}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": "succeeds", "timestamp": 1665619799.651789, "user_message": "Finished initialization of resources [io_manager]."}	RESOURCE_INIT_SUCCESS	2022-10-13 00:09:59.651789	succeeds	\N	\N
+9	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "succeeds", "step_keys": ["succeeds"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "succeeds_job", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmplz8aiibf\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "solid_name": "succeeds", "step_key": "succeeds"}, "message": "Started capturing logs for step: succeeds.", "pid": 64882, "pipeline_name": "succeeds_job", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "succeeds", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}}, "step_key": "succeeds", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": "succeeds", "timestamp": 1665619799.693444, "user_message": "Started capturing logs for step: succeeds."}	LOGS_CAPTURED	2022-10-13 00:09:59.693444	succeeds	\N	\N
+10	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "succeeds_job", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmplz8aiibf\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "solid_name": "succeeds", "step_key": "succeeds"}, "message": "Started execution of step \\"succeeds\\".", "pid": 64882, "pipeline_name": "succeeds_job", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "succeeds", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}}, "step_key": "succeeds", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": "succeeds", "timestamp": 1665619799.7330828, "user_message": "Started execution of step \\"succeeds\\"."}	STEP_START	2022-10-13 00:09:59.733083	succeeds	\N	\N
+11	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "succeeds"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "succeeds_job", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmplz8aiibf\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "solid_name": "succeeds", "step_key": "succeeds"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 64882, "pipeline_name": "succeeds_job", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "succeeds", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}}, "step_key": "succeeds", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": "succeeds", "timestamp": 1665619799.7456481, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2022-10-13 00:09:59.745648	succeeds	\N	\N
+12	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/claire/dagster_home/storage/26c370d7-64b4-40d6-93ba-1f821f1af0e3/succeeds/result"}, "label": "path"}], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "succeeds_job", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmplz8aiibf\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "solid_name": "succeeds", "step_key": "succeeds"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 64882, "pipeline_name": "succeeds_job", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "succeeds", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}}, "step_key": "succeeds", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": "succeeds", "timestamp": 1665619799.75895, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-10-13 00:09:59.75895	succeeds	\N	\N
+13	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 41.355056000000005}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "succeeds_job", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmplz8aiibf\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "solid_name": "succeeds", "step_key": "succeeds"}, "message": "Finished execution of step \\"succeeds\\" in 41ms.", "pid": 64882, "pipeline_name": "succeeds_job", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "succeeds", "solid_handle": {"__class__": "SolidHandle", "name": "succeeds", "parent": null}}, "step_key": "succeeds", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": "succeeds", "timestamp": 1665619799.784409, "user_message": "Finished execution of step \\"succeeds\\" in 41ms."}	STEP_SUCCESS	2022-10-13 00:09:59.784409	succeeds	\N	\N
+14	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "64856"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Multiprocess executor: parent process exiting after 4.09s (pid: 64856)", "pid": 64856, "pipeline_name": "succeeds_job", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": null, "timestamp": 1665619800.188095, "user_message": "Multiprocess executor: parent process exiting after 4.09s (pid: 64856)"}	ENGINE_EVENT	2022-10-13 00:10:00.188095	\N	\N	\N
+15	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_SUCCESS", "logging_tags": {}, "message": "Finished execution of run for \\"succeeds_job\\".", "pid": 64856, "pipeline_name": "succeeds_job", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": null, "timestamp": 1665619800.19754, "user_message": "Finished execution of run for \\"succeeds_job\\"."}	PIPELINE_SUCCESS	2022-10-13 00:10:00.19754	\N	\N	\N
+16	26c370d7-64b4-40d6-93ba-1f821f1af0e3	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Process for run exited (pid: 64856).", "pid": null, "pipeline_name": "succeeds_job", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "", "pipeline_name": "succeeds_job", "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "step_key": null, "timestamp": 1665619800.252233, "user_message": ""}	ENGINE_EVENT	2022-10-13 00:10:00.252233	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: instance_info; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.instance_info (run_storage_id) FROM stdin;
+23d435fc-a72f-48fe-ac64-f349b866e850
+\.
+
+
+--
+-- Data for Name: instigators; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.instigators (id, selector_id, repository_selector_id, status, instigator_type, instigator_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: job_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.job_ticks (id, job_origin_id, selector_id, status, type, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: jobs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.jobs (id, job_origin_id, selector_id, repository_origin_id, status, job_type, job_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: kvs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.kvs (key, value) FROM stdin;
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+1	26c370d7-64b4-40d6-93ba-1f821f1af0e3	.dagster/repository	more_toys_repository@dagster_test.toys.repo
+2	26c370d7-64b4-40d6-93ba-1f821f1af0e3	dagster/solid_selection	*
+3	26c370d7-64b4-40d6-93ba-1f821f1af0e3	.dagster/grpc_info	{"host": "localhost", "socket": "/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmplz8aiibf"}
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, snapshot_id, pipeline_name, mode, status, run_body, partition, partition_set, create_timestamp, update_timestamp, start_time, end_time) FROM stdin;
+1	26c370d7-64b4-40d6-93ba-1f821f1af0e3	1deccee186d4c5a6c7e9d4859e07c550c2c2dd72	succeeds_job	\N	SUCCESS	{"__class__": "PipelineRun", "asset_selection": null, "execution_plan_snapshot_id": "0bbe5d437908a00de4548c6f4dbe4a00ed54c9e8", "external_pipeline_origin": {"__class__": "ExternalPipelineOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": null, "executable_path": null, "module_name": "dagster_test.toys.repo", "package_name": null, "python_file": null, "working_directory": null}, "location_name": "dagster_test.toys.repo"}, "repository_name": "more_toys_repository"}, "pipeline_name": "succeeds_job"}, "has_repository_load_data": false, "mode": "default", "parent_run_id": null, "pipeline_code_origin": {"__class__": "PipelinePythonOrigin", "pipeline_name": "succeeds_job", "repository_origin": {"__class__": "RepositoryPythonOrigin", "code_pointer": {"__class__": "ModuleCodePointer", "fn_name": "more_toys_repository", "module": "dagster_test.toys.repo", "working_directory": "/Users/claire/dagster"}, "container_context": {}, "container_image": null, "entry_point": ["dagster"], "executable_path": "/Users/claire/.virtualenvs/dagster-dev-3.9/bin/python"}}, "pipeline_name": "succeeds_job", "pipeline_snapshot_id": "1deccee186d4c5a6c7e9d4859e07c550c2c2dd72", "root_run_id": null, "run_config": {}, "run_id": "26c370d7-64b4-40d6-93ba-1f821f1af0e3", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.SUCCESS"}, "step_keys_to_execute": null, "tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmplz8aiibf\\"}", "dagster/solid_selection": "*"}}	\N	\N	2022-10-12 17:09:51.711499	2022-10-12 17:10:00.2423	1665619796.085198	1665619800.2423
+\.
+
+
+--
+-- Data for Name: secondary_indexes; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.secondary_indexes (id, name, create_timestamp, migration_completed) FROM stdin;
+1	run_partitions	2022-10-12 17:09:30.994189	2022-10-12 17:09:30.990958
+2	run_repo_label_tags	2022-10-12 17:09:31.013468	2022-10-12 17:09:31.009559
+3	bulk_action_types	2022-10-12 17:09:31.050023	2022-10-12 17:09:31.045031
+4	run_start_end_overwritten	2022-10-12 17:09:31.098842	2022-10-12 17:09:31.094335
+5	asset_key_table	2022-10-12 17:09:31.197464	2022-10-12 17:09:31.19347
+6	asset_key_index_columns	2022-10-12 17:09:31.230313	2022-10-12 17:09:31.210526
+7	schedule_jobs_selector_id	2022-10-12 17:09:31.350029	2022-10-12 17:09:31.344507
+8	schedule_ticks_selector_id	2022-10-12 17:09:31.412124	2022-10-12 17:09:31.408104
+\.
+
+
+--
+-- Data for Name: snapshots; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.snapshots (id, snapshot_id, snapshot_body, snapshot_type) FROM stdin;
+1	1deccee186d4c5a6c7e9d4859e07c550c2c2dd72	\\x789ced5d696fdcc811fd2bc4e44312602db379f77e936d392bc49116961641b032e83eaa355c73482e0fd91343ff3ddd3ce690c951cf6838921d2db09648f6f9ea557575f5a1af93306431298a309cfc6c4c7e8d3288a3042e129215d3b49cfc644c589a88e83a2cd81466242cba2f3f1b5fd7f3beaed35dd4c956f393380ebb32d4eb90cec34f30af0b384ee643055dceb3ba19aa080e05cba3ac8cd2442648aa38962f21a966e10d892b28962f4504315f79be8e6e200913320355b2aa4ebe6c6a5f3c45096f1b511779a70dff949f8f8ecffe33b995690b466292876d96b68e52a60a33929399ea5757b94a7e9ce7647e743125191c3988830916f7a9efba96e32213b92e37292734f02d9b790218709b6e8fc7e45d5494462a8c9daadb09c9f65d07e48ef56a21fffefdf156d8ff3ed9b2211f562455e65172fd700934c5ec0fd945796321d6545023f12a4de31d10d8adb74d6dcbfe2e1e35fa79f1faf8ddf1fb9e8ef6e5baa853d4f95e9d9fbfab730debeddb382583166eff2034d52d51583e8f08c3db77e7c797f7e0709a1c100555d91283ee6944044ecfeeeb7f93f8b74476ec4851f3c505c4c0ca343fa2e0721705d4c61078c4b1992b2c0046846b070c098ff93e42d4c5071cddd62dc71e9abe15fce16f67a7e767db999d4edbb76fda87bbd2a95566d9476e9ac4f6c10e4c9fdb3ec3c2c38c7916c63e73882b1c827c0f5c663f09f1ecdaf6d1e5b3b043dbb7ed1b01497d5e7691601f638a7dc4914518f826b1781098360b02f9bf673bc8e7a66fb94f423cbbb57c74e1b40672fb967d239a66f45ff6114c4739489863ac644da8852cd3736c975a96e5f84c48350d2cef69d8b69d1b3fba80965edbf68d6b64d465435450e4f9040836fdc024c4f3b18be56f26f311e501f35c909ead3592407eef2df4adfabc2c55902a2ec32c4f6f220e0a9932af60e54b5d7a488af08f224dc2a2cc55495f6f079b1415610e7f56515e1726485ca8d23a5f814705a1b1fcd461df31a376fd39b131b1015cf0a8434d6e5bae4b0508ec7a260ab049049706ccc44a9e4faf6f90eca56b1feed1a1adc9a5ab3027ef4e5e5f9ef7f963f7ce97178db2c124dc173601a9324404522b180a0861810fc80f2802d7a7aef71d32fe6a9283340c505ca9b65f75d2ae9f6e6f7b383339f902ac2ac120716c14256485112506310a695c623064fd0c8ae268722fafa2246c13f753cb7184e510e6baa68b394172c4804062ef31c9105f4ea5b96d5b968bd8b85a733599912f2a5ec4aa3c87a454c0983f19bbc306844d6bdc6ad812f92f8f648b2a126f81dd4c3638da889e408eed788cbb9cfb20022208b52d6ee10063e914f91ef2706062eaeb2ba6b60e1c5231031b05c22542d2829bb24bc465be002e28a69cf9aeb23ea6c769f0fd29661f879ae2ab1c8c720ac62a090ca8e995e646994a7691bc348a8ab61fa1302aa59ec64791e69f0ac86f20ffa8c1b265ea010da5d2b596e053cbe4c24696e781fccf073937323d5320ea60939bae73f071ede1401519f99ce86054273cd4d8a8cdf643aae0234f9e7653c14e8c9ba8d5d6a4e132b53ced38a1ca18d4189bfab6d416c7b203c4957a3057d81e0a6cce3066147b72c66aedac31a3f62b8bd8a7187ec49ed585dded989ad16aabe6de27e2fb50cd478e0a3eabe6b36a8ea39a75a4565b37f71e61de876e3e7248f859379f75731cdd6ca2f4dacab9f7e5857d28e723879c9f95f35939c751ce7611405b3bf7be7cb117ed742d416ca2eab611c7ae251f41b54b05a730b79cc0f75ddf795ad1d867ed7c34edd426bb2eaf0e49766109f0b8e0cc3309c28e4f021180cfe458e9131359d4f14dcfa5cc7926fb33d99f6acf7a8722b5dd555b35b5b5e010aa594bc40c90ed3a9e6753cc1d1a082a38623400db0d7ccfc6c8c2aefcd7164f4a2f7502ea5793d3b3b7e757939eb0fae5148c38bdbe86fcaf85514e7328a669cc35a2e4325318c30dc443fec8880b0457134eae8b12f2c12ea956aaddb2f3b4cadbfe69f4a9feb9a37bb51d8374397df9fef4f56578f1cbf1af270fe0b580c0766dee51d7b1086382704c81514e09506c09cfc1402926df1dafbf5e2d69a8d6693b9eabc55c25a5e6dd822b7dcb4a8a2c6d1d064be3541243fe4c8a34067dde34670ffacdbc36253419a62bcb83320cb9beeca6cd10f311c8be31cca483c51d8f59c803ea22ea04ccf77f9035db575514972fa2c410510cc55c926b669c9e1b339210c9176945496914728883c22009379a6d0537f2a9e940bb2059fb06f2179d7d1569d816decf31dfb1c1f1b18902d765d4725c399fe3dcb36db0904f05a30e2608118d9d01db49f3a01cb3882927ad5c76d20ab8e4bb8f10e39609cc0c4c4e1c8b720404acef6f74561b525696b3db0d273b6eed1a30455beff8d0638ab64c0eca94f1ce417d37f3abbbb490b648163a480bed69b21e2df67d426b4fb4d0dd7df643d062f2fb9b935fdf9fbc3ebe3c79f34163fb19c93f411e96a96c625a0c7ac1e3eecb5bdf72d733f2fe7b0ae5540eb1ed4e3d83e460b4998c343792b43c325ecd3b87eea7be741ac36d9b6b505bb4f7b36a6a8b2e2f0fab2d1809ec798008d88e2da7e6c8b5a5b7e998a6a02e13a60f4180c92893e190c41129ead75f2769a67e4ea4431e4935ba3dd890dc0ca4ed5ed06fc6e7ddf690f6727ab9b16d9a7e6eb7dfd67c6d769772e373544eebfdb8799568b0b7c9170d05d4b487ec47dce1a78068265f8501b3a834661277e9fe16db62d116d28f0404d895631d80c74d1002d1207098ef09c72116a1be1960613207d3b1ad5e513106c0871dbf156464b7cb680646adb8502a8084347c524994fd93ed835267b3b152aa5e4c0460e5ed5301401d8429a6c433a91d305370c90d24246710f2dcb13159ce787450a915674ad4dc5d3a3a6995b3d6e647b32c8699d4cfedd56851503f50da7324cd3140d7da1e760cd00d51ff101e9356409f94d3074508b5213db4a0f5b67dff10829e9c7cc9e28845653c378a0c5824e6cda6f29457b1b41c656a6439c429e1ea4087fab2dc367f649c2b0ff473a4aa56bf416d68cacfa9c194cf529be32ea0d8c67b22b1285aa5955e6a5b6d24dd51e354d455bc69a294c61f29353e93c250d54bab25f274266d5693bfaed128546cbb79218d5a1c1b14baf6b6e5c91a9aa41fdbd8e7c72e7d54ac24bddf08b669c3b6f9dfacf7acde1da1cd7f3da61d94ffda01b41f82ff0f082469adf06d07e94105ad7d806324416b41a7ddc883420796acdc164c6081028f78ae87a99a98fa983386c0130402399c8d712864dc09e1a3e9d19358d7ff666a509559550e99faedc27b7a96429b5887a5bbeeecf0ff6a4850eba203eb9cba0b939aa4d085ffa0a4d03e82fb9448a133e53687f65154332a9dd254742799957bacd6376764ae26d2c6320416cfd763af72b65d287fb3805279d4b439b8994359e549e319ab623fae86d6d46a28cbaa90a55552feedef3a8735d7c370bde7bd9e63d65bc5ac0f3d2ab56d6c8238abe77615002c0752aa59cd2a42ed51de865c2aaf4a7001604ccb322b7e7ef992a7ac38cae6e5344d8ed2fcfaa5fd328e684ef2f9cbbb6c9b96b3f82f923f257c298b1724e12fea03c42f66526629d709a5d5e9c326fd20fadaa77cf58ca3b6193aac71d48d1d7e6f0ee2a877b174d1df8118b5ae6fa4491c5d111d8a38bbde8639b977ac6c9fd72f005cb9e6722d76a7dbdd1daf0154309dfd63d34d80b7ea5b1bac09eb34aac9d2ce31d8701f6e1b3352ed3beb92dfbd1777ad50bddb71578adda88f3c2ab298ccefde7d2bf94ed50ea92859ea8ec67db82bb5ae5d885b07abf2ee72e087ec229ec9a1248fa4a9f8ef7079db1c18b8d3ef9e1bba365c77ba2bc8dd8d861b50de78c5e95d985738dd8ff45e6e791c0bfaaeab43d80f5cb3ba2bf88beb0a37a0bff96ad587c0ff805b1cc7c27fd1d92101f4deefba2bfced85841bc0df74a7eb43a0dff986c6b1803f4d36c27e96aac5ce9e917557e8bb0237c3bf924a4b0467e797bf7423639f0cdac60c83d826e869e51032432ec7aec02c3d880db8dce3663c84990fb99d722c722ebbdb2b85c6d9814cf9ce152bab7ca38f0319241c1236bfe852afba38b5971f46c94dca88125453528fab7fa1129e2ed275328e92ac2ac3ba315dc60f8d2cf95c762762e18c64d99ae7de54296703619f0fdf7cedf5eea594277594e0c3ed10bbae73924d7bcb0eff48eb6097fadb09e47a0db14e4b520e75d62108fe2513bc01b191decd8e998dc5bcab93ac14d484b8c36626a6720d39f4cf673eee9ef9d8b9717763b2f5fc6f717769935fa5ebb6b16c94e8fb36d118327dc4d595039cdbe839a1514b224fd3b2fb9324bb6df45913e85d23b030415112a9de151b0c686df8de2c93aeffe1955996165129cdc9c2a8add9c19ed703c5ffc0c4e90a6c878a3b10f599fa66116d236ee775925573bc3a515f9f2f0ff5af1da256bab771f3527b08a021689b2a5c1888c5f8fced50b57cfc1faa22fe64	PIPELINE
+2	0bbe5d437908a00de4548c6f4dbe4a00ed54c9e8	\\x789cad53c16a1b3110fd95b0e7526213c7496fa5040aa1c4e0f664cc20a47122a2955469947663f6df3bb32baf9d26e9a9d737f39edecc3ced1b00ed54ce00cda7b3e6e637ea4236f895537eed55cc0f819a0f678d4a64774a53868829db4c68b89f52412ee2c00a09bc6a5164dae2c80203d6434c4123eb1f9a44cd7a4b563978f4e197874c8a84b67fe9e5568a93a1f5d0c45cd3f12b5643ab62b4fe3e0bb1673caa849e26315f9c1334e1930d2543424a1d28226c234da484ca74100ac532826c6197c233fa8c34d8d86ca58fe78db50d9e6401c1e7a9186d44673d42ae0b032bcb696606b5469c5d5d9a0bbd50977a89d7e6e26a718de74bbd589cebb99e1bb39ccb5413b5aa337f7678f711bb0c14ea0665b84d938b489bdc6c6bd76067ffce35d7dc20d71c775f67dd0895b5a5739213c87a535781beb4a39428dc72e1e397bb6fab1fdf6f1a19bc4552469102cb5b9d248fdbfca79fbba1ede0caa87b9e22017511a19afaec3b291d42953073ac9ae1a881534816f3ebd41ca557c72e0970968b8eca351b36c38032b2532ee308d57cbd0413fe2c369d669e8f559ce114b26b8eb27dc60363c84b70d6c083f2c6bd91ecb554bf8ec593014f8f30a6b97aedfbed5f9a3561a78c212aefbec8c5e3836f1cfd7f1b668454fd9cfdb6ff034d3f81b0	EXECUTION_PLAN
+\.
+
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.asset_keys_id_seq', 1, false);
+
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.bulk_actions_id_seq', 1, false);
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 16, true);
+
+
+--
+-- Name: instigators_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.instigators_id_seq', 1, false);
+
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.job_ticks_id_seq', 1, false);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.jobs_id_seq', 1, false);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 3, true);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 1, true);
+
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.secondary_indexes_id_seq', 8, true);
+
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.snapshots_id_seq', 2, true);
+
+
+--
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.alembic_version
+    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
+
+
+--
+-- Name: asset_keys asset_keys_asset_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_asset_key_key UNIQUE (asset_key);
+
+
+--
+-- Name: asset_keys asset_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bulk_actions bulk_actions_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_key_key UNIQUE (key);
+
+
+--
+-- Name: bulk_actions bulk_actions_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: daemon_heartbeats daemon_heartbeats_daemon_type_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.daemon_heartbeats
+    ADD CONSTRAINT daemon_heartbeats_daemon_type_key UNIQUE (daemon_type);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: instigators instigators_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.instigators
+    ADD CONSTRAINT instigators_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: instigators instigators_selector_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.instigators
+    ADD CONSTRAINT instigators_selector_id_key UNIQUE (selector_id);
+
+
+--
+-- Name: job_ticks job_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks
+    ADD CONSTRAINT job_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jobs jobs_job_origin_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_job_origin_id_key UNIQUE (job_origin_id);
+
+
+--
+-- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_name_key UNIQUE (name);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_snapshot_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_snapshot_id_key UNIQUE (snapshot_id);
+
+
+--
+-- Name: idx_asset_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_key ON public.event_logs USING btree (asset_key);
+
+
+--
+-- Name: idx_asset_partition; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_partition ON public.event_logs USING btree (asset_key, partition);
+
+
+--
+-- Name: idx_bulk_actions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions ON public.bulk_actions USING btree (key);
+
+
+--
+-- Name: idx_bulk_actions_action_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions_action_type ON public.bulk_actions USING btree (action_type);
+
+
+--
+-- Name: idx_bulk_actions_selector_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions_selector_id ON public.bulk_actions USING btree (selector_id);
+
+
+--
+-- Name: idx_bulk_actions_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions_status ON public.bulk_actions USING btree (status);
+
+
+--
+-- Name: idx_event_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_event_type ON public.event_logs USING btree (dagster_event_type, id);
+
+
+--
+-- Name: idx_job_tick_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_status ON public.job_ticks USING btree (job_origin_id, status);
+
+
+--
+-- Name: idx_job_tick_timestamp; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_timestamp ON public.job_ticks USING btree (job_origin_id, "timestamp");
+
+
+--
+-- Name: idx_kvs_keys_unique; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE UNIQUE INDEX idx_kvs_keys_unique ON public.kvs USING btree (key);
+
+
+--
+-- Name: idx_run_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_id ON public.event_logs USING btree (run_id);
+
+
+--
+-- Name: idx_run_partitions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_partitions ON public.runs USING btree (partition_set, partition);
+
+
+--
+-- Name: idx_run_range; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_range ON public.runs USING btree (status, update_timestamp, create_timestamp);
+
+
+--
+-- Name: idx_run_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_status ON public.runs USING btree (status);
+
+
+--
+-- Name: idx_run_tags; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_tags ON public.run_tags USING btree (key, value);
+
+
+--
+-- Name: idx_step_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_step_key ON public.event_logs USING btree (step_key);
+
+
+--
+-- Name: idx_tick_selector_timestamp; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_tick_selector_timestamp ON public.job_ticks USING btree (selector_id, "timestamp");
+
+
+--
+-- Name: ix_instigators_instigator_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_instigators_instigator_type ON public.instigators USING btree (instigator_type);
+
+
+--
+-- Name: ix_job_ticks_job_origin_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_job_ticks_job_origin_id ON public.job_ticks USING btree (job_origin_id);
+
+
+--
+-- Name: ix_jobs_job_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_jobs_job_type ON public.jobs USING btree (job_type);
+
+
+--
+-- Name: runs fk_runs_snapshot_id_snapshots_snapshot_id; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT fk_runs_snapshot_id_snapshots_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES public.snapshots(snapshot_id);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

@@ -648,3 +648,32 @@ def test_add_kvs_table(hostname, conn_string):
             instance.upgrade()
             assert "kvs" in get_tables(instance)
             assert "idx_kvs_keys_unique" in get_indexes(instance, "kvs")
+
+
+def test_add_asset_event_tags_table(hostname, conn_string):
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            # use an old snapshot
+            __file__,
+            "snapshot_1_0_12_pre_add_asset_event_tags_table/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "asset_event_tags" not in get_tables(instance)
+
+            instance.upgrade()
+            assert "asset_event_tags" in get_tables(instance)
+            assert "idx_asset_event_tags" in get_indexes(instance, "asset_event_tags")
