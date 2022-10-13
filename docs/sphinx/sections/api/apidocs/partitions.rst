@@ -40,6 +40,9 @@ Partitions Definitions
 .. autoclass:: TimeWindowPartitionsDefinition
     :members:
 
+.. autoclass:: TimeWindow
+    :members:
+
 .. autoclass:: StaticPartitionsDefinition
     :members:
 
