@@ -16,7 +16,7 @@ This example contains:
 To download this example, run:
 
 ```shell
-dagster project from-example --name my-dagster-project --example dbt_dagster_tutorial
+dagster project from-example --name my-dagster-project --example tutorial_dbt_dagster
 ```
 
 To install this example and its dependencies, run:

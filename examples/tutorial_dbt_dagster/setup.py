@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 if __name__ == "__main__":
     setup(
-        name="dbt_dagster_tutorial",
+        name="tutorial_dbt_dagster",
         packages=find_packages(),
         install_requires=[
             "dagster",

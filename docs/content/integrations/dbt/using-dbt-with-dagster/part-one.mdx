@@ -13,30 +13,30 @@ description: Dagster can orchestrate dbt alongside other technologies.
   tutorial.
 </Note>
 
-First, you'll download Dagster's `dbt_dagster_tutorial` example and configure the dbt project it contains. The example uses dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project as well.
+First, you'll download Dagster's `tutorial_dbt_dagster` example and configure the dbt project it contains. The example uses dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), but you can follow along with a different project as well.
 
 In this part, you'll:
 
-- [Download the `dbt_dagster_tutorial` example](#step-1-download-the-dbt_dagster_tutorial-example)
+- [Download the `tutorial_dbt_dagster` example](#step-1-download-the-tutorial_dbt_dagster-example)
 - [Create a DuckDB connection profile](#step-2-create-a-duckdb-profile)
 - [Configure dbt model data sources](#step-3-configure-dbt-model-data-sources)
 
 ---
 
-## Step 1: Download the dbt_dagster_tutorial example
+## Step 1: Download the tutorial_dbt_dagster example
 
-Let's get started by downloading the [`dbt_dagster_tutorial` example](https://github.com/dagster-io/dagster/tree/master/examples/dbt_dagster_tutorial).
+Let's get started by downloading the [`tutorial_dbt_dagster` example](https://github.com/dagster-io/dagster/tree/master/examples/tutorial_dbt_dagster).
 
 1. In the terminal, run the following to download the example:
 
    ```shell
-   dagster project from-example --name dbt_dagster_tutorial --example dbt_dagster_tutorial
+   dagster project from-example --name tutorial_dbt_dagster --example tutorial_dbt_dagster
    ```
 
-2. Navigate into the `dbt_dagster_tutorial` folder:
+2. Navigate into the `tutorial_dbt_dagster` folder:
 
    ```shell
-   cd dbt_dagster_tutorial
+   cd tutorial_dbt_dagster
    ```
 
 3. Run the following to install the project's dependencies:
