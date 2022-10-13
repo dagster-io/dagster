@@ -1,4 +1,4 @@
-Dagster’s [software-defined assets](/concepts/assets/software-defined-assets) (SDAs) bear a number of similarities to dbt models. A software-defined asset contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project are similar to Dagster SDAs in that:
+Dagster’s [software-defined assets](/concepts/assets/software-defined-assets) (SDAs) bear several similarities to dbt models. A software-defined asset contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project are similar to Dagster SDAs in that:
 
 - The asset key for a dbt model is (by default) the name of the model.
 - The upstream dependencies of a dbt model are defined with `ref` or `source` calls within the model's definition.
