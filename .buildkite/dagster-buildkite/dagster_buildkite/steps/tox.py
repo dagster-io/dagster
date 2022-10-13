@@ -29,6 +29,7 @@ def build_tox_step(
     retries: Optional[int] = None,
     timeout_in_minutes: Optional[int] = None,
     queue: Optional[BuildkiteQueue] = None,
+    skip_reason: Optional[str] = None,
 ) -> CommandStep:
     base_label = base_label or os.path.basename(root_dir)
     emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]
@@ -65,6 +66,7 @@ def build_tox_step(
         .with_retry(retries)
         .with_dependencies(dependencies)
         .with_queue(queue)
+        .with_skip(skip_reason)
         .on_test_image(python_version, env_vars or [])
     ).build()
 

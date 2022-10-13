@@ -112,6 +112,8 @@ def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[Bu
             )
         ):
             steps += pkg.build_steps()
+        else:
+            steps += pkg.build_skipped_steps("Package unaffected by these changes")
 
     return steps
 
