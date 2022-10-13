@@ -186,7 +186,7 @@ def get_commit(rev):
 
 
 def get_changed_files():
-    subprocess.check(["git", "fetch", "origin", "master"])
+    subprocess.call(["git", "fetch", "origin", "master"])
     origin = get_commit("origin/master")
     head = get_commit("HEAD")
     logging.info(f"Changed files between origin/master ({origin}) and HEAD ({head}):")
