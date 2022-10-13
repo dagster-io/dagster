@@ -88,7 +88,7 @@ def test_load_from_instance(use_normalization_tables, connection_to_group_fn, fi
     # Check schema metadata is added correctly to asset def
 
     assert any(
-        out.metadata.get("schema")
+        out.metadata.get("table_schema")
         == MetadataValue.table_schema(
             TableSchema(
                 columns=[
@@ -106,7 +106,7 @@ def test_load_from_instance(use_normalization_tables, connection_to_group_fn, fi
     # Check schema metadata works for normalization tables too
     if use_normalization_tables:
         assert any(
-            out.metadata.get("schema")
+            out.metadata.get("table_schema")
             == MetadataValue.table_schema(
                 TableSchema(
                     columns=[

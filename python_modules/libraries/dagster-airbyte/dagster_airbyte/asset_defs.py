@@ -36,7 +36,6 @@ from dagster._core.definitions.load_assets_from_modules import with_group
 from dagster._core.definitions.metadata import MetadataValue, TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.execution.context.init import build_init_resource_context
-from dagster._serdes.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster._utils import merge_dicts
 
 
