@@ -1,6 +1,6 @@
 import enum
 from abc import ABC, abstractmethod
-from typing import List, NamedTuple, Optional, OrderedDict, Tuple, Union
+from typing import Any, List, NamedTuple, Optional, OrderedDict, Tuple, Union
 
 import click
 
@@ -105,6 +105,21 @@ class ManagedStackDiff(
         modifications_str = "\n".join(my_modifications)
         return f"{additions_str}\n{deletions_str}\n{modifications_str}"
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, ManagedStackDiff):
+            return False
+
+        return (
+            sorted(self.additions, key=lambda x: x[0])
+            == sorted(other.additions, key=lambda x: x[0])
+            and sorted(self.deletions, key=lambda x: x[0])
+            == sorted(other.deletions, key=lambda x: x[0])
+            and sorted(self.modifications, key=lambda x: x[0])
+            == sorted(other.modifications, key=lambda x: x[0])
+            and sorted(list(self.nested.items()), key=lambda x: x[0])
+            == sorted(list(other.nested.items()), key=lambda x: x[0])
+        )
+
     def get_diff_display_entries(self, indent: int = 0) -> Tuple[List[str], List[str], List[str]]:
         """
         Returns a tuple of additions, deletions, and modification entries associated with this diff object.
@@ -152,10 +167,13 @@ class ManagedStackDiff(
                     click.style(f"{' ' * indent}- {key}:", fg="red")
                 ] + nested_deletions
             else:
-                # If there are only modifications, display the nested entry as a modification
-                my_modifications += [
-                    click.style(f"{' ' * indent}~ {key}:", fg="yellow")
-                ] + nested_modifications
+                # Otherwise, display the nested entry as a modification
+                my_modifications += (
+                    [click.style(f"{' ' * indent}~ {key}:", fg="yellow")]
+                    + nested_additions
+                    + nested_deletions
+                    + nested_modifications
+                )
 
         return (my_additions, my_deletions, my_modifications)
 
