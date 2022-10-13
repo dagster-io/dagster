@@ -7,6 +7,7 @@ const plugins = {
   sql,
   ipynb,
   snowflake: sql,
+  noteable: ipynb,
 };
 
 export interface IPluginSidebarProps {
