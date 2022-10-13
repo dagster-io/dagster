@@ -99,6 +99,7 @@ Join our community here:
 - 📺 [Subscribe to our YouTube channel](https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q)
 - 📚 [Read our blog posts](https://dagster.io/blog)
 - 👋 [Join us on Slack](https://dagster.io/slack)
+- 🗃 [Browse Slack archives](https://discuss.dagster.io)
 - ✏️ [Start a Github Discussion](https://github.com/dagster-io/dagster/discussions)
 
 ## Contributing
