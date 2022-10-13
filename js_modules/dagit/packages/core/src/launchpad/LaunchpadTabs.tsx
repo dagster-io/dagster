@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, IconWrapper} from '@dagster-io/ui';
+import {Box, ButtonLink, Colors, Icon, IconWrapper} from '@dagster-io/ui';
 import * as React from 'react';
 import styled, {css} from 'styled-components/macro';
 
@@ -79,6 +79,8 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
   );
 };
 
+const REMOVE_ALL_THRESHOLD = 3;
+
 interface LaunchpadTabsProps {
   data: IStorageData;
   onCreate: () => void;
@@ -100,7 +102,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
   const onRemove = async (keyToRemove: string) => {
     if (sessionCount > 1) {
       await confirm({
-        title: 'Discard tab?',
+        title: 'Remove tab?',
         description: `The configuration for ${
           keyToRemove ? `"${sessions[keyToRemove].name}"` : 'this tab'
         } will be discarded.`,
@@ -109,11 +111,22 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
     }
   };
 
+  const onRemoveAll = async () => {
+    await confirm({
+      title: 'Remove all tabs?',
+      description: 'All configuration tabs will be discarded.',
+    });
+
+    let updatedData = data;
+    sessionKeys.forEach((keyToRemove) => {
+      updatedData = applyRemoveSession(updatedData, keyToRemove);
+    });
+
+    onSave(updatedData);
+  };
+
   return (
-    <Box
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      padding={{horizontal: 12, top: 12}}
-    >
+    <Box border={{side: 'bottom', width: 1, color: Colors.KeylineGray}} padding={{top: 12}}>
       <LaunchpadTabsContainer>
         {sessionKeys.map((key) => (
           <LaunchpadTab
@@ -127,6 +140,17 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
           />
         ))}
         <LaunchpadTab title="+ Add..." onClick={onCreate} />
+        {sessionKeys.length > REMOVE_ALL_THRESHOLD ? (
+          <ButtonLink color={Colors.Red500} onClick={onRemoveAll}>
+            <Box
+              flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+              style={{whiteSpace: 'nowrap'}}
+            >
+              <Icon name="delete" color={Colors.Red500} />
+              <div>Remove all</div>
+            </Box>
+          </ButtonLink>
+        ) : null}
       </LaunchpadTabsContainer>
     </Box>
   );
@@ -139,6 +163,8 @@ const LaunchpadTabsContainer = styled.div`
   gap: 8px;
   z-index: 1;
   flex-direction: row;
+  padding-left: 12px;
+  overflow-x: auto;
 `;
 
 const TabContainer = styled.div<{$active: boolean}>`
@@ -150,6 +176,7 @@ const TabContainer = styled.div<{$active: boolean}>`
   gap: 4px;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
+  white-space: nowrap;
 
   ${({$active}) =>
     $active

@@ -1,4 +1,3 @@
-import {Checkbox, Group} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
@@ -172,48 +171,6 @@ export const VeryLongRunning = () => {
   }, [twoDaysAgo, sixHoursAgo]);
 
   return <RunTimeline jobs={jobs} range={[fourHoursAgo, future]} />;
-};
-
-export const BucketByRepo = () => {
-  const [bucketByRepo, setBucketByRepo] = React.useState(true);
-  const sixHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
-  const now = React.useMemo(() => Date.now(), []);
-
-  const jobs = React.useMemo(() => {
-    return [...new Array(4)]
-      .fill(null)
-      .map(
-        (_) => {
-          const repoAddress = makeRepoAddress();
-          return [...new Array(4)].reduce((accum) => {
-            const jobKey = faker.random.words(3).split(' ').join('-').toLowerCase();
-            return [
-              ...accum,
-              {
-                key: jobKey,
-                jobName: jobKey,
-                path: `/${jobKey}`,
-                repoAddress,
-                runs: generateRunMocks(6, [sixHoursAgo, now]),
-              },
-            ];
-          }, []);
-        },
-        [sixHoursAgo, now],
-      )
-      .flat();
-  }, [now, sixHoursAgo]);
-
-  return (
-    <Group direction="column" spacing={12}>
-      <Checkbox
-        checked={bucketByRepo}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBucketByRepo(e.target.checked)}
-        label="Bucket by repo?"
-      />
-      <RunTimeline bucketByRepo={bucketByRepo} jobs={jobs} range={[sixHoursAgo, now]} />
-    </Group>
-  );
 };
 
 export const MultipleStatusesBatched = () => {
