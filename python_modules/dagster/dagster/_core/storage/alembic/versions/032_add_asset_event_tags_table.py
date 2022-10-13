@@ -5,14 +5,14 @@ Revises: 5e139331e376
 Create Date: 2022-10-12 15:43:46.007624
 
 """
-from alembic import op
 import sqlalchemy as db
+from alembic import op
 
 from dagster._core.storage.migration.utils import has_index, has_table
 
 # revision identifiers, used by Alembic.
-revision = 'b205615425e4'
-down_revision = '5e139331e376'
+revision = "b205615425e4"
+down_revision = "5e139331e376"
 branch_labels = None
 depends_on = None
 
