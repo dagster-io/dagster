@@ -13,7 +13,7 @@ from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.test_utils import environ, instance_for_test
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def instance():
     with instance_for_test() as instance:
         yield instance

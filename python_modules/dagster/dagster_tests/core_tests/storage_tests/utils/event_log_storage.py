@@ -270,6 +270,7 @@ def _event_types(out_events):
 
 @solid
 def should_succeed(context):
+    time.sleep(0.001)
     context.log.info("succeed")
     return "yay"
 
@@ -1106,7 +1107,8 @@ class TestEventLogStorage:
             input_defs=[InputDefinition("_input", str)],
             output_defs=[OutputDefinition(str)],
         )
-        def should_retry(context, _input):
+        def should_retry(_, _input):
+            time.sleep(0.001)
             raise RetryRequested(max_retries=3)
 
         def _one():
@@ -1175,7 +1177,7 @@ class TestEventLogStorage:
     def test_run_step_stats_with_resource_markers(self, storage, test_run_id):
         @solid(required_resource_keys={"foo"})
         def foo_solid():
-            pass
+            time.sleep(0.001)
 
         def _pipeline():
             foo_solid()
