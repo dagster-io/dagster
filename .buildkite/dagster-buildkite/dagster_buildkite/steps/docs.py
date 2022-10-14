@@ -4,7 +4,7 @@ from dagster_buildkite.steps.tox import build_tox_step
 
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
-from ..utils import BuildkiteLeafStep, BuildkiteStep, GroupStep
+from ..utils import BuildkiteLeafStep, BuildkiteStep, GroupStep, skip_if_no_docs_changes
 from .packages import build_dagit_screenshot_steps, build_example_packages_steps
 
 
@@ -21,6 +21,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
         # Be sure to check the diff to make sure the literalincludes are as you expect them."
         CommandStepBuilder("docs code snippets")
         .run("cd docs", "make next-dev-install", "make mdx-format", "git diff --exit-code")
+        .skip(skip_if_no_docs_changes())
         .on_test_image(AvailablePythonVersion.V3_7)
         .build(),
         # Make sure the docs site can build end-to-end.
@@ -44,14 +45,17 @@ def build_docs_steps() -> List[BuildkiteStep]:
             # "git diff --ignore-all-space --stat",
             # "git diff --exit-code --ignore-all-space --no-patch",
         )
+        .skip(skip_if_no_docs_changes())
         .on_test_image(AvailablePythonVersion.V3_9)
         .build(),
         # Verify screenshot integrity.
-        build_tox_step("docs", "audit-screenshots"),
+        build_tox_step("docs", "audit-screenshots", skip_reason=skip_if_no_docs_changes()),
         # mypy for build scripts
-        build_tox_step("docs", "mypy", command_type="mypy"),
+        build_tox_step("docs", "mypy", command_type="mypy", skip_reason=skip_if_no_docs_changes()),
         # pylint for build scripts
-        build_tox_step("docs", "pylint", command_type="pylint"),
+        build_tox_step(
+            "docs", "pylint", command_type="pylint", skip_reason=skip_if_no_docs_changes()
+        ),
     ]
 
     steps += [
