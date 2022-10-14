@@ -421,6 +421,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "integration",
             "unit",
         ],
+        timeout_in_minutes=120,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-aws",

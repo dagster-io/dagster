@@ -23,7 +23,7 @@ def docker_compose_env_file_fixture():
 
 
 RETRY_DELAY_SEC = 5
-STARTUP_TIME_SEC = 300
+STARTUP_TIME_SEC = 60 * 120
 AIRBYTE_VOLUMES = [
     "airbyte_integration_tests_data",
     "airbyte_integration_tests_db",
