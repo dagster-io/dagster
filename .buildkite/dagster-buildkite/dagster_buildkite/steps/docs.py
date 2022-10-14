@@ -21,7 +21,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
         # Be sure to check the diff to make sure the literalincludes are as you expect them."
         CommandStepBuilder("docs code snippets")
         .run("cd docs", "make next-dev-install", "make mdx-format", "git diff --exit-code")
-        .skip(skip_if_no_docs_changes())
+        .with_skip(skip_if_no_docs_changes())
         .on_test_image(AvailablePythonVersion.V3_7)
         .build(),
         # Make sure the docs site can build end-to-end.
@@ -45,7 +45,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
             # "git diff --ignore-all-space --stat",
             # "git diff --exit-code --ignore-all-space --no-patch",
         )
-        .skip(skip_if_no_docs_changes())
+        .with_skip(skip_if_no_docs_changes())
         .on_test_image(AvailablePythonVersion.V3_9)
         .build(),
         # Verify screenshot integrity.
