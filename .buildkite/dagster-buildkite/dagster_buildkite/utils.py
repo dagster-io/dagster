@@ -215,6 +215,9 @@ def skip_if_no_python_changes():
 
 @functools.lru_cache(maxsize=None)
 def skip_if_no_helm_changes():
+    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        return None
+
     if any(Path("helm") in path.parents for path in get_changed_files()):
         logging.info("Run helm steps because files in the helm directory changed")
         return None
