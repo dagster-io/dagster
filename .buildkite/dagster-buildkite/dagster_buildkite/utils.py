@@ -292,3 +292,18 @@ def changed_python_package_names():
 
 def message_contains(substring: str) -> bool:
     return substring in os.getenv("BUILDKITE_MESSAGE", "")
+
+
+def skip_if_no_docs_changes():
+    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        return None
+
+    # If anything changes in the docs directory
+    if any(Path("docs") in path.parents for path in get_changed_files()):
+        return None
+
+    # If anything changes that uses the literalinclude docstring
+    if any("literalinclude" in path.read_text() for path in get_changed_files()):
+        return None
+
+    return "No docs changes"
