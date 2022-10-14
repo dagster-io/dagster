@@ -34,14 +34,7 @@ def get_reconcilable_objects(module: ModuleType) -> List[ManagedStackReconciler]
     ]
 
 
-@click.group()
-def main():
-    pass
-
-
-@main.command()
-@click.argument("input-file", type=click.Path(exists=True))
-def check(input_file):
+def check(input_file: str) -> ManagedStackDiff:
     module = load_module(input_file)
     reconcilable_objects = get_reconcilable_objects(module)
 
@@ -50,12 +43,11 @@ def check(input_file):
     diff = ManagedStackDiff()
     for obj in reconcilable_objects:
         diff = diff.join(obj.check())
-    print(diff)
+    return diff
 
 
-@main.command()
-@click.argument("input-file", type=click.Path(exists=True))
-def apply(input_file):
+def apply(input_file: str) -> ManagedStackDiff:
+
     module = load_module(input_file)
     reconcilable_objects = get_reconcilable_objects(module)
 
@@ -64,4 +56,21 @@ def apply(input_file):
     diff = ManagedStackDiff()
     for obj in reconcilable_objects:
         diff = diff.join(obj.apply())
-    print(diff)
+    return diff
+
+
+@click.group()
+def main():
+    pass
+
+
+@main.command(name="check")
+@click.argument("input-file", type=click.Path(exists=True))
+def check_cmd(input_file):
+    print(check(input_file))
+
+
+@main.command(name="apply")
+@click.argument("input-file", type=click.Path(exists=True))
+def apply_cmd(input_file):
+    print(apply(input_file))

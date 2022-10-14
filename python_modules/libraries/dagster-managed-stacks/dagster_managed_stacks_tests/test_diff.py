@@ -1,8 +1,7 @@
+import re
+
 from dagster_managed_stacks import ManagedStackDiff
 from dagster_managed_stacks.utils import diff_dicts
-
-
-import re
 
 
 def test_diff_equality():
