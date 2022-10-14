@@ -32,7 +32,7 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_pandera_tests*"]),
         include_package_data=True,
-        install_requires=[f"dagster{pin}", "pandas", "pandera>=0.9.0"],
+        install_requires=["dagster==1.0.13", "pandas", "pandera>=0.9.0"],
         extras_require={
             "test": [
                 "pytest",

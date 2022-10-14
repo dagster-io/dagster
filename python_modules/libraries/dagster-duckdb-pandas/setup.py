@@ -34,8 +34,8 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["dagster_duckdb_pandas_tests*"]),
         include_package_data=True,
         install_requires=[
-            f"dagster{pin}",
-            f"dagster-duckdb{pin}",
+            "dagster==1.0.13",
+            "dagster-duckdb==0.16.13",
             "pandas",
         ],
         zip_safe=False,

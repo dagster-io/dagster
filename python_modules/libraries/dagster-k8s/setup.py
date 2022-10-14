@@ -32,6 +32,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_k8s_tests*"]),
-        install_requires=[f"dagster{pin}", "kubernetes"],
+        install_requires=["dagster==1.0.13", "kubernetes"],
         zip_safe=False,
     )
