@@ -14,6 +14,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -57,6 +58,7 @@ export interface AssetViewParams {
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const {flagNewAssetDetails} = useFeatureFlags();
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
@@ -156,7 +158,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               title="Activity"
               onClick={() => setParams({...params, view: 'activity'})}
             />
-            <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
+            {flagNewAssetDetails && (
+              <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
+            )}
             <Tab
               id="definition"
               title="Definition"

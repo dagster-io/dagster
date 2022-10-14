@@ -17,6 +17,7 @@ export const AssetMaterializationGraphs: React.FC<{
   groups: AssetEventGroup[];
   xAxis: 'partition' | 'time';
   asSidebarSection?: boolean;
+  columnCount?: number;
 }> = (props) => {
   const [xHover, setXHover] = React.useState<string | number | null>(null);
 
@@ -36,7 +37,7 @@ export const AssetMaterializationGraphs: React.FC<{
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          gridTemplateColumns: `1fr `.repeat(props.columnCount || 2),
           justifyContent: 'stretch',
         }}
       >

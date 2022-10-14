@@ -1,10 +1,12 @@
 import {Box, ButtonGroup, Colors, NonIdealState, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {RepositorySelector} from '../types/globalTypes';
 
 import {AssetEventsTable} from './AssetEventsTable';
+import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {AssetViewParams} from './AssetView';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
@@ -38,6 +40,7 @@ export const AssetEvents: React.FC<Props> = ({
   setParams,
   liveData,
 }) => {
+  const {flagNewAssetDetails} = useFeatureFlags();
   const {
     xAxis,
     materializations,
@@ -97,54 +100,69 @@ export const AssetEvents: React.FC<Props> = ({
   }
 
   return (
-    <Box>
-      <Box
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        padding={{vertical: 16, horizontal: 24}}
-        style={{marginBottom: -1}}
-      >
-        <Subheading>Asset Events</Subheading>
-        {assetHasDefinedPartitions ? (
-          <div style={{margin: '-6px 0 '}}>
-            <ButtonGroup
-              activeItems={activeItems}
-              buttons={[
-                {id: 'partition', label: 'By partition'},
-                {id: 'time', label: 'By timestamp'},
-              ]}
-              onClick={(id: string) =>
-                setParams(
-                  id === 'time'
-                    ? {...params, partition: undefined, time: focused?.timestamp || ''}
-                    : {...params, partition: focused?.partition || '', time: undefined},
-                )
-              }
-            />
-          </div>
-        ) : null}
-      </Box>
-      <FailedRunsSinceMaterializationBanner liveData={liveData} />
-      <CurrentRunsBanner liveData={liveData} />
-      {grouped.length > 0 ? (
-        <AssetEventsTable
-          hasPartitions={assetHasDefinedPartitions}
-          hasLineage={materializations.some((m) => m.assetLineage.length > 0)}
-          groups={grouped}
-          focused={focused}
-          setFocused={onSetFocused}
-        />
-      ) : (
-        <Box padding={{vertical: 20}} border={{side: 'top', color: Colors.KeylineGray, width: 1}}>
-          <NonIdealState
-            icon="materialization"
-            title="No materializations"
-            description="No materializations were found for this asset."
-          />
+    <Box style={{display: 'flex', flex: 1}}>
+      <Box style={{flex: 1}}>
+        <Box
+          flex={{justifyContent: 'space-between', alignItems: 'center'}}
+          padding={{vertical: 16, horizontal: 24}}
+          style={{marginBottom: -1}}
+        >
+          <Subheading>Asset Events</Subheading>
+          {assetHasDefinedPartitions ? (
+            <div style={{margin: '-6px 0 '}}>
+              <ButtonGroup
+                activeItems={activeItems}
+                buttons={[
+                  {id: 'partition', label: 'By partition'},
+                  {id: 'time', label: 'By timestamp'},
+                ]}
+                onClick={(id: string) =>
+                  setParams(
+                    id === 'time'
+                      ? {...params, partition: undefined, time: focused?.timestamp || ''}
+                      : {...params, partition: focused?.partition || '', time: undefined},
+                  )
+                }
+              />
+            </div>
+          ) : null}
         </Box>
-      )}
-      {loadedPartitionKeys && (
-        <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.Gray400}}>
-          Showing materializations for the last {loadedPartitionKeys.length} partitions.
+        <FailedRunsSinceMaterializationBanner liveData={liveData} />
+        <CurrentRunsBanner liveData={liveData} />
+        {grouped.length > 0 ? (
+          <AssetEventsTable
+            hasPartitions={assetHasDefinedPartitions}
+            hasLineage={materializations.some((m) => m.assetLineage.length > 0)}
+            groups={grouped}
+            focused={focused}
+            setFocused={onSetFocused}
+          />
+        ) : (
+          <Box padding={{vertical: 20}} border={{side: 'top', color: Colors.KeylineGray, width: 1}}>
+            <NonIdealState
+              icon="materialization"
+              title="No materializations"
+              description="No materializations were found for this asset."
+            />
+          </Box>
+        )}
+        {loadedPartitionKeys && (
+          <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.Gray400}}>
+            Showing materializations for the last {loadedPartitionKeys.length} partitions.
+          </Box>
+        )}
+      </Box>
+      {!flagNewAssetDetails && (
+        <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
+          <Box
+            flex={{justifyContent: 'space-between', alignItems: 'center'}}
+            border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+            padding={{vertical: 16, horizontal: 24}}
+            style={{marginBottom: -1}}
+          >
+            <Subheading>Asset Plots</Subheading>
+          </Box>
+          <AssetMaterializationGraphs xAxis={xAxis} groups={grouped} columnCount={1} />
         </Box>
       )}
     </Box>

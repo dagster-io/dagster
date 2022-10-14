@@ -72,7 +72,12 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         )}
       </SidebarSection>
       <SidebarSection title="Metadata Plots">
-        <AssetMaterializationGraphs xAxis={xAxis} asSidebarSection groups={grouped} />
+        <AssetMaterializationGraphs
+          xAxis={xAxis}
+          asSidebarSection
+          groups={grouped}
+          columnCount={1}
+        />
       </SidebarSection>
     </>
   );
