@@ -465,12 +465,22 @@
                 "path": "/dagster-cloud/developing-testing/branch-deployments"
               },
               {
-                "title": "Secret management",
-                "path": "/dagster-cloud/developing-testing/using-environment-variables-and-secrets-in-dagster-cloud"
-              },
-              {
                 "title": "Environment variables",
-                "path": "/dagster-cloud/developing-testing/environment-variables"
+                "path": "/dagster-cloud/developing-testing/environment-variables",
+                "children": [
+                  {
+                    "title": "Serverless",
+                    "path": "/dagster-cloud/developing-testing/environment-variables/setup-for-serverless-deployments"
+                  },
+                  {
+                    "title": "Hybrid",
+                    "path": "/dagster-cloud/developing-testing/environment-variables/setup-for-hybrid-deployments"
+                  },
+                  {
+                    "title": "Reference",
+                    "path": "/dagster-cloud/developing-testing/environment-variables/reference"
+                  }
+                ]
               }
             ]
           }

@@ -1,9 +1,9 @@
 ---
-title: Using environment variables and secrets in Dagster Cloud
+title: Using custom environment variables in Dagster Cloud
 description: TODO
 ---
 
-# Using environment variables and secrets in Dagster Cloud
+# Configuring environment variables for Dagster Cloud Hybrid deployments
 
 <Note>
   Using Dagster Open Source? Check out the{" "}
@@ -13,59 +13,6 @@ description: TODO
   version of this guide!
 </Note>
 
-How you make environment variables accessible to your Dagster code depends on the [deployment type](/dagster-cloud/deployment) you're using:
-
-- [Serverless deployment](#serverless-deployment)
-- [Hybrid deployment](#hybrid-deployment)
-
----
-
-## Making environment variables accessible in Serverless deployments
-
-How you pass environment variables depends on how your [code location](/dagster-cloud/developing-testing/code-locations) is deployed to Dagster Cloud:
-
-- [GitHub](#github)
-- [dagster-cloud CLI](#dagster-cloud-cli)
-
-### GitHub
-
-<Note>
-  Managing repository secrets in GitHub requires <strong>Admin</strong> (for
-  organizations) or <strong>repository owner</strong> (for personal
-  repositories) permissions.
-</Note>
-
-If you're using GitHub for version control, you can add environment variables in the Dagster repository as as [encrypted repository secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets#about-encrypted-secrets). When Dagster GitHub actions are executed, the TODO
-
-#### Step 1: Create the secret
-
-Frst, create the secret in the GitHub repository:
-
-<AddGitubRepositorySecret />
-
-#### Step 2: Update deploy.yml and branch_deployments.yml
-
-Next, uncomment the `env_vars` property in the repository's `/.github/workflows/deploy.yml` and `/.github/workflows/branch_deployments.yml` files:
-
-```yaml
-env_vars: ${{ toJson(secrets) }}
-```
-
-**Note**: This step only needs to be performed once. Any new secrets will be automatically accessible once this step is completed.
-
-### dagster-cloud CLI
-
-If you're using a git provider like GitLab or Bitbucket, you can use the [dagster-cloud CLI](/dagster-cloud/developing-testing/dagster-cloud-cli) to pass in environment variables with the `--env` flag.
-
-This flag accepts `KEY=VALUE` pairs. For example:
-
-```shell
-dagster-cloud serverless deploy --env GITHUB_API_TOKEN=TOKEN_VALUE
-```
-
----
-
-## Making environment variables accessible in Hybrid deployments
 
 If you're using [Hybrid deployment](/dagster-cloud/deployment/hybrid), add the environment variables to your agent's configuration to make them accessible. This is accomplished by using the `container_context` property in your project's `dagster_cloud.yaml` file.
 
