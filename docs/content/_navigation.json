@@ -462,7 +462,17 @@
               },
               {
                 "title": "Branch deployments",
-                "path": "/dagster-cloud/developing-testing/branch-deployments"
+                "path": "/dagster-cloud/developing-testing/branch-deployments",
+                "children": [
+                  {
+                    "title": "Using with GitHub",
+                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github"
+                  },
+                  {
+                    "title": "Using with dagster-cloud CLI",
+                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
+                  }
+                ]
               },
               {
                 "title": "Environment variables",
