@@ -208,10 +208,10 @@ def _make_sensor(
     name: str,
     wait_for_all_upstream: bool,
     wait_for_in_progress_runs: bool,
-    minimum_interval_seconds: Optional[int] = None,
-    description: Optional[str] = None,
-    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    run_tags: Optional[Mapping[str, str]] = None,
+    minimum_interval_seconds: Optional[int],
+    description: Optional[str],
+    default_status: DefaultSensorStatus,
+    run_tags: Optional[Mapping[str, str]],
 ) -> MultiAssetSensorDefinition:
     """Creates the sensor that will monitor the parents of all provided assets and determine
     which assets should be materialized (ie their parents have been updated).
