@@ -26,6 +26,7 @@ setup(
             "dagster-aws",
             "dagster-azure",
             "dagster-gcp",
+            "dagster-k8s",
         ]
     },
     entry_points={
