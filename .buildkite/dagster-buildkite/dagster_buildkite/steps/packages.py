@@ -416,6 +416,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=["default", "requiresairflowdb"],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-airbyte",
+        pytest_tox_factors=[
+            "integration",
+            "unit",
+        ],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-aws",
         env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
     ),
