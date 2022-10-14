@@ -339,6 +339,17 @@ def test_reuse_task_definition(instance, ecs):
         )
     )
 
+    # Fails if the existing task definition has a different container name
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["name"] = "foobar"
+    ecs.register_task_definition(**task_definition)
+
+    assert not instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            original_task_definition, instance.run_launcher.container_name
+        )
+    )
+
 
 def test_launching_custom_task_definition(
     ecs, instance_cm, run, workspace, pipeline, external_pipeline

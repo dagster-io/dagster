@@ -456,6 +456,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             # task definition does not exist, do not reuse
             return False
 
+        if not any(
+            [
+                container["name"] == self.container_name
+                for container in existing_task_definition["containerDefinitions"]
+            ]
+        ):
+            return False
+
         existing_task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
             existing_task_definition, self.container_name
         )
