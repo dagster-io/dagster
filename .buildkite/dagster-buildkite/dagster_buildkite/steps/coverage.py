@@ -31,5 +31,6 @@ def build_coverage_step() -> CommandStep:
                 "CI_PULL_REQUEST",
             ],
         )
+        .with_skip("Skip coverage uploads until we're finished without Buildkite refactor")
         .build()
     )
