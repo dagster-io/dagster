@@ -1,9 +1,7 @@
 import random
 from typing import List
 
-from dagster import AssetKey, asset
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._legacy import AssetGroup
+from dagster import AssetKey, AssetsDefinition, asset
 
 N_ASSETS = 1000
 
@@ -27,4 +25,4 @@ def generate_big_honkin_assets() -> List[AssetsDefinition]:
     return assets
 
 
-big_honkin_asset_group = AssetGroup(generate_big_honkin_assets())
+assets = generate_big_honkin_assets()
