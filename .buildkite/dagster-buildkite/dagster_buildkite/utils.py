@@ -243,13 +243,15 @@ def changed_python_package_names():
                 # The file can alter behavior - exclude things like README changes
                 and (change.suffix in [".py", ".cfg", ".toml"])
             ):
-                with_implementation_changes.append(directory.name)
 
                 # The file is part of a test suite. We treat these two cases
                 # differently because we don't need to run tests in dependent packages
                 # if only a test in an upstream package changed.
                 if any(part.endswith("tests") for part in change.parts):
                     with_test_changes.append(directory.name)
+                else:
+                    with_implementation_changes.append(directory.name)
+
     return namedtuple("ChangedPackages", ["with_implementation_changes", "with_test_changes"])(
         with_implementation_changes, with_test_changes
     )
