@@ -19,6 +19,7 @@ import Icons from '../Icons';
 import Link from '../Link';
 
 import 'react-medium-image-zoom/dist/styles.css';
+import AddGitubRepositorySecret from './includes/dagster-cloud/AddGitubRepositorySecret.mdx';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
 
@@ -616,6 +617,7 @@ export default {
   Icons,
   ReferenceTable,
   ReferenceTableItem,
+  AddGitubRepositorySecret,
   GenerateAgentToken,
   BDCreateConfigureAgent,
   ArticleList,
