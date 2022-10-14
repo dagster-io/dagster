@@ -15,7 +15,6 @@ from dagster_buildkite.steps.wait import build_wait_step
 from dagster_buildkite.utils import BuildkiteStep, is_feature_branch, is_release_branch, safe_getenv
 
 _DAGIT_PATHS = ("js_modules/dagit",)
-_DOCS_PATHS = ("examples", "docs")
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
@@ -32,7 +31,6 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     oss_contribution = os.getenv("OSS_CONTRIBUTION")
     do_coverage = DO_COVERAGE
     dagit_ui_only_diff = _is_path_only_diff(paths=_DAGIT_PATHS)
-    docs_only_diff = _is_path_only_diff(paths=_DOCS_PATHS)
 
     steps: List[BuildkiteStep] = []
 
@@ -74,13 +72,9 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     steps += build_repo_wide_steps()
 
     # Skip non-dagit-ui steps if we are on a feature branch with only dagit-ui (web app) changes.
-    logging.info(f"dagit_ui_only: {dagit_ui_only_diff}, docs_only: {docs_only_diff}")
+    logging.info(f"dagit_ui_only: {dagit_ui_only_diff}")
     if is_feature_branch(branch_name) and dagit_ui_only_diff:
         steps += build_dagit_ui_steps()
-
-    # Skip non-docs steps if we are on a feature branch with only docs changes.
-    elif is_feature_branch(branch_name) and docs_only_diff:
-        steps += build_docs_steps()
 
     # Full pipeline.
     else:
