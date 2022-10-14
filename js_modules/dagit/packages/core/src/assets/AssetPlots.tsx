@@ -33,8 +33,18 @@ export const AssetPlots: React.FC<Props> = ({
 
   if (loading) {
     return (
-      <Box padding={{vertical: 20}}>
-        <Spinner purpose="section" />
+      <Box>
+        <Box
+          flex={{justifyContent: 'space-between', alignItems: 'center'}}
+          padding={{vertical: 16, horizontal: 24}}
+          border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+          style={{marginBottom: -1}}
+        >
+          <Subheading>Asset Plots</Subheading>
+        </Box>
+        <Box padding={{vertical: 48}}>
+          <Spinner purpose="page" />
+        </Box>
       </Box>
     );
   }

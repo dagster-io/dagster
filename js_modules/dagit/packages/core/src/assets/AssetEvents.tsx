@@ -82,18 +82,40 @@ export const AssetEvents: React.FC<Props> = ({
     focused = grouped[0];
   }
 
+  const header = (
+    <Box
+      flex={{justifyContent: 'space-between', alignItems: 'center'}}
+      padding={{vertical: 16, horizontal: 24}}
+      style={{marginBottom: -1}}
+    >
+      <Subheading>Asset Events</Subheading>
+      {assetHasDefinedPartitions ? (
+        <div style={{margin: '-6px 0 '}}>
+          <ButtonGroup
+            activeItems={activeItems}
+            buttons={[
+              {id: 'partition', label: 'By partition'},
+              {id: 'time', label: 'By timestamp'},
+            ]}
+            onClick={(id: string) =>
+              setParams(
+                id === 'time'
+                  ? {...params, partition: undefined, time: focused?.timestamp || ''}
+                  : {...params, partition: focused?.partition || '', time: undefined},
+              )
+            }
+          />
+        </div>
+      ) : null}
+    </Box>
+  );
+
   if (loading) {
     return (
       <Box>
-        <Box
-          flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          padding={{vertical: 16, horizontal: 24}}
-          style={{marginBottom: -1}}
-        >
-          <Subheading>Asset Events</Subheading>
-        </Box>
-        <Box padding={{vertical: 20}}>
-          <Spinner purpose="section" />
+        {header}
+        <Box padding={{vertical: 48}} border={{side: 'top', color: Colors.KeylineGray, width: 1}}>
+          <Spinner purpose="page" />
         </Box>
       </Box>
     );
@@ -102,31 +124,7 @@ export const AssetEvents: React.FC<Props> = ({
   return (
     <Box style={{display: 'flex', flex: 1}}>
       <Box style={{flex: 1}}>
-        <Box
-          flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          padding={{vertical: 16, horizontal: 24}}
-          style={{marginBottom: -1}}
-        >
-          <Subheading>Asset Events</Subheading>
-          {assetHasDefinedPartitions ? (
-            <div style={{margin: '-6px 0 '}}>
-              <ButtonGroup
-                activeItems={activeItems}
-                buttons={[
-                  {id: 'partition', label: 'By partition'},
-                  {id: 'time', label: 'By timestamp'},
-                ]}
-                onClick={(id: string) =>
-                  setParams(
-                    id === 'time'
-                      ? {...params, partition: undefined, time: focused?.timestamp || ''}
-                      : {...params, partition: focused?.partition || '', time: undefined},
-                  )
-                }
-              />
-            </div>
-          ) : null}
-        </Box>
+        {header}
         <FailedRunsSinceMaterializationBanner liveData={liveData} />
         <CurrentRunsBanner liveData={liveData} />
         {grouped.length > 0 ? (
@@ -154,14 +152,6 @@ export const AssetEvents: React.FC<Props> = ({
       </Box>
       {!flagNewAssetDetails && (
         <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
-          <Box
-            flex={{justifyContent: 'space-between', alignItems: 'center'}}
-            border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
-            padding={{vertical: 16, horizontal: 24}}
-            style={{marginBottom: -1}}
-          >
-            <Subheading>Asset Plots</Subheading>
-          </Box>
           <AssetMaterializationGraphs xAxis={xAxis} groups={grouped} columnCount={1} />
         </Box>
       )}
