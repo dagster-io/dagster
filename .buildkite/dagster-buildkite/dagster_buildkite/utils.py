@@ -209,10 +209,11 @@ def skip_if_no_python_changes():
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
 
-    if not any(path.suffix == ".py" for path in get_changed_files()):
-        return "No python changes"
+    if any(path.suffix == ".py" for path in get_changed_files()):
+        logging.info("Run docs steps because .py files changed")
+        return None
 
-    return None
+    return "No python changes"
 
 
 @functools.lru_cache(maxsize=None)
