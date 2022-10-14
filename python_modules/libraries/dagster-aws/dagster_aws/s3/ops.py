@@ -18,7 +18,6 @@ from .file_manager import S3FileHandle
 
 
 def dict_with_fields(name: str, fields: Dict[str, object]):
-
     check.str_param(name, "name")
     check.dict_param(fields, "fields", key_type=str)
     field_names = set(fields.keys())
