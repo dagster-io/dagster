@@ -6,9 +6,7 @@ import {
   CursorHistoryControls,
   NonIdealState,
   Page,
-  PageHeader,
   Tag,
-  Heading,
   tokenToString,
 } from '@dagster-io/ui';
 import partition from 'lodash/partition';
@@ -16,11 +14,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {
-  FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
-  useQueryRefreshAtInterval,
-} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {InstancePageContext} from '../instance/InstancePageContext';
@@ -28,7 +22,7 @@ import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
-import {RunListTabs, useSelectedRunsTab} from './RunListTabs';
+import {useSelectedRunsTab} from './RunListTabs';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTable';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {
@@ -38,6 +32,7 @@ import {
   useQueryPersistedRunFilters,
   RunFilterToken,
 } from './RunsFilterInput';
+import {RunsPageHeader} from './RunsPageHeader';
 import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
@@ -74,6 +69,7 @@ export const RunsRoot = () => {
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
   });
+
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const currentTab = useSelectedRunsTab(filterTokens);
@@ -123,17 +119,7 @@ export const RunsRoot = () => {
 
   return (
     <Page>
-      <PageHeader
-        title={<Heading>Runs</Heading>}
-        tabs={
-          <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
-            <RunListTabs />
-            <Box padding={{bottom: 8}}>
-              <QueryRefreshCountdown refreshState={refreshState} />
-            </Box>
-          </Box>
-        }
-      />
+      <RunsPageHeader refreshStates={[refreshState]} />
       {currentTab === 'queued' && canSeeConfig ? (
         <Box
           flex={{direction: 'column', gap: 8}}
