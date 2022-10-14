@@ -300,10 +300,12 @@ def skip_if_no_docs_changes():
 
     # If anything changes in the docs directory
     if any(Path("docs") in path.parents for path in get_changed_files()):
+        logging.info("Run docs steps because files in the docs directory changed")
         return None
 
     # If anything changes that uses the literalinclude docstring
     if any("literalinclude" in path.read_text() for path in get_changed_files()):
+        logging.info("Run docs steps because files with the literalinclude docstring changed")
         return None
 
     return "No docs changes"
