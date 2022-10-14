@@ -262,7 +262,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 for key, value in filters.tags.items()
             ]
 
-            query = query.where(RunsTable.c.run_id.in_(db.intersect_all(*intersections)))
+            query = query.where(RunsTable.c.run_id.in_(db.intersect(*intersections)))
         return query
 
     def _runs_query(
