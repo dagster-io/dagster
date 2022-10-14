@@ -3,7 +3,7 @@
 import re
 
 from dagster_managed_stacks import ManagedStackDiff
-from dagster_managed_stacks.cli import check, apply
+from dagster_managed_stacks.cli import apply, check
 from dagster_managed_stacks.utils import diff_dicts
 
 from dagster._utils import file_relative_path

@@ -1,14 +1,15 @@
-from datetime import datetime, timedelta
-import time
-import pytest
-from contextlib import contextmanager
-import subprocess
-from dagster._utils import file_relative_path
 import os
-import requests
-from dagster._core.test_utils import environ
+import subprocess
+import time
+from contextlib import contextmanager
+from datetime import datetime, timedelta
 
-pytest_plugins = ["dagster_test.fixtures"]
+import pytest
+import requests
+from dagster_test.fixtures import *
+
+from dagster._core.test_utils import environ
+from dagster._utils import file_relative_path
 
 
 @pytest.fixture(name="docker_compose_file")
@@ -22,7 +23,7 @@ def docker_compose_env_file_fixture():
 
 
 RETRY_DELAY_SEC = 5
-STARTUP_TIME_SEC = 60
+STARTUP_TIME_SEC = 300
 AIRBYTE_VOLUMES = [
     "airbyte_integration_tests_data",
     "airbyte_integration_tests_db",
@@ -58,6 +59,8 @@ def docker_compose_airbyte_instance_fixture(
 
     with docker_compose_cm(docker_compose_file, env_file=docker_compose_env_file) as hostnames:
 
+        webapp_host = hostnames["airbyte-webapp"]
+
         # Poll Airbyte API until it's ready
         # Healthcheck endpoint is ready before API is ready, so we poll the API
         start_time = datetime.now()
@@ -66,24 +69,26 @@ def docker_compose_airbyte_instance_fixture(
             if (now - start_time).seconds > STARTUP_TIME_SEC:
                 raise Exception("Airbyte instance failed to start in time")
 
+            poll_result = None
             try:
                 poll_result = requests.post(
-                    "http://localhost:8000/api/v1/workspaces/list",
+                    f"http://{webapp_host}:8001/api/v1/workspaces/list",
                     headers={"Content-Type": "application/json"},
                 )
                 if poll_result.status_code == 200:
                     break
-            except requests.exceptions.ConnectionError:
-                pass
+            except requests.exceptions.ConnectionError as e:
+                print(e)
 
             time.sleep(RETRY_DELAY_SEC)
             print(
-                "Waiting for Airbyte instance to start"
+                f"Waiting for Airbyte instance to start on {webapp_host}"
                 + "." * (3 + (now - start_time).seconds // RETRY_DELAY_SEC)
+                + (f"\n{poll_result.status_code}: {poll_result.text}" if poll_result else "")
             )
 
-        with environ({"AIRBYTE_HOSTNAME": hostnames["airbyte-webapp"]}):
-            yield hostnames["airbyte-webapp"]
+        with environ({"AIRBYTE_HOSTNAME": webapp_host}):
+            yield webapp_host
 
 
 @pytest.fixture(name="airbyte_source_files")
