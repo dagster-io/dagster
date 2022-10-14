@@ -23,7 +23,7 @@ def docker_compose_env_file_fixture():
 
 
 RETRY_DELAY_SEC = 5
-STARTUP_TIME_SEC = 60 * 120
+STARTUP_TIME_SEC = 120
 AIRBYTE_VOLUMES = [
     "airbyte_integration_tests_data",
     "airbyte_integration_tests_db",
@@ -60,6 +60,7 @@ def docker_compose_airbyte_instance_fixture(
     with docker_compose_cm(docker_compose_file, env_file=docker_compose_env_file) as hostnames:
 
         webapp_host = hostnames["airbyte-webapp"]
+        webapp_port = "8000" if webapp_host == "localhost" else "80"
 
         # Poll Airbyte API until it's ready
         # Healthcheck endpoint is ready before API is ready, so we poll the API
@@ -72,7 +73,7 @@ def docker_compose_airbyte_instance_fixture(
             poll_result = None
             try:
                 poll_result = requests.post(
-                    f"http://{webapp_host}:8001/api/v1/workspaces/list",
+                    f"http://{webapp_host}:{webapp_port}/api/v1/workspaces/list",
                     headers={"Content-Type": "application/json"},
                 )
                 if poll_result.status_code == 200:
@@ -87,7 +88,7 @@ def docker_compose_airbyte_instance_fixture(
                 + (f"\n{poll_result.status_code}: {poll_result.text}" if poll_result else "")
             )
 
-        with environ({"AIRBYTE_HOSTNAME": webapp_host}):
+        with environ({"AIRBYTE_HOSTNAME": webapp_host, "AIRBYTE_PORT": webapp_port}):
             yield webapp_host
 
 

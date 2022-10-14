@@ -19,7 +19,7 @@ from dagster._core.definitions.resource_requirement import ResourceAddable
 airbyte_instance = airbyte_resource.configured(
     {
         "host": os.getenv("AIRBYTE_HOSTNAME", "localhost"),
-        "port": "8001",
+        "port": os.getenv("AIRBYTE_PORT", "80"),
     }
 )
 
