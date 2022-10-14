@@ -204,6 +204,7 @@ def get_changed_files():
     return [Path(path) for path in paths]
 
 
+@functools.lru_cache(maxsize=None)
 def skip_if_no_python_changes():
     if not is_feature_branch():
         return None
