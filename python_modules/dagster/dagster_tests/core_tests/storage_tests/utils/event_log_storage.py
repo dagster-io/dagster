@@ -1,6 +1,7 @@
 import datetime
 import logging  # pylint: disable=unused-import; used by mock in string form
 import re
+import sys
 import time
 from collections import Counter
 from contextlib import ExitStack, contextmanager
@@ -41,6 +42,11 @@ from dagster._core.execution.api import execute_run
 from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
+from dagster._core.host_representation.origin import (
+    ExternalPipelineOrigin,
+    ExternalRepositoryOrigin,
+    InProcessRepositoryLocationOrigin,
+)
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
@@ -48,6 +54,7 @@ from dagster._core.storage.event_log.migration import (
 )
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import (
     AssetGroup,
@@ -74,7 +81,22 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: List[str]):
     check.list_param(run_ids, "run_ids", of_type=str)
     if instance:
         for run_id in run_ids:
-            create_run_for_test(instance, run_id=run_id)
+            create_run_for_test(
+                instance,
+                run_id=run_id,
+                external_pipeline_origin=ExternalPipelineOrigin(
+                    ExternalRepositoryOrigin(
+                        InProcessRepositoryLocationOrigin(
+                            LoadableTargetOrigin(
+                                executable_path=sys.executable,
+                                module_name="fake",
+                            )
+                        ),
+                        "fake",
+                    ),
+                    "fake",
+                ),
+            )
     yield
     if instance:
         for run_id in run_ids:
