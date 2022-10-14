@@ -23,12 +23,9 @@ setup(
             # remove pin once minimum supported kubernetes version is 1.19
             "kubernetes<22.6.0",
             "dagster",
-            "dagster-pandas",
-            "dagster-postgres",
             "dagster-aws",
             "dagster-azure",
             "dagster-gcp",
-            "dagster-k8s",
         ]
     },
     entry_points={
