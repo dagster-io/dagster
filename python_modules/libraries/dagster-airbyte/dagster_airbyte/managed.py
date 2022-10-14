@@ -556,7 +556,7 @@ class AirbyteManagedStackReconciler(ManagedStackReconciler):
         self._airbyte_instance: AirbyteResource = airbyte(build_init_resource_context())
         self._connections = list(connections)
 
-        super().__init__("airbyte")
+        super().__init__()
 
     def check(self) -> ManagedStackCheckResult:
         return reconcile_config(self._airbyte_instance, self._connections, dry_run=True)
