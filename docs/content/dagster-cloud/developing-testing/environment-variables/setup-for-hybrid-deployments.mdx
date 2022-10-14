@@ -1,26 +1,42 @@
 ---
-title: Using custom environment variables in Dagster Cloud
-description: TODO
+title: Configuring environment variables for Dagster Cloud Hybrid deployments | Dagster Docs
+description: Configure custom environment variables for a Dagster Cloud Hybrid deployment.
 ---
 
 # Configuring environment variables for Dagster Cloud Hybrid deployments
 
 <Note>
-  Using Dagster Open Source? Check out the{" "}
-  <a href="/guides/dagster/using-environment-variables-and-secrets-in-dagster-os">
-    Dagster Open Source
-  </a>{" "}
-  version of this guide!
+  This guide is applicable to Dagster Cloud. If you're using Dagster Cloud
+  Serverless deployments, refer to the{" "}
+  <a href="/dagster-cloud/developing-testing/environment-variables/setup-for-serverless-deployments">
+    Serverless version of this guide
+  </a>
+  .
 </Note>
 
+[Hybrid deployment](/dagster-cloud/deployment/hybrid)
 
-If you're using [Hybrid deployment](/dagster-cloud/deployment/hybrid), add the environment variables to your agent's configuration to make them accessible. This is accomplished by using the `container_context` property in your project's `dagster_cloud.yaml` file.
+TODO
 
-Select your agent type to view an agent-specific configuration example.
+---
 
-<details><summary>AMAZON ECS AGENTS</summary>
+## Configuring the agent
+
+For Hybrid deployments, making environment variables accessible is accomplished by adding them to your agent's configuration in your project's `dagster_cloud.yaml` file. In this section, we'll show you how to configure the `container_context` property for your agent, which is used to pass in environment variables.
+
+How the `container_context` property is configured depends on the agent type:
+
+- [Amazon ECS](#amazon-ecs-agents)
+- [Docker](#docker-agents)
+- [Kubernetes](#kubernetes-agents)
+
+### Amazon ECS agents
+
+For Amazon ECS agents, use `container_context.ecs.env_vars` and `container_context.ecs.secrets` to include environment variables and AWS Secrets Manager secrets in ECS tasks:
 
 ```yaml
+## dagster_cloud.yaml
+
 container_context:
   ecs:
     env_vars:
@@ -30,8 +46,6 @@ container_context:
       - name: GITHUB_API_TOKEN
         valueFrom: "arn:aws:secretsmanager:us-east-1:xxxxxx:secret:secret_name:GITHUB_API_TOKEN::"
 ```
-
-For Amazon ECS agents, use `container_context.ecs.env_vars` and `container_context.ecs.secrets` to include environment variables and AWS Secrets Manager secrets in ECS tasks:
 
 <ReferenceTable>
   <ReferenceTableItem propertyName="env_vars">
@@ -59,11 +73,13 @@ For Amazon ECS agents, use `container_context.ecs.env_vars` and `container_conte
   </ReferenceTableItem>
 </ReferenceTable>
 
-</details>
+### Docker agents
 
-<details><summary>DOCKER AGENTS</summary>
+For Docker agents, use the `container_context.docker.env_vars` property to include environment variables in the Docker container:
 
 ```yaml
+## dagster_cloud.yaml
+
 container_context:
   docker:
     env_vars:
@@ -71,13 +87,15 @@ container_context:
       - DATABASE_NAME=testing
 ```
 
-For Docker agents, use the `container_context.docker.env_vars` property to include environment variables in the Docker container. This property is a list, where each item can be either `KEY` or `KEY=VALUE`. If only `KEY`, the value will be pulled from the local environment.
+The `container_context.docker.env_vars` property is a list, where each item can be either `KEY` or `KEY=VALUE`. If only `KEY`, the value will be pulled from the local environment.
 
-</details>
+### Kubernetes agents
 
-<details><summary>KUBERNETES AGENTS</summary>
+For Kubernetes agents, use the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets` properties to specify environment variables and secrets:
 
 ```yaml
+## dagster_cloud.yaml
+
 container_context:
   k8s:
     env_vars:
@@ -86,8 +104,6 @@ container_context:
       - GITHUB_API_TOKEN
       - SNOWFLAKE_PASSWORD
 ```
-
-For Kubernetes agents, use the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets` properties to specify environment variables and secrets:
 
 <ReferenceTable>
   <ReferenceTableItem propertyName="env_vars">
@@ -104,8 +120,6 @@ For Kubernetes agents, use the `container_context.k8s.env_vars` and `container_c
     for more info.
   </ReferenceTableItem>
 </ReferenceTable>
-
-</details>
 
 ---
 

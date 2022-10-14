@@ -1,16 +1,17 @@
 ---
-title: Using custom environment variables in Dagster Cloud
-description: TODO
+title: Configuring environment variables for Dagster Cloud Serverless deployments | Dagster Docs
+description: Configure custom environment variables for a Dagster Cloud Serverless deployment.
 ---
 
 # Configuring environment variables for Dagster Cloud Serverless deployments
 
 <Note>
-  Using Dagster Open Source? Check out the{" "}
-  <a href="/guides/dagster/using-environment-variables-and-secrets-in-dagster-os">
-    Dagster Open Source
-  </a>{" "}
-  version of this guide!
+  This guide is applicable to Dagster Cloud. If you're using Dagster Cloud
+  Hybrid deployments, refer to the{" "}
+  <a href="/dagster-cloud/developing-testing/environment-variables/setup-for-hybrid-deployments">
+    Serverless version of this guide
+  </a>
+  .
 </Note>
 
 How you pass environment variables depends on how your [code location](/dagster-cloud/developing-testing/code-locations) is deployed to Dagster Cloud:
@@ -28,7 +29,9 @@ How you pass environment variables depends on how your [code location](/dagster-
   repositories) permissions.
 </Note>
 
-If you're using GitHub for version control, you can add environment variables in the Dagster repository as as [encrypted repository secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets#about-encrypted-secrets). When Dagster GitHub actions are executed, the TODO
+If you're using GitHub with Dagster Cloud, you can add environment variables in the Dagster repository as as [encrypted repository secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets#about-encrypted-secrets). When Dagster GitHub actions are executed, the
+
+<TODO></TODO>
 
 ### Step 1: Create the secret
 
@@ -61,3 +64,5 @@ dagster-cloud serverless deploy --env GITHUB_API_TOKEN=TOKEN_VALUE
 ---
 
 ## Accessing environment variables in Dagster code
+
+<TODO></TODO>
