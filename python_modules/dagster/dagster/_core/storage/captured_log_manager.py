@@ -2,7 +2,9 @@
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import List, NamedTuple, Optional
+from typing import IO, Generator, List, NamedTuple, Optional
+
+from dagster._core.storage.compute_log_manager import ComputeIOType
 
 MAX_BYTES_CHUNK_READ = 4194304  # 4 MB
 
@@ -135,7 +137,20 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def is_capture_complete(self, log_key: List[str]):
+    @contextmanager
+    def open_log_stream(
+        self, log_key: List[str], io_type: ComputeIOType
+    ) -> Generator[Optional[IO], None, None]:
+        """
+        Context manager for providing an IO stream that enables the caller to write to a log stream
+        managed by the captured log manager, to be read later using the given log key.
+
+        Args:
+            log_key (List[String]): The log key identifying the captured logs
+        """
+
+    @abstractmethod
+    def is_capture_complete(self, log_key: List[str]) -> bool:
         """Flag indicating when the log capture for a given log key has completed.
 
         Args:
@@ -152,7 +167,6 @@ class CapturedLogManager(ABC):
 
         Args:
             log_key (List[String]): The log key identifying the captured logs
-
         """
 
     @abstractmethod
@@ -183,6 +197,14 @@ class CapturedLogManager(ABC):
 
         Returns:
             CapturedLogMetadata
+        """
+
+    @abstractmethod
+    def delete_logs(self, log_key: List[str]):
+        """Deletes the captured logs for a given log key.
+
+        Args:
+            log_key (List[String]): The log key identifying the captured logs
         """
 
     @abstractmethod

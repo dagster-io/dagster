@@ -3,7 +3,7 @@ import os
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import List, Optional, Tuple, Union
+from typing import IO, Generator, List, Optional, Tuple, Union
 
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver
@@ -14,7 +14,7 @@ from dagster._core.execution.compute_logs import mirror_stream_to_file
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._seven import json
-from dagster._utils import ensure_dir, touch_file
+from dagster._utils import ensure_dir, ensure_file, touch_file
 
 from .captured_log_manager import (
     CapturedLogData,
@@ -78,13 +78,22 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         # leave artifact on filesystem so that we know the capture is completed
         touch_file(self.complete_artifact_path(log_key))
 
+    @contextmanager
+    def open_log_stream(
+        self, log_key: List[str], io_type: ComputeIOType
+    ) -> Generator[Optional[IO], None, None]:
+        path = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+        ensure_file(path)
+        with open(path, "+a", encoding="utf-8") as f:
+            yield f
+
     def is_capture_complete(self, log_key: List[str]):
         return os.path.exists(self.complete_artifact_path(log_key))
 
     def get_log_data(
         self, log_key: List[str], cursor: Optional[str] = None, max_bytes: Optional[int] = None
     ) -> CapturedLogData:
-        stdout_cursor, stderr_cursor = self._parse_cursor(cursor)
+        stdout_cursor, stderr_cursor = self.parse_cursor(cursor)
         stdout, stdout_offset = self._read_bytes(
             log_key, ComputeIOType.STDOUT, offset=stdout_cursor, max_bytes=max_bytes
         )
@@ -95,7 +104,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             log_key=log_key,
             stdout=stdout,
             stderr=stderr,
-            cursor=self._build_cursor(stdout_offset, stderr_offset),
+            cursor=self.build_cursor(stdout_offset, stderr_offset),
         )
 
     def get_contextual_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
@@ -110,6 +119,22 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             stderr_download_url=self._captured_log_download_url(log_key, ComputeIOType.STDERR),
         )
 
+    def delete_logs(self, log_key: List[str]):
+        paths = [
+            self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]),
+            self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR]),
+            self.get_captured_local_path(
+                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT], partial=True
+            ),
+            self.get_captured_local_path(
+                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR], partial=True
+            ),
+            self.get_captured_local_path(log_key, "complete"),
+        ]
+        for path in paths:
+            if os.path.exists(path) and os.path.isfile(path):
+                os.remove(path)
+
     def _read_bytes(
         self,
         log_key: List[str],
@@ -118,20 +143,9 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         max_bytes: Optional[int] = None,
     ):
         path = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+        return self.read_path(path, offset or 0, max_bytes)
 
-        if not os.path.exists(path) or not os.path.isfile(path):
-            return None, offset
-
-        with open(path, "rb") as f:
-            f.seek(offset or 0, os.SEEK_SET)
-            if max_bytes is None:
-                data = f.read()
-            else:
-                data = f.read(max_bytes)
-            new_offset = f.tell()
-        return data, new_offset
-
-    def _parse_cursor(self, cursor: Optional[str] = None) -> Tuple[int, int]:
+    def parse_cursor(self, cursor: Optional[str] = None) -> Tuple[int, int]:
         # Translates a string cursor into a set of byte offsets for stdout, stderr
         if not cursor:
             return 0, 0
@@ -147,7 +161,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
 
         return stdout, stderr
 
-    def _build_cursor(self, stdout_offset: int, stderr_offset: int) -> str:
+    def build_cursor(self, stdout_offset: int, stderr_offset: int) -> str:
         return f"{stdout_offset}:{stderr_offset}"
 
     def complete_artifact_path(self, log_key):
@@ -156,7 +170,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
     def on_progress(self, log_key: List[str]):
         pass
 
-    def _read_path(
+    def read_path(
         self,
         path: str,
         offset: int = 0,
