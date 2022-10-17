@@ -300,6 +300,7 @@ class PackageSpec(
         if self.name in changed_python_package_names().with_test_changes:
             return None
 
+        # TODO: Walk the dependency tree
         if any(
             requirement in changed_python_package_names().with_implementation_changes
             for requirement in self.requirements
