@@ -36,10 +36,6 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         base_path: str,
     ):
         """Stores the pandas DataFrame as a csv and loads it as a view in duckdb."""
-        check.invariant(
-            not context.has_asset_partitions,
-            "DuckDBPandasTypeHadnler Can't store partitioned outputs",
-        )
 
         filepath = self._get_path(context, base_path)
         # ensure path exists
@@ -70,6 +66,11 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
     def _get_path(self, context: OutputContext, base_path: str) -> Path:
         if context.has_asset_key:
+            if context.has_asset_partitions:
+                start, end = context.asset_partitions_time_window
+                dt_format = "%Y%m%d%H%M%S"
+                partition_str = start.strftime(dt_format) + "_" + end.strftime(dt_format)
+                return Path(f"{base_path}/{'_'.join(context.asset_key.path)}/{partition_str}.csv")
             return Path(f"{base_path}/{'_'.join(context.asset_key.path)}.csv")
         else:
             keys = context.get_identifier()
