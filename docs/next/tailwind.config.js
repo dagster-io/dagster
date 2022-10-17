@@ -26,6 +26,9 @@ module.exports = {
         sans: ['Neue Montreal', ...defaultTheme.fontFamily.sans],
         mono: ['Diatype Mono', ...defaultTheme.fontFamily.mono],
       },
+      letterSpacing: {
+
+      },
       borderRadius: {
         xl: '36px',
       },
@@ -81,8 +84,10 @@ module.exports = {
         DEFAULT: {
           css: {
             code: {
-              background_color: theme('colors.gray.900', defaultTheme.colors.gray[900]),
+              background_color: theme('colors.gray.900'),
               overflowWrap: 'break-word',
+              fontWeight: theme('fontWeight.medium'),
+              fontSize: "14px",
             },
             'code::before': {
               content: '""',
@@ -91,24 +96,48 @@ module.exports = {
               content: '""',
             },
             'a code': {
-              background: theme('colors.gray.100'),
-              color: theme('colors.primary.900'),
+              background: theme('colors.primary.100'),
+              color: theme('colors.blurple'),
               padding: '4px 6px',
               transition: 'all .3s',
             },
             'a code:hover': {
-              text_decoration: 'underline',
-              background: theme('colors.primary.100'),
-              color: theme('colors.blurple'),
+              color: theme('colors.primary.900'),
             },
             'pre a': {
               backgroundColor: theme('colors.primary.100'),
               marginRight: 8,
             },
+            strong:{
+              fontWeight: theme('fontWeight.medium'),
+            },
+            h1: {
+              color: theme('colors.gable-green'),
+              fontSize: theme('fontSize.4xl'),
+              marginTop: 40,
+              fontFamily: theme('fontFamily.sans').join(','),
+              fontWeight: theme('fontWeight.medium'),
+            },
+            h2: {
+              color: theme('colors.gable-green'),
+              fontFamily: theme('fontFamily.sans').join(','),
+              fontWeight: theme('fontWeight.medium'),
+            },
+            h3: {
+              color: theme('colors.gable-green'),
+              fontFamily: theme('fontFamily.sans').join(','),
+              fontWeight: theme('fontWeight.medium'),
+            },
+            h4: {
+              color: theme('colors.gable-green'),
+              fontFamily: theme('fontFamily.sans').join(','),
+              fontWeight: theme('fontWeight.medium'),
+            },
             a: {
-              color: theme('colors.primary.900'),
+              color: theme('colors.blurple'),
               transition: '.3s all',
               textDecoration: 'none',
+              fontWeight: theme('fontWeight.normal'),
               overflowWrap: 'break-word',
             },
             'a:hover': {
@@ -118,11 +147,22 @@ module.exports = {
               boxShadow: 'none',
             },
             'a strong': {
-              color: theme('colors.primary.900'),
+              color: theme('colors.blurple'),
             },
             'a strong:hover': {
               textDecoration: 'underline',
             },
+            p: {
+              color: theme('colors.gray.700'),
+              fontFamily: theme('fontFamily.sans').join(','),
+              fontSize: theme('fontSize.base'),
+              lineHeight: '1.4em',
+              fontWeight: theme('fontWeight.normal'),
+            },
+            hr: {
+              marginTop: "2em",
+              marginBottom: "2em",
+            }
           },
         },
       }),
