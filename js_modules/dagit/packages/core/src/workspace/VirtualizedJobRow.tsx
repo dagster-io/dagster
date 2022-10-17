@@ -68,11 +68,12 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
     <Row $height={height} $start={start}>
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <RowCell>
-          <div style={{whiteSpace: 'nowrap', fontWeight: 500}}>
-            <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>
-              <MiddleTruncate text={name} />
-            </Link>
-          </div>
+          <Link
+            to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}
+            style={{maxWidth: '100%', fontWeight: 500}}
+          >
+            <MiddleTruncate text={name} />
+          </Link>
           <div
             style={{
               maxWidth: '100%',

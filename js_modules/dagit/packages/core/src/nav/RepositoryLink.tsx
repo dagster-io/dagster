@@ -56,7 +56,6 @@ export const RepositoryLink: React.FC<{
 
 const RepositoryName = styled(Link)`
   max-width: 280px;
-  min-width: 150px;
 `;
 
 const ReloadTooltip = styled(Tooltip)`
