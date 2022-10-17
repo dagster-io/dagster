@@ -1,8 +1,6 @@
-import logging
 import os
 import re
-import subprocess
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from dagster_buildkite.defines import DO_COVERAGE
 from dagster_buildkite.steps.coverage import build_coverage_step
