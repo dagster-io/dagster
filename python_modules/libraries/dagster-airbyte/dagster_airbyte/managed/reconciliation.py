@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, cast
 
 from dagster_airbyte.managed.types import (
     AirbyteConnection,
@@ -15,6 +15,7 @@ from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDi
 from dagster_managed_elements.types import ManagedElementReconciler
 from dagster_managed_elements.utils import diff_dicts
 
+import dagster._check as check
 from dagster import ResourceDefinition
 from dagster._annotations import experimental
 from dagster._core.execution.context.init import build_init_resource_context
@@ -35,7 +36,9 @@ def gen_configured_stream_json(
     )
 
 
-def diff_sources(config_src: AirbyteSource, curr_src: AirbyteSource) -> ManagedElementCheckResult:
+def diff_sources(
+    config_src: Optional[AirbyteSource], curr_src: Optional[AirbyteSource]
+) -> ManagedElementCheckResult:
     """
     Utility to diff two AirbyteSource objects.
     """
@@ -44,15 +47,14 @@ def diff_sources(config_src: AirbyteSource, curr_src: AirbyteSource) -> ManagedE
         curr_src.source_configuration if curr_src else {},
     )
     if not diff.is_empty():
-        return ManagedElementDiff().with_nested(
-            config_src.name if config_src else curr_src.name, diff
-        )
+        name = config_src.name if config_src else curr_src.name if curr_src else "Unknown"
+        return ManagedElementDiff().with_nested(name, diff)
 
     return ManagedElementDiff()
 
 
 def diff_destinations(
-    config_dst: AirbyteDestination, curr_dst: AirbyteDestination
+    config_dst: Optional[AirbyteDestination], curr_dst: Optional[AirbyteDestination]
 ) -> ManagedElementCheckResult:
     """
     Utility to diff two AirbyteDestination objects.
@@ -62,14 +64,15 @@ def diff_destinations(
         curr_dst.destination_configuration if curr_dst else {},
     )
     if not diff.is_empty():
-        return ManagedElementDiff().with_nested(
-            config_dst.name if config_dst else curr_dst.name, diff
-        )
+        name = config_dst.name if config_dst else curr_dst.name if curr_dst else "Unknown"
+        return ManagedElementDiff().with_nested(name, diff)
 
     return ManagedElementDiff()
 
 
-def conn_dict(conn: AirbyteConnection) -> Dict[str, Any]:
+def conn_dict(conn: Optional[AirbyteConnection]) -> Dict[str, Any]:
+    if not conn:
+        return {}
     return {
         "source": conn.source.name if conn.source else "Unknown",
         "destination": conn.destination.name if conn.destination else "Unknown",
@@ -79,21 +82,15 @@ def conn_dict(conn: AirbyteConnection) -> Dict[str, Any]:
 
 
 def diff_connections(
-    config_conn: AirbyteConnection, curr_conn: AirbyteConnection
+    config_conn: Optional[AirbyteConnection], curr_conn: Optional[AirbyteConnection]
 ) -> ManagedElementCheckResult:
     """
     Utility to diff two AirbyteConnection objects.
     """
-    if not config_conn and curr_conn:
-        diff = diff_dicts({}, conn_dict(curr_conn))
-        return ManagedElementDiff().with_nested(curr_conn.name, diff)
-    if not curr_conn and config_conn:
-        diff = diff_dicts(conn_dict(config_conn), {})
-        return ManagedElementDiff().with_nested(config_conn.name, diff)
-
     diff = diff_dicts(conn_dict(config_conn), conn_dict(curr_conn))
     if not diff.is_empty():
-        return ManagedElementDiff().with_nested(config_conn.name, diff)
+        name = config_conn.name if config_conn else curr_conn.name if curr_conn else "Unknown"
+        return ManagedElementDiff().with_nested(name, diff)
 
     return ManagedElementDiff()
 
@@ -121,8 +118,8 @@ def reconcile_sources(
             diff_sources(configured_source, existing_source.source if existing_source else None)
         )
 
-        if not configured_source or (
-            existing_source and configured_source.must_be_recreated(existing_source.source)
+        if existing_source and (
+            not configured_source or (configured_source.must_be_recreated(existing_source.source))
         ):
             initialized_sources[source_name] = existing_source
             if not dry_run:
@@ -133,7 +130,9 @@ def reconcile_sources(
             existing_source = None
 
         if configured_source:
-            defn_id = res.get_source_definition_by_name(configured_source.source_type, workspace_id)
+            defn_id = check.not_none(
+                res.get_source_definition_by_name(configured_source.source_type, workspace_id)
+            )
             base_source_defn_dict = {
                 "name": configured_source.name,
                 "connectionConfiguration": configured_source.source_configuration,
@@ -148,13 +147,18 @@ def reconcile_sources(
                     )
             else:
                 if not dry_run:
-                    create_result = res.make_request(
-                        endpoint="/sources/create",
-                        data={
-                            "sourceDefinitionId": defn_id,
-                            "workspaceId": workspace_id,
-                            **base_source_defn_dict,
-                        },
+                    create_result = cast(
+                        Dict[str, str],
+                        check.not_none(
+                            res.make_request(
+                                endpoint="/sources/create",
+                                data={
+                                    "sourceDefinitionId": defn_id,
+                                    "workspaceId": workspace_id,
+                                    **base_source_defn_dict,
+                                },
+                            )
+                        ),
                     )
                     source_id = create_result["sourceId"]
 
@@ -193,14 +197,14 @@ def reconcile_destinations(
             )
         )
 
-        if not configured_destination:
+        if not configured_destination and existing_destination:
             initialized_destinations[destination_name] = existing_destination
             if not dry_run:
                 res.make_request(
                     endpoint="/destinations/delete",
                     data={"destinationId": existing_destination.destination_id},
                 )
-        else:
+        elif configured_destination:
             defn_id = res.get_destination_definition_by_name(
                 configured_destination.destination_type, workspace_id
             )
@@ -218,13 +222,18 @@ def reconcile_destinations(
                     )
             else:
                 if not dry_run:
-                    create_result = res.make_request(
-                        endpoint="/destinations/create",
-                        data={
-                            "destinationDefinitionId": defn_id,
-                            "workspaceId": workspace_id,
-                            **base_destination_defn_dict,
-                        },
+                    create_result = cast(
+                        Dict[str, str],
+                        check.not_none(
+                            res.make_request(
+                                endpoint="/destinations/create",
+                                data={
+                                    "destinationDefinitionId": defn_id,
+                                    "workspaceId": workspace_id,
+                                    **base_destination_defn_dict,
+                                },
+                            )
+                        ),
                     )
                     destination_id = create_result["destinationId"]
 
@@ -252,17 +261,26 @@ def reconcile_config(
 
         workspace_id = res.get_default_workspace()
 
+        existing_sources_raw = cast(
+            Dict[str, List[Dict[str, Any]]],
+            check.not_none(
+                res.make_request(endpoint="/sources/list", data={"workspaceId": workspace_id})
+            ),
+        )
+        existing_dests_raw = cast(
+            Dict[str, List[Dict[str, Any]]],
+            check.not_none(
+                res.make_request(endpoint="/destinations/list", data={"workspaceId": workspace_id})
+            ),
+        )
+
         existing_sources: Dict[str, InitializedAirbyteSource] = {
             source_json["name"]: InitializedAirbyteSource.from_api_json(source_json)
-            for source_json in res.make_request(
-                endpoint="/sources/list", data={"workspaceId": workspace_id}
-            ).get("sources", [])
+            for source_json in existing_sources_raw.get("sources", [])
         }
         existing_dests: Dict[str, InitializedAirbyteDestination] = {
             destination_json["name"]: InitializedAirbyteDestination.from_api_json(destination_json)
-            for destination_json in res.make_request(
-                endpoint="/destinations/list", data={"workspaceId": workspace_id}
-            ).get("destinations", [])
+            for destination_json in existing_dests_raw.get("destinations", [])
         }
 
         # First, determine which connections need to be created or deleted
@@ -304,30 +322,47 @@ def reconcile_normalization(
     """
     existing_basic_norm_op_id = None
     if existing_connection_id:
-        operations = res.make_request(
-            endpoint="/operations/list",
-            data={"connectionId": existing_connection_id},
-        )["operations"]
-        existing_basic_norm_op_id = next(
-            (operation for operation in operations if is_basic_normalization_operation(operation)),
+        operations = cast(
+            Dict[str, List[Dict[str, str]]],
+            check.not_none(
+                res.make_request(
+                    endpoint="/operations/list",
+                    data={"connectionId": existing_connection_id},
+                )
+            ),
+        )
+        existing_basic_norm_op = next(
+            (
+                operation
+                for operation in operations["operations"]
+                if is_basic_normalization_operation(operation)
+            ),
             None,
-        )["operationId"]
+        )
+        existing_basic_norm_op_id = (
+            existing_basic_norm_op["operationId"] if existing_basic_norm_op else None
+        )
 
     if normalization_config is not False:
         if res.does_dest_support_normalization(destination.destination_definition_id, workspace_id):
             if existing_basic_norm_op_id:
                 return existing_basic_norm_op_id
             else:
-                return res.make_request(
-                    endpoint="/operations/create",
-                    data={
-                        "workspaceId": workspace_id,
-                        "name": "Normalization",
-                        "operatorConfiguration": {
-                            "operatorType": "normalization",
-                            "normalization": {"option": "basic"},
-                        },
-                    },
+                return cast(
+                    Dict[str, str],
+                    check.not_none(
+                        res.make_request(
+                            endpoint="/operations/create",
+                            data={
+                                "workspaceId": workspace_id,
+                                "name": "Normalization",
+                                "operatorConfiguration": {
+                                    "operatorType": "normalization",
+                                    "normalization": {"option": "basic"},
+                                },
+                            },
+                        )
+                    ),
                 )["operationId"]
         elif normalization_config is True:
             raise Exception(
@@ -352,13 +387,17 @@ def reconcile_connections_pre(
 
     diff = ManagedElementDiff()
 
-    existing_connections = {
+    existing_connections_raw = cast(
+        Dict[str, List[Dict[str, Any]]],
+        check.not_none(
+            res.make_request(endpoint="/connections/list", data={"workspaceId": workspace_id})
+        ),
+    )
+    existing_connections: Dict[str, InitializedAirbyteConnection] = {
         connection_json["name"]: InitializedAirbyteConnection.from_api_json(
             connection_json, existing_sources, existing_destinations
         )
-        for connection_json in res.make_request(
-            endpoint="/connections/list", data={"workspaceId": workspace_id}
-        ).get("connections", [])
+        for connection_json in existing_connections_raw.get("connections", [])
     }
 
     for conn_name in set(config_connections.keys()).union(existing_connections.keys()):
@@ -392,13 +431,17 @@ def reconcile_connections_post(
     Creates new and modifies existing connections based on the config if dry_run is False.
     """
 
+    existing_connections_raw = cast(
+        Dict[str, List[Dict[str, Any]]],
+        check.not_none(
+            res.make_request(endpoint="/connections/list", data={"workspaceId": workspace_id})
+        ),
+    )
     existing_connections = {
         connection_json["name"]: InitializedAirbyteConnection.from_api_json(
             connection_json, init_sources, init_dests
         )
-        for connection_json in res.make_request(
-            endpoint="/connections/list", data={"workspaceId": workspace_id}
-        ).get("connections", [])
+        for connection_json in existing_connections_raw.get("connections", [])
     }
 
     for conn_name, config_conn in config_connections.items():

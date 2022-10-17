@@ -1,6 +1,5 @@
 # pylint: disable=unused-argument
 
-import re
 
 from dagster_managed_elements import ManagedElementDiff
 from dagster_managed_elements.cli import apply, check

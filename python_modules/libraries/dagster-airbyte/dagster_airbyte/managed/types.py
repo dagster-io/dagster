@@ -158,6 +158,9 @@ class InitializedAirbyteConnection:
             None,
         )
 
+        assert source, f"Could not find source with id {api_dict['sourceId']}"
+        assert dest, f"Could not find destination with id {api_dict['destinationId']}"
+
         streams = {
             stream["stream"]["name"]: AirbyteSyncMode(
                 (

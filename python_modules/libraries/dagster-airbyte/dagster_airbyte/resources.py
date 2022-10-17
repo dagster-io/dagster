@@ -95,11 +95,11 @@ class AirbyteResource:
         if not self._cache_enabled > 0:
             return self.make_request(endpoint, data)
         data_json = json.dumps(data, sort_keys=True)
-        hash = hashlib.sha1(data_json.encode("utf-8")).hexdigest()
+        digest = hashlib.sha1(data_json.encode("utf-8")).hexdigest()
 
-        if hash not in self._request_cache:
-            self._request_cache[hash] = self.make_request(endpoint, data)
-        return self._request_cache[hash]
+        if digest not in self._request_cache:
+            self._request_cache[digest] = self.make_request(endpoint, data)
+        return self._request_cache[digest]
 
     def make_request(
         self, endpoint: str, data: Optional[Dict[str, object]]
@@ -160,9 +160,7 @@ class AirbyteResource:
         )
         return workspaces[0].get("workspaceId")
 
-    def get_source_definition_by_name(
-        self, name: str, workspace_id: str
-    ) -> Optional[Mapping[str, Any]]:
+    def get_source_definition_by_name(self, name: str, workspace_id: str) -> Optional[str]:
         name_lower = name.lower()
         definitions = self.make_request_cached(
             endpoint="/source_definitions/list_for_workspace", data={"workspaceId": workspace_id}
@@ -179,9 +177,14 @@ class AirbyteResource:
 
     def get_destination_definition_by_name(self, name: str, workspace_id: str):
         name_lower = name.lower()
-        definitions = self.make_request(
-            endpoint="/destination_definitions/list_for_workspace",
-            data={"workspaceId": workspace_id},
+        definitions = cast(
+            Dict[str, List[Dict[str, str]]],
+            check.not_none(
+                self.make_request(
+                    endpoint="/destination_definitions/list_for_workspace",
+                    data={"workspaceId": workspace_id},
+                )
+            ),
         )
 
         return next(
@@ -194,23 +197,36 @@ class AirbyteResource:
         )
 
     def get_source_catalog_id(self, source_id: str):
-        result = self.make_request(
-            endpoint="/sources/discover_schema", data={"sourceId": source_id}
+        result = cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
+            ),
         )
         return result["catalogId"]
 
     def get_source_schema(self, source_id: str) -> Dict[str, Any]:
-        return self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
+        return cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
+            ),
+        )
 
     def does_dest_support_normalization(
         self, destination_definition_id: str, workspace_id: str
     ) -> Dict[str, Any]:
-        return self.make_request(
-            endpoint="/destination_definition_specifications/get",
-            data={
-                "destinationDefinitionId": destination_definition_id,
-                "workspaceId": workspace_id,
-            },
+        return cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request(
+                    endpoint="/destination_definition_specifications/get",
+                    data={
+                        "destinationDefinitionId": destination_definition_id,
+                        "workspaceId": workspace_id,
+                    },
+                )
+            ),
         ).get("supportsNormalization", False)
 
     def get_job_status(self, connection_id: str, job_id: int) -> dict:
