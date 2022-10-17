@@ -315,7 +315,7 @@ class PackageSpec(
                 # Our change is in this package's directory
                 (change in Path(self.directory).rglob("*"))
                 # The file can alter behavior - exclude things like README changes
-                and (change.suffix in [".py", ".cfg", ".toml"])
+                and (change.suffix in [".py", ".cfg", ".toml"] or change.name == "requirements.txt")
             ):
                 return None
 
