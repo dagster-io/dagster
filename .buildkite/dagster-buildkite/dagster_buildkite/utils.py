@@ -263,6 +263,11 @@ def changed_python_package_names():
                 else:
                     with_implementation_changes.append(directory.name)
 
+    logging.info("With implementation changes:")
+    logging.info(with_implementation_changes)
+    logging.info("With test changes:")
+    logging.info(with_test_changes)
+
     return namedtuple("ChangedPackages", ["with_implementation_changes", "with_test_changes"])(
         with_implementation_changes, with_test_changes
     )
