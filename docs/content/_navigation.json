@@ -1,7 +1,7 @@
 [
   {
     "title": "Getting Started",
-    "icon": "Sparkles",
+    "icon": "Flag",
     "path": "/getting-started",
     "children": [
       {
@@ -20,7 +20,7 @@
   },
   {
     "title": "Tutorials",
-    "icon": "AcademicCap",
+    "icon": "Tutorials",
     "path": "/tutorial",
     "children": [
       {
@@ -69,7 +69,7 @@
   },
   {
     "title": "Concepts",
-    "icon": "Menu",
+    "icon": "Concepts",
     "path": "/concepts",
     "isDefaultOpen": true,
     "children": [
@@ -278,7 +278,7 @@
   },
   {
     "title": "Deployment",
-    "icon": "CloudUpload",
+    "icon": "Deployment",
     "path": "/deployment",
     "children": [
       {
@@ -476,7 +476,7 @@
   },
   {
     "title": "Integrations",
-    "icon": "Grid",
+    "icon": "Integrations",
     "path": "/integrations",
     "children": [
         {
@@ -551,7 +551,7 @@
   },
   {
     "title": "Guides",
-    "icon": "Search",
+    "icon": "Guides",
     "path": "/guides",
     "children": [
       {
@@ -617,7 +617,7 @@
   },
   {
     "title": "API Reference",
-    "icon": "BookOpen",
+    "icon": "Reference",
     "path": "/_apidocs",
     "children": [
       {
@@ -866,7 +866,7 @@
   },
   {
     "title": "Community",
-    "icon": "Users",
+    "icon": "Community",
     "path": "/community",
     "children": [
       {
@@ -891,7 +891,7 @@
   },
   {
     "title": "About",
-    "icon": "InfoCircle",
+    "icon": "About",
     "isUnversioned": true,
     "children": [
       {
