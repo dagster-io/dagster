@@ -1,26 +1,21 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonGroup, Colors, NonIdealState, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RepositorySelector} from '../types/globalTypes';
 
 import {AssetEventsTable} from './AssetEventsTable';
-import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {AssetViewParams} from './AssetView';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
-import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
-import {AssetEventGroup, groupByPartition} from './groupByPartition';
+import {AssetEventGroup, useGroupedEvents} from './groupByPartition';
 import {AssetKey} from './types';
-import {AssetEventsQuery, AssetEventsQueryVariables} from './types/AssetEventsQuery';
+import {useRecentAssetEvents} from './useRecentAssetEvents';
 
 interface Props {
   assetKey: AssetKey;
-  asSidebarSection?: boolean;
   liveData?: LiveDataForNode;
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
@@ -37,86 +32,23 @@ interface Props {
   opName?: string | null;
 }
 
-/**
- * If the asset has a defined partition space, we load all materializations in the
- * last 100 partitions. This ensures that if you run a huge backfill of old partitions,
- * you still see accurate info for the last 100 partitions in the UI. A count-based
- * limit could cause random partitions to disappear if materializations were out of order.
- */
-function useRecentAssetEvents(
-  assetKey: AssetKey,
-  assetHasDefinedPartitions: boolean,
-  xAxis: 'partition' | 'time',
-  before?: string,
-) {
-  const loadUsingPartitionKeys = assetHasDefinedPartitions && xAxis === 'partition';
-
-  const {data, loading, refetch} = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(
-    ASSET_EVENTS_QUERY,
-    {
-      variables: loadUsingPartitionKeys
-        ? {
-            assetKey: {path: assetKey.path},
-            before,
-            partitionInLast: 120,
-          }
-        : {
-            assetKey: {path: assetKey.path},
-            before,
-            limit: 100,
-          },
-    },
-  );
-
-  return React.useMemo(() => {
-    const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
-    const materializations = asset?.assetMaterializations || [];
-    const observations = asset?.assetObservations || [];
-
-    const allPartitionKeys = asset?.definition?.partitionKeys;
-    const loadedPartitionKeys =
-      loadUsingPartitionKeys && allPartitionKeys
-        ? allPartitionKeys.slice(allPartitionKeys.length - 120)
-        : undefined;
-
-    return {asset, loadedPartitionKeys, materializations, observations, loading, refetch};
-  }, [data, loading, refetch, loadUsingPartitionKeys]);
-}
-
 export const AssetEvents: React.FC<Props> = ({
   assetKey,
   assetLastMaterializedAt,
   assetHasDefinedPartitions,
-  asSidebarSection,
   params,
   setParams,
   liveData,
 }) => {
-  // The params behavior on this page is a bit nuanced - there are two main query
-  // params: ?timestamp= and ?partition= and only one is set at a time. They can
-  // be undefined, an empty string or a value and all three states are used.
-  //
-  // - If both are undefined, we expand the first item in the table by default
-  // - If one is present, it determines which xAxis is used (partition grouping)
-  // - If one is present and set to a value, that item in the table is expanded.
-  // - If one is present but an empty string, no items in the table is expanded.
-
-  const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
-  const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
-  const xAxis =
-    assetHasDefinedPartitions && params.partition !== undefined
-      ? 'partition'
-      : params.time !== undefined || before
-      ? 'time'
-      : xAxisDefault;
-
+  const {flagNewAssetDetails} = useFeatureFlags();
   const {
+    xAxis,
     materializations,
     observations,
     loadedPartitionKeys,
     loading,
     refetch,
-  } = useRecentAssetEvents(assetKey, assetHasDefinedPartitions, xAxis, before);
+  } = useRecentAssetEvents(assetKey, assetHasDefinedPartitions, params);
 
   React.useEffect(() => {
     if (params.asOf) {
@@ -125,23 +57,7 @@ export const AssetEvents: React.FC<Props> = ({
     refetch();
   }, [params.asOf, assetLastMaterializedAt, refetch]);
 
-  const grouped = React.useMemo<AssetEventGroup[]>(() => {
-    const events = [...materializations, ...observations].sort(
-      (b, a) => Number(a.timestamp) - Number(b.timestamp),
-    );
-    if (xAxis === 'partition' && loadedPartitionKeys) {
-      return groupByPartition(events, loadedPartitionKeys);
-    } else {
-      // return a group for every materialization to achieve un-grouped rendering
-      return events.map((event) => ({
-        latest: event,
-        partition: event.partition || undefined,
-        timestamp: event.timestamp,
-        all: [],
-      }));
-    }
-  }, [loadedPartitionKeys, materializations, observations, xAxis]);
-
+  const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
 
   const onSetFocused = (group: AssetEventGroup | undefined) => {
@@ -151,45 +67,6 @@ export const AssetEvents: React.FC<Props> = ({
         : {partition: group?.partition !== params.partition ? group?.partition || '' : ''};
     setParams({...params, ...updates});
   };
-
-  if (process.env.NODE_ENV === 'test') {
-    return <span />; // chartjs and our useViewport hook don't play nicely with jest
-  }
-
-  if (asSidebarSection) {
-    const latest = materializations[0];
-
-    if (loading) {
-      return (
-        <Box padding={{vertical: 20}}>
-          <Spinner purpose="section" />
-        </Box>
-      );
-    }
-    return (
-      <>
-        <FailedRunsSinceMaterializationBanner liveData={liveData} />
-        <CurrentRunsBanner liveData={liveData} />
-        <SidebarSection title="Materialization in Last Run">
-          {latest ? (
-            <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-              <LatestMaterializationMetadata latest={latest} />
-            </div>
-          ) : (
-            <Box
-              margin={{horizontal: 24, vertical: 12}}
-              style={{color: Colors.Gray500, fontSize: '0.8rem'}}
-            >
-              No materializations found
-            </Box>
-          )}
-        </SidebarSection>
-        <SidebarSection title="Metadata Plots">
-          <AssetMaterializationGraphs xAxis={xAxis} asSidebarSection groups={grouped} />
-        </SidebarSection>
-      </>
-    );
-  }
 
   let focused: AssetEventGroup | undefined = grouped.find((b) =>
     params.time
@@ -205,22 +82,41 @@ export const AssetEvents: React.FC<Props> = ({
     focused = grouped[0];
   }
 
+  const header = (
+    <Box
+      flex={{justifyContent: 'space-between', alignItems: 'center'}}
+      padding={{vertical: 16, horizontal: 24}}
+      style={{marginBottom: -1}}
+    >
+      <Subheading>Asset Events</Subheading>
+      {assetHasDefinedPartitions ? (
+        <div style={{margin: '-6px 0 '}}>
+          <ButtonGroup
+            activeItems={activeItems}
+            buttons={[
+              {id: 'partition', label: 'By partition'},
+              {id: 'time', label: 'By timestamp'},
+            ]}
+            onClick={(id: string) =>
+              setParams(
+                id === 'time'
+                  ? {...params, partition: undefined, time: focused?.timestamp || ''}
+                  : {...params, partition: focused?.partition || '', time: undefined},
+              )
+            }
+          />
+        </div>
+      ) : null}
+    </Box>
+  );
+
   if (loading) {
     return (
-      <Box style={{display: 'flex'}}>
-        <Box style={{flex: 1}}>
-          <Box
-            flex={{justifyContent: 'space-between', alignItems: 'center'}}
-            padding={{vertical: 16, horizontal: 24}}
-            style={{marginBottom: -1}}
-          >
-            <Subheading>Asset Events</Subheading>
-          </Box>
-          <Box padding={{vertical: 20}}>
-            <Spinner purpose="section" />
-          </Box>
+      <Box>
+        {header}
+        <Box padding={{vertical: 48}} border={{side: 'top', color: Colors.KeylineGray, width: 1}}>
+          <Spinner purpose="page" />
         </Box>
-        <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}} />
       </Box>
     );
   }
@@ -228,31 +124,7 @@ export const AssetEvents: React.FC<Props> = ({
   return (
     <Box style={{display: 'flex', flex: 1}}>
       <Box style={{flex: 1}}>
-        <Box
-          flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          padding={{vertical: 16, horizontal: 24}}
-          style={{marginBottom: -1}}
-        >
-          <Subheading>Asset Events</Subheading>
-          {assetHasDefinedPartitions ? (
-            <div style={{margin: '-6px 0 '}}>
-              <ButtonGroup
-                activeItems={activeItems}
-                buttons={[
-                  {id: 'partition', label: 'By partition'},
-                  {id: 'time', label: 'By timestamp'},
-                ]}
-                onClick={(id: string) =>
-                  setParams(
-                    id === 'time'
-                      ? {...params, partition: undefined, time: focused?.timestamp || ''}
-                      : {...params, partition: focused?.partition || '', time: undefined},
-                  )
-                }
-              />
-            </div>
-          ) : null}
-        </Box>
+        {header}
         <FailedRunsSinceMaterializationBanner liveData={liveData} />
         <CurrentRunsBanner liveData={liveData} />
         {grouped.length > 0 ? (
@@ -277,110 +149,12 @@ export const AssetEvents: React.FC<Props> = ({
             Showing materializations for the last {loadedPartitionKeys.length} partitions.
           </Box>
         )}
-        {/** Ensures the line between the left and right columns goes to the bottom of the page */}
-        <div style={{flex: 1}} />
       </Box>
-      <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
-        <AssetMaterializationGraphs
-          xAxis={xAxis}
-          asSidebarSection={asSidebarSection}
-          groups={grouped}
-        />
-      </Box>
+      {!flagNewAssetDetails && (
+        <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
+          <AssetMaterializationGraphs xAxis={xAxis} groups={grouped} columnCount={1} />
+        </Box>
+      )}
     </Box>
   );
 };
-
-const ASSET_EVENTS_QUERY = gql`
-  query AssetEventsQuery(
-    $assetKey: AssetKeyInput!
-    $limit: Int
-    $before: String
-    $partitionInLast: Int
-  ) {
-    assetOrError(assetKey: $assetKey) {
-      ... on Asset {
-        id
-        key {
-          path
-        }
-        assetObservations(
-          limit: $limit
-          beforeTimestampMillis: $before
-          partitionInLast: $partitionInLast
-        ) {
-          ...AssetObservationFragment
-        }
-        assetMaterializations(
-          limit: $limit
-          beforeTimestampMillis: $before
-          partitionInLast: $partitionInLast
-        ) {
-          ...AssetMaterializationFragment
-        }
-
-        definition {
-          id
-          partitionKeys
-        }
-      }
-    }
-  }
-  fragment AssetMaterializationFragment on MaterializationEvent {
-    partition
-    runOrError {
-      ... on PipelineRun {
-        id
-        runId
-        mode
-        repositoryOrigin {
-          id
-          repositoryName
-          repositoryLocationName
-        }
-        status
-        pipelineName
-        pipelineSnapshotId
-      }
-    }
-    runId
-    timestamp
-    stepKey
-    label
-    description
-    metadataEntries {
-      ...MetadataEntryFragment
-    }
-    assetLineage {
-      ...AssetLineageFragment
-    }
-  }
-  fragment AssetObservationFragment on ObservationEvent {
-    partition
-    runOrError {
-      ... on PipelineRun {
-        id
-        runId
-        mode
-        repositoryOrigin {
-          id
-          repositoryName
-          repositoryLocationName
-        }
-        status
-        pipelineName
-        pipelineSnapshotId
-      }
-    }
-    runId
-    timestamp
-    stepKey
-    label
-    description
-    metadataEntries {
-      ...MetadataEntryFragment
-    }
-  }
-  ${METADATA_ENTRY_FRAGMENT}
-  ${ASSET_LINEAGE_FRAGMENT}
-`;
