@@ -1,7 +1,6 @@
 import re
 
 from dagster_managed_elements import ManagedElementDiff
-from dagster_managed_elements.utils import diff_dicts
 
 
 def test_diff_equality():

@@ -15,9 +15,14 @@ def load_module(file_path: str) -> ModuleType:
     https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
     """
     spec = importlib.util.spec_from_file_location(MODULE_NAME, file_path)
+    if not spec:
+        raise ValueError(f"Could not load module spec from {file_path}")
     module = importlib.util.module_from_spec(spec)
     sys.modules[MODULE_NAME] = module
-    spec.loader.exec_module(module)
+    loader = spec.loader
+    if not loader:
+        raise ValueError(f"Could not load loader from {file_path}")
+    loader.exec_module(module)
 
     return module
 
@@ -38,11 +43,15 @@ def check(input_file: str) -> ManagedElementDiff:
     module = load_module(input_file)
     reconcilable_objects = get_reconcilable_objects(module)
 
-    print(f"Found {len(reconcilable_objects)} stacks, checking...")
+    click.echo(f"Found {len(reconcilable_objects)} stacks, checking...")
 
     diff = ManagedElementDiff()
     for obj in reconcilable_objects:
-        diff = diff.join(obj.check())
+        result = obj.check()
+        if isinstance(result, ManagedElementDiff):
+            diff = diff.join(result)
+        else:
+            click.echo(result)
     return diff
 
 
@@ -51,11 +60,15 @@ def apply(input_file: str) -> ManagedElementDiff:
     module = load_module(input_file)
     reconcilable_objects = get_reconcilable_objects(module)
 
-    print(f"Found {len(reconcilable_objects)} stacks, applying...")
+    click.echo(f"Found {len(reconcilable_objects)} stacks, applying...")
 
     diff = ManagedElementDiff()
     for obj in reconcilable_objects:
-        diff = diff.join(obj.apply())
+        result = obj.apply()
+        if isinstance(result, ManagedElementDiff):
+            diff = diff.join(result)
+        else:
+            click.echo(result)
     return diff
 
 
@@ -67,10 +80,10 @@ def main():
 @main.command(name="check")
 @click.argument("input-file", type=click.Path(exists=True))
 def check_cmd(input_file):
-    print(check(input_file))
+    click.echo(check(input_file))
 
 
 @main.command(name="apply")
 @click.argument("input-file", type=click.Path(exists=True))
 def apply_cmd(input_file):
-    print(apply(input_file))
+    click.echo(apply(input_file))

@@ -178,11 +178,9 @@ class ManagedElementDiff(
         return (my_additions, my_deletions, my_modifications)
 
 
-"""
-Union type representing the status of a managed element - can either
-return the (potentially empty) diff between the configured and deployed
-stack, or an error.
-"""
+# Union type representing the status of a managed element - can either
+# return the (potentially empty) diff between the configured and deployed
+# stack, or an error.
 ManagedElementCheckResult = Union[ManagedElementDiff, ManagedElementError]
 
 
