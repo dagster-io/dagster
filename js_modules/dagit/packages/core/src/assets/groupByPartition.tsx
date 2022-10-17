@@ -1,4 +1,5 @@
 import groupBy from 'lodash/groupBy';
+import React from 'react';
 
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {AssetObservationFragment} from './types/AssetObservationFragment';
@@ -46,3 +47,27 @@ export const groupByPartition = (
       };
     });
 };
+
+export function useGroupedEvents(
+  xAxis: 'partition' | 'time',
+  materializations: Event[],
+  observations: Event[],
+  loadedPartitionKeys: string[] | undefined,
+) {
+  return React.useMemo<AssetEventGroup[]>(() => {
+    const events = [...materializations, ...observations].sort(
+      (b, a) => Number(a.timestamp) - Number(b.timestamp),
+    );
+    if (xAxis === 'partition' && loadedPartitionKeys) {
+      return groupByPartition(events, loadedPartitionKeys);
+    } else {
+      // return a group for every materialization to achieve un-grouped rendering
+      return events.map((event) => ({
+        latest: event,
+        partition: event.partition || undefined,
+        timestamp: event.timestamp,
+        all: [],
+      }));
+    }
+  }, [loadedPartitionKeys, materializations, observations, xAxis]);
+}

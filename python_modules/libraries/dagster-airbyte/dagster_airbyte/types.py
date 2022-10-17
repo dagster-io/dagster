@@ -1,4 +1,19 @@
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, NamedTuple, Optional
+
+from dagster._core.definitions.metadata.table import TableSchema
+
+
+class AirbyteTableMetadata:
+    def __init__(
+        self,
+        schema: TableSchema,
+        normalization_tables: Optional[Dict[str, "AirbyteTableMetadata"]] = None,
+    ):
+        """
+        Contains metadata about an Airbyte table, including its schema and any created normalization tables.
+        """
+        self.schema = schema
+        self.normalization_tables = normalization_tables or dict()
 
 
 class AirbyteOutput(

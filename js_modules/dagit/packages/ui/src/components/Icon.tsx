@@ -14,6 +14,7 @@ import arrow_upward from '../icon-svgs/arrow_upward.svg';
 import asset from '../icon-svgs/asset.svg';
 import asset_group from '../icon-svgs/asset_group.svg';
 import asset_non_sda from '../icon-svgs/asset_non_sda.svg';
+import asset_plot from '../icon-svgs/asset_plot.svg';
 import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
@@ -130,6 +131,7 @@ import {Colors} from './Colors';
 export const Icons = {
   // Core icons
   asset,
+  asset_plot,
   asset_non_sda,
   asset_group,
   expectation,
