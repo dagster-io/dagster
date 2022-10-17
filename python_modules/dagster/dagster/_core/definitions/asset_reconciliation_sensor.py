@@ -317,7 +317,7 @@ def build_asset_reconciliation_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    run_tags: Optional[Dict[str, str]] = None,
+    run_tags: Optional[Mapping[str, str]] = None,
 ) -> MultiAssetSensorDefinition:
     """Constructs a sensor that will monitor the parents of the provided assets and materialize an asset
     based on the materialization of its parents. This will keep the monitored assets up to date with the
