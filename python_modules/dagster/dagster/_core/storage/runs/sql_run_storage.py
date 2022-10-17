@@ -249,7 +249,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         if filters.tags:
             intersections = [
-                db.select(RunTagsTable.c.run_id).where(
+                db.select([RunTagsTable.c.run_id]).where(
                     db.and_(
                         RunTagsTable.c.key == key,
                         (
