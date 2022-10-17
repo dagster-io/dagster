@@ -26,9 +26,7 @@ module.exports = {
         sans: ['Neue Montreal', ...defaultTheme.fontFamily.sans],
         mono: ['Diatype Mono', ...defaultTheme.fontFamily.mono],
       },
-      letterSpacing: {
-
-      },
+      letterSpacing: {},
       borderRadius: {
         xl: '36px',
       },
@@ -87,7 +85,7 @@ module.exports = {
               background_color: theme('colors.gray.900'),
               overflowWrap: 'break-word',
               fontWeight: theme('fontWeight.medium'),
-              fontSize: "14px",
+              fontSize: '14px',
             },
             'code::before': {
               content: '""',
@@ -108,7 +106,7 @@ module.exports = {
               backgroundColor: theme('colors.primary.100'),
               marginRight: 8,
             },
-            strong:{
+            strong: {
               fontWeight: theme('fontWeight.medium'),
             },
             h1: {
@@ -160,9 +158,9 @@ module.exports = {
               fontWeight: theme('fontWeight.normal'),
             },
             hr: {
-              marginTop: "2em",
-              marginBottom: "2em",
-            }
+              marginTop: '2em',
+              marginBottom: '2em',
+            },
           },
         },
       }),

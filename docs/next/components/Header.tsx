@@ -1,7 +1,7 @@
-import * as React from 'react';
-import {useState} from 'react';
 import cx from 'classnames';
 import {JoinSlackButton} from 'components/JoinSlackButton';
+import * as React from 'react';
+import {useState} from 'react';
 
 import {SignInButton} from './SignInButton';
 
@@ -22,7 +22,7 @@ const Header = ({openMobileDocsMenu}) => {
       }
       const dy = window.scrollY - lastScrollY.current;
 
-      const alpha = Math.min(Math.max(0, (window.scrollY - 30) / 70), .98);
+      const alpha = Math.min(Math.max(0, (window.scrollY - 30) / 70), 0.98);
       headerBgRef.current.style.opacity = `${alpha}`;
 
       const targetTop = dy < 0 || window.scrollY < 30 ? 0 : COLLAPSING_PX;
@@ -31,14 +31,14 @@ const Header = ({openMobileDocsMenu}) => {
       if (targetTop !== currentTop) {
         headerRef.current.style.top = `${Math.min(0, Math.max(COLLAPSING_PX, currentTop - dy))}px`;
       }
-      
+
       lastScrollY.current = window.scrollY;
 
       if (window.scrollY > 0) {
         setIsCollapsed(true);
-        } else {
-          setIsCollapsed(false);
-        }
+      } else {
+        setIsCollapsed(false);
+      }
     };
 
     document.addEventListener('scroll', handler);
@@ -49,12 +49,16 @@ const Header = ({openMobileDocsMenu}) => {
   }, [headerRef, headerBgRef]);
 
   return (
-    <div ref={headerRef}
-      className={cx('fixed top-0  w-full z-50 px-2 lg:px-10 flex flex-col tracking-wide transition-all', {
-        'p-0 transition': isCollapsed,
-        'p-2 transition': !isCollapsed,
-      }
-    )}>
+    <div
+      ref={headerRef}
+      className={cx(
+        'fixed top-0  w-full z-50 px-2 lg:px-10 flex flex-col tracking-wide transition-all',
+        {
+          'p-0 transition': isCollapsed,
+          'p-2 transition': !isCollapsed,
+        },
+      )}
+    >
       <div className="absolute z-0 inset-0 bg-white shadow-sm" ref={headerBgRef} />
       <div className="hidden md:block" />
       <nav className="z-10 flex justify-between items-center text-gable-green px-4">
@@ -83,10 +87,14 @@ const Header = ({openMobileDocsMenu}) => {
           />
         </a>
         <div
-        className={cx('hidden lg:flex my-1  text-gable-green gap-0 w-10/12 md:w-6/12 justify-center transition-all', {
-          'text-base': isCollapsed,
-          'text-lg': !isCollapsed,
-        })}>
+          className={cx(
+            'hidden lg:flex my-1  text-gable-green gap-0 w-10/12 md:w-6/12 justify-center transition-all',
+            {
+              'text-base': isCollapsed,
+              'text-lg': !isCollapsed,
+            },
+          )}
+        >
           <a
             href="https://dagster.io/platform"
             className="whitespace-nowrap py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
@@ -130,10 +138,14 @@ const Header = ({openMobileDocsMenu}) => {
             Docs
           </a>
         </div>
-        <div className={cx('hidden lg:flex my-1  text-gable-green gap-1 w-36 lg:w-3/12 justify-end transition-all', {
-          'text-base': isCollapsed,
-          'text-lg': !isCollapsed,
-        })}
+        <div
+          className={cx(
+            'hidden lg:flex my-1  text-gable-green gap-1 w-36 lg:w-3/12 justify-end transition-all',
+            {
+              'text-base': isCollapsed,
+              'text-lg': !isCollapsed,
+            },
+          )}
         >
           <SignInButton />
 

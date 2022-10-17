@@ -3,7 +3,6 @@ import * as React from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 
-
 const Layout: React.FC = ({children}) => {
   const [isMobileDocsMenuOpen, setMobileDocsMenuOpen] = React.useState<boolean>(false);
   const openMobileDocsMenu = () => {

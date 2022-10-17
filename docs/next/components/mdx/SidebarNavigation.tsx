@@ -111,10 +111,13 @@ const renderItems = (items, activeId, depth, key) => {
           <li key={`${key}-${idx}`} className={cx(MARGINS[depth], 'mt-2 list-inside ')}>
             <a
               href={item.url}
-              className={cx('font-normal text-sm text-gray-500 hover:text-gray-800 transition leading-2', {
-                'text-blurple': activeId === item.url.slice(1),
-                'text-gray-500 hover:text-gray-800 transition': activeId !== item.url.slice(1),
-              })}
+              className={cx(
+                'font-normal text-sm text-gray-500 hover:text-gray-800 transition leading-2',
+                {
+                  'text-blurple': activeId === item.url.slice(1),
+                  'text-gray-500 hover:text-gray-800 transition': activeId !== item.url.slice(1),
+                },
+              )}
             >
               {item.title}
             </a>
