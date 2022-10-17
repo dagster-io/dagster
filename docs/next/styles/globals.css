@@ -9,21 +9,9 @@
 }
 
 @layer base {
-  @font-face {
-    font-family: Neue Montreal;
-    font-weight: 400;
-    src: url(/fonts/PPNeueMontreal-Regular.woff) format("woff");
-  }
-
-  @font-face {
-    font-family: Diatype Mono;
-    font-weight: 400;
-    src: url(/fonts/ABCDiatypeMono-Regular.woff) format("woff");
-  }
-
   html {
     font-feature-settings: "ss02";
-    letter-spacing: 0.025em;
+    letter-spacing: 0.0175em;
   }
 
   ::selection {
@@ -43,6 +31,7 @@
     border-radius: 4px;
   }
 }
+
 
 /* These classes contain anchor links in the API docs. This property a scroll-margin top to compensate
 for the navigation bar. */
@@ -563,4 +552,9 @@ dt > a.reference.internal {
 
 .ais-SearchBox-input {
   width: 100%;
+}
+
+.sidebar-container {
+  max-height: calc(100vh - 10rem);
+  padding-bottom: 5rem;
 }
