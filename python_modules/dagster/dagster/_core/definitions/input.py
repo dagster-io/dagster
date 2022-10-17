@@ -118,7 +118,7 @@ class InputDefinition:
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
         input_manager_key: Optional[str] = None
-        # when adding new params, make sure to update combine_with_inferred below
+        # when adding new params, make sure to update combine_with_inferred and with_dagster_type below
     ):
         self._name = check_valid_name(name)
 
@@ -316,6 +316,19 @@ class InputDefinition:
             dagster_type=dagster_type,
             description=description,
             default_value=default_value,
+            root_manager_key=self._root_manager_key,
+            metadata=self._metadata,
+            asset_key=self._asset_key,
+            asset_partitions=self._asset_partitions_fn,
+            input_manager_key=self._input_manager_key,
+        )
+
+    def with_dagster_type(self, dagster_type: DagsterType) -> "InputDefinition":
+        return InputDefinition(
+            name=self.name,
+            dagster_type=dagster_type,
+            description=self.description,
+            default_value=self.default_value if self.has_default_value else NoValueSentinel,
             root_manager_key=self._root_manager_key,
             metadata=self._metadata,
             asset_key=self._asset_key,
