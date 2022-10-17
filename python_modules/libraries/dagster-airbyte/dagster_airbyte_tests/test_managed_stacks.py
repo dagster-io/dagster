@@ -2,9 +2,9 @@
 
 import re
 
-from dagster_managed_stacks import ManagedStackDiff
-from dagster_managed_stacks.cli import apply, check
-from dagster_managed_stacks.utils import diff_dicts
+from dagster_managed_elements import ManagedElementDiff
+from dagster_managed_elements.cli import apply, check
+from dagster_managed_elements.utils import diff_dicts
 
 from dagster._utils import file_relative_path
 
@@ -50,7 +50,7 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
 
     check_result = check(file_relative_path(__file__, "./example_stacks/example_airbyte_stack.py"))
 
-    assert check_result == ManagedStackDiff()
+    assert check_result == ManagedElementDiff()
 
     # Now, we try to remove everything
     check_result = check(file_relative_path(__file__, "./example_stacks/empty_airbyte_stack.py"))
@@ -73,4 +73,4 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
 
     check_result = check(file_relative_path(__file__, "./example_stacks/empty_airbyte_stack.py"))
 
-    assert check_result == ManagedStackDiff()
+    assert check_result == ManagedElementDiff()

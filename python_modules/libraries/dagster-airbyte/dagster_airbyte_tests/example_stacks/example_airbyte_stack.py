@@ -3,7 +3,7 @@ import os
 from dagster_airbyte import (
     AirbyteConnection,
     AirbyteDestination,
-    AirbyteManagedStackReconciler,
+    AirbyteManagedElementReconciler,
     AirbyteSource,
     AirbyteSyncMode,
     airbyte_resource,
@@ -46,7 +46,7 @@ local_json_conn = AirbyteConnection(
 )
 
 
-reconciler = AirbyteManagedStackReconciler(
+reconciler = AirbyteManagedElementReconciler(
     airbyte=airbyte_instance,
     connections=[
         local_json_conn,

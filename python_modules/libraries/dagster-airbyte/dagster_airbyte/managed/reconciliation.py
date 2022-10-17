@@ -11,9 +11,9 @@ from dagster_airbyte.managed.types import (
 )
 from dagster_airbyte.resources import AirbyteResource
 from dagster_airbyte.utils import is_basic_normalization_operation
-from dagster_managed_stacks import ManagedStackCheckResult, ManagedStackDiff
-from dagster_managed_stacks.types import ManagedStackReconciler
-from dagster_managed_stacks.utils import diff_dicts
+from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDiff
+from dagster_managed_elements.types import ManagedElementReconciler
+from dagster_managed_elements.utils import diff_dicts
 
 from dagster import ResourceDefinition
 from dagster._annotations import experimental
@@ -35,7 +35,7 @@ def gen_configured_stream_json(
     )
 
 
-def diff_sources(config_src: AirbyteSource, curr_src: AirbyteSource) -> ManagedStackCheckResult:
+def diff_sources(config_src: AirbyteSource, curr_src: AirbyteSource) -> ManagedElementCheckResult:
     """
     Utility to diff two AirbyteSource objects.
     """
@@ -44,16 +44,16 @@ def diff_sources(config_src: AirbyteSource, curr_src: AirbyteSource) -> ManagedS
         curr_src.source_configuration if curr_src else {},
     )
     if not diff.is_empty():
-        return ManagedStackDiff().with_nested(
+        return ManagedElementDiff().with_nested(
             config_src.name if config_src else curr_src.name, diff
         )
 
-    return ManagedStackDiff()
+    return ManagedElementDiff()
 
 
 def diff_destinations(
     config_dst: AirbyteDestination, curr_dst: AirbyteDestination
-) -> ManagedStackCheckResult:
+) -> ManagedElementCheckResult:
     """
     Utility to diff two AirbyteDestination objects.
     """
@@ -62,11 +62,11 @@ def diff_destinations(
         curr_dst.destination_configuration if curr_dst else {},
     )
     if not diff.is_empty():
-        return ManagedStackDiff().with_nested(
+        return ManagedElementDiff().with_nested(
             config_dst.name if config_dst else curr_dst.name, diff
         )
 
-    return ManagedStackDiff()
+    return ManagedElementDiff()
 
 
 def conn_dict(conn: AirbyteConnection) -> Dict[str, Any]:
@@ -80,22 +80,22 @@ def conn_dict(conn: AirbyteConnection) -> Dict[str, Any]:
 
 def diff_connections(
     config_conn: AirbyteConnection, curr_conn: AirbyteConnection
-) -> ManagedStackCheckResult:
+) -> ManagedElementCheckResult:
     """
     Utility to diff two AirbyteConnection objects.
     """
     if not config_conn and curr_conn:
         diff = diff_dicts({}, conn_dict(curr_conn))
-        return ManagedStackDiff().with_nested(curr_conn.name, diff)
+        return ManagedElementDiff().with_nested(curr_conn.name, diff)
     if not curr_conn and config_conn:
         diff = diff_dicts(conn_dict(config_conn), {})
-        return ManagedStackDiff().with_nested(config_conn.name, diff)
+        return ManagedElementDiff().with_nested(config_conn.name, diff)
 
     diff = diff_dicts(conn_dict(config_conn), conn_dict(curr_conn))
     if not diff.is_empty():
-        return ManagedStackDiff().with_nested(config_conn.name, diff)
+        return ManagedElementDiff().with_nested(config_conn.name, diff)
 
-    return ManagedStackDiff()
+    return ManagedElementDiff()
 
 
 def reconcile_sources(
@@ -104,13 +104,13 @@ def reconcile_sources(
     existing_sources: Mapping[str, InitializedAirbyteSource],
     workspace_id: str,
     dry_run: bool,
-) -> Tuple[Mapping[str, InitializedAirbyteSource], ManagedStackCheckResult]:
+) -> Tuple[Mapping[str, InitializedAirbyteSource], ManagedElementCheckResult]:
     """
     Generates a diff of the configured and existing sources and reconciles them to match the
     configured state if dry_run is False.
     """
 
-    diff = ManagedStackDiff()
+    diff = ManagedElementDiff()
 
     initialized_sources = {}
     for source_name in set(config_sources.keys()).union(existing_sources.keys()):
@@ -173,13 +173,13 @@ def reconcile_destinations(
     existing_destinations: Mapping[str, InitializedAirbyteDestination],
     workspace_id: str,
     dry_run: bool,
-) -> Tuple[Mapping[str, InitializedAirbyteDestination], ManagedStackCheckResult]:
+) -> Tuple[Mapping[str, InitializedAirbyteDestination], ManagedElementCheckResult]:
     """
     Generates a diff of the configured and existing destinations and reconciles them to match the
     configured state if dry_run is False.
     """
 
-    diff = ManagedStackDiff()
+    diff = ManagedElementDiff()
 
     initialized_destinations = {}
     for destination_name in set(config_destinations.keys()).union(existing_destinations.keys()):
@@ -239,7 +239,7 @@ def reconcile_destinations(
 
 def reconcile_config(
     res: AirbyteResource, objects: List[AirbyteConnection], dry_run: bool = False
-) -> ManagedStackCheckResult:
+) -> ManagedElementCheckResult:
     """
     Main entry point for the reconciliation process. Takes a list of AirbyteConnection objects
     and a pointer to an Airbyte instance and returns a diff, along with applying the diff
@@ -286,7 +286,7 @@ def reconcile_config(
             dry_run,
         )
 
-        return ManagedStackDiff().join(sources_diff).join(dests_diff).join(connections_diff)
+        return ManagedElementDiff().join(sources_diff).join(dests_diff).join(connections_diff)
 
 
 def reconcile_normalization(
@@ -344,13 +344,13 @@ def reconcile_connections_pre(
     existing_destinations: Mapping[str, InitializedAirbyteDestination],
     workspace_id: str,
     dry_run: bool,
-) -> ManagedStackCheckResult:
+) -> ManagedElementCheckResult:
     """
     Generates the diff for connections, and deletes any connections that are not in the config if
     dry_run is False.
     """
 
-    diff = ManagedStackDiff()
+    diff = ManagedElementDiff()
 
     existing_connections = {
         connection_json["name"]: InitializedAirbyteConnection.from_api_json(
@@ -467,15 +467,15 @@ def reconcile_connections_post(
 
 
 @experimental
-class AirbyteManagedStackReconciler(ManagedStackReconciler):
+class AirbyteManagedElementReconciler(ManagedElementReconciler):
     def __init__(self, airbyte: ResourceDefinition, connections: Iterable[AirbyteConnection]):
         self._airbyte_instance: AirbyteResource = airbyte(build_init_resource_context())
         self._connections = list(connections)
 
         super().__init__()
 
-    def check(self) -> ManagedStackCheckResult:
+    def check(self) -> ManagedElementCheckResult:
         return reconcile_config(self._airbyte_instance, self._connections, dry_run=True)
 
-    def apply(self) -> ManagedStackCheckResult:
+    def apply(self) -> ManagedElementCheckResult:
         return reconcile_config(self._airbyte_instance, self._connections, dry_run=False)

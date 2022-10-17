@@ -1,9 +1,6 @@
 import os
 
-from dagster_airbyte import (
-    AirbyteManagedStackReconciler,
-    airbyte_resource,
-)
+from dagster_airbyte import AirbyteManagedElementReconciler, airbyte_resource
 
 airbyte_instance = airbyte_resource.configured(
     {
@@ -13,7 +10,7 @@ airbyte_instance = airbyte_resource.configured(
 )
 
 
-reconciler = AirbyteManagedStackReconciler(
+reconciler = AirbyteManagedElementReconciler(
     airbyte=airbyte_instance,
     connections=[],
 )

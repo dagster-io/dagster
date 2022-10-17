@@ -1,12 +1,12 @@
 from dagster._core.utils import check_dagster_package_version
 
 try:
-    import dagster_managed_stacks
+    import dagster_managed_elements
 
     from .managed import (
         AirbyteConnection,
         AirbyteDestination,
-        AirbyteManagedStackReconciler,
+        AirbyteManagedElementReconciler,
         AirbyteSource,
         AirbyteSyncMode,
     )
