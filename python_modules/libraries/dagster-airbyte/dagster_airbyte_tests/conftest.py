@@ -1,3 +1,5 @@
+# pylint: disable=print-call
+
 import os
 import subprocess
 import time
@@ -8,6 +10,8 @@ import requests
 
 from dagster._core.test_utils import environ
 from dagster._utils import file_relative_path
+
+pytest_plugins = ["dagster_test.fixtures"]
 
 
 @pytest.fixture(name="docker_compose_file")
@@ -95,7 +99,7 @@ def airbyte_source_files_fixture():
     FILES = ["sample_file.json"]
 
     for file in FILES:
-        with open(file_relative_path(__file__, file), "r") as f:
+        with open(file_relative_path(__file__, file), "r", encoding="utf8") as f:
             contents = f.read()
-        with open(os.path.join("/tmp/airbyte_local", file), "w") as f:
+        with open(os.path.join("/tmp/airbyte_local", file), "w", encoding="utf8") as f:
             f.write(contents)

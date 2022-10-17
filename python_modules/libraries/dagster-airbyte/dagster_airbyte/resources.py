@@ -4,7 +4,7 @@ import logging
 import sys
 import time
 from contextlib import contextmanager
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 from dagster_airbyte.types import AirbyteOutput
