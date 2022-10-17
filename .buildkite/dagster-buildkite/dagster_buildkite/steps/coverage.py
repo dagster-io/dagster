@@ -32,6 +32,6 @@ def build_coverage_step() -> CommandStep:
                 "CI_PULL_REQUEST",
             ],
         )
-        .with_skip(skip_coverage_if_feature_branch)
+        .with_skip(skip_coverage_if_feature_branch())
         .build()
     )
