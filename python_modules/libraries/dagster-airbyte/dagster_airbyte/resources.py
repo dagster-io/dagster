@@ -7,11 +7,7 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import requests
-from dagster_airbyte.types import (
-    AirbyteOutput,
-    InitializedAirbyteDestination,
-    InitializedAirbyteSource,
-)
+from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 
 from dagster import Failure, Field, StringSource
@@ -64,6 +60,8 @@ class AirbyteResource:
 
         self._forward_logs = forward_logs
         self._request_cache: Dict[str, Optional[Dict[str, object]]] = {}
+        # Int in case we nest contexts
+        self._cache_enabled = 0
 
         self._username = username
         self._password = password
@@ -78,16 +76,24 @@ class AirbyteResource:
 
     @contextmanager
     def cache_requests(self):
+        """
+        Context manager that enables caching certain requests to the Airbyte API,
+        cleared when the context is exited.
+        """
         self.clear_request_cache()
+        self._cache_enabled += 1
         try:
             yield
         finally:
             self.clear_request_cache()
+            self._cache_enabled -= 1
 
     def clear_request_cache(self):
         self._request_cache = {}
 
     def make_request_cached(self, endpoint: str, data: Optional[Dict[str, object]]):
+        if not self._cache_enabled > 0:
+            return self.make_request(endpoint, data)
         data_json = json.dumps(data, sort_keys=True)
         hash = hashlib.sha1(data_json.encode("utf-8")).hexdigest()
 
@@ -193,18 +199,16 @@ class AirbyteResource:
         )
         return result["catalogId"]
 
-    def get_source_schema(self, source: InitializedAirbyteSource) -> Dict[str, Any]:
-        return self.make_request(
-            endpoint="/sources/discover_schema", data={"sourceId": source.source_id}
-        )
+    def get_source_schema(self, source_id: str) -> Dict[str, Any]:
+        return self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
 
     def does_dest_support_normalization(
-        self, destination: InitializedAirbyteDestination, workspace_id: str
+        self, destination_definition_id: str, workspace_id: str
     ) -> Dict[str, Any]:
         return self.make_request(
             endpoint="/destination_definition_specifications/get",
             data={
-                "destinationDefinitionId": destination.destination_definition_id,
+                "destinationDefinitionId": destination_definition_id,
                 "workspaceId": workspace_id,
             },
         ).get("supportsNormalization", False)
