@@ -298,7 +298,7 @@ def skip_if_no_js_changes():
         return None
 
     # If anything changes in the js_modules directory
-    if any(Path("js_exaples") in path.parents for path in get_changed_files()):
+    if any(Path("js_modules") in path.parents for path in get_changed_files()):
         return None
 
     return "No JS changes"
