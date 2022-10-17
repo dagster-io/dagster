@@ -235,6 +235,29 @@ def skip_coverage_if_feature_branch():
 
 
 @functools.lru_cache(maxsize=None)
+def skip_mysql():
+    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        return None
+
+    if "dagster" in changed_python_package_names():
+        return None
+
+    return "Skip unless mysql schemas might have changed"
+
+
+@functools.lru_cache(maxsize=None)
+def skip_graphql():
+    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        return None
+
+    for dependency in ["dagster", "dagster-graphql", "automation"]:
+        if dependency in changed_python_package_names():
+            return None
+
+    return "Skip unless GraphQL schemas might have changed"
+
+
+@functools.lru_cache(maxsize=None)
 def python_package_directories():
     # Consider any directory with a setup.py file to be a package
     packages = [Path(setup).parent for setup in glob.glob("**/setup.py", recursive=True)]
