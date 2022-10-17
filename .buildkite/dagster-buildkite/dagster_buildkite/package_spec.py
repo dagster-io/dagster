@@ -3,12 +3,18 @@ from distutils.core import run_setup  # pylint: disable=deprecated-module
 from pathlib import Path
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
 
-from setuptools.dist import Distribution
+import pkg_resources
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
 from .steps.tox import build_tox_step
-from .utils import BuildkiteLeafStep, GroupStep, changed_python_package_names, is_feature_branch
+from .utils import (
+    BuildkiteLeafStep,
+    GroupStep,
+    changed_python_package_names,
+    get_changed_files,
+    is_feature_branch,
+)
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -276,35 +282,45 @@ class PackageSpec(
         setup = Path(self.directory) / "setup.py"
         if setup.exists():
             return run_setup(Path(self.directory) / "setup.py")
-        else:
-            return Distribution()
 
     @property
     def requirements(self):
-        extras = [
-            requirement
-            for requirements in self.distribution.extras_require.values()
-            for requirement in requirements
-        ]
-        install = self.distribution.install_requires
-        return extras + install
+        # First try to infer requirements from the distribution
+        if self.distribution:
+            extras = [
+                requirement
+                for requirements in self.distribution.extras_require.values()
+                for requirement in requirements
+            ]
+            install = self.distribution.install_requires
+            return extras + install
+
+        # If we don't have a distribution (like many of our integration test suites)
+        # we can use a requirements.txt file to capture requirements
+        requirements_txt = Path(self.directory) / "requirements.txt"
+        if requirements_txt.exists():
+            parsed = pkg_resources.parse_requirements(requirements_txt.read_text())
+            return [requirement.name for requirement in parsed]
+
+        # Otherwise return nothing
+        return []
 
     @property
     def skip_reason(self) -> Optional[str]:
         if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
             return None
 
-        if self.name in changed_python_package_names().with_implementation_changes:
-            return None
-
-        if self.name in changed_python_package_names().with_test_changes:
-            return None
+        for change in get_changed_files():
+            if (
+                # Our change is in this package's directory
+                (change in Path(self.directory).rglob("*"))
+                # The file can alter behavior - exclude things like README changes
+                and (change.suffix in [".py", ".cfg", ".toml"])
+            ):
+                return None
 
         # TODO: Walk the dependency tree
-        if any(
-            requirement in changed_python_package_names().with_implementation_changes
-            for requirement in self.requirements
-        ):
+        if any(requirement in changed_python_package_names() for requirement in self.requirements):
             return None
 
         return "Package unaffected by these changes"

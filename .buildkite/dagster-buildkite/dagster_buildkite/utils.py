@@ -3,7 +3,6 @@ import glob
 import logging
 import os
 import subprocess
-from collections import namedtuple
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -249,8 +248,7 @@ def python_package_directories():
 
 @functools.lru_cache(maxsize=None)
 def changed_python_package_names():
-    with_implementation_changes = []
-    with_test_changes = []
+    changes = []
 
     for directory in python_package_directories():
         for change in get_changed_files():
@@ -264,11 +262,7 @@ def changed_python_package_names():
                 # The file is part of a test suite. We treat these two cases
                 # differently because we don't need to run tests in dependent packages
                 # if only a test in an upstream package changed.
-                if any(part.endswith("tests") for part in change.parts):
-                    with_test_changes.append(directory.name)
-                else:
-                    with_implementation_changes.append(directory.name)
+                if not any(part.endswith("tests") for part in change.parts):
+                    changes.append(directory.name)
 
-    return namedtuple("ChangedPackages", ["with_implementation_changes", "with_test_changes"])(
-        with_implementation_changes, with_test_changes
-    )
+    return changes
