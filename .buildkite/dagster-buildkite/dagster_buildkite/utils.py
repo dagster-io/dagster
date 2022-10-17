@@ -225,6 +225,14 @@ def skip_if_no_helm_changes():
 
 
 @functools.lru_cache(maxsize=None)
+def skip_coverage_if_feature_branch():
+    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        return None
+
+    return "Skip coverage uploads until we're finished with our Buildkite refactor"
+
+
+@functools.lru_cache(maxsize=None)
 def python_package_directories():
     # Consider any directory with a setup.py file to be a package
     return [Path(setup).parent for setup in glob.glob("**/setup.py", recursive=True)]

@@ -2,6 +2,7 @@ from dagster_buildkite.step_builder import CommandStepBuilder
 from dagster_buildkite.utils import CommandStep
 
 from ..images.versions import BUILDKITE_COVERAGE_IMAGE_VERSION
+from ..utils import skip_coverage_if_feature_branch
 
 
 def build_coverage_step() -> CommandStep:
@@ -31,6 +32,6 @@ def build_coverage_step() -> CommandStep:
                 "CI_PULL_REQUEST",
             ],
         )
-        .with_skip("Skip coverage uploads until we're finished without Buildkite refactor")
+        .with_skip(skip_coverage_if_feature_branch)
         .build()
     )
