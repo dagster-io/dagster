@@ -1,7 +1,7 @@
-import {JoinSlackButton} from 'components/JoinSlackButton';
 import * as React from 'react';
 import {useState} from 'react';
 import cx from 'classnames';
+import {JoinSlackButton} from 'components/JoinSlackButton';
 
 import {SignInButton} from './SignInButton';
 
@@ -23,7 +23,6 @@ const Header = ({openMobileDocsMenu}) => {
       const dy = window.scrollY - lastScrollY.current;
 
       const alpha = Math.min(Math.max(0, (window.scrollY - 30) / 70), .98);
-      //const alpha = .97;
       headerBgRef.current.style.opacity = `${alpha}`;
 
       const targetTop = dy < 0 || window.scrollY < 30 ? 0 : COLLAPSING_PX;

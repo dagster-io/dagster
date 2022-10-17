@@ -6,14 +6,13 @@
 // and update all existing usage of it
 
 import path from 'path';
-
+import cx from 'classnames'
 import {Tab, Transition} from '@headlessui/react';
 import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
 import React, {useContext, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
-import cx from "classnames"
 
 import {useVersion} from '../../util/useVersion';
 import Icons from '../Icons';

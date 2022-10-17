@@ -1,11 +1,7 @@
 import '/styles/fonts.css';
-
 import '/styles/globals.css';
 import '/styles/prism.css';
-
-
 import {useVersion} from 'util/useVersion';
-
 import {PersistentTabProvider} from 'components/PersistentTabContext';
 import {DefaultSeo} from 'next-seo';
 import {AppProps} from 'next/app';
