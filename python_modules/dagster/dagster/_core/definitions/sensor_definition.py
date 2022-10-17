@@ -1037,6 +1037,111 @@ class MultiAssetSensorCursorAdvances:
         )
 
 
+@experimental
+class AssetSLASensorEvaluationContext(SensorEvaluationContext):
+    """The context object available as the argument to the evaluation function of a
+    :py:class:`dagster.AssetSLASensorDefinition`.
+
+    Users should not instantiate this object directly. To construct a
+    `AssetSLASensorEvaluationContext` for testing purposes, use :py:func:`dagster.
+    build_asset_sla_sensor_context`.
+
+    Attributes:
+        asset_keys (Sequence[AssetKey]): The asset keys that the sensor is configured to monitor.
+        repository_def (RepositoryDefinition): The repository that the sensor belongs to.
+        instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
+        cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
+            the cursor attribute of SkipReason and RunRequest.
+        instance (Optional[DagsterInstance]): The deserialized instance can also be passed in
+            directly (primarily useful in testing contexts).
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import asset_sla_sensor, AssetSLASensorEvaluationContext
+
+        @asset_sla_sensor(asset_keys=[AssetKey("asset_1), AssetKey("asset_2)])
+        def the_sensor(context: AssetSLASensorEvaluationContext):
+            ...
+
+    """
+
+    def __init__(
+        self,
+        instance_ref: Optional[InstanceRef],
+        cursor: Optional[str],
+        repository_name: Optional[str],
+        repository_def: "RepositoryDefinition",
+        asset_selection: Optional[AssetSelection],
+        asset_keys: Optional[Sequence[AssetKey]],
+        instance: Optional[DagsterInstance] = None,
+    ):
+        from dagster._core.storage.event_log.base import EventLogRecord
+        from dagster._core.selector.subset_selector import generate_asset_dep_graph
+
+        self._repository_def = repository_def
+        if asset_selection is not None:
+            repo_assets = self._repository_def._assets_defs_by_key.values()
+            repo_source_assets = self._repository_def.source_assets_by_key.values()
+            self._asset_keys = list(asset_selection.resolve([*repo_assets, *repo_source_assets]))
+        elif asset_keys is not None:
+            self._asset_keys = list(asset_keys)
+        else:
+            raise DagsterInvalidDefinitionError(
+                "AssetSLASensorEvaluationContext requires one of asset_selection or asset_keys"
+            )
+
+        self._assets_by_key: Dict[AssetKey, Optional[AssetsDefinition]] = {}
+        for asset_key in self._asset_keys:
+            assets_def = (
+                self._repository_def._assets_defs_by_key.get(  # pylint:disable=protected-access
+                    asset_key
+                )
+            )
+            self._assets_by_key[asset_key] = assets_def
+
+        self._cursor_has_been_updated = False
+        self._previous_statuses_by_key = json.loads(cursor) if cursor else {}
+        self._upstream_mapping = generate_asset_dep_graph(repo_assets, repo_source_assets)[
+            "upstream"
+        ]
+
+        super().__init__(
+            instance_ref=instance_ref,
+            last_completion_time=last_completion_time,
+            last_run_key=last_run_key,
+            cursor=cursor,
+            repository_name=repository_name,
+            instance=instance,
+        )
+
+    def current_sla_statuses_by_key(self) -> Mapping[AssetKey, bool]:
+        from dagster._core.execution.calculate_data_time import get_latest_root_data_for_key
+
+        statuses = {}
+        for asset_key, assets_def in self._assets_by_key.items():
+            sla = assets_def.slas_by_key.get(asset_key)
+            if sla is not None:
+                root_data_timestamps = get_latest_root_data_for_key(
+                    instance=self.instance,
+                    asset_key=asset_key,
+                    upstream_asset_keys=self._upstream_mapping,
+                )
+                statuses[asset_key] = sla.is_passing(root_data_timestamps)
+
+        # update cursor with new information
+        self._cursor = json.dumps(current_sla_statuses_by_key)
+        return statuses
+
+    def changed_sla_statuses_by_key(self) -> Mapping[AssetKey, bool]:
+        return {
+            key: status
+            for key, status in self.current_sla_statuses_by_key().items()
+            if self._previous_statuses_by_key.get(key) != status
+        }
+
+
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
 SensorExecutionContext = SensorEvaluationContext
 
@@ -1579,6 +1684,11 @@ MultiAssetMaterializationFunction = Callable[
     AssetMaterializationFunctionReturn,
 ]
 
+AssetSLAMaterializationFunction = Callable[
+    ["AssetSLASensorEvaluationContext"],
+    AssetMaterializationFunctionReturn,
+]
+
 
 class AssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a given
@@ -1813,6 +1923,151 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     kwargs[context_param_name],
                     context_param_name,
                     MultiAssetSensorEvaluationContext,
+                )
+
+            return self._raw_fn(context)
+
+        else:
+            if len(args) + len(kwargs) > 0:
+                raise DagsterInvalidInvocationError(
+                    "Sensor decorated function has no arguments, but arguments were provided to "
+                    "invocation."
+                )
+
+            return self._raw_fn()  # type: ignore [TypeGuard limitation]
+
+    @public  # type: ignore
+    @property
+    def asset_selection(self) -> Optional[AssetSelection]:
+        return self._asset_selection
+
+    @public  # type: ignore
+    @property
+    def asset_keys(self) -> Optional[Sequence[AssetKey]]:
+        return self._asset_keys
+
+
+@experimental
+class AssetSLASensorDefinition(SensorDefinition):
+    """Define an asset sensor that takes some action based on the SLA status of selected assets.
+
+    Users should not instantiate this object directly. To construct a
+    `AssetSLASensor`, use :py:func:`dagster.
+    asset_sla_sensor`.
+
+    Args:
+        name (str): The name of the sensor to create.
+        asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
+        asset_materialization_fn (Callable[[AssetSLASensorEvaluationContext], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
+            evaluation function for the sensor, which is run at an interval to determine whether a
+            run should be launched or not. Takes a :py:class:`~dagster.AssetSLASensorEvaluationContext`.
+
+            This function must return a generator, which must yield either a single SkipReason
+            or one or more RunRequest objects.
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+        job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
+            object to target with this sensor.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
+            (experimental) A list of jobs to be executed when the sensor fires.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        asset_keys: Optional[Sequence[AssetKey]],
+        asset_selection: Optional[AssetSelection],
+        job_name: Optional[str],
+        asset_materialization_fn: Callable[
+            ["AssetSLASensorEvaluationContext"],
+            RawSensorEvaluationFunctionReturn,
+        ],
+        minimum_interval_seconds: Optional[int] = None,
+        description: Optional[str] = None,
+        job: Optional[ExecutableDefinition] = None,
+        jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    ):
+
+        check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
+        self._asset_selection: Optional[AssetSelection] = None
+        self._asset_keys: Optional[List[AssetKey]] = None
+        if asset_selection:
+            self._asset_selection = check.inst_param(
+                asset_selection, "asset_selection", AssetSelection
+            )
+        else:  # asset keys provided
+            asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
+            self._asset_keys = asset_keys
+
+        def _wrap_asset_fn(materialization_fn):
+            def _fn(context):
+                result = materialization_fn(context)
+                if result is None:
+                    return
+
+                # because the materialization_fn can yield results (see _wrapped_fn in multi_asset_sensor decorator),
+                # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) to be True.
+                # So keep track to see if we actually return any values and should update the cursor
+                runs_yielded = False
+                if inspect.isgenerator(result) or isinstance(result, list):
+                    for item in result:
+                        runs_yielded = True
+                        yield item
+                elif isinstance(result, RunRequest):
+                    runs_yielded = True
+                    yield result
+                elif isinstance(result, SkipReason):
+                    # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
+                    yield result
+
+            return _fn
+
+        super().__init__(
+            name=check_valid_name(name),
+            job_name=job_name,
+            evaluation_fn=_wrap_asset_fn(
+                check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
+            ),
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+            default_status=default_status,
+        )
+
+    def __call__(self, *args, **kwargs):
+
+        if is_context_provided(self._raw_fn):
+            if len(args) + len(kwargs) == 0:
+                raise DagsterInvalidInvocationError(
+                    "Sensor evaluation function expected context argument, but no context argument "
+                    "was provided when invoking."
+                )
+            if len(args) + len(kwargs) > 1:
+                raise DagsterInvalidInvocationError(
+                    "Sensor invocation received multiple arguments. Only a first "
+                    "positional context parameter should be provided when invoking."
+                )
+
+            context_param_name = get_function_params(self._raw_fn)[0].name
+
+            if args:
+                context = check.inst_param(
+                    args[0], context_param_name, AssetSLASensorEvaluationContext
+                )
+            else:
+                if context_param_name not in kwargs:
+                    raise DagsterInvalidInvocationError(
+                        f"Sensor invocation expected argument '{context_param_name}'."
+                    )
+                context = check.inst_param(
+                    kwargs[context_param_name],
+                    context_param_name,
+                    AssetSLASensorEvaluationContext,
                 )
 
             return self._raw_fn(context)
