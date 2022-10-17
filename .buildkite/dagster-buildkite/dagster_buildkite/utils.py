@@ -238,7 +238,13 @@ def skip_coverage_if_feature_branch():
 @functools.lru_cache(maxsize=None)
 def python_package_directories():
     # Consider any directory with a setup.py file to be a package
-    return [Path(setup).parent for setup in glob.glob("**/setup.py", recursive=True)]
+    packages = [Path(setup).parent for setup in glob.glob("**/setup.py", recursive=True)]
+    # hidden files are ignored by glob.glob and we don't actually want to recurse
+    # all hidden files because there's so much random cruft. So just hardcode the
+    # one hidden package we know we need.
+    dagster_buildkite = Path(".buildkite/dagster-buildkite")
+    packages.append(dagster_buildkite)
+    return packages
 
 
 @functools.lru_cache(maxsize=None)

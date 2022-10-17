@@ -291,7 +291,7 @@ class PackageSpec(
 
     @property
     def skip_reason(self) -> Optional[str]:
-        if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
             return None
 
         if self.name in changed_python_package_names().with_implementation_changes:

@@ -1,6 +1,5 @@
 import os
 from glob import glob
-from pathlib import Path
 from typing import List, Optional
 
 from dagster_buildkite.defines import GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
@@ -13,9 +12,7 @@ from dagster_buildkite.steps.test_project import (
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
-    get_changed_files,
     network_buildkite_container,
-    safe_getenv,
 )
 
 
