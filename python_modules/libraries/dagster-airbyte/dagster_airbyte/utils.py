@@ -18,6 +18,13 @@ def generate_table_schema(stream_schema_props: Mapping[str, Any]) -> TableSchema
     )
 
 
+def is_basic_normalization_operation(operation_def: Dict[str, Any]) -> bool:
+    return (
+        operation_def.get("operatorType", operation_def.get("operator_type")) == "normalization"
+        and operation_def.get("normalization", {}).get("option") == "basic"
+    )
+
+
 def _materialization_for_stream(
     name: str,
     stream_schema_props: Dict[str, Any],

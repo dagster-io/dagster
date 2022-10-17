@@ -2,6 +2,7 @@ import hashlib
 import inspect
 import os
 import re
+from abc import abstractmethod
 from itertools import chain
 from typing import (
     Any,
@@ -14,13 +15,18 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     cast,
 )
 
 import yaml
 from dagster_airbyte.resources import AirbyteResource
 from dagster_airbyte.types import AirbyteTableMetadata
-from dagster_airbyte.utils import generate_materializations, generate_table_schema
+from dagster_airbyte.utils import (
+    generate_materializations,
+    generate_table_schema,
+    is_basic_normalization_operation,
+)
 
 from dagster import AssetKey, AssetOut, Output, ResourceDefinition
 from dagster import _check as check
@@ -32,7 +38,6 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.load_assets_from_modules import with_group
 from dagster._core.definitions.metadata import MetadataValue, TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.execution.context.init import build_init_resource_context
@@ -355,9 +360,7 @@ class AirbyteConnectionMetadata(
             name=contents["name"],
             stream_prefix=contents.get("prefix", ""),
             has_basic_normalization=any(
-                op.get("operatorConfiguration", {}).get("operatorType") == "normalization"
-                and op.get("operatorConfiguration", {}).get("normalization", {}).get("option")
-                == "basic"
+                is_basic_normalization_operation(op.get("operatorConfiguration", {}))
                 for op in operations.get("operations", [])
             ),
             stream_data=contents.get("syncCatalog", {}).get("streams", []),
@@ -374,9 +377,7 @@ class AirbyteConnectionMetadata(
             name=contents["resource_name"],
             stream_prefix=config_contents.get("prefix", ""),
             has_basic_normalization=any(
-                op.get("operator_configuration", {}).get("operator_type") == "normalization"
-                and op.get("operator_configuration", {}).get("normalization", {}).get("option")
-                == "basic"
+                is_basic_normalization_operation(op.get("operator_configuration", {}))
                 for op in config_contents.get("operations", [])
             ),
             stream_data=config_contents.get("sync_catalog", {}).get("streams", []),
@@ -444,29 +445,21 @@ def _get_schema_by_table_name(
     return dict(schema_by_normalization_table_name + schema_by_base_table_name)
 
 
-class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
+class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
-        airbyte_resource_def: ResourceDefinition,
-        workspace_id: Optional[str],
         key_prefix: List[str],
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
     ):
-        self._airbyte_resource_def = airbyte_resource_def
-        self._airbyte_instance: AirbyteResource = airbyte_resource_def(
-            build_init_resource_context()
-        )
 
-        self._workspace_id = workspace_id
         self._key_prefix = key_prefix
         self._create_assets_for_normalization_tables = create_assets_for_normalization_tables
         self._connection_to_group_fn = connection_to_group_fn
         self._connection_filter = connection_filter
 
         contents = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
-        contents.update(str(workspace_id).encode("utf-8"))
         contents.update(",".join(key_prefix).encode("utf-8"))
         contents.update(str(create_assets_for_normalization_tables).encode("utf-8"))
         if connection_filter:
@@ -474,48 +467,14 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
 
         super().__init__(unique_id=f"airbyte-{contents.hexdigest()}")
 
+    @abstractmethod
+    def _get_connections(self) -> List[Tuple[str, AirbyteConnectionMetadata]]:
+        pass
+
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
 
-        workspace_id = self._workspace_id
-        if not workspace_id:
-            workspaces = cast(
-                List[Dict[str, Any]],
-                check.not_none(
-                    self._airbyte_instance.make_request(endpoint="/workspaces/list", data={})
-                ).get("workspaces", []),
-            )
-
-            check.invariant(len(workspaces) <= 1, "Airbyte instance has more than one workspace")
-            check.invariant(len(workspaces) > 0, "Airbyte instance has no workspaces")
-
-            workspace_id = workspaces[0].get("workspaceId")
-
-        connections = cast(
-            List[Dict[str, Any]],
-            check.not_none(
-                self._airbyte_instance.make_request(
-                    endpoint="/connections/list", data={"workspaceId": workspace_id}
-                )
-            ).get("connections", []),
-        )
-
         asset_defn_data: List[AssetsDefinitionCacheableData] = []
-        for connection_json in connections:
-            connection_id = cast(str, connection_json.get("connectionId"))
-
-            operations_json = cast(
-                Dict[str, Any],
-                check.not_none(
-                    self._airbyte_instance.make_request(
-                        endpoint="/operations/list",
-                        data={"connectionId": connection_id},
-                    )
-                ),
-            )
-            connection = AirbyteConnectionMetadata.from_api_json(connection_json, operations_json)
-            # Filter out connections that don't match the filter function
-            if self._connection_filter and not self._connection_filter(connection):
-                continue
+        for (connection_id, connection) in self._get_connections():
 
             stream_table_metadata = connection.parse_stream_tables(
                 self._create_assets_for_normalization_tables
@@ -543,10 +502,150 @@ class AirbyteInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
-        return with_resources(
-            [_build_airbyte_assets_from_metadata(meta) for meta in data],
-            {"airbyte": self._airbyte_resource_def},
+        return [_build_airbyte_assets_from_metadata(meta) for meta in data]
+
+
+class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
+    def __init__(
+        self,
+        airbyte_resource_def: ResourceDefinition,
+        workspace_id: Optional[str],
+        key_prefix: List[str],
+        create_assets_for_normalization_tables: bool,
+        connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
+        connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
+    ):
+        super().__init__(
+            key_prefix=key_prefix,
+            create_assets_for_normalization_tables=create_assets_for_normalization_tables,
+            connection_to_group_fn=connection_to_group_fn,
+            connection_filter=connection_filter,
         )
+        self._workspace_id = workspace_id
+        self._airbyte_resource_def = airbyte_resource_def
+        self._airbyte_instance: AirbyteResource = airbyte_resource_def(
+            build_init_resource_context()
+        )
+
+    def _get_connections(self) -> List[Tuple[str, AirbyteConnectionMetadata]]:
+        workspace_id = self._workspace_id
+        if not workspace_id:
+            workspaces = cast(
+                List[Dict[str, Any]],
+                check.not_none(
+                    self._airbyte_instance.make_request(endpoint="/workspaces/list", data={})
+                ).get("workspaces", []),
+            )
+
+            check.invariant(len(workspaces) <= 1, "Airbyte instance has more than one workspace")
+            check.invariant(len(workspaces) > 0, "Airbyte instance has no workspaces")
+
+            workspace_id = workspaces[0].get("workspaceId")
+
+        connections = cast(
+            List[Dict[str, Any]],
+            check.not_none(
+                self._airbyte_instance.make_request(
+                    endpoint="/connections/list", data={"workspaceId": workspace_id}
+                )
+            ).get("connections", []),
+        )
+
+        output_connections: List[Tuple[str, AirbyteConnectionMetadata]] = []
+        for connection_json in connections:
+            connection_id = cast(str, connection_json.get("connectionId"))
+
+            operations_json = cast(
+                Dict[str, Any],
+                check.not_none(
+                    self._airbyte_instance.make_request(
+                        endpoint="/operations/list",
+                        data={"connectionId": connection_id},
+                    )
+                ),
+            )
+            connection = AirbyteConnectionMetadata.from_api_json(connection_json, operations_json)
+
+            # Filter out connections that don't match the filter function
+            if self._connection_filter and not self._connection_filter(connection):
+                continue
+
+            output_connections.append((connection_id, connection))
+        return output_connections
+
+    def build_definitions(
+        self, data: Sequence[AssetsDefinitionCacheableData]
+    ) -> Sequence[AssetsDefinition]:
+        return with_resources(
+            super().build_definitions(data), {"airbyte": self._airbyte_resource_def}
+        )
+
+
+class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
+    def __init__(
+        self,
+        project_dir: str,
+        workspace_id: Optional[str],
+        key_prefix: List[str],
+        create_assets_for_normalization_tables: bool,
+        connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
+        connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
+    ):
+        super().__init__(
+            key_prefix=key_prefix,
+            create_assets_for_normalization_tables=create_assets_for_normalization_tables,
+            connection_to_group_fn=connection_to_group_fn,
+            connection_filter=connection_filter,
+        )
+        self._workspace_id = workspace_id
+        self._project_dir = project_dir
+
+    def _get_connections(self) -> List[Tuple[str, AirbyteConnectionMetadata]]:
+        connections_dir = os.path.join(self._project_dir, "connections")
+
+        output_connections: List[Tuple[str, AirbyteConnectionMetadata]] = []
+        for connection_name in os.listdir(connections_dir):
+
+            connection_dir = os.path.join(connections_dir, connection_name)
+            with open(os.path.join(connection_dir, "configuration.yaml"), encoding="utf-8") as f:
+                connection = AirbyteConnectionMetadata.from_config(yaml.safe_load(f.read()))
+
+            # Filter out connections that don't match the filter function
+            if self._connection_filter and not self._connection_filter(connection):
+                continue
+
+            if self._workspace_id:
+                state_file = f"state_{self._workspace_id}.yaml"
+                check.invariant(
+                    state_file in os.listdir(connection_dir),
+                    f"Workspace state file {state_file} not found",
+                )
+            else:
+                state_files = [
+                    filename
+                    for filename in os.listdir(connection_dir)
+                    if filename.startswith("state_")
+                ]
+                check.invariant(
+                    len(state_files) > 0,
+                    "No state files found for connection {} in {}".format(
+                        connection_name, connection_dir
+                    ),
+                )
+                check.invariant(
+                    len(state_files) <= 1,
+                    "More than one state file found for connection {} in {}, specify a workspace_id to disambiguate".format(
+                        connection_name, connection_dir
+                    ),
+                )
+                state_file = state_files[0]
+
+            with open(os.path.join(connection_dir, cast(str, state_file)), encoding="utf-8") as f:
+                state = yaml.safe_load(f.read())
+                connection_id = state.get("resource_id")
+
+            output_connections.append((connection_id, connection))
+        return output_connections
 
 
 @experimental
@@ -634,7 +733,7 @@ def load_assets_from_airbyte_project(
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
     connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
-) -> List[AssetsDefinition]:
+) -> CacheableAssetsDefinition:
     """
     Loads an Airbyte project into a set of Dagster assets.
 
@@ -684,67 +783,11 @@ def load_assets_from_airbyte_project(
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
-    assets: List[AssetsDefinition] = []
-
-    connections_dir = os.path.join(project_dir, "connections")
-    for connection_name in os.listdir(connections_dir):
-
-        connection_dir = os.path.join(connections_dir, connection_name)
-        with open(os.path.join(connection_dir, "configuration.yaml"), encoding="utf-8") as f:
-            connection = AirbyteConnectionMetadata.from_config(yaml.safe_load(f.read()))
-
-        # Filter out connections that don't match the filter function
-        if connection_filter and not connection_filter(connection):
-            continue
-
-        if workspace_id:
-            state_file = f"state_{workspace_id}.yaml"
-            check.invariant(
-                state_file in os.listdir(connection_dir),
-                f"Workspace state file {state_file} not found",
-            )
-        else:
-            state_files = [
-                filename for filename in os.listdir(connection_dir) if filename.startswith("state_")
-            ]
-            check.invariant(
-                len(state_files) > 0,
-                "No state files found for connection {} in {}".format(
-                    connection_name, connection_dir
-                ),
-            )
-            check.invariant(
-                len(state_files) <= 1,
-                "More than one state file found for connection {} in {}, specify a workspace_id to disambiguate".format(
-                    connection_name, connection_dir
-                ),
-            )
-            state_file = state_files[0]
-
-        with open(os.path.join(connection_dir, cast(str, state_file)), encoding="utf-8") as f:
-            state = yaml.safe_load(f.read())
-            connection_id = state.get("resource_id")
-
-        stream_table_metadata = connection.parse_stream_tables(
-            create_assets_for_normalization_tables
-        )
-        schema_by_table_name = _get_schema_by_table_name(stream_table_metadata)
-
-        assets_for_connection = build_airbyte_assets(
-            connection_id=connection_id,
-            destination_tables=list(stream_table_metadata.keys()),
-            normalization_tables={
-                table: set(metadata.normalization_tables.keys())
-                for table, metadata in stream_table_metadata.items()
-            },
-            asset_key_prefix=key_prefix,
-            schema_by_table_name=schema_by_table_name,
-        )
-
-        if connection_to_group_fn:
-            assets_for_connection = list(
-                with_group(assets_for_connection, connection_to_group_fn(connection_name))
-            )
-        assets.extend(assets_for_connection)
-
-    return assets
+    return AirbyteYAMLCacheableAssetsDefintion(
+        project_dir,
+        workspace_id,
+        key_prefix,
+        create_assets_for_normalization_tables,
+        connection_to_group_fn,
+        connection_filter,
+    )
