@@ -9,6 +9,7 @@ try:
         AirbyteManagedElementReconciler,
         AirbyteSource,
         AirbyteSyncMode,
+        load_assets_from_connections,
     )
 
 except ImportError:

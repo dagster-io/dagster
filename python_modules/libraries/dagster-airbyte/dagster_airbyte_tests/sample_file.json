@@ -1,11 +1,13 @@
-[
-    {
-        "foo": "bar"
-    },
-    {
-        "foo": "baz"
-    },
-    {
-        "foo": "qux"
-    }
-]
+{
+    "my_data_stream": [
+        {
+            "foo": "bar"
+        },
+        {
+            "foo": "baz"
+        },
+        {
+            "foo": "qux"
+        }
+    ]
+}

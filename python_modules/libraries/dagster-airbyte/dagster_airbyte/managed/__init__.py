@@ -1,2 +1,2 @@
-from .reconciliation import AirbyteManagedElementReconciler
+from .reconciliation import AirbyteManagedElementReconciler, load_assets_from_connections
 from .types import AirbyteConnection, AirbyteDestination, AirbyteSource, AirbyteSyncMode
