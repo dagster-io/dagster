@@ -1,7 +1,9 @@
 import functools
+import glob
 import logging
 import os
 import subprocess
+from collections import namedtuple
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -223,3 +225,44 @@ def skip_if_no_helm_changes():
         return None
 
     return "No helm changes"
+
+
+@functools.lru_cache(maxsize=None)
+def skip_coverage_if_feature_branch():
+    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        return None
+
+    return "Skip coverage uploads until we're finished with our Buildkite refactor"
+
+
+@functools.lru_cache(maxsize=None)
+def python_package_directories():
+    # Consider any directory with a setup.py file to be a package
+    return [Path(setup).parent for setup in glob.glob("**/setup.py", recursive=True)]
+
+
+@functools.lru_cache(maxsize=None)
+def changed_python_package_names():
+    with_implementation_changes = []
+    with_test_changes = []
+
+    for directory in python_package_directories():
+        for change in get_changed_files():
+            if (
+                # Our change is in this package's directory
+                (change in directory.rglob("*"))
+                # The file can alter behavior - exclude things like README changes
+                and (change.suffix in [".py", ".cfg", ".toml"])
+            ):
+
+                # The file is part of a test suite. We treat these two cases
+                # differently because we don't need to run tests in dependent packages
+                # if only a test in an upstream package changed.
+                if any(part.endswith("tests") for part in change.parts):
+                    with_test_changes.append(directory.name)
+                else:
+                    with_implementation_changes.append(directory.name)
+
+    return namedtuple("ChangedPackages", ["with_implementation_changes", "with_test_changes"])(
+        with_implementation_changes, with_test_changes
+    )
