@@ -340,7 +340,7 @@ def build_asset_reconciliation_sensor(
         description (Optional[str]): A description for the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        run_tags (Optional[Dict[str, str]): Dictionary of tags to pass to the RunRequests launched by this sensor
+        run_tags (Optional[Mapping[str, str]): Dictionary of tags to pass to the RunRequests launched by this sensor
 
     Returns:
         A MultiAssetSensorDefinition that will monitor the parents of the provided assets to determine when
