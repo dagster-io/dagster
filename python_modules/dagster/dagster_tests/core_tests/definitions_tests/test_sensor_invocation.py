@@ -21,6 +21,7 @@ from dagster import (
     PartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
+    SkipReason,
     StaticPartitionsDefinition,
     asset,
     build_multi_asset_sensor_context,
@@ -1227,3 +1228,17 @@ def test_error_exec_in_process_to_build_multi_asset_sensor_context():
                 cursor_from_latest_materializations=True,
                 cursor="alskdjalsjk",
             )
+
+
+def test_error_not_thrown_for_skip_reason():
+    @multi_asset_sensor(asset_keys=[july_asset.key])
+    def test_unconsumed_events_sensor(context):
+        return SkipReason("I am skipping")
+
+    with instance_for_test() as instance:
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key],
+            repository_def=my_repo,
+            instance=instance,
+        )
+        list(test_unconsumed_events_sensor(ctx))
