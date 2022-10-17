@@ -112,6 +112,6 @@ def build_graphql_python_client_backcompat_steps() -> List[CommandStep]:
             "pip install -e python_modules/dagster[test] -e python_modules/dagster-graphql -e python_modules/automation",
             "dagster-graphql-client query check",
         )
-        with_skip(skip_graphql())
+        .with_skip(skip_graphql())
         .build()
     ]
