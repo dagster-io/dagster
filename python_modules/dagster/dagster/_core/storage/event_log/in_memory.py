@@ -1,7 +1,7 @@
 import logging
 import time
 from collections import OrderedDict, defaultdict
-from typing import Dict, Iterable, Mapping, Optional, Sequence, Set, cast
+from typing import Dict, Iterable, Mapping, Optional, Sequence, Set, cast, List, Tuple
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
@@ -236,6 +236,27 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                 and record.timestamp >= event_records_filter.before_timestamp
             ):
                 return False
+
+            if (
+                event_records_filter.storage_ids
+                and record.storage_id not in event_records_filter.storage_ids
+            ):
+                return False
+
+            if event_records_filter.tags:
+                if (
+                    not record.dagster_event.is_step_materialization
+                    or not record.dagster_event.step_materialization_data.materialization.tags
+                ):
+                    return False
+
+                for key, value in event_records_filter.tags.items():
+                    if (
+                        record.dagster_event.step_materialization_data.materialization.tags.get(key)
+                        != value
+                    ):
+                        return False
+
             return True
 
         for records in self._logs.values():
@@ -351,6 +372,29 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                     break
 
         return list(asset_run_ids)
+
+    def get_asset_event_tags(self) -> List[Tuple[str, Set[str]]]:
+        tags: Dict[str, Set] = defaultdict(set)
+        for records in self._logs.values():
+            for record in records:
+                if (
+                    record.is_dagster_event
+                    and record.dagster_event.asset_key
+                    and record.dagster_event.event_type_value
+                    == DagsterEventType.ASSET_MATERIALIZATION.value
+                    and self._wiped_asset_keys.get(record.dagster_event.asset_key, 0)
+                    < record.timestamp
+                    and record.dagster_event.step_materialization_data.materialization.tags
+                ):
+                    for (
+                        key,
+                        value,
+                    ) in (
+                        record.dagster_event.step_materialization_data.materialization.tags.items()
+                    ):
+                        tags[key].add(value)
+
+        return sorted(list([(k, v) for k, v in tags.items()]), key=lambda x: x[0])
 
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)

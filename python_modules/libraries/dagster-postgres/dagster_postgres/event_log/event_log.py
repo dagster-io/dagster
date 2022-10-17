@@ -11,6 +11,8 @@ from dagster._core.storage.event_log import (
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
+from dagster._core.storage.event_log.schema import AssetEventTagsTable
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.sql import (
@@ -140,7 +142,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventLogEntry)
         insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
         with self._connect() as conn:
-            # this could tell us the return id
             result = conn.execute(
                 insert_event_statement.returning(
                     SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id
@@ -162,9 +163,10 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             )
             and event.dagster_event.asset_key
         ):
-            self.store_asset_event(event, res[1])
+            self.store_asset_event(event)
+            self.store_asset_event_tags(event, res[1])
 
-    def store_asset_event(self, event: EventLogEntry, event_id: int):
+    def store_asset_event(self, event: EventLogEntry):
         check.inst_param(event, "event", EventLogEntry)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return

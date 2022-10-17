@@ -243,7 +243,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 or event.dagster_event.is_asset_observation
                 or event.dagster_event.is_asset_materialization_planned
             ):
-                self.store_asset_event(event, event_id)
+                self.store_asset_event(event)
+                self.store_asset_event_tags(event, event_id)
 
     def get_event_records(
         self,

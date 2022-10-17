@@ -423,6 +423,8 @@ class AssetMaterialization(
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
+        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
+            materialization. Not intended to be provided by user code.
     """
 
     def __new__(
@@ -491,8 +493,6 @@ class AssetMaterialization(
         # PartitionMetadataEntry (unstable API) case is unhandled
         return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
 
-    # probably create a static method to create with tags
-
 
 class MaterializationSerializer(DefaultNamedTupleSerializer):
     @classmethod
@@ -515,7 +515,6 @@ class Materialization(
         ],
     )
 ):
-    # Need to add tags field here for backwards compatibility?
     """Event indicating that an op has materialized a value.
 
     Solid compute functions may yield events of this type whenever they wish to indicate to the

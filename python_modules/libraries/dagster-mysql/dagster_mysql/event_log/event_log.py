@@ -8,6 +8,8 @@ from dagster._core.storage.event_log import (
     SqlEventLogStorageMetadata,
     SqlPollingEventWatcher,
 )
+from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.storage.event_log.schema import AssetEventTagsTable
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.sql import (
@@ -121,7 +123,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         MySQLEventLogStorage.wipe_storage(conn_string)
         return MySQLEventLogStorage(conn_string)
 
-    def store_asset_event(self, event, event_id: int):
+    def store_asset_event(self, event):
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
         # See SqlEventLogStorage.store_asset_event method for more details
 

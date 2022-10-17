@@ -311,15 +311,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
             List[Tuple[str, Set[str]]]
         """
 
-    # @abstractmethod
-    # def add_asset_event_tags(self, event_id: int, new_tags: Mapping[str, str]):
-    #     """Add additional tags for an asset event.
-
-    #     Args:
-    #         event_id (str)
-    #         new_tags (Mapping[str, str])
-    #     """
-
     @abstractmethod
     def get_asset_run_ids(self, asset_key: AssetKey) -> Iterable[str]:
         pass

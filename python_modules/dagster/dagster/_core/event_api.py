@@ -7,6 +7,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
+from dagster._core.errors import DagsterInvalidInvocationError
 
 
 class RunShardedEventsCursor(NamedTuple):
@@ -84,6 +85,12 @@ class EventRecordsFilter(
     ):
         check.opt_list_param(asset_partitions, "asset_partitions", of_type=str)
         check.inst_param(event_type, "event_type", DagsterEventType)
+
+        tags = check.opt_mapping_param(tags, "tags", key_type=str)
+        if tags and event_type is not DagsterEventType.ASSET_MATERIALIZATION:
+            raise DagsterInvalidInvocationError(
+                "Can only filter by tags for asset materialization events"
+            )
 
         # type-ignores work around mypy type inference bug
         return super(EventRecordsFilter, cls).__new__(

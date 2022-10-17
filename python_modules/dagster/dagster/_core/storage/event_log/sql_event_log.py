@@ -116,9 +116,8 @@ class SqlEventLogStorage(EventLogStorage):
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
             return "last_materialization_timestamp" in column_names
 
-    def store_asset_event(self, event: EventLogEntry, event_id: int):
+    def store_asset_event(self, event: EventLogEntry):
         check.inst_param(event, "event", EventLogEntry)
-        check.int_param(event_id, "event_id")
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
@@ -146,29 +145,11 @@ class SqlEventLogStorage(EventLogStorage):
             )
         )
 
-        # insert_tags_statement = None
-        # if event.dagster_event.is_step_materialization:
-        #     tags = event.dagster_event.step_materialization_data.materialization.tags
-        #     if tags:
-        #         insert_tags_statement = AssetEventTagsTable.insert().values(
-        #         conn.execute(
-        #             AssetEventTagsTable.insert(),
-        #             [dict(event_id=event_id, key=k, value=v) for k, v in tags.items()],
-        #         )
-
         with self.index_connection() as conn:
             try:
                 conn.execute(insert_statement)
             except db.exc.IntegrityError:
                 conn.execute(update_statement)
-
-            if event.dagster_event.is_step_materialization:
-                tags = event.dagster_event.step_materialization_data.materialization.tags
-                if tags:
-                    conn.execute(
-                        AssetEventTagsTable.insert(),
-                        [dict(event_id=event_id, key=k, value=v) for k, v in tags.items()],
-                    )
 
     def _get_asset_entry_values(self, event, has_asset_key_index_cols):
         # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
@@ -226,6 +207,20 @@ class SqlEventLogStorage(EventLogStorage):
 
         return entry_values
 
+    def store_asset_event_tags(self, event: EventLogEntry, event_id: int):
+        check.inst_param(event, "event", EventLogEntry)
+        check.int_param(event_id, "event_id")
+        if event.dagster_event.is_step_materialization and isinstance(
+            event.dagster_event.step_materialization_data.materialization, AssetMaterialization
+        ):
+            tags = event.dagster_event.step_materialization_data.materialization.tags
+            if tags:
+                with self.index_connection() as conn:
+                    conn.execute(
+                        AssetEventTagsTable.insert(),
+                        [dict(event_id=event_id, key=k, value=v) for k, v in tags.items()],
+                    )
+
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
 
@@ -251,7 +246,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
             and event.dagster_event.asset_key
         ):
-            self.store_asset_event(event, event_id)
+            self.store_asset_event(event)
+            self.store_asset_event_tags(event, event_id)
 
     def get_records_for_run(
         self,
@@ -1183,17 +1179,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         return query
 
-    def get_materialization_record_by_id(self, event_id: int) -> Optional[EventLogRecord]:
-        records = self.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION, storage_ids=[event_id]
-            )
-        )
-        if not records:
-            return None
-        else:
-            return list(records)[0]
-
     def get_asset_event_tags(self) -> List[Tuple[str, Set[str]]]:
         tags = defaultdict(set)
         query = db.select([AssetEventTagsTable.c.key, AssetEventTagsTable.c.value]).distinct(
@@ -1207,32 +1192,6 @@ class SqlEventLogStorage(EventLogStorage):
             tags[key].add(value)
 
         return sorted(list([(k, v) for k, v in tags.items()]), key=lambda x: x[0])
-
-    # def add_asset_event_tags(self, event_id: int, new_tags: Mapping[str, str]):
-    #     """Add additional tags for an asset event.
-
-    #     Args:
-    #         event_id (str)
-    #         new_tags (Mapping[str, str])
-    #     """
-    #     check.int_param(event_id, "event_id")
-    #     check.dict_param(new_tags, "new_tags", key_type=str, value_type=str)
-
-    #     materialization = self.get_materialization_record_by_id(event_id)
-    #     if not materialization:
-    #         raise DagsterInvalidInvocationError(f"No materialization event found for id {event_id}")
-
-    #     materialization.with_tags(new_tags)
-    #     updated_materialization = EventLogRecord(materialization.storage_id, )
-
-    #     with self.index_connection() as conn:
-    #         conn.execute(
-    #             SqlEventLogStorageTable.update()
-    #             .where(SqlEventLogStorageTable.c.id == event_id)
-    #             .values(
-    #                 event=
-    #             )
-    #         )
 
     def get_asset_run_ids(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
