@@ -101,18 +101,18 @@ const useActiveId = (itemIds) => {
   return activeId;
 };
 
-const MARGINS = ['ml-0', 'ml-2', 'ml-4', 'ml-8'];
+const MARGINS = ['ml-0', 'ml-1', 'ml-2', 'ml-3'];
 
 const renderItems = (items, activeId, depth, key) => {
   return (
     <ol key={key}>
       {items.map((item, idx) => {
         return item.url ? (
-          <li key={`${key}-${idx}`} className={cx(MARGINS[depth], 'mt-3 list-inside')}>
+          <li key={`${key}-${idx}`} className={cx(MARGINS[depth], 'mt-2 list-inside ')}>
             <a
               href={item.url}
-              className={cx('font-semibold text-sm text-gray-500 hover:text-gray-800 transition', {
-                'text-gray-800': activeId === item.url.slice(1),
+              className={cx('font-normal text-sm text-gray-500 hover:text-gray-800 transition leading-2', {
+                'text-blurple': activeId === item.url.slice(1),
                 'text-gray-500 hover:text-gray-800 transition': activeId !== item.url.slice(1),
               })}
             >

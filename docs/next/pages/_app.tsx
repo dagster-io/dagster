@@ -1,5 +1,8 @@
-import '../styles/globals.css';
-import '../styles/prism.css';
+import '/styles/fonts.css';
+
+import '/styles/globals.css';
+import '/styles/prism.css';
+
 
 import {useVersion} from 'util/useVersion';
 

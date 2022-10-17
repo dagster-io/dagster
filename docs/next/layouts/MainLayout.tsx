@@ -3,6 +3,7 @@ import * as React from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 
+
 const Layout: React.FC = ({children}) => {
   const [isMobileDocsMenuOpen, setMobileDocsMenuOpen] = React.useState<boolean>(false);
   const openMobileDocsMenu = () => {
@@ -25,8 +26,8 @@ const Layout: React.FC = ({children}) => {
         }}
       >
         <Header openMobileDocsMenu={openMobileDocsMenu} />
-        <div className="w-screen mx-auto px-4 sm:px-6 lg:px-8" style={{paddingTop: '64px'}}>
-          <div className="mt-10 flex justify-center">
+        <div className="w-screen mx-auto px-4 sm:px-6 lg:px-8" style={{paddingTop: '48px'}}>
+          <div className="mt-8 flex justify-center">
             <Sidebar
               isMobileDocsMenuOpen={isMobileDocsMenuOpen}
               closeMobileDocsMenu={closeMobileDocsMenu}

@@ -1,13 +1,15 @@
 import {JoinSlackButton} from 'components/JoinSlackButton';
 import * as React from 'react';
 import {useState} from 'react';
+import cx from 'classnames';
 
 import {SignInButton} from './SignInButton';
 
-const COLLAPSING_PX = -16;
+const COLLAPSING_PX = 0; //-80 if promo banner is hidden
 
 const Header = ({openMobileDocsMenu}) => {
   const [isMobileHeaderOpen, setIsMobileHeaderOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const lastScrollY = React.useRef(0);
   const headerBgRef = React.createRef<HTMLDivElement>();
@@ -20,7 +22,8 @@ const Header = ({openMobileDocsMenu}) => {
       }
       const dy = window.scrollY - lastScrollY.current;
 
-      const alpha = Math.min(Math.max(0, (window.scrollY - 30) / 70), 1);
+      const alpha = Math.min(Math.max(0, (window.scrollY - 30) / 70), .98);
+      //const alpha = .97;
       headerBgRef.current.style.opacity = `${alpha}`;
 
       const targetTop = dy < 0 || window.scrollY < 30 ? 0 : COLLAPSING_PX;
@@ -29,7 +32,14 @@ const Header = ({openMobileDocsMenu}) => {
       if (targetTop !== currentTop) {
         headerRef.current.style.top = `${Math.min(0, Math.max(COLLAPSING_PX, currentTop - dy))}px`;
       }
+      
       lastScrollY.current = window.scrollY;
+
+      if (window.scrollY > 0) {
+        setIsCollapsed(true);
+        } else {
+          setIsCollapsed(false);
+        }
     };
 
     document.addEventListener('scroll', handler);
@@ -40,7 +50,12 @@ const Header = ({openMobileDocsMenu}) => {
   }, [headerRef, headerBgRef]);
 
   return (
-    <div className="fixed top-0 pt-6 pb-2 w-full z-50 px-2 lg:px-10 flex flex-col" ref={headerRef}>
+    <div ref={headerRef}
+      className={cx('fixed top-0  w-full z-50 px-2 lg:px-10 flex flex-col tracking-wide transition-all', {
+        'p-0 transition': isCollapsed,
+        'p-2 transition': !isCollapsed,
+      }
+    )}>
       <div className="absolute z-0 inset-0 bg-white shadow-sm" ref={headerBgRef} />
       <div className="hidden md:block" />
       <nav className="z-10 flex justify-between items-center text-gable-green px-4">
@@ -57,24 +72,31 @@ const Header = ({openMobileDocsMenu}) => {
         </div>
         <a
           href="https://dagster.io"
-          className="flex-shrink-0 flex items-center z-50 w-36 lg:w-3/12"
+          className="flex-shrink-0 flex items-center z-50 w-9/12 justify-center lg:justify-start lg:w-3/12"
         >
           <img
-            className="block py-3 sm:py-0 h-14 sm:h-8"
+            className={cx('block h-14 py-3 sm:py-0 transition-all', {
+              'sm:h-6': isCollapsed,
+              'sm:h-8': !isCollapsed,
+            })}
             src="/assets/logos/dagster_logo_primary.svg"
             alt="Dagster logo"
           />
         </a>
-        <div className="hidden lg:flex my-1 text-lg text-gable-green gap-0 w-10/12 md:w-6/12 justify-center">
+        <div
+        className={cx('hidden lg:flex my-1  text-gable-green gap-0 w-10/12 md:w-6/12 justify-center transition-all', {
+          'text-base': isCollapsed,
+          'text-lg': !isCollapsed,
+        })}>
           <a
             href="https://dagster.io/platform"
-            className="whitespace-nowrap py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
+            className="whitespace-nowrap py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Platform
           </a>
           <a
             href="https://dagster.io/cloud"
-            className="whitespace-nowrap py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
+            className="whitespace-nowrap py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Cloud{' '}
             <div
@@ -86,30 +108,34 @@ const Header = ({openMobileDocsMenu}) => {
           </a>
           <a
             href="https://dagster.io/pricing"
-            className="py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
+            className="py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Pricing
           </a>
           <a
             href="https://dagster.io/blog"
-            className="py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
+            className="py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Blog
           </a>
           <a
             href="https://dagster.io/community"
-            className="hidden xl:block py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
+            className="hidden xl:block py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
           >
             Community
           </a>
           <a
             href="/"
-            className="py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent bg-lavender bg-opacity-100"
+            className="py-2 rounded-xl px-4 hover:text-gable-green-darker hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent bg-lavender bg-opacity-100"
           >
             Docs
           </a>
         </div>
-        <div className="hidden lg:flex my-1 text-lg text-gable-green gap-1 w-36 lg:w-3/12 justify-end">
+        <div className={cx('hidden lg:flex my-1  text-gable-green gap-1 w-36 lg:w-3/12 justify-end transition-all', {
+          'text-base': isCollapsed,
+          'text-lg': !isCollapsed,
+        })}
+        >
           <SignInButton />
 
           <JoinSlackButton icon={true} />
@@ -169,7 +195,7 @@ const Header = ({openMobileDocsMenu}) => {
         <div
           className={`${
             isMobileHeaderOpen ? 'block' : 'hidden'
-          } lg:hidden pb-2 absolute bg-white w-full top-0 left-0 right-0 pt-36 px-6 shadow-xl`}
+          } lg:hidden pb-2 absolute bg-white w-full top-0 left-0 right-0 pt-20 px-6 shadow-xl`}
         >
           <div className="pt-2 pb-3">
             <a
