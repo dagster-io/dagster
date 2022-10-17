@@ -1071,19 +1071,20 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
         self,
         instance_ref: Optional[InstanceRef],
         cursor: Optional[str],
-        repository_name: Optional[str],
         repository_def: "RepositoryDefinition",
         asset_selection: Optional[AssetSelection],
         asset_keys: Optional[Sequence[AssetKey]],
         instance: Optional[DagsterInstance] = None,
     ):
-        from dagster._core.storage.event_log.base import EventLogRecord
         from dagster._core.selector.subset_selector import generate_asset_dep_graph
 
         self._repository_def = repository_def
+        repo_assets = self._repository_def._assets_defs_by_key.values()
+        repo_source_assets = self._repository_def.source_assets_by_key.values()
+        self._upstream_mapping = generate_asset_dep_graph(repo_assets, repo_source_assets)[
+            "upstream"
+        ]
         if asset_selection is not None:
-            repo_assets = self._repository_def._assets_defs_by_key.values()
-            repo_source_assets = self._repository_def.source_assets_by_key.values()
             self._asset_keys = list(asset_selection.resolve([*repo_assets, *repo_source_assets]))
         elif asset_keys is not None:
             self._asset_keys = list(asset_keys)
@@ -1101,40 +1102,53 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
             )
             self._assets_by_key[asset_key] = assets_def
 
-        self._cursor_has_been_updated = False
-        self._previous_statuses_by_key = json.loads(cursor) if cursor else {}
-        self._upstream_mapping = generate_asset_dep_graph(repo_assets, repo_source_assets)[
-            "upstream"
-        ]
+        self._previous_statuses_by_key = (
+            {AssetKey.from_user_string(k): v for k, v in json.loads(cursor).items()}
+            if cursor
+            else {}
+        )
 
         super().__init__(
             instance_ref=instance_ref,
-            last_completion_time=last_completion_time,
-            last_run_key=last_run_key,
+            last_completion_time=None,
+            last_run_key=None,
             cursor=cursor,
-            repository_name=repository_name,
+            repository_name=repository_def.name,
             instance=instance,
         )
 
     def current_sla_statuses_by_key(self) -> Mapping[AssetKey, bool]:
+        """Returns a mapping from each monitored AssetKey with an SLA defined to a boolean status."""
         from dagster._core.execution.calculate_data_time import get_latest_root_data_for_key
 
         statuses = {}
         for asset_key, assets_def in self._assets_by_key.items():
+            if assets_def is None:
+                continue
             sla = assets_def.slas_by_key.get(asset_key)
-            if sla is not None:
-                root_data_timestamps = get_latest_root_data_for_key(
-                    instance=self.instance,
-                    asset_key=asset_key,
-                    upstream_asset_keys=self._upstream_mapping,
-                )
-                statuses[asset_key] = sla.is_passing(root_data_timestamps)
+            if sla is None:
+                continue
+            root_data_ids_and_timestamps = get_latest_root_data_for_key(
+                instance=self.instance,
+                asset_key=asset_key,
+                upstream_asset_keys=self._upstream_mapping,
+            )
+            statuses[asset_key] = sla.is_passing(
+                {
+                    AssetKey.from_user_string(k): v[1]
+                    for k, v in root_data_ids_and_timestamps.items()
+                }
+            )
 
         # update cursor with new information
-        self._cursor = json.dumps(current_sla_statuses_by_key)
+        self.update_cursor(json.dumps({k.to_user_string(): v for k, v in statuses.items()}))
         return statuses
 
     def changed_sla_statuses_by_key(self) -> Mapping[AssetKey, bool]:
+        """Returns a mapping from each monitored AssetKey with an SLA defined to a boolean status.
+        This mapping will contain keys for which the SLA status has changed since the last tick on
+        which statuses were evaluated.
+        """
         return {
             key: status
             for key, status in self.current_sla_statuses_by_key().items()
@@ -1671,6 +1685,73 @@ def build_multi_asset_sensor_context(
     )
 
 
+@experimental
+def build_asset_sla_sensor_context(
+    *,
+    repository_def: "RepositoryDefinition",
+    asset_keys: Optional[Sequence[AssetKey]] = None,
+    asset_selection: Optional[AssetSelection] = None,
+    instance: Optional[DagsterInstance] = None,
+    cursor: Optional[str] = None,
+) -> AssetSLASensorEvaluationContext:
+    """Builds asset sla sensor execution context for testing purposes using the provided parameters.
+
+    This function can be used to provide a context to the invocation of a multi asset sensor definition. If
+    provided, the dagster instance must be persistent; DagsterInstance.ephemeral() will result in an
+    error.
+
+    Args:
+        repository_def (RepositoryDefinition): The repository definition that the sensor belongs to.
+        asset_keys (Optional[Sequence[AssetKey]]): The list of asset keys monitored by the sensor.
+            If not provided, asset_selection argument must be provided.
+        asset_selection (Optional[AssetSelection]): The asset selection monitored by the sensor.
+            If not provided, asset_keys argument must be provided.
+        instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
+        cursor (Optional[str]): A string cursor to provide to the evaluation of the sensor. Must be
+            a dictionary of asset key strings to ints that has been converted to a json string
+
+    Examples:
+
+        .. code-block:: python
+
+            @repository
+            def my_repo():
+                ...
+
+            with instance_for_test() as instance:
+                context = build_asset_sla_sensor_context(
+                    repository_def=my_repo,
+                    asset_keys=[AssetKey("asset_1"), AssetKey("asset_2")],
+                    instance=instance,
+                )
+                my_asset_sla_sensor(context)
+
+    """
+    from dagster._core.definitions import RepositoryDefinition
+
+    check.opt_inst_param(instance, "instance", DagsterInstance)
+    check.opt_str_param(cursor, "cursor")
+    check.inst_param(repository_def, "repository_def", RepositoryDefinition)
+    check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
+
+    if asset_selection:
+        asset_selection = check.inst_param(asset_selection, "asset_selection", AssetSelection)
+        asset_keys = None
+    else:  # asset keys provided
+        asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
+        check.invariant(len(asset_keys) > 0, "Must provide at least one asset key")
+        asset_selection = None
+
+    return AssetSLASensorEvaluationContext(
+        instance_ref=None,
+        asset_selection=asset_selection,
+        asset_keys=asset_keys,
+        cursor=cursor,
+        instance=instance,
+        repository_def=repository_def,
+    )
+
+
 AssetMaterializationFunctionReturn = Union[
     Iterator[Union[RunRequest, SkipReason]], Sequence[RunRequest], RunRequest, SkipReason, None
 ]
@@ -2006,22 +2087,10 @@ class AssetSLASensorDefinition(SensorDefinition):
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
                 result = materialization_fn(context)
-                if result is None:
-                    return
-
-                # because the materialization_fn can yield results (see _wrapped_fn in multi_asset_sensor decorator),
-                # even if you return None in a sensor, it will still cause in inspect.isgenerator(result) to be True.
-                # So keep track to see if we actually return any values and should update the cursor
-                runs_yielded = False
                 if inspect.isgenerator(result) or isinstance(result, list):
                     for item in result:
-                        runs_yielded = True
                         yield item
-                elif isinstance(result, RunRequest):
-                    runs_yielded = True
-                    yield result
-                elif isinstance(result, SkipReason):
-                    # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
+                elif isinstance(result, (SkipReason, RunRequest)):
                     yield result
 
             return _fn
@@ -2030,7 +2099,7 @@ class AssetSLASensorDefinition(SensorDefinition):
             name=check_valid_name(name),
             job_name=job_name,
             evaluation_fn=_wrap_asset_fn(
-                check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
+                check.callable_param(asset_materialization_fn, "asset_materialization_fn")
             ),
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,

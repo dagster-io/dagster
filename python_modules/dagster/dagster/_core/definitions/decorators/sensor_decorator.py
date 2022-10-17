@@ -11,8 +11,8 @@ from ...errors import DagsterInvariantViolationError
 from ..events import AssetKey
 from ..sensor_definition import (
     AssetMaterializationFunction,
-    AssetSLASensorDefinition,
     AssetSLAMaterializationFunction,
+    AssetSLASensorDefinition,
     AssetSensorDefinition,
     DefaultSensorStatus,
     MultiAssetMaterializationFunction,
@@ -286,7 +286,7 @@ def asset_sla_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
+) -> Callable[[AssetSLASensorDefinition], AssetSLASensorDefinition]:
     """
     Creates an asset sensor that can monitor multiple assets' SLA statuses
 

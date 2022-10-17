@@ -13,6 +13,8 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import (
+    AssetSLASensorDefinition,
+    AssetSLASensorEvaluationContext,
     MultiAssetSensorDefinition,
     MultiAssetSensorEvaluationContext,
     SensorEvaluationContext,
@@ -295,6 +297,16 @@ def get_external_sensor_execution(
                     last_run_key=last_run_key,
                     cursor=cursor,
                     repository_name=repo_def.name,
+                    repository_def=repo_def,
+                    asset_selection=sensor_def.asset_selection,
+                    asset_keys=sensor_def.asset_keys,
+                )
+            )
+        elif isinstance(sensor_def, AssetSLASensorDefinition):
+            sensor_context = stack.enter_context(
+                AssetSLASensorEvaluationContext(
+                    instance_ref,
+                    cursor=cursor,
                     repository_def=repo_def,
                     asset_selection=sensor_def.asset_selection,
                     asset_keys=sensor_def.asset_keys,
