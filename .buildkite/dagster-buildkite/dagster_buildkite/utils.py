@@ -290,3 +290,15 @@ def skip_if_no_docs_changes():
         return None
 
     return "No docs changes"
+
+
+@functools.lru_cache(maxsize=None)
+def skip_if_no_js_changes():
+    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        return None
+
+    # If anything changes in the js_modules directory
+    if any(Path("js_exaples") in path.parents for path in get_changed_files()):
+        return None
+
+    return "No JS changes"
