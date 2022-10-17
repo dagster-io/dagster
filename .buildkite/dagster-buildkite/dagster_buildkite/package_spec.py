@@ -290,7 +290,7 @@ class PackageSpec(
         return extras + install
 
     @property
-    def skip_reason(self):
+    def skip_reason(self) -> Optional[str]:
         if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
             return None
 
