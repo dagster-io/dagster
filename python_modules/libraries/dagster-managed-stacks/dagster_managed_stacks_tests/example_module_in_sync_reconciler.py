@@ -1,4 +1,0 @@
-from dagster_managed_stacks import ManagedStackDiff
-from dagster_managed_stacks_tests.example_reconciler import MyManagedStackReconciler
-
-my_reconciler = MyManagedStackReconciler(ManagedStackDiff())

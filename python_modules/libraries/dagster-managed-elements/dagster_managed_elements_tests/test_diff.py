@@ -1,25 +1,25 @@
 import re
 
-from dagster_managed_stacks import ManagedStackDiff
-from dagster_managed_stacks.utils import diff_dicts
+from dagster_managed_elements import ManagedElementDiff
+from dagster_managed_elements.utils import diff_dicts
 
 
 def test_diff_equality():
 
-    assert ManagedStackDiff() == ManagedStackDiff()
+    assert ManagedElementDiff() == ManagedElementDiff()
 
     # Ensure equality ignores order
     assert (
-        ManagedStackDiff()
+        ManagedElementDiff()
         .add("foo", "bar")
         .delete("baz", "qux")
         .with_nested(
-            "nested", ManagedStackDiff().modify("qwerty", "hjkl", "uiop").add("new", "field")
+            "nested", ManagedElementDiff().modify("qwerty", "hjkl", "uiop").add("new", "field")
         )
     ) == (
-        ManagedStackDiff()
+        ManagedElementDiff()
         .with_nested(
-            "nested", ManagedStackDiff().add("new", "field").modify("qwerty", "hjkl", "uiop")
+            "nested", ManagedElementDiff().add("new", "field").modify("qwerty", "hjkl", "uiop")
         )
         .delete("baz", "qux")
         .add("foo", "bar")
@@ -28,24 +28,24 @@ def test_diff_equality():
 
 def test_diff_join():
 
-    assert ManagedStackDiff().add("foo", "bar").add("baz", "qux") == ManagedStackDiff().add(
+    assert ManagedElementDiff().add("foo", "bar").add("baz", "qux") == ManagedElementDiff().add(
         "foo", "bar"
-    ).join(ManagedStackDiff().add("baz", "qux"))
+    ).join(ManagedElementDiff().add("baz", "qux"))
 
     assert (
-        ManagedStackDiff()
+        ManagedElementDiff()
         .add("foo", "bar")
         .delete("baz", "qux")
-        .with_nested("nested", ManagedStackDiff().add("new", "field"))
-        .with_nested("nested2", ManagedStackDiff().add("asdf", "asdf"))
+        .with_nested("nested", ManagedElementDiff().add("new", "field"))
+        .with_nested("nested2", ManagedElementDiff().add("asdf", "asdf"))
     ) == (
-        ManagedStackDiff()
+        ManagedElementDiff()
         .add("foo", "bar")
-        .with_nested("nested", ManagedStackDiff().add("new", "field"))
+        .with_nested("nested", ManagedElementDiff().add("new", "field"))
         .join(
-            ManagedStackDiff()
+            ManagedElementDiff()
             .delete("baz", "qux")
-            .with_nested("nested2", ManagedStackDiff().add("asdf", "asdf"))
+            .with_nested("nested2", ManagedElementDiff().add("asdf", "asdf"))
         )
     )
 
@@ -53,23 +53,23 @@ def test_diff_join():
 ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
 
 
-def clean_escape(diff: ManagedStackDiff):
+def clean_escape(diff: ManagedElementDiff):
     return ANSI_ESCAPE.sub("", str(diff)).strip("\n")
 
 
 def test_diff_string():
 
-    assert clean_escape(ManagedStackDiff()) == ""
+    assert clean_escape(ManagedElementDiff()) == ""
 
-    assert clean_escape(ManagedStackDiff().add("foo", "bar")) == "+ foo: bar"
+    assert clean_escape(ManagedElementDiff().add("foo", "bar")) == "+ foo: bar"
 
-    assert clean_escape(ManagedStackDiff().delete("foo", "bar")) == "- foo: bar"
+    assert clean_escape(ManagedElementDiff().delete("foo", "bar")) == "- foo: bar"
 
-    assert clean_escape(ManagedStackDiff().modify("foo", "bar", "baz")) == "~ foo: bar -> baz"
+    assert clean_escape(ManagedElementDiff().modify("foo", "bar", "baz")) == "~ foo: bar -> baz"
 
     assert (
         clean_escape(
-            ManagedStackDiff()
+            ManagedElementDiff()
             .add("foo", "bar")
             .delete("baz", "qux")
             .modify("qwerty", "hjkl", "uiop")
@@ -84,10 +84,12 @@ def test_diff_string():
     assert (
         (
             clean_escape(
-                ManagedStackDiff()
+                ManagedElementDiff()
                 .add("foo", "bar")
                 .delete("baz", "qux")
-                .with_nested("nested", ManagedStackDiff().add("qwerty", "uiop").add("asdf", "zxcv"))
+                .with_nested(
+                    "nested", ManagedElementDiff().add("qwerty", "uiop").add("asdf", "zxcv")
+                )
             )
         )
         == """\
@@ -102,11 +104,11 @@ def test_diff_string():
     assert (
         (
             clean_escape(
-                ManagedStackDiff()
+                ManagedElementDiff()
                 .add("foo", "bar")
                 .delete("baz", "qux")
                 .with_nested(
-                    "nested", ManagedStackDiff().delete("qwerty", "uiop").delete("asdf", "zxcv")
+                    "nested", ManagedElementDiff().delete("qwerty", "uiop").delete("asdf", "zxcv")
                 )
             )
         )
@@ -122,11 +124,11 @@ def test_diff_string():
     assert (
         (
             clean_escape(
-                ManagedStackDiff()
+                ManagedElementDiff()
                 .add("foo", "bar")
                 .delete("baz", "qux")
                 .with_nested(
-                    "nested", ManagedStackDiff().add("qwerty", "uiop").delete("asdf", "zxcv")
+                    "nested", ManagedElementDiff().add("qwerty", "uiop").delete("asdf", "zxcv")
                 )
             )
         )

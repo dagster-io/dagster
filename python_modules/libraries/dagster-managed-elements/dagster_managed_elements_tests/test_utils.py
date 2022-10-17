@@ -1,5 +1,5 @@
-from dagster_managed_stacks import ManagedStackDiff
-from dagster_managed_stacks.utils import diff_dicts
+from dagster_managed_elements import ManagedElementDiff
+from dagster_managed_elements.utils import diff_dicts
 
 
 def test_diff_dicts():
@@ -9,12 +9,12 @@ def test_diff_dicts():
 
     assert (diff_dicts(config_dict, dst_dict)) == (
         (
-            ManagedStackDiff()
+            ManagedElementDiff()
             .add("foo", "bar")
             .delete("baz", "qux")
             .with_nested(
                 "nested",
-                ManagedStackDiff()
+                ManagedElementDiff()
                 .modify("qwerty", "hjkl", "uiop")
                 .add("new", "field")
                 .delete("old", "field"),
@@ -25,34 +25,34 @@ def test_diff_dicts():
     # Ensure a bunch of adds works
     empty_dict = {}
     assert diff_dicts(config_dict, empty_dict) == (
-        ManagedStackDiff()
+        ManagedElementDiff()
         .add("foo", "bar")
         .add("same", "as")
         .with_nested(
             "nested",
-            ManagedStackDiff().add("qwerty", "uiop").add("new", "field"),
+            ManagedElementDiff().add("qwerty", "uiop").add("new", "field"),
         )
     )
 
     # Bunch of deletes
     empty_dict = {}
     assert diff_dicts(empty_dict, config_dict) == (
-        ManagedStackDiff()
+        ManagedElementDiff()
         .delete("foo", "bar")
         .delete("same", "as")
         .with_nested(
             "nested",
-            ManagedStackDiff().delete("qwerty", "uiop").delete("new", "field"),
+            ManagedElementDiff().delete("qwerty", "uiop").delete("new", "field"),
         )
     )
 
     # Changing a key from a non-dict to a dict should be treated as a delete and add nested
     partial_dict = {"foo": "bar", "nested": "not-a-dict", "same": "as"}
     assert diff_dicts(config_dict, partial_dict) == (
-        ManagedStackDiff()
+        ManagedElementDiff()
         .delete("nested", "not-a-dict")
         .with_nested(
             "nested",
-            ManagedStackDiff().add("qwerty", "uiop").add("new", "field"),
+            ManagedElementDiff().add("qwerty", "uiop").add("new", "field"),
         )
     )

@@ -1,17 +1,17 @@
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Optional, Tuple
 
-from .types import ManagedStackDiff
+from .types import ManagedElementDiff
 
 
 def diff_dicts(
     config_dict: Optional[Dict[str, Any]],
     dst_dict: Optional[Dict[str, Any]],
-) -> ManagedStackDiff:
+) -> ManagedElementDiff:
     """
-    Utility function which builds a ManagedStackDiff given two dictionaries.
+    Utility function which builds a ManagedElementDiff given two dictionaries.
     """
-    diff = ManagedStackDiff()
+    diff = ManagedElementDiff()
 
     config_dict = config_dict or {}
     dst_dict = dst_dict or {}

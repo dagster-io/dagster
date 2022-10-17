@@ -1,7 +1,11 @@
 import pytest
 from click.testing import CliRunner
-from dagster_managed_stacks import ManagedStackCheckResult, ManagedStackDiff, ManagedStackReconciler
-from dagster_managed_stacks.cli import main
+from dagster_managed_elements import (
+    ManagedElementCheckResult,
+    ManagedElementDiff,
+    ManagedElementReconciler,
+)
+from dagster_managed_elements.cli import main
 
 from dagster._utils import file_relative_path
 

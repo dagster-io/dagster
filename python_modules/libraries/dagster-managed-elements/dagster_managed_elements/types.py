@@ -5,7 +5,7 @@ from typing import Any, List, NamedTuple, Optional, OrderedDict, Tuple, Union
 import click
 
 
-class ManagedStackError(enum.Enum):
+class ManagedElementError(enum.Enum):
     CANNOT_CONNECT = "cannot_connect"
 
 
@@ -22,19 +22,19 @@ def _sanitize(key: str, value: str):
     return value
 
 
-class ManagedStackDiff(
+class ManagedElementDiff(
     NamedTuple(
-        "_ManagedStackDiff",
+        "_ManagedElementDiff",
         [
             ("additions", List[Tuple[str, str]]),
             ("deletions", List[Tuple[str, str]]),
             ("modifications", List[Tuple[str, str, str]]),
-            ("nested", OrderedDict[str, "ManagedStackDiff"]),
+            ("nested", OrderedDict[str, "ManagedElementDiff"]),
         ],
     )
 ):
     """
-    Utility class representing the diff between configured and deployed managed stack. Can be rendered to a
+    Utility class representing the diff between configured and deployed managed element. Can be rendered to a
     color-coded, user-friendly string.
     """
 
@@ -52,31 +52,31 @@ class ManagedStackDiff(
             OrderedDict({}),
         )
 
-    def add(self, name: str, value: str) -> "ManagedStackDiff":
+    def add(self, name: str, value: str) -> "ManagedElementDiff":
         """
         Adds an addition entry to the diff.
         """
         return self._replace(additions=self.additions + [(name, value)])
 
-    def delete(self, name: str, value: str) -> "ManagedStackDiff":
+    def delete(self, name: str, value: str) -> "ManagedElementDiff":
         """
         Adds a deletion entry to the diff.
         """
         return self._replace(deletions=self.deletions + [(name, value)])
 
-    def modify(self, name: str, old_value: str, new_value: str) -> "ManagedStackDiff":
+    def modify(self, name: str, old_value: str, new_value: str) -> "ManagedElementDiff":
         """
         Adds a modification entry to the diff.
         """
         return self._replace(modifications=self.modifications + [(name, old_value, new_value)])
 
-    def with_nested(self, name: str, nested: "ManagedStackDiff") -> "ManagedStackDiff":
+    def with_nested(self, name: str, nested: "ManagedElementDiff") -> "ManagedElementDiff":
         """
         Adds the nested diff as a child of the current diff.
         """
         return self._replace(nested=OrderedDict(list(self.nested.items()) + [(name, nested)]))
 
-    def join(self, other: "ManagedStackDiff") -> "ManagedStackDiff":
+    def join(self, other: "ManagedElementDiff") -> "ManagedElementDiff":
         """
         Combines two diff objects into a single diff object.
         """
@@ -106,7 +106,7 @@ class ManagedStackDiff(
         return f"{additions_str}\n{deletions_str}\n{modifications_str}"
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, ManagedStackDiff):
+        if not isinstance(other, ManagedElementDiff):
             return False
 
         return (
@@ -179,16 +179,16 @@ class ManagedStackDiff(
 
 
 """
-Union type representing the status of a managed stack - can either
+Union type representing the status of a managed element - can either
 return the (potentially empty) diff between the configured and deployed
 stack, or an error.
 """
-ManagedStackCheckResult = Union[ManagedStackDiff, ManagedStackError]
+ManagedElementCheckResult = Union[ManagedElementDiff, ManagedElementError]
 
 
-class ManagedStackReconciler(ABC):
+class ManagedElementReconciler(ABC):
     """
-    Base class which defines the interface for checking and reconciling a managed stack.
+    Base class which defines the interface for checking and reconciling a managed element.
 
     Typically, the constructor will take in a set of resources or user configuration. The
     implementations of the check and apply methods will then use this configuration to
@@ -197,15 +197,15 @@ class ManagedStackReconciler(ABC):
     """
 
     @abstractmethod
-    def check(self) -> ManagedStackCheckResult:
+    def check(self) -> ManagedElementCheckResult:
         """
-        Returns whether the user provided config for the managed stack is in sync with the external resource.
+        Returns whether the user provided config for the managed element is in sync with the external resource.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def apply(self) -> ManagedStackCheckResult:
+    def apply(self) -> ManagedElementCheckResult:
         """
-        Reconciles the managed stack with the external resource, returning the applied diff.
+        Reconciles the managed element with the external resource, returning the applied diff.
         """
         raise NotImplementedError()

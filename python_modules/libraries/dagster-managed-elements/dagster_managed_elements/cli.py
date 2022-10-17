@@ -4,7 +4,7 @@ from types import ModuleType
 from typing import List
 
 import click
-from dagster_managed_stacks.types import ManagedStackDiff, ManagedStackReconciler
+from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler
 
 MODULE_NAME = "usercode"
 
@@ -22,38 +22,38 @@ def load_module(file_path: str) -> ModuleType:
     return module
 
 
-def get_reconcilable_objects(module: ModuleType) -> List[ManagedStackReconciler]:
+def get_reconcilable_objects(module: ModuleType) -> List[ManagedElementReconciler]:
     """
-    Collect all ManagedStackReconciler-implementing objects in the root of the
+    Collect all ManagedElementReconciler-implementing objects in the root of the
     module.
     """
     return [
         getattr(module, obj)
         for obj in dir(module)
-        if isinstance(getattr(module, obj), ManagedStackReconciler)
+        if isinstance(getattr(module, obj), ManagedElementReconciler)
     ]
 
 
-def check(input_file: str) -> ManagedStackDiff:
+def check(input_file: str) -> ManagedElementDiff:
     module = load_module(input_file)
     reconcilable_objects = get_reconcilable_objects(module)
 
     print(f"Found {len(reconcilable_objects)} stacks, checking...")
 
-    diff = ManagedStackDiff()
+    diff = ManagedElementDiff()
     for obj in reconcilable_objects:
         diff = diff.join(obj.check())
     return diff
 
 
-def apply(input_file: str) -> ManagedStackDiff:
+def apply(input_file: str) -> ManagedElementDiff:
 
     module = load_module(input_file)
     reconcilable_objects = get_reconcilable_objects(module)
 
     print(f"Found {len(reconcilable_objects)} stacks, applying...")
 
-    diff = ManagedStackDiff()
+    diff = ManagedElementDiff()
     for obj in reconcilable_objects:
         diff = diff.join(obj.apply())
     return diff
