@@ -1,0 +1,12 @@
+  dagster
+  dagster-graphql
+  dagster-test
+  dagster-aws
+  dagster-pandas
+  dagster-gcp
+  dagster-celery
+  dagster-celery-docker
+  dagster-k8s
+  dagster-celery-k8s
+  dagster-postgres
+  dagster-docker
