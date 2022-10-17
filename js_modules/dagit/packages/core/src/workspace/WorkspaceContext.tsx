@@ -79,6 +79,7 @@ const ROOT_WORKSPACE_QUERY = gql`
                   id
                   name
                   isJob
+                  isAssetJob
                   pipelineSnapshotId
                 }
                 schedules {
