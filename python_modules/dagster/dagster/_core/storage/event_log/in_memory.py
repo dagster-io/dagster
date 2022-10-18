@@ -1,7 +1,7 @@
 import logging
 import time
 from collections import OrderedDict, defaultdict
-from typing import Dict, Iterable, Mapping, Optional, Sequence, Set, cast, List, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, cast
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails

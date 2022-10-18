@@ -31,8 +31,8 @@ from dagster._core.host_representation.external_data import (
     ExternalTargetData,
     ExternalTimeWindowPartitionsDefinitionData,
     external_asset_graph_from_defs,
-    external_time_window_partitions_definition_from_def,
     external_partitions_definition_from_def,
+    external_time_window_partitions_definition_from_def,
 )
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE

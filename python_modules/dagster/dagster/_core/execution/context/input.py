@@ -1,4 +1,15 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._annotations import public
@@ -13,6 +24,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition, SolidDefinition
+    from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent
@@ -76,6 +88,7 @@ class InputContext:
         asset_key: Optional[AssetKey] = None,
         partition_key: Optional[str] = None,
     ):
+        from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
 
@@ -94,7 +107,9 @@ class InputContext:
         self._step_context = step_context
         self._asset_key = asset_key
         if self._step_context and self._step_context.has_partition_key:
-            self._partition_key: Optional[str] = self._step_context.partition_key
+            self._partition_key: Optional[
+                Union[str, MultiDimensionalPartitionKey]
+            ] = self._step_context.partition_key
         else:
             self._partition_key = partition_key
 
@@ -282,16 +297,23 @@ class InputContext:
 
     @public  # type: ignore
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> Union[str, "MultiDimensionalPartitionKey"]:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.
         """
-        check.invariant(
-            self._partition_key is not None,
-            "Tried to access partition_key on a non-partitioned run.",
-        )
-        return cast(str, self._partition_key)
+        from dagster._core.definitions.composite_partitions import CompositePartitionsDefinition
+        from dagster._core.definitions.job_definition import JobDefinition
+
+        if self._partition_key is None:
+            check.failed(
+                "Tried to access partition_key on a non-partitioned run.",
+            )
+
+        if isinstance(self._partition_key, str):
+            return cast(str, self._partition_key)
+
+        return self._partition_key
 
     @public  # type: ignore
     @property

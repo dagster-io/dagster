@@ -15,6 +15,14 @@ BACKFILL_ID_TAG = "{prefix}backfill".format(prefix=SYSTEM_TAG_PREFIX)
 
 PARTITION_NAME_TAG = "{prefix}partition".format(prefix=SYSTEM_TAG_PREFIX)
 
+MULTIDIMENSIONAL_PARTITION_PREFIX = "{partition_name_tag}/".format(
+    partition_name_tag=PARTITION_NAME_TAG
+)
+MULTIDIMENSIONAL_PARTITION_TAG = lambda dimension_name: "{prefix}{dimension_name}".format(
+    prefix=MULTIDIMENSIONAL_PARTITION_PREFIX,
+    dimension_name=dimension_name,
+)
+
 PARTITION_SET_TAG = "{prefix}partition_set".format(prefix=SYSTEM_TAG_PREFIX)
 
 PARENT_RUN_ID_TAG = "{prefix}parent_run_id".format(prefix=SYSTEM_TAG_PREFIX)

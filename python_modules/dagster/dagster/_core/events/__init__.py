@@ -57,6 +57,7 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.events import ObjectStoreOperation
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import ExecutionStep, StepKind
@@ -643,7 +644,7 @@ class DagsterEvent(
 
     @public  # type: ignore
     @property
-    def partition(self) -> Optional[str]:
+    def partition(self) -> Optional[Union[str, "MultiDimensionalPartitionKey"]]:
         if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:
             return self.step_materialization_data.materialization.partition
         elif self.event_type == DagsterEventType.ASSET_OBSERVATION:

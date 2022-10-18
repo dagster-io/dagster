@@ -1,5 +1,17 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._annotations import public
@@ -29,6 +41,9 @@ from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
 
 
 class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
@@ -285,7 +300,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @public  # type: ignore
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> Union[str, "MultiDimensionalPartitionKey"]:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.

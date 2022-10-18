@@ -1,5 +1,17 @@
 # pylint: disable=super-init-not-called
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Set, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Set,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._config import Shape

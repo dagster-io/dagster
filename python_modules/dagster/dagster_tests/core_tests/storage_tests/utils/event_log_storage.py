@@ -2334,8 +2334,8 @@ class TestEventLogStorage:
 
             asset_event_tags = storage.get_asset_event_tags()
             assert asset_event_tags == [
-                ('dagster/partition/country', {'US'}),
-                ('dagster/partition/date', {'2022-10-13'}),
+                ("dagster/partition/country", {"US"}),
+                ("dagster/partition/date", {"2022-10-13"}),
             ]
 
     def test_event_record_filter_tags(self, storage):
@@ -2344,7 +2344,7 @@ class TestEventLogStorage:
         @op
         def my_op():
             yield AssetObservation(
-                asset_key=key, metadata={'foo': 'bar'}
+                asset_key=key, metadata={"foo": "bar"}
             )  # should not show up in any queries
             yield AssetMaterialization(
                 asset_key=key,

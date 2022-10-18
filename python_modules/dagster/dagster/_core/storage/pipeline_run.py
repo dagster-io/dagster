@@ -34,6 +34,7 @@ from dagster._serdes.serdes import (
 
 from .tags import (
     BACKFILL_ID_TAG,
+    MULTIDIMENSIONAL_PARTITION_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
@@ -524,7 +525,16 @@ class PipelineRun(
 
     @staticmethod
     def tags_for_partition_set(partition_set, partition):
-        return {PARTITION_NAME_TAG: partition.name, PARTITION_SET_TAG: partition_set.name}
+        from dagster._core.definitions.composite_partitions import MultiDimensionalPartition
+
+        tags = {PARTITION_SET_TAG: partition_set.name}
+        if isinstance(partition, MultiDimensionalPartition):
+            for dimension, dimension_partition in partition.partitions_by_dimension().items():
+                tags[MULTIDIMENSIONAL_PARTITION_TAG(dimension)] = dimension_partition.name
+        else:
+            tags[PARTITION_NAME_TAG] = partition.name
+
+        return tags
 
 
 @whitelist_for_serdes(serializer=DagsterRunSerializer)

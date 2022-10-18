@@ -49,7 +49,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.pipeline_run import PipelineRun
-from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, PARTITION_NAME_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import DagsterType
 
@@ -57,6 +57,7 @@ from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.dependency import Node, NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.resource_definition import Resources
@@ -329,12 +330,29 @@ class PlanExecutionContext(IPlanContext):
         return self._log_manager
 
     @property
-    def partition_key(self) -> str:
+    def partition_key(self) -> Union[str, "MultiDimensionalPartitionKey"]:
+        from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
+
         tags = self._plan_data.pipeline_run.tags
+
         check.invariant(
-            PARTITION_NAME_TAG in tags, "Tried to access partition_key for a non-partitioned run"
+            PARTITION_NAME_TAG in tags
+            or any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]),
+            "Tried to access partition_key for a non-partitioned run",
         )
-        return tags[PARTITION_NAME_TAG]
+
+        if PARTITION_NAME_TAG in tags:
+            return tags[PARTITION_NAME_TAG]
+
+        partitions_by_dimension: Dict[str, str] = {}
+        for tag in tags:
+            if tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX):
+                dimension = tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
+                partitions_by_dimension[dimension] = tags[tag]
+
+        return MultiDimensionalPartitionKey.from_partition_dimension_mapping(
+            partitions_by_dimension
+        )
 
     @property
     def partition_time_window(self) -> str:
@@ -358,7 +376,12 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def has_partition_key(self) -> bool:
-        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags
+        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags or any(
+            [
+                tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+                for tag in self._plan_data.pipeline_run.tags.keys()
+            ]
+        )
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(

@@ -35,6 +35,7 @@ from .metadata import (
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
     from dagster._core.execution.context.output import OutputContext
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
@@ -396,8 +397,7 @@ class AssetMaterialization(
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
-            ("partition", PublicAttr[Optional[str]]),
-            ("tags", Optional[Mapping[str, str]]),
+            ("partition", PublicAttr[Optional[Union[str, "MultiDimensionalPartitionKey"]]]),
         ],
     )
 ):
@@ -423,8 +423,6 @@ class AssetMaterialization(
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
-        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
-            materialization. Not intended to be provided by user code.
     """
 
     def __new__(
@@ -432,10 +430,11 @@ class AssetMaterialization(
         asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
-        partition: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        partition: Optional[Union[str, "MultiDimensionalPartitionKey"]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
+        from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
+
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
@@ -452,13 +451,20 @@ class AssetMaterialization(
             metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
         )
 
+        serializable_partition: Optional[Union[str, MultiDimensionalPartitionKey]] = None
+        if isinstance(partition, MultiDimensionalPartitionKey):
+            serializable_partition = check.inst_param(
+                partition, "partition", MultiDimensionalPartitionKey
+            )
+        else:
+            serializable_partition = check.opt_str_param(partition, "partition")
+
         return super(AssetMaterialization, cls).__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
             metadata_entries=normalize_metadata(metadata, metadata_entries),
-            partition=check.opt_str_param(partition, "partition"),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
+            partition=serializable_partition,
         )
 
     @property

@@ -3,6 +3,7 @@ from typing import Optional
 import sqlalchemy as db
 
 import dagster._check as check
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
@@ -11,10 +12,9 @@ from dagster._core.storage.event_log import (
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
-from dagster._core.storage.event_log.schema import AssetEventTagsTable
-from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.event_log.schema import AssetEventTagsTable
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,

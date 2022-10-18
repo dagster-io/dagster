@@ -36,6 +36,7 @@ from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+    from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.resolved_asset_defs import ResolvedAssetDependencies
     from dagster._core.execution.context.output import OutputContext
@@ -48,7 +49,13 @@ class AssetOutputInfo(
         "_AssetOutputInfo",
         [
             ("key", AssetKey),
-            ("partitions_fn", Callable[["OutputContext"], Optional[AbstractSet[str]]]),
+            (
+                "partitions_fn",
+                Callable[
+                    ["OutputContext"],
+                    Optional[AbstractSet[Union[str, "MultiDimensionalPartitionKey"]]],
+                ],
+            ),
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("is_required", bool),
         ],
@@ -68,7 +75,11 @@ class AssetOutputInfo(
     def __new__(
         cls,
         key: AssetKey,
-        partitions_fn: Optional[Callable[["OutputContext"], Optional[AbstractSet[str]]]] = None,
+        partitions_fn: Optional[
+            Callable[
+                ["OutputContext"], Optional[AbstractSet[Union[str, "MultiDimensionalPartitionKey"]]]
+            ]
+        ] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         is_required: bool = True,
     ):
@@ -614,6 +625,7 @@ class AssetLayer:
                     check.not_none(inner_node_handle), inner_output_def.name
                 )
                 partition_fn = lambda context: {context.partition_key}
+
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
                     asset_key,
                     partitions_fn=partition_fn if assets_def.partitions_def else None,

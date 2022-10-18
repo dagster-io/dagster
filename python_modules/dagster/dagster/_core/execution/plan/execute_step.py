@@ -1,7 +1,19 @@
 import inspect
 import warnings
 from collections import defaultdict
-from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -13,6 +25,12 @@ from dagster._core.definitions import (
     Output,
     OutputDefinition,
     TypeCheck,
+)
+from dagster._core.definitions.asset_layer import AssetOutputInfo
+from dagster._core.definitions.composite_partitions import (
+    CompositePartitionsDefinition,
+    MultiDimensionalPartition,
+    MultiDimensionalPartitionKey,
 )
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
@@ -427,19 +445,24 @@ def _type_check_and_store_output(
         yield evt
 
 
+def _get_output_asset_info(
+    output_context: OutputContext, output_def: OutputDefinition
+) -> Optional[AssetOutputInfo]:
+    return output_context.step_context.pipeline_def.asset_layer.asset_info_for_output(
+        node_handle=output_context.step_context.solid_handle, output_name=output_def.name
+    )
+
+
 def _asset_key_and_partitions_for_output(
     output_context: OutputContext,
     output_def: OutputDefinition,
     output_manager: IOManager,
-) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
+) -> Tuple[Optional[AssetKey], AbstractSet[Union[str, "MultiDimensionalPartitionKey"]]]:
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
-
-    pipeline_def = output_context.step_context.pipeline_def
     node_handle = output_context.step_context.solid_handle
-    output_asset_info = pipeline_def.asset_layer.asset_info_for_output(
-        node_handle=output_context.step_context.solid_handle, output_name=output_def.name
-    )
+    output_asset_info = _get_output_asset_info(output_context, output_def)
+
     if output_asset_info:
         if manager_asset_key is not None:
             raise DagsterInvariantViolationError(
@@ -484,26 +507,50 @@ def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLin
 
 def _get_output_asset_materializations(
     asset_key: AssetKey,
-    asset_partitions: AbstractSet[str],
+    asset_partitions: AbstractSet[Union[str, MultiDimensionalPartitionKey]],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]],
+    output_context: OutputContext,
 ) -> Iterator[AssetMaterialization]:
 
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
-
     if asset_partitions:
+        composite_partitions_def: Optional[CompositePartitionsDefinition] = None
+        if any(
+            [isinstance(partition, MultiDimensionalPartitionKey) for partition in asset_partitions]
+        ):
+            asset_output_info = _get_output_asset_info(output_context, output_def)
+            if not (
+                asset_output_info
+                and asset_output_info.partitions_def
+                and isinstance(asset_output_info.partitions_def, CompositePartitionsDefinition)
+            ):
+                raise DagsterInvariantViolationError(
+                    "Asset output info must contain a composite partitions definition."
+                )
+            composite_partitions_def = _get_output_asset_info(
+                output_context, output_def
+            ).partitions_def
+
+        collapsed_partitions: List[str] = [
+            partition
+            if isinstance(partition, str)
+            else composite_partitions_def.get_partition_key(partition)
+            for partition in asset_partitions
+        ]
+
         metadata_mapping: Dict[str, List[Union[MetadataEntry, PartitionMetadataEntry]]] = {
-            partition: [] for partition in asset_partitions
+            partition: [] for partition in collapsed_partitions
         }
         for entry in all_metadata:
             # if you target a given entry at a partition, only apply it to the requested partition
             # otherwise, apply it to all partitions
             if isinstance(entry, PartitionMetadataEntry):
-                if entry.partition not in asset_partitions:
+                if entry.partition not in collapsed_partitions:
                     raise DagsterInvariantViolationError(
                         f"Output {output_def.name} associated a metadata entry ({entry}) with the partition "
-                        f"`{entry.partition}`, which is not one of the declared partition mappings ({asset_partitions})."
+                        f"`{entry.partition}`, which is not one of the declared partition mappings ({collapsed_partitions})."
                     )
                 metadata_mapping[entry.partition].append(entry.entry)
             else:
@@ -517,7 +564,11 @@ def _get_output_asset_materializations(
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     partition=partition,
-                    metadata_entries=metadata_mapping[partition],
+                    metadata_entries=metadata_mapping[
+                        composite_partitions_def.get_partition_key(partition)
+                        if isinstance(partition, MultiDimensionalPartitionKey)
+                        else partition
+                    ],
                 )
     else:
         for entry in all_metadata:
@@ -631,6 +682,7 @@ def _store_output(
             output,
             output_def,
             manager_metadata_entries,
+            output_context,
         ):
             yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 
