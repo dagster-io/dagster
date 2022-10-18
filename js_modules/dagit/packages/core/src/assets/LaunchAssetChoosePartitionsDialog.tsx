@@ -287,7 +287,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           {previewCount === 0 ? (
             <Box margin={{vertical: 8}}>
               <ButtonLink onClick={() => setPreviewCount(5)}>
-                Show per-Asset partition health
+                Show per-asset partition health
               </ButtonLink>
             </Box>
           ) : previewCount < partitionedAssets.length ? (

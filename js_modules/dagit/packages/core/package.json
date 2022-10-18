@@ -126,6 +126,7 @@
     "graphql.macro": "^1.4.2",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^26.6.3",
+    "jest-canvas-mock": "^2.4.0",
     "jest-environment-jsdom-sixteen": "^1.0.3",
     "prettier": "2.2.1",
     "react": "^17.0.2",
