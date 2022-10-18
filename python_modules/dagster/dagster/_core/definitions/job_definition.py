@@ -1,3 +1,5 @@
+import importlib
+import os
 from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
@@ -47,7 +49,7 @@ from dagster._core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
-from dagster._core.storage.io_manager import io_manager
+from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.utils import str_format_set
 from dagster._utils import merge_dicts
 
@@ -832,6 +834,22 @@ def get_direct_input_values_from_job(target: PipelineDefinition) -> Mapping[str,
     description="Built-in filesystem IO manager that stores and retrieves values using pickling."
 )
 def default_job_io_manager(init_context: "InitResourceContext"):
+    # support overriding the default io manager via environment variables
+    module_name = os.getenv("DAGSTER_DEFAULT_IO_MANAGER_MODULE")
+    attribute_name = os.getenv("DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE")
+    if module_name and attribute_name:
+        from dagster._core.execution.build_resources import build_resources
+
+        module = importlib.import_module(module_name)
+        attr = getattr(module, attribute_name)
+        check.invariant(
+            isinstance(attr, IOManagerDefinition),
+            "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE must specify an IOManagerDefinition",
+        )
+        with build_resources({"io_manager": attr}) as resources:
+            return resources.io_manager
+
+    # normally, default to the fs_io_manager
     from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 
     instance = check.not_none(init_context.instance)

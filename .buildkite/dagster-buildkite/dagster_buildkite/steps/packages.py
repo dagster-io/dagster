@@ -1,6 +1,5 @@
 import os
 from glob import glob
-from pathlib import Path
 from typing import List, Optional
 
 from dagster_buildkite.defines import GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
@@ -13,9 +12,7 @@ from dagster_buildkite.steps.test_project import (
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
-    get_changed_files,
     network_buildkite_container,
-    safe_getenv,
 )
 
 
@@ -59,61 +56,14 @@ def build_dagit_screenshot_steps() -> List[BuildkiteStep]:
 
 
 def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[BuildkiteStep]:
-    changed_files = get_changed_files()
-
     steps: List[BuildkiteStep] = []
     all_packages = sorted(
         package_specs,
         key=lambda p: f"{_PACKAGE_TYPE_ORDER.index(p.package_type)} {p.name}",
     )
 
-    packages_with_changes = [
-        package
-        for package in all_packages
-        if any(
-            path
-            for path in changed_files
-            # A file in our git diff exists in the package directory
-            if path in Path(package.directory).rglob("*")
-            # The file can alter behavior - exclude things like README changes
-            and path.suffix in [".py", ".cfg", ".toml"]
-            # The file is not part of a test
-            and not any(part.endswith("tests") for part in path.parts)
-        )
-    ]
-
-    packages_with_changed_tests = [
-        package
-        for package in all_packages
-        if any(
-            path
-            for path in changed_files
-            # A file in our git diff exists in the package directory
-            if path in Path(package.directory).rglob("*")
-            # The file can alter behavior - exclude things like README changes
-            and path.suffix in [".py", ".cfg", ".toml"]
-            # The file is part of a test
-            and any(part.endswith("tests") for part in path.parts)
-        )
-    ]
-
     for pkg in all_packages:
-        if (
-            # On all pushes to main
-            safe_getenv("BUILDKITE_BRANCH") == "master"
-            # Or if any of the package's tests change
-            or pkg in packages_with_changed_tests
-            # Or if any of the package's implemention changes
-            or pkg in packages_with_changes
-            # Or if the package requires any package which implementation has changed
-            or any(
-                requirement in [package.name for package in packages_with_changes]
-                for requirement in pkg.requirements
-            )
-        ):
-            steps += pkg.build_steps()
-        else:
-            steps += pkg.build_skipped_steps("Package unaffected by these changes")
+        steps += pkg.build_steps()
 
     return steps
 

@@ -3,12 +3,18 @@ from distutils.core import run_setup  # pylint: disable=deprecated-module
 from pathlib import Path
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
 
-from setuptools.dist import Distribution
+import pkg_resources
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
 from .steps.tox import build_tox_step
-from .utils import BuildkiteLeafStep, GroupStep
+from .utils import (
+    BuildkiteLeafStep,
+    GroupStep,
+    changed_python_package_names,
+    get_changed_files,
+    is_feature_branch,
+)
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -162,10 +168,7 @@ class PackageSpec(
             run_pylint,
         )
 
-    def build_skipped_steps(self, skip_reason: str) -> List[GroupStep]:
-        return self.build_steps(skip_reason=skip_reason)
-
-    def build_steps(self, skip_reason: Optional[str] = None) -> List[GroupStep]:
+    def build_steps(self) -> List[GroupStep]:
         base_name = self.name or os.path.basename(self.directory)
         steps: List[BuildkiteLeafStep] = []
 
@@ -237,7 +240,7 @@ class PackageSpec(
                             timeout_in_minutes=self.timeout_in_minutes,
                             queue=self.queue,
                             retries=self.retries,
-                            skip_reason=skip_reason,
+                            skip_reason=self.skip_reason,
                         )
                     )
 
@@ -249,7 +252,7 @@ class PackageSpec(
                     base_label=base_name,
                     command_type="mypy",
                     python_version=supported_python_versions[-1],
-                    skip_reason=skip_reason,
+                    skip_reason=self.skip_reason,
                 )
             )
 
@@ -261,7 +264,7 @@ class PackageSpec(
                     base_label=base_name,
                     command_type="pylint",
                     python_version=supported_python_versions[-1],
-                    skip_reason=skip_reason,
+                    skip_reason=self.skip_reason,
                 )
             )
 
@@ -279,15 +282,45 @@ class PackageSpec(
         setup = Path(self.directory) / "setup.py"
         if setup.exists():
             return run_setup(Path(self.directory) / "setup.py")
-        else:
-            return Distribution()
 
     @property
     def requirements(self):
-        extras = [
-            requirement
-            for requirements in self.distribution.extras_require.values()
-            for requirement in requirements
-        ]
-        install = self.distribution.install_requires
-        return extras + install
+        # First try to infer requirements from the distribution
+        if self.distribution:
+            extras = [
+                requirement
+                for requirements in self.distribution.extras_require.values()
+                for requirement in requirements
+            ]
+            install = self.distribution.install_requires
+            return extras + install
+
+        # If we don't have a distribution (like many of our integration test suites)
+        # we can use a requirements.txt file to capture requirements
+        requirements_txt = Path(self.directory) / "requirements.txt"
+        if requirements_txt.exists():
+            parsed = pkg_resources.parse_requirements(requirements_txt.read_text())
+            return [requirement.name for requirement in parsed]
+
+        # Otherwise return nothing
+        return []
+
+    @property
+    def skip_reason(self) -> Optional[str]:
+        if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
+            return None
+
+        for change in get_changed_files():
+            if (
+                # Our change is in this package's directory
+                (Path(self.directory) in change.parents)
+                # The file can alter behavior - exclude things like README changes
+                and (change.suffix in [".py", ".cfg", ".toml"] or change.name == "requirements.txt")
+            ):
+                return None
+
+        # TODO: Walk the dependency tree
+        if any(requirement in changed_python_package_names() for requirement in self.requirements):
+            return None
+
+        return "Package unaffected by these changes"

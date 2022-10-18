@@ -11,7 +11,7 @@ import {Tab, Transition} from '@headlessui/react';
 import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
-import React, {useContext, useRef, useState} from 'react';
+import React, {ReactElement, useContext, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
 import {useVersion} from '../../util/useVersion';
@@ -19,6 +19,7 @@ import Icons from '../Icons';
 import Link from '../Link';
 
 import 'react-medium-image-zoom/dist/styles.css';
+import {RenderedDAG} from './RenderedDAG';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
 import DbtModelAssetExplanation from './includes/dagster/integrations/DbtModelAssetExplanation.mdx';
@@ -338,9 +339,36 @@ const Experimental = () => {
   );
 };
 
-const Pre = ({children, ...props}) => {
+// next-mdx converts code blocks to <code> elements wrapped in <pre> elements.
+// We need to access the props of the code element to see if we should render an asset
+// graph DAG; so we turn the <pre> tag into a styling no-op and create a new <pre> tag
+// around the <code> tag once we have access to the <code> tag's props.
+const Pre: React.FC<React.HTMLProps<HTMLPreElement>> = ({children, ...props}) => {
+  const updatedProps = {...props, className: 'noop'};
+  // Add a prop to children so that the Code renderer can tell if it's a code block
+  // or not
+  return (
+    <pre {...updatedProps}>
+      {React.Children.map(children, (child: ReactElement<any>) =>
+        React.cloneElement(child, {fullwidth: true}),
+      )}
+    </pre>
+  );
+};
+
+interface CodeProps extends React.HTMLProps<HTMLElement> {
+  dagimage?: string;
+  fullwidth?: boolean;
+}
+
+const Code: React.FC<CodeProps> = ({children, dagimage, ...props}) => {
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
+
+  // Early exit if we're not a full width code block
+  if (!props.fullwidth) {
+    return <code {...props}>{children}</code>;
+  }
 
   const onClick = async () => {
     try {
@@ -356,53 +384,65 @@ const Pre = ({children, ...props}) => {
   };
 
   return (
-    <div className="relative">
-      <Transition
-        show={!copied}
-        appear={true}
-        enter="transition ease-out duration-150 transform"
-        enterFrom="opacity-0 scale-95"
-        enterTo="opacity-100 scale-100"
-        leave="transition ease-in duration-150 transform"
-        leaveFrom="opacity-100 scale-100"
-        leaveTo="opacity-0 scale-95"
-      >
-        <div className="absolute top-0 right-0 mt-2 mr-2">
-          <svg
-            className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-300"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            onClick={onClick}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-        </div>
-      </Transition>
-      <Transition
-        show={copied}
-        appear={true}
-        enter="transition ease-out duration-150 transform"
-        enterFrom="opacity-0 scale-95"
-        enterTo="opacity-500 scale-100"
-        leave="transition ease-in duration-200 transform"
-        leaveFrom="opacity-100 scale-100"
-        leaveTo="opacity-0 scale-95"
-      >
-        <div className="absolute top-0 right-0 mt-1 mr-2">
-          <span className="inline-flex items-center px-2 rounded text-xs font-medium leading-4 bg-gray-100 text-gray-800">
-            Copied
-          </span>
-        </div>
-      </Transition>
-      <pre ref={preRef} {...(props as any)}>
-        {children}
-      </pre>
+    <div className="relative" style={{display: 'flex'}}>
+      <div style={{flex: '1 1 auto', position: 'relative', minWidth: 0}}>
+        <Transition
+          show={!copied}
+          appear={true}
+          enter="transition ease-out duration-150 transform"
+          enterFrom="opacity-0 scale-95"
+          enterTo="opacity-100 scale-100"
+          leave="transition ease-in duration-150 transform"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-95"
+        >
+          <div className="absolute top-0 right-0 mt-2 mr-2">
+            <svg
+              className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              onClick={onClick}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+          </div>
+        </Transition>
+        <Transition
+          show={copied}
+          appear={true}
+          enter="transition ease-out duration-150 transform"
+          enterFrom="opacity-0 scale-95"
+          enterTo="opacity-500 scale-100"
+          leave="transition ease-in duration-200 transform"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-95"
+        >
+          <div className="absolute top-0 right-0 mt-1 mr-2">
+            <span className="inline-flex items-center px-2 rounded text-xs font-medium leading-4 bg-gray-100 text-gray-800">
+              Copied
+            </span>
+          </div>
+        </Transition>
+        <pre
+          className={props.className}
+          ref={preRef}
+          style={{height: '100%', marginBottom: 0, marginTop: 0}}
+        >
+          <code {...props}>{children}</code>
+        </pre>
+      </div>
+      {dagimage && (
+        <RenderedDAG
+          svgSrc="/images/asset-screenshots/my_assets.svg"
+          mobileImgSrc="/images-2022-july/screenshots/python-assets2.png"
+        />
+      )}
     </div>
   );
 };
@@ -599,6 +639,7 @@ export default {
       <img {...(props as any)} />
     </span>
   ),
+  code: Code,
   pre: Pre,
   PyObject,
   Link,
@@ -626,4 +667,5 @@ export default {
   ExampleItem,
   TabGroup,
   TabItem,
+  RenderedDAG,
 };

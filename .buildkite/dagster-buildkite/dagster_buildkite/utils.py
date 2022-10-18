@@ -1,4 +1,5 @@
 import functools
+import glob
 import logging
 import os
 import subprocess
@@ -223,3 +224,45 @@ def skip_if_no_helm_changes():
         return None
 
     return "No helm changes"
+
+
+@functools.lru_cache(maxsize=None)
+def skip_coverage_if_feature_branch():
+    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        return None
+
+    return "Skip coverage uploads until we're finished with our Buildkite refactor"
+
+
+@functools.lru_cache(maxsize=None)
+def python_package_directories():
+    # Consider any directory with a setup.py file to be a package
+    packages = [Path(setup).parent for setup in glob.glob("**/setup.py", recursive=True)]
+    # hidden files are ignored by glob.glob and we don't actually want to recurse
+    # all hidden files because there's so much random cruft. So just hardcode the
+    # one hidden package we know we need.
+    dagster_buildkite = Path(".buildkite/dagster-buildkite")
+    packages.append(dagster_buildkite)
+    return packages
+
+
+@functools.lru_cache(maxsize=None)
+def changed_python_package_names():
+    changes = []
+
+    for directory in python_package_directories():
+        for change in get_changed_files():
+            if (
+                # Our change is in this package's directory
+                (change in directory.rglob("*"))
+                # The file can alter behavior - exclude things like README changes
+                and (change.suffix in [".py", ".cfg", ".toml"])
+            ):
+
+                # The file is part of a test suite. We treat these two cases
+                # differently because we don't need to run tests in dependent packages
+                # if only a test in an upstream package changed.
+                if not any(part.endswith("tests") for part in change.parts):
+                    changes.append(directory.name)
+
+    return changes

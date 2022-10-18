@@ -1090,3 +1090,47 @@ def test_monitor_source_asset_sensor(executor):
             )
             run_request = instance.get_runs(limit=1)[0]
             assert run_request.pipeline_name == "the_graph"
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_with_tags(executor):
+    """Asset graph:
+        x
+        |
+        y
+    Sensor for y that materializes y when all of its parents have materialized
+    Tests that tags get forwarded to the run request
+    """
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(attribute="asset_sensor_repo") as (
+        instance,
+        workspace_ctx,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+
+            y_sensor = external_repo.get_external_sensor("just_y_AND")
+            instance.start_sensor(y_sensor)
+
+            materialize([x], instance=instance)
+            wait_for_all_runs_to_finish(instance)
+
+            evaluate_sensors(workspace_ctx, executor)
+
+            ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                y_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            wait_for_all_runs_to_finish(instance)
+            run_request = instance.get_runs(limit=1)[0]
+            assert run_request.pipeline_name == "__ASSET_JOB"
+            assert run_request.asset_selection == {AssetKey("y")}
+            assert run_request.tags.get("hello") == "world"
