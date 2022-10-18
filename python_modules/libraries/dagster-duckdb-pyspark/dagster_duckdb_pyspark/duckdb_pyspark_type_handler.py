@@ -1,11 +1,12 @@
 from pathlib import Path
+from typing import cast
 
 import duckdb
 import pyspark
 from dagster_duckdb import DbTypeHandler
+from pyspark.sql import SparkSession
 
 from dagster import InputContext, OutputContext
-from dagster import _check as check
 
 
 class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
@@ -51,13 +52,16 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
 
         context.add_output_metadata({"row_count": row_count, "path": str(filepath)})
 
-    def load_input(self, context: InputContext, conn: duckdb.DuckDBPyConnection):
+    def load_input(
+        self, context: InputContext, conn: duckdb.DuckDBPyConnection
+    ) -> pyspark.sql.DataFrame:
         """Loads the return of the query as the correct type."""
 
-        check.failed(
-            f"Inputs of type {context.dagster_type} not supported. Please specify a valid type "
-            "for this input."
-        )
+        df = conn.execute(
+            f"SELECT * FROM {self._table_path(context, cast(OutputContext, context.upstream_output))}"
+        ).fetchdf()
+        spark = SparkSession.builder.getOrCreate()
+        return spark.createDataFrame(df)
 
     def _get_path(self, context: OutputContext, base_path: str):
         # this returns a directory where parquet files will be written
@@ -85,4 +89,4 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
 
     @property
     def supported_input_types(self):
-        return []
+        return [pyspark.sql.DataFrame]

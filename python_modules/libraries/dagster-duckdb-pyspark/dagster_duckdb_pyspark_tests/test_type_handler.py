@@ -95,7 +95,7 @@ def downstream(upstream: SparkDF) -> SparkDF:
     return upstream
 
 
-def test_cant_load_input(tmp_path):
+def test_load_as_pyspark(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()])
     resource_defs = {
         "io_manager": duckdb_io_manager.configured(
@@ -103,8 +103,11 @@ def test_cant_load_input(tmp_path):
         ),
     }
 
-    with pytest.raises(
-        CheckError,
-        match="DuckDBIOManager does not have a handler that supports inputs of type",
-    ):
-        materialize([upstream, downstream], resources=resource_defs)
+    res = materialize([upstream, downstream], resources=resource_defs)
+    assert res.success
+    assert isinstance(
+        res._get_output_for_handle(  # pylint: disable=protected-access
+            handle="my_schema__downstream", output_name="result"
+        ),
+        SparkDF,
+    )
