@@ -307,6 +307,8 @@ class PackageSpec(
 
     @property
     def skip_reason(self) -> Optional[str]:
+        if self.name == "dagster-test":
+            breakpoint()
         if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
             return None
 
