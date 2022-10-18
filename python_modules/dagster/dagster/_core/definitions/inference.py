@@ -5,6 +5,7 @@ from dagster._seven import funcsigs, is_module_available
 
 from .utils import NoValueSentinel
 
+IS_DOCSTRING_PARSER_AVAILABLE = is_module_available("docstring_parser")
 
 class InferredInputProps(NamedTuple):
     """The information about an input that can be inferred from the function signature"""
@@ -24,7 +25,7 @@ class InferredOutputProps(NamedTuple):
 
 def _infer_input_description_from_docstring(fn: Callable) -> Dict[str, Optional[str]]:
     doc_str = fn.__doc__
-    if not is_module_available("docstring_parser") or doc_str is None:
+    if not IS_DOCSTRING_PARSER_AVAILABLE or doc_str is None:
         return {}
 
     from docstring_parser import parse
@@ -38,7 +39,7 @@ def _infer_input_description_from_docstring(fn: Callable) -> Dict[str, Optional[
 
 def _infer_output_description_from_docstring(fn: Callable) -> Optional[str]:
     doc_str = fn.__doc__
-    if not is_module_available("docstring_parser") or doc_str is None:
+    if not IS_DOCSTRING_PARSER_AVAILABLE or doc_str is None:
         return None
     from docstring_parser import parse
 
