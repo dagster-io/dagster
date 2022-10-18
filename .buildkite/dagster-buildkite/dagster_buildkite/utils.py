@@ -145,7 +145,7 @@ def connect_sibling_docker_container(
     ]
 
 
-def is_feature_branch(branch_name: str) -> bool:
+def is_feature_branch(branch_name: str = safe_getenv("BUILDKITE_BRANCH")) -> bool:
     return not (branch_name == "master" or branch_name.startswith("release"))
 
 
@@ -205,7 +205,7 @@ def get_changed_files():
 
 
 def skip_if_no_python_changes():
-    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+    if not is_feature_branch():
         return None
 
     if not any(path.suffix == ".py" for path in get_changed_files()):
@@ -216,7 +216,7 @@ def skip_if_no_python_changes():
 
 @functools.lru_cache(maxsize=None)
 def skip_if_no_helm_changes():
-    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+    if not is_feature_branch():
         return None
 
     if any(Path("helm") in path.parents for path in get_changed_files()):
@@ -228,14 +228,14 @@ def skip_if_no_helm_changes():
 
 @functools.lru_cache(maxsize=None)
 def skip_coverage_if_feature_branch():
-    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+    if not is_feature_branch():
         return None
 
     return "Skip coverage uploads until we're finished with our Buildkite refactor"
 
 
 def skip_mysql_if_no_changes_to_dependencies(dependencies: List[str]):
-    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+    if not is_feature_branch():
         return None
 
     for dependency in dependencies:
@@ -246,7 +246,7 @@ def skip_mysql_if_no_changes_to_dependencies(dependencies: List[str]):
 
 
 def skip_graphql_if_no_changes_to_dependencies(dependencies: List[str]):
-    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+    if not is_feature_branch():
         return None
 
     for dependency in dependencies:
