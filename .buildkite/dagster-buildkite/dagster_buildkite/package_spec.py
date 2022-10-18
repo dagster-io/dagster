@@ -1,5 +1,5 @@
 import os
-from distutils import core as distutils_core
+from distutils import core as distutils_core  # pylint: disable=deprecated-module
 from importlib import reload
 from pathlib import Path
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
