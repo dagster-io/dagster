@@ -1,5 +1,6 @@
 import os
-from distutils.core import run_setup  # pylint: disable=deprecated-module
+from distutils import core as distutils_core
+from importlib import reload
 from pathlib import Path
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
 
@@ -279,9 +280,14 @@ class PackageSpec(
 
     @property
     def distribution(self):
+        # run_setup stores state in a global variable. Reload the module
+        # each time we use it - otherwise we'll get the previous invocation's
+        # distribution if our setup.py doesn't implement setup() correctly
+        reload(distutils_core)
+
         setup = Path(self.directory) / "setup.py"
         if setup.exists():
-            return run_setup(Path(self.directory) / "setup.py")
+            return distutils_core.run_setup(setup)
 
     @property
     def requirements(self):
