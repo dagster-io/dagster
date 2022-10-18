@@ -1,4 +1,6 @@
-  dagster
-  dagster-graphql
-  dagster-test
-  dagster-postgres
+# This file is used to declare dependencies so we can
+# conditionally skip unaffected parts of the CI build
+dagster
+dagster-graphql
+dagster-test
+dagster-postgres
