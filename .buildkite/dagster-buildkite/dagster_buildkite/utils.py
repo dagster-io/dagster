@@ -234,7 +234,6 @@ def skip_coverage_if_feature_branch():
     return "Skip coverage uploads until we're finished with our Buildkite refactor"
 
 
-@functools.lru_cache(maxsize=None)
 def skip_mysql():
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
@@ -245,7 +244,6 @@ def skip_mysql():
     return "Skip unless mysql schemas might have changed"
 
 
-@functools.lru_cache(maxsize=None)
 def skip_graphql():
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
