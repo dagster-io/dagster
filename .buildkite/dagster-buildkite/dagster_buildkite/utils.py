@@ -292,7 +292,6 @@ def skip_if_no_docs_changes():
     return "No docs changes"
 
 
-@functools.lru_cache(maxsize=None)
 def skip_if_no_js_changes():
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
