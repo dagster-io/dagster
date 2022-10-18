@@ -416,6 +416,10 @@ class ExternalPipelineOrigin(
     def get_id(self) -> str:
         return create_snapshot_id(self)
 
+    @property
+    def location_name(self) -> str:
+        return self.external_repository_origin.repository_location_origin.location_name
+
 
 class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
     @classmethod

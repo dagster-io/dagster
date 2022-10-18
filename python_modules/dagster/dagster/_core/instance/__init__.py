@@ -105,6 +105,7 @@ if TYPE_CHECKING:
         TickData,
         TickStatus,
     )
+    from dagster._core.secrets import SecretsLoader
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.event_log import EventLogStorage
@@ -292,11 +293,13 @@ class DagsterInstance:
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Dict[str, Any]] = None,
+        secrets_loader: Optional["SecretsLoader"] = None,
         ref: Optional[InstanceRef] = None,
     ):
         from dagster._core.launcher import RunLauncher
         from dagster._core.run_coordinator import RunCoordinator
         from dagster._core.scheduler import Scheduler
+        from dagster._core.secrets import SecretsLoader
         from dagster._core.storage.compute_log_manager import ComputeLogManager
         from dagster._core.storage.event_log import EventLogStorage
         from dagster._core.storage.root import LocalArtifactStorage
@@ -332,6 +335,11 @@ class DagsterInstance:
         self._run_launcher.register_instance(self)
 
         self._settings = check.opt_dict_param(settings, "settings")
+
+        self._secrets_loader = check.opt_inst_param(secrets_loader, "secrets_loader", SecretsLoader)
+
+        if self._secrets_loader:
+            self._secrets_loader.register_instance(self)
 
         self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
 
@@ -479,6 +487,7 @@ class DagsterInstance:
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
             settings=instance_ref.settings,
+            secrets_loader=instance_ref.secrets_loader,
             ref=instance_ref,
             **kwargs,
         )
@@ -757,6 +766,8 @@ class DagsterInstance:
         self._run_launcher.dispose()
         self._event_storage.dispose()
         self._compute_log_manager.dispose()
+        if self._secrets_loader:
+            self._secrets_loader.dispose()
 
     # run storage
     @public
@@ -2135,3 +2146,11 @@ class DagsterInstance:
         )
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         return get_tick_retention_settings(tick_settings, default_tick_settings)
+
+    def inject_env_vars(self, location_name: Optional[str]):
+        if not self._secrets_loader:
+            return
+
+        new_env = self._secrets_loader.get_secrets_for_environment(location_name)
+        for k, v in new_env.items():
+            os.environ[k] = v
