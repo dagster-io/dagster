@@ -307,4 +307,4 @@ def skip_if_no_dagit_changes():
     if ["dagster", "dagit", "dagster-graphql"] in changed_python_package_names():
         return None
 
-    return "No JS changes"
+    return "No changes that affect the JS webapp"
