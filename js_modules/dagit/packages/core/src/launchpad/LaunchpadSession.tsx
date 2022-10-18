@@ -44,7 +44,7 @@ import {
   CONFIG_PARTITION_SELECTION_QUERY,
 } from './ConfigEditorConfigPicker';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
-import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
+import {useLaunchPadHooks} from './LaunchpadHooksContext';
 import {LaunchpadType} from './LaunchpadRoot';
 import {LoadingOverlay} from './LoadingOverlay';
 import {OpSelector} from './OpSelector';
@@ -551,6 +551,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       'This job is partitioned. Are you sure you want to launch' +
       ' a run without a partition specified?';
   }
+
+  const {LaunchRootExecutionButton} = useLaunchPadHooks();
 
   return (
     <>
