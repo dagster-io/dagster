@@ -1,7 +1,7 @@
 import enum
 import json
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import pendulum
 import pytest
@@ -1364,3 +1364,32 @@ def test_infer_graph_input_type_from_inner_inner_input():
     assert outer.input_defs[0].dagster_type.is_nothing
 
     assert outer.execute_in_process().success
+
+
+def test_infer_graph_input_type_from_inner_input_fan_in():
+    @op
+    def op1(in1: List[int]):
+        assert in1 == [5]
+
+    @graph
+    def graph1(in1):
+        op1([in1])
+
+    assert graph1.input_defs[0].dagster_type.typing_type == int
+
+    assert graph1.execute_in_process(run_config={"inputs": {"in1": {"value": 5}}}).success
+
+
+def test_infer_graph_input_type_from_inner_input_mixed_fan_in():
+    @op
+    def op1(in1: List[int], in2: int):
+        assert in1 == [5]
+        assert in2 == 5
+
+    @graph
+    def graph1(in1):
+        op1([in1], in1)
+
+    assert graph1.input_defs[0].dagster_type.typing_type == int
+
+    assert graph1.execute_in_process(run_config={"inputs": {"in1": {"value": 5}}}).success

@@ -812,7 +812,7 @@ def _validate_in_mappings(
     input_defs_by_name: Dict[str, InputDefinition] = OrderedDict()
     mapping_keys = set()
 
-    target_input_defs_by_graph_input_name: Dict[str, List[InputDefinition]] = defaultdict(list)
+    target_input_types_by_graph_input_name: Dict[str, Set[DagsterType]] = defaultdict(set)
 
     for mapping in input_mappings:
         # handle incorrect objects passed in as mappings
@@ -844,7 +844,6 @@ def _validate_in_mappings(
             )
 
         target_input_def = target_node.input_def_named(mapping.maps_to.input_name)
-        target_input_defs_by_graph_input_name[mapping.graph_input_name].append(target_input_def)
         solid_input_handle = SolidInputHandle(target_node, target_input_def)
 
         if mapping.maps_to_fan_in:
@@ -865,6 +864,9 @@ def _validate_in_mappings(
                     f"the MultiDependencyDefinition is not a MappedInputPlaceholder"
                 )
             mapping_keys.add(f"{maps_to.node_name}.{maps_to.input_name}.{maps_to.fan_in_index}")
+            target_input_types_by_graph_input_name[mapping.graph_input_name].add(
+                target_input_def.dagster_type.get_inner_type_for_fan_in()
+            )
         else:
             if dependency_structure.has_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
@@ -874,6 +876,9 @@ def _validate_in_mappings(
                 )
 
             mapping_keys.add(f"{mapping.maps_to.node_name}.{mapping.maps_to.input_name}")
+            target_input_types_by_graph_input_name[mapping.graph_input_name].add(
+                target_input_def.dagster_type
+            )
 
     for input_handle in dependency_structure.input_handles():
         if dependency_structure.has_fan_in_deps(input_handle):
@@ -890,13 +895,10 @@ def _validate_in_mappings(
     # same dagster type, then use that dagster type for the graph input
     for graph_input_name, graph_input_def in input_defs_by_name.items():
         if graph_input_def.dagster_type.kind == DagsterTypeKind.ANY:
-            target_input_defs = target_input_defs_by_graph_input_name[graph_input_name]
-            if all(
-                target_input_def.dagster_type == target_input_defs[0].dagster_type
-                for target_input_def in target_input_defs
-            ):
+            target_input_types = target_input_types_by_graph_input_name[graph_input_name]
+            if len(target_input_types) == 1:
                 input_defs_by_name[graph_input_name] = graph_input_def.with_dagster_type(
-                    target_input_defs[0].dagster_type
+                    next(iter(target_input_types))
                 )
 
     return list(input_defs_by_name.values())
