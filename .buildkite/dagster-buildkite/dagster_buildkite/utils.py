@@ -292,12 +292,19 @@ def skip_if_no_docs_changes():
     return "No docs changes"
 
 
-def skip_if_no_js_changes():
+def skip_if_no_dagit_changes():
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
 
     # If anything changes in the js_modules directory
     if any(Path("js_modules") in path.parents for path in get_changed_files()):
+        return None
+
+    # If anything changes in python packages that our front end depend on
+    # dagster and dagster-graphql might indicate changes to our graphql schema
+    # (once we can walk a dependency tree, we can  reduce this to just dagster-graphql)
+    # dagit might indicate changes to other non-graphql endpoints
+    if ["dagster", "dagit", "dagster-graphql"] in changed_python_package_names():
         return None
 
     return "No JS changes"

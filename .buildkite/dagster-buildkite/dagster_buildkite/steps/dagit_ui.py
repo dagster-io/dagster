@@ -2,7 +2,7 @@ from typing import List
 
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
-from ..utils import CommandStep, skip_if_no_js_changes
+from ..utils import CommandStep, skip_if_no_dagit_changes
 
 
 def build_dagit_ui_steps() -> List[CommandStep]:
@@ -20,6 +20,6 @@ def build_dagit_ui_steps() -> List[CommandStep]:
             "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
         )
         .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_js_changes())
+        .with_skip(skip_if_no_dagit_changes())
         .build(),
     ]
