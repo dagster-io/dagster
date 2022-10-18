@@ -37,10 +37,11 @@ class TestCapturedLogManager:
     def test_capture(self, captured_log_manager):
         log_key = ["foo"]
 
-        with captured_log_manager.capture_logs(log_key):
+        with captured_log_manager.capture_logs(log_key) as context:
             print("HELLO WORLD")  # pylint: disable=print-call
             print("HELLO ERROR", file=sys.stderr)  # pylint: disable=print-call
             assert not captured_log_manager.is_capture_complete(log_key)
+            assert context.log_key == log_key
 
         assert captured_log_manager.is_capture_complete(log_key)
 
@@ -49,7 +50,7 @@ class TestCapturedLogManager:
         assert log_data.stderr == b"HELLO ERROR\n"
         assert log_data.cursor
 
-        log_metadata = captured_log_manager.get_contextual_log_metadata(log_key)
+        log_metadata = captured_log_manager.get_log_metadata(log_key)
         assert log_metadata.stdout_location
         assert log_metadata.stderr_location
         assert log_metadata.stdout_download_url
@@ -61,10 +62,11 @@ class TestCapturedLogManager:
     def test_long_key(self, captured_log_manager):
         log_key = ["".join(random.choice(string.ascii_lowercase) for x in range(300))]
 
-        with captured_log_manager.capture_logs(log_key):
+        with captured_log_manager.capture_logs(log_key) as context:
             print("HELLO WORLD")  # pylint: disable=print-call
             print("HELLO ERROR", file=sys.stderr)  # pylint: disable=print-call
             assert not captured_log_manager.is_capture_complete(log_key)
+            assert context.log_key == log_key
 
         assert captured_log_manager.is_capture_complete(log_key)
 
@@ -73,7 +75,7 @@ class TestCapturedLogManager:
         assert log_data.stderr == b"HELLO ERROR\n"
         assert log_data.cursor
 
-        log_metadata = captured_log_manager.get_contextual_log_metadata(log_key)
+        log_metadata = captured_log_manager.get_log_metadata(log_key)
         assert log_metadata.stdout_location
         assert log_metadata.stderr_location
         assert log_metadata.stdout_download_url

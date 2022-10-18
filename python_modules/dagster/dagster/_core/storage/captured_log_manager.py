@@ -9,6 +9,25 @@ from dagster._core.storage.compute_log_manager import ComputeIOType
 MAX_BYTES_CHUNK_READ = 4194304  # 4 MB
 
 
+class CapturedLogContext(
+    NamedTuple(
+        "_CapturedLogContext",
+        [
+            ("log_key", List[str]),
+            ("external_url", Optional[str]),
+        ],
+    )
+):
+    """
+    Object representing the context in which logs are captured.  Can be used by external logging
+    sidecar implementations to point dagit to an external url to view compute logs instead of a
+    Dagster-managed location.
+    """
+
+    def __new__(cls, log_key: List[str], external_url: Optional[str] = None):
+        return super(CapturedLogContext, cls).__new__(cls, log_key, external_url=external_url)
+
+
 class CapturedLogData(
     NamedTuple(
         "_CapturedLogData",
@@ -39,7 +58,6 @@ class CapturedLogMetadata(
     NamedTuple(
         "_CapturedLogMetadata",
         [
-            ("external_url", Optional[str]),
             ("stdout_location", Optional[str]),
             ("stderr_location", Optional[str]),
             ("stdout_download_url", Optional[str]),
@@ -54,7 +72,6 @@ class CapturedLogMetadata(
 
     def __new__(
         cls,
-        external_url: Optional[str] = None,
         stdout_location: Optional[str] = None,
         stderr_location: Optional[str] = None,
         stdout_download_url: Optional[str] = None,
@@ -62,7 +79,6 @@ class CapturedLogMetadata(
     ):
         return super(CapturedLogMetadata, cls).__new__(
             cls,
-            external_url=external_url,
             stdout_location=stdout_location,
             stderr_location=stderr_location,
             stdout_download_url=stdout_download_url,
@@ -127,7 +143,7 @@ class CapturedLogManager(ABC):
 
     @abstractmethod
     @contextmanager
-    def capture_logs(self, log_key: List[str]):
+    def capture_logs(self, log_key: List[str]) -> Generator[CapturedLogContext, None, None]:
         """
         Context manager for capturing the stdout/stderr within the current process, and persisting
         it under the given log key.
@@ -188,7 +204,7 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def get_contextual_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
+    def get_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
         """Returns the metadata of the captured logs for a given log key, including
         displayable information on where the logs are persisted.
 

@@ -17,6 +17,7 @@ from dagster._seven import json
 from dagster._utils import ensure_dir, ensure_file, touch_file
 
 from .captured_log_manager import (
+    CapturedLogContext,
     CapturedLogData,
     CapturedLogManager,
     CapturedLogMetadata,
@@ -68,12 +69,12 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         return LocalComputeLogManager(inst_data=inst_data, **config_value)
 
     @contextmanager
-    def capture_logs(self, log_key: List[str]):
+    def capture_logs(self, log_key: List[str]) -> Generator[CapturedLogContext, None, None]:
         outpath = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT])
         errpath = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR])
         with mirror_stream_to_file(sys.stdout, outpath):
             with mirror_stream_to_file(sys.stderr, errpath):
-                yield
+                yield CapturedLogContext(log_key)
 
         # leave artifact on filesystem so that we know the capture is completed
         touch_file(self.complete_artifact_path(log_key))
@@ -107,7 +108,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             cursor=self.build_cursor(stdout_offset, stderr_offset),
         )
 
-    def get_contextual_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
+    def get_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
         return CapturedLogMetadata(
             stdout_location=self.get_captured_local_path(
                 log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
