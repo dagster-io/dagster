@@ -234,21 +234,22 @@ def skip_coverage_if_feature_branch():
     return "Skip coverage uploads until we're finished with our Buildkite refactor"
 
 
-def skip_mysql():
+def skip_mysql_checks_if_no_changes_to_dependencies(dependencies: List[str]):
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
 
-    if "dagster" in changed_python_package_names():
-        return None
+    for dependency in dependencies:
+        if dependency in changed_python_package_names():
+            return None
 
     return "Skip unless mysql schemas might have changed"
 
 
-def skip_graphql():
+def skip_graphql_checks_if_no_changes_to_dependencies(dependencies: List[str]):
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
 
-    for dependency in ["dagster", "dagster-graphql", "automation"]:
+    for dependency in dependencies:
         if dependency in changed_python_package_names():
             return None
 
