@@ -234,7 +234,7 @@ def skip_coverage_if_feature_branch():
     return "Skip coverage uploads until we're finished with our Buildkite refactor"
 
 
-def skip_mysql_checks_if_no_changes_to_dependencies(dependencies: List[str]):
+def skip_mysql_if_no_changes_to_dependencies(dependencies: List[str]):
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
 
@@ -245,7 +245,7 @@ def skip_mysql_checks_if_no_changes_to_dependencies(dependencies: List[str]):
     return "Skip unless mysql schemas might have changed"
 
 
-def skip_graphql_checks_if_no_changes_to_dependencies(dependencies: List[str]):
+def skip_graphql_if_no_changes_to_dependencies(dependencies: List[str]):
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
 
