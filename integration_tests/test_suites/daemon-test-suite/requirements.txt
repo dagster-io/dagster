@@ -1,0 +1,14 @@
+# This file is used to declare dependencies so we can
+# conditionally skip unaffected parts of the CI build
+dagster
+dagster-graphql
+dagster-test
+dagster-aws
+dagster-pandas
+dagster-gcp
+dagster-celery
+dagster-celery-docker
+dagster-k8s
+dagster-celery-k8s
+dagster-postgres
+dagster-docker
