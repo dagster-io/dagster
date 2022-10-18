@@ -10,11 +10,13 @@ from typing import (
     Sequence,
     Type,
     Union,
+    cast,
 )
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import (
     ASSET_BASE_JOB_PREFIX,
 )
@@ -25,12 +27,13 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.partition import PartitionSetDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.reconstruct import ReconstructableJob, reconstructable_repository
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import check_valid_name
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
@@ -46,6 +49,7 @@ from .valid_definitions import (
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+    from dagster._core.execution.execution_result import ExecutionResult
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
@@ -387,6 +391,46 @@ class RepositoryDefinition:
     def asset_graph(self) -> InternalAssetGraph:
         return AssetGraph.from_assets(
             [*set(self._assets_defs_by_key.values()), *self.source_assets_by_key.values()]
+        )
+
+    def materialize(
+        self,
+        selection: Union[AssetSelection, CoercibleToAssetKey, AbstractSet[CoercibleToAssetKey]],
+        instance: DagsterInstance,
+    ) -> "ExecutionResult":
+        """
+        Executes a run that materializes all the selected assets.
+
+        The repository this is invoked on must be defined at module scope.
+
+        Args:
+            selection (Union[AssetSelection, str, AssetKey, AbstractSet[Union[str, AssetKey]]]):
+                The assets to materialize.
+            instance (DagsterInstance): The instance to execute against.
+
+        Returns:
+            ExecutionResult: The result of the execution.
+        """
+        from dagster._core.execution.api import execute_job
+
+        if isinstance(selection, AssetSelection):
+            asset_keys = list(selection.resolve(self.asset_graph))
+        elif isinstance(selection, (frozenset, set)):
+            asset_keys = [AssetKey.from_coerceable(key) for key in selection]
+        else:
+            asset_keys = [AssetKey.from_coerceable(cast(CoercibleToAssetKey, selection))]
+
+        job_def = self.get_implicit_job_def_for_assets(asset_keys)
+        if not job_def:
+            raise DagsterInvalidSubsetError(
+                "Some assets within the selection are partitioned differently than other assets "
+                "within the selection, and thus they can't be materialized as part of the same run."
+            )
+
+        return execute_job(
+            ReconstructableJob(reconstructable_repository(self), job_def.name),
+            asset_selection=asset_keys,
+            instance=instance,
         )
 
     # If definition comes from the @repository decorator, then the __call__ method will be
