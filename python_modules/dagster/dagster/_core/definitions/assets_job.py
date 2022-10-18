@@ -30,7 +30,7 @@ from .utils import DEFAULT_IO_MANAGER_KEY
 ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
 
 
-def is_base_asset_job_name(name) -> bool:
+def is_base_asset_job_name(name: str) -> bool:
     return name.startswith(ASSET_BASE_JOB_PREFIX)
 
 

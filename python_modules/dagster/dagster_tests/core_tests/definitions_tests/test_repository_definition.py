@@ -13,6 +13,7 @@ from dagster import (
     JobDefinition,
     OpDefinition,
     ResourceDefinition,
+    HourlyPartitionsDefinition,
     SensorDefinition,
     SourceAsset,
     asset,
@@ -25,16 +26,20 @@ from dagster import (
     io_manager,
     job,
     logger,
+    mem_io_manager,
+    multiprocess_executor,
     op,
     repository,
     resource,
     schedule,
     sensor,
+    with_resources,
 )
 from dagster._check import CheckError
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster._core.test_utils import instance_for_test
 from dagster._legacy import AssetGroup
 from dagster._loggers import default_loggers
 
@@ -1428,3 +1433,68 @@ def test_default_loggers_keys_conflict():
         return [the_job]
 
     assert the_repo.get_job("the_job").loggers == {"foo": some_logger}
+
+
+@repository(default_executor_def=in_process_executor)
+def module_level_repo_in_process_executor():
+    @asset
+    def asset1():
+        return 5
+
+    return [with_resources([asset1], resource_defs={"io_manager": mem_io_manager})]
+
+
+def test_materialize_in_process_executor():
+    result = module_level_repo_in_process_executor.materialize("asset1")
+    assert result.success
+
+
+@repository(default_executor_def=multiprocess_executor)
+def module_level_repo_multiprocess_executor():
+    @asset
+    def asset1():
+        return 5
+
+    return [asset1]
+
+
+def test_materialize_multiprocess_executor():
+    with instance_for_test():
+        result = module_level_repo_multiprocess_executor.materialize("asset1")
+        assert result.success
+
+
+@repository(default_executor_def=in_process_executor)
+def module_level_repo_with_partitioned_assets():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-06-07"))
+    def asset1():
+        return 5
+
+    @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-06-06-00:00"))
+    def asset2():
+        return 5
+
+    return [with_resources([asset1, asset2], resource_defs={"io_manager": mem_io_manager})]
+
+
+def test_materialize_partitions():
+    with instance_for_test():
+        with pytest.raises(DagsterInvalidSubsetError):
+            module_level_repo_with_partitioned_assets.materialize(["asset1", "asset2"])
+
+
+def test_repo_not_module_scoped():
+    @repository(default_executor_def=multiprocess_executor)
+    def repo_multiprocess_executor():
+        @asset
+        def asset1():
+            return 5
+
+        return [asset1]
+
+    with instance_for_test():
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="Can only reconstruct repositories that are defined within a module",
+        ):
+            repo_multiprocess_executor.materialize("asset1")

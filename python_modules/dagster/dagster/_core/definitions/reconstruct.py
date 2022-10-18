@@ -434,29 +434,51 @@ def reconstructable(target):
             )
         )
 
-    try:
-        if (
-            hasattr(target, "__module__")
-            and hasattr(target, "__name__")
-            and inspect.getmodule(target).__name__ != "__main__"
-        ):
-            return ReconstructablePipeline.for_module(target.__module__, target.__name__)
-    except:
-        pass
-
-    python_file = get_python_file_from_target(target)
-    if not python_file:
+    code_pointer = _find_code_pointer(target)
+    if code_pointer:
+        return bootstrap_standalone_recon_pipeline(code_pointer)
+    else:
         raise DagsterInvariantViolationError(
             "reconstructable() can not reconstruct jobs or pipelines defined in interactive "
             "environments like <stdin>, IPython, or Jupyter notebooks. "
             "Use a pipeline defined in a module or file instead, or use build_reconstructable_job."
         )
 
-    pointer = FileCodePointer(
-        python_file=python_file, fn_name=target.__name__, working_directory=os.getcwd()
-    )
 
-    return bootstrap_standalone_recon_pipeline(pointer)
+def reconstructable_repository(target: "RepositoryDefinition") -> ReconstructableRepository:
+    code_pointer = _find_code_pointer(target)
+
+    if code_pointer:
+        return ReconstructableRepository(code_pointer)
+    else:
+        raise DagsterInvariantViolationError(
+            "Can only reconstruct repositories that are defined within a module, at module scope. "
+            "Cannot reconstruct repositories defined in interactive environments like <stdin>, "
+            "IPython, or Jupyter notebooks."
+        )
+
+
+def _find_code_pointer(target) -> Optional[CodePointer]:
+    try:
+        if (
+            hasattr(target, "__module__")
+            and hasattr(target, "__name__")
+            and inspect.getmodule(target).__name__ != "__main__"
+        ):
+            if getattr(inspect.getmodule(target), target.__name__, None) != target:
+                return None
+
+            return ModuleCodePointer(target.__module__, target.__name__, os.getcwd())
+    except:
+        pass
+
+    python_file = get_python_file_from_target(target)
+    if python_file:
+        return FileCodePointer(
+            python_file=python_file, fn_name=target.__name__, working_directory=os.getcwd()
+        )
+
+    return None
 
 
 @experimental

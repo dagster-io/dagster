@@ -1,8 +1,11 @@
+import itertools
 from abc import ABC, abstractmethod
+from contextlib import ExitStack
 from inspect import isfunction
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -22,12 +25,17 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.instance import DagsterInstance
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+    DagsterInvalidSubsetError,
+)
+from dagster._core.instance import DagsterInstance, is_dagster_home_set
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import make_readonly_value, merge_dicts
 
+from .asset_selection import AssetSelection
 from .assets_job import get_base_asset_jobs, is_base_asset_job_name
 from .cacheable_assets import AssetsDefinitionCacheableData
 from .events import AssetKey, CoercibleToAssetKey
@@ -37,6 +45,7 @@ from .job_definition import JobDefinition
 from .logger_definition import LoggerDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
+from .reconstruct import ReconstructableJob, reconstructable_repository
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 from .source_asset import SourceAsset
@@ -46,6 +55,7 @@ from .utils import check_valid_name
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetGroup, AssetsDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+    from dagster._core.execution.execution_result import ExecutionResult
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
@@ -1421,6 +1431,72 @@ class RepositoryDefinition:
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
         return AssetValueLoader(self._assets_defs_by_key, instance=instance)
+
+    @public
+    def materialize(
+        self,
+        selection: Union[AssetSelection, CoercibleToAssetKey, AbstractSet[CoercibleToAssetKey]],
+        instance: Optional[DagsterInstance] = None,
+    ) -> "ExecutionResult":
+        """
+        Executes a run that materializes all the selected assets.
+
+        The repository this is invoked on must be defined at module scope.
+
+        Args:
+            assets (Union[AssetSelection, str, AssetKey, AbstractSet[Union[str, AssetKey]]]):
+                The assets to materialize.
+            instance (DagsterInstance): The instance to execute against.
+
+        Returns:
+            ExecutionResult: The result of the execution.
+        """
+        from dagster._core.execution.api import execute_job
+
+        if isinstance(selection, AssetSelection):
+            asset_keys = list(
+                selection.resolve(
+                    itertools.chain(
+                        self._assets_defs_by_key.keys(), self._source_assets_by_key.keys()
+                    )
+                )
+            )
+        elif isinstance(selection, (frozenset, set)):
+            asset_keys = [AssetKey.from_coerceable(key) for key in selection]
+        else:
+            asset_keys = [AssetKey.from_coerceable(selection)]
+
+        job_def = self._get_base_job_that_contains_all_asset_keys(asset_keys)
+        if not job_def:
+            raise DagsterInvalidSubsetError(
+                "Some assets within the selection are partitioned differently than other assets "
+                "within the selection, and thus they can't be materialized as part of the same run."
+            )
+
+        with ExitStack() as exit_stack:
+            if not instance:
+                if is_dagster_home_set():
+                    instance = exit_stack.enter_context(DagsterInstance.get())
+                else:
+                    instance = exit_stack.enter_context(DagsterInstance.ephemeral())
+
+            return execute_job(
+                ReconstructableJob(reconstructable_repository(self), job_def.name),
+                asset_selection=asset_keys,
+                instance=instance,
+            )
+
+    def _get_base_job_that_contains_all_asset_keys(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Optional[JobDefinition]:
+        for job_name in self.job_names:
+            if is_base_asset_job_name(job_name):
+                job_def = self.get_job(job_name)
+                job_asset_keys = job_def.asset_layer.asset_keys
+                if all(asset_key in job_asset_keys for asset_key in asset_keys):
+                    return job_def
+
+        return None
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.

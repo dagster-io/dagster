@@ -1,7 +1,7 @@
 import operator
 from abc import ABC
 from functools import reduce
-from typing import AbstractSet, FrozenSet, Optional, Sequence, Union
+from typing import AbstractSet, FrozenSet, Iterable, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import public
@@ -209,7 +209,7 @@ class UpstreamAssetSelection(AssetSelection):
 
 
 class Resolver:
-    def __init__(self, all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]):
+    def __init__(self, all_assets: Iterable[Union[AssetsDefinition, SourceAsset]]):
         assets_defs = []
         source_assets = []
         for asset in all_assets:
