@@ -1,4 +1,3 @@
-import functools
 import os
 from distutils import core as distutils_core  # pylint: disable=deprecated-module
 from importlib import reload
@@ -280,7 +279,6 @@ class PackageSpec(
         ]
 
     @property
-    @functools.lru_cache(maxsize=None)
     def distribution(self):
         # run_setup stores state in a global variable. Reload the module
         # each time we use it - otherwise we'll get the previous invocation's
@@ -292,7 +290,6 @@ class PackageSpec(
             return distutils_core.run_setup(setup)
 
     @property
-    @functools.lru_cache(maxsize=None)
     def requirements(self):
         # First try to infer requirements from the distribution
         if self.distribution:
@@ -315,7 +312,6 @@ class PackageSpec(
         return []
 
     @property
-    @functools.lru_cache(maxsize=None)
     def skip_reason(self) -> Optional[str]:
         if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
             return None
