@@ -65,16 +65,16 @@ export const LaunchAssetExecutionButton: React.FC<{
   preferredJobName?: string;
 }> = ({assetKeys, preferredJobName, context, intent = 'primary'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
-  const launchWithTelemetry = useLaunchWithTelemetry();
-
-  const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
-  const client = useApolloClient();
-  const confirm = useConfirmation();
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
   const label = `Materialize${
     context === 'all' ? ` all${count}` : context === 'selected' ? ` selected${count}` : count
   }`;
+
+  const {onClick, loading, launchpadElement} = useMaterializationAction(
+    assetKeys,
+    preferredJobName,
+  );
 
   if (!assetKeys.length || !canLaunchPipelineExecution.enabled) {
     return (
@@ -91,6 +91,29 @@ export const LaunchAssetExecutionButton: React.FC<{
       </Tooltip>
     );
   }
+
+  return (
+    <>
+      <Tooltip content="Shift+click to add configuration">
+        <Button
+          intent={intent}
+          onClick={onClick}
+          icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
+        >
+          {label}
+        </Button>
+      </Tooltip>
+      {launchpadElement}
+    </>
+  );
+};
+
+export const useMaterializationAction = (assetKeys: AssetKey[], preferredJobName?: string) => {
+  const launchWithTelemetry = useLaunchWithTelemetry();
+  const client = useApolloClient();
+  const confirm = useConfirmation();
+
+  const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
 
   const onClick = async (e: React.MouseEvent<any>) => {
     if (state.type === 'loading') {
@@ -157,24 +180,9 @@ export const LaunchAssetExecutionButton: React.FC<{
     }
   };
 
-  return (
-    <>
-      <Tooltip content="Shift+click to add configuration">
-        <Button
-          intent={intent}
-          onClick={onClick}
-          icon={
-            state.type === 'loading' ? (
-              <Spinner purpose="body-text" />
-            ) : (
-              <Icon name="materialization" />
-            )
-          }
-        >
-          {label}
-        </Button>
-      </Tooltip>
-      {state.type === 'launchpad' && (
+  const launchpad = () => {
+    if (state.type === 'launchpad') {
+      return (
         <AssetLaunchpad
           assetJobName={state.jobName}
           repoAddress={state.repoAddress}
@@ -182,8 +190,11 @@ export const LaunchAssetExecutionButton: React.FC<{
           open={true}
           setOpen={() => setState({type: 'none'})}
         />
-      )}
-      {state.type === 'partitions' && (
+      );
+    }
+
+    if (state.type === 'partitions') {
+      return (
         <LaunchAssetChoosePartitionsDialog
           assets={state.assets}
           upstreamAssetKeys={state.upstreamAssetKeys}
@@ -192,9 +203,13 @@ export const LaunchAssetExecutionButton: React.FC<{
           open={true}
           setOpen={() => setState({type: 'none'})}
         />
-      )}
-    </>
-  );
+      );
+    }
+
+    return null;
+  };
+
+  return {onClick, loading: state.type === 'loading', launchpadElement: launchpad()};
 };
 
 async function stateForLaunchingAssets(
