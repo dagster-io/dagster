@@ -313,7 +313,7 @@ class PackageSpec(
         for change in get_changed_files():
             if (
                 # Our change is in this package's directory
-                (change in Path(self.directory).rglob("*"))
+                (Path(self.directory) in change.parents)
                 # The file can alter behavior - exclude things like README changes
                 and (change.suffix in [".py", ".cfg", ".toml"] or change.name == "requirements.txt")
             ):
