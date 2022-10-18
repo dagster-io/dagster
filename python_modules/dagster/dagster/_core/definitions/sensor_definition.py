@@ -1781,7 +1781,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
                 runs_yielded = False
                 if inspect.isgenerator(result) or isinstance(result, list):
                     for item in result:
-                        runs_yielded = True
+                        if isinstance(item, RunRequest):
+                            runs_yielded = True
                         yield item
                 elif isinstance(result, RunRequest):
                     runs_yielded = True
