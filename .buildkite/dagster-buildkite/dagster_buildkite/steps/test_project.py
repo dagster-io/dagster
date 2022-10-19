@@ -9,6 +9,7 @@ from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteLeafStep, GroupStep
 
 build_for: Set[AvailablePythonVersion] = set()
+build_core_for: Set[AvailablePythonVersion] = set()
 
 
 def build_test_project_steps() -> List[GroupStep]:
@@ -59,7 +60,7 @@ def build_test_project_steps() -> List[GroupStep]:
                     "BUILDKITE_SECRETS_BUCKET",
                 ],
             )
-            .with_skip(skip_if_version_not_needed(version))
+            .with_skip(skip_core_if_version_not_needed(version))
             .build()
         )
 
@@ -125,12 +126,19 @@ def _test_project_core_step_key(version: AvailablePythonVersion) -> str:
 
 
 def test_project_core_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
-    build_for.add(version)
+    build_core_for.add(version)
     return [_test_project_core_step_key(version)]
 
 
 def skip_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:
     if version in build_for:
+        return None
+
+    return "Skipped because no builds depends on this image"
+
+
+def skip_core_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:
+    if version in build_core_for:
         return None
 
     return "Skipped because no builds depends on this image"
