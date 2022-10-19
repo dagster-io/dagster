@@ -28,6 +28,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {OverviewSensorTable} from './OverviewSensorsTable';
 import {OverviewTabs} from './OverviewTabs';
+import {sortRepoBuckets} from './sortRepoBuckets';
 import {OverviewSensorsQuery} from './types/OverviewSensorsQuery';
 import {UnloadableSensorsQuery} from './types/UnloadableSensorsQuery';
 
@@ -46,7 +47,7 @@ export const OverviewSensorsRoot = () => {
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
-  const repoBuckets = useRepoBuckets(data);
+  const repoBuckets = React.useMemo(() => buildBuckets(data), [data]);
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
@@ -220,37 +221,35 @@ type RepoBucket = {
   sensors: string[];
 };
 
-const useRepoBuckets = (data?: OverviewSensorsQuery): RepoBucket[] => {
-  return React.useMemo(() => {
-    if (data?.workspaceOrError.__typename !== 'Workspace') {
-      return [];
+const buildBuckets = (data?: OverviewSensorsQuery): RepoBucket[] => {
+  if (data?.workspaceOrError.__typename !== 'Workspace') {
+    return [];
+  }
+
+  const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+
+  const buckets = [];
+
+  for (const entry of entries) {
+    if (entry?.__typename !== 'RepositoryLocation') {
+      continue;
     }
 
-    const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+    for (const repo of entry.repositories) {
+      const {name, sensors} = repo;
+      const repoAddress = buildRepoAddress(name, entry.name);
+      const sensorNames = sensors.map(({name}) => name);
 
-    const buckets = [];
-
-    for (const entry of entries) {
-      if (entry?.__typename !== 'RepositoryLocation') {
-        continue;
-      }
-
-      for (const repo of entry.repositories) {
-        const {name, sensors} = repo;
-        const repoAddress = buildRepoAddress(name, entry.name);
-        const sensorNames = sensors.map(({name}) => name);
-
-        if (sensorNames.length > 0) {
-          buckets.push({
-            repoAddress,
-            sensors: sensorNames,
-          });
-        }
+      if (sensorNames.length > 0) {
+        buckets.push({
+          repoAddress,
+          sensors: sensorNames,
+        });
       }
     }
+  }
 
-    return buckets;
-  }, [data]);
+  return sortRepoBuckets(buckets);
 };
 
 const OVERVIEW_SENSORS_QUERY = gql`
