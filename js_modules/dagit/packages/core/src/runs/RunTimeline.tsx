@@ -69,7 +69,23 @@ const EXPANSION_STATE_STORAGE_KEY = 'timeline-expansion-state';
 export const RunTimeline = (props: Props) => {
   const {loading = false, jobs, range} = props;
   const [width, setWidth] = React.useState<number | null>(null);
-  const {expandedKeys, onToggle} = useRepoExpansionState(EXPANSION_STATE_STORAGE_KEY);
+
+  const now = Date.now();
+  const [_, end] = range;
+  const includesTicks = now <= end;
+
+  const buckets = jobs.reduce((accum, job) => {
+    const {repoAddress} = job;
+    const repoKey = repoAddressAsString(repoAddress);
+    const jobsForRepo = accum[repoKey] || [];
+    return {...accum, [repoKey]: [...jobsForRepo, job]};
+  }, {});
+
+  const allKeys = Object.keys(buckets);
+  const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
+    EXPANSION_STATE_STORAGE_KEY,
+    allKeys,
+  );
 
   const observer = React.useRef<ResizeObserver | null>(null);
 
@@ -92,17 +108,6 @@ export const RunTimeline = (props: Props) => {
       </Timeline>
     );
   }
-
-  const now = Date.now();
-  const [_, end] = range;
-  const includesTicks = now <= end;
-
-  const buckets = jobs.reduce((accum, job) => {
-    const {repoAddress} = job;
-    const repoKey = repoAddressAsString(repoAddress);
-    const jobsForRepo = accum[repoKey] || [];
-    return {...accum, [repoKey]: [...jobsForRepo, job]};
-  }, {});
 
   const repoOrder = Object.keys(buckets).sort((a, b) =>
     a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()),
@@ -149,6 +154,7 @@ export const RunTimeline = (props: Props) => {
               isDuplicateRepoName={!!(name && duplicateRepoNames.has(name))}
               jobs={buckets[repoKey]}
               onToggle={onToggle}
+              onToggleAll={onToggleAll}
               width={width}
             />
           );
@@ -169,16 +175,35 @@ interface TimelineSectionProps {
   range: [number, number];
   width: number;
   onToggle: (repoAddress: RepoAddress) => void;
+  onToggleAll: (expanded: boolean) => void;
 }
 
 const TimelineSection = (props: TimelineSectionProps) => {
-  const {expanded, onToggle, repoKey, isDuplicateRepoName, jobs, range, top, width} = props;
+  const {
+    expanded,
+    onToggle,
+    onToggleAll,
+    repoKey,
+    isDuplicateRepoName,
+    jobs,
+    range,
+    top,
+    width,
+  } = props;
   const repoAddress = repoAddressFromPath(repoKey);
   const repoName = repoAddress?.name || 'Unknown repo';
   const repoLocation = repoAddress?.location || 'Unknown location';
-  const onClick = React.useCallback(() => {
-    repoAddress && onToggle(repoAddress);
-  }, [onToggle, repoAddress]);
+
+  const onClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      if (e.getModifierState('Shift')) {
+        onToggleAll(!expanded);
+      } else {
+        repoAddress && onToggle(repoAddress);
+      }
+    },
+    [expanded, onToggle, onToggleAll, repoAddress],
+  );
 
   return (
     <div>
