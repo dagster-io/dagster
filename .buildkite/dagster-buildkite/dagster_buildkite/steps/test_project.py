@@ -1,4 +1,4 @@
-from typing import List, Set
+from typing import List, Optional, Set
 
 from ..images.versions import (
     BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
@@ -129,7 +129,7 @@ def test_project_core_depends_fn(version: AvailablePythonVersion, _) -> List[str
     return [_test_project_core_step_key(version)]
 
 
-def skip_if_version_not_needed(version: AvailablePythonVersion) -> str:
+def skip_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:
     if version in build_for:
         return None
 
