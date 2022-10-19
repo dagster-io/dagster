@@ -13,13 +13,12 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster import IOManager, InputContext, OutputContext
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidDefinitionError
-
-SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext
+from dagster._core.storage.io_manager import IOManager
 
 T = TypeVar("T")
 

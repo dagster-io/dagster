@@ -1,12 +1,19 @@
 from typing import Mapping, Union, cast
 
 import pandas as pd
-from dagster_snowflake import DbTypeHandler
 from dagster_snowflake.resources import SnowflakeConnection
-from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, TableSlice
+from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from snowflake.connector.pandas_tools import pd_writer
 
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster import (
+    DbTypeHandler,
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+    TableSlice,
+)
 from dagster._core.definitions.metadata import RawMetadataValue
 
 

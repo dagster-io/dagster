@@ -2,9 +2,19 @@ from typing import Sequence
 
 from snowflake.connector import ProgrammingError
 
-from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster import (
+    DbClient,
+    DbIOManager,
+    DbTypeHandler,
+    Field,
+    IOManagerDefinition,
+    OutputContext,
+    StringSource,
+    TablePartition,
+    TableSlice,
+    io_manager,
+)
 
-from .db_io_manager import DbClient, DbIOManager, DbTypeHandler, TablePartition, TableSlice
 from .resources import SnowflakeConnection
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
