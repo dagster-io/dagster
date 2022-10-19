@@ -31,7 +31,7 @@ class TablePartition(NamedTuple):
 class TableSlice(NamedTuple):
     table: str
     schema: str
-    database: str
+    database: Optional[str] = None
     columns: Optional[Sequence[str]] = None
     partition: Optional[TablePartition] = None
 
@@ -189,7 +189,7 @@ class DbIOManager(IOManager):
         return TableSlice(
             table=table,
             schema=schema,
-            database=cast(Mapping[str, str], context.resource_config)["database"],
+            database=cast(Mapping[str, str], context.resource_config).get("database"),
             partition=partition,
             columns=(context.metadata or {}).get("columns"),  # type: ignore  # (mypy bug)
         )
