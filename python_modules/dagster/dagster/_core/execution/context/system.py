@@ -57,7 +57,7 @@ from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
+    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.dependency import Node, NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.resource_definition import Resources
@@ -331,7 +331,9 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def partition_key(self) -> Union[str, "MultiDimensionalPartitionKey"]:
-        from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiDimensionalPartitionKey,
+        )
 
         tags = self._plan_data.pipeline_run.tags
 

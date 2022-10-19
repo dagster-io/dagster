@@ -27,8 +27,8 @@ from dagster._core.definitions import (
     TypeCheck,
 )
 from dagster._core.definitions.asset_layer import AssetOutputInfo
-from dagster._core.definitions.composite_partitions import (
-    CompositePartitionsDefinition,
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionsDefinition,
     MultiDimensionalPartition,
     MultiDimensionalPartitionKey,
 )
@@ -62,6 +62,7 @@ from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import ensure_gen, iterate_with_context
 from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
 from dagster._utils.timing import time_execution_scope
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG
 
 from .compute import SolidOutputUnion
 from .compute_generator import create_solid_compute_wrapper
@@ -516,7 +517,7 @@ def _get_output_asset_materializations(
 
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
     if asset_partitions:
-        composite_partitions_def: Optional[CompositePartitionsDefinition] = None
+        multi_dimensional_partitions_def: Optional[MultiPartitionsDefinition] = None
         if any(
             [isinstance(partition, MultiDimensionalPartitionKey) for partition in asset_partitions]
         ):
@@ -524,19 +525,19 @@ def _get_output_asset_materializations(
             if not (
                 asset_output_info
                 and asset_output_info.partitions_def
-                and isinstance(asset_output_info.partitions_def, CompositePartitionsDefinition)
+                and isinstance(asset_output_info.partitions_def, MultiPartitionsDefinition)
             ):
                 raise DagsterInvariantViolationError(
                     "Asset output info must contain a composite partitions definition."
                 )
-            composite_partitions_def = _get_output_asset_info(
+            multi_dimensional_partitions_def = _get_output_asset_info(
                 output_context, output_def
             ).partitions_def
 
         collapsed_partitions: List[str] = [
             partition
             if isinstance(partition, str)
-            else composite_partitions_def.get_partition_key(partition)
+            else multi_dimensional_partitions_def.get_partition_key(partition)
             for partition in asset_partitions
         ]
 
@@ -561,14 +562,24 @@ def _get_output_asset_materializations(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
 
+                tags = None
+                if isinstance(partition, MultiDimensionalPartitionKey):
+                    tags = {
+                        MULTIDIMENSIONAL_PARTITION_TAG(
+                            dimension.dimension_name
+                        ): dimension.partition_key
+                        for dimension in partition.dimension_keys
+                    }
+
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     partition=partition,
                     metadata_entries=metadata_mapping[
-                        composite_partitions_def.get_partition_key(partition)
+                        multi_dimensional_partitions_def.get_partition_key(partition)
                         if isinstance(partition, MultiDimensionalPartitionKey)
                         else partition
                     ],
+                    tags=tags,
                 )
     else:
         for entry in all_metadata:

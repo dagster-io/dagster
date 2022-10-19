@@ -24,7 +24,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition, SolidDefinition
-    from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
+    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent
@@ -88,7 +88,9 @@ class InputContext:
         asset_key: Optional[AssetKey] = None,
         partition_key: Optional[str] = None,
     ):
-        from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiDimensionalPartitionKey,
+        )
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
 
@@ -302,7 +304,9 @@ class InputContext:
 
         Raises an error if the current run is not a partitioned run.
         """
-        from dagster._core.definitions.composite_partitions import CompositePartitionsDefinition
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiPartitionsDefinition,
+        )
         from dagster._core.definitions.job_definition import JobDefinition
 
         if self._partition_key is None:

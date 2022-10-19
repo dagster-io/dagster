@@ -31,7 +31,7 @@ from dagster._core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition, PipelineDefinition
-    from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
+    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent
@@ -127,7 +127,9 @@ class OutputContext:
         warn_on_step_context_use: bool = False,
         partition_key: Optional[Union[str, "MultiDimensionalPartitionKey"]] = None,
     ):
-        from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiDimensionalPartitionKey,
+        )
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
 

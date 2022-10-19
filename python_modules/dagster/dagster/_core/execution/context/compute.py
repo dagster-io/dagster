@@ -43,7 +43,7 @@ from dagster._utils.forked_pdb import ForkedPdb
 from .system import StepExecutionContext
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
+    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
 
 
 class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init

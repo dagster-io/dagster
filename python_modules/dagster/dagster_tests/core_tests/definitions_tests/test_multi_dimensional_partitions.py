@@ -9,8 +9,8 @@ from dagster import (
     define_asset_job,
     repository,
 )
-from dagster._core.definitions.composite_partitions import (
-    CompositePartitionsDefinition,
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionsDefinition,
     MultiDimensionalPartitionKey,
 )
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG
@@ -19,10 +19,10 @@ from dagster._core.test_utils import instance_for_test
 DATE_FORMAT = "%Y-%m-%d"
 
 
-def test_composite_static_partitions():
+def test_multi_static_partitions():
     partitions1 = StaticPartitionsDefinition(["a", "b", "c"])
     partitions2 = StaticPartitionsDefinition(["x", "y", "z"])
-    composite = CompositePartitionsDefinition({"abc": partitions1, "xyz": partitions2})
+    composite = MultiPartitionsDefinition({"abc": partitions1, "xyz": partitions2})
     assert composite.get_partition_keys() == [
         "a|x",
         "a|y",
@@ -36,10 +36,10 @@ def test_composite_static_partitions():
     ]
 
 
-def test_composite_time_window_static_partitions():
+def test_multi_dimensional_time_window_static_partitions():
     time_window_partitions = DailyPartitionsDefinition(start_date="2021-05-05")
     static_partitions = StaticPartitionsDefinition(["a", "b", "c"])
-    composite = CompositePartitionsDefinition(
+    composite = MultiPartitionsDefinition(
         {"date": time_window_partitions, "abc": static_partitions}
     )
     assert set(
@@ -59,10 +59,10 @@ def test_composite_time_window_static_partitions():
     assert partitions[0].partitions_by_dimension().get("abc").name == "a"
 
 
-def test_tags_composite_partitions():
+def test_tags_multi_dimensional_partitions():
     time_window_partitions = DailyPartitionsDefinition(start_date="2021-05-05")
     static_partitions = StaticPartitionsDefinition(["a", "b", "c"])
-    composite = CompositePartitionsDefinition(
+    composite = MultiPartitionsDefinition(
         {"date": time_window_partitions, "abc": static_partitions}
     )
 
@@ -88,11 +88,15 @@ def test_tags_composite_partitions():
             )
         )
         assert result.success
+        assert result.dagster_run.tags[MULTIDIMENSIONAL_PARTITION_TAG("abc")] == "a"
+        assert result.dagster_run.tags[MULTIDIMENSIONAL_PARTITION_TAG("date")] == "2021-06-01"
 
-        materializations = instance.get_event_records(
-            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+        materializations = sorted(
+            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)),
+            key=lambda x: x.event_log_entry.dagster_event.asset_key,
         )
         assert len(materializations) == 2
+
         for materialization in materializations:
             assert (
                 materialization.event_log_entry.dagster_event.partition
@@ -115,7 +119,7 @@ def test_tags_composite_partitions():
             instance.get_event_records(
                 EventRecordsFilter(
                     DagsterEventType.ASSET_MATERIALIZATION,
-                    tags={MULTIDIMENSIONAL_PARTITION_TAG("abc"): "non_existent"},
+                    tags={MULTIDIMENSIONAL_PARTITION_TAG("abc"): "nonexistent"},
                 )
             )
         )

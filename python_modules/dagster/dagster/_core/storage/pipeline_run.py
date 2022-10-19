@@ -525,7 +525,7 @@ class PipelineRun(
 
     @staticmethod
     def tags_for_partition_set(partition_set, partition):
-        from dagster._core.definitions.composite_partitions import MultiDimensionalPartition
+        from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartition
 
         tags = {PARTITION_SET_TAG: partition_set.name}
         if isinstance(partition, MultiDimensionalPartition):
