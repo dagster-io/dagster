@@ -60,7 +60,7 @@ def build_test_project_steps() -> List[GroupStep]:
                     "BUILDKITE_SECRETS_BUCKET",
                 ],
             )
-            .with_skip(skip_core_if_version_not_needed(version))
+            .with_skip(skip_if_version_not_needed(version))
             .build()
         )
 
@@ -100,7 +100,7 @@ def build_test_project_steps() -> List[GroupStep]:
                     "BUILDKITE_SECRETS_BUCKET",
                 ],
             )
-            .with_skip(skip_if_version_not_needed(version))
+            .with_skip(skip_core_if_version_not_needed(version))
             .build()
         )
     return [
@@ -134,11 +134,11 @@ def skip_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]
     if version in build_for:
         return None
 
-    return "Skipped because no builds depends on this image"
+    return "Skipped because no build depends on this image"
 
 
 def skip_core_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:
     if version in build_core_for:
         return None
 
-    return "Skipped because no builds depends on this image"
+    return "Skipped because no build depends on this image"
