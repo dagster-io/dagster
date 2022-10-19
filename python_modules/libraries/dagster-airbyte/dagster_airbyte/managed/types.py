@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Any, Dict, Mapping, Optional
 
+import dagster._check as check
+
 
 class AirbyteSyncMode(Enum):
     """
@@ -33,7 +35,7 @@ class InitializedAirbyteSource:
     User-defined Airbyte source bound to actual created Airbyte source.
     """
 
-    def __init__(self, source: AirbyteSource, source_id: str, source_definition_id: str):
+    def __init__(self, source: AirbyteSource, source_id: str, source_definition_id: Optional[str]):
         self.source = source
         self.source_id = source_id
         self.source_definition_id = source_definition_id
@@ -41,13 +43,13 @@ class InitializedAirbyteSource:
     @classmethod
     def from_api_json(cls, api_json: Dict[str, Any]):
         return cls(
-            AirbyteSource(
-                api_json["name"],
-                api_json["sourceName"],
-                api_json["connectionConfiguration"],
+            source=AirbyteSource(
+                name=api_json["name"],
+                source_type=api_json["sourceName"],
+                source_configuration=api_json["connectionConfiguration"],
             ),
-            api_json["sourceId"],
-            "",
+            source_id=api_json["sourceId"],
+            source_definition_id=None,
         )
 
 
@@ -74,7 +76,10 @@ class InitializedAirbyteDestination:
     """
 
     def __init__(
-        self, destination: AirbyteDestination, destination_id: str, destination_definition_id: str
+        self,
+        destination: AirbyteDestination,
+        destination_id: str,
+        destination_definition_id: Optional[str],
     ):
         self.destination = destination
         self.destination_id = destination_id
@@ -83,13 +88,13 @@ class InitializedAirbyteDestination:
     @classmethod
     def from_api_json(cls, api_json: Dict[str, Any]):
         return cls(
-            AirbyteDestination(
-                api_json["name"],
-                api_json["destinationName"],
-                api_json["connectionConfiguration"],
+            destination=AirbyteDestination(
+                name=api_json["name"],
+                destination_type=api_json["destinationName"],
+                destination_configuration=api_json["connectionConfiguration"],
             ),
-            api_json["destinationId"],
-            "",
+            destination_id=api_json["destinationId"],
+            destination_definition_id=None,
         )
 
 
@@ -158,8 +163,10 @@ class InitializedAirbyteConnection:
             None,
         )
 
-        assert source, f"Could not find source with id {api_dict['sourceId']}"
-        assert dest, f"Could not find destination with id {api_dict['destinationId']}"
+        source = check.not_none(source, f"Could not find source with id {api_dict['sourceId']}")
+        dest = check.not_none(
+            dest, f"Could not find destination with id {api_dict['destinationId']}"
+        )
 
         streams = {
             stream["stream"]["name"]: AirbyteSyncMode(
@@ -172,11 +179,11 @@ class InitializedAirbyteConnection:
         }
         return cls(
             AirbyteConnection(
-                api_dict["name"],
-                source,
-                dest,
-                streams,
-                len(api_dict["operationIds"]) > 0,
+                name=api_dict["name"],
+                source=source,
+                destination=dest,
+                stream_config=streams,
+                normalize_data=len(api_dict["operationIds"]) > 0,
             ),
             api_dict["connectionId"],
         )

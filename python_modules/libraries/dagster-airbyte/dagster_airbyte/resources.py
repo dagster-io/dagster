@@ -154,7 +154,7 @@ class AirbyteResource:
     def get_default_workspace(self):
         workspaces = cast(
             List[Dict[str, Any]],
-            check.not_none(self.make_request(endpoint="/workspaces/list", data={})).get(
+            check.not_none(self.make_request_cached(endpoint="/workspaces/list", data={})).get(
                 "workspaces", []
             ),
         )
@@ -180,7 +180,7 @@ class AirbyteResource:
         definitions = cast(
             Dict[str, List[Dict[str, str]]],
             check.not_none(
-                self.make_request(
+                self.make_request_cached(
                     endpoint="/destination_definitions/list_for_workspace",
                     data={"workspaceId": workspace_id},
                 )
@@ -219,7 +219,7 @@ class AirbyteResource:
         return cast(
             Dict[str, Any],
             check.not_none(
-                self.make_request(
+                self.make_request_cached(
                     endpoint="/destination_definition_specifications/get",
                     data={
                         "destinationDefinitionId": destination_definition_id,

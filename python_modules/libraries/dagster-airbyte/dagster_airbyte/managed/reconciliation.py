@@ -101,6 +101,7 @@ def reconcile_sources(
     existing_sources: Mapping[str, InitializedAirbyteSource],
     workspace_id: str,
     dry_run: bool,
+    should_delete: bool,
 ) -> Tuple[Mapping[str, InitializedAirbyteSource], ManagedElementCheckResult]:
     """
     Generates a diff of the configured and existing sources and reconciles them to match the
@@ -113,6 +114,11 @@ def reconcile_sources(
     for source_name in set(config_sources.keys()).union(existing_sources.keys()):
         configured_source = config_sources.get(source_name)
         existing_source = existing_sources.get(source_name)
+
+        # Ignore sources not mentioned in the user config unless the user specifies to delete
+        if not should_delete and existing_source and not configured_source:
+            initialized_sources[source_name] = existing_source
+            continue
 
         diff = diff.join(
             diff_sources(configured_source, existing_source.source if existing_source else None)
@@ -137,7 +143,7 @@ def reconcile_sources(
                 "name": configured_source.name,
                 "connectionConfiguration": configured_source.source_configuration,
             }
-            source_id = "TBD"
+            source_id = ""
             if existing_source:
                 source_id = existing_source.source_id
                 if not dry_run:
@@ -177,6 +183,7 @@ def reconcile_destinations(
     existing_destinations: Mapping[str, InitializedAirbyteDestination],
     workspace_id: str,
     dry_run: bool,
+    should_delete: bool,
 ) -> Tuple[Mapping[str, InitializedAirbyteDestination], ManagedElementCheckResult]:
     """
     Generates a diff of the configured and existing destinations and reconciles them to match the
@@ -190,6 +197,11 @@ def reconcile_destinations(
         configured_destination = config_destinations.get(destination_name)
         existing_destination = existing_destinations.get(destination_name)
 
+        # Ignore destinations not mentioned in the user config unless the user specifies to delete
+        if not should_delete and existing_destination and not configured_destination:
+            initialized_destinations[destination_name] = existing_destination
+            continue
+
         diff = diff.join(
             diff_destinations(
                 configured_destination,
@@ -197,7 +209,10 @@ def reconcile_destinations(
             )
         )
 
-        if not configured_destination and existing_destination:
+        if existing_destination and (
+            not configured_destination
+            or (configured_destination.must_be_recreated(existing_destination.destination))
+        ):
             initialized_destinations[destination_name] = existing_destination
             if not dry_run:
                 res.make_request(
@@ -212,7 +227,7 @@ def reconcile_destinations(
                 "name": configured_destination.name,
                 "connectionConfiguration": configured_destination.destination_configuration,
             }
-            destination_id = "TBD"
+            destination_id = ""
             if existing_destination:
                 destination_id = existing_destination.destination_id
                 if not dry_run:
@@ -247,7 +262,10 @@ def reconcile_destinations(
 
 
 def reconcile_config(
-    res: AirbyteResource, objects: List[AirbyteConnection], dry_run: bool = False
+    res: AirbyteResource,
+    objects: List[AirbyteConnection],
+    dry_run: bool = False,
+    should_delete: bool = False,
 ) -> ManagedElementCheckResult:
     """
     Main entry point for the reconciliation process. Takes a list of AirbyteConnection objects
@@ -283,18 +301,28 @@ def reconcile_config(
             for destination_json in existing_dests_raw.get("destinations", [])
         }
 
-        # First, determine which connections need to be created or deleted
+        # First, remove any connections that need to be deleted, so that we can
+        # safely delete any sources/destinations that are no longer referenced
+        # or that need to be recreated.
         connections_diff = reconcile_connections_pre(
-            res, config_connections, existing_sources, existing_dests, workspace_id, dry_run
+            res,
+            config_connections,
+            existing_sources,
+            existing_dests,
+            workspace_id,
+            dry_run,
+            should_delete,
         )
 
         all_sources, sources_diff = reconcile_sources(
-            res, config_sources, existing_sources, workspace_id, dry_run
+            res, config_sources, existing_sources, workspace_id, dry_run, should_delete
         )
         all_dests, dests_diff = reconcile_destinations(
-            res, config_dests, existing_dests, workspace_id, dry_run
+            res, config_dests, existing_dests, workspace_id, dry_run, should_delete
         )
 
+        # Now that we have updated the set of sources and destinations, we can
+        # recreate or update any connections which depend on them.
         reconcile_connections_post(
             res,
             config_connections,
@@ -344,7 +372,9 @@ def reconcile_normalization(
         )
 
     if normalization_config is not False:
-        if res.does_dest_support_normalization(destination.destination_definition_id, workspace_id):
+        if destination.destination_definition_id and res.does_dest_support_normalization(
+            destination.destination_definition_id, workspace_id
+        ):
             if existing_basic_norm_op_id:
                 return existing_basic_norm_op_id
             else:
@@ -379,10 +409,15 @@ def reconcile_connections_pre(
     existing_destinations: Mapping[str, InitializedAirbyteDestination],
     workspace_id: str,
     dry_run: bool,
+    should_delete: bool,
 ) -> ManagedElementCheckResult:
     """
     Generates the diff for connections, and deletes any connections that are not in the config if
     dry_run is False.
+
+    It's necessary to do this in two steps because we need to remove connections that depend on
+    sources and destinations that are being deleted or recreated before Airbyte will allow us to
+    delete or recreate them.
     """
 
     diff = ManagedElementDiff()
@@ -403,6 +438,10 @@ def reconcile_connections_pre(
     for conn_name in set(config_connections.keys()).union(existing_connections.keys()):
         config_conn = config_connections.get(conn_name)
         existing_conn = existing_connections.get(conn_name)
+
+        # Ignore connections not mentioned in the user config unless the user specifies to delete
+        if not should_delete and not config_conn:
+            continue
 
         diff = diff.join(
             diff_connections(config_conn, existing_conn.connection if existing_conn else None)
@@ -511,14 +550,40 @@ def reconcile_connections_post(
 
 @experimental
 class AirbyteManagedElementReconciler(ManagedElementReconciler):
-    def __init__(self, airbyte: ResourceDefinition, connections: Iterable[AirbyteConnection]):
+    def __init__(
+        self,
+        airbyte: ResourceDefinition,
+        connections: Iterable[AirbyteConnection],
+        delete_unmented_resources: bool = False,
+    ):
+        """
+        Reconciles Python-specified Airbyte resources with an Airbyte instance.
+
+        Args:
+            airbyte (ResourceDefinition): The Airbyte resource definition to reconcile against.
+            connections (Iterable[AirbyteConnection]): The Airbyte connection objects to reconcile.
+            delete_unmented_resources (bool): Whether to delete resources that are not mentioned in
+                the set of connections provided. When True, all Airbyte instance contents are effectively
+                managed by the reconciler. Defaults to False.
+        """
         self._airbyte_instance: AirbyteResource = airbyte(build_init_resource_context())
         self._connections = list(connections)
+        self._delete_unmentioned_resources = delete_unmented_resources
 
         super().__init__()
 
     def check(self) -> ManagedElementCheckResult:
-        return reconcile_config(self._airbyte_instance, self._connections, dry_run=True)
+        return reconcile_config(
+            self._airbyte_instance,
+            self._connections,
+            dry_run=True,
+            should_delete=self._delete_unmentioned_resources,
+        )
 
     def apply(self) -> ManagedElementCheckResult:
-        return reconcile_config(self._airbyte_instance, self._connections, dry_run=False)
+        return reconcile_config(
+            self._airbyte_instance,
+            self._connections,
+            dry_run=False,
+            should_delete=self._delete_unmentioned_resources,
+        )

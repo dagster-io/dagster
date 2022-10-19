@@ -13,5 +13,4 @@ airbyte_instance = airbyte_resource.configured(
 reconciler = AirbyteManagedElementReconciler(
     airbyte=airbyte_instance,
     connections=[],
-    delete_unmented_resources=True,
 )

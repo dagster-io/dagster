@@ -51,6 +51,15 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
 
     assert check_result == ManagedElementDiff()
 
+    # Ensure that the empty stack w/o delete has no diff (it will not try to delete resources it
+    # doesn't know about)
+    check_result = check(
+        file_relative_path(__file__, "./example_stacks/empty_airbyte_stack_no_delete.py")
+    )
+
+    # Inverted result (e.g. all deletions)
+    expected_result = ManagedElementDiff()
+
     # Now, we try to remove everything
     check_result = check(file_relative_path(__file__, "./example_stacks/empty_airbyte_stack.py"))
 
