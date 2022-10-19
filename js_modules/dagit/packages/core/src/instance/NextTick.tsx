@@ -66,7 +66,7 @@ export const SCHEDULE_FUTURE_TICKS_FRAGMENT = gql`
       id
       status
     }
-    futureTicks(limit: 10) {
+    futureTicks(cursor: $tickCursor, until: $ticksUntil) {
       results {
         timestamp
       }
