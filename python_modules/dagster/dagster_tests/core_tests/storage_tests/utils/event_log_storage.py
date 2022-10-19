@@ -2318,6 +2318,10 @@ class TestEventLogStorage:
                 partition=MultiDimensionalPartitionKey.from_partition_dimension_mapping(
                     {"country": "US", "date": "2022-10-13"}
                 ),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
             )
             yield Output(5)
 
