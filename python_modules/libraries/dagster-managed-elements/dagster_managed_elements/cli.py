@@ -1,30 +1,52 @@
-import importlib.util
+import functools
+import importlib
 import sys
 from types import ModuleType
-from typing import List
+from typing import List, Optional
 
 import click
 from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler
 
-MODULE_NAME = "usercode"
 
-
-def load_module(file_path: str) -> ModuleType:
+def _deepgetattr(obj, attr: List[str]):
     """
-    Imports a Python module from a file path.
-    https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+    Recursive getattr that allows for nested attributes.
+    https://stackoverflow.com/a/14324459
     """
-    spec = importlib.util.spec_from_file_location(MODULE_NAME, file_path)
-    if not spec:
-        raise ValueError(f"Could not load module spec from {file_path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[MODULE_NAME] = module
-    loader = spec.loader
-    if not loader:
-        raise ValueError(f"Could not load loader from {file_path}")
-    loader.exec_module(module)
+    return functools.reduce(getattr, attr.split("."), obj)
 
-    return module
+
+def get_reconcilable_objects_from_module(
+    module_dir: Optional[str], import_str: str
+) -> List[ManagedElementReconciler]:
+    module_str = import_str
+    object_paths = None
+
+    if ":" in module_str:
+        module_str, obj_str = module_str.split(":", 1)
+        object_paths = obj_str.split(",")
+
+    if module_dir:
+        sys.path.append(module_dir)
+
+    try:
+        module = importlib.import_module(module_str)
+    except ModuleNotFoundError:
+        raise ValueError(f"Could not import module {module_str}")
+
+    if object_paths is None:
+        object_paths = [
+            obj for obj in dir(module) if isinstance(getattr(module, obj), ManagedElementReconciler)
+        ]
+
+    reconcilable_objects = [_deepgetattr(module, path) for path in object_paths]
+
+    for entry in zip(object_paths, reconcilable_objects):
+        path, obj = entry
+        if not isinstance(obj, ManagedElementReconciler):
+            raise ValueError(f"{module_str}:{path} is not a ManagedElementReconciler")
+
+    return reconcilable_objects
 
 
 def get_reconcilable_objects(module: ModuleType) -> List[ManagedElementReconciler]:
@@ -39,9 +61,10 @@ def get_reconcilable_objects(module: ModuleType) -> List[ManagedElementReconcile
     ]
 
 
-def check(input_file: str) -> ManagedElementDiff:
-    module = load_module(input_file)
-    reconcilable_objects = get_reconcilable_objects(module)
+def check(module_dir: str, import_str: str) -> ManagedElementDiff:
+    reconcilable_objects = get_reconcilable_objects_from_module(
+        module_dir=module_dir, import_str=import_str
+    )
 
     click.echo(f"Found {len(reconcilable_objects)} stacks, checking...")
 
@@ -55,10 +78,10 @@ def check(input_file: str) -> ManagedElementDiff:
     return diff
 
 
-def apply(input_file: str) -> ManagedElementDiff:
-
-    module = load_module(input_file)
-    reconcilable_objects = get_reconcilable_objects(module)
+def apply(module_dir: str, import_str: str) -> ManagedElementDiff:
+    reconcilable_objects = get_reconcilable_objects_from_module(
+        module_dir=module_dir, import_str=import_str
+    )
 
     click.echo(f"Found {len(reconcilable_objects)} stacks, applying...")
 
@@ -78,12 +101,36 @@ def main():
 
 
 @main.command(name="check")
-@click.argument("input-file", type=click.Path(exists=True))
-def check_cmd(input_file):
-    click.echo(check(input_file))
+@click.option(
+    "--module",
+    "-m",
+    type=str,
+    required=True,
+    help="Module containing the reconcilers to check.\nOptionally can include a colon and a comma-separated list of attribute paths to check specific reconcilers, otherwise all reconcilers in the module root will be checked, e.g. `my_module:reconciler1,reconciler2`",
+)
+@click.option(
+    "--dir",
+    "-d",
+    type=click.Path(exists=True),
+    help="Optional path to load module from, will be appended to system path.",
+)
+def check_cmd(module, dir):
+    click.echo(check(dir, module))
 
 
 @main.command(name="apply")
-@click.argument("input-file", type=click.Path(exists=True))
-def apply_cmd(input_file):
-    click.echo(apply(input_file))
+@click.option(
+    "--module",
+    "-m",
+    type=str,
+    required=True,
+    help="Module containing the reconcilers to apply.\nOptionally can include a colon and a comma-separated list of attribute paths to apply specific reconcilers, otherwise all reconcilers in the module root will be checked, e.g. `my_module:reconciler1,reconciler2`",
+)
+@click.option(
+    "-dir",
+    "-d",
+    type=click.Path(exists=True),
+    help="Optional path to load module from, will be appended to system path.",
+)
+def apply_cmd(module, dir):
+    click.echo(apply(dir, module))

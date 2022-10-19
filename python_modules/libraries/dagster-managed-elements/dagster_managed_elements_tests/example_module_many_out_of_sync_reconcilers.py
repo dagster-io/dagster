@@ -9,3 +9,13 @@ my_reconciler = MyManagedElementReconciler(
 )
 
 my_other_reconciler = MyManagedElementReconciler(ManagedElementDiff().delete("foo", "bar"))
+
+
+class MyReconcilerHolder:
+    def __init__(self, reconciler):
+        self.reconciler = reconciler
+
+
+my_nested_reconciler = MyReconcilerHolder(
+    MyManagedElementReconciler(ManagedElementDiff().modify("foo", "bar", "baz"))
+)

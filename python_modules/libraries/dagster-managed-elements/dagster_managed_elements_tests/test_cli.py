@@ -4,6 +4,8 @@ from dagster_managed_elements.cli import main
 
 from dagster._utils import file_relative_path
 
+TEST_ROOT_DIR = file_relative_path(__file__, ".")
+
 
 @pytest.mark.parametrize(
     "command",
@@ -15,31 +17,26 @@ def test_commands(command):
 
     is_check = command == "check"
 
-    check_result = runner.invoke(
-        main,
-        [command, file_relative_path(__file__, "./this_file_doesnt_exist.py")],
-    )
+    check_result = runner.invoke(main, [command, "-m", "module_doesnt_exist", "-d", TEST_ROOT_DIR])
     assert check_result.exit_code != 0
 
-    check_result = runner.invoke(
-        main, [command, file_relative_path(__file__, "./example_empty_module.py")]
-    )
+    check_result = runner.invoke(main, [command, "-m", "example_empty_module", "-d", TEST_ROOT_DIR])
     assert check_result.exit_code == 0
     assert "Found 0 stacks" in check_result.output
 
     check_result = runner.invoke(
-        main, [command, file_relative_path(__file__, "./example_module_in_sync_reconciler.py")]
+        main, [command, "-m", "example_module_in_sync_reconciler", "-d", TEST_ROOT_DIR]
     )
     assert check_result.exit_code == 0
     assert "Found 1 stacks" in check_result.output
     assert (
-        "+" not in check_result.output
-        and "-" not in check_result.output
-        and "~" not in check_result.output
+        "+ " not in check_result.output
+        and "- " not in check_result.output
+        and "~ " not in check_result.output
     ), check_result.output
 
     check_result = runner.invoke(
-        main, [command, file_relative_path(__file__, "./example_module_out_of_sync_reconciler.py")]
+        main, [command, "-m", "example_module_out_of_sync_reconciler", "-d", TEST_ROOT_DIR]
     )
     assert check_result.exit_code == 0
     assert "Found 1 stacks" in check_result.output
@@ -54,11 +51,69 @@ def test_commands(command):
     ), check_result.output
 
     check_result = runner.invoke(
-        main,
-        [command, file_relative_path(__file__, "./example_module_many_out_of_sync_reconcilers.py")],
+        main, [command, "-m", "example_module_many_out_of_sync_reconcilers", "-d", TEST_ROOT_DIR]
     )
     assert check_result.exit_code == 0
     assert "Found 2 stacks" in check_result.output
     assert (
-        "+" in check_result.output and "-" in check_result.output and "~" not in check_result.output
+        "+ " in check_result.output
+        and "- " in check_result.output
+        and "~ " not in check_result.output
+    ), check_result.output
+
+    # Test specifying only a specific attr
+    check_result = runner.invoke(
+        main,
+        [
+            command,
+            "-m",
+            "example_module_many_out_of_sync_reconcilers:my_reconciler",
+            "-d",
+            TEST_ROOT_DIR,
+        ],
+    )
+    assert check_result.exit_code == 0
+    assert "Found 1 stacks" in check_result.output
+    assert (
+        "+" in check_result.output
+        and "-" not in check_result.output
+        and "~" not in check_result.output
+    ), check_result.output
+
+    # Test specifying both attrs
+    check_result = runner.invoke(
+        main,
+        [
+            command,
+            "-m",
+            "example_module_many_out_of_sync_reconcilers:my_other_reconciler,my_reconciler",
+            "-d",
+            TEST_ROOT_DIR,
+        ],
+    )
+    assert check_result.exit_code == 0
+    assert "Found 2 stacks" in check_result.output
+    assert (
+        "+ " in check_result.output
+        and "- " in check_result.output
+        and "~ " not in check_result.output
+    ), check_result.output
+
+    # Test specifying nested attr
+    check_result = runner.invoke(
+        main,
+        [
+            command,
+            "-m",
+            "example_module_many_out_of_sync_reconcilers:my_nested_reconciler.reconciler",
+            "-d",
+            TEST_ROOT_DIR,
+        ],
+    )
+    assert check_result.exit_code == 0
+    assert "Found 1 stacks" in check_result.output
+    assert (
+        "+ " not in check_result.output
+        and "- " not in check_result.output
+        and "~ " in check_result.output
     ), check_result.output
