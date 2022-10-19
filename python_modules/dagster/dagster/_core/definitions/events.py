@@ -21,6 +21,7 @@ from typing import (
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG, SYSTEM_TAG_PREFIX
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
@@ -35,6 +36,7 @@ from .metadata import (
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.execution.context.output import OutputContext
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
@@ -396,7 +398,7 @@ class AssetMaterialization(
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
-            ("partition", PublicAttr[Optional[str]]),
+            ("partition", PublicAttr[Optional[Union[str, "MultiDimensionalPartitionKey"]]]),
             ("tags", Optional[Mapping[str, str]]),
         ],
     )
@@ -418,13 +420,13 @@ class AssetMaterialization(
         description (Optional[str]): A longer human-readable description of the materialized value.
         metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary metadata about the
             materialized value.
-        partition (Optional[str]): The name of the partition that was materialized.
+        partition (Optional[Union[str, MultiDimensionalPartitionKey]]): The name of the partition that was materialized.
+        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the materialization. Users should not pass
+            values into this argument.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
-        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
-            materialization. Not intended to be provided by user code.
     """
 
     def __new__(
@@ -432,10 +434,14 @@ class AssetMaterialization(
         asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
-        partition: Optional[str] = None,
+        partition: Optional[Union[str, "MultiDimensionalPartitionKey"]] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiDimensionalPartitionKey,
+        )
+
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
@@ -447,18 +453,32 @@ class AssetMaterialization(
             check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
+        check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
+        if any([not tag.startswith(SYSTEM_TAG_PREFIX) for tag in tags or {}]):
+            check.failed(
+                "Users should not pass values into the tags argument for AssetMaterializations. The tags argument is reserved for system-populated tags."
+            )
+
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
         )
+
+        serializable_partition: Optional[Union[str, MultiDimensionalPartitionKey]] = None
+        if isinstance(partition, MultiDimensionalPartitionKey):
+            serializable_partition = check.inst_param(
+                partition, "partition", MultiDimensionalPartitionKey
+            )
+        else:
+            serializable_partition = check.opt_str_param(partition, "partition")
 
         return super(AssetMaterialization, cls).__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
             metadata_entries=normalize_metadata(metadata, metadata_entries),
-            partition=check.opt_str_param(partition, "partition"),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
+            tags=tags,
+            partition=serializable_partition,
         )
 
     @property

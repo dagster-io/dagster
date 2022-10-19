@@ -10,8 +10,8 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Union,
     Tuple,
+    Union,
 )
 
 import dagster._check as check

@@ -1,13 +1,13 @@
 from datetime import datetime
-from typing import List, NamedTuple, Optional, Union, Mapping
+from typing import List, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
-from dagster._core.errors import DagsterInvalidInvocationError
 
 
 class RunShardedEventsCursor(NamedTuple):

@@ -28,6 +28,7 @@ from dagster import asset, op, resource
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.events import (
     DagsterEvent,
@@ -2314,7 +2315,9 @@ class TestEventLogStorage:
         def my_op():
             yield AssetMaterialization(
                 asset_key=key,
-                tags={"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+                partition=MultiDimensionalPartitionKey.from_partition_dimension_mapping(
+                    {"country": "US", "date": "2022-10-13"}
+                ),
             )
             yield Output(5)
 
@@ -2334,8 +2337,8 @@ class TestEventLogStorage:
 
             asset_event_tags = storage.get_asset_event_tags()
             assert asset_event_tags == [
-                ('dagster/partition/country', {'US'}),
-                ('dagster/partition/date', {'2022-10-13'}),
+                ("dagster/partition/country", {"US"}),
+                ("dagster/partition/date", {"2022-10-13"}),
             ]
 
     def test_event_record_filter_tags(self, storage):
@@ -2344,18 +2347,33 @@ class TestEventLogStorage:
         @op
         def my_op():
             yield AssetObservation(
-                asset_key=key, metadata={'foo': 'bar'}
+                asset_key=key, metadata={"foo": "bar"}
             )  # should not show up in any queries
             yield AssetMaterialization(
                 asset_key=key,
-                tags={"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+                partition=MultiDimensionalPartitionKey.from_partition_dimension_mapping(
+                    {"country": "US", "date": "2022-10-13"}
+                ),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
             )
             yield AssetMaterialization(
                 asset_key=key,
-                tags={"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+                partition=MultiDimensionalPartitionKey.from_partition_dimension_mapping(
+                    {"country": "US", "date": "2022-10-13"}
+                ),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
             )
             yield AssetMaterialization(
                 asset_key=key,
+                partition=MultiDimensionalPartitionKey.from_partition_dimension_mapping(
+                    {"country": "Canada", "date": "2022-10-13"}
+                ),
                 tags={
                     "dagster/partition/country": "Canada",
                     "dagster/partition/date": "2022-10-13",
@@ -2363,6 +2381,9 @@ class TestEventLogStorage:
             )
             yield AssetMaterialization(
                 asset_key=key,
+                partition=MultiDimensionalPartitionKey.from_partition_dimension_mapping(
+                    {"country": "Mexico", "date": "2022-10-14"}
+                ),
                 tags={
                     "dagster/partition/country": "Mexico",
                     "dagster/partition/date": "2022-10-14",
@@ -2390,14 +2411,20 @@ class TestEventLogStorage:
                 )
             )
             assert len(materializations) == 2
-            for materialization in materializations:
-                assert (
-                    materialization.event_log_entry.dagster_event.step_materialization_data.materialization.tags
-                    == {
-                        "dagster/partition/country": "US",
-                        "dagster/partition/date": "2022-10-13",
-                    }
+            for record in materializations:
+                materialization = (
+                    record.event_log_entry.dagster_event.step_materialization_data.materialization
                 )
+                assert (
+                    materialization.partition
+                    == MultiDimensionalPartitionKey.from_partition_dimension_mapping(
+                        {"country": "US", "date": "2022-10-13"}
+                    )
+                )
+                assert materialization.tags == {
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                }
 
             materializations = storage.get_event_records(
                 EventRecordsFilter(
@@ -2413,10 +2440,13 @@ class TestEventLogStorage:
                 )
             )
             assert len(materializations) == 3
-            for materialization in materializations:
-                assert (
-                    materialization.event_log_entry.dagster_event.step_materialization_data.materialization.tags[
-                        "dagster/partition/date"
-                    ]
-                    == "2022-10-13"
+            for record in materializations:
+                materialization = (
+                    record.event_log_entry.dagster_event.step_materialization_data.materialization
                 )
+                date_dimension = [
+                    dimension
+                    for dimension in materialization.partition.dimension_keys
+                    if dimension.dimension_name == "date"
+                ][0]
+                assert date_dimension.partition_key == "2022-10-13"
