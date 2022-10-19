@@ -8,7 +8,7 @@ import click
 from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler
 
 
-def _deepgetattr(obj, attr: List[str]):
+def _deepgetattr(obj, attr: str):
     """
     Recursive getattr that allows for nested attributes.
     https://stackoverflow.com/a/14324459
@@ -109,13 +109,13 @@ def main():
     help="Module containing the reconcilers to check.\nOptionally can include a colon and a comma-separated list of attribute paths to check specific reconcilers, otherwise all reconcilers in the module root will be checked, e.g. `my_module:reconciler1,reconciler2`",
 )
 @click.option(
-    "--dir",
+    "--working-directory",
     "-d",
     type=click.Path(exists=True),
     help="Optional path to load module from, will be appended to system path.",
 )
-def check_cmd(module, dir):
-    click.echo(check(dir, module))
+def check_cmd(module, working_directory):
+    click.echo(check(working_directory, module))
 
 
 @main.command(name="apply")
@@ -127,10 +127,10 @@ def check_cmd(module, dir):
     help="Module containing the reconcilers to apply.\nOptionally can include a colon and a comma-separated list of attribute paths to apply specific reconcilers, otherwise all reconcilers in the module root will be checked, e.g. `my_module:reconciler1,reconciler2`",
 )
 @click.option(
-    "-dir",
+    "--working-directory",
     "-d",
     type=click.Path(exists=True),
     help="Optional path to load module from, will be appended to system path.",
 )
-def apply_cmd(module, dir):
-    click.echo(apply(dir, module))
+def apply_cmd(module, working_directory):
+    click.echo(apply(working_directory, module))
