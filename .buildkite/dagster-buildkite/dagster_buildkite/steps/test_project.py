@@ -59,6 +59,7 @@ def build_test_project_steps() -> List[GroupStep]:
                     "BUILDKITE_SECRETS_BUCKET",
                 ],
             )
+            .with_skip(skip_if_version_not_needed(version))
             .build()
         )
 
