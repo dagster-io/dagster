@@ -2,16 +2,17 @@ import os
 from glob import glob
 from typing import List
 
+from dagster_buildkite import python_packages
+
 from ..defines import GIT_REPO_ROOT
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
 from ..utils import (
     BuildkiteStep,
     CommandStep,
+    is_feature_branch,
     safe_getenv,
-    skip_graphql_if_no_changes_to_dependencies,
     skip_if_no_python_changes,
-    skip_mysql_if_no_changes_to_dependencies,
 )
 from .helm import build_helm_steps
 from .packages import build_library_packages_steps
@@ -117,3 +118,25 @@ def build_graphql_python_client_backcompat_steps() -> List[CommandStep]:
         )
         .build()
     ]
+
+
+def skip_mysql_if_no_changes_to_dependencies(dependencies: List[str]):
+    if not is_feature_branch():
+        return None
+
+    for dependency in dependencies:
+        if python_packages.get(dependency) in python_packages.with_changes:
+            return None
+
+    return "Skip unless mysql schemas might have changed"
+
+
+def skip_graphql_if_no_changes_to_dependencies(dependencies: List[str]):
+    if not is_feature_branch():
+        return None
+
+    for dependency in dependencies:
+        if python_packages.get(dependency) in python_packages.with_changes:
+            return None
+
+    return "Skip unless GraphQL schemas might have changed"
