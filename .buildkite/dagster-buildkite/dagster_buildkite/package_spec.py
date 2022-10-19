@@ -302,7 +302,7 @@ class PackageSpec(
                 # The file can alter behavior - exclude things like README changes
                 and (change.suffix in [".py", ".cfg", ".toml"] or change.name == "requirements.txt")
             ):
-                logging.warning(f"Building {self.name} because it has changed")
+                logging.info(f"Building {self.name} because it has changed")
                 return None
 
         # Consider anything required by install or an extra to be in scope.
