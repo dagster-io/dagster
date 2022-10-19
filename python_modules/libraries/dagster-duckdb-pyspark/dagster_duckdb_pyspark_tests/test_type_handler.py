@@ -124,7 +124,7 @@ def daily_partitioned(context):
 
 def test_partitioned_asset(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()]).configured(
-            {"duckdb_path": os.path.join(tmp_path, "unit_test.duckdb"), "base_path": "/Users/jamie/dev/test_outs"}
+            {"duckdb_path": os.path.join(tmp_path, "unit_test.duckdb")}
         )
     resource_defs = {
         "io_manager": duckdb_io_manager
@@ -140,8 +140,6 @@ def test_partitioned_asset(tmp_path):
     assert out_df["_1"].tolist() == ['1', '1', '1']
 
     materialize([daily_partitioned], partition_key="2022-01-02", resources=resource_defs)
-
-    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
 
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
     print(out_df)
