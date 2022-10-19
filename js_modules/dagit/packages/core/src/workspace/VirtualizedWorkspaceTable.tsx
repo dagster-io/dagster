@@ -31,7 +31,7 @@ export const RepoRow: React.FC<{
       <RepoSectionHeader
         repoName={repoAddress.name}
         repoLocation={repoAddress.location}
-        expanded
+        expanded={expanded}
         onClick={(e: React.MouseEvent) =>
           e.getModifierState('Shift') ? onToggleAll(!expanded) : onToggle(repoAddress)
         }
