@@ -4,6 +4,7 @@ import sqlalchemy as db
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
@@ -164,6 +165,12 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             and event.dagster_event.asset_key
         ):
             self.store_asset_event(event)
+
+            if res[1] is None:
+                raise DagsterInvariantViolationError(
+                    "Cannot store asset event tags for null event id."
+                )
+
             self.store_asset_event_tags(event, res[1])
 
     def store_asset_event(self, event: EventLogEntry):

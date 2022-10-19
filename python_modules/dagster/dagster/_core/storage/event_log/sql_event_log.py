@@ -12,7 +12,12 @@ import dagster._seven as seven
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._core.errors import DagsterEventLogInvalidForRun, DagsterInvalidInvocationError
+from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
+from dagster._core.errors import (
+    DagsterEventLogInvalidForRun,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import MARKER_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -85,8 +90,6 @@ class SqlEventLogStorage(EventLogStorage):
         the `dagster-postgres` implementation which overrides the generic SQL implementation of
         `store_event`.
         """
-        from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
-
         dagster_event_type = None
         asset_key_str = None
         partition = None
@@ -213,23 +216,33 @@ class SqlEventLogStorage(EventLogStorage):
         return entry_values
 
     def store_asset_event_tags(self, event: EventLogEntry, event_id: int):
-        from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
 
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
-        if event.dagster_event.is_step_materialization and isinstance(
-            event.dagster_event.step_materialization_data.materialization, AssetMaterialization
+        if (
+            event.dagster_event.is_step_materialization
+            and isinstance(
+                event.dagster_event.step_materialization_data.materialization, AssetMaterialization
+            )
+            and event.dagster_event.step_materialization_data.materialization.tags
         ):
-            partition = event.dagster_event.step_materialization_data.materialization.partition
-            if isinstance(partition, MultiDimensionalPartitionKey):
-                with self.index_connection() as conn:
-                    conn.execute(
-                        AssetEventTagsTable.insert(),
-                        [
-                            dict(event_id=event_id, key=MULTIDIMENSIONAL_PARTITION_TAG(k), value=v)
-                            for k, v in partition.dimension_keys
-                        ],
-                    )
+            check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
+            asset_key_str = event.dagster_event.asset_key.to_string()
+
+            tags = event.dagster_event.step_materialization_data.materialization.tags
+            with self.index_connection() as conn:
+                conn.execute(
+                    AssetEventTagsTable.insert(),
+                    [
+                        dict(
+                            event_id=event_id,
+                            asset_key=asset_key_str,
+                            key=key,
+                            value=value,
+                        )
+                        for key, value in tags.items()
+                    ],
+                )
 
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
@@ -257,6 +270,12 @@ class SqlEventLogStorage(EventLogStorage):
             and event.dagster_event.asset_key
         ):
             self.store_asset_event(event)
+
+            if event_id is None:
+                raise DagsterInvariantViolationError(
+                    "Cannot store asset event tags for null event id."
+                )
+
             self.store_asset_event_tags(event, event_id)
 
     def get_records_for_run(
@@ -1307,7 +1326,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         # TODO update method to handle multi-dimensional partition keys
 
-        from dagster._core.definitions.composite_partitions import (
+        from dagster._core.definitions.multi_dimensional_partitions import (
             deserialize_partition_from_db_string,
         )
 
@@ -1353,7 +1372,7 @@ class SqlEventLogStorage(EventLogStorage):
 
             partition = deserialize_partition_from_db_string(row[1])
 
-            if asset_key:
+            if asset_key and partition and not isinstance(partition, MultiDimensionalPartitionKey):
                 materialization_count_by_partition[asset_key][partition] = row[2]
 
         return materialization_count_by_partition

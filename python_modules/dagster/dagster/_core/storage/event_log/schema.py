@@ -1,4 +1,5 @@
 import sqlalchemy as db
+from sqlalchemy.dialects import sqlite
 
 from ..sql import MySQLCompatabilityTypes, get_current_timestamp
 
@@ -55,8 +56,14 @@ AssetKeyTable = db.Table(
 AssetEventTagsTable = db.Table(
     "asset_event_tags",
     SqlEventLogStorageMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("event_id", db.Integer, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
+    db.Column("asset_key", db.Text),
     db.Column("key", db.Text),
     db.Column("value", db.Text),
 )

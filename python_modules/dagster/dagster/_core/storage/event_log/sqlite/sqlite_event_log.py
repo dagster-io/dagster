@@ -17,6 +17,7 @@ from watchdog.observers import Observer
 import dagster._check as check
 import dagster._seven as seven
 from dagster._config import StringSource
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
@@ -244,6 +245,12 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 or event.dagster_event.is_asset_materialization_planned
             ):
                 self.store_asset_event(event)
+
+                if event_id is None:
+                    raise DagsterInvariantViolationError(
+                        "Cannot store asset event tags for null event id."
+                    )
+
                 self.store_asset_event_tags(event, event_id)
 
     def get_event_records(
