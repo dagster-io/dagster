@@ -9,8 +9,9 @@ const MAX_HOVER_WIDTH = (MAX_WIDTH / 40.0) * 40.5;
 
 export const RenderedDAG: React.FC<{
   svgSrc: string;
-  mobileImgSrc: string;
-}> = ({svgSrc}) => {
+  mobileFullwidth: boolean;
+  exitFullwidth: () => void;
+}> = ({svgSrc, mobileFullwidth, exitFullwidth}) => {
   const [focus, setFocus] = React.useState(false);
   const [hover, setHover] = React.useState(false);
   const [content, setContent] = React.useState('');
@@ -24,9 +25,11 @@ export const RenderedDAG: React.FC<{
     load();
   }, [svgSrc]);
 
+  const isFullWidth = focus || mobileFullwidth;
+
   return (
     <div
-      className="text-black hidden lg:block"
+      className={mobileFullwidth ? 'text-black lg:block block' : 'text-black hidden lg:block'}
       style={{
         minHeight: 400,
         width: '40.5%',
@@ -44,16 +47,28 @@ export const RenderedDAG: React.FC<{
           bottom: 0,
           top: 0,
           right: 0,
-          paddingLeft: focus ? 0 : hover ? 5 : 15,
-          width: focus ? '100%' : '40.5%',
-          maxWidth: focus ? '100%' : MAX_HOVER_WIDTH,
+          paddingLeft: isFullWidth ? 0 : hover ? 5 : 15,
+          width: isFullWidth ? '100%' : '40.5%',
+          maxWidth: isFullWidth ? '100%' : MAX_HOVER_WIDTH,
           left: 'unset',
-          cursor: focus ? 'grab' : 'zoom-in',
-          zIndex: focus || hover ? 2 : 1,
+          cursor: isFullWidth ? 'grab' : 'zoom-in',
+          zIndex: isFullWidth || hover ? 2 : 1,
           transition:
             'width 300ms ease-in-out, max-width 300ms ease-in-out, padding-left 300ms ease-in-out, left 300ms ease-in-out',
         }}
       >
+        {mobileFullwidth && (
+          <div className="absolute top-0 right-0 mt-2 mr-2 z-50">
+            <svg
+              className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-300"
+              viewBox="0 0 24 24"
+              fill="#333333"
+              onClick={exitFullwidth}
+            >
+              <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5a2 2 0 0 0-2-2zm0 16H5V7h14v12zm-2-7H7v-2h10v2zm-4 4H7v-2h6v2z" />
+            </svg>
+          </div>
+        )}
         {focus && (
           <div
             onClick={() => setFocus(false)}
@@ -79,7 +94,7 @@ export const RenderedDAG: React.FC<{
             graphHeight={Number(content.match(/ height=\"([0-9\.]+)\"/)![1])}
             maxZoom={1.2}
             maxAutocenterZoom={1.0}
-            onFocus={() => setFocus(true)}
+            onFocus={() => setFocus(!isFullWidth)}
             onBlur={() => setFocus(false)}
             content={content}
           />

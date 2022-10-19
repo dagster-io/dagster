@@ -364,11 +364,16 @@ interface CodeProps extends React.HTMLProps<HTMLElement> {
 const Code: React.FC<CodeProps> = ({children, dagimage, ...props}) => {
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
+  const [showDag, setShowDag] = useState(false);
 
   // Early exit if we're not a full width code block
   if (!props.fullwidth) {
     return <code {...props}>{children}</code>;
   }
+
+  const toggleDag = () => {
+    setShowDag(!showDag);
+  };
 
   const onClick = async () => {
     try {
@@ -413,6 +418,36 @@ const Code: React.FC<CodeProps> = ({children, dagimage, ...props}) => {
             </svg>
           </div>
         </Transition>
+        {dagimage && (
+          <Transition
+            show={!copied}
+            appear={true}
+            enter="transition ease-out duration-150 transform"
+            enterFrom="opacity-0 scale-95"
+            enterTo="opacity-100 scale-100"
+            leave="transition ease-in duration-150 transform"
+            leaveFrom="opacity-100 scale-100"
+            leaveTo="opacity-0 scale-95"
+          >
+            <div className="absolute top-0 right-6 mt-2 mr-2 block lg:hidden">
+              <svg
+                className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-300"
+                viewBox="-1 -1 18 18"
+                fill="none"
+                onClick={toggleDag}
+              >
+                <path
+                  clipRule="evenodd"
+                  d="M1 1V5L4.06573 5L5 6.40141L5 9.59863L4.06576 11L1 11V15L7 15L7 11H5.26761L5.93427 10L10.0657 10L10.7324 11H9L9 15L15 15V11L11.9342 11L11 9.59863V6.40141L11.9343 5L15 5V1H9L9 5L10.7324 5L10.0658 6L5.93424 6L5.26758 5L7 5L7 1H1Z"
+                  strokeWidth="1"
+                  fill="currentColor"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </div>
+          </Transition>
+        )}
+
         <Transition
           show={copied}
           appear={true}
@@ -440,7 +475,8 @@ const Code: React.FC<CodeProps> = ({children, dagimage, ...props}) => {
       {dagimage && (
         <RenderedDAG
           svgSrc={'/' + dagimage}
-          mobileImgSrc="/images-2022-july/screenshots/python-assets2.png"
+          mobileFullwidth={showDag}
+          exitFullwidth={() => setShowDag(false)}
         />
       )}
     </div>
