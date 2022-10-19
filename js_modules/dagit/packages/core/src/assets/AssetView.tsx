@@ -37,8 +37,8 @@ import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDe
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetLineageScope} from './AssetNodeLineageGraph';
+import {AssetOverview} from './AssetOverview';
 import {AssetPageHeader} from './AssetPageHeader';
-import {AssetPlots} from './AssetPlots';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
@@ -48,7 +48,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'activity' | 'definition' | 'lineage' | 'plots';
+  view?: 'activity' | 'definition' | 'lineage' | 'overview';
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
   partition?: string;
@@ -109,6 +109,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   const isUpstreamChanged =
     liveDataByNode[toGraphId(assetKey)]?.computeStatus === AssetComputeStatus.OUT_OF_DATE;
 
+  const defaultTab = flagNewAssetDetails ? 'overview' : 'activity';
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
       <AssetPageHeader
@@ -152,14 +154,19 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           </>
         }
         tabs={
-          <Tabs size="large" selectedTabId={params.view || 'activity'}>
-            <Tab
-              id="activity"
-              title="Activity"
-              onClick={() => setParams({...params, view: 'activity'})}
-            />
-            {flagNewAssetDetails && (
-              <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
+          <Tabs size="large" selectedTabId={params.view || defaultTab}>
+            {flagNewAssetDetails ? (
+              <Tab
+                id="overview"
+                title="Overview"
+                onClick={() => setParams({...params, view: 'overview'})}
+              />
+            ) : (
+              <Tab
+                id="activity"
+                title="Activity"
+                onClick={() => setParams({...params, view: 'activity'})}
+              />
             )}
             <Tab
               id="definition"
@@ -240,12 +247,15 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : (
             <AssetNoDefinitionState />
           )
-        ) : params.view === 'plots' ? (
-          <AssetPlots
+        ) : (params.view || defaultTab) === 'overview' ? (
+          <AssetOverview
             assetKey={assetKey}
-            params={params}
-            setParams={setParams}
+            assetLastMaterializedAt={lastMaterializedAt}
             assetHasDefinedPartitions={!!definition?.partitionDefinition}
+            params={params}
+            paramsTimeWindowOnly={!!params.asOf}
+            setParams={setParams}
+            liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
           />
         ) : (
           <AssetEvents
