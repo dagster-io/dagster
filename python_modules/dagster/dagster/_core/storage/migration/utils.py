@@ -307,3 +307,97 @@ def create_tick_selector_index():
     op.create_index(
         "idx_tick_selector_timestamp", "job_ticks", ["selector_id", "timestamp"], unique=False
     )
+
+
+def add_id_based_event_indices():
+    if not has_table("event_logs"):
+        return
+
+    if not has_index("event_logs", "idx_events_by_run_id"):
+        op.create_index(
+            "idx_events_by_run_id",
+            "event_logs",
+            ["run_id", "id"],
+            postgresql_concurrently=True,
+            mysql_length=64,
+        )
+        if has_index("event_logs", "idx_run_id"):
+            op.drop_index(
+                "idx_run_id",
+                postgresql_concurrently=True,
+            )
+
+    if not has_index("event_logs", "idx_events_by_asset"):
+        op.create_index(
+            "idx_events_by_asset",
+            "event_logs",
+            ["asset_key", "dagster_event_type", "id"],
+            postgresql_concurrently=True,
+            postgresql_where=db.text("asset_key IS NOT NULL"),
+            mysql_length=64,
+        )
+        if has_index("event_logs", "idx_asset_key"):
+            op.drop_index(
+                "idx_asset_key",
+                postgresql_concurrently=True,
+            )
+
+    if not has_index("event_logs", "idx_events_by_asset_partition"):
+        op.create_index(
+            "idx_events_by_asset_partition",
+            "event_logs",
+            ["asset_key", "dagster_event_type", "partition", "id"],
+            postgresql_concurrently=True,
+            postgresql_where=db.text("asset_key IS NOT NULL AND partition IS NOT NULL"),
+            mysql_length=64,
+        )
+        if has_index("event_logs", "idx_asset_partition"):
+            op.drop_index(
+                "idx_asset_partition",
+                postgresql_concurrently=True,
+            )
+
+
+def drop_id_based_event_indices():
+    if not has_table("event_logs"):
+        return
+
+    if not has_index("event_logs", "idx_asset_partition"):
+        op.create_index(
+            "idx_asset_partition",
+            "event_logs",
+            ["asset_key", "partition"],
+            unique=False,
+            postgresql_concurrently=True,
+            mysql_length=64,
+        )
+        if has_index("event_logs", "idx_events_by_asset_partition"):
+            op.drop_index("idx_events_by_run_id", postgresql_concurrently=True)
+
+    if not has_index("event_logs", "idx_asset_key"):
+        op.create_index(
+            "idx_asset_key",
+            "event_logs",
+            ["asset_key"],
+            unique=False,
+            postgresql_concurrently=True,
+            mysql_length=64,
+        )
+
+        if has_index("event_logs", "idx_events_by_asset"):
+            op.drop_index("idx_events_by_asset", postgresql_concurrently=True)
+
+    if not has_index("event_logs", "idx_run_id"):
+        op.create_index(
+            "idx_run_id",
+            "event_logs",
+            ["run_id"],
+            unique=False,
+            postgresql_concurrently=True,
+            mysql_length=64,
+        )
+        if has_index("event_logs", "idx_run_id"):
+            op.drop_index(
+                "idx_events_by_run_id",
+                postgresql_concurrently=True,
+            )
