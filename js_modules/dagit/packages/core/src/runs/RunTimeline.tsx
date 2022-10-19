@@ -15,10 +15,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {AnchorButton} from '../ui/AnchorButton';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -35,7 +37,7 @@ import {mergeStatusToBackground} from './mergeStatusToBackground';
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;
 const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
-const EMPTY_STATE_HEIGHT = 66;
+const EMPTY_STATE_HEIGHT = 110;
 const LEFT_SIDE_SPACE_ALLOTTED = 320;
 const LABEL_WIDTH = 268;
 const MIN_DATE_WIDTH_PCT = 10;
@@ -585,6 +587,7 @@ const RunTimelineRow = ({
 
 const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
   const {loading, includesTicks} = props;
+  const {flagNewWorkspace} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -596,11 +599,27 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
       );
     }
 
-    if (includesTicks) {
-      return <span>No runs or scheduled ticks in this time period.</span>;
-    }
-
-    return <span>No runs in this time period.</span>;
+    return (
+      <Box flex={{direction: 'column', gap: 12, alignItems: 'center'}}>
+        <div>
+          {includesTicks
+            ? 'No runs or scheduled ticks in this time period.'
+            : 'No runs in this time period.'}
+        </div>
+        <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+          <AnchorButton
+            icon={<Icon name="add_circle" />}
+            to={flagNewWorkspace ? '/overview/jobs' : '/workspace'}
+          >
+            Launch a run
+          </AnchorButton>
+          <span>or</span>
+          <AnchorButton icon={<Icon name="materialization" />} to="/instance/asset-groups">
+            Materialize an asset
+          </AnchorButton>
+        </Box>
+      </Box>
+    );
   };
 
   return (
