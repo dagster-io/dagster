@@ -16,7 +16,6 @@ from dagster._core.host_representation import ExternalRepository, RepositoryLoca
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
-    ExternalCompositePartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
@@ -230,14 +229,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
             if isinstance(
-                partitions_def_data,
-                (
-                    ExternalStaticPartitionsDefinitionData,
-                    ExternalTimeWindowPartitionsDefinitionData,
-                    ExternalCompositePartitionsDefinitionData,
-                    ExternalCompositePartitionsDefinitionData,
-                ),
-            ):
+                partitions_def_data, ExternalStaticPartitionsDefinitionData
+            ) or isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData):
                 return [
                     partition.name
                     for partition in partitions_def_data.get_partitions_definition().get_partitions()

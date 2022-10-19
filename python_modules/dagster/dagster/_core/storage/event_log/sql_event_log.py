@@ -10,7 +10,6 @@ import sqlalchemy as db
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.composite_partitions import MultiDimensionalPartitionKey
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
 from dagster._core.errors import (
