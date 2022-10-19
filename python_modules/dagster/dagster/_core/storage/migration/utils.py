@@ -372,7 +372,7 @@ def drop_id_based_event_indices():
             mysql_length=64,
         )
         if has_index("event_logs", "idx_events_by_asset_partition"):
-            op.drop_index("idx_events_by_run_id", postgresql_concurrently=True)
+            op.drop_index("idx_events_by_asset_partition", postgresql_concurrently=True)
 
     if not has_index("event_logs", "idx_asset_key"):
         op.create_index(
