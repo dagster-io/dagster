@@ -214,10 +214,11 @@ class PackageSpec(
                     else:
                         extra_commands_post = []
 
-                    if isinstance(self.pytest_step_dependencies, list):
-                        dependencies = self.pytest_step_dependencies
-                    elif callable(self.pytest_step_dependencies):
-                        dependencies = self.pytest_step_dependencies(py_version, other_factor)
+                    if not self.skip_reason:
+                        if isinstance(self.pytest_step_dependencies, list):
+                            dependencies = self.pytest_step_dependencies
+                        elif callable(self.pytest_step_dependencies):
+                            dependencies = self.pytest_step_dependencies(py_version, other_factor)
                     else:
                         dependencies = []
 
