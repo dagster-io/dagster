@@ -506,4 +506,14 @@ sensors:
   num_workers: 8
 ```
 
+### Schedule evaluation
+
+Likewise, the `schedules` key lets you configure how your schedules get evaluated. If you want your schedules to be evaluated asynchronously, you can set the `use_threads` attribute as well as a `num_workers` config setting.
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedules endbefore=end_marker_schedules
+schedules:
+  use_threads: true
+  num_workers: 8
+```
+
 By default, Dagster evaluates sensors synchronously.
