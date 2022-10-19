@@ -177,15 +177,6 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def on_progress(self, log_key: List[str]):
-        """Utility method that can be called periodically while logs are being captured, in order
-        to support different batched streaming implementations.
-
-        Args:
-            log_key (List[String]): The log key identifying the captured logs
-        """
-
-    @abstractmethod
     def get_log_data(
         self,
         log_key: List[str],
@@ -244,11 +235,6 @@ class CapturedLogManager(ABC):
             subscription (CapturedLogSubscription): subscription object which manages when to send
                 back data to the subscriber
         """
-
-    def get_in_progress_log_keys(self, prefix: Optional[List[str]] = None) -> List[List[str]]:
-        """Utility method to help with keeping track of the set of in-progress capture.  Helpful for
-        streaming updates for block-upload captured log managers"""
-        return []
 
     def build_log_key_for_run(self, run_id, step_key):
         """Legacy adapter to translate run_id/key to captured log manager-based log_key"""

@@ -162,7 +162,7 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         )
 
         if not path.exists(file):
-            raise HTTPException(404)
+            raise HTTPException(404, detail="No log files available for download")
 
         return FileResponse(
             context.instance.compute_log_manager.get_local_path(
@@ -178,14 +178,16 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         context = self.make_request_context(request)
 
         if not isinstance(context.instance.compute_log_manager, LocalComputeLogManager):
-            raise HTTPException(404)
+            raise HTTPException(
+                404, detail="Compute log manager is not compatible for local downloads"
+            )
 
         location = context.instance.compute_log_manager.get_captured_local_path(
             log_key, file_extension
         )
 
         if not location or not path.exists(location):
-            raise HTTPException(404)
+            raise HTTPException(404, detail="No log files available for download")
 
         filebase = "__".join(log_key)
         return FileResponse(location, filename=f"{filebase}.{file_extension}")

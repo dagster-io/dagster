@@ -72,9 +72,8 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
     def capture_logs(self, log_key: List[str]) -> Generator[CapturedLogContext, None, None]:
         outpath = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT])
         errpath = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR])
-        with mirror_stream_to_file(sys.stdout, outpath):
-            with mirror_stream_to_file(sys.stderr, errpath):
-                yield CapturedLogContext(log_key)
+        with mirror_stream_to_file(sys.stdout, outpath), mirror_stream_to_file(sys.stderr, errpath):
+            yield CapturedLogContext(log_key)
 
         # leave artifact on filesystem so that we know the capture is completed
         touch_file(self.complete_artifact_path(log_key))
@@ -155,11 +154,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         if not parts or len(parts) != 2:
             return 0, 0
 
-        try:
-            stdout, stderr = [int(_) for _ in parts]
-        except ValueError:
-            return 0, 0
-
+        stdout, stderr = [int(_) for _ in parts]
         return stdout, stderr
 
     def build_cursor(self, stdout_offset: int, stderr_offset: int) -> str:
@@ -167,9 +162,6 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
 
     def complete_artifact_path(self, log_key):
         return self.get_captured_local_path(log_key, "complete")
-
-    def on_progress(self, log_key: List[str]):
-        pass
 
     def read_path(
         self,
@@ -215,26 +207,6 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
 
     def unsubscribe(self, subscription):
         self.on_unsubscribe(subscription)
-
-    def get_in_progress_log_keys(self, prefix: Optional[List[str]] = None) -> List[List[str]]:
-        # maybe instead need to keep track using the contextmanager, in memory
-        prefix = check.opt_list_param(prefix, "prefix", of_type=str)
-
-        fileset = set()
-        parent_dir = os.path.join(self._base_dir, *prefix)
-
-        if not os.path.exists(parent_dir) or not os.path.isdir(parent_dir):
-            return []
-
-        for filename in os.listdir(parent_dir):
-            filepath = os.path.join(parent_dir, filename)
-            if not os.path.isfile(filepath):
-                continue
-
-            if filepath.endswith(IO_TYPE_EXTENSION[ComputeIOType.STDERR]):
-                fileset.add(os.path.splitext(filename)[0])
-
-        return [[*prefix, key] for key in fileset]
 
     ###############################################
     #
