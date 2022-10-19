@@ -19,7 +19,7 @@ class PythonPackage:
         reload(distutils_core)
         distribution = distutils_core.run_setup(str(setup_py_path), stop_after="init")
 
-        self._install_requires = distribution.install_require  # type: ignore[attr-defined]
+        self._install_requires = distribution.install_requires  # type: ignore[attr-defined]
         self._extras_require = distribution.extras_require  # type: ignore[attr-defined]
         self.name = distribution.get_name()  # type: ignore[attr-defined]
 
