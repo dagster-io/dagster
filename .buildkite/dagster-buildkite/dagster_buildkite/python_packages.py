@@ -3,6 +3,7 @@ import logging
 from distutils import core as distutils_core  # pylint: disable=deprecated-module
 from importlib import reload
 from pathlib import Path
+from typing import Set
 
 from dagster_buildkite.utils import get_changed_files
 from pkg_resources import Requirement, parse_requirements
@@ -16,18 +17,18 @@ class PythonPackage:
         # each time we use it - otherwise we'll get the previous invocation's
         # distribution if our setup.py doesn't implement setup() correctly
         reload(distutils_core)
-        distribution = distutils_core.run_setup(setup_py_path, stop_after="init")
+        distribution = distutils_core.run_setup(str(setup_py_path), stop_after="init")
 
-        self._install_requires = distribution.install_requires
-        self._extras_require = distribution.extras_require
-        self.name = distribution.get_name()
+        self._install_requires = distribution.install_require  # type: ignore[attr-defined]
+        self._extras_require = distribution.extras_require  # type: ignore[attr-defined]
+        self.name = distribution.get_name()  # type: ignore[attr-defined]
 
     @property
     def install_requires(self):
         return set(
             requirement
             for requirement in parse_requirements(self._install_requires)
-            if get(requirement.name)
+            if get(requirement.name)  # type: ignore[attr-defined]
         )
 
     @property
@@ -84,8 +85,8 @@ def get(name: str):
 
 
 def walk_dependencies(requirement: Requirement):
-    dependencies = set()
-    dagster_package = get(requirement.name)
+    dependencies: Set[PythonPackage] = set()
+    dagster_package = get(requirement.name)  # type: ignore[attr-defined]
 
     # Return early if it's not a dependency defined in our repo
     if not dagster_package:
