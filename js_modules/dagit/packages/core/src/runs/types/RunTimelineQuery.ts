@@ -158,4 +158,6 @@ export interface RunTimelineQuery {
 export interface RunTimelineQueryVariables {
   inProgressFilter: RunsFilter;
   terminatedFilter: RunsFilter;
+  tickCursor?: number | null;
+  ticksUntil?: number | null;
 }

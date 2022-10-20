@@ -1,0 +1,2 @@
+include LICENSE
+include dagster_duckdb/py.typed

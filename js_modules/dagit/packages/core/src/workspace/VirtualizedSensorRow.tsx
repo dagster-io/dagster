@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {AssetLink} from '../assets/AssetLink';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
@@ -47,6 +48,8 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
   );
 
   useDelayedRowQuery(querySensor);
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+
   const {data} = queryResult;
 
   const sensorData = React.useMemo(() => {

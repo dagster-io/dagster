@@ -22,12 +22,14 @@ from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 def fs_io_manager(init_context):
     """Built-in filesystem IO manager that stores and retrieves values using pickling.
 
-    Allows users to specify a base directory where all the step outputs will be stored. By
-    default, step outputs will be stored in the directory specified by local_artifact_storage in
-    your dagster.yaml file (which will be a temporary directory if not explicitly set).
+    The base directory that the pickle files live inside is determined by:
 
-    Serializes and deserializes output values using pickling and automatically constructs
-    the filepaths for ops and assets.
+    * The IO manager's "base_dir" configuration value, if specified. Otherwise...
+    * A "storage/" directory underneath the value for "local_artifact_storage" in your dagster.yaml
+      file, if specified. Otherwise...
+    * A "storage/" directory underneath the directory that the DAGSTER_HOME environment variable
+      points to, if that environment variable is specified. Otherwise...
+    * A temporary directory.
 
     Assigns each op output to a unique filepath containing run ID, step key, and output name.
     Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key

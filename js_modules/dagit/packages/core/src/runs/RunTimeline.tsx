@@ -15,10 +15,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {AnchorButton} from '../ui/AnchorButton';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -35,7 +37,7 @@ import {mergeStatusToBackground} from './mergeStatusToBackground';
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;
 const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
-const EMPTY_STATE_HEIGHT = 66;
+const EMPTY_STATE_HEIGHT = 110;
 const LEFT_SIDE_SPACE_ALLOTTED = 320;
 const LABEL_WIDTH = 268;
 const MIN_DATE_WIDTH_PCT = 10;
@@ -60,7 +62,6 @@ export type TimelineJob = {
 
 interface Props {
   loading?: boolean;
-  bucketByRepo?: boolean;
   jobs: TimelineJob[];
   range: [number, number];
 }
@@ -68,9 +69,25 @@ interface Props {
 const EXPANSION_STATE_STORAGE_KEY = 'timeline-expansion-state';
 
 export const RunTimeline = (props: Props) => {
-  const {loading = false, bucketByRepo = false, jobs, range} = props;
+  const {loading = false, jobs, range} = props;
   const [width, setWidth] = React.useState<number | null>(null);
-  const {expandedKeys, onToggle} = useRepoExpansionState(EXPANSION_STATE_STORAGE_KEY);
+
+  const now = Date.now();
+  const [_, end] = range;
+  const includesTicks = now <= end;
+
+  const buckets = jobs.reduce((accum, job) => {
+    const {repoAddress} = job;
+    const repoKey = repoAddressAsString(repoAddress);
+    const jobsForRepo = accum[repoKey] || [];
+    return {...accum, [repoKey]: [...jobsForRepo, job]};
+  }, {});
+
+  const allKeys = Object.keys(buckets);
+  const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
+    EXPANSION_STATE_STORAGE_KEY,
+    allKeys,
+  );
 
   const observer = React.useRef<ResizeObserver | null>(null);
 
@@ -93,51 +110,6 @@ export const RunTimeline = (props: Props) => {
       </Timeline>
     );
   }
-
-  const now = Date.now();
-  const [_, end] = range;
-  const includesTicks = now <= end;
-
-  if (!bucketByRepo) {
-    const anyJobs = jobs.length > 0;
-    const height = ROW_HEIGHT * jobs.length;
-    const timelineHeight = DATE_TIME_HEIGHT + (anyJobs ? height : EMPTY_STATE_HEIGHT);
-    return (
-      <Timeline $height={timelineHeight} ref={containerRef}>
-        <Box
-          padding={{left: 24}}
-          flex={{direction: 'column', justifyContent: 'center'}}
-          style={{fontSize: '16px', height: DATE_TIME_HEIGHT}}
-          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-        >
-          Jobs
-        </Box>
-        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
-        <div>
-          {jobs.length ? (
-            jobs.map((job, ii) => (
-              <RunTimelineRow
-                key={job.key}
-                job={job}
-                top={ii * ROW_HEIGHT + DATE_TIME_HEIGHT}
-                range={range}
-                width={width}
-              />
-            ))
-          ) : (
-            <RunsEmptyOrLoading loading={loading} includesTicks={includesTicks} />
-          )}
-        </div>
-      </Timeline>
-    );
-  }
-
-  const buckets = jobs.reduce((accum, job) => {
-    const {repoAddress} = job;
-    const repoKey = repoAddressAsString(repoAddress);
-    const jobsForRepo = accum[repoKey] || [];
-    return {...accum, [repoKey]: [...jobsForRepo, job]};
-  }, {});
 
   const repoOrder = Object.keys(buckets).sort((a, b) =>
     a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()),
@@ -184,6 +156,7 @@ export const RunTimeline = (props: Props) => {
               isDuplicateRepoName={!!(name && duplicateRepoNames.has(name))}
               jobs={buckets[repoKey]}
               onToggle={onToggle}
+              onToggleAll={onToggleAll}
               width={width}
             />
           );
@@ -204,16 +177,35 @@ interface TimelineSectionProps {
   range: [number, number];
   width: number;
   onToggle: (repoAddress: RepoAddress) => void;
+  onToggleAll: (expanded: boolean) => void;
 }
 
 const TimelineSection = (props: TimelineSectionProps) => {
-  const {expanded, onToggle, repoKey, isDuplicateRepoName, jobs, range, top, width} = props;
+  const {
+    expanded,
+    onToggle,
+    onToggleAll,
+    repoKey,
+    isDuplicateRepoName,
+    jobs,
+    range,
+    top,
+    width,
+  } = props;
   const repoAddress = repoAddressFromPath(repoKey);
   const repoName = repoAddress?.name || 'Unknown repo';
   const repoLocation = repoAddress?.location || 'Unknown location';
-  const onClick = React.useCallback(() => {
-    repoAddress && onToggle(repoAddress);
-  }, [onToggle, repoAddress]);
+
+  const onClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      if (e.getModifierState('Shift')) {
+        onToggleAll(!expanded);
+      } else {
+        repoAddress && onToggle(repoAddress);
+      }
+    },
+    [expanded, onToggle, onToggleAll, repoAddress],
+  );
 
   return (
     <div>
@@ -595,6 +587,7 @@ const RunTimelineRow = ({
 
 const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
   const {loading, includesTicks} = props;
+  const {flagNewWorkspace} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -606,11 +599,27 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
       );
     }
 
-    if (includesTicks) {
-      return <span>No runs or scheduled ticks in this time period.</span>;
-    }
-
-    return <span>No runs in this time period.</span>;
+    return (
+      <Box flex={{direction: 'column', gap: 12, alignItems: 'center'}}>
+        <div>
+          {includesTicks
+            ? 'No runs or scheduled ticks in this time period.'
+            : 'No runs in this time period.'}
+        </div>
+        <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+          <AnchorButton
+            icon={<Icon name="add_circle" />}
+            to={flagNewWorkspace ? '/overview/jobs' : '/workspace'}
+          >
+            Launch a run
+          </AnchorButton>
+          <span>or</span>
+          <AnchorButton icon={<Icon name="materialization" />} to="/instance/asset-groups">
+            Materialize an asset
+          </AnchorButton>
+        </Box>
+      </Box>
+    );
   };
 
   return (
@@ -664,6 +673,7 @@ const JobName = styled.div`
   padding: 0 12px 0 24px;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: ${LEFT_SIDE_SPACE_ALLOTTED}px;
 `;
 
 const RunChunks = styled.div`

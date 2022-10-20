@@ -1,0 +1,69 @@
+---
+title: "Using dbt with Dagster software-defined assets"
+description: Dagster can orchestrate dbt alongside other technologies.
+---
+
+# Using dbt with Dagster software-defined assets
+
+<Note>
+  Using dbt Cloud? Check out the{" "}
+  <a href="/integrations/dbt-cloud">dbt Cloud with Dagster guide</a>!
+</Note>
+
+In this tutorial, we'll walk you through integrating dbt with Dagster using dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt), and a [DuckDB database](https://duckdb.org/).
+
+By the end of this tutorial, you will:
+
+- Understand how dbt models and Dagster [software-defined assets](/concepts/assets/software-defined-assets) (or SDAs) work together
+- [Set up a dbt project](/integrations/dbt/using-dbt-with-dagster/part-one)
+- [Load the dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/part-two)
+- [Create and materialize upstream Dagster assets](/integrations/dbt/using-dbt-with-dagster/part-three)
+- [Create and materialize a downstream asset](/integrations/dbt/using-dbt-with-dagster/part-four) that outputs a plotly chart
+
+---
+
+## dbt models and Dagster software-defined assets
+
+<DbtModelAssetExplanation />
+
+---
+
+## Prerequisites
+
+To complete this tutorial, you'll need:
+
+- **To install dbt, Dagster, and Dagit**. Run the following to install everything using pip:
+
+  ```shell
+  pip install dbt-core dagster dagit
+  ```
+
+  Refer to the [dbt](https://docs.getdbt.com/dbt-cli/install/overview) and [Dagster](/getting-started/install) installation docs for more info.
+
+- **To download the [`tutorial_dbt_dagster`](https://github.com/dagster-io/dagster/tree/master/examples/tutorial_dbt_dagster) Dagster example.** We'll walk you through this in the first step. This example includes:
+
+  - **dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop).** You can follow along using a different dbt project, but you won't be able to use the code examples in this tutorial as-is.
+
+  - **A blank template version of the tutorial project**, which you can use to follow along with the tutorial.
+
+  - **A finished version of the tutorial project,** which you can use to check out the final version of the work you'll do in the tutorial.
+
+  - **Dependencies for the following libraries**:
+
+    - **dagster-dbt.** This library allows you to integrate dbt with Dagster.
+
+    - **dbt-duckdb.** This tutorial uses [DuckDB](https://docs.getdbt.com/reference/warehouse-profiles/duckdb-profile) as the database backing dbt.
+
+    - **dagster-duckdb.** This library provides a resource that enables the materialization of Dagster assets as DuckDB tables.
+
+    - **dagster-duckdb-pandas.** This library allows you to store pandas DataFrames in DuckDB.
+
+    - **pandas.** This tutorial uses [pandas](https://pandas.pydata.org/docs/index.html) to fetch raw data.
+
+    - **plotly**. This tutorial uses [plotly](https://plotly.com/python/) to create a histogram asset.
+
+---
+
+## Ready to get started?
+
+When you've fulfilled all the [prerequisites](#prerequisites) for the tutorial, you can get started by [setting up the dbt project](/integrations/dbt/using-dbt-with-dagster/part-one).

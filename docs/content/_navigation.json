@@ -1,7 +1,7 @@
 [
   {
     "title": "Getting Started",
-    "icon": "Sparkles",
+    "icon": "Flag",
     "path": "/getting-started",
     "children": [
       {
@@ -20,7 +20,7 @@
   },
   {
     "title": "Tutorials",
-    "icon": "AcademicCap",
+    "icon": "Tutorials",
     "path": "/tutorial",
     "children": [
       {
@@ -69,7 +69,7 @@
   },
   {
     "title": "Concepts",
-    "icon": "Menu",
+    "icon": "Concepts",
     "path": "/concepts",
     "isDefaultOpen": true,
     "children": [
@@ -278,7 +278,7 @@
   },
   {
     "title": "Deployment",
-    "icon": "CloudUpload",
+    "icon": "Deployment",
     "path": "/deployment",
     "children": [
       {
@@ -500,7 +500,7 @@
   },
   {
     "title": "Integrations",
-    "icon": "Grid",
+    "icon": "Integrations",
     "path": "/integrations",
     "children": [
         {
@@ -513,11 +513,39 @@
       },
       {
         "title": "dbt",
-        "path": "/integrations/dbt"
+        "path": "/integrations/dbt",
+        "children": [
+          {
+            "title": "dbt + Dagster tutorial",
+            "path": "/integrations/dbt/using-dbt-with-dagster",
+            "children": [
+              {
+                "title": "Set up dbt project",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-one"
+              },
+              {
+                "title": "Load dbt models as assets",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-two"
+              },
+              {
+                "title": "Create and materialize upstream assets",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-three"
+              },
+              {
+                "title": "Create and materialize downstream asset",
+                "path": "/integrations/dbt/using-dbt-with-dagster/part-four"
+              }
+            ]
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/dbt/reference"
+          }
+        ]
       },
       {
         "title": "dbt Cloud",
-        "path": "/integrations/dbt_cloud"
+        "path": "/integrations/dbt-cloud"
       },
       {
         "title": "Great Expectations",
@@ -547,7 +575,7 @@
   },
   {
     "title": "Guides",
-    "icon": "Search",
+    "icon": "Guides",
     "path": "/guides",
     "children": [
       {
@@ -617,7 +645,7 @@
   },
   {
     "title": "API Reference",
-    "icon": "BookOpen",
+    "icon": "Reference",
     "path": "/_apidocs",
     "children": [
       {
@@ -765,6 +793,18 @@
             "path": "/_apidocs/libraries/dagster-docker"
           },
           {
+            "title": "DuckDB (dagster-duckdb)",
+            "path": "/_apidocs/libraries/dagster-duckdb"
+          },
+          {
+            "title": "DuckDB + Pandas (dagster-duckdb-pandas)",
+            "path": "/_apidocs/libraries/dagster-duckdb-pandas"
+          },
+          {
+            "title": "DuckDB + PySpark (dagster-duckdb-pyspark)",
+            "path": "/_apidocs/libraries/dagster-duckdb-pyspark"
+          },
+          {
             "title": "Fivetran (dagster-fivetran)",
             "path": "/_apidocs/libraries/dagster-fivetran"
           },
@@ -854,7 +894,7 @@
   },
   {
     "title": "Community",
-    "icon": "Users",
+    "icon": "Community",
     "path": "/community",
     "children": [
       {
@@ -879,7 +919,7 @@
   },
   {
     "title": "About",
-    "icon": "InfoCircle",
+    "icon": "About",
     "isUnversioned": true,
     "children": [
       {

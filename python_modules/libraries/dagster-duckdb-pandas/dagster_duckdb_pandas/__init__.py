@@ -1,0 +1,1 @@
+from .duckdb_pandas_type_handler import DuckDBPandasTypeHandler as DuckDBPandasTypeHandler

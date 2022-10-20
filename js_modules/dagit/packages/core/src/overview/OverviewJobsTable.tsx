@@ -30,7 +30,14 @@ const JOBS_EXPANSION_STATE_STORAGE_KEY = 'jobs-virtualized-expansion-state';
 
 export const OverviewJobsTable: React.FC<Props> = ({repos}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const {expandedKeys, onToggle} = useRepoExpansionState(JOBS_EXPANSION_STATE_STORAGE_KEY);
+  const allKeys = React.useMemo(
+    () => repos.map(({repoAddress}) => repoAddressAsString(repoAddress)),
+    [repos],
+  );
+  const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
+    JOBS_EXPANSION_STATE_STORAGE_KEY,
+    allKeys,
+  );
 
   const flattened: RowType[] = React.useMemo(() => {
     const flat: RowType[] = [];
@@ -92,13 +99,15 @@ export const OverviewJobsTable: React.FC<Props> = ({repos}) => {
                   height={size}
                   start={start}
                   onToggle={onToggle}
+                  onToggleAll={onToggleAll}
+                  expanded={expandedKeys.includes(repoAddressAsString(row.repoAddress))}
                   showLocation={duplicateRepoNames.has(row.repoAddress.name)}
                   rightElement={
                     <Tooltip
                       content={row.jobCount === 1 ? '1 job' : `${row.jobCount} jobs`}
                       placement="top"
                     >
-                      <Tag intent="primary">{row.jobCount}</Tag>
+                      <Tag>{row.jobCount}</Tag>
                     </Tooltip>
                   }
                 />

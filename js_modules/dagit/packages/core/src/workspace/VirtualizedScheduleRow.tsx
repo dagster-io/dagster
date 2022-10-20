@@ -14,6 +14,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -56,9 +57,12 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
         scheduleName: name,
       },
     },
+    notifyOnNetworkStatusChange: true,
   });
 
   useDelayedRowQuery(querySchedule);
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+
   const {data} = queryResult;
 
   const scheduleData = React.useMemo(() => {

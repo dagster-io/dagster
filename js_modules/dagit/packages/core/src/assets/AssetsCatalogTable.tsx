@@ -166,7 +166,8 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
 
   return (
     <Wrapper>
-      <StickyTableContainer $top={0}>
+      {/* 48px allows for the toolbar to be sticky as well */}
+      <StickyTableContainer $top={48}>
         <AssetTable
           view={view}
           assets={displayed}

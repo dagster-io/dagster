@@ -92,7 +92,12 @@ export const AssetTable = ({
 
   return (
     <Box flex={{direction: 'column'}}>
-      <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
+      <Box
+        background={Colors.White}
+        flex={{alignItems: 'center', gap: 12}}
+        padding={{vertical: 8, left: 24, right: 12}}
+        style={{position: 'sticky', top: 0, zIndex: 1}}
+      >
         {actionBarComponents}
         <div style={{flex: 1}} />
         <QueryRefreshCountdown refreshState={refreshState} />

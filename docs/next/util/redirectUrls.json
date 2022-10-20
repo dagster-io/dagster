@@ -577,5 +577,10 @@
     "source": "/concepts/partitions-schedules-sensors/sensors#job-failure-sensor",
     "destination": "/concepts/partitions-schedules-sensors/sensors#run-failure-sensor",
     "statusCode": 302
+  },
+  {
+    "source": "/integrations/dbt_cloud",
+    "destination": "/integrations/dbt-cloud",
+    "statusCode": 302
   }
 ]

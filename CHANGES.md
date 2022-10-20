@@ -1,5 +1,72 @@
 # Changelog
 
+# 1.0.14 (core) / 0.16.14 (libraries)
+
+### New
+
+- Tags can now be provided to an asset reconciliation sensor and will be applied to all RunRequests returned by the sensor.
+- If you don’t explicitly specify a DagsterType on a graph input, but all the inner inputs that the graph input maps to have the same DagsterType, the graph input’s DagsterType will be set to the the DagsterType of the inner inputs.
+- [dagster-airbyte] `load_assets_from_airbyte_project` now caches the project data generated at repo load time so it does not have to be regenerated in subprocesses.
+- [dagster-airbyte] Output table schema metadata is now generated at asset definition time when using `load_assets_from_airbyte_instance` or `load_assets_from_airbyte_project`.
+- [dagit] The run timeline now groups all jobs by repository. You can collapse or expand each repository in this view by clicking the repository name. This state will be preserved locally. You can also hold `Shift` while clicking the repository name, and all repository groups will be collapsed or expanded accordingly.
+- [dagit] In the launchpad view, a “Remove all” button is now available once you have accrued three or more tabs for that job, to make it easier to clear stale configuration tabs from view.
+- [dagit] When scrolling through the asset catalog, the toolbar is now sticky. This makes it simpler to select multiple assets and materialize them without requiring you to scroll back to the top of the page.
+- [dagit] A “Materialize” option has been added to the action menu on individual rows in the asset catalog view.
+- [dagster-aws] The `EcsRunLauncher` now allows you to pass in a dictionary in the `task_definition` config field that specifies configuration for the task definition of the launched run, including role ARNs and a list of sidecar containers to include. Previously, the task definition could only be configured by passing in a task definition ARN or by basing the the task definition off of the task definition of the ECS task launching the run. See the [docs](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.ecs.EcsRunLauncher) for the full set of available config.
+
+### Bugfixes
+
+- Previously, yielding a `SkipReason` within a multi-asset sensor (experimental) would raise an error. This has been fixed.
+- [dagit] Previously, if you had a partitioned asset job and supplied a hardcoded dictionary of config to `define_asset_job`, you would run into a `CheckError` when launching the job from Dagit. This has been fixed.
+- [dagit] When viewing the Runs section of Dagit, the counts displayed in the tabs (e.g. “In progress”, “Queued”, etc.) were not updating on a poll interval. This has been fixed.
+
+# 1.0.13 (core) / 0.16.13 (libraries)
+
+### New
+
+- `AssetMaterialization` now has a `metadata` property, which allows accessing the materialization’s metadata as a dictionary.
+- `DagsterInstance` now has a `get_latest_materialization_event` method, which allows fetching the most recent materialization event for a particular asset key.
+- `RepositoryDefinition.load_asset_value` and `AssetValueLoader.load_asset_value` now work with IO managers whose `load_input` implementation accesses the `op_def` and `name` attributes on the `InputContext`.
+- `RepositoryDefinition.load_asset_value` and `AssetValueLoader.load_asset_value` now respect the `DAGSTER_HOME` environment variable.
+- `InMemoryIOManager`, the `IOManager` that backs `mem_io_manager`, has been added to the public API.
+- The `multi_asset_sensor` (experimental) now supports marking individual partitioned materializations as “consumed”. Unconsumed materializations will appear in future calls to partitioned context methods.
+- The `build_multi_asset_sensor_context` testing method (experimental) now contains a flag to set the cursor to the newest events in the Dagster instance.
+- `TableSchema` now has a static constructor that enables building it from a dictionary of column names to column types.
+- Added a new CLI command `dagster run migrate-repository` which lets you migrate the run history for a given job from one repository to another.  This is useful to preserve run history for a job when you have renamed a repository, for example.
+- [dagit] The run timeline view now shows jobs grouped by repository, with each repository section collapsible. This feature was previously gated by a feature flag, and is now turned on for everyone.
+- [dagster-airbyte] Added option to specify custom request params to the Airbyte resource, which can be used for auth purposes.
+- [dagster-airbyte] When loading Airbyte assets from an instance or from YAML, a filter function can be specified to ignore certain connections.
+- [dagster-airflow] `DagsterCloudOperator` and `DagsterOperator` now support Airflow 2. Previously, installing the library on Airflow 2 would break due to an import error.
+- [dagster-duckdb] A new integration with DuckDB allows you to store op outputs and assets in an in-process database.
+
+### Bugfixes
+
+- Previously, if retries were exceeded when running with `execute_in_process`, no error would be raised. Now, a `DagsterMaxRetriesExceededError` will be launched off.
+- [dagster-airbyte] Fixed generating assets for Airbyte normalization tables corresponding with nested union types.
+- [dagster-dbt] When running assets with `load_assets_from_...(..., use_build=True)`, AssetObservation events would be emitted for each test. These events would have metadata fields which shared names with the fields added to the AssetMaterialization events, causing confusing historical graphs for fields such as Compilation Time. This has been fixed.
+- [dagster-dbt] The name for the underlying op for `load_assets_from_...` was generated in a way which was non-deterministic for dbt projects which pulled in external packages, leading to errors when executing across multiple processes. This has been fixed.
+
+### Dependency changes
+
+- [dagster-dbt] The package no longer depends on pandas and dagster-pandas.
+
+### Community Contributions
+
+- [dagster-airbyte] Added possibility to change request timeout value when calling Airbyte. Thanks @FransDel!
+- [dagster-airflow] Fixed an import error in `dagster_airflow.hooks`. Thanks @bollwyvl!
+- [dagster-gcp] Unpin Google dependencies. `dagster-gcp` now supports google-api-python-client 2.x. Thanks @amarrella!
+- [dagstermill] Fixed an issue where DagsterTranslator was missing an argument required by newer versions of papermill. Thanks @tizz98!
+
+### Documentation
+
+- Added an example, underneath examples/assets_smoke_test, that shows how to write a smoke test that feeds empty data to all the transformations in a data pipeline.
+- Added documentation for `build_asset_reconciliation_sensor`.
+- Added documentation for monitoring partitioned materializations using the `multi_asset_sensor` and kicking off subsequent partitioned runs.
+- [dagster-cloud] Added documentation for running the Dagster Cloud Docker agent with Docker credential helpers.
+- [dagster-dbt] The class methods of the dbt_cli_resource are now visible in the API docs for the dagster-dbt library.
+- [dagster-dbt] Added a step-by-step tutorial for using dbt models with Dagster software-defined assets
+
+
 # 1.0.12 (core) / 0.16.12 (libraries)
 
 ### New

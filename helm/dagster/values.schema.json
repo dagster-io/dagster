@@ -2324,6 +2324,30 @@
                 "useThreads"
             ]
         },
+        "Schedules": {
+            "title": "Schedules",
+            "type": "object",
+            "properties": {
+                "useThreads": {
+                    "title": "Usethreads",
+                    "type": "boolean"
+                },
+                "numWorkers": {
+                    "title": "Numworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "useThreads"
+            ]
+        },
         "Daemon": {
             "title": "Daemon",
             "type": "object",
@@ -2418,6 +2442,9 @@
                 "sensors": {
                     "$ref": "#/definitions/Sensors"
                 },
+                "schedules": {
+                    "$ref": "#/definitions/Schedules"
+                },
                 "schedulerName": {
                     "title": "Schedulername",
                     "anyOf": [
@@ -2452,7 +2479,8 @@
                 "annotations",
                 "runMonitoring",
                 "runRetries",
-                "sensors"
+                "sensors",
+                "schedules"
             ],
             "additionalProperties": false
         },

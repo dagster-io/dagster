@@ -1248,6 +1248,8 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                     ),
                     SqlEventLogStorageTable.c.partition != None,
+                    SqlEventLogStorageTable.c.dagster_event_type
+                    == DagsterEventType.ASSET_MATERIALIZATION.value,
                 )
             )
             .group_by(SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition)

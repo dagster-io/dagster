@@ -20,6 +20,7 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
   id: string;
   name: string;
   isJob: boolean;
+  isAssetJob: boolean;
   pipelineSnapshotId: string;
 }
 

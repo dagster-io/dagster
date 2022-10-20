@@ -30,6 +30,8 @@ run_monitoring:
 
 run_retries:
   max_retries: 0
+
+sso_default_role: EDITOR
 ```
 
 ---
@@ -41,6 +43,7 @@ For each deployment, you can configure settings for:
 - [Run queue](#run-queue-run_queue)
 - [Run monitoring](#run-monitoring-run_monitoring)
 - [Run retries](#run-retries-run_retries)
+- [SSO default role](#sso-default-role)
 
 ### Run queue (run_queue)
 
@@ -148,6 +151,27 @@ run_retries:
     <ul>
       <li>
         <strong>Default</strong> - <code>0</code>
+      </li>
+    </ul>
+  </ReferenceTableItem>
+</ReferenceTable>
+
+### SSO default role
+
+The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users which log in via SSO. For more information on available roles, see the [Dagster Cloud permissions reference](/dagster-cloud/account/managing-users#understanding-user-permissions).
+
+```yaml
+sso_default_role: EDITOR
+```
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="sso_default_role">
+    If SAML SSO is enabled, this is the default role that will be assigned to
+    Dagster Cloud users for this deployment. If SAML SSO is not enabled, this
+    setting is ignored.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>VIEWER</code>
       </li>
     </ul>
   </ReferenceTableItem>

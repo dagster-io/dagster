@@ -1,3 +1,5 @@
+import importlib
+import os
 from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
@@ -47,7 +49,7 @@ from dagster._core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
-from dagster._core.storage.io_manager import io_manager
+from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.utils import str_format_set
 from dagster._utils import merge_dicts
 
@@ -188,31 +190,35 @@ class JobDefinition(PipelineDefinition):
             else:
                 hardcoded_config = config if config else {}
                 partitioned_config = PartitionedConfig(partitions_def, lambda _: hardcoded_config)
-
-        if isinstance(config, ConfigMapping):
-            config_mapping = config
-        elif isinstance(config, PartitionedConfig):
-            partitioned_config = config
-        elif isinstance(config, dict):
-            check.invariant(
-                len(_preset_defs) == 0,
-                "Bad state: attempted to pass preset definitions to job alongside config dictionary.",
-            )
-            presets = [PresetDefinition(name="default", run_config=config)]
-            # Using config mapping here is a trick to make it so that the preset will be used even
-            # when no config is supplied for the job.
-            config_mapping = _config_mapping_with_default_value(
-                get_run_config_schema_for_job(
-                    graph_def, resource_defs_with_defaults, executor_def, logger_defs, asset_layer
-                ),
-                config,
-                name,
-            )
-        elif config is not None:
-            check.failed(
-                f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
-                f"is an object of type {type(config)}"
-            )
+        else:
+            if isinstance(config, ConfigMapping):
+                config_mapping = config
+            elif isinstance(config, PartitionedConfig):
+                partitioned_config = config
+            elif isinstance(config, dict):
+                check.invariant(
+                    len(_preset_defs) == 0,
+                    "Bad state: attempted to pass preset definitions to job alongside config dictionary.",
+                )
+                presets = [PresetDefinition(name="default", run_config=config)]
+                # Using config mapping here is a trick to make it so that the preset will be used even
+                # when no config is supplied for the job.
+                config_mapping = _config_mapping_with_default_value(
+                    get_run_config_schema_for_job(
+                        graph_def,
+                        resource_defs_with_defaults,
+                        executor_def,
+                        logger_defs,
+                        asset_layer,
+                    ),
+                    config,
+                    name,
+                )
+            elif config is not None:
+                check.failed(
+                    f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
+                    f"is an object of type {type(config)}"
+                )
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
         mode_def = ModeDefinition(
@@ -479,7 +485,7 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             asset_selection=asset_selection,
             asset_selection_data=asset_selection_data,
-            config=self.config_mapping,
+            config=self.config_mapping or self.partitioned_config,
         )
         return new_job
 
@@ -832,6 +838,22 @@ def get_direct_input_values_from_job(target: PipelineDefinition) -> Mapping[str,
     description="Built-in filesystem IO manager that stores and retrieves values using pickling."
 )
 def default_job_io_manager(init_context: "InitResourceContext"):
+    # support overriding the default io manager via environment variables
+    module_name = os.getenv("DAGSTER_DEFAULT_IO_MANAGER_MODULE")
+    attribute_name = os.getenv("DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE")
+    if module_name and attribute_name:
+        from dagster._core.execution.build_resources import build_resources
+
+        module = importlib.import_module(module_name)
+        attr = getattr(module, attribute_name)
+        check.invariant(
+            isinstance(attr, IOManagerDefinition),
+            "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE must specify an IOManagerDefinition",
+        )
+        with build_resources({"io_manager": attr}) as resources:
+            return resources.io_manager
+
+    # normally, default to the fs_io_manager
     from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 
     instance = check.not_none(init_context.instance)

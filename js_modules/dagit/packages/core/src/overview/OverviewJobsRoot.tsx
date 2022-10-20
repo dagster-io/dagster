@@ -3,6 +3,7 @@ import {Box, Colors, Heading, NonIdealState, PageHeader, Spinner, TextInput} fro
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
@@ -27,6 +28,8 @@ export const OverviewJobsRoot = () => {
     notifyOnNetworkStatusChange: true,
   });
   const {data, loading} = queryResultOverview;
+
+  const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.
   const repoBuckets = useRepoBuckets(data);
@@ -102,7 +105,10 @@ export const OverviewJobsRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="jobs" />} />
+      <PageHeader
+        title={<Heading>Overview</Heading>}
+        tabs={<OverviewTabs tab="jobs" refreshState={refreshState} />}
+      />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}

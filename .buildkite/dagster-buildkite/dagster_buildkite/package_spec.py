@@ -1,10 +1,21 @@
 import os
+from distutils import core as distutils_core  # pylint: disable=deprecated-module
+from importlib import reload
+from pathlib import Path
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
+
+import pkg_resources
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
 from .steps.tox import build_tox_step
-from .utils import BuildkiteLeafStep, GroupStep
+from .utils import (
+    BuildkiteLeafStep,
+    GroupStep,
+    changed_python_package_names,
+    get_changed_files,
+    is_feature_branch,
+)
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -230,6 +241,7 @@ class PackageSpec(
                             timeout_in_minutes=self.timeout_in_minutes,
                             queue=self.queue,
                             retries=self.retries,
+                            skip_reason=self.skip_reason,
                         )
                     )
 
@@ -241,6 +253,7 @@ class PackageSpec(
                     base_label=base_name,
                     command_type="mypy",
                     python_version=supported_python_versions[-1],
+                    skip_reason=self.skip_reason,
                 )
             )
 
@@ -252,6 +265,7 @@ class PackageSpec(
                     base_label=base_name,
                     command_type="pylint",
                     python_version=supported_python_versions[-1],
+                    skip_reason=self.skip_reason,
                 )
             )
 
@@ -263,3 +277,56 @@ class PackageSpec(
                 steps=steps,
             )
         ]
+
+    @property
+    def distribution(self):
+        # run_setup stores state in a global variable. Reload the module
+        # each time we use it - otherwise we'll get the previous invocation's
+        # distribution if our setup.py doesn't implement setup() correctly
+        reload(distutils_core)
+
+        setup = Path(self.directory) / "setup.py"
+        if setup.exists():
+            return distutils_core.run_setup(setup)
+
+    @property
+    def requirements(self):
+        # First try to infer requirements from the distribution
+        if self.distribution:
+            extras = [
+                requirement
+                for requirements in self.distribution.extras_require.values()
+                for requirement in requirements
+            ]
+            install = self.distribution.install_requires
+            return extras + install
+
+        # If we don't have a distribution (like many of our integration test suites)
+        # we can use a requirements.txt file to capture requirements
+        requirements_txt = Path(self.directory) / "requirements.txt"
+        if requirements_txt.exists():
+            parsed = pkg_resources.parse_requirements(requirements_txt.read_text())
+            return [requirement.name for requirement in parsed]
+
+        # Otherwise return nothing
+        return []
+
+    @property
+    def skip_reason(self) -> Optional[str]:
+        if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
+            return None
+
+        for change in get_changed_files():
+            if (
+                # Our change is in this package's directory
+                (Path(self.directory) in change.parents)
+                # The file can alter behavior - exclude things like README changes
+                and (change.suffix in [".py", ".cfg", ".toml"] or change.name == "requirements.txt")
+            ):
+                return None
+
+        # TODO: Walk the dependency tree
+        if any(requirement in changed_python_package_names() for requirement in self.requirements):
+            return None
+
+        return "Package unaffected by these changes"

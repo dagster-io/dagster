@@ -11,7 +11,8 @@ from .utils import get_project_connection_json, get_project_job_json
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
 @pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
-def test_load_from_project(use_normalization_tables, connection_to_group_fn):
+@pytest.mark.parametrize("filter_connection", [True, False])
+def test_load_from_project(use_normalization_tables, connection_to_group_fn, filter_connection):
 
     ab_resource = airbyte_resource(
         build_init_resource_context(
@@ -23,16 +24,23 @@ def test_load_from_project(use_normalization_tables, connection_to_group_fn):
     )
 
     if connection_to_group_fn:
-        ab_assets = load_assets_from_airbyte_project(
+        ab_cacheable_assets = load_assets_from_airbyte_project(
             file_relative_path(__file__, "./test_airbyte_project"),
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
+            connection_filter=(lambda _: False) if filter_connection else None,
         )
     else:
-        ab_assets = load_assets_from_airbyte_project(
+        ab_cacheable_assets = load_assets_from_airbyte_project(
             file_relative_path(__file__, "./test_airbyte_project"),
             create_assets_for_normalization_tables=use_normalization_tables,
+            connection_filter=(lambda _: False) if filter_connection else None,
         )
+    ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
+
+    if filter_connection:
+        assert len(ab_assets) == 0
+        return
 
     tables = {"dagster_releases", "dagster_tags", "dagster_teams"} | (
         {"dagster_releases_assets", "dagster_releases_author", "dagster_tags_commit"}
@@ -44,7 +52,7 @@ def test_load_from_project(use_normalization_tables, connection_to_group_fn):
         [
             ab_assets[0].group_names_by_key.get(AssetKey(t))
             == (
-                connection_to_group_fn("github_snowflake_ben")
+                connection_to_group_fn("GitHub <> snowflake-ben")
                 if connection_to_group_fn
                 else "github_snowflake_ben"
             )

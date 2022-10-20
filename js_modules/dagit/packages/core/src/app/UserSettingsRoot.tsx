@@ -117,7 +117,7 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
               ),
             },
             {
-              key: 'New Workspace page',
+              key: 'New workspace pages, overview pages, and top navigation',
               value: (
                 <Checkbox
                   format="switch"
@@ -127,12 +127,12 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
               ),
             },
             {
-              key: 'Bucket run timeline and jobs page by repo',
+              key: 'New asset detail pages',
               value: (
                 <Checkbox
                   format="switch"
-                  checked={flags.includes(FeatureFlag.flagRunBucketing)}
-                  onChange={() => toggleFlag(FeatureFlag.flagRunBucketing)}
+                  checked={flags.includes(FeatureFlag.flagNewAssetDetails)}
+                  onChange={() => toggleFlag(FeatureFlag.flagNewAssetDetails)}
                 />
               ),
             },

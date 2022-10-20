@@ -9,7 +9,7 @@ export enum FeatureFlag {
   flagDebugConsoleLogging = 'flagDebugConsoleLogging',
   flagDisableWebsockets = 'flagDisableWebsockets',
   flagNewWorkspace = 'flagNewWorkspace',
-  flagRunBucketing = 'flagRunBucketing',
+  flagNewAssetDetails = 'flagNewAssetDetails',
   flagAssetGraphExperimentalZoom = 'flagAssetGraphExperimentalZoom',
 }
 

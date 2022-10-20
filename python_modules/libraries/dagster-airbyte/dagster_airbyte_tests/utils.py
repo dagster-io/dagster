@@ -205,6 +205,18 @@ def get_project_connection_json(**kwargs):
                                         "format": "date-time",
                                     },
                                     "target_commitish": {"type": ["null", "string"]},
+                                    "foo": {
+                                        "oneOf": [
+                                            {
+                                                "type": ["null", "object"],
+                                                "properties": {"bar": {"type": "string"}},
+                                            },
+                                            {
+                                                "type": ["null", "object"],
+                                                "properties": {"baz": {"type": "string"}},
+                                            },
+                                        ]
+                                    },
                                 },
                             },
                             "supportedSyncModes": ["full_refresh", "incremental"],
@@ -444,6 +456,18 @@ def get_instance_connections_json():
                                             "format": "date-time",
                                         },
                                         "target_commitish": {"type": ["null", "string"]},
+                                        "foo": {
+                                            "oneOf": [
+                                                {
+                                                    "types": ["null", "object"],
+                                                    "properties": {"bar": {"type": "string"}},
+                                                },
+                                                {
+                                                    "type": ["null", "object"],
+                                                    "properties": {"baz": {"type": "string"}},
+                                                },
+                                            ]
+                                        },
                                     },
                                 },
                                 "supportedSyncModes": ["full_refresh", "incremental"],

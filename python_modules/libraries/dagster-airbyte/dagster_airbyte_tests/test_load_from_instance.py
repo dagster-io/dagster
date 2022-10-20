@@ -4,6 +4,8 @@ from dagster_airbyte import airbyte_resource
 from dagster_airbyte.asset_defs import load_assets_from_airbyte_instance
 
 from dagster import AssetKey, build_init_resource_context, materialize
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 
 from .utils import (
     get_instance_connections_json,
@@ -17,7 +19,8 @@ from .utils import (
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
 @pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
-def test_load_from_instance(use_normalization_tables, connection_to_group_fn):
+@pytest.mark.parametrize("filter_connection", [True, False])
+def test_load_from_instance(use_normalization_tables, connection_to_group_fn, filter_connection):
 
     ab_resource = airbyte_resource(
         build_init_resource_context(
@@ -57,19 +60,64 @@ def test_load_from_instance(use_normalization_tables, connection_to_group_fn):
             ab_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
+            connection_filter=(lambda _: False) if filter_connection else None,
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
             ab_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
+            connection_filter=(lambda _: False) if filter_connection else None,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
 
+    if filter_connection:
+        assert len(ab_assets) == 0
+        return
+
     tables = {"dagster_releases", "dagster_tags", "dagster_teams"} | (
-        {"dagster_releases_assets", "dagster_releases_author", "dagster_tags_commit"}
+        {
+            "dagster_releases_assets",
+            "dagster_releases_author",
+            "dagster_tags_commit",
+            "dagster_releases_foo",
+        }
         if use_normalization_tables
         else set()
     )
+
+    # Check schema metadata is added correctly to asset def
+
+    assert any(
+        out.metadata.get("table_schema")
+        == MetadataValue.table_schema(
+            TableSchema(
+                columns=[
+                    TableColumn(name="commit", type="['null', 'object']"),
+                    TableColumn(name="name", type="['null', 'string']"),
+                    TableColumn(name="node_id", type="['null', 'string']"),
+                    TableColumn(name="repository", type="['string']"),
+                    TableColumn(name="tarball_url", type="['null', 'string']"),
+                    TableColumn(name="zipball_url", type="['null', 'string']"),
+                ]
+            )
+        )
+        for out in ab_assets[0].node_def.output_defs
+    )
+    # Check schema metadata works for normalization tables too
+    if use_normalization_tables:
+        assert any(
+            out.metadata.get("table_schema")
+            == MetadataValue.table_schema(
+                TableSchema(
+                    columns=[
+                        TableColumn(name="sha", type="['null', 'string']"),
+                        TableColumn(name="url", type="['null', 'string']"),
+                    ]
+                )
+            )
+            for out in ab_assets[0].node_def.output_defs
+        )
+
     assert ab_assets[0].keys == {AssetKey(t) for t in tables}
     assert all(
         [

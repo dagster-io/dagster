@@ -1,0 +1,7 @@
+jaffle_shop:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: tutorial.duckdb
+      schema: jaffle_shop

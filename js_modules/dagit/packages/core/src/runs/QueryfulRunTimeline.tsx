@@ -1,6 +1,5 @@
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {RunsFilter} from '../types/globalTypes';
 
 import {RunTimeline} from './RunTimeline';
@@ -14,7 +13,6 @@ interface Props {
 
 export const QueryfulRunTimeline = (props: Props) => {
   const {range, visibleJobKeys, runsFilter = {}} = props;
-  const {flagRunBucketing} = useFeatureFlags();
   const {jobs, loading} = useRunsForTimeline(range, runsFilter);
 
   const visibleJobs = React.useMemo(() => jobs.filter(({key}) => visibleJobKeys.has(key)), [
@@ -22,12 +20,5 @@ export const QueryfulRunTimeline = (props: Props) => {
     visibleJobKeys,
   ]);
 
-  return (
-    <RunTimeline
-      loading={loading}
-      range={range}
-      jobs={visibleJobs}
-      bucketByRepo={flagRunBucketing}
-    />
-  );
+  return <RunTimeline loading={loading} range={range} jobs={visibleJobs} />;
 };
