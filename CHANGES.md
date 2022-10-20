@@ -1,5 +1,24 @@
 # Changelog
 
+# 1.0.14 (core) / 0.16.14 (libraries)
+
+### New
+
+- Tags can now be provided to an asset reconciliation sensor and will be applied to all RunRequests returned by the sensor.
+- If you don’t explicitly specify a DagsterType on a graph input, but all the inner inputs that the graph input maps to have the same DagsterType, the graph input’s DagsterType will be set to the the DagsterType of the inner inputs.
+- [dagster-airbyte] `load_assets_from_airbyte_project` now caches the project data generated at repo load time so it does not have to be regenerated in subprocesses.
+- [dagster-airbyte] Output table schema metadata is now generated at asset definition time when using `load_assets_from_airbyte_instance` or `load_assets_from_airbyte_project`.
+- [dagit] The run timeline now groups all jobs by repository. You can collapse or expand each repository in this view by clicking the repository name. This state will be preserved locally. You can also hold `Shift` while clicking the repository name, and all repository groups will be collapsed or expanded accordingly.
+- [dagit] In the launchpad view, a “Remove all” button is now available once you have accrued three or more tabs for that job, to make it easier to clear stale configuration tabs from view.
+- [dagit] When scrolling through the asset catalog, the toolbar is now sticky. This makes it simpler to select multiple assets and materialize them without requiring you to scroll back to the top of the page.
+- [dagit] A “Materialize” option has been added to the action menu on individual rows in the asset catalog view.
+
+### Bugfixes
+
+- Previously, yielding a `SkipReason` within a multi-asset sensor (experimental) would raise an error. This has been fixed.
+- [dagit] Previously, if you had a partitioned asset job and supplied a hardcoded dictionary of config to `define_asset_job`, you would run into a `CheckError` when launching the job from Dagit. This has been fixed.
+- [dagit] When viewing the Runs section of Dagit, the counts displayed in the tabs (e.g. “In progress”, “Queued”, etc.) were not updating on a poll interval. This has been fixed.
+
 # 1.0.13 (core) / 0.16.13 (libraries)
 
 ### New
