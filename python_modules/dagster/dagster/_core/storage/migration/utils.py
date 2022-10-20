@@ -396,7 +396,7 @@ def drop_id_based_event_indices():
             postgresql_concurrently=True,
             mysql_length=64,
         )
-        if has_index("event_logs", "idx_run_id"):
+        if has_index("event_logs", "idx_events_by_run_id"):
             op.drop_index(
                 "idx_events_by_run_id",
                 postgresql_concurrently=True,
