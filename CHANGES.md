@@ -12,6 +12,7 @@
 - [dagit] In the launchpad view, a “Remove all” button is now available once you have accrued three or more tabs for that job, to make it easier to clear stale configuration tabs from view.
 - [dagit] When scrolling through the asset catalog, the toolbar is now sticky. This makes it simpler to select multiple assets and materialize them without requiring you to scroll back to the top of the page.
 - [dagit] A “Materialize” option has been added to the action menu on individual rows in the asset catalog view.
+- [dagster-aws] The `EcsRunLauncher` now allows you to pass in a dictionary in the `task_definition` config field that specifies configuration for the task definition of the launched run, including role ARNs and a list of sidecar containers to include. Previously, the task definition could only be configured by passing in a task definition ARN or by basing the the task definition off of the task definition of the ECS task launching the run. See the [docs](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.ecs.EcsRunLauncher) for the full set of available config.
 
 ### Bugfixes
 
