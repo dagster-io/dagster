@@ -10,8 +10,8 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionsDefinition,
     MultiDimensionalPartitionKey,
+    MultiPartitionsDefinition,
 )
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG
 from dagster._core.test_utils import instance_for_test

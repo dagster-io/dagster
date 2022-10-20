@@ -27,17 +27,17 @@ from dagster._core.definitions import (
     TypeCheck,
 )
 from dagster._core.definitions.asset_layer import AssetOutputInfo
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionsDefinition,
-    MultiDimensionalPartition,
-    MultiDimensionalPartitionKey,
-)
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     PartitionMetadataEntry,
     normalize_metadata,
+)
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiDimensionalPartition,
+    MultiDimensionalPartitionKey,
+    MultiPartitionsDefinition,
 )
 from dagster._core.errors import (
     DagsterExecutionHandleOutputError,
@@ -57,12 +57,11 @@ from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
 from dagster._core.storage.io_manager import IOManager
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG, MULTIDIMENSIONAL_PARTITION_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import ensure_gen, iterate_with_context
 from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
 from dagster._utils.timing import time_execution_scope
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG
 
 from .compute import SolidOutputUnion
 from .compute_generator import create_solid_compute_wrapper
@@ -512,46 +511,25 @@ def _get_output_asset_materializations(
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]],
-    output_context: OutputContext,
 ) -> Iterator[AssetMaterialization]:
 
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
     if asset_partitions:
-        multi_dimensional_partitions_def: Optional[MultiPartitionsDefinition] = None
-        if any(
-            [isinstance(partition, MultiDimensionalPartitionKey) for partition in asset_partitions]
-        ):
-            asset_output_info = _get_output_asset_info(output_context, output_def)
-            if not (
-                asset_output_info
-                and asset_output_info.partitions_def
-                and isinstance(asset_output_info.partitions_def, MultiPartitionsDefinition)
-            ):
-                raise DagsterInvariantViolationError(
-                    "Asset output info must contain a composite partitions definition."
-                )
-            multi_dimensional_partitions_def = _get_output_asset_info(
-                output_context, output_def
-            ).partitions_def
+        metadata_mapping: Dict[
+            Union[str, MultiDimensionalPartitionKey],
+            List[Union[MetadataEntry, PartitionMetadataEntry]],
+        ] = {partition: [] for partition in asset_partitions}
 
-        collapsed_partitions: List[str] = [
-            partition
-            if isinstance(partition, str)
-            else multi_dimensional_partitions_def.get_partition_key(partition)
-            for partition in asset_partitions
-        ]
-
-        metadata_mapping: Dict[str, List[Union[MetadataEntry, PartitionMetadataEntry]]] = {
-            partition: [] for partition in collapsed_partitions
-        }
         for entry in all_metadata:
+            # TODO: Allow users to specify a multi-dimensional partition key in a PartitionMetadataEntry
+
             # if you target a given entry at a partition, only apply it to the requested partition
             # otherwise, apply it to all partitions
             if isinstance(entry, PartitionMetadataEntry):
-                if entry.partition not in collapsed_partitions:
+                if entry.partition not in asset_partitions:
                     raise DagsterInvariantViolationError(
                         f"Output {output_def.name} associated a metadata entry ({entry}) with the partition "
-                        f"`{entry.partition}`, which is not one of the declared partition mappings ({collapsed_partitions})."
+                        f"`{entry.partition}`, which is not one of the declared partition mappings ({asset_partitions})."
                     )
                 metadata_mapping[entry.partition].append(entry.entry)
             else:
@@ -574,11 +552,7 @@ def _get_output_asset_materializations(
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     partition=partition,
-                    metadata_entries=metadata_mapping[
-                        multi_dimensional_partitions_def.get_partition_key(partition)
-                        if isinstance(partition, MultiDimensionalPartitionKey)
-                        else partition
-                    ],
+                    metadata_entries=metadata_mapping[partition],
                     tags=tags,
                 )
     else:
@@ -693,7 +667,6 @@ def _store_output(
             output,
             output_def,
             manager_metadata_entries,
-            output_context,
         ):
             yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 

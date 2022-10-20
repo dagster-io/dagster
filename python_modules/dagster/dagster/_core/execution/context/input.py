@@ -304,11 +304,6 @@ class InputContext:
 
         Raises an error if the current run is not a partitioned run.
         """
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionsDefinition,
-        )
-        from dagster._core.definitions.job_definition import JobDefinition
-
         if self._partition_key is None:
             check.failed(
                 "Tried to access partition_key on a non-partitioned run.",

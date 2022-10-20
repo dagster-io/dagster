@@ -57,9 +57,9 @@ from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.dependency import Node, NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState

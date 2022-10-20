@@ -3,12 +3,10 @@ from datetime import datetime
 from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
-from dagster import DagsterInvalidInvocationError
+from dagster._annotations import experimental
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    deserialize_as,
-    serialize_dagster_namedtuple,
-)
+from dagster._serdes.serdes import deserialize_as, serialize_dagster_namedtuple
+
 from .partition import Partition, PartitionsDefinition
 
 
@@ -128,15 +126,18 @@ class PartitionDimensionDefinition(
         )
 
 
+@experimental
 class MultiPartitionsDefinition(PartitionsDefinition):
     """The set of partitions is the cross product of partitions in the inner partitions
     definitions"""
 
     def __init__(self, partitions_defs: Mapping[str, PartitionsDefinition]):
+        from dagster import DagsterInvalidInvocationError
+
         if not len(partitions_defs.keys()) == 2:
             raise DagsterInvalidInvocationError(
-                "Dagster currently only supports composite partitions definitions with 2 partitions definitions. "
-                f"Your composite partitions definition has {len(partitions_defs.keys())} partitions definitions."
+                "Dagster currently only supports multi-partitions definitions with 2 partitions definitions. "
+                f"Your multi-partitions definition has {len(partitions_defs.keys())} partitions definitions."
             )
         check.mapping_param(
             partitions_defs, "partitions_defs", key_type=str, value_type=PartitionsDefinition
@@ -211,7 +212,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
 
                 raise DagsterInvalidInvocationError(
                     "Invalid partition dimension keys provided. All provided keys must be defined as "
-                    f"partition dimensions in the composite partitions. Valid keys are {partition_dim_names}. "
+                    f"partition dimensions. Valid keys are {partition_dim_names}. "
                     "You provided: \n"
                     f"{f'Extra keys: {extra_keys}.' if extra_keys else ''}"
                     f"{f'Missing keys {missing_keys}.' if missing_keys else ''}"
