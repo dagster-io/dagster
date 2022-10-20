@@ -90,16 +90,3 @@ db.Index(
     ),
     mysql_length=64,
 )
-# REMOVED in https://github.com/dagster-io/dagster/pull/10105
-# db.Index("idx_run_id", SqlEventLogStorageTable.c.run_id)
-# db.Index(
-#     "idx_asset_key",
-#     SqlEventLogStorageTable.c.asset_key,
-#     mysql_length=32,
-# )
-# db.Index(
-#     "idx_asset_partition",
-#     SqlEventLogStorageTable.c.asset_key,
-#     SqlEventLogStorageTable.c.partition,
-#     mysql_length=64,
-# )
