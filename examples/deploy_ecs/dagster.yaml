@@ -3,9 +3,21 @@ scheduler:
   module: dagster.core.scheduler
   class: DagsterDaemonScheduler
 
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
+# run_coordinator:
+#   module: dagster.core.run_coordinator
+#   class: QueuedRunCoordinator
+
+# compute_logs:
+#   module: dagster_aws.s3.compute_log_manager
+#   class: S3ComputeLogManager
+#   config:
+#     bucket: "prha.upload"
+
+compute_logs:
+  module: dagster_aws.ecs.ecs_cloudwatch_compute_log_manager
+  class: EcsCloudwatchComputeLogManager
+  config:
+    project_name: "democloudwatch"
 
 run_launcher:
   module: dagster_aws.ecs
