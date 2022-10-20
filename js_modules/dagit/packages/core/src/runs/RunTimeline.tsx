@@ -111,9 +111,7 @@ export const RunTimeline = (props: Props) => {
     );
   }
 
-  const repoOrder = Object.keys(buckets).sort((a, b) =>
-    a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()),
-  );
+  const repoOrder = Object.keys(buckets).sort((a, b) => a.localeCompare(b));
 
   let nextTop = DATE_TIME_HEIGHT;
   const expandedRepos = repoOrder.filter((repoKey) => expandedKeys.includes(repoKey));
