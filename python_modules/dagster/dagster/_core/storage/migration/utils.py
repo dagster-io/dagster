@@ -324,6 +324,7 @@ def add_id_based_event_indices():
         if has_index("event_logs", "idx_run_id"):
             op.drop_index(
                 "idx_run_id",
+                "event_logs",
                 postgresql_concurrently=True,
             )
 
@@ -339,6 +340,7 @@ def add_id_based_event_indices():
         if has_index("event_logs", "idx_asset_key"):
             op.drop_index(
                 "idx_asset_key",
+                "event_logs",
                 postgresql_concurrently=True,
             )
 
@@ -354,6 +356,7 @@ def add_id_based_event_indices():
         if has_index("event_logs", "idx_asset_partition"):
             op.drop_index(
                 "idx_asset_partition",
+                "event_logs",
                 postgresql_concurrently=True,
             )
 
@@ -372,7 +375,9 @@ def drop_id_based_event_indices():
             mysql_length=64,
         )
         if has_index("event_logs", "idx_events_by_asset_partition"):
-            op.drop_index("idx_events_by_asset_partition", postgresql_concurrently=True)
+            op.drop_index(
+                "idx_events_by_asset_partition", "event_logs", postgresql_concurrently=True
+            )
 
     if not has_index("event_logs", "idx_asset_key"):
         op.create_index(
@@ -385,7 +390,7 @@ def drop_id_based_event_indices():
         )
 
         if has_index("event_logs", "idx_events_by_asset"):
-            op.drop_index("idx_events_by_asset", postgresql_concurrently=True)
+            op.drop_index("idx_events_by_asset", "event_logs", postgresql_concurrently=True)
 
     if not has_index("event_logs", "idx_run_id"):
         op.create_index(
@@ -399,5 +404,6 @@ def drop_id_based_event_indices():
         if has_index("event_logs", "idx_events_by_run_id"):
             op.drop_index(
                 "idx_events_by_run_id",
+                "event_logs",
                 postgresql_concurrently=True,
             )
