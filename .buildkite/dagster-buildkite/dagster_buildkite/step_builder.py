@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from .python_version import AvailablePythonVersion
-from .utils import CommandStep, message_contains
+from .utils import CommandStep, message_contains, safe_getenv
 
 DEFAULT_TIMEOUT_IN_MIN = 20
 
@@ -17,9 +17,9 @@ AWS_ECR_REGION = "us-west-2"
 
 
 class BuildkiteQueue(Enum):
-    DOCKER = "docker-p"
-    MEDIUM = "buildkite-medium-v5-0-1"
-    WINDOWS = "windows-medium"
+    DOCKER = safe_getenv("BUILDKITE_DOCKER_QUEUE")
+    MEDIUM = safe_getenv("BUILDKITE_MEDIUM_QUEUE")
+    WINDOWS = safe_getenv("BUILDKITE_WINDOWS_QUEUE")
 
     @classmethod
     def contains(cls, value: object) -> bool:
