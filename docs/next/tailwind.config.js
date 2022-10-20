@@ -109,6 +109,9 @@ module.exports = {
             strong: {
               fontWeight: theme('fontWeight.medium'),
             },
+            em: {
+              fontStyle: 'italic',
+            },
             h1: {
               color: theme('colors.gable-green'),
               fontSize: theme('fontSize.4xl'),
