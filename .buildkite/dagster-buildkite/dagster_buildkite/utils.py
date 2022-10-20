@@ -291,4 +291,4 @@ def changed_python_package_names():
 
 
 def message_contains(substring: str) -> bool:
-    return substring in os.getenv("BUILDKITE_MESSAGE")
+    return substring in os.getenv("BUILDKITE_MESSAGE", "")
