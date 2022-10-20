@@ -1,4 +1,7 @@
 from typing import Sequence
+
+import duckdb
+
 from dagster import (
     DbClient,
     DbIOManager,
@@ -10,7 +13,6 @@ from dagster import (
     TableSlice,
     io_manager,
 )
-import duckdb
 from dagster._utils.backoff import backoff
 
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -65,7 +67,9 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
         Op outputs will be stored in the schema specified by output metadata (defaults to public) in a
         table of the name of the output.
         """
-        return DbIOManager(type_handlers=type_handlers, db_client=DuckDbClient())
+        return DbIOManager(
+            type_handlers=type_handlers, db_client=DuckDbClient(), io_manager_name="DuckDBIOManager"
+        )
 
     return duckdb_io_manager
 
@@ -98,7 +102,7 @@ def _connect_duckdb(context):
         fn=duckdb.connect,
         retry_on=(RuntimeError, duckdb.IOException),
         kwargs={"database": context.resource_config["duckdb_path"], "read_only": False},
-        max_retries=10
+        max_retries=10,
     )
 
 

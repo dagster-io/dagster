@@ -1,14 +1,13 @@
 from datetime import datetime
+
 from dagster_duckdb.io_manager import DuckDbClient, _get_cleanup_statement
 
-from dagster import TableSlice, TablePartition
+from dagster import TablePartition, TableSlice
 
 
 def test_get_select_statement():
     assert (
-        DuckDbClient.get_select_statement(
-            TableSlice(schema="schema1", table="table1")
-        )
+        DuckDbClient.get_select_statement(TableSlice(schema="schema1", table="table1"))
         == "SELECT * FROM schema1.table1"
     )
 
@@ -45,9 +44,7 @@ def test_get_select_statement_partitioned():
 
 def test_get_cleanup_statement():
     assert (
-        _get_cleanup_statement(
-            TableSlice(schema="schema1", table="table1")
-        )
+        _get_cleanup_statement(TableSlice(schema="schema1", table="table1"))
         == "DELETE FROM schema1.table1"
     )
 

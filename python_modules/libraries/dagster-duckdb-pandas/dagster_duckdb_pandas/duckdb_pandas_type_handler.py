@@ -1,11 +1,15 @@
-from pathlib import Path
-from typing import cast
-
-import duckdb
 import pandas as pd
-from dagster_duckdb.io_manager import _connect_duckdb, DuckDbClient
+from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb
 
-from dagster import InputContext, OutputContext, DbTypeHandler, TableSlice, MetadataValue, TableColumn, TableSchema
+from dagster import (
+    DbTypeHandler,
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+    TableSlice,
+)
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -34,31 +38,36 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
     """
 
-    def handle_output(
-        self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame
-    ):
+    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame):
         """Stores the pandas DataFrame in duckdb."""
 
-        conn = _connect_duckdb(context)
+        conn = _connect_duckdb(context).cursor()
 
         conn.execute(f"create schema if not exists {table_slice.schema};")
-        conn.execute(f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from obj;")
-        # conn.execute(f"insert into {table_slice.schema}.{table_slice.table}; select * from obj")
+        conn.execute(
+            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from obj;"
+        )
+        if not conn.fetchall():
+            # table was not created, therefore already exists. Insert the data
+            conn.execute(f"insert into {table_slice.schema}.{table_slice.table} select * from obj")
 
-        context.add_output_metadata({
-            "row_count": obj.shape[0],
-            "dataframe_columns": MetadataValue.table_schema(
-                TableSchema(
-                    columns=[
-                        TableColumn(name=name, type=str(dtype))
-                        for name, dtype in obj.dtypes.iteritems()
-                    ]
-                )
-            ),})
+        context.add_output_metadata(
+            {
+                "row_count": obj.shape[0],
+                "dataframe_columns": MetadataValue.table_schema(
+                    TableSchema(
+                        columns=[
+                            TableColumn(name=name, type=str(dtype))
+                            for name, dtype in obj.dtypes.iteritems()
+                        ]
+                    )
+                ),
+            }
+        )
 
     def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
-        conn = _connect_duckdb(context)
+        conn = _connect_duckdb(context).cursor()
         DuckDbClient.get_select_statement(table_slice)
         return conn.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
 
