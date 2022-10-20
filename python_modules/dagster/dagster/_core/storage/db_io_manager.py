@@ -67,7 +67,10 @@ class DbClient:
 
 class DbIOManager(IOManager):
     def __init__(
-        self, type_handlers: Sequence[DbTypeHandler], db_client: DbClient, io_manager_name: str
+        self,
+        type_handlers: Sequence[DbTypeHandler],
+        db_client: DbClient,
+        io_manager_name: str = "DbIOManager",
     ):
         self._handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
         for type_handler in type_handlers:

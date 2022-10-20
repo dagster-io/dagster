@@ -46,7 +46,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         """Stores the given object at the provided filepath."""
         conn = _connect_duckdb(context).cursor()
 
-        pd_df = obj.toPandas()
+        pd_df = obj.toPandas()  # pylint: disable=unused-variable; pd_df is used in duckdb queries
 
         conn.execute(f"create schema if not exists {table_slice.schema};")
         conn.execute(
@@ -64,8 +64,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
                 "dataframe_columns": MetadataValue.table_schema(
                     TableSchema(
                         columns=[
-                            TableColumn(name=name, type=str(dtype))
-                            for name, dtype in pd_df.dtypes.iteritems()
+                            TableColumn(name=name, type=str(dtype)) for name, dtype in obj.dtypes
                         ]
                     )
                 ),
