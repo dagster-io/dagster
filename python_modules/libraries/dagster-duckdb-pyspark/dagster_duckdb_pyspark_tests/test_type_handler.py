@@ -33,7 +33,7 @@ def test_duckdb_io_manager_with_ops(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()])
     resource_defs = {
         "io_manager": duckdb_io_manager.configured(
-            {"duckdb_path": os.path.join(tmp_path, "unit_test.duckdb")}
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
 
@@ -71,7 +71,7 @@ def test_duckdb_io_manager_with_assets(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()])
     resource_defs = {
         "io_manager": duckdb_io_manager.configured(
-            {"duckdb_path": os.path.join(tmp_path, "unit_test.duckdb")}
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
 
@@ -105,7 +105,7 @@ def test_not_supported_type(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()])
     resource_defs = {
         "io_manager": duckdb_io_manager.configured(
-            {"duckdb_path": os.path.join(tmp_path, "unit_test.duckdb")}
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
 
@@ -140,7 +140,7 @@ def daily_partitioned(context):
 
 def test_partitioned_asset(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()]).configured(
-        {"duckdb_path": os.path.join(tmp_path, "unit_test.duckdb")}
+        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
     )
     resource_defs = {"io_manager": duckdb_io_manager}
 

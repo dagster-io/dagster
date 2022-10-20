@@ -98,7 +98,7 @@ from dagster._config.source import (
     IntSource as IntSource,
     StringSource as StringSource,
 )
-from dagster._core.db_io_manager import (
+from dagster._core.storage.db_io_manager import (
     TablePartition as TablePartition,
     TableSlice as TableSlice,
     DbTypeHandler as DbTypeHandler,

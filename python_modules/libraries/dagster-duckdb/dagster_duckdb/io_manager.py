@@ -9,6 +9,7 @@ from dagster import (
     Field,
     IOManagerDefinition,
     OutputContext,
+    StringSource,
     TablePartition,
     TableSlice,
     io_manager,
@@ -21,8 +22,6 @@ DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
-
-    Note that the DuckDBIOManager cannot load partitioned assets.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
@@ -38,29 +37,63 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
             from dagster_duckdb import build_duckdb_io_manager
             from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 
-            duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
-
-            @job(resource_defs={'io_manager': duckdb_io_manager})
-            def my_job():
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in duckdb
+            )
+            def my_table():  # the name of the asset will be the table name
                 ...
 
-    You may configure the returned IO Manager as follows:
+            duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+
+            @repository
+            def my_repo():
+                return with_resources(
+                    [my_table],
+                    {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
+                )
+
+    The returned DuckDB IOManager can be configured with the following values:
 
     .. code-block:: YAML
 
-        resources:
-            io_manager:
-                config:
-                    base_path: path/to/store/files  # all data will be stored at this path
-                    duckdb_path: path/to/database.duckdb  # path to the duckdb database
+        database: path/to/database.duckdb  # path to the duckdb database
+        schema: my_schema  # name of the schema for the tables
+
+    If you do not provide a schema, dagster will determine a schema based on the assets and ops using
+    the IO Manager. For assets, the schema will be determined from the asset key. For ops, the schema can be
+    specified by including a "schema" entry in output metadata. If none of these is provided, the schema will
+    default to "public".
+
+        .. code-block:: python
+
+            @op(
+                out={"my_table": Out(metadata={"schema": "my_schema"})}
+            )
+            def make_my_table():
+                ...
+
+    To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+    In or AssetIn.
+
+        .. code-block:: python
+
+            @asset(
+                in={"my_table": AssetIn("my_table": metadata={"columns": ["a"]})}
+            )
+            def my_table_a(my_table):
+                # my_table will just contain the data from column "a"
+                ...
+
     """
 
-    @io_manager(config_schema={"base_path": Field(str, is_required=False), "duckdb_path": str})
+    @io_manager(
+        config_schema={
+            "database": StringSource,
+            "schema": Field(StringSource, is_required=False),
+        }
+    )
     def duckdb_io_manager(_):
         """IO Manager for storing outputs in a DuckDB database
-
-        Supports storing and loading Pandas DataFrame objects. Converts the DataFrames to CSV and
-        creates DuckDB views over the files.
 
         Assets will be stored in the schema and table name specified by their AssetKey.
         Subsequent materializations of an asset will overwrite previous materializations of that asset.
@@ -101,7 +134,7 @@ def _connect_duckdb(context):
     return backoff(
         fn=duckdb.connect,
         retry_on=(RuntimeError, duckdb.IOException),
-        kwargs={"database": context.resource_config["duckdb_path"], "read_only": False},
+        kwargs={"database": context.resource_config["database"], "read_only": False},
         max_retries=10,
     )
 

@@ -6,7 +6,7 @@ import pytest
 from dagster_duckdb.io_manager import build_duckdb_io_manager
 from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 
-from dagster import DailyPartitionsDefinition, Out, asset, graph, materialize, op
+from dagster import AssetIn, DailyPartitionsDefinition, Out, asset, graph, materialize, op
 from dagster._check import CheckError
 
 
@@ -29,7 +29,7 @@ def test_duckdb_io_manager_with_ops(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
         "io_manager": duckdb_io_manager.configured(
-            {"duckdb_path": os.path.join(tmp_path, "unit_test.duckdb")}
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
 
@@ -65,7 +65,7 @@ def test_duckdb_io_manager_with_assets(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
         "io_manager": duckdb_io_manager.configured(
-            {"duckdb_path": os.path.join(tmp_path, "unit_test.duckdb")}
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
 
@@ -85,6 +85,37 @@ def test_duckdb_io_manager_with_assets(tmp_path):
         duckdb_conn.close()
 
 
+@asset(key_prefix=["my_schema"], ins={"b_df": AssetIn("b_df", metadata={"columns": ["a"]})})
+def b_plus_one_columns(b_df: pd.DataFrame):
+    return b_df + 1
+
+
+def test_loading_columns(tmp_path):
+    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+    resource_defs = {
+        "io_manager": duckdb_io_manager.configured(
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+        ),
+    }
+
+    # materialize asset twice to ensure that tables get properly deleted
+    for _ in range(2):
+        res = materialize([b_df, b_plus_one_columns], resources=resource_defs)
+        assert res.success
+
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+
+        out_df = duckdb_conn.execute("SELECT * FROM my_schema.b_df").fetch_df()
+        assert out_df["a"].tolist() == [1, 2, 3]
+
+        out_df = duckdb_conn.execute("SELECT * FROM my_schema.b_plus_one_columns").fetch_df()
+        assert out_df["a"].tolist() == [2, 3, 4]
+
+        assert out_df.shape[1] == 1
+
+        duckdb_conn.close()
+
+
 @op
 def non_supported_type() -> int:
     return 1
@@ -99,7 +130,7 @@ def test_not_supported_type(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
         "io_manager": duckdb_io_manager.configured(
-            {"duckdb_path": os.path.join(tmp_path, "unit_test.duckdb")}
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
 
@@ -132,7 +163,7 @@ def daily_partitioned(context):
 
 def test_partitioned_asset(tmp_path):
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()]).configured(
-        {"duckdb_path": os.path.join(tmp_path, "unit_test.duckdb")}
+        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
     )
     resource_defs = {"io_manager": duckdb_io_manager}
 

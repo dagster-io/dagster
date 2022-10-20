@@ -33,7 +33,7 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             def my_repo():
                 return with_resources(
                     [my_table],
-                    {"io_manager": duckdb_io_manager.configured({"duckdb_path": "my_db.duckdb"})}
+                    {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
                 )
 
     """
