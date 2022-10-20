@@ -53,7 +53,7 @@ const Header = ({openMobileDocsMenu}) => {
     <div
       ref={headerRef}
       className={cx(
-        'fixed top-0  w-full z-50 px-2 lg:px-10 flex flex-col tracking-wide transition-all',
+        'fixed top-0  w-full z-50 px-2 lg:px-10 flex flex-col tracking-normal font-normal transition-all',
         {
           'p-0 transition': isCollapsed,
           'p-2 transition': !isCollapsed,
