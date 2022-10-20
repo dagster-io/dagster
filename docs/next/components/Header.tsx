@@ -22,7 +22,8 @@ const Header = ({openMobileDocsMenu}) => {
       }
       const dy = window.scrollY - lastScrollY.current;
 
-      const alpha = Math.min(Math.max(0, (window.scrollY - 30) / 70), 0.98);
+      const alpha = window.innerWidth > 800 ? Math.min(Math.max(.1, (window.scrollY - 30) / 70), 0.98) : 1;
+      console.log(window.innerWidth);
       headerBgRef.current.style.opacity = `${alpha}`;
 
       const targetTop = dy < 0 || window.scrollY < 30 ? 0 : COLLAPSING_PX;
