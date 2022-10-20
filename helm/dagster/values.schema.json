@@ -746,6 +746,7 @@
             "properties": {
                 "enabled": {
                     "title": "Enabled",
+                    "default": true,
                     "const": true,
                     "type": "boolean"
                 },
