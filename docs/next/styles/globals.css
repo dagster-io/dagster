@@ -557,7 +557,7 @@ dt > a.reference.internal {
 .sidebar-container {
   max-height: calc(100vh - 10rem);
   padding-bottom: 5rem;
-
+}
 
 pre[class="noop"] {
     background-color: transparent;
