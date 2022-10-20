@@ -67,6 +67,7 @@ db.Index(
     "idx_events_by_run_id",
     SqlEventLogStorageTable.c.run_id,
     SqlEventLogStorageTable.c.id,
+    mysql_length={"run_id": 64},
 )
 db.Index(
     "idx_events_by_asset",
@@ -74,7 +75,7 @@ db.Index(
     SqlEventLogStorageTable.c.dagster_event_type,
     SqlEventLogStorageTable.c.id,
     postgresql_where=(SqlEventLogStorageTable.c.asset_key != None),
-    mysql_length=64,
+    mysql_length={"asset_key": 64, "dagster_event_type": 64},
 )
 db.Index(
     "idx_events_by_asset_partition",
@@ -88,5 +89,5 @@ db.Index(
             SqlEventLogStorageTable.c.partition != None,
         )
     ),
-    mysql_length=64,
+    mysql_length={"asset_key": 64, "dagster_event_type": 64, "partition": 64},
 )

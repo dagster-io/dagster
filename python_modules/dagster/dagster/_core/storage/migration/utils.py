@@ -319,7 +319,7 @@ def add_id_based_event_indices():
             "event_logs",
             ["run_id", "id"],
             postgresql_concurrently=True,
-            mysql_length=64,
+            mysql_length={"run_id": 64},
         )
         if has_index("event_logs", "idx_run_id"):
             op.drop_index(
@@ -334,7 +334,7 @@ def add_id_based_event_indices():
             ["asset_key", "dagster_event_type", "id"],
             postgresql_concurrently=True,
             postgresql_where=db.text("asset_key IS NOT NULL"),
-            mysql_length=64,
+            mysql_length={"asset_key": 64, "dagster_event_type": 64},
         )
         if has_index("event_logs", "idx_asset_key"):
             op.drop_index(
@@ -349,7 +349,7 @@ def add_id_based_event_indices():
             ["asset_key", "dagster_event_type", "partition", "id"],
             postgresql_concurrently=True,
             postgresql_where=db.text("asset_key IS NOT NULL AND partition IS NOT NULL"),
-            mysql_length=64,
+            mysql_length={"asset_key": 64, "dagster_event_type": 64, "partition": 64},
         )
         if has_index("event_logs", "idx_asset_partition"):
             op.drop_index(
