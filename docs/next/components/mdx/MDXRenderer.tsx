@@ -107,7 +107,7 @@ const BreadcrumbNav = ({asPath}) => {
 
   return (
     breadcrumbItems.length > 1 && (
-      <nav className="flex flex-nowrap lg:px-4 py-3" aria-label="Breadcrumb">
+      <nav className="flex flex-nowrap lg:px-4 py-2" aria-label="Breadcrumb">
         <ol className="md:inline-flex space-x-1 lg:space-x-3">
           {breadcrumbItems.map((item, index) => {
             return (
@@ -126,7 +126,7 @@ const BreadcrumbNav = ({asPath}) => {
                   <a
                     href={item.path}
                     className={cx(
-                      'ml-1 lg:ml-2 text-xs lg:text-sm lg:font-medium text-gray-700 hover:text-gray-900 truncate',
+                      'ml-1 lg:ml-2 text-xs lg:text-sm lg:font-normal text-gable-green truncate',
                       {
                         // Map nav hierarchy to levels for docs search
                         'DocSearch-lvl0': index === 0,
@@ -150,15 +150,15 @@ const BreadcrumbNav = ({asPath}) => {
 const RightSidebar = ({editMode, navigationItems, githubLink, toggleFeedback}) => {
   return (
     !editMode && (
-      <aside className="hidden relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
+      <aside className="hidden relative xl:block flex-none w-80 shrink-0 border-l border-gray-200">
         {/* Start secondary column (hidden on smaller screens) */}
-        <div className="flex flex-col justify-between sticky top-24 py-6 px-4">
+        <div className="flex flex-col justify-between top-24 px-2 sticky">
           <div
-            className="mb-8 px-4 pt-2 pb-10 relative overflow-y-scroll border-b border-gray-200"
+            className="mb-8 px-4 pb-10 relative overflow-y-scroll border-b border-gray-200"
             style={{maxHeight: 'calc(100vh - 300px)'}}
           >
-            <div className="font-semibold text-gable-green">On This Page</div>
-            <div className="mt-6">
+            <div className="font-medium text-gable-green">On This Page</div>
+            <div className="mt-4">
               {navigationItems && <SidebarNavigation items={navigationItems} />}
             </div>
           </div>
@@ -223,7 +223,7 @@ export const VersionedContentLayout = ({children, asPath = null}) => {
   return (
     <div className="flex-1 w-full min-w-0 relative z-0 focus:outline-none" tabIndex={0}>
       <div className="flex flex-col lg:mt-5">
-        <div className="flex justify-between px-4 mb-5">
+        <div className="flex justify-between px-4 mb-4">
           <div className="flex justify-start flex-col lg:flex-row lg:px-4 w-full">
             <div className="flex">
               <VersionDropdown />
