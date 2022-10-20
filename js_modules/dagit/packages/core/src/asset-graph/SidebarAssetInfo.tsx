@@ -6,12 +6,12 @@ import styled from 'styled-components/macro';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
-import {AssetEvents} from '../assets/AssetEvents';
 import {
   AssetMetadataTable,
   ASSET_NODE_OP_METADATA_FRAGMENT,
   metadataForAssetNode,
 } from '../assets/AssetMetadata';
+import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary';
 import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
@@ -66,15 +66,11 @@ export const SidebarAssetInfo: React.FC<{
         padded={false}
       />
 
-      <AssetEvents
+      <AssetSidebarActivitySummary
         assetKey={assetKey}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
         assetHasDefinedPartitions={!!asset.partitionDefinition}
-        asSidebarSection
         liveData={liveData}
-        paramsTimeWindowOnly={false}
-        params={{}}
-        setParams={() => {}}
       />
 
       <div style={{borderBottom: `2px solid ${Colors.Gray300}`}} />

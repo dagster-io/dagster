@@ -27,7 +27,14 @@ const SENSORS_EXPANSION_STATE_STORAGE_KEY = 'sensors-virtualized-expansion-state
 
 export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const {expandedKeys, onToggle} = useRepoExpansionState(SENSORS_EXPANSION_STATE_STORAGE_KEY);
+  const allKeys = React.useMemo(
+    () => repos.map(({repoAddress}) => repoAddressAsString(repoAddress)),
+    [repos],
+  );
+  const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
+    SENSORS_EXPANSION_STATE_STORAGE_KEY,
+    allKeys,
+  );
 
   const flattened: RowType[] = React.useMemo(() => {
     const flat: RowType[] = [];
@@ -89,6 +96,8 @@ export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
                   height={size}
                   start={start}
                   onToggle={onToggle}
+                  onToggleAll={onToggleAll}
+                  expanded={expandedKeys.includes(repoAddressAsString(row.repoAddress))}
                   showLocation={duplicateRepoNames.has(row.repoAddress.name)}
                   rightElement={
                     <Tooltip

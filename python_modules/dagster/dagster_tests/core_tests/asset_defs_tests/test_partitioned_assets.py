@@ -425,6 +425,11 @@ def test_job_config_with_asset_partitions():
     ).resolve([asset1], [])
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
+    assert (
+        the_job.get_job_def_for_subset_selection(asset_selection={AssetKey("asset1")})
+        .execute_in_process(partition_key="2020-01-01")
+        .success
+    )
 
 
 def test_job_partitioned_config_with_asset_partitions():

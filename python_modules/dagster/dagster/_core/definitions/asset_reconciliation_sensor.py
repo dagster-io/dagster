@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Dict, Mapping, Optional, Set, Tuple, cast
 import pendulum
 import toposort
 
+import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
@@ -207,9 +208,10 @@ def _make_sensor(
     name: str,
     wait_for_all_upstream: bool,
     wait_for_in_progress_runs: bool,
-    minimum_interval_seconds: Optional[int] = None,
-    description: Optional[str] = None,
-    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    minimum_interval_seconds: Optional[int],
+    description: Optional[str],
+    default_status: DefaultSensorStatus,
+    run_tags: Optional[Mapping[str, str]],
 ) -> MultiAssetSensorDefinition:
     """Creates the sensor that will monitor the parents of all provided assets and determine
     which assets should be materialized (ie their parents have been updated).
@@ -290,7 +292,9 @@ def _make_sensor(
         if len(should_materialize) > 0:
             context.update_cursor(json.dumps(cursor_update_dict))
             context._cursor_has_been_updated = True  # pylint: disable=protected-access
-            return RunRequest(run_key=f"{context.cursor}", asset_selection=list(should_materialize))
+            return RunRequest(
+                run_key=f"{context.cursor}", asset_selection=list(should_materialize), tags=run_tags
+            )
 
     return MultiAssetSensorDefinition(
         asset_selection=selection,
@@ -313,6 +317,7 @@ def build_asset_reconciliation_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    run_tags: Optional[Mapping[str, str]] = None,
 ) -> MultiAssetSensorDefinition:
     """Constructs a sensor that will monitor the parents of the provided assets and materialize an asset
     based on the materialization of its parents. This will keep the monitored assets up to date with the
@@ -335,6 +340,7 @@ def build_asset_reconciliation_sensor(
         description (Optional[str]): A description for the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        run_tags (Optional[Mapping[str, str]): Dictionary of tags to pass to the RunRequests launched by this sensor
 
     Returns:
         A MultiAssetSensorDefinition that will monitor the parents of the provided assets to determine when
@@ -415,6 +421,7 @@ def build_asset_reconciliation_sensor(
             which will cause ``y`` to be materialized when ``x`` is materialized.
     """
     check_valid_name(name)
+    check.opt_dict_param(run_tags, "run_tags", key_type=str, value_type=str)
     return _make_sensor(
         selection=asset_selection,
         name=name,
@@ -423,4 +430,5 @@ def build_asset_reconciliation_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
         description=description,
         default_status=default_status,
+        run_tags=run_tags,
     )

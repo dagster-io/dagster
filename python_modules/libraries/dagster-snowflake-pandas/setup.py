@@ -38,6 +38,7 @@ setup(
         "pandas",
         "requests",
         "snowflake-connector-python[pandas]",
+        "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
         "snowflake-sqlalchemy",
     ],
     zip_safe=False,

@@ -13,15 +13,28 @@ export const RepoRow: React.FC<{
   start: number;
   showLocation: boolean;
   rightElement: React.ReactNode;
+  expanded: boolean;
   onToggle: (repoAddress: RepoAddress) => void;
-}> = ({repoAddress, height, start, onToggle, showLocation, rightElement}) => {
+  onToggleAll: (expanded: boolean) => void;
+}> = ({
+  repoAddress,
+  height,
+  start,
+  expanded,
+  onToggle,
+  onToggleAll,
+  showLocation,
+  rightElement,
+}) => {
   return (
     <Row $height={height} $start={start}>
       <RepoSectionHeader
         repoName={repoAddress.name}
         repoLocation={repoAddress.location}
-        expanded
-        onClick={() => onToggle(repoAddress)}
+        expanded={expanded}
+        onClick={(e: React.MouseEvent) =>
+          e.getModifierState('Shift') ? onToggleAll(!expanded) : onToggle(repoAddress)
+        }
         showLocation={showLocation}
         rightElement={rightElement}
       />

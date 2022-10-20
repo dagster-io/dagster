@@ -1,13 +1,14 @@
 // eslint-disable-next-line no-restricted-imports
-import {HTMLTable, IHTMLTableProps} from '@blueprintjs/core';
-import styled from 'styled-components/macro';
+import {HTMLTable, HTMLTableProps} from '@blueprintjs/core';
+import styled, {css} from 'styled-components/macro';
 
 import {StyledTag} from './BaseTag';
 import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
-export interface TableProps extends IHTMLTableProps {
+export interface TableProps extends HTMLTableProps {
   $compact?: boolean;
+  $monospaceFont?: boolean;
 }
 
 export const Table = styled(HTMLTable)<TableProps>`
@@ -36,8 +37,16 @@ export const Table = styled(HTMLTable)<TableProps>`
 
   & tr td {
     color: ${Colors.Gray900};
-    font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    ${({$monospaceFont}) =>
+      $monospaceFont === false
+        ? css`
+            font-family: ${FontFamily.default};
+            font-size: 14px;
+          `
+        : css`
+            font-family: ${FontFamily.monospace};
+            font-size: 16px;
+          `}
     padding: ${({$compact}) => ($compact ? '8px' : '12px')};
   }
 

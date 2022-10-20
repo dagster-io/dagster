@@ -28,7 +28,7 @@ from .tasks import (
     get_task_definition_dict_from_current_task,
     get_task_kwargs_from_current_task,
 )
-from .utils import sanitize_family
+from .utils import sanitize_family, task_definitions_match
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
@@ -65,7 +65,10 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.secrets_manager = boto3.client("secretsmanager")
         self.logs = boto3.client("logs")
 
-        self.task_definition = task_definition
+        self.task_definition = task_definition if isinstance(task_definition, str) else None
+        self.task_definition_dict = (
+            task_definition if not isinstance(task_definition, str) else None
+        )
         self.container_name = container_name
 
         self.secrets = check.opt_list_param(secrets, "secrets")
@@ -137,12 +140,21 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def config_type(cls):
         return {
             "task_definition": Field(
-                StringSource,
+                ScalarUnion(
+                    scalar_type=str,
+                    non_scalar_schema={
+                        "log_group": Field(StringSource, is_required=False),
+                        "sidecar_containers": Field(Array(Permissive({})), is_required=False),
+                        "execution_role_arn": Field(StringSource, is_required=False),
+                        "task_role_arn": Field(StringSource, is_required=False),
+                        "requires_compatibilities": Field(Array(str), is_required=False),
+                    },
+                ),
                 is_required=False,
                 description=(
-                    "The task definition to use when launching new tasks. "
-                    "If none is provided, each run will create its own task "
-                    "definition."
+                    "Either the short name of an existing task definition to use when launching new tasks, "
+                    "or a dictionary configuration to use when creating a task definition for the run."
+                    "If neither is provided, the task definition will be created based on the current task's task definition."
                 ),
             ),
             "container_name": Field(
@@ -391,6 +403,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         return self._current_task
 
+    def _get_run_task_definition_family(self, run) -> str:
+        return sanitize_family(
+            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name  # type: ignore
+        )
+
     def _run_task_kwargs(self, run, image, container_context) -> Dict[str, Any]:
         """
         Return a dictionary of args to launch the ECS task, registering a new task
@@ -402,24 +419,52 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         if container_context.task_definition_arn:
             task_definition = container_context.task_definition_arn
         else:
-            family = sanitize_family(
-                run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name  # type: ignore
-            )
-            task_definition_dict = get_task_definition_dict_from_current_task(
-                self.ecs,
-                family,
-                self._get_current_task(),
-                image,
-                self.container_name,
-                environment=environment,
-                secrets=secrets if secrets else {},
-                include_sidecars=self.include_sidecars,
-            )
+            family = self._get_run_task_definition_family(run)
 
-            task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-                task_definition_dict,
-                self.container_name,
-            )
+            if self.task_definition_dict:
+                task_definition_config = DagsterEcsTaskDefinitionConfig(
+                    family,
+                    image,
+                    self.container_name,
+                    command=None,
+                    log_configuration=(
+                        {
+                            "logDriver": "awslogs",
+                            "options": {
+                                "awslogs-group": self.task_definition_dict["log_group"],
+                                "awslogs-region": self.ecs.meta.region_name,
+                                "awslogs-stream-prefix": family,
+                            },
+                        }
+                        if self.task_definition_dict.get("log_group")
+                        else None
+                    ),
+                    secrets=secrets if secrets else [],
+                    environment=environment,
+                    execution_role_arn=self.task_definition_dict.get("execution_role_arn"),
+                    task_role_arn=self.task_definition_dict.get("task_role_arn"),
+                    sidecars=self.task_definition_dict.get("sidecar_containers"),
+                    requires_compatibilities=self.task_definition_dict.get(
+                        "requires_compatibilities", []
+                    ),
+                )
+                task_definition_dict = task_definition_config.task_definition_dict()
+            else:
+                task_definition_dict = get_task_definition_dict_from_current_task(
+                    self.ecs,
+                    family,
+                    self._get_current_task(),
+                    image,
+                    self.container_name,
+                    environment=environment,
+                    secrets=secrets if secrets else {},
+                    include_sidecars=self.include_sidecars,
+                )
+
+                task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+                    task_definition_dict,
+                    self.container_name,
+                )
 
             if not self._reuse_task_definition(
                 task_definition_config,
@@ -456,19 +501,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             # task definition does not exist, do not reuse
             return False
 
-        if not any(
-            [
-                container["name"] == self.container_name
-                for container in existing_task_definition["containerDefinitions"]
-            ]
-        ):
-            return False
-
-        existing_task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            existing_task_definition, self.container_name
+        return task_definitions_match(
+            desired_task_definition_config,
+            existing_task_definition,
+            container_name=self.container_name,
         )
-
-        return existing_task_definition_config == desired_task_definition_config
 
     def _environment(self, container_context):
         return [

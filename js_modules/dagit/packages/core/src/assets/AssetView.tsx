@@ -14,6 +14,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -37,6 +38,7 @@ import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNo
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
+import {AssetPlots} from './AssetPlots';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
@@ -46,7 +48,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'activity' | 'definition' | 'lineage';
+  view?: 'activity' | 'definition' | 'lineage' | 'plots';
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
   partition?: string;
@@ -56,6 +58,7 @@ export interface AssetViewParams {
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const {flagNewAssetDetails} = useFeatureFlags();
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
@@ -155,6 +158,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               title="Activity"
               onClick={() => setParams({...params, view: 'activity'})}
             />
+            {flagNewAssetDetails && (
+              <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
+            )}
             <Tab
               id="definition"
               title="Definition"
@@ -234,6 +240,13 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : (
             <AssetNoDefinitionState />
           )
+        ) : params.view === 'plots' ? (
+          <AssetPlots
+            assetKey={assetKey}
+            params={params}
+            setParams={setParams}
+            assetHasDefinedPartitions={!!definition?.partitionDefinition}
+          />
         ) : (
           <AssetEvents
             assetKey={assetKey}

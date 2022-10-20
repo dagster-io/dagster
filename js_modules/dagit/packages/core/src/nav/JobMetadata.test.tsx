@@ -5,7 +5,7 @@ import * as Flags from '../app/Flags';
 import {TestProvider} from '../testing/TestProvider';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {JobMetadata, useJobNavMetadata} from './JobMetadata';
+import {JobMetadata} from './JobMetadata';
 
 jest.mock('../app/Flags');
 
@@ -70,10 +70,7 @@ describe('JobMetadata', () => {
   };
 
   const JobMetadataContainer = () => {
-    const metadata = useJobNavMetadata(REPO_ADDRESS, PIPELINE_NAME);
-    return (
-      <JobMetadata metadata={metadata} pipelineName={PIPELINE_NAME} repoAddress={REPO_ADDRESS} />
-    );
+    return <JobMetadata pipelineName={PIPELINE_NAME} repoAddress={REPO_ADDRESS} />;
   };
 
   const renderWithMocks = (mocks?: any) => {
