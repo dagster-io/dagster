@@ -107,7 +107,7 @@ export const OverviewScheduleTable: React.FC<Props> = ({repos}) => {
                       }
                       placement="top"
                     >
-                      <Tag intent="primary">{row.scheduleCount}</Tag>
+                      <Tag>{row.scheduleCount}</Tag>
                     </Tooltip>
                   }
                 />

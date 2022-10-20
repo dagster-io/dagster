@@ -107,7 +107,7 @@ export const OverviewJobsTable: React.FC<Props> = ({repos}) => {
                       content={row.jobCount === 1 ? '1 job' : `${row.jobCount} jobs`}
                       placement="top"
                     >
-                      <Tag intent="primary">{row.jobCount}</Tag>
+                      <Tag>{row.jobCount}</Tag>
                     </Tooltip>
                   }
                 />

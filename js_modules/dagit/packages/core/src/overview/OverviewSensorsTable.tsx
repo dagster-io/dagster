@@ -104,7 +104,7 @@ export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
                       content={row.sensorCount === 1 ? '1 sensor' : `${row.sensorCount} sensors`}
                       placement="top"
                     >
-                      <Tag intent="primary">{row.sensorCount}</Tag>
+                      <Tag>{row.sensorCount}</Tag>
                     </Tooltip>
                   }
                 />
