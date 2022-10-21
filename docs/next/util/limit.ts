@@ -50,8 +50,9 @@ export const limitSnippetLines = (content, fromTo, dedent, startAfter, endBefore
   }
 
   const dedentedElements = elements.map((x) => x.substring(dedentLevel));
+  const filteredElements = dedentedElements.filter((x) => !x.trim().startsWith('# type: ignore'));
 
-  let result = dedentedElements;
+  let result = filteredElements;
   if (fromTo) {
     const desiredLineNumbers = parseLineNumbersToSet(fromTo, dedentedElements.length);
     result = result.filter((_, i) => desiredLineNumbers.has(i));
