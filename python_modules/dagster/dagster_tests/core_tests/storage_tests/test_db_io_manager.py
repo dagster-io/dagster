@@ -5,6 +5,7 @@ import pytest
 from pendulum import datetime
 
 from dagster import AssetKey, InputContext, OutputContext, build_output_context
+from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.db_io_manager import (
@@ -301,3 +302,19 @@ def test_handle_none_output():
     manager.handle_output(output_context, None)
 
     assert len(handler.handle_output_calls) == 0
+
+
+def test_non_supported_type():
+    handler = IntHandler()
+    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
+    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    asset_key = AssetKey(["schema1", "table1"])
+    output_context = build_output_context(
+        asset_key=asset_key,
+        resource_config=resource_config,
+        dagster_type=resolve_dagster_type(type(None)),
+    )
+    with pytest.raises(
+        CheckError, match="DbIOManager does not have a handler for type '<class 'str'>'"
+    ):
+        manager.handle_output(output_context, "a_string")

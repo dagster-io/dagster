@@ -70,20 +70,19 @@ class DbIOManager(IOManager):
         self,
         type_handlers: Sequence[DbTypeHandler],
         db_client: DbClient,
-        io_manager_name: str = "DbIOManager",
     ):
         self._handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
+        self._io_manager_name = self.__class__.__name__
         for type_handler in type_handlers:
             for handled_type in type_handler.supported_types:
                 check.invariant(
                     handled_type not in self._handlers_by_type,
-                    f"{io_manager_name} provided with two handlers for the same type. "
+                    f"{self._io_manager_name} provided with two handlers for the same type. "
                     f"Type: '{handled_type}'. Handler classes: '{type(type_handler)}' and "
                     f"'{type(self._handlers_by_type.get(handled_type))}'.",
                 )
 
                 self._handlers_by_type[handled_type] = type_handler
-        self._io_manager_name = io_manager_name
         self._db_client = db_client
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
