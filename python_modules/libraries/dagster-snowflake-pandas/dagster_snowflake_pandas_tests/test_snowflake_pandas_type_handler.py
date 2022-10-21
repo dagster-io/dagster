@@ -21,12 +21,12 @@ from dagster import (
     Out,
     TableColumn,
     TableSchema,
-    TableSlice,
     build_input_context,
     build_output_context,
     job,
     op,
 )
+from dagster._core.storage.db_io_manager import TableSlice
 
 resource_config = {
     "database": "database_abc",
