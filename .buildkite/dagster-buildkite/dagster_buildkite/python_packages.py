@@ -56,6 +56,9 @@ class PythonPackage:
     def __hash__(self):
         return hash(self.directory)
 
+    def __lt__(self, other):
+        return self.name < other.name
+
 
 class PythonPackages:
     _repositories: Set[Path] = set()
@@ -122,7 +125,7 @@ class PythonPackages:
         # one hidden package we know we need.
         packages.add(PythonPackage(Path(".buildkite/dagster-buildkite/setup.py")))
 
-        for package in packages:
+        for package in sorted(packages):
             logging.info("  - " + package.name)
             cls.all[package.name] = package
 
@@ -141,6 +144,6 @@ class PythonPackages:
                 ):
                     packages_with_changes.add(package)
 
-        for package in packages_with_changes:
+        for package in sorted(packages_with_changes):
             logging.info("  - " + package.name)
             cls.with_changes.add(package)

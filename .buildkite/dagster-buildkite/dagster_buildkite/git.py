@@ -33,7 +33,7 @@ class ChangedFiles:
             .strip()
             .split("\n")
         )
-        for path in paths:
+        for path in sorted(paths):
             logging.info("  - " + path)
             cls.all.add(git_repository_directory / path)
 
