@@ -51,7 +51,7 @@ def _find_first_tagged_cell_index(nb, tag):
 # Typically, papermill injects the injected-parameters cell *below* the parameters cell
 # but we want to *replace* the parameters cell, which is what this function does.
 def replace_parameters(context, nb, parameters):
-    """Assigned parameters into the appropiate place in the input notebook
+    """Assigned parameters into the appropriate place in the input notebook
 
     Args:
         nb (NotebookNode): Executable notebook object
