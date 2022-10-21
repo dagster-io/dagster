@@ -1,13 +1,15 @@
 # isort: skip_file
 # pylint: disable=unused-variable
 
+import os
+
 
 def scope_load_assets_from_airbyte_project():
     # start_load_assets_from_airbyte_project
     from dagster_airbyte import load_assets_from_airbyte_project
 
     airbyte_assets = load_assets_from_airbyte_project(
-        project_dir="path/to/airbyte/project"
+        project_dir="path/to/airbyte/project",
     )
     # end_load_assets_from_airbyte_project
 
@@ -20,6 +22,13 @@ def scope_load_assets_from_airbyte_instance():
         {
             "host": "localhost",
             "port": "8000",
+            # If using basic auth
+            "request_additional_params": {
+                "auth": (
+                    "airbyte",
+                    os.getenv("AIRBYTE_PASSWORD"),
+                )
+            },
         }
     )
     airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
@@ -39,6 +48,13 @@ def scope_airbyte_project_config():
                 {
                     "host": "localhost",
                     "port": "8000",
+                    # If using basic auth
+                    "request_additional_params": {
+                        "auth": (
+                            "airbyte",
+                            os.getenv("AIRBYTE_PASSWORD"),
+                        )
+                    },
                 }
             )
         },
@@ -73,6 +89,13 @@ def scope_airbyte_manual_config():
                 {
                     "host": "localhost",
                     "port": "8000",
+                    # If using basic auth
+                    "request_additional_params": {
+                        "auth": (
+                            "airbyte",
+                            os.getenv("AIRBYTE_PASSWORD"),
+                        )
+                    },
                 }
             )
         },
