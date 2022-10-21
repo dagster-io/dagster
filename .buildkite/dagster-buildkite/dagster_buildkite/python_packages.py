@@ -1,12 +1,18 @@
-import glob
 import logging
 from distutils import core as distutils_core  # pylint: disable=deprecated-module
 from importlib import reload
 from pathlib import Path
-from typing import Set
+from typing import Dict, Optional, Set
 
+import pathspec
 from dagster_buildkite.utils import get_changed_files
 from pkg_resources import Requirement, parse_requirements
+
+logging.basicConfig(
+    format="%(asctime)s %(levelname)-8s %(message)s",
+    level=os.getenv("LOGLEVEL", "INFO"),
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 class PythonPackage:
@@ -24,84 +30,123 @@ class PythonPackage:
         self.name = distribution.get_name()  # type: ignore[attr-defined]
 
     @property
-    def install_requires(self):
+    def install_requires(self) -> Set[Requirement]:
         return set(
             requirement
             for requirement in parse_requirements(self._install_requires)
-            if get(requirement.name)  # type: ignore[attr-defined]
+            if PythonPackages.get(requirement.name)  # type: ignore[attr-defined]
         )
 
     @property
-    def extras_require(self):
+    def extras_require(self) -> Dict[str, Set[Requirement]]:
         extras_require = {}
         for extra, requirements in self._extras_require.items():
             extras_require[extra] = set(
                 requirement
                 for requirement in parse_requirements(requirements)
-                if get(requirement.name)
+                if PythonPackages.get(requirement.name)  # type: ignore[attr-defined]
             )
         return extras_require
 
-    def __repr__(self):
+    def __str__(self):
         return self.name
 
+    def __eq__(self, other):
+        return self.directory == other.directory
 
-# Consider any setup.py file to be a package
-_packages = set(
-    [
-        PythonPackage(Path(setup))
-        for setup in glob.glob("**/setup.py", recursive=True)
-        if "_tests" not in setup
-    ]
-)
-# hidden files are ignored by glob.glob and we don't actually want to recurse
-# all hidden files because there's so much random cruft. So just hardcode the
-# one hidden package we know we need.
-_packages.add(PythonPackage(Path(".buildkite/dagster-buildkite/setup.py")))
-
-_registry = {package.name: package for package in _packages}
-
-with_changes = set()
-
-for package in _packages:
-    for change in get_changed_files():
-        if (
-            # Our change is in this package's directory
-            (change in package.directory.rglob("*"))
-            # The file can alter behavior - exclude things like README changes
-            and (change.suffix in [".py", ".cfg", ".toml"])
-            # The file is not part of a test suite. We treat this differently
-            # because we don't want to run tests in dependent packages
-        ):
-            with_changes.add(package)
-
-logging.info("Changed packages:")
-for package in with_changes:
-    logging.info(package.name)
+    # Because we define __eq__
+    # https://docs.python.org/3.1/reference/datamodel.html#object.__hash__
+    def __hash__(self):
+        return hash(self.directory)
 
 
-def get(name: str):
-    return _registry.get(name)
+class PythonPackages:
+    _repositories: Set[Path] = set()
+    all: Dict[str, PythonPackage] = dict()
+    with_changes: Set[PythonPackage] = set()
 
+    @classmethod
+    def get(cls, name: str) -> Optional[PythonPackage]:
+        return cls.all.get(name)
 
-def walk_dependencies(requirement: Requirement):
-    dependencies: Set[PythonPackage] = set()
-    dagster_package = get(requirement.name)  # type: ignore[attr-defined]
+    @classmethod
+    def walk_dependencies(cls, requirement: Requirement) -> Set[PythonPackage]:
+        dependencies: Set[PythonPackage] = set()
+        dagster_package = cls.get(requirement.name)  # type: ignore[attr-defined]
 
-    # Return early if it's not a dependency defined in our repo
-    if not dagster_package:
+        # Return early if it's not a dependency defined in our repo
+        if not dagster_package:
+            return dependencies
+
+        # Add the dagster package
+        dependencies.add(dagster_package)
+
+        # Walk the tree for any extras we require
+        for extra in requirement.extras:
+            for req in dagster_package.extras_require.get(extra, set()):
+                dependencies.update(cls.walk_dependencies(req))
+
+        # Walk the tree for anything our dagster package's install requires
+        for req in dagster_package.install_requires:
+            dependencies.update(cls.walk_dependencies(req))
+
         return dependencies
 
-    # Add the dagster package
-    dependencies.add(dagster_package)
+    @classmethod
+    def load_repository(cls, git_repository_directory: Path = Path(".")) -> None:
+        # Only do the expensive globbing once
+        if git_repository_directory in cls._repositories:
+            return None
 
-    # Walk the tree for any extras we require
-    for extra in requirement.extras:
-        for req in dagster_package.extras_require.get(extra):
-            dependencies.update(walk_dependencies(req))
+        logging.info(f"Parsing packages in {git_repository_directory.absolute()}:")
 
-    # Walk the tree for anything our dagster package's install requires
-    for req in dagster_package.install_requires:
-        dependencies.update(walk_dependencies(req))
+        git_ignore = git_repository_directory / ".gitignore"
 
-    return dependencies
+        if git_ignore.exists():
+            ignored = git_ignore.read_text().splitlines()
+            git_ignore_spec = pathspec.PathSpec.from_lines("gitwildmatch", ignored)
+        else:
+            git_ignore_spec = pathspec.PathSpec().from_lines([])
+
+        # Consider any setup.py file to be a package
+        packages = set(
+            [
+                PythonPackage(Path(setup))
+                for setup in git_repository_directory.rglob("**/setup.py")
+                if "_tests" not in str(setup) and not git_ignore_spec.match_file(str(setup))
+            ]
+        )
+
+        # hidden files are ignored by glob.glob and we don't actually want to recurse
+        # all hidden files because there's so much random cruft. So just hardcode the
+        # one hidden package we know we need.
+        packages.add(PythonPackage(Path(".buildkite/dagster-buildkite/setup.py")))
+
+        for package in packages:
+            logging.info("  - " + package.name)
+            cls.all[package.name] = package
+
+        packages_with_changes = set()
+
+        logging.info("Changed packages:")
+        for package in packages:
+            for change in get_changed_files():
+                if (
+                    # Our change is in this package's directory
+                    (change in package.directory.rglob("*"))
+                    # The file can alter behavior - exclude things like README changes
+                    and (change.suffix in [".py", ".cfg", ".toml"])
+                    # The file is not part of a test suite. We treat this differently
+                    # because we don't want to run tests in dependent packages
+                ):
+                    packages_with_changes.add(package)
+
+        for package in packages_with_changes:
+            logging.info("  - " + package.name)
+            cls.with_changes.add(package)
+
+
+# Memoize our changed files
+get_changed_files()
+# Preload our current repo into PythonPackages
+PythonPackages.load_repository(Path("."))
