@@ -47,7 +47,7 @@ def configurable_job():
 
 @schedule(job=configurable_job, cron_schedule="0 0 * * *")
 def configurable_job_schedule(context: ScheduleEvaluationContext):
-    scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")  # type: ignore[union-attr]
     return RunRequest(
         run_key=None,
         run_config={
