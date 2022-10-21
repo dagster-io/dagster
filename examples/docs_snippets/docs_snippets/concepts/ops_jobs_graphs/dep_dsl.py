@@ -28,7 +28,7 @@ def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
 
     deps = {}
 
-    for op_yaml_data in yaml_data["ops"]:
+    for op_yaml_data in yaml_data["ops"]:  # type: ignore[index]
         def_name = op_yaml_data["def"]
         alias = op_yaml_data.get("alias", def_name)
         op_deps_entry = {}
@@ -39,10 +39,10 @@ def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
         deps[NodeInvocation(name=def_name, alias=alias)] = op_deps_entry
 
     return GraphDefinition(
-        name=yaml_data["name"],
-        description=yaml_data.get("description"),
+        name=yaml_data["name"],  # type: ignore[index]
+        description=yaml_data.get("description"),  # type: ignore[attr-defined]
         node_defs=op_defs,
-        dependencies=deps,
+        dependencies=deps,  # type: ignore[arg-type]
     )
 
 
