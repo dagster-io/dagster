@@ -8,7 +8,7 @@ from dagster._core.storage.pipeline_run import PipelineRun
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):
-    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+    def submit_run(self, context: SubmitRunContext) -> PipelineRun:  # type: ignore[return]
         desired_header = context.get_request_header(CUSTOM_HEADER_NAME)
 
 
