@@ -1,21 +1,16 @@
+import logging
 import os
-from distutils import core as distutils_core  # pylint: disable=deprecated-module
-from importlib import reload
 from pathlib import Path
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
 
 import pkg_resources
+from dagster_buildkite import python_packages
+from dagster_buildkite.python_packages import walk_dependencies
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
 from .steps.tox import build_tox_step
-from .utils import (
-    BuildkiteLeafStep,
-    GroupStep,
-    changed_python_package_names,
-    get_changed_files,
-    is_feature_branch,
-)
+from .utils import BuildkiteLeafStep, GroupStep, get_changed_files, is_feature_branch
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -279,34 +274,18 @@ class PackageSpec(
         ]
 
     @property
-    def distribution(self):
-        # run_setup stores state in a global variable. Reload the module
-        # each time we use it - otherwise we'll get the previous invocation's
-        # distribution if our setup.py doesn't implement setup() correctly
-        reload(distutils_core)
-
-        setup = Path(self.directory) / "setup.py"
-        if setup.exists():
-            return distutils_core.run_setup(setup)
-
-    @property
     def requirements(self):
-        # First try to infer requirements from the distribution
-        if self.distribution:
-            extras = [
-                requirement
-                for requirements in self.distribution.extras_require.values()
-                for requirement in requirements
-            ]
-            install = self.distribution.install_requires
-            return extras + install
+        # First try to infer requirements from the python package
+        package = python_packages.get(self.name)
+        if package:
+            return set.union(package.install_requires, *package.extras_require.values())
 
         # If we don't have a distribution (like many of our integration test suites)
         # we can use a requirements.txt file to capture requirements
         requirements_txt = Path(self.directory) / "requirements.txt"
         if requirements_txt.exists():
             parsed = pkg_resources.parse_requirements(requirements_txt.read_text())
-            return [requirement.name for requirement in parsed]
+            return [requirement for requirement in parsed]
 
         # Otherwise return nothing
         return []
@@ -323,10 +302,18 @@ class PackageSpec(
                 # The file can alter behavior - exclude things like README changes
                 and (change.suffix in [".py", ".cfg", ".toml"] or change.name == "requirements.txt")
             ):
+                logging.info(f"Building {self.name} because it has changed")
                 return None
 
-        # TODO: Walk the dependency tree
-        if any(requirement in changed_python_package_names() for requirement in self.requirements):
-            return None
+        # Consider anything required by install or an extra to be in scope.
+        # We might one day narrow this down to specific extras.
+        for requirement in self.requirements:
+            in_scope_changes = python_packages.with_changes.intersection(
+                walk_dependencies(requirement)
+            )
+            if in_scope_changes:
+
+                logging.info(f"Building {self.name} because of changes to f{in_scope_changes}")
+                return None
 
         return "Package unaffected by these changes"
