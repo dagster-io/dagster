@@ -31,13 +31,13 @@ The function responsible for computing the contents of any software-defined asse
 The easiest way to create a multi-asset is with the <PyObject object="multi_asset" decorator /> decorator. This decorator functions similarly to the <PyObject object="asset" decorator /> decorator, but requires an `outs` parameter specifying each output asset of the function.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_basic_multi_asset endbefore=end_basic_multi_asset
-from dagster import Out, multi_asset
+from dagster import AssetOut, multi_asset
 
 
 @multi_asset(
     outs={
-        "my_string_asset": Out(),
-        "my_int_asset": Out(),
+        "my_string_asset": AssetOut(),
+        "my_int_asset": AssetOut(),
     }
 )
 def my_function():
@@ -55,13 +55,13 @@ Sometimes, the underlying computation is sufficiently flexible to allow for comp
 Inside the body of the function, we can use `context.selected_output_names` or `context.selected_asset_keys` to find out which computations should be run.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_subsettable_multi_asset endbefore=end_subsettable_multi_asset
-from dagster import Out, Output, multi_asset
+from dagster import AssetOut, Output, multi_asset
 
 
 @multi_asset(
     outs={
-        "a": Out(is_required=False),
-        "b": Out(is_required=False),
+        "a": AssetOut(is_required=False),
+        "b": AssetOut(is_required=False),
     },
     can_subset=True,
 )
@@ -85,7 +85,7 @@ from dagster import AssetKey, Out, Output, multi_asset
 
 
 @multi_asset(
-    outs={"c": Out(), "d": Out()},
+    outs={"c": AssetOut(), "d": AssetOut()},
     internal_asset_deps={
         "c": {AssetKey("a")},
         "d": {AssetKey("b")},
