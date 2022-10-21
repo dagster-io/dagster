@@ -125,7 +125,7 @@ def merge_yaml_strings(yaml_strs, loader=DagsterRunConfigYamlLoader):
     return functools.reduce(deep_merge_dicts, yaml_dicts, {})
 
 
-def load_yaml_from_path(path: str, loader=DagsterRunConfigYamlLoader) -> object:
+def load_yaml_from_path(path: str, loader=DagsterRunConfigYamlLoader) -> dict:
     check.str_param(path, "path")
     with open(path, "r", encoding="utf8") as ff:
         return yaml.load(ff, Loader=loader)

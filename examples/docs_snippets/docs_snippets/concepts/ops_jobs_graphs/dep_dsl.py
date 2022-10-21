@@ -42,7 +42,7 @@ def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
         name=yaml_data["name"],
         description=yaml_data.get("description"),
         node_defs=op_defs,
-        dependencies=deps,
+        dependencies=deps,  # type: ignore[arg-type]
     )
 
 
