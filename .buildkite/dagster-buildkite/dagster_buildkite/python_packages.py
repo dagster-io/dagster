@@ -98,7 +98,7 @@ class PythonPackages:
         if git_repository_directory in cls._repositories:
             return None
 
-        logging.info(f"Finding Python packages:")
+        logging.info("Finding Python packages:")
 
         git_ignore = git_repository_directory / ".gitignore"
 
