@@ -28,6 +28,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
 import {OverviewTabs} from './OverviewTabs';
+import {sortRepoBuckets} from './sortRepoBuckets';
 import {OverviewSchedulesQuery} from './types/OverviewSchedulesQuery';
 import {UnloadableSchedulesQuery} from './types/UnloadableSchedulesQuery';
 
@@ -46,7 +47,7 @@ export const OverviewSchedulesRoot = () => {
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
-  const repoBuckets = useRepoBuckets(data);
+  const repoBuckets = React.useMemo(() => buildBuckets(data), [data]);
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
@@ -221,37 +222,35 @@ type RepoBucket = {
   schedules: string[];
 };
 
-const useRepoBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
-  return React.useMemo(() => {
-    if (data?.workspaceOrError.__typename !== 'Workspace') {
-      return [];
+const buildBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
+  if (data?.workspaceOrError.__typename !== 'Workspace') {
+    return [];
+  }
+
+  const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+
+  const buckets = [];
+
+  for (const entry of entries) {
+    if (entry?.__typename !== 'RepositoryLocation') {
+      continue;
     }
 
-    const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+    for (const repo of entry.repositories) {
+      const {name, schedules} = repo;
+      const repoAddress = buildRepoAddress(name, entry.name);
+      const scheduleNames = schedules.map(({name}) => name);
 
-    const buckets = [];
-
-    for (const entry of entries) {
-      if (entry?.__typename !== 'RepositoryLocation') {
-        continue;
-      }
-
-      for (const repo of entry.repositories) {
-        const {name, schedules} = repo;
-        const repoAddress = buildRepoAddress(name, entry.name);
-        const scheduleNames = schedules.map(({name}) => name);
-
-        if (scheduleNames.length > 0) {
-          buckets.push({
-            repoAddress,
-            schedules: scheduleNames,
-          });
-        }
+      if (scheduleNames.length > 0) {
+        buckets.push({
+          repoAddress,
+          schedules: scheduleNames,
+        });
       }
     }
+  }
 
-    return buckets;
-  }, [data]);
+  return sortRepoBuckets(buckets);
 };
 
 const OVERVIEW_SCHEDULES_QUERY = gql`

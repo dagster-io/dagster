@@ -6,6 +6,7 @@ import {
   NonIdealState,
   PageHeader,
   Heading,
+  Page,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -57,7 +58,7 @@ export const InstanceBackfills = () => {
   useDocumentTitle('Backfills');
 
   return (
-    <>
+    <Page>
       <PageHeader
         title={<Heading>{flagNewWorkspace ? 'Overview' : pageTitle}</Heading>}
         tabs={
@@ -127,7 +128,7 @@ export const InstanceBackfills = () => {
           );
         }}
       </Loading>
-    </>
+    </Page>
   );
 };
 

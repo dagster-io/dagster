@@ -281,7 +281,7 @@ export const IconNames = Object.keys(Icons) as IconName[];
 interface Props {
   color?: string;
   name: IconName;
-  size?: 16 | 20 | 24 | 48;
+  size?: 12 | 16 | 20 | 24 | 48;
   style?: React.CSSProperties;
 }
 

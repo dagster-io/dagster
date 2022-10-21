@@ -13,13 +13,15 @@ import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {InstigationType} from '../types/globalTypes';
-import {Row, RowCell} from '../ui/VirtualizedTable';
+import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext';
 import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/SingleSensorQuery';
 import {workspacePathFromAddress} from './workspacePath';
+
+const TEMPLATE_COLUMNS = '76px 1.5fr 1fr 120px 148px 180px';
 
 interface SensorRowProps {
   name: string;
@@ -78,36 +80,54 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
                 <MiddleTruncate text={name} />
               </Link>
             </span>
-            {sensorData?.targets && sensorData.targets.length ? (
-              <Caption>
-                <Box flex={{direction: 'column', gap: 2}}>
-                  {sensorData.targets.map((target) => (
-                    <PipelineReference
-                      key={target.pipelineName}
-                      showIcon
-                      size="small"
-                      pipelineName={target.pipelineName}
-                      pipelineHrefContext={repoAddress}
-                      isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
-                    />
-                  ))}
-                </Box>
+            <div
+              style={{
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              <Caption
+                style={{
+                  color: Colors.Gray500,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {sensorData?.description}
               </Caption>
+            </div>
+          </Box>
+        </RowCell>
+        <RowCell>
+          <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
+            {sensorData?.targets && sensorData.targets.length ? (
+              <Box flex={{direction: 'column', gap: 2}}>
+                {sensorData.targets.map((target) => (
+                  <PipelineReference
+                    key={target.pipelineName}
+                    showIcon
+                    size="small"
+                    pipelineName={target.pipelineName}
+                    pipelineHrefContext={repoAddress}
+                    isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
+                  />
+                ))}
+              </Box>
             ) : null}
             {sensorData?.metadata.assetKeys && sensorData.metadata.assetKeys.length ? (
-              <Caption>
-                <Box flex={{direction: 'column', gap: 2}}>
-                  {sensorData.metadata.assetKeys.map((key) => (
-                    <AssetLink key={key.path.join('/')} path={key.path} icon="asset" />
-                  ))}
-                </Box>
-              </Caption>
+              <Box flex={{direction: 'column', gap: 2}}>
+                {sensorData.metadata.assetKeys.map((key) => (
+                  <AssetLink key={key.path.join('/')} path={key.path} icon="asset" />
+                ))}
+              </Box>
             ) : null}
           </Box>
         </RowCell>
         <RowCell>
           {sensorData ? (
-            <div>{humanizeSensorInterval(sensorData.minIntervalSeconds)}</div>
+            <div style={{color: Colors.Dark}}>
+              {humanizeSensorInterval(sensorData.minIntervalSeconds)}
+            </div>
           ) : (
             <LoadingOrNone queryResult={queryResult} />
           )}
@@ -131,6 +151,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
               name={name}
               showButton={false}
               showHover
+              showSummary={false}
             />
           ) : (
             <LoadingOrNone queryResult={queryResult} />
@@ -141,9 +162,31 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
   );
 };
 
+export const VirtualizedSensorHeader = () => {
+  return (
+    <Box
+      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: TEMPLATE_COLUMNS,
+        height: '32px',
+        fontSize: '12px',
+        color: Colors.Gray600,
+      }}
+    >
+      <HeaderCell />
+      <HeaderCell>Name</HeaderCell>
+      <HeaderCell>Job / Asset</HeaderCell>
+      <HeaderCell>Frequency</HeaderCell>
+      <HeaderCell>Last tick</HeaderCell>
+      <HeaderCell>Last run</HeaderCell>
+    </Box>
+  );
+};
+
 const RowGrid = styled(Box)`
   display: grid;
-  grid-template-columns: 76px 38% 30% 10% 20%;
+  grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
 `;
 
@@ -152,6 +195,7 @@ const SINGLE_SENSOR_QUERY = gql`
     sensorOrError(sensorSelector: $selector) {
       ... on Sensor {
         id
+        description
         name
         targets {
           pipelineName
