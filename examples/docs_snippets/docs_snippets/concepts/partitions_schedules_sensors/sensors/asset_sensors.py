@@ -28,7 +28,7 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
             "ops": {
                 "read_materialization": {
                     "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,
+                        "asset_key": asset_event.dagster_event.asset_key.path,  # type: ignore[union-attr]
                     }
                 }
             }
