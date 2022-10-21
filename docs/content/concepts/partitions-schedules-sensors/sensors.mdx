@@ -393,9 +393,7 @@ you create a run failure sensor that will message a given Slack channel:
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_slack_marker endbefore=end_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
 
-slack_on_run_failure = make_slack_on_run_failure_sensor(
-    "#my_channel", os.getenv("MY_SLACK_TOKEN")
-)
+slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv("MY_SLACK_TOKEN"))
 ```
 
 <PyObject object="make_email_on_run_failure_sensor" /> helps you create a run failure
@@ -430,6 +428,7 @@ Sometimes, you may want to monitor jobs in a repository other than the one where
 def team_a_repo_sensor():
     # when any job in team_a_repository succeeds, this sensor will trigger
     send_slack_alert()
+
 
 
 @run_failure_sensor(
