@@ -47,7 +47,9 @@ To load Airbyte assets into Dagster from a set of YAML configuration files, spec
 ```python startafter=start_load_assets_from_airbyte_project endbefore=end_load_assets_from_airbyte_project file=/integrations/airbyte/airbyte.py dedent=4
 from dagster_airbyte import load_assets_from_airbyte_project
 
-airbyte_assets = load_assets_from_airbyte_project(project_dir="path/to/airbyte/project")
+airbyte_assets = load_assets_from_airbyte_project(
+    project_dir="path/to/airbyte/project",
+)
 ```
 
 The `load_assets_from_airbyte_project` function parses the YAML metadata, generating a set of software-defined assets which reflect each of the data streams synced by your connections. Each connection has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.

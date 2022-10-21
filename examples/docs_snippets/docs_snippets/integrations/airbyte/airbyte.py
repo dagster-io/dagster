@@ -9,7 +9,7 @@ def scope_load_assets_from_airbyte_project():
     from dagster_airbyte import load_assets_from_airbyte_project
 
     airbyte_assets = load_assets_from_airbyte_project(
-        project_dir="path/to/airbyte/project"
+        project_dir="path/to/airbyte/project",
     )
     # end_load_assets_from_airbyte_project
 
