@@ -428,7 +428,7 @@ class BetterPandasIOManager(IOManager):
             obj.to_csv(file_path, index=False)
 
     def load_input(self, context) -> pd.DataFrame:
-        return pd.read_csv(self._get_path(context.upstream_output))  # type: ignore
+        return pd.read_csv(self._get_path(context.upstream_output))
 
 
 # write a subclass that uses _get_path for your custom loading logic
