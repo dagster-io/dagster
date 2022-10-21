@@ -1,7 +1,7 @@
 import pickle
 from typing import Union
 
-from google.api_core.exceptions import Forbidden, TooManyRequests, ServiceUnavailable
+from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud import storage  # type: ignore
 
 from dagster import Field, IOManager, InputContext, OutputContext, StringSource
