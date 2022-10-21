@@ -3,10 +3,12 @@ from typing import Any
 
 import pytest
 from dagster import (
+    AllPartitionMapping,
     AssetKey,
     AssetOut,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    In,
     Nothing,
     OpExecutionContext,
     Output,
@@ -15,8 +17,10 @@ from dagster import (
     TimeWindowPartitionMapping,
     _check as check,
     build_op_context,
+    graph_asset,
     io_manager,
     materialize_to_memory,
+    op,
     resource,
 )
 from dagster._core.definitions import (
@@ -801,3 +805,101 @@ def test_asset_in_nothing_context():
 
     assert AssetKey("upstream") in asset1.keys_by_input_name.values()
     assert materialize_to_memory([asset1]).success
+
+
+def test_graph_asset_decorator_no_args():
+    @op
+    def my_op(x, y):
+        del y
+        return x
+
+    @graph_asset
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    assert my_graph.keys_by_input_name["x"] == AssetKey("x")
+    assert my_graph.keys_by_input_name["y"] == AssetKey("y")
+    assert my_graph.keys_by_output_name["result"] == AssetKey("my_graph")
+
+
+def test_graph_asset_group_name():
+    @op
+    def my_op1(x):  # pylint: disable=unused-argument
+        return x
+
+    @op
+    def my_op2(y):
+        return y
+
+    @graph_asset(group_name="group1")
+    def my_asset(x):
+        return my_op2(my_op1(x))
+
+    # The asset key is the function name when there is only one output
+    assert my_asset.group_names_by_key[AssetKey("my_asset")] == "group1"
+
+
+def test_graph_asset_partitioned():
+    @op
+    def my_op(context):
+        assert context.partition_key == "a"
+
+    @graph_asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+    def my_asset():
+        return my_op()
+
+    assert materialize_to_memory([my_asset], partition_key="a").success
+
+
+def test_graph_asset_partition_mapping():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        ...
+
+    @op(ins={"in1": In(Nothing)})
+    def my_op(context):
+        assert context.partition_key == "a"
+        assert context.asset_partition_keys_for_input("in1") == ["a", "b", "c"]
+
+    @graph_asset(
+        partitions_def=partitions_def,
+        ins={"asset1": AssetIn(partition_mapping=AllPartitionMapping())},
+    )
+    def my_asset(asset1):
+        return my_op(asset1)
+
+    assert materialize_to_memory([asset1, my_asset], partition_key="a").success
+
+
+def test_graph_asset_w_key_prefix():
+    @op
+    def foo():
+        return 1
+
+    @op
+    def bar(i):
+        return i + 1
+
+    @graph_asset(key_prefix=["this", "is", "a", "prefix"], group_name="abc")
+    def the_asset():
+        return bar(foo())
+
+    assert the_asset.keys_by_output_name["result"].path == [
+        "this",
+        "is",
+        "a",
+        "prefix",
+        "the_asset",
+    ]
+
+    assert the_asset.group_names_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the_asset"]): "abc"
+    }
+
+    @graph_asset(key_prefix="prefix", group_name="abc")
+    def str_prefix():
+        return bar(foo())
+
+    assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
