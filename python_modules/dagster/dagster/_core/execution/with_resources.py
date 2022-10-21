@@ -1,4 +1,4 @@
-import collections
+from collections.abc import Iterable as IterableABC
 from typing import Any, Iterable, List, Mapping, Optional, Sequence, TypeVar, Union, cast
 
 from dagster import _check as check
@@ -97,7 +97,7 @@ def with_resources(
                 )
             resource_defs[key] = resource_defs[key].configured(resource_config["config"])
 
-    if not isinstance(definitions, collections.Iterable):
+    if not isinstance(definitions, IterableABC):
         definitions = [definitions]
 
     transformed_defs: List[T] = []
