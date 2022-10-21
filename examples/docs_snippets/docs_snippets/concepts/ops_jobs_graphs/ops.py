@@ -16,7 +16,7 @@ class MockRequest:
         return MockResponse()
 
 
-requests = MockRequest()
+requests = MockRequest()  # type: ignore[assignment]
 
 # start_op_marker
 
@@ -53,7 +53,7 @@ def my_input_op(abc, xyz):
 # start_typed_input_op_marker
 
 MyDagsterType = DagsterType(
-    type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType"
+    type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType"  # type: ignore[operator]
 )
 
 
