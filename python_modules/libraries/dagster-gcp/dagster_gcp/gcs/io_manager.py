@@ -1,7 +1,7 @@
 import pickle
 from typing import Union
 
-from google.api_core.exceptions import Forbidden, TooManyRequests
+from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud import storage  # type: ignore
 
 from dagster import Field, IOManager, InputContext, OutputContext, StringSource
@@ -83,7 +83,7 @@ class PickledObjectGCSIOManager(IOManager):
         backoff(
             self.bucket_obj.blob(key).upload_from_string,
             args=[pickled_obj],
-            retry_on=(TooManyRequests, Forbidden),
+            retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
         )
 
 
