@@ -28,7 +28,7 @@ import requests
 from dagster import asset
 
 
-@asset
+@asset  # type: ignore[no-redef]
 def cereals():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
