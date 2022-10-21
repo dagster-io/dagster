@@ -18,7 +18,7 @@ class PartitionDimensionKey(
         )
 
 
-class MultiDimensionalPartitionKey(str):
+class MultiPartitionKey(str):
     """
     A multi-dimensional partition key stores the partition key for each dimension.
     Subclasses the string class to keep partition key type as a string.
@@ -40,7 +40,7 @@ class MultiDimensionalPartitionKey(str):
             for dimension in sorted(list(partition_dimension_mapping.keys()))
         ]
 
-        str_key = super(MultiDimensionalPartitionKey, cls).__new__(
+        str_key = super(MultiPartitionKey, cls).__new__(
             cls, "|".join([dim_key.partition_key for dim_key in dimension_keys])
         )
 

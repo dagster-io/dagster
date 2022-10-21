@@ -439,7 +439,7 @@ class AssetMaterialization(
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiDimensionalPartitionKey,
+            MultiPartitionKey,
         )
 
         if isinstance(asset_key, AssetKey):
@@ -467,16 +467,16 @@ class AssetMaterialization(
 
         partition = check.opt_str_param(partition, "partition")
 
-        if not isinstance(partition, MultiDimensionalPartitionKey):
+        if not isinstance(partition, MultiPartitionKey):
             # When event log records are unpacked from storage, cast the partition key as a
-            # MultiDimensionalPartitionKey if multi-dimensional partition tags exist
+            # MultiPartitionKey if multi-dimensional partition tags exist
             multi_dimensional_partitions = {
                 dimension[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]: partition_key
                 for dimension, partition_key in (tags or {}).items()
                 if dimension.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
             }
             if multi_dimensional_partitions:
-                partition = MultiDimensionalPartitionKey(multi_dimensional_partitions)
+                partition = MultiPartitionKey(multi_dimensional_partitions)
 
         return super(AssetMaterialization, cls).__new__(
             cls,

@@ -28,7 +28,7 @@ from dagster import asset, op, resource
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.dependency import NodeHandle
-from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.events import (
     DagsterEvent,
@@ -2315,7 +2315,7 @@ class TestEventLogStorage:
         def my_op():
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiDimensionalPartitionKey({"country": "US", "date": "2022-10-13"}),
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
                 tags={
                     "dagster/partition/country": "US",
                     "dagster/partition/date": "2022-10-13",
@@ -2353,7 +2353,7 @@ class TestEventLogStorage:
             )  # should not show up in any queries
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiDimensionalPartitionKey({"country": "US", "date": "2022-10-13"}),
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
                 tags={
                     "dagster/partition/country": "US",
                     "dagster/partition/date": "2022-10-13",
@@ -2361,7 +2361,7 @@ class TestEventLogStorage:
             )
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiDimensionalPartitionKey({"country": "US", "date": "2022-10-13"}),
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
                 tags={
                     "dagster/partition/country": "US",
                     "dagster/partition/date": "2022-10-13",
@@ -2369,7 +2369,7 @@ class TestEventLogStorage:
             )
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiDimensionalPartitionKey({"country": "Canada", "date": "2022-10-13"}),
+                partition=MultiPartitionKey({"country": "Canada", "date": "2022-10-13"}),
                 tags={
                     "dagster/partition/country": "Canada",
                     "dagster/partition/date": "2022-10-13",
@@ -2377,7 +2377,7 @@ class TestEventLogStorage:
             )
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiDimensionalPartitionKey({"country": "Mexico", "date": "2022-10-14"}),
+                partition=MultiPartitionKey({"country": "Mexico", "date": "2022-10-14"}),
                 tags={
                     "dagster/partition/country": "Mexico",
                     "dagster/partition/date": "2022-10-14",
@@ -2410,8 +2410,8 @@ class TestEventLogStorage:
                     record.event_log_entry.dagster_event.step_materialization_data.materialization
                 )
 
-                assert isinstance(materialization.partition, MultiDimensionalPartitionKey)
-                assert materialization.partition == MultiDimensionalPartitionKey(
+                assert isinstance(materialization.partition, MultiPartitionKey)
+                assert materialization.partition == MultiPartitionKey(
                     {"country": "US", "date": "2022-10-13"}
                 )
                 assert materialization.partition.keys_by_dimension() == {
@@ -2455,19 +2455,19 @@ class TestEventLogStorage:
         def my_op():
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiDimensionalPartitionKey({"country": "US", "date": "2022-10-13"}),
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
             )
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiDimensionalPartitionKey({"country": "US", "date": "2022-10-13"}),
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
             )
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiDimensionalPartitionKey({"country": "Canada", "date": "2022-10-13"}),
+                partition=MultiPartitionKey({"country": "Canada", "date": "2022-10-13"}),
             )
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiDimensionalPartitionKey({"country": "Mexico", "date": "2022-10-14"}),
+                partition=MultiPartitionKey({"country": "Mexico", "date": "2022-10-14"}),
             )
             yield Output(5)
 
@@ -2483,19 +2483,19 @@ class TestEventLogStorage:
             materialization_counts = instance.get_materialization_count_by_partition([key])
             assert (
                 materialization_counts[key][
-                    MultiDimensionalPartitionKey({"country": "US", "date": "2022-10-13"})
+                    MultiPartitionKey({"country": "US", "date": "2022-10-13"})
                 ]
                 == 2
             )
             assert (
                 materialization_counts[key][
-                    MultiDimensionalPartitionKey({"country": "Mexico", "date": "2022-10-14"})
+                    MultiPartitionKey({"country": "Mexico", "date": "2022-10-14"})
                 ]
                 == 1
             )
             assert (
                 materialization_counts[key][
-                    MultiDimensionalPartitionKey({"country": "Canada", "date": "2022-10-13"})
+                    MultiPartitionKey({"country": "Canada", "date": "2022-10-13"})
                 ]
                 == 1
             )
