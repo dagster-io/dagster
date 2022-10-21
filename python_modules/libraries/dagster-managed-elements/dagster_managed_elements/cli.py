@@ -100,7 +100,10 @@ def main():
     pass
 
 
-@main.command(name="check")
+@main.command(
+    name="check",
+    help="Checks whether configuration for the specified managed elements is in sync with the current state, and prints a diff if not.",
+)
 @click.option(
     "--module",
     "-m",
@@ -112,13 +115,16 @@ def main():
     "--working-directory",
     "-d",
     type=click.Path(exists=True),
-    help="Optional path to load module from, will be appended to system path.",
+    help="Optional relative or absolute path to load module from, will be appended to system path.",
 )
 def check_cmd(module, working_directory):
     click.echo(check(working_directory, module))
 
 
-@main.command(name="apply")
+@main.command(
+    name="apply",
+    help="Reconciles the config for the specified managed elements, updating the remote state.",
+)
 @click.option(
     "--module",
     "-m",
@@ -130,7 +136,7 @@ def check_cmd(module, working_directory):
     "--working-directory",
     "-d",
     type=click.Path(exists=True),
-    help="Optional path to load module from, will be appended to system path.",
+    help="Optional relative or absolute path to load module from, will be appended to system path.",
 )
 def apply_cmd(module, working_directory):
     click.echo(apply(working_directory, module))

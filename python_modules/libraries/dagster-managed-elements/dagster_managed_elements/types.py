@@ -4,6 +4,8 @@ from typing import Any, List, NamedTuple, Optional, OrderedDict, Tuple, Union
 
 import click
 
+import dagster._check as check
+
 
 class ManagedElementError(enum.Enum):
     CANNOT_CONNECT = "cannot_connect"
@@ -22,13 +24,17 @@ def _sanitize(key: str, value: str):
     return value
 
 
+DiffData = Tuple[str, str]
+ModifiedDiffData = Tuple[str, str, str]
+
+
 class ManagedElementDiff(
     NamedTuple(
         "_ManagedElementDiff",
         [
-            ("additions", List[Tuple[str, str]]),
-            ("deletions", List[Tuple[str, str]]),
-            ("modifications", List[Tuple[str, str, str]]),
+            ("additions", List[DiffData]),
+            ("deletions", List[DiffData]),
+            ("modifications", List[ModifiedDiffData]),
             ("nested", OrderedDict[str, "ManagedElementDiff"]),
         ],
     )
@@ -40,10 +46,14 @@ class ManagedElementDiff(
 
     def __new__(
         cls,
-        additions: Optional[List[Tuple[str, str]]] = None,
-        deletions: Optional[List[Tuple[str, str]]] = None,
-        modifications: Optional[List[Tuple[str, str, str]]] = None,
+        additions: Optional[List[DiffData]] = None,
+        deletions: Optional[List[DiffData]] = None,
+        modifications: Optional[List[ModifiedDiffData]] = None,
     ):
+        check.opt_list_param(additions, "additions", of_type=DiffData)
+        check.opt_list_param(deletions, "deletions", of_type=DiffData)
+        check.opt_list_param(modifications, "modifications", of_type=ModifiedDiffData)
+
         return super().__new__(
             cls,
             additions or [],
@@ -56,30 +66,48 @@ class ManagedElementDiff(
         """
         Adds an addition entry to the diff.
         """
+        check.str_param(name, "name")
+        check.str_param(value, "value")
+
         return self._replace(additions=self.additions + [(name, value)])
 
     def delete(self, name: str, value: str) -> "ManagedElementDiff":
         """
         Adds a deletion entry to the diff.
         """
+        check.str_param(name, "name")
+        check.str_param(value, "value")
+
         return self._replace(deletions=self.deletions + [(name, value)])
 
     def modify(self, name: str, old_value: str, new_value: str) -> "ManagedElementDiff":
         """
         Adds a modification entry to the diff.
         """
+        check.str_param(name, "name")
+        check.str_param(old_value, "old_value")
+        check.str_param(new_value, "new_value")
+
         return self._replace(modifications=self.modifications + [(name, old_value, new_value)])
 
     def with_nested(self, name: str, nested: "ManagedElementDiff") -> "ManagedElementDiff":
         """
         Adds the nested diff as a child of the current diff.
         """
+        check.str_param(name, "name")
+        check.inst_param(nested, "nested", ManagedElementDiff)
+
         return self._replace(nested=OrderedDict(list(self.nested.items()) + [(name, nested)]))
+
+    def __add__(self, other: "ManagedElementDiff") -> "ManagedElementDiff":
+        return self.join(other)
 
     def join(self, other: "ManagedElementDiff") -> "ManagedElementDiff":
         """
         Combines two diff objects into a single diff object.
         """
+        check.inst_param(other, "other", ManagedElementDiff)
+
         return self._replace(
             additions=self.additions + other.additions,
             deletions=self.deletions + other.deletions,
