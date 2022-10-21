@@ -38,11 +38,86 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             from dagster_snowflake import build_snowflake_io_manager
             from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
-            snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
-
-            @job(resource_defs={'io_manager': snowflake_io_manager})
-            def my_job():
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            )
+            def my_table():  # the name of the asset will be the table name
                 ...
+
+            snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
+            @repository
+            def my_repo():
+                return with_resources(
+                    [my_table],
+                    {"io_manager": snowflake_io_manager.configured({
+                        "database": "my_database",
+                        "account" : ...,
+                        "user: ...,
+                        ...
+                    })}
+                )
+
+        The returned Snowflake IOManager can be configured with the following values:
+
+        .. code-block:: YAML
+
+            database: my_database  # name of the database in snowflake
+            account: my_account  # snowflake account
+            user: user@email.com  # user account
+            password: abc123  # account password
+            warehouse: my_warehouse # snowflake warehouse
+            schema: my_schema  # name of the schema for the tables
+
+        You can also point all configuration to environment variables where dagster will find the values
+
+        .. code-block:: python
+
+            @repository
+            def my_repo():
+                return with_resources(
+                    [my_table],
+                    {"io_manager": snowflake_io_manager.configured({
+                        "database": {"env": "SNOWFLAKE_DATABASE"},
+                        "account" : {"env": "SNOWFLAKE_ACCOUNT"},
+                        "user: ...,
+                        ...
+                    })}
+                )
+
+
+        If you do not provide a schema, dagster will determine a schema based on the assets and ops using
+        the IO Manager. For assets, the schema will be determined from the asset key.
+        For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+        via config or on the asset/op, "public" will be used for the schema.
+
+        .. code-block:: python
+
+            @op(
+                out={"my_table": Out(metadata={"schema": "my_schema"})}
+            )
+            def make_my_table():
+                # the returned value will be stored at my_schema.my_table
+                ...
+
+            @asset(
+                key_prefix=["my_schema"]
+            )
+            def my_other_table():
+                # the returned value will be stored at my_schema.my_other_table
+                ...
+
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+        In or AssetIn.
+
+        .. code-block:: python
+
+            @asset(
+                in={"my_table": AssetIn("my_table": metadata={"columns": ["a"]})}
+            )
+            def my_table_a(my_table):
+                # my_table will just contain the data from column "a"
+                ...
+
     """
 
     @io_manager(
