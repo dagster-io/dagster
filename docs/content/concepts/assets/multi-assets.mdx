@@ -81,7 +81,7 @@ When a multi-asset is created, it is assumed that each output asset depends on a
 In these situations, you may optionally provide a mapping from each output asset to the set of <PyObject object="AssetKey" />s that it depends on. This information is used to display lineage information in Dagit and for parsing selections over your asset graph.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_asset_deps_multi_asset endbefore=end_asset_deps_multi_asset
-from dagster import AssetKey, Out, Output, multi_asset
+from dagster import AssetKey, AssetOut, Output, multi_asset
 
 
 @multi_asset(
