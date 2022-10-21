@@ -2315,9 +2315,7 @@ class TestEventLogStorage:
         def my_op():
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiDimensionalPartitionKey.from_partition_dimension_mapping(
-                    {"country": "US", "date": "2022-10-13"}
-                ),
+                partition=MultiDimensionalPartitionKey({"country": "US", "date": "2022-10-13"}),
                 tags={
                     "dagster/partition/country": "US",
                     "dagster/partition/date": "2022-10-13",
@@ -2339,7 +2337,7 @@ class TestEventLogStorage:
             )
             assert len(materializations) == 1
 
-            asset_event_tags = storage.get_asset_event_tags()
+            asset_event_tags = storage.get_asset_event_tags(key)
             assert asset_event_tags == [
                 ("dagster/partition/country", {"US"}),
                 ("dagster/partition/date", {"2022-10-13"}),

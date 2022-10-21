@@ -1,7 +1,7 @@
 import logging
 import time
 from collections import OrderedDict, defaultdict
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, cast
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, cast, AbstractSet
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
@@ -373,13 +373,13 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
         return list(asset_run_ids)
 
-    def get_asset_event_tags(self) -> List[Tuple[str, Set[str]]]:
+    def get_asset_event_tags(self, asset_key: AssetKey) -> Sequence[Tuple[str, AbstractSet[str]]]:
         tags: Dict[str, Set] = defaultdict(set)
         for records in self._logs.values():
             for record in records:
                 if (
                     record.is_dagster_event
-                    and record.dagster_event.asset_key
+                    and record.dagster_event.asset_key == asset_key
                     and record.dagster_event.event_type_value
                     == DagsterEventType.ASSET_MATERIALIZATION.value
                     and self._wiped_asset_keys.get(record.dagster_event.asset_key, 0)

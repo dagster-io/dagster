@@ -12,6 +12,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    AbstractSet,
 )
 
 import dagster._check as check
@@ -304,11 +305,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def get_asset_event_tags(self) -> List[Tuple[str, Set[str]]]:
-        """Get a list of tag keys and the values that have been associated with them.
+    def get_asset_event_tags(self, asset_key: AssetKey) -> Sequence[Tuple[str, AbstractSet[str]]]:
+        """Get a list of tag keys and the values that have been associated with them for a specific
+        asset key.
 
         Returns:
-            List[Tuple[str, Set[str]]]
+            Sequence[Tuple[str, AbstractSet[str]]]
         """
 
     @abstractmethod

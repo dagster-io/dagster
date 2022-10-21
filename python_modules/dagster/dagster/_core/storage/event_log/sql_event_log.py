@@ -2,7 +2,20 @@ import logging
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union, cast
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+    AbstractSet,
+)
 
 import pendulum
 import sqlalchemy as db
@@ -1204,10 +1217,12 @@ class SqlEventLogStorage(EventLogStorage):
 
         return query
 
-    def get_asset_event_tags(self) -> List[Tuple[str, Set[str]]]:
+    def get_asset_event_tags(self, asset_key: AssetKey) -> Sequence[Tuple[str, AbstractSet[str]]]:
         tags = defaultdict(set)
-        query = db.select([AssetEventTagsTable.c.key, AssetEventTagsTable.c.value]).distinct(
-            AssetEventTagsTable.c.key, AssetEventTagsTable.c.value
+        query = (
+            db.select([AssetEventTagsTable.c.key, AssetEventTagsTable.c.value])
+            .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.value)
+            .where(SqlEventLogStorageTable.c.asset_key == asset_key.to_string())
         )
 
         with self.index_connection() as conn:

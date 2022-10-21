@@ -4,13 +4,7 @@ import dagster._check as check
 
 
 class PartitionDimensionKey(
-    NamedTuple(
-        "_PartitionDimensionKey",
-        [
-            ("dimension_name", str),
-            ("partition_key", str),
-        ],
-    )
+    NamedTuple("_PartitionDimensionKey", [("dimension_name", str), ("partition_key", str)])
 ):
     """
     Representation of a single dimension of a multi-dimensional partition key.

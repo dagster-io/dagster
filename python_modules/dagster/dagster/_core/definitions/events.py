@@ -418,14 +418,15 @@ class AssetMaterialization(
     computations, enabling tooling like the Assets dashboard in Dagit.
 
     Args:
-        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across job
-            runs
+        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across
+            job runs
         description (Optional[str]): A longer human-readable description of the materialized value.
-        metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary metadata about the
-            materialized value.
-        partition (Optional[Union[str, MultiDimensionalPartitionKey]]): The name of the partition that was materialized.
-        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the materialization. Users should not pass
-            values into this argument.
+        metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary
+            metadata about the materialized value.
+        partition (Optional[Union[str, MultiDimensionalPartitionKey]]): The name of the partition
+            that was materialized.
+        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
+            materialization. Users should not pass values into this argument.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -459,7 +460,8 @@ class AssetMaterialization(
         check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
         if any([not tag.startswith(SYSTEM_TAG_PREFIX) for tag in tags or {}]):
             check.failed(
-                "Users should not pass values into the tags argument for AssetMaterializations. The tags argument is reserved for system-populated tags."
+                "Users should not pass values into the tags argument for AssetMaterializations. "
+                "The tags argument is reserved for system-populated tags."
             )
 
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
