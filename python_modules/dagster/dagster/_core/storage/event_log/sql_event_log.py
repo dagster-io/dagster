@@ -3,6 +3,7 @@ from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from datetime import datetime
 from typing import (
+    AbstractSet,
     Any,
     Dict,
     Iterable,
@@ -14,7 +15,6 @@ from typing import (
     Tuple,
     Union,
     cast,
-    AbstractSet,
 )
 
 import pendulum
@@ -24,17 +24,11 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
-from dagster._core.errors import (
-    DagsterEventLogInvalidForRun,
-    DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterEventLogInvalidForRun, DagsterInvariantViolationError
 from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import MARKER_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import build_run_step_stats_from_events
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG
 from dagster._serdes import (
     deserialize_as,
     deserialize_json_to_dagster_namedtuple,
@@ -135,7 +129,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def store_asset_event(self, event: EventLogEntry):
         check.inst_param(event, "event", EventLogEntry)
-        if not event.is_dagster_event or not event.dagster_event.asset_key:
+        if not (event.dagster_event and event.dagster_event.asset_key):
             return
 
         # We switched to storing the entire event record of the last materialization instead of just
@@ -229,7 +223,9 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
         if (
-            event.dagster_event.is_step_materialization
+            event.dagster_event
+            and event.dagster_event.asset_key
+            and event.dagster_event.is_step_materialization
             and isinstance(
                 event.dagster_event.step_materialization_data.materialization, AssetMaterialization
             )

@@ -21,10 +21,7 @@ from typing import (
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
-from dagster._core.storage.tags import (
-    MULTIDIMENSIONAL_PARTITION_PREFIX,
-    SYSTEM_TAG_PREFIX,
-)
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
@@ -39,7 +36,6 @@ from .metadata import (
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.execution.context.output import OutputContext
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
@@ -401,7 +397,7 @@ class AssetMaterialization(
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
-            ("partition", PublicAttr[Optional[Union[str, "MultiDimensionalPartitionKey"]]]),
+            ("partition", PublicAttr[Optional[Union[str]]]),
             ("tags", Optional[Mapping[str, str]]),
         ],
     )
@@ -423,7 +419,7 @@ class AssetMaterialization(
         description (Optional[str]): A longer human-readable description of the materialized value.
         metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary
             metadata about the materialized value.
-        partition (Optional[Union[str, MultiDimensionalPartitionKey]]): The name of the partition
+        partition (Optional[str]): The name of the partition
             that was materialized.
         tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
             materialization. Users should not pass values into this argument.
@@ -438,7 +434,7 @@ class AssetMaterialization(
         asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
-        partition: Optional[Union[str, "MultiDimensionalPartitionKey"]] = None,
+        partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):

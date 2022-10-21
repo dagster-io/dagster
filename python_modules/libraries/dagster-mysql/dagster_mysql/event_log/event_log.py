@@ -1,7 +1,6 @@
 import sqlalchemy as db
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.event_log import (
     AssetKeyTable,
@@ -11,7 +10,6 @@ from dagster._core.storage.event_log import (
 )
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster._core.storage.event_log.schema import AssetEventTagsTable
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,

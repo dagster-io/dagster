@@ -2,6 +2,7 @@ import base64
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
+    AbstractSet,
     Callable,
     Iterable,
     List,
@@ -12,7 +13,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    AbstractSet,
 )
 
 import dagster._check as check
