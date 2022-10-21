@@ -70,6 +70,15 @@ def test_nb_op(name, **kwargs):
         **kwargs,
     )
 
+def test_nb_asset(name, **kwargs):
+    path = kwargs.pop("path", nb_test_path(name))
+
+    return dagstermill.define_dagstermill_asset(
+        name=name,
+        notebook_path=path,
+        **kwargs
+    )
+
 
 default_mode_defs = [
     ModeDefinition(
@@ -530,6 +539,12 @@ def hello_world_with_output_notebook_pipeline_legacy():
     load_notebook_legacy(notebook)
 
 
+###################################################################################################
+# Assets
+###################################################################################################
+
+hello_world_asset = test_nb_asset(name="hello_world")
+
 @repository
 def notebook_repo():
     pipelines = [
@@ -560,3 +575,9 @@ def notebook_repo():
         pipelines += [tutorial_pipeline]
 
     return pipelines
+
+@repository
+def notebook_assets_repo():
+    return [
+        hello_world_asset
+    ]
