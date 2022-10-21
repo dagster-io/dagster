@@ -42,7 +42,7 @@ def scope_airbyte_project_config():
     from dagster import with_resources
 
     airbyte_assets = with_resources(
-        load_assets_from_airbyte_project(project_dir="path/to/airbyte/project"),
+        [load_assets_from_airbyte_project(project_dir="path/to/airbyte/project")],
         {
             "airbyte": airbyte_resource.configured(
                 {
