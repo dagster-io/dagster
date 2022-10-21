@@ -181,6 +181,12 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def __hash__(self):
         return hash(tuple(self.partitions_defs))
 
+    # def get_multi_dimensional_partition_keys(self) -> List[MultiPartitionKey]:
+    #     return [
+    #         MultiPartitionKey(partition.value)
+    #         for partition in self.get_partitions()
+    #     ]
+
 
 def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:
     check.inst_param(multi_partition_key, "multi_partition_key", MultiPartitionKey)

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union, Tuple
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -16,8 +16,13 @@ from dagster._core.host_representation import ExternalRepository, RepositoryLoca
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
+    ExternalMultiPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
+)
+from dagster_graphql.schema.partition_sets import (
+    GrapheneMultiDimensionalPartitionKey,
+    GraphenePartitionDimensionKeys,
 )
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
@@ -224,7 +229,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         # weird mypy bug causes mistyped _node_definition_snap
         return check.not_none(self._node_definition_snap)  # type: ignore
 
-    def get_partition_keys(self) -> Sequence[str]:
+    def get_partition_keys(self) -> Union[Sequence[str], Sequence[GraphenePartitionDimensionKeys]]:
         # TODO: Add functionality for dynamic partitions definition
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
@@ -234,6 +239,11 @@ class GrapheneAssetNode(graphene.ObjectType):
                 return [
                     partition.name
                     for partition in partitions_def_data.get_partitions_definition().get_partitions()
+                ]
+            if isinstance(partitions_def_data, ExternalMultiPartitionsDefinitionData):
+                return [
+                    GrapheneMultiDimensionalPartitionKey(partition)
+                    for partition in partitions_def_data.get_partitions_definition().get_multi_dimensional_partition_keys()
                 ]
         return []
 

@@ -1,3 +1,4 @@
+from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
 import graphene
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
@@ -277,6 +278,24 @@ class GraphenePartitionSetsOrError(graphene.Union):
     class Meta:
         types = (GraphenePartitionSets, GraphenePipelineNotFoundError, GraphenePythonError)
         name = "PartitionSetsOrError"
+
+
+class GraphenePartitionDimensionKey(graphene.ObjectType):
+    dimension_name = graphene.NonNull(graphene.String)
+    partition_key = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "PartitionDimensionKey"
+
+
+class GrapheneMultiDimensionalPartitionKey(graphene.ObjectType):
+    dimension_keys = non_null_list(GraphenePartitionDimensionKey)
+
+    class Meta:
+        name = "PartitionDimensionKeys"
+
+    def __init__(self, multi_dim_partition_key: MultiDimensionalPartitionKey):
+        self.dimension_keys = multi_dim_partition_key.dimension_keys
 
 
 types = [
