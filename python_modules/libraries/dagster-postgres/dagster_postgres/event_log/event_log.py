@@ -3,7 +3,6 @@ from typing import Optional
 import sqlalchemy as db
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
@@ -15,7 +14,6 @@ from dagster._core.storage.event_log import (
 )
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster._core.storage.event_log.schema import AssetEventTagsTable
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -175,7 +173,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def store_asset_event(self, event: EventLogEntry):
         check.inst_param(event, "event", EventLogEntry)
-        if not event.is_dagster_event or not event.dagster_event.asset_key:
+        if not (event.dagster_event and event.dagster_event.asset_key):
             return
 
         # We switched to storing the entire event record of the last materialization instead of just

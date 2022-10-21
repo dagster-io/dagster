@@ -2,6 +2,7 @@ import base64
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
+    AbstractSet,
     Callable,
     Iterable,
     List,
@@ -304,11 +305,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def get_asset_event_tags(self) -> List[Tuple[str, Set[str]]]:
-        """Get a list of tag keys and the values that have been associated with them.
+    def get_asset_event_tags(self, asset_key: AssetKey) -> Sequence[Tuple[str, AbstractSet[str]]]:
+        """Get a list of tag keys and the values that have been associated with them for a specific
+        asset key.
 
         Returns:
-            List[Tuple[str, Set[str]]]
+            Sequence[Tuple[str, AbstractSet[str]]]
         """
 
     @abstractmethod

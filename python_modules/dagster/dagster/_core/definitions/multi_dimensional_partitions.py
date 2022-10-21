@@ -6,22 +6,18 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import deserialize_as, serialize_dagster_namedtuple
+from typing import List, Mapping, NamedTuple
+
+import dagster._check as check
 
 from .partition import Partition, PartitionsDefinition
 
 
-@whitelist_for_serdes
 class PartitionDimensionKey(
-    NamedTuple(
-        "_PartitionDimensionKey",
-        [
-            ("dimension_name", str),
-            ("partition_key", str),
-        ],
-    )
+    NamedTuple("_PartitionDimensionKey", [("dimension_name", str), ("partition_key", str)])
 ):
     """
-    Serializable representation of a single dimension of a multi-dimensional partition key.
+    Representation of a single dimension of a multi-dimensional partition key.
     """
 
     def __new__(cls, dimension_name: str, partition_key: str):
@@ -32,77 +28,62 @@ class PartitionDimensionKey(
         )
 
 
-@whitelist_for_serdes
-class MultiDimensionalPartitionKey(
-    NamedTuple("_MultiDimensionalPartitionKey", [("dimension_keys", List[PartitionDimensionKey])])
-):
+class MultiPartitionKey(str):
     """
-    Serializable representation of a multi-dimensional partition key.
-    This object is stored as the partition key for asset materialization events.
-    Dimension keys are ordered by dimension name, to ensure equivalence regardless
-    of user-provided ordering.
+    A multi-dimensional partition key stores the partition key for each dimension.
+    Subclasses the string class to keep partition key type as a string.
+
+    Contains additional methods to access the partition key for each dimension.
+    Creates a string representation of the partition key for each dimension, separated by a pipe (|).
+    Orders the dimensions by name, to ensure consistent string representation.
     """
 
-    def __new__(cls, dimension_keys: Sequence[PartitionDimensionKey]):
-        dimension_keys = check.sequence_param(
-            dimension_keys, "dimension_keys", of_type=PartitionDimensionKey
-        )
-        sorted_keys = list(sorted(dimension_keys, key=lambda key: key.dimension_name))
-        return super(MultiDimensionalPartitionKey, cls).__new__(
-            cls,
-            dimension_keys=sorted_keys,
+    dimension_keys: List[PartitionDimensionKey] = []
+
+    def __new__(cls, partition_dimension_mapping: Mapping[str, str]):
+        check.mapping_param(
+            partition_dimension_mapping, "partitions_by_dimension", key_type=str, value_type=str
         )
 
-    def __hash__(self):
-        return hash(tuple(self.dimension_keys))
+        dimension_keys: List[PartitionDimensionKey] = [
+            PartitionDimensionKey(dimension, partition_dimension_mapping[dimension])
+            for dimension in sorted(list(partition_dimension_mapping.keys()))
+        ]
 
-    @staticmethod
-    def from_partition_dimension_mapping(
-        partition_dimension_mapping: Mapping[str, str],
-    ) -> "MultiDimensionalPartitionKey":
-        return MultiDimensionalPartitionKey(
-            dimension_keys=[
-                PartitionDimensionKey(dimension_name, partition_key)
-                for dimension_name, partition_key in partition_dimension_mapping.items()
-            ]
+        str_key = super(MultiPartitionKey, cls).__new__(
+            cls, "|".join([dim_key.partition_key for dim_key in dimension_keys])
         )
 
-    def to_db_string(self):
-        return serialize_dagster_namedtuple(self)
+        str_key.dimension_keys = dimension_keys
+
+        return str_key
+
+    def keys_by_dimension(self):
+        return {dim_key.dimension_name: dim_key.partition_key for dim_key in self.dimension_keys}
 
 
-def deserialize_partition_from_db_string(
-    partition: Optional[str],
-) -> Optional[Union[str, MultiDimensionalPartitionKey]]:
-    if partition is None:
-        return None
-    if partition.startswith("["):
-        return deserialize_as(partition, MultiDimensionalPartitionKey)
-    return partition
+# class MultiDimensionalPartition(Partition):
+#     def __init__(self, value: Mapping[str, Partition], name: Optional[str] = None):
+#         self._value = check.mapping_param(value, "value", key_type=str, value_type=Partition)
+#         self._name = cast(str, check.opt_str_param(name, "name", str(value)))
 
+#     @property
+#     def value(self) -> Mapping[str, Partition]:
+#         return self._value
 
-class MultiDimensionalPartition(Partition):
-    def __init__(self, value: Mapping[str, Partition], name: Optional[str] = None):
-        self._value = check.mapping_param(value, "value", key_type=str, value_type=Partition)
-        self._name = cast(str, check.opt_str_param(name, "name", str(value)))
+#     @property
+#     def name(self) -> str:
+#         return self._name
 
-    @property
-    def value(self) -> Mapping[str, Partition]:
-        return self._value
+#     def __eq__(self, other) -> bool:
+#         return (
+#             isinstance(other, MultiDimensionalPartition)
+#             and self.value == other.value
+#             and self.name == other.name
+#         )
 
-    @property
-    def name(self) -> str:
-        return self._name
-
-    def __eq__(self, other) -> bool:
-        return (
-            isinstance(other, MultiDimensionalPartition)
-            and self.value == other.value
-            and self.name == other.name
-        )
-
-    def partitions_by_dimension(self) -> Mapping[str, Partition]:
-        return self.value
+#     def partitions_by_dimension(self) -> Mapping[str, Partition]:
+#         return self.value
 
 
 class PartitionDimensionDefinition(
@@ -169,7 +150,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
                 for i in range(len(partitions_tuple))
             }
 
-            return MultiDimensionalPartition(
+            return Partition(
                 value=partitions_by_dimension,
                 name=self.get_partition_key(
                     {
@@ -194,43 +175,25 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         return hash(tuple(self.partitions_defs))
 
     def get_partition_key(
-        self, partition_key_by_dimension: Union[Mapping[str, str], MultiDimensionalPartitionKey]
-    ) -> str:
-        if isinstance(partition_key_by_dimension, Mapping):
-            check.mapping_param(
-                partition_key_by_dimension,
-                "partition_key_by_dimension",
-                key_type=str,
-                value_type=str,
-            )
-            partition_dim_names = set(
-                [partition_dim.name for partition_dim in self._partitions_defs]
-            )
-            if set(partition_key_by_dimension.keys()) != partition_dim_names:
-                extra_keys = set(partition_key_by_dimension.keys()) - partition_dim_names
-                missing_keys = partition_dim_names - set(partition_key_by_dimension.keys())
-
-                raise DagsterInvalidInvocationError(
-                    "Invalid partition dimension keys provided. All provided keys must be defined as "
-                    f"partition dimensions. Valid keys are {partition_dim_names}. "
-                    "You provided: \n"
-                    f"{f'Extra keys: {extra_keys}.' if extra_keys else ''}"
-                    f"{f'Missing keys {missing_keys}.' if missing_keys else ''}"
-                )
-
-            partition_key_by_dimension = (
-                MultiDimensionalPartitionKey.from_partition_dimension_mapping(
-                    partition_key_by_dimension
-                )
-            )
-
-        else:
-            check.inst_param(
-                partition_key_by_dimension,
-                "partition_key_by_dimension",
-                MultiDimensionalPartitionKey,
-            )
-
-        return "|".join(
-            [dim_key.partition_key for dim_key in partition_key_by_dimension.dimension_keys]
+        self, partition_key_by_dimension: Mapping[str, str]
+    ) -> MultiPartitionsKey:
+        check.mapping_param(
+            partition_key_by_dimension,
+            "partition_key_by_dimension",
+            key_type=str,
+            value_type=str,
         )
+        partition_dim_names = set([partition_dim.name for partition_dim in self._partitions_defs])
+        if set(partition_key_by_dimension.keys()) != partition_dim_names:
+            extra_keys = set(partition_key_by_dimension.keys()) - partition_dim_names
+            missing_keys = partition_dim_names - set(partition_key_by_dimension.keys())
+
+            raise DagsterInvalidInvocationError(
+                "Invalid partition dimension keys provided. All provided keys must be defined as "
+                f"partition dimensions. Valid keys are {partition_dim_names}. "
+                "You provided: \n"
+                f"{f'Extra keys: {extra_keys}.' if extra_keys else ''}"
+                f"{f'Missing keys {missing_keys}.' if missing_keys else ''}"
+            )
+
+        return MultiPartitionKey(partition_key_by_dimension)
