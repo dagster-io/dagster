@@ -47,7 +47,7 @@ except DagsterGraphQLClientError as exc:
 from dagster_graphql import DagsterGraphQLClientError
 
 try:
-    new_run_id: str = client.submit_job_execution(
+    new_run_id: str = client.submit_job_execution(  # type: ignore[no-redef]
         JOB_NAME,
         run_config={},
     )

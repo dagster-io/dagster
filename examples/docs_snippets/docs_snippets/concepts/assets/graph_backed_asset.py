@@ -84,7 +84,7 @@ def middle_asset(upstream_asset):
     return add_one(upstream_asset)
 
 
-middle_asset = AssetsDefinition.from_graph(middle_asset)
+middle_asset = AssetsDefinition.from_graph(middle_asset)  # type: ignore[assignment]
 
 
 @asset
@@ -96,7 +96,7 @@ def downstream_asset(middle_asset):
 
 basic_deps_job = define_asset_job(
     "basic_deps_job",
-    AssetSelection.assets(upstream_asset, middle_asset, downstream_asset),
+    AssetSelection.assets(upstream_asset, middle_asset, downstream_asset),  # type: ignore[arg-type]
 )
 
 

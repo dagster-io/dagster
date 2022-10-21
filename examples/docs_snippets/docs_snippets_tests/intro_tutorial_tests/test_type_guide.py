@@ -93,7 +93,7 @@ def test_python_object_dagster_type():
     def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
         # These type annotations are a shorthand for constructing InputDefinitions
         # and OutputDefinitions, and are not mypy compliant
-        return EvenType(even_num.num * 2)
+        return EvenType(even_num.num * 2)  # type: ignore[attr-defined]
 
     # end_use_object_type
 
@@ -118,7 +118,7 @@ def test_even_type_loader():
 
     @solid
     def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
-        return EvenType(even_num.num * 2)
+        return EvenType(even_num.num * 2)  # type: ignore[attr-defined]
 
     # start_via_config
     yaml_doc = """
@@ -164,7 +164,7 @@ def test_even_type_materialization_config():
 
     @solid
     def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
-        return EvenType(even_num.num * 2)
+        return EvenType(even_num.num * 2)  # type: ignore[attr-defined]
 
     with safe_tempfile_path() as path:
         yaml_doc = """
@@ -196,7 +196,7 @@ def test_mypy_compliance():
 
     @solid
     def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
-        return EvenType(even_num.num * 2)
+        return EvenType(even_num.num * 2)  # type: ignore[attr-defined]
 
     # end_mypy
     assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success

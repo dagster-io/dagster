@@ -246,7 +246,7 @@ def send_slack_alert():
 # start_cross_repo_run_status_sensor
 
 
-@run_status_sensor(
+@run_status_sensor(  # type: ignore[arg-type]
     monitored_jobs=[
         RepositorySelector(
             location_name="repository.location", repository_name="team_a_repository"
@@ -259,7 +259,7 @@ def team_a_repo_sensor():
     send_slack_alert()
 
 
-@run_failure_sensor(
+@run_failure_sensor(  # type: ignore[arg-type]
     monitored_jobs=[
         JobSelector(
             location_name="repository.location",
@@ -277,7 +277,7 @@ def team_a_data_update_failure_sensor():
 
 
 # start_instance_sensor
-@run_status_sensor(
+@run_status_sensor(  # type: ignore[arg-type]
     monitor_all_repositories=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
