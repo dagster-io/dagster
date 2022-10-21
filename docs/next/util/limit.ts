@@ -50,11 +50,11 @@ export const limitSnippetLines = (content, fromTo, dedent, startAfter, endBefore
   }
 
   const dedentedElements = elements.map((x) => x.substring(dedentLevel));
-  const filteredElements = dedentedElements.map((x) =>
+  const mypyStrippedElements = dedentedElements.map((x) =>
     x.includes(MYPY_IGNORE) ? x.substring(0, x.indexOf(MYPY_IGNORE)).trimEnd() : x,
   );
 
-  let result = filteredElements;
+  let result = mypyStrippedElements;
   if (fromTo) {
     const desiredLineNumbers = parseLineNumbersToSet(fromTo, dedentedElements.length);
     result = result.filter((_, i) => desiredLineNumbers.has(i));
