@@ -4,6 +4,8 @@ from dagster_fivetran.types import FivetranOutput
 
 import dagster._check as check
 from dagster import AssetMaterialization, MetadataValue
+from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 
 
 def get_fivetran_connector_url(connector_details: Dict[str, Any]) -> str:
@@ -16,6 +18,24 @@ def get_fivetran_logs_url(connector_details: Dict[str, Any]) -> str:
     return f"{get_fivetran_connector_url(connector_details)}/logs"
 
 
+def metadata_for_table(
+    table_data: Dict[str, Any], connector_url: str, include_column_info: bool = False
+) -> Dict[str, MetadataUserInput]:
+    metadata: Dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
+    if table_data.get("columns"):
+        columns = check.dict_elem(table_data, "columns")
+
+        table_columns = sorted(
+            [TableColumn(name=col["name_in_destination"], type="any") for col in columns.values()],
+            key=lambda col: col.name,
+        )
+        metadata["table_schema"] = MetadataValue.table_schema(TableSchema(table_columns))
+        if include_column_info:
+            metadata["column_info"] = MetadataValue.json(columns)
+
+    return metadata
+
+
 def _table_data_to_materialization(
     fivetran_output: FivetranOutput,
     asset_key_prefix: List[str],
@@ -26,17 +46,15 @@ def _table_data_to_materialization(
     asset_key = asset_key_prefix + [schema_name, table_name]
     if not table_data["enabled"]:
         return None
-    metadata: Dict[str, MetadataValue] = {
-        "connector_url": MetadataValue.url(
-            get_fivetran_connector_url(fivetran_output.connector_details)
-        )
-    }
-    if table_data.get("columns"):
-        metadata["column_info"] = MetadataValue.json(check.dict_elem(table_data, "columns"))
+
     return AssetMaterialization(
         asset_key=asset_key,
         description=f"Table generated via Fivetran sync: {schema_name}.{table_name}",
-        metadata=metadata,
+        metadata=metadata_for_table(
+            table_data,
+            get_fivetran_connector_url(fivetran_output.connector_details),
+            include_column_info=True,
+        ),
     )
 
 

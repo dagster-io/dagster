@@ -1,12 +1,38 @@
-from typing import List, Optional
+import hashlib
+import inspect
+import re
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+)
 
-from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
-from dagster_fivetran.utils import generate_materializations
+from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
+from dagster_fivetran.utils import (
+    generate_materializations,
+    get_fivetran_connector_url,
+    metadata_for_table,
+)
 
 from dagster import AssetKey, AssetOut, AssetsDefinition, Output
 from dagster import _check as check
 from dagster import multi_asset
 from dagster._annotations import experimental
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
+from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.load_assets_from_modules import with_group
+from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.execution.context.init import build_init_resource_context
+from dagster._core.execution.with_resources import with_resources
 
 
 @experimental
@@ -17,6 +43,7 @@ def build_fivetran_assets(
     poll_timeout: Optional[float] = None,
     io_manager_key: Optional[str] = None,
     asset_key_prefix: Optional[List[str]] = None,
+    metadata_by_table_name: Optional[Dict[str, MetadataUserInput]] = None,
 ) -> List[AssetsDefinition]:
 
     """
@@ -73,14 +100,16 @@ def build_fivetran_assets(
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     tracked_asset_keys = {
-        AssetKey(asset_key_prefix + table.split(".")) for table in destination_tables
+        table: AssetKey(asset_key_prefix + table.split(".")) for table in destination_tables
     }
 
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
         outs={
-            "_".join(key.path): AssetOut(io_manager_key=io_manager_key, key=key)
-            for key in tracked_asset_keys
+            "_".join(key.path): AssetOut(
+                io_manager_key=io_manager_key, key=key, metadata=metadata_by_table_name[table]
+            )
+            for table, key in tracked_asset_keys.items()
         },
         required_resource_keys={"fivetran"},
         compute_kind="fivetran",
@@ -96,7 +125,7 @@ def build_fivetran_assets(
         ):
             # scan through all tables actually created, if it was expected then emit an Output.
             # otherwise, emit a runtime AssetMaterialization
-            if materialization.asset_key in tracked_asset_keys:
+            if materialization.asset_key in tracked_asset_keys.values():
                 yield Output(
                     value=None,
                     output_name="_".join(materialization.asset_key.path),
@@ -108,3 +137,178 @@ def build_fivetran_assets(
                 yield materialization
 
     return [_assets]
+
+
+class FivetranConnectionMetadata(
+    NamedTuple(
+        "_FivetranConnectionMetadata",
+        [
+            ("name", str),
+            ("connector_id", str),
+            ("connector_url", str),
+            ("schemas", List[Dict[str, Any]]),
+        ],
+    )
+):
+    def build_asset_defn_metadata(
+        self,
+        key_prefix: List[str],
+        group_name: Optional[str],
+    ) -> AssetsDefinitionCacheableData:
+
+        schema_tables: Dict[str, Dict[str, Any]] = {}
+        if "schemas" in self.schemas:
+            for schema in self.schemas["schemas"].values():
+                schema_name = schema["name_in_destination"]
+                for table in schema["tables"].values():
+                    if table["enabled"]:
+                        table_name = table["name_in_destination"]
+                        schema_tables[f"{schema_name}.{table_name}"] = metadata_for_table(
+                            table, self.connector_url
+                        )
+        else:
+            schema_tables[self.name] = {}
+
+        outputs = {table: AssetKey(key_prefix + [table]) for table in schema_tables.keys()}
+
+        internal_deps: Dict[str, Set[AssetKey]] = {}
+
+        return AssetsDefinitionCacheableData(
+            keys_by_input_name={},
+            keys_by_output_name=outputs,
+            internal_asset_deps=internal_deps,
+            group_name=group_name,
+            key_prefix=key_prefix,
+            can_subset=False,
+            metadata_by_output_name=schema_tables,
+            extra_metadata={
+                "connector_id": self.connector_id,
+            },
+        )
+
+
+def _build_fivetran_assets_from_metadata(
+    assets_defn_meta: AssetsDefinitionCacheableData,
+) -> AssetsDefinition:
+    connector_id = assets_defn_meta.extra_metadata["connector_id"]
+
+    return with_group(
+        build_fivetran_assets(
+            connector_id=connector_id,
+            destination_tables=list(assets_defn_meta.keys_by_output_name.keys()),
+            asset_key_prefix=assets_defn_meta.key_prefix,
+            metadata_by_table_name=assets_defn_meta.metadata_by_output_name,
+        ),
+        assets_defn_meta.group_name,
+    )[0]
+
+
+class FivetranInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
+    def __init__(
+        self,
+        fivetran_resource_def: ResourceDefinition,
+        key_prefix: List[str],
+        connector_to_group_fn: Optional[Callable[[str], Optional[str]]],
+        connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
+    ):
+
+        self._fivetran_resource_def = fivetran_resource_def
+        self._fivetran_instance: FivetranResource = fivetran_resource_def(
+            build_init_resource_context()
+        )
+
+        self._key_prefix = key_prefix
+        self._connector_to_group_fn = connector_to_group_fn
+        self._connection_filter = connector_filter
+
+        contents = hashlib.sha1()
+        contents.update(",".join(key_prefix).encode("utf-8"))
+        if connector_filter:
+            contents.update(inspect.getsource(connector_filter).encode("utf-8"))
+
+        super().__init__(unique_id=f"fivetran-{contents.hexdigest()}")
+
+    def _get_connectors(self) -> List[FivetranConnectionMetadata]:
+        output_connectors: List[FivetranConnectionMetadata] = []
+
+        groups = self._fivetran_instance.make_request("GET", "groups")["items"]
+
+        for group in groups:
+            group_id = group["id"]
+
+            connectors = self._fivetran_instance.make_request(
+                "GET", f"groups/{group_id}/connectors"
+            )["items"]
+            for connector in connectors:
+                connector_id = connector["id"]
+
+                connector_name = connector["schema"]
+                connector_url = get_fivetran_connector_url(connector)
+
+                schemas = self._fivetran_instance.make_request(
+                    "GET", f"connectors/{connector_id}/schemas"
+                )
+
+                output_connectors.append(
+                    FivetranConnectionMetadata(
+                        name=connector_name,
+                        connector_id=connector_id,
+                        connector_url=connector_url,
+                        schemas=schemas,
+                    )
+                )
+
+        return output_connectors
+
+    def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
+
+        asset_defn_data: List[AssetsDefinitionCacheableData] = []
+        for connector in self._get_connectors():
+
+            if not self._connection_filter or self._connection_filter(connector):
+
+                asset_defn_data.append(
+                    connector.build_asset_defn_metadata(
+                        self._key_prefix,
+                        self._connector_to_group_fn(connector.name)
+                        if self._connector_to_group_fn
+                        else None,
+                    )
+                )
+
+        return asset_defn_data
+
+    def build_definitions(
+        self, data: Sequence[AssetsDefinitionCacheableData]
+    ) -> Sequence[AssetsDefinition]:
+        return with_resources(
+            [_build_fivetran_assets_from_metadata(meta) for meta in data],
+            {"fivetran": self._fivetran_resource_def},
+        )
+
+
+def _clean_name(name: str) -> str:
+    """
+    Cleans an input to be a valid Dagster asset name.
+    """
+    return re.sub(r"[^a-z0-9]+", "_", name.lower())
+
+
+@experimental
+def load_assets_from_fivetran_instance(
+    fivetran: ResourceDefinition,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    connector_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]] = None,
+) -> CacheableAssetsDefinition:
+
+    if isinstance(key_prefix, str):
+        key_prefix = [key_prefix]
+    key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
+
+    return FivetranInstanceCacheableAssetsDefintion(
+        fivetran,
+        key_prefix,
+        connector_to_group_fn,
+        connector_filter,
+    )

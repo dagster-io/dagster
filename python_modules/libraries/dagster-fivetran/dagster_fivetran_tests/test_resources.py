@@ -30,7 +30,7 @@ def test_get_connector_details():
     with responses.RequestsMock() as rsps:
         rsps.add(
             rsps.GET,
-            f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}",
+            f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
             json=get_sample_connector_response(),
         )
         assert (
@@ -59,12 +59,12 @@ def test_get_connector_details_flake(max_retries, n_flakes):
             for _ in range(n_flakes):
                 rsps.add(
                     rsps.GET,
-                    f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}",
+                    f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
                     status=500,
                 )
             rsps.add(
                 rsps.GET,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
                 json=get_sample_connector_response(),
             )
             return ft_resource.get_connector_details(DEFAULT_CONNECTOR_ID)
@@ -127,7 +127,7 @@ def test_get_connector_sync_status(data, expected):
     with responses.RequestsMock() as rsps:
         rsps.add(
             rsps.GET,
-            f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}",
+            f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
             json=get_sample_connector_response(data=data),
         )
         assert ft_resource.get_connector_sync_status(DEFAULT_CONNECTOR_ID) == expected
@@ -147,7 +147,7 @@ def test_sync_and_poll(n_polls, succeed_at_end):
             }
         )
     )
-    api_prefix = f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}"
+    api_prefix = f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}"
 
     final_data = (
         {"succeeded_at": "2021-01-01T02:00:00.0Z"}
@@ -160,7 +160,7 @@ def test_sync_and_poll(n_polls, succeed_at_end):
         with responses.RequestsMock() as rsps:
             rsps.add(
                 rsps.GET,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
                 json=get_complex_sample_connector_schema_config(),
             )
             rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
@@ -199,22 +199,22 @@ def test_sync_and_poll_timeout():
         with responses.RequestsMock() as rsps:
             rsps.add(
                 rsps.GET,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
                 json=get_complex_sample_connector_schema_config(),
             )
             rsps.add(
                 rsps.GET,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
                 json=get_sample_connector_response(),
             )
             rsps.add(
                 rsps.PATCH,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
                 json=get_sample_update_response(),
             )
             rsps.add(
                 rsps.POST,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/force",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/force",
                 json=get_sample_sync_response(),
             )
             ft_resource.sync_and_poll(DEFAULT_CONNECTOR_ID, poll_interval=1, poll_timeout=2)
@@ -242,22 +242,22 @@ def test_sync_and_poll_invalid(data, match):
         with responses.RequestsMock() as rsps:
             rsps.add(
                 rsps.GET,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
                 json=get_complex_sample_connector_schema_config(),
             )
             rsps.add(
                 rsps.GET,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
                 json=get_sample_connector_response(data=data),
             )
             rsps.add(
                 rsps.PATCH,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}",
                 json=get_sample_update_response(),
             )
             rsps.add(
                 rsps.POST,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/force",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/force",
                 json=get_sample_sync_response(),
             )
             ft_resource.sync_and_poll(DEFAULT_CONNECTOR_ID, poll_interval=0.1)
@@ -277,7 +277,7 @@ def test_resync_and_poll(n_polls, succeed_at_end):
             }
         )
     )
-    api_prefix = f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}"
+    api_prefix = f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}"
 
     final_data = (
         {"succeeded_at": "2021-01-01T02:00:00.0Z"}
@@ -290,7 +290,7 @@ def test_resync_and_poll(n_polls, succeed_at_end):
         with responses.RequestsMock() as rsps:
             rsps.add(
                 rsps.GET,
-                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
+                f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas",
                 json=get_complex_sample_connector_schema_config(),
             )
             rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
