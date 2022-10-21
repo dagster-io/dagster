@@ -31,7 +31,7 @@ class TablePartition(NamedTuple):
 class TableSlice(NamedTuple):
     table: str
     schema: str
-    database: str
+    database: Optional[str] = None
     columns: Optional[Sequence[str]] = None
     partition: Optional[TablePartition] = None
 
@@ -66,19 +66,24 @@ class DbClient:
 
 
 class DbIOManager(IOManager):
-    def __init__(self, type_handlers: Sequence[DbTypeHandler], db_client: DbClient):
+    def __init__(
+        self,
+        type_handlers: Sequence[DbTypeHandler],
+        db_client: DbClient,
+        io_manager_name: str = "DbIOManager",
+    ):
         self._handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
         for type_handler in type_handlers:
             for handled_type in type_handler.supported_types:
                 check.invariant(
                     handled_type not in self._handlers_by_type,
-                    "DbIOManager provided with two handlers for the same type. "
+                    f"{io_manager_name} provided with two handlers for the same type. "
                     f"Type: '{handled_type}'. Handler classes: '{type(type_handler)}' and "
                     f"'{type(self._handlers_by_type.get(handled_type))}'.",
                 )
 
                 self._handlers_by_type[handled_type] = type_handler
-
+        self._io_manager_name = io_manager_name
         self._db_client = db_client
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
@@ -88,7 +93,7 @@ class DbIOManager(IOManager):
             obj_type = type(obj)
             check.invariant(
                 obj_type in self._handlers_by_type,
-                f"DbIOManager does not have a handler for type '{obj_type}'. Has handlers "
+                f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has handlers "
                 f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
             )
 
@@ -113,7 +118,7 @@ class DbIOManager(IOManager):
         obj_type = context.dagster_type.typing_type
         check.invariant(
             obj_type in self._handlers_by_type,
-            f"DbIOManager does not have a handler for type '{obj_type}'. Has handlers "
+            f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has handlers "
             f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
         )
         return self._handlers_by_type[obj_type].load_input(
@@ -189,7 +194,7 @@ class DbIOManager(IOManager):
         return TableSlice(
             table=table,
             schema=schema,
-            database=cast(Mapping[str, str], context.resource_config)["database"],
+            database=cast(Mapping[str, str], context.resource_config).get("database"),
             partition=partition,
             columns=(context.metadata or {}).get("columns"),  # type: ignore  # (mypy bug)
         )

@@ -5,15 +5,15 @@ import pytest
 from pendulum import datetime
 
 from dagster import AssetKey, InputContext, OutputContext, build_output_context
-from dagster._core.db_io_manager import (
+from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
     TablePartition,
     TableSlice,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import resolve_dagster_type
 
 resource_config = {
