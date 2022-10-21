@@ -80,6 +80,16 @@ export const AssetOverview: React.FC<Props> = ({
 
   return (
     <>
+      <FailedRunsSinceMaterializationBanner
+        liveData={liveData}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      />
+
+      <CurrentRunsBanner
+        liveData={liveData}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      />
+
       <Box
         flex={{justifyContent: 'space-between', alignItems: 'center'}}
         border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
@@ -109,10 +119,6 @@ export const AssetOverview: React.FC<Props> = ({
 
       <Box style={{flex: 1, minHeight: 0}} flex={{direction: 'row'}}>
         <Box style={{display: 'flex', flex: 1}} flex={{direction: 'column'}}>
-          <FailedRunsSinceMaterializationBanner liveData={liveData} />
-
-          <CurrentRunsBanner liveData={liveData} />
-
           {loading ? (
             <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
               <Spinner purpose="section" />
