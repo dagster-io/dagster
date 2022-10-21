@@ -16,12 +16,6 @@ from dagster_buildkite.utils import BuildkiteStep, is_feature_branch, is_release
 
 _DAGIT_PATHS = ("js_modules/dagit",)
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=os.getenv("LOGLEVEL", "INFO"),
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
 
 def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
 

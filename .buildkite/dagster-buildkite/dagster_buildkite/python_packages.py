@@ -8,12 +8,6 @@ import pathspec
 from dagster_buildkite.git import ChangedFiles
 from pkg_resources import Requirement, parse_requirements
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=os.getenv("LOGLEVEL", "INFO"),
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
 
 class PythonPackage:
     def __init__(self, setup_py_path: Path):

@@ -4,12 +4,6 @@ import subprocess
 from pathlib import Path
 from typing import Set
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=os.getenv("LOGLEVEL", "INFO"),
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
 
 def get_commit(rev):
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
