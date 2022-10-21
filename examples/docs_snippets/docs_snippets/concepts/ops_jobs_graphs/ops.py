@@ -16,7 +16,7 @@ class MockRequest:
         return MockResponse()
 
 
-requests = MockRequest()
+requests = MockRequest()  # type: ignore[assignment]
 
 # start_op_marker
 
