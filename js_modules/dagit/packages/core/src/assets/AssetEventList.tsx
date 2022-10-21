@@ -99,7 +99,7 @@ const AssetEventListPartitionRow: React.FC<{group: AssetEventGroup}> = ({group})
         {!latest ? <Tag intent="none">Missing</Tag> : <Tag intent="success">Materialized</Tag>}
       </Box>
 
-      <Caption color={Colors.Gray600}>
+      <Caption color={Colors.Gray600} style={{userSelect: 'none'}}>
         {timestamp ? (
           <span>
             Materialized <Timestamp timestamp={{ms: Number(timestamp)}} />

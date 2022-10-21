@@ -39,6 +39,7 @@ import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetOverview} from './AssetOverview';
 import {AssetPageHeader} from './AssetPageHeader';
+import {AssetPlots} from './AssetPlots';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
@@ -48,7 +49,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'activity' | 'definition' | 'lineage' | 'overview';
+  view?: 'activity' | 'definition' | 'lineage' | 'overview' | 'plots';
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
   partition?: string;
@@ -180,6 +181,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               onClick={() => setParams({...params, view: 'lineage'})}
               disabled={!definition}
             />
+            {flagNewAssetDetails && (
+              <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
+            )}
           </Tabs>
         }
         right={
@@ -256,6 +260,13 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             paramsTimeWindowOnly={!!params.asOf}
             setParams={setParams}
             liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+          />
+        ) : params.view === 'plots' ? (
+          <AssetPlots
+            assetKey={assetKey}
+            assetHasDefinedPartitions={!!definition?.partitionDefinition}
+            params={params}
+            setParams={setParams}
           />
         ) : (
           <AssetEvents
