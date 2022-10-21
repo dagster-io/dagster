@@ -22,13 +22,9 @@ def scope_load_assets_from_airbyte_instance():
         {
             "host": "localhost",
             "port": "8000",
-            # If using basic auth
-            "request_additional_params": {
-                "auth": (
-                    "airbyte",
-                    os.getenv("AIRBYTE_PASSWORD"),
-                )
-            },
+            # If using basic auth, include username and password:
+            "username": "airbyte",
+            "password": {"env": "AIRBYTE_PASSWORD"},
         }
     )
     airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
@@ -48,13 +44,9 @@ def scope_airbyte_project_config():
                 {
                     "host": "localhost",
                     "port": "8000",
-                    # If using basic auth
-                    "request_additional_params": {
-                        "auth": (
-                            "airbyte",
-                            os.getenv("AIRBYTE_PASSWORD"),
-                        )
-                    },
+                    # If using basic auth, include username and password:
+                    "username": "airbyte",
+                    "password": {"env": "AIRBYTE_PASSWORD"},
                 }
             )
         },
@@ -89,13 +81,9 @@ def scope_airbyte_manual_config():
                 {
                     "host": "localhost",
                     "port": "8000",
-                    # If using basic auth
-                    "request_additional_params": {
-                        "auth": (
-                            "airbyte",
-                            os.getenv("AIRBYTE_PASSWORD"),
-                        )
-                    },
+                    # If using basic auth, include username and password:
+                    "username": "airbyte",
+                    "password": {"env": "AIRBYTE_PASSWORD"},
                 }
             )
         },
