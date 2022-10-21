@@ -1,11 +1,8 @@
-from typing import List, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import List, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import deserialize_as, serialize_dagster_namedtuple
 
 
-@whitelist_for_serdes
 class PartitionDimensionKey(
     NamedTuple(
         "_PartitionDimensionKey",
@@ -16,7 +13,7 @@ class PartitionDimensionKey(
     )
 ):
     """
-    Serializable representation of a single dimension of a multi-dimensional partition key.
+    Representation of a single dimension of a multi-dimensional partition key.
     """
 
     def __new__(cls, dimension_name: str, partition_key: str):
@@ -27,50 +24,35 @@ class PartitionDimensionKey(
         )
 
 
-@whitelist_for_serdes
-class MultiDimensionalPartitionKey(
-    NamedTuple("_MultiDimensionalPartitionKey", [("dimension_keys", List[PartitionDimensionKey])])
-):
+class MultiDimensionalPartitionKey(str):
     """
-    Serializable representation of a multi-dimensional partition key.
-    This object is stored as the partition key for asset materialization events.
-    Dimension keys are ordered by dimension name, to ensure equivalence regardless
-    of user-provided ordering.
+    A multi-dimensional partition key stores the partition key for each dimension.
+    Subclasses the string class to keep partition key type as a string.
+
+    Contains additional methods to access the partition key for each dimension.
+    Creates a string representation of the partition key for each dimension, separated by a pipe (|).
+    Orders the dimensions by name, to ensure consistent string representation.
     """
 
-    def __new__(cls, dimension_keys: Sequence[PartitionDimensionKey]):
-        dimension_keys = check.sequence_param(
-            dimension_keys, "dimension_keys", of_type=PartitionDimensionKey
-        )
-        sorted_keys = list(sorted(dimension_keys, key=lambda key: key.dimension_name))
-        return super(MultiDimensionalPartitionKey, cls).__new__(
-            cls,
-            dimension_keys=sorted_keys,
+    dimension_keys: List[PartitionDimensionKey] = []
+
+    def __new__(cls, partition_dimension_mapping: Mapping[str, str]):
+        check.mapping_param(
+            partition_dimension_mapping, "partitions_by_dimension", key_type=str, value_type=str
         )
 
-    def __hash__(self):
-        return hash(tuple(self.dimension_keys))
+        dimension_keys: List[PartitionDimensionKey] = [
+            PartitionDimensionKey(dimension, partition_dimension_mapping[dimension])
+            for dimension in sorted(list(partition_dimension_mapping.keys()))
+        ]
 
-    @staticmethod
-    def from_partition_dimension_mapping(
-        partition_dimension_mapping: Mapping[str, str],
-    ) -> "MultiDimensionalPartitionKey":
-        return MultiDimensionalPartitionKey(
-            dimension_keys=[
-                PartitionDimensionKey(dimension_name, partition_key)
-                for dimension_name, partition_key in partition_dimension_mapping.items()
-            ]
+        str_key = super(MultiDimensionalPartitionKey, cls).__new__(
+            cls, "|".join([dim_key.partition_key for dim_key in dimension_keys])
         )
 
-    def to_db_string(self):
-        return serialize_dagster_namedtuple(self)
+        str_key.dimension_keys = dimension_keys
 
+        return str_key
 
-def deserialize_partition_from_db_string(
-    partition: Optional[str],
-) -> Optional[Union[str, MultiDimensionalPartitionKey]]:
-    if partition is None:
-        return None
-    if partition.startswith("["):
-        return deserialize_as(partition, MultiDimensionalPartitionKey)
-    return partition
+    def keys_by_dimension(self):
+        return {dim_key.dimension_name: dim_key.partition_key for dim_key in self.dimension_keys}

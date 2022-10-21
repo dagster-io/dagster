@@ -21,7 +21,10 @@ from typing import (
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG, SYSTEM_TAG_PREFIX
+from dagster._core.storage.tags import (
+    MULTIDIMENSIONAL_PARTITION_PREFIX,
+    SYSTEM_TAG_PREFIX,
+)
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
@@ -464,13 +467,18 @@ class AssetMaterialization(
             metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
         )
 
-        serializable_partition: Optional[Union[str, MultiDimensionalPartitionKey]] = None
-        if isinstance(partition, MultiDimensionalPartitionKey):
-            serializable_partition = check.inst_param(
-                partition, "partition", MultiDimensionalPartitionKey
-            )
-        else:
-            serializable_partition = check.opt_str_param(partition, "partition")
+        partition = check.opt_str_param(partition, "partition")
+
+        if not isinstance(partition, MultiDimensionalPartitionKey):
+            # When event log records are unpacked from storage, cast the partition key as a
+            # MultiDimensionalPartitionKey if multi-dimensional partition tags exist
+            multi_dimensional_partitions = {
+                dimension[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]: partition_key
+                for dimension, partition_key in (tags or {}).items()
+                if dimension.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+            }
+            if multi_dimensional_partitions:
+                partition = MultiDimensionalPartitionKey(multi_dimensional_partitions)
 
         return super(AssetMaterialization, cls).__new__(
             cls,
@@ -478,7 +486,7 @@ class AssetMaterialization(
             description=check.opt_str_param(description, "description"),
             metadata_entries=normalize_metadata(metadata, metadata_entries),
             tags=tags,
-            partition=serializable_partition,
+            partition=partition,
         )
 
     @property

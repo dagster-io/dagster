@@ -100,10 +100,7 @@ class SqlEventLogStorage(EventLogStorage):
                 check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
                 asset_key_str = event.dagster_event.asset_key.to_string()
             if event.dagster_event.partition:
-                if isinstance(event.dagster_event.partition, MultiDimensionalPartitionKey):
-                    partition = event.dagster_event.partition.to_db_string()
-                else:
-                    partition = event.dagster_event.partition
+                partition = event.dagster_event.partition
 
         # https://stackoverflow.com/a/54386260/324449
         return SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
@@ -1323,12 +1320,6 @@ class SqlEventLogStorage(EventLogStorage):
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Mapping[str, int]]:
 
-        # TODO update method to handle multi-dimensional partition keys
-
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            deserialize_partition_from_db_string,
-        )
-
         check.list_param(asset_keys, "asset_keys", AssetKey)
 
         query = (
@@ -1369,9 +1360,9 @@ class SqlEventLogStorage(EventLogStorage):
         for row in results:
             asset_key = AssetKey.from_db_string(row[0])
 
-            partition = deserialize_partition_from_db_string(row[1])
+            partition = row[1]
 
-            if asset_key and partition and not isinstance(partition, MultiDimensionalPartitionKey):
+            if asset_key and partition:
                 materialization_count_by_partition[asset_key][partition] = row[2]
 
         return materialization_count_by_partition
