@@ -4,12 +4,13 @@ from pathlib import Path
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
 
 import pkg_resources
+from dagster_buildkite.git import ChangedFiles
 from dagster_buildkite.python_packages import PythonPackages
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
 from .steps.tox import build_tox_step
-from .utils import BuildkiteLeafStep, GroupStep, get_changed_files, is_feature_branch
+from .utils import BuildkiteLeafStep, GroupStep, is_feature_branch
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -294,7 +295,7 @@ class PackageSpec(
         if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
             return None
 
-        for change in get_changed_files():
+        for change in ChangedFiles.all:
             if (
                 # Our change is in this package's directory
                 (Path(self.directory) in change.parents)

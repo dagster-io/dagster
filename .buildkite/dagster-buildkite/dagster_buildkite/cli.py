@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from dagster_buildkite.pipelines.dagster_oss_main import build_dagster_oss_main_steps
+from dagster_buildkite.repository import Repositories
 
 from .utils import buildkite_yaml_for_steps
 
@@ -9,6 +12,7 @@ a pipeline.
 
 
 def dagster() -> None:
+    Repositories.load_repository(Path("."))
     steps = build_dagster_oss_main_steps()
     buildkite_yaml = buildkite_yaml_for_steps(steps)
     print(buildkite_yaml)  # pylint: disable=print-call

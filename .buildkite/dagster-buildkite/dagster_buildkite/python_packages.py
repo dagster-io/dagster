@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, Optional, Set
 
 import pathspec
-from dagster_buildkite.utils import get_changed_files
+from dagster_buildkite.git import ChangedFiles
 from pkg_resources import Requirement, parse_requirements
 
 logging.basicConfig(
@@ -51,6 +51,9 @@ class PythonPackage:
     def __str__(self):
         return self.name
 
+    def __repr__(self):
+        return f"PythonPackage({self.name})"
+
     def __eq__(self, other):
         return self.directory == other.directory
 
@@ -67,7 +70,10 @@ class PythonPackages:
 
     @classmethod
     def get(cls, name: str) -> Optional[PythonPackage]:
-        return cls.all.get(name)
+        # We're inconsistent about whether we use dashes or undrescores and we
+        # get away with it because pip converts all underscores to dashes. So
+        # mimic that behavior.
+        return cls.all.get(name) or cls.all.get(name.replace("_", "-"))
 
     @classmethod
     def walk_dependencies(cls, requirement: Requirement) -> Set[PythonPackage]:
@@ -93,12 +99,12 @@ class PythonPackages:
         return dependencies
 
     @classmethod
-    def load_repository(cls, git_repository_directory: Path = Path(".")) -> None:
+    def load_repository(cls, git_repository_directory) -> None:
         # Only do the expensive globbing once
         if git_repository_directory in cls._repositories:
             return None
 
-        logging.info(f"Parsing packages in {git_repository_directory.absolute()}:")
+        logging.info(f"Finding Python packages:")
 
         git_ignore = git_repository_directory / ".gitignore"
 
@@ -128,9 +134,9 @@ class PythonPackages:
 
         packages_with_changes = set()
 
-        logging.info("Changed packages:")
+        logging.info("Finding changed packages:")
         for package in packages:
-            for change in get_changed_files():
+            for change in ChangedFiles.all:
                 if (
                     # Our change is in this package's directory
                     (change in package.directory.rglob("*"))
@@ -144,9 +150,3 @@ class PythonPackages:
         for package in packages_with_changes:
             logging.info("  - " + package.name)
             cls.with_changes.add(package)
-
-
-# Memoize our changed files
-get_changed_files()
-# Preload our current repo into PythonPackages
-PythonPackages.load_repository(Path("."))
