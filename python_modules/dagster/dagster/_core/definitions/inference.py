@@ -7,6 +7,7 @@ from .utils import NoValueSentinel
 
 IS_DOCSTRING_PARSER_AVAILABLE = is_module_available("docstring_parser")
 
+
 class InferredInputProps(NamedTuple):
     """The information about an input that can be inferred from the function signature"""
 
