@@ -25,13 +25,13 @@ class InMemoryRunStorage(SqlRunStorage):
 
         if preload:
             for payload in preload:
-                self.add_run(payload.pipeline_run)
                 self.add_pipeline_snapshot(
                     payload.pipeline_snapshot, payload.pipeline_run.pipeline_snapshot_id
                 )
                 self.add_execution_plan_snapshot(
                     payload.execution_plan_snapshot, payload.pipeline_run.execution_plan_snapshot_id
                 )
+                self.add_run(payload.pipeline_run)
 
     def _create_connection(self):
         engine = create_engine(create_in_memory_conn_string("runs"), poolclass=NullPool)
