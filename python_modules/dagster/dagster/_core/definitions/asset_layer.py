@@ -37,7 +37,6 @@ from .resource_definition import ResourceDefinition
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.resolved_asset_defs import ResolvedAssetDependencies
     from dagster._core.execution.context.output import OutputContext
 
@@ -53,7 +52,7 @@ class AssetOutputInfo(
                 "partitions_fn",
                 Callable[
                     ["OutputContext"],
-                    Optional[AbstractSet[Union[str, "MultiDimensionalPartitionKey"]]],
+                    Optional[AbstractSet[str]],
                 ],
             ),
             ("partitions_def", Optional["PartitionsDefinition"]),
@@ -75,11 +74,7 @@ class AssetOutputInfo(
     def __new__(
         cls,
         key: AssetKey,
-        partitions_fn: Optional[
-            Callable[
-                ["OutputContext"], Optional[AbstractSet[Union[str, "MultiDimensionalPartitionKey"]]]
-            ]
-        ] = None,
+        partitions_fn: Optional[Callable[["OutputContext"], Optional[AbstractSet[str]]]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         is_required: bool = True,
     ):

@@ -31,7 +31,6 @@ from dagster._core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition, PipelineDefinition
-    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent
@@ -125,11 +124,8 @@ class OutputContext:
         op_def: Optional["OpDefinition"] = None,
         asset_info: Optional[AssetOutputInfo] = None,
         warn_on_step_context_use: bool = False,
-        partition_key: Optional[Union[str, "MultiDimensionalPartitionKey"]] = None,
+        partition_key: Optional[str] = None,
     ):
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiDimensionalPartitionKey,
-        )
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
 
@@ -149,9 +145,7 @@ class OutputContext:
         self._asset_info = asset_info
         self._warn_on_step_context_use = warn_on_step_context_use
         if self._step_context and self._step_context.has_partition_key:
-            self._partition_key: Optional[
-                Union[str, MultiDimensionalPartitionKey]
-            ] = self._step_context.partition_key
+            self._partition_key: Optional[str] = self._step_context.partition_key
         else:
             self._partition_key = partition_key
 
@@ -375,7 +369,7 @@ class OutputContext:
 
     @public  # type: ignore
     @property
-    def partition_key(self) -> Union[str, "MultiDimensionalPartitionKey"]:
+    def partition_key(self) -> str:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.
@@ -392,9 +386,6 @@ class OutputContext:
             check.failed(
                 "Tried to access partition_key on a non-partitioned run.",
             )
-
-        if isinstance(self._partition_key, str):
-            return cast(str, self._partition_key)
 
         return self._partition_key
 

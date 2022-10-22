@@ -35,9 +35,9 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiDimensionalPartition,
-    MultiDimensionalPartitionKey,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
+    get_tags_from_multi_partition_key,
 )
 from dagster._core.errors import (
     DagsterExecutionHandleOutputError,
@@ -445,23 +445,15 @@ def _type_check_and_store_output(
         yield evt
 
 
-def _get_output_asset_info(
-    output_context: OutputContext, output_def: OutputDefinition
-) -> Optional[AssetOutputInfo]:
-    return output_context.step_context.pipeline_def.asset_layer.asset_info_for_output(
-        node_handle=output_context.step_context.solid_handle, output_name=output_def.name
-    )
-
-
 def _asset_key_and_partitions_for_output(
     output_context: OutputContext,
     output_def: OutputDefinition,
     output_manager: IOManager,
-) -> Tuple[Optional[AssetKey], AbstractSet[Union[str, "MultiDimensionalPartitionKey"]]]:
+) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
     node_handle = output_context.step_context.solid_handle
-    output_asset_info = _get_output_asset_info(output_context, output_def)
+    output_asset_info = output_context.asset_info
 
     if output_asset_info:
         if manager_asset_key is not None:
@@ -507,7 +499,7 @@ def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLin
 
 def _get_output_asset_materializations(
     asset_key: AssetKey,
-    asset_partitions: AbstractSet[Union[str, MultiDimensionalPartitionKey]],
+    asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]],
@@ -516,7 +508,7 @@ def _get_output_asset_materializations(
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
     if asset_partitions:
         metadata_mapping: Dict[
-            Union[str, MultiDimensionalPartitionKey],
+            str,
             List[Union[MetadataEntry, PartitionMetadataEntry]],
         ] = {partition: [] for partition in asset_partitions}
 
@@ -540,14 +532,11 @@ def _get_output_asset_materializations(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
 
-                tags = None
-                if isinstance(partition, MultiDimensionalPartitionKey):
-                    tags = {
-                        MULTIDIMENSIONAL_PARTITION_TAG(
-                            dimension.dimension_name
-                        ): dimension.partition_key
-                        for dimension in partition.dimension_keys
-                    }
+                tags = (
+                    get_tags_from_multi_partition_key(partition)
+                    if isinstance(partition, MultiPartitionKey)
+                    else None
+                )
 
                 yield AssetMaterialization(
                     asset_key=asset_key,

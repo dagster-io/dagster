@@ -7,7 +7,7 @@ from dagster._annotations import experimental
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import deserialize_as, serialize_dagster_namedtuple
 from typing import List, Mapping, NamedTuple
-
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG
 import dagster._check as check
 
 from .partition import Partition, PartitionsDefinition
@@ -60,30 +60,6 @@ class MultiPartitionKey(str):
 
     def keys_by_dimension(self):
         return {dim_key.dimension_name: dim_key.partition_key for dim_key in self.dimension_keys}
-
-
-# class MultiDimensionalPartition(Partition):
-#     def __init__(self, value: Mapping[str, Partition], name: Optional[str] = None):
-#         self._value = check.mapping_param(value, "value", key_type=str, value_type=Partition)
-#         self._name = cast(str, check.opt_str_param(name, "name", str(value)))
-
-#     @property
-#     def value(self) -> Mapping[str, Partition]:
-#         return self._value
-
-#     @property
-#     def name(self) -> str:
-#         return self._name
-
-#     def __eq__(self, other) -> bool:
-#         return (
-#             isinstance(other, MultiDimensionalPartition)
-#             and self.value == other.value
-#             and self.name == other.name
-#         )
-
-#     def partitions_by_dimension(self) -> Mapping[str, Partition]:
-#         return self.value
 
 
 class PartitionDimensionDefinition(
@@ -174,9 +150,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def __hash__(self):
         return hash(tuple(self.partitions_defs))
 
-    def get_partition_key(
-        self, partition_key_by_dimension: Mapping[str, str]
-    ) -> MultiPartitionsKey:
+    def get_partition_key(self, partition_key_by_dimension: Mapping[str, str]) -> MultiPartitionKey:
         check.mapping_param(
             partition_key_by_dimension,
             "partition_key_by_dimension",
@@ -197,3 +171,12 @@ class MultiPartitionsDefinition(PartitionsDefinition):
             )
 
         return MultiPartitionKey(partition_key_by_dimension)
+
+
+def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:
+    check.inst_param(multi_partition_key, "multi_partition_key", MultiPartitionKey)
+
+    return {
+        MULTIDIMENSIONAL_PARTITION_TAG(dimension.dimension_name): dimension.partition_key
+        for dimension in multi_partition_key.dimension_keys
+    }

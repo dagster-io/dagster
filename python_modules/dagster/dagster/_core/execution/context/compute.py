@@ -42,9 +42,6 @@ from dagster._utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
 
-if TYPE_CHECKING:
-    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
-
 
 class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
     """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext"""
@@ -300,7 +297,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @public  # type: ignore
     @property
-    def partition_key(self) -> Union[str, "MultiDimensionalPartitionKey"]:
+    def partition_key(self) -> str:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.

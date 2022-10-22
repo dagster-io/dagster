@@ -92,8 +92,6 @@ class EventRecordsFilter(
                 "Can only filter by tags for asset materialization events"
             )
 
-        # TODO: enable searching with a MultiDimensionalPartitionKey object
-
         # type-ignores work around mypy type inference bug
         return super(EventRecordsFilter, cls).__new__(
             cls,

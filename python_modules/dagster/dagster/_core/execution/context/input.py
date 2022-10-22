@@ -24,7 +24,6 @@ from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition, SolidDefinition
-    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent
@@ -88,9 +87,6 @@ class InputContext:
         asset_key: Optional[AssetKey] = None,
         partition_key: Optional[str] = None,
     ):
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiDimensionalPartitionKey,
-        )
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
 
@@ -109,9 +105,7 @@ class InputContext:
         self._step_context = step_context
         self._asset_key = asset_key
         if self._step_context and self._step_context.has_partition_key:
-            self._partition_key: Optional[
-                Union[str, MultiDimensionalPartitionKey]
-            ] = self._step_context.partition_key
+            self._partition_key: Optional[str] = self._step_context.partition_key
         else:
             self._partition_key = partition_key
 
@@ -299,7 +293,7 @@ class InputContext:
 
     @public  # type: ignore
     @property
-    def partition_key(self) -> Union[str, "MultiDimensionalPartitionKey"]:
+    def partition_key(self) -> str:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.
@@ -308,9 +302,6 @@ class InputContext:
             check.failed(
                 "Tried to access partition_key on a non-partitioned run.",
             )
-
-        if isinstance(self._partition_key, str):
-            return cast(str, self._partition_key)
 
         return self._partition_key
 

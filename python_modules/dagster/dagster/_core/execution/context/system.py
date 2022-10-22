@@ -59,7 +59,6 @@ from .output import OutputContext, get_output_context
 if TYPE_CHECKING:
     from dagster._core.definitions.dependency import Node, NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
@@ -330,9 +329,9 @@ class PlanExecutionContext(IPlanContext):
         return self._log_manager
 
     @property
-    def partition_key(self) -> Union[str, "MultiDimensionalPartitionKey"]:
+    def partition_key(self) -> str:
         from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiDimensionalPartitionKey,
+            MultiPartitionKey,
         )
 
         tags = self._plan_data.pipeline_run.tags
@@ -352,9 +351,7 @@ class PlanExecutionContext(IPlanContext):
                 dimension = tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
                 partitions_by_dimension[dimension] = tags[tag]
 
-        return MultiDimensionalPartitionKey.from_partition_dimension_mapping(
-            partitions_by_dimension
-        )
+        return MultiPartitionKey(partitions_by_dimension)
 
     @property
     def partition_time_window(self) -> str:

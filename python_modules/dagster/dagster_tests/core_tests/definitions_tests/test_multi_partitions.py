@@ -10,7 +10,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiDimensionalPartitionKey,
+    MultiPartitionKey,
     MultiPartitionsDefinition,
 )
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG
@@ -55,8 +55,8 @@ def test_multi_dimensional_time_window_static_partitions():
 
     partitions = composite.get_partitions(current_time=datetime.strptime("2021-05-07", DATE_FORMAT))
     assert len(partitions) == 6
-    assert partitions[0].partitions_by_dimension().get("date").name == "2021-05-05"
-    assert partitions[0].partitions_by_dimension().get("abc").name == "a"
+    assert partitions[0].value.get("date").name == "2021-05-05"
+    assert partitions[0].value.get("abc").name == "a"
 
 
 def test_tags_multi_dimensional_partitions():
@@ -98,11 +98,8 @@ def test_tags_multi_dimensional_partitions():
         assert len(materializations) == 2
 
         for materialization in materializations:
-            assert (
-                materialization.event_log_entry.dagster_event.partition
-                == MultiDimensionalPartitionKey.from_partition_dimension_mapping(
-                    {"abc": "a", "date": "2021-06-01"}
-                )
+            assert materialization.event_log_entry.dagster_event.partition == MultiPartitionKey(
+                {"abc": "a", "date": "2021-06-01"}
             )
 
         materializations = list(

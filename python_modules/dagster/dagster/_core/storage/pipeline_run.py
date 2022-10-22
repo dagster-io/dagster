@@ -525,12 +525,14 @@ class PipelineRun(
 
     @staticmethod
     def tags_for_partition_set(partition_set, partition):
-        from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartition
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiPartitionKey,
+            get_tags_from_multi_partition_key,
+        )
 
         tags = {PARTITION_SET_TAG: partition_set.name}
-        if isinstance(partition, MultiDimensionalPartition):
-            for dimension, dimension_partition in partition.partitions_by_dimension().items():
-                tags[MULTIDIMENSIONAL_PARTITION_TAG(dimension)] = dimension_partition.name
+        if isinstance(partition.name, MultiPartitionKey):
+            tags.update(get_tags_from_multi_partition_key(partition.name))
         else:
             tags[PARTITION_NAME_TAG] = partition.name
 
