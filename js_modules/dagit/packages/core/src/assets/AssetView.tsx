@@ -92,16 +92,17 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   );
 
   const {upstream, downstream} = useNeighborsFromGraph(assetGraphData, assetKey);
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
+  const {liveDataRefreshState, liveDataByNode, runWatchers} = useLiveDataForAssetKeys(
+    graphAssetKeys,
+  );
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
-    useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS),
+    liveDataRefreshState,
   );
 
   // Refresh immediately when a run is launched from this page
   useDidLaunchEvent(queryResult.refetch);
-  useDidLaunchEvent(liveResult.refetch);
 
   // Avoid thrashing the materializations UI (which chooses a different default query based on whether
   // data is partitioned) by waiting for the definition to be loaded. (null OR a valid definition)
@@ -111,6 +112,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
+      {runWatchers}
       <AssetPageHeader
         assetKey={assetKey}
         tags={

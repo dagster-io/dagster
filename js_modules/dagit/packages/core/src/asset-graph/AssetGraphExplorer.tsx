@@ -7,12 +7,7 @@ import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {
-  FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
-  QueryRefreshState,
-  useQueryRefreshAtInterval,
-} from '../app/QueryRefresh';
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
@@ -32,7 +27,6 @@ import {
   LoadingNotice,
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {useDidLaunchEvent} from '../runs/RunUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
@@ -83,10 +77,9 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     applyingEmptyDefault,
   } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
 
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
-  const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
-
-  useDidLaunchEvent(liveResult.refetch);
+  const {liveDataByNode, liveDataRefreshState, runWatchers} = useLiveDataForAssetKeys(
+    graphAssetKeys,
+  );
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>
@@ -107,16 +100,19 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
           );
         }
         return (
-          <AssetGraphExplorerWithData
-            key={props.explorerPath.pipelineName}
-            assetGraphData={assetGraphData}
-            allAssetKeys={allAssetKeys}
-            graphQueryItems={graphQueryItems}
-            applyingEmptyDefault={applyingEmptyDefault}
-            liveDataRefreshState={liveDataRefreshState}
-            liveDataByNode={liveDataByNode}
-            {...props}
-          />
+          <>
+            <AssetGraphExplorerWithData
+              key={props.explorerPath.pipelineName}
+              assetGraphData={assetGraphData}
+              allAssetKeys={allAssetKeys}
+              graphQueryItems={graphQueryItems}
+              applyingEmptyDefault={applyingEmptyDefault}
+              liveDataRefreshState={liveDataRefreshState}
+              liveDataByNode={liveDataByNode}
+              {...props}
+            />
+            {runWatchers}
+          </>
         );
       }}
     </Loading>
