@@ -1,8 +1,6 @@
 # isort: skip_file
 # pylint: disable=unused-variable
 
-import os
-
 
 def scope_load_assets_from_airbyte_project():
     # start_load_assets_from_airbyte_project
