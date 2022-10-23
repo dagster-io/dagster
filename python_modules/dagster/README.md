@@ -25,6 +25,8 @@
   <img src="https://img.shields.io/pypi/pyversions/dagster?labelColor=4F43DD&color=163B36">
 </p>
 
+# Dagster
+
 Dagster is an orchestrator that's designed for developing and maintaining data assets, such as tables, data sets, machine learning models, and reports.
 
 You declare functions that you want to run and the data assets that those functions produce or update. Dagster then helps you run your functions at the right time and keep your assets up-to-date.
