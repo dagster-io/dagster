@@ -6,8 +6,8 @@
     </picture>
   </a>
   <br /><br />
-  <a target="_blank" href="https://twitter.com/dagsterio">
-    <img src="https://img.shields.io/twitter/follow/dagsterio?labelColor=4F43DD&color=163B36&logo=twitter&style=flat">
+  <a target="_blank" href="https://twitter.com/dagster">
+    <img src="https://img.shields.io/twitter/follow/dagster?labelColor=4F43DD&color=163B36&logo=twitter&style=flat">
   </a>
   <a target="_blank" href="https://dagster.io/slack">
     <img src="https://dagster-slackin.herokuapp.com/badge.svg?bg=163B36">
@@ -97,7 +97,7 @@ our [Dagster Community](https://dagster.io/community) page.
 Join our community here:
 
 - 🌟 [Star us on Github](https://github.com/dagster-io/dagster)
-- 🐦 [Follow us on Twitter](https://twitter.com/dagsterio)
+- 🐦 [Follow us on Twitter](https://twitter.com/dagster)
 - 📺 [Subscribe to our YouTube channel](https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q)
 - 📚 [Read our blog posts](https://dagster.io/blog)
 - 👋 [Join us on Slack](https://dagster.io/slack)
