@@ -23,7 +23,7 @@ class ChangedFiles:
     @classmethod
     def load_from_git(cls, git_info: GitInfo) -> None:
         # Only do the expensive git diffing once
-        if GitInfo.directory in cls._repositories:
+        if git_info.directory in cls._repositories:
             return None
 
         original_directory = os.getcwd()
