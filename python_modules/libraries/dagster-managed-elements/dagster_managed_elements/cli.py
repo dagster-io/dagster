@@ -66,7 +66,7 @@ def check(module_dir: str, import_str: str) -> ManagedElementDiff:
         module_dir=module_dir, import_str=import_str
     )
 
-    click.echo(f"Found {len(reconcilable_objects)} stacks, checking...")
+    click.echo(f"Found {len(reconcilable_objects)} managed elements, checking...")
 
     diff = ManagedElementDiff()
     for obj in reconcilable_objects:
@@ -83,7 +83,7 @@ def apply(module_dir: str, import_str: str) -> ManagedElementDiff:
         module_dir=module_dir, import_str=import_str
     )
 
-    click.echo(f"Found {len(reconcilable_objects)} stacks, applying...")
+    click.echo(f"Found {len(reconcilable_objects)} managed elements, applying...")
 
     diff = ManagedElementDiff()
     for obj in reconcilable_objects:
