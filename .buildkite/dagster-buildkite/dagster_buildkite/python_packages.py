@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, Optional, Set
 
 import pathspec
-from dagster_buildkite.git import ChangedFiles
+from dagster_buildkite.git import ChangedFiles, GitInfo
 from pkg_resources import Requirement, parse_requirements
 
 
@@ -96,14 +96,16 @@ class PythonPackages:
         return dependencies
 
     @classmethod
-    def load_repository(cls, git_repository_directory) -> None:
+    def load_from_git(cls, git_info: GitInfo) -> None:
         # Only do the expensive globbing once
-        if git_repository_directory in cls._repositories:
+        if git_info.directory in cls._repositories:
             return None
+
+        ChangedFiles.load_from_git(git_info)
 
         logging.info("Finding Python packages:")
 
-        git_ignore = git_repository_directory / ".gitignore"
+        git_ignore = git_info.directory / ".gitignore"
 
         if git_ignore.exists():
             ignored = git_ignore.read_text().splitlines()
@@ -115,7 +117,7 @@ class PythonPackages:
         packages = set(
             [
                 PythonPackage(Path(setup))
-                for setup in git_repository_directory.rglob("setup.py")
+                for setup in git_info.directory.rglob("setup.py")
                 if "_tests" not in str(setup) and not git_ignore_spec.match_file(str(setup))
             ]
         )
