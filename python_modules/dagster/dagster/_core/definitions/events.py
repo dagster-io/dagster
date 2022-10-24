@@ -126,6 +126,17 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
         """
         return ASSET_KEY_DELIMITER.join(self.path)
 
+    def to_python_identifier(self, suffix: Optional[str] = None) -> str:
+        """Build a valid Python identifier based on the asset key that can be used for
+        operation names or I/O manager keys.
+        """
+        path = list(self.path)
+
+        if suffix is not None:
+            path.append(suffix)
+
+        return "__".join(path).replace("-", "_")
+
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
         return AssetKey(asset_key_string.split(ASSET_KEY_DELIMITER))
