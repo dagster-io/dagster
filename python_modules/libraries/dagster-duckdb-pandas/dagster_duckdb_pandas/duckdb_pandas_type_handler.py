@@ -61,7 +61,6 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
         conn = _connect_duckdb(context).cursor()
-        DuckDbClient.get_select_statement(table_slice)
         return conn.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
 
     @property

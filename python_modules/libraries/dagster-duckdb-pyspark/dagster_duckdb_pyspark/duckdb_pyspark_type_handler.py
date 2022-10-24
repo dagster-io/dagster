@@ -67,7 +67,6 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
     def load_input(self, context: InputContext, table_slice: TableSlice) -> pyspark.sql.DataFrame:
         """Loads the return of the query as the correct type."""
         conn = _connect_duckdb(context).cursor()
-        DuckDbClient.get_select_statement(table_slice)
         pd_df = conn.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
         spark = SparkSession.builder.getOrCreate()
         return spark.createDataFrame(pd_df)
