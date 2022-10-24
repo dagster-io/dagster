@@ -7,6 +7,7 @@ Create Date: 2022-10-12 15:43:46.007624
 """
 import sqlalchemy as db
 from alembic import op
+from sqlalchemy.dialects import sqlite
 
 from dagster._core.storage.migration.utils import has_index, has_table
 
@@ -21,8 +22,14 @@ def upgrade():
     if not has_table("asset_event_tags"):
         op.create_table(
             "asset_event_tags",
-            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column(
+                "id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                primary_key=True,
+                autoincrement=True,
+            ),
             db.Column("event_id", db.Integer, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
+            db.Column("asset_key", db.Text),
             db.Column("key", db.Text),
             db.Column("value", db.Text),
         )
@@ -31,9 +38,9 @@ def upgrade():
         op.create_index(
             "idx_asset_event_tags",
             "asset_event_tags",
-            ["key", "value"],
+            ["asset_key", "key", "value"],
             unique=False,
-            mysql_length={"key": 64, "value": 64},
+            mysql_length={"key": 64, "value": 64, "asset_key": 64},
         )
 
 
