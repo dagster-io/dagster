@@ -27,7 +27,7 @@ class ChangedFiles:
             return None
 
         original_directory = os.getcwd()
-        os.chdir(GitInfo.directory)
+        os.chdir(git_info.directory)
 
         subprocess.call(["git", "fetch", "origin", git_info.base_branch])
         origin = get_commit(f"origin/{git_info.base_branch}")
