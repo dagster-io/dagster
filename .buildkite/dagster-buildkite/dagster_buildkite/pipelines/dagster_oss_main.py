@@ -1,4 +1,3 @@
-import logging
 import os
 import re
 import subprocess
@@ -6,21 +5,13 @@ from typing import List, Optional, Tuple
 
 from dagster_buildkite.defines import DO_COVERAGE
 from dagster_buildkite.steps.coverage import build_coverage_step
-from dagster_buildkite.steps.dagit_ui import build_dagit_ui_steps
+from dagster_buildkite.steps.dagit_ui import build_dagit_ui_steps, skip_if_no_dagit_changes
 from dagster_buildkite.steps.dagster import build_dagster_steps, build_repo_wide_steps
 from dagster_buildkite.steps.docs import build_docs_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.trigger import build_trigger_step
 from dagster_buildkite.steps.wait import build_wait_step
-from dagster_buildkite.utils import BuildkiteStep, is_feature_branch, is_release_branch, safe_getenv
-
-_DAGIT_PATHS = ("js_modules/dagit",)
-
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=os.getenv("LOGLEVEL", "INFO"),
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+from dagster_buildkite.utils import BuildkiteStep, is_release_branch, safe_getenv
 
 
 def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
@@ -28,7 +19,6 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     branch_name = safe_getenv("BUILDKITE_BRANCH")
     commit_hash = safe_getenv("BUILDKITE_COMMIT")
     do_coverage = DO_COVERAGE
-    dagit_ui_only_diff = _is_path_only_diff(paths=_DAGIT_PATHS)
 
     steps: List[BuildkiteStep] = []
 
@@ -55,29 +45,21 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
             env={
                 "DAGSTER_BRANCH": branch_name,
                 "DAGSTER_COMMIT_HASH": commit_hash,
-                "DAGIT_ONLY_OSS_CHANGE": "1" if dagit_ui_only_diff else "",
+                "DAGIT_ONLY_OSS_CHANGE": "1" if not skip_if_no_dagit_changes else "",
             },
         ),
     )
 
-    # Always include repo wide steps
-    steps += build_repo_wide_steps()
-
-    # Skip non-dagit-ui steps if we are on a feature branch with only dagit-ui (web app) changes.
-    logging.info(f"dagit_ui_only: {dagit_ui_only_diff}")
-    if is_feature_branch(branch_name) and dagit_ui_only_diff:
-        steps += build_dagit_ui_steps()
-
     # Full pipeline.
-    else:
-        steps += build_docs_steps()
-        steps += build_dagit_ui_steps()
-        steps += build_dagster_steps()
-        steps += build_integration_steps()
+    steps += build_repo_wide_steps()
+    steps += build_docs_steps()
+    steps += build_dagit_ui_steps()
+    steps += build_dagster_steps()
+    steps += build_integration_steps()
 
-        if do_coverage:
-            steps.append(build_wait_step())
-            steps.append(build_coverage_step())
+    if do_coverage:
+        steps.append(build_wait_step())
+        steps.append(build_coverage_step())
 
     return steps
 
