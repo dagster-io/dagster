@@ -115,15 +115,10 @@ class PythonPackages:
         packages = set(
             [
                 PythonPackage(Path(setup))
-                for setup in git_repository_directory.rglob("**/setup.py")
+                for setup in git_repository_directory.rglob("setup.py")
                 if "_tests" not in str(setup) and not git_ignore_spec.match_file(str(setup))
             ]
         )
-
-        # hidden files are ignored by glob.glob and we don't actually want to recurse
-        # all hidden files because there's so much random cruft. So just hardcode the
-        # one hidden package we know we need.
-        packages.add(PythonPackage(Path(".buildkite/dagster-buildkite/setup.py")))
 
         for package in sorted(packages):
             logging.info("  - " + package.name)
