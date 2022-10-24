@@ -39,7 +39,6 @@ if __name__ == "__main__":
         entry_points={
             "console_scripts": [
                 "dagster-managed-elements = dagster_managed_elements.cli:main",
-                "dagster-me = dagster_managed_elements.cli:main",
             ]
         },
     )
