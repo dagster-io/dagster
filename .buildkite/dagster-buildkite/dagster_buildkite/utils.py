@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Union
 
 import packaging.version
 import yaml
+from dagster_buildkite.git import ChangedFiles
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
@@ -186,30 +187,11 @@ def get_commit(rev):
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
 
-@functools.lru_cache(maxsize=None)
-def get_changed_files():
-    subprocess.call(["git", "fetch", "origin", "master"])
-    origin = get_commit("origin/master")
-    head = get_commit("HEAD")
-    logging.info(f"Changed files between origin/master ({origin}) and HEAD ({head}):")
-    paths = (
-        subprocess.check_output(["git", "diff", "origin/master...HEAD", "--name-only"])
-        .decode("utf-8")
-        .strip()
-        .split("\n")
-    )
-    for path in paths:
-        logging.info(path)
-    return [Path(path) for path in paths]
-
-
-@functools.lru_cache(maxsize=None)
 def skip_if_no_python_changes():
     if not is_feature_branch():
         return None
 
-    if any(path.suffix == ".py" for path in get_changed_files()):
-        logging.info("Run docs steps because .py files changed")
+    if not any(path.suffix == ".py" for path in ChangedFiles.all):
         return None
 
     return "No python changes"
@@ -220,7 +202,7 @@ def skip_if_no_helm_changes():
     if not is_feature_branch():
         return None
 
-    if any(Path("helm") in path.parents for path in get_changed_files()):
+    if any(Path("helm") in path.parents for path in ChangedFiles.all):
         logging.info("Run helm steps because files in the helm directory changed")
         return None
 
@@ -244,12 +226,12 @@ def skip_if_no_docs_changes():
         return None
 
     # If anything changes in the docs directory
-    if any(Path("docs") in path.parents for path in get_changed_files()):
+    if any(Path("docs") in path.parents for path in ChangedFiles.all):
         logging.info("Run docs steps because files in the docs directory changed")
         return None
 
     # If anything changes in the examples directory. This is where our docs snippets live.
-    if any(Path("examples") in path.parents for path in get_changed_files()):
+    if any(Path("examples") in path.parents for path in ChangedFiles.all):
         logging.info("Run docs steps because files in the examples directory changed")
         return None
 
