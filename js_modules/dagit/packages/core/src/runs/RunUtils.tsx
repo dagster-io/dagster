@@ -14,8 +14,8 @@ import {ExecutionParams, RunStatus} from '../types/globalTypes';
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
-import {LaunchPipelineExecution} from './types/LaunchPipelineExecution';
-import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
+import {LaunchPipelineExecution_launchPipelineExecution} from './types/LaunchPipelineExecution';
+import {LaunchPipelineReexecution_launchPipelineReexecution} from './types/LaunchPipelineReexecution';
 import {RunFragment} from './types/RunFragment';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 import {RunTimeFragment} from './types/RunTimeFragment';
@@ -65,24 +65,17 @@ export type LaunchBehavior = 'open' | 'open-in-new-tab' | 'toast';
 
 export function handleLaunchResult(
   pipelineName: string,
-  result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution | null},
+  result: void | null | LaunchPipelineExecution_launchPipelineExecution,
   history: History<unknown>,
   options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
 ) {
-  const obj =
-    result && result.data && 'launchPipelineExecution' in result.data
-      ? result.data.launchPipelineExecution
-      : result && result.data && 'launchPipelineReexecution' in result.data
-      ? result.data.launchPipelineReexecution
-      : null;
-
-  if (!obj) {
+  if (!result) {
     showCustomAlert({body: `No data was returned. Did Dagit crash?`});
     return;
   }
 
-  if (obj.__typename === 'LaunchRunSuccess') {
-    const pathname = `/instance/runs/${obj.run.runId}`;
+  if (result.__typename === 'LaunchRunSuccess') {
+    const pathname = `/instance/runs/${result.run.runId}`;
     const search = options.preserveQuerystring ? history.location.search : '';
     const openInNewTab = () => window.open(history.createHref({pathname, search}), '_blank');
     const openInSameTab = () => history.push({pathname, search});
@@ -96,7 +89,7 @@ export function handleLaunchResult(
         intent: 'success',
         message: (
           <div>
-            Launched run <Mono>{obj.run.runId.slice(0, 8)}</Mono>
+            Launched run <Mono>{result.run.runId.slice(0, 8)}</Mono>
           </div>
         ),
         action: {
@@ -106,18 +99,18 @@ export function handleLaunchResult(
       });
     }
     document.dispatchEvent(new CustomEvent('run-launched'));
-  } else if (obj.__typename === 'InvalidSubsetError') {
-    showCustomAlert({body: obj.message});
-  } else if (obj.__typename === 'PythonError') {
+  } else if (result.__typename === 'InvalidSubsetError') {
+    showCustomAlert({body: result.message});
+  } else if (result.__typename === 'PythonError') {
     showCustomAlert({
       title: 'Error',
-      body: <PythonErrorInfo error={obj} />,
+      body: <PythonErrorInfo error={result} />,
     });
   } else {
     let message = `${pipelineName} cannot be executed with the provided config.`;
 
-    if ('errors' in obj) {
-      message += ` Please fix the following errors:\n\n${obj.errors
+    if ('errors' in result) {
+      message += ` Please fix the following errors:\n\n${result.errors
         .map((error) => error.message)
         .join('\n\n')}`;
     }

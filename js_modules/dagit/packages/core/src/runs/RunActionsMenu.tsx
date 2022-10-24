@@ -143,9 +143,14 @@ export const RunActionsMenu: React.FC<{
                           repositoryName: repoMatch.match.repository.name,
                         }),
                       });
-                      handleLaunchResult(run.pipelineName, result, history, {
-                        behavior: 'open',
-                      });
+                      handleLaunchResult(
+                        run.pipelineName,
+                        result.data?.launchPipelineReexecution,
+                        history,
+                        {
+                          behavior: 'open',
+                        },
+                      );
                     }
                   }}
                 />
