@@ -36,7 +36,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
             @asset(
                 key_prefix=["my_schema"]  # will be used as the schema in duckdb
             )
-            def my_table():  # the name of the asset will be the table name
+            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
             duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
@@ -55,7 +55,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
         database: path/to/database.duckdb  # path to the duckdb database
         schema: my_schema  # name of the schema for the tables
 
-    If you do not provide a schema, dagster will determine a schema based on the assets and ops using
+    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
     the IO Manager. For assets, the schema will be determined from the asset key. For ops, the schema can be
     specified by including a "schema" entry in output metadata. If none of these is provided, the schema will
     default to "public".
@@ -65,7 +65,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
             @op(
                 out={"my_table": Out(metadata={"schema": "my_schema"})}
             )
-            def make_my_table():
+            def make_my_table() -> pd.DataFrame:
                 ...
 
     To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
@@ -74,9 +74,9 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
         .. code-block:: python
 
             @asset(
-                in={"my_table": AssetIn("my_table": metadata={"columns": ["a"]})}
+                ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
             )
-            def my_table_a(my_table):
+            def my_table_a(my_table: pd.DataFrame):
                 # my_table will just contain the data from column "a"
                 ...
 
