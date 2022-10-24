@@ -210,6 +210,7 @@ class AssetGroup:
         description = check.opt_str_param(description, "description", "")
         tags = check.opt_mapping_param(tags, "tags", key_type=str)
 
+        print("ASSET GROUP BUILD JOB w SELECTION", selection)
         return build_asset_selection_job(
             name=name,
             assets=self.assets,

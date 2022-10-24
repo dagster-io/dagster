@@ -132,12 +132,14 @@ class RepositoryLocation(AbstractContextManager):
         a solid selection is specified, which requires access to the underlying PipelineDefinition
         to generate the subsetted pipeline snapshot."""
         if not selector.solid_selection and not selector.asset_selection:
+            print("NOT GETTING SUBSET")
             return self.get_repository(selector.repository_name).get_full_external_job(
                 selector.pipeline_name
             )
 
         repo_handle = self.get_repository(selector.repository_name).handle
 
+        print("GETTING SUBSET")
         subset_result = self.get_subset_external_pipeline_result(selector)
         external_data = subset_result.external_pipeline_data
         if external_data is None:

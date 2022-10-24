@@ -22,6 +22,9 @@ from dagster._core.definitions import (
     build_assets_job,
     multi_asset,
 )
+from dagster._core.definitions.decorators.source_asset_decorator import source_asset
+from dagster._core.definitions.logical_version import LogicalVersion
+from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
@@ -619,3 +622,37 @@ def test_multi_asset_retry_policy():
         ...
 
     assert my_asset.op.retry_policy == retry_policy
+
+
+def test_source_asset_all_fields():
+
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @resource
+    def baz_resource():
+        pass
+
+    @io_manager(required_resource_keys={"baz"})
+    def foo_manager():
+        pass
+
+    @source_asset(
+        description="some description",
+        metadata={"metakey": "metaval"},
+        partitions_def=partitions_def,
+        group_name="foo",
+        io_manager_key="my_io_key",
+        io_manager_def=foo_manager,
+        resource_defs={"baz": baz_resource},
+    )
+    def my_source_asset():
+        return LogicalVersion("bar")
+
+    assert my_source_asset.op.description == "some description"
+    assert my_source_asset.partitions_def == partitions_def
+    assert my_source_asset.group_name == "foo"
+    assert my_source_asset.io_manager_key == "my_io_key"
+    assert my_source_asset.io_manager_def == foo_manager
+    assert my_source_asset.metadata["metakey"] == TextMetadataValue("metaval")
+    assert my_source_asset.op
+    assert len(my_source_asset.op.output_defs) == 1

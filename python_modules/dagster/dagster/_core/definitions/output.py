@@ -81,7 +81,7 @@ class OutputDefinition:
         asset_partitions: Optional[
             Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]
         ] = None,
-        asset_partitions_def: Optional["PartitionsDefinition"] = None
+        asset_partitions_def: Optional["PartitionsDefinition"] = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
         from dagster._core.definitions.partition import PartitionsDefinition
