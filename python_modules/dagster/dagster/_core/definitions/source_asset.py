@@ -1,11 +1,12 @@
 from typing_extensions import Protocol, TypeAlias
+from dagster._core.errors import DagsterInvalidObservationError
+from dagster._core.execution.context.compute import OpExecutionContext
 import warnings
 from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.logical_version import LogicalVersion
+from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,
@@ -13,7 +14,6 @@ from dagster._core.definitions.metadata import (
     PartitionMetadataEntry,
     normalize_metadata,
 )
-from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
@@ -43,7 +43,7 @@ class SourceAssetObserveFunctionWithContext(Protocol):
 
     def __call__(
         self, context: "SourceAssetObserveContext"
-    ) -> Union[MetadataUserInput, LogicalVersion]:
+    ) -> MetadataUserInput:
         ...
 
 
@@ -52,7 +52,7 @@ class SourceAssetObserveFunctionNoContext(Protocol):
     def __name__(self) -> str:
         ...
 
-    def __call__(self) -> Union[MetadataUserInput, LogicalVersion]:
+    def __call__(self) -> MetadataUserInput:
         ...
 
 
@@ -81,7 +81,7 @@ class SourceAsset(ResourceAddable):
     key: PublicAttr[AssetKey]
     metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
     io_manager_key: PublicAttr[Optional[str]]
-    io_manager_def: PublicAttr[Optional[IOManagerDefinition]]
+    _io_manager_def: PublicAttr[Optional[IOManagerDefinition]]
     description: PublicAttr[Optional[str]]
     partitions_def: PublicAttr[Optional[PartitionsDefinition]]
     group_name: PublicAttr[str]
@@ -178,13 +178,25 @@ class SourceAsset(ResourceAddable):
         if self.observe_fn is None:
             return None
         else:
+            observe_fn = self.observe_fn
+            def compute_fn(context: OpExecutionContext) -> None:
+                raw_observation = observe_fn(context)  # type: ignore
+                metadata = _raw_observation_to_metadata(raw_observation)
+                context.log_event(
+                    AssetObservation(
+                        asset_key=self.key,
+                        metadata=metadata,
+                    )
+                )
+
             if not self._node_def:
                 self._node_def = OpDefinition(
-                    compute_fn=self.observe_fn,
+                    compute_fn=compute_fn,
                     name="__".join(self.key.path).replace("-", "_"),
                     description=self.description,
                 )
             return self._node_def
+
 
     def with_resources(self, resource_defs) -> "SourceAsset":
         from dagster._core.execution.resources_init import get_transitive_required_resource_keys
@@ -265,3 +277,12 @@ class SourceAsset(ResourceAddable):
 
     def __hash__(self):
         return hash(self.key)
+
+def _raw_observation_to_metadata(raw_observation: object) -> MetadataUserInput:
+    if isinstance(raw_observation, dict):
+        return raw_observation
+    else:
+        raise DagsterInvalidObservationError(
+            "Source asset observe function must return a metadata dictionary."
+        )
+
