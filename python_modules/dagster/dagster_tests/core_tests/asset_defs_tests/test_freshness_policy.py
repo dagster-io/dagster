@@ -6,31 +6,31 @@ from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 @pytest.mark.parametrize(
-    ["sla", "materialization_time", "evaluation_time", "should_pass"],
+    ["sla", "materialization_time", "evaluation_time", "expected_minutes_late"],
     [
         (
             FreshnessPolicy.minimum_freshness(30),
             create_pendulum_time(2022, 1, 1, 0),
             create_pendulum_time(2022, 1, 1, 0, 25),
-            True,
+            0,
         ),
         (
             FreshnessPolicy.minimum_freshness(120),
             create_pendulum_time(2022, 1, 1, 0),
             create_pendulum_time(2022, 1, 1, 1),
-            True,
+            0,
         ),
         (
             FreshnessPolicy.minimum_freshness(30),
             create_pendulum_time(2022, 1, 1, 0),
             create_pendulum_time(2022, 1, 1, 1),
-            False,
+            30,
         ),
         (
             FreshnessPolicy.minimum_freshness(500),
             None,
             create_pendulum_time(2022, 1, 1, 0, 25),
-            False,
+            None,
         ),
         # materialization happened before SLA
         (
@@ -39,7 +39,7 @@ from dagster._seven.compat.pendulum import create_pendulum_time
             ),
             create_pendulum_time(2022, 1, 1, 0, 5),
             create_pendulum_time(2022, 1, 1, 0, 10),
-            True,
+            0,
         ),
         # materialization happened after SLA, but is fine now
         (
@@ -48,7 +48,7 @@ from dagster._seven.compat.pendulum import create_pendulum_time
             ),
             create_pendulum_time(2022, 1, 1, 0, 30),
             create_pendulum_time(2022, 1, 1, 1, 0),
-            True,
+            0,
         ),
         # materialization for this data has not happened yet (day before)
         (
@@ -56,8 +56,9 @@ from dagster._seven.compat.pendulum import create_pendulum_time
                 cron_schedule="@daily", minimum_freshness_minutes=15
             ),
             create_pendulum_time(2022, 1, 1, 23, 0),
-            create_pendulum_time(2022, 1, 2, 1, 0),
-            False,
+            create_pendulum_time(2022, 1, 2, 2, 0),
+            # expected data by is 2022-01-02T00:15, so you are 1 hour, 45 minutes late
+            60 + 45,
         ),
         # weird one, basically want to have a materialization every hour no more than 5 hours after
         # that data arrives -- edge case probably not useful in practice?
@@ -67,28 +68,28 @@ from dagster._seven.compat.pendulum import create_pendulum_time
             ),
             create_pendulum_time(2022, 1, 1, 1, 0),
             create_pendulum_time(2022, 1, 1, 4, 0),
-            True,
+            0,
         ),
         (
             FreshnessPolicy.cron_minimum_freshness(
                 cron_schedule="@hourly", minimum_freshness_minutes=60 * 5
             ),
-            create_pendulum_time(2022, 1, 1, 1, 0),
-            create_pendulum_time(2022, 1, 1, 6, 30),
-            False,
+            create_pendulum_time(2022, 1, 1, 1, 15),
+            create_pendulum_time(2022, 1, 1, 7, 45),
+            # the data for 2AM is considered missing if it is not there by 7AM (5 hours later).
+            # we evaluate at 7:45, so at this point it is 45 minutes late
+            45,
         ),
     ],
 )
-def test_slas(sla, materialization_time, evaluation_time, should_pass):
+def test_slas(sla, materialization_time, evaluation_time, expected_minutes_late):
     if materialization_time:
         upstream_materialization_times = {AssetKey("root"): materialization_time.timestamp()}
     else:
         upstream_materialization_times = {AssetKey("root"): None}
-
-    assert (
-        sla.is_passing(
-            current_timestamp=evaluation_time.timestamp(),
-            upstream_materialization_timestamps=upstream_materialization_times,
-        )
-        == should_pass
+    minutes_late = sla.minutes_late(
+        current_timestamp=evaluation_time.timestamp(),
+        upstream_materialization_timestamps=upstream_materialization_times,
     )
+
+    assert minutes_late == expected_minutes_late

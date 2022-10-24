@@ -18,9 +18,9 @@ class UpstreamMaterializationTimeConstraint(ABC):
     """
 
     @abstractmethod
-    def is_passing(
+    def minutes_late(
         self, current_timestamp: float, upstream_materialization_timestamp: Optional[float]
-    ) -> bool:
+    ) -> Optional[float]:
         raise NotImplementedError()
 
 
@@ -31,22 +31,23 @@ class MinimumFreshnessConstraint(UpstreamMaterializationTimeConstraint):
     """
 
     def __init__(self, minimum_freshness_minutes: float):
-        self._minimum_freshness_minutes = minimum_freshness_minutes
+        self._minimum_freshness_duration = pendulum.duration(minutes=minimum_freshness_minutes)
 
-    def is_passing(
+    def minutes_late(
         self, current_timestamp: float, upstream_materialization_timestamp: Optional[float]
-    ) -> bool:
+    ) -> Optional[float]:
         if upstream_materialization_timestamp is None:
-            return False
+            return None
 
         upstream_datetime = pendulum.from_timestamp(upstream_materialization_timestamp)
         current_datetime = pendulum.from_timestamp(current_timestamp)
 
-        minimum_datetime = current_datetime - pendulum.duration(
-            minutes=self._minimum_freshness_minutes
-        )
+        minimum_datetime = current_datetime - self._minimum_freshness_duration
 
-        return upstream_datetime >= minimum_datetime
+        if upstream_datetime >= minimum_datetime:
+            return 0
+        else:
+            return (minimum_datetime - upstream_datetime).minutes
 
 
 class CronMinimumFreshnessConstraint(UpstreamMaterializationTimeConstraint):
@@ -57,26 +58,40 @@ class CronMinimumFreshnessConstraint(UpstreamMaterializationTimeConstraint):
 
     def __init__(self, cron_schedule: str, minimum_freshness_minutes: float):
         self._cron_schedule = cron_schedule
-        self._minimum_freshness_minutes = minimum_freshness_minutes
+        self._minimum_freshness_duration = pendulum.duration(minutes=minimum_freshness_minutes)
 
-    def is_passing(
+    def minutes_late(
         self, current_timestamp: float, upstream_materialization_timestamp: Optional[float]
-    ) -> bool:
+    ) -> Optional[float]:
         if upstream_materialization_timestamp is None:
-            return False
+            return None
 
-        now = pendulum.from_timestamp(current_timestamp)
+        upstream_datetime = pendulum.from_timestamp(upstream_materialization_timestamp)
+        current_datetime = pendulum.from_timestamp(current_timestamp)
 
-        # find the most recent schedule tick which could possibly be failing this constraint
-        # (generally this is just the previous schedule tick)
+        # find the most recent schedule tick which is more than minimum_freshness_duration old,
+        # i.e. the most recent schedule tick which could be failing this constraint
         schedule_ticks = croniter(
-            self._cron_schedule, now, ret_type=pendulum.DateTime, is_prev=True
+            self._cron_schedule, current_datetime, ret_type=pendulum.DateTime, is_prev=True
         )
-        latest_tick = next(schedule_ticks)
-        while latest_tick + pendulum.duration(minutes=self._minimum_freshness_minutes) > now:
-            latest_tick = next(schedule_ticks)
+        latest_required_tick = next(schedule_ticks)
+        while latest_required_tick + self._minimum_freshness_duration > current_datetime:
+            latest_required_tick = next(schedule_ticks)
+            print("...")
+            print("dur", latest_required_tick + self._minimum_freshness_duration)
+            print("lrt", latest_required_tick)
 
-        return pendulum.from_timestamp(upstream_materialization_timestamp) > latest_tick
+        print("ups", upstream_datetime)
+        print("cur", current_datetime)
+        print("latest", latest_required_tick)
+        if upstream_datetime >= latest_required_tick:
+            return 0
+        else:
+            # find the difference between the actual data time and the latest time that you would
+            # have expected to get this data by
+            expected_by_time = latest_required_tick + self._minimum_freshness_duration
+            print("expected_by_time", expected_by_time)
+            return current_datetime.diff(expected_by_time).in_minutes()
 
 
 class FreshnessPolicy(ABC):
@@ -89,12 +104,12 @@ class FreshnessPolicy(ABC):
     """
 
     @abstractmethod
-    def is_passing(
+    def minutes_late(
         self,
         current_timestamp: float,
         upstream_materialization_timestamps: Mapping[AssetKey, Optional[float]],
-    ) -> bool:
-        raise NotImplementedError
+    ) -> Optional[float]:
+        raise NotImplementedError()
 
     @staticmethod
     def minimum_freshness(minimum_freshness_minutes: float) -> "MinimumFreshnessPolicy":
@@ -124,15 +139,20 @@ class UniformFreshnessPolicy(FreshnessPolicy):
     def __init__(self, constraint: UpstreamMaterializationTimeConstraint):
         self._constraint = constraint
 
-    def is_passing(
+    def minutes_late(
         self,
         current_timestamp: float,
         upstream_materialization_timestamps: Mapping[AssetKey, Optional[float]],
-    ) -> bool:
-        return all(
-            self._constraint.is_passing(current_timestamp, upstream_timestamp)
+    ) -> Optional[float]:
+
+        constraints_minutes_late = [
+            self._constraint.minutes_late(current_timestamp, upstream_timestamp)
             for upstream_timestamp in upstream_materialization_timestamps.values()
-        )
+        ]
+        if any(val is None for val in constraints_minutes_late):
+            return None
+        else:
+            return max(constraints_minutes_late)
 
 
 class MinimumFreshnessPolicy(UniformFreshnessPolicy):
