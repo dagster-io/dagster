@@ -292,10 +292,7 @@ export const Icon = React.memo((props: Props) => {
     // in Dagit but not in Storybook due to webpack config differences
     img = (img as {default: any}).default;
   }
-  let color: string | null = props.color || Colors.Dark;
-  if (SVGS_WITH_COLORS.has(img)) {
-    color = null;
-  }
+  const color: string | null = props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.Dark);
   return (
     <IconWrapper
       role="img"
