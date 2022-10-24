@@ -8,8 +8,21 @@ from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteLeafStep, GroupStep
 
-build_for: Set[AvailablePythonVersion] = set()
-build_core_for: Set[AvailablePythonVersion] = set()
+# Some python packages depend on these images but we don't explicitly define that dependency anywhere other
+# than when we construct said package's Buildkite steps. Until we more explicitly define those dependencies
+# somewhere, we use these sets to track internal state about whether or not to build the test- project and
+# test-project-core images.
+#
+# When we build the Buildkite steps for a python package that needs one or both of these images, add the
+# required versions to these sets. We'll otherwise skip building images for any versions not requested here.
+#
+# This means you need to call `build_test_project_steps()` after you've build the other Buildkite steps that
+# require the images.
+#
+# TODO: Don't do this :) More explicitly define the dependencies.
+# See https://github.com/dagster-io/dagster/pull/10099 for implementation ideas.
+build_test_project_for: Set[AvailablePythonVersion] = set()
+build_test_project_core_for: Set[AvailablePythonVersion] = set()
 
 
 def build_test_project_steps() -> List[GroupStep]:
@@ -117,7 +130,7 @@ def _test_project_step_key(version: AvailablePythonVersion) -> str:
 
 
 def test_project_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
-    build_for.add(version)
+    build_test_project_for.add(version)
     return [_test_project_step_key(version)]
 
 
@@ -126,19 +139,19 @@ def _test_project_core_step_key(version: AvailablePythonVersion) -> str:
 
 
 def test_project_core_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
-    build_core_for.add(version)
+    build_test_project_core_for.add(version)
     return [_test_project_core_step_key(version)]
 
 
 def skip_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:
-    if version in build_for:
+    if version in build_test_project_for:
         return None
 
     return "Skipped because no build depends on this image"
 
 
 def skip_core_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:
-    if version in build_core_for:
+    if version in build_test_project_core_for:
         return None
 
     return "Skipped because no build depends on this image"
