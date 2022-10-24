@@ -15,6 +15,7 @@ from dagster import (
     TableSlice,
 )
 from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 
 def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice: TableSlice):

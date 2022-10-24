@@ -27,6 +27,7 @@ from dagster import (
     job,
     op,
 )
+from dagster._core.storage.db_io_manager import TableSlice
 
 resource_config = {
     "database": "database_abc",

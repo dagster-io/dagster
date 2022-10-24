@@ -2,17 +2,13 @@ from typing import Sequence
 
 from snowflake.connector import ProgrammingError
 
-from dagster import (
+from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
-    Field,
-    IOManagerDefinition,
-    OutputContext,
-    StringSource,
     TablePartition,
     TableSlice,
-    io_manager,
 )
 
 from .resources import SnowflakeConnection
@@ -42,7 +38,8 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
             @job(resource_defs={'io_manager': snowflake_io_manager})
             def my_job():
-                ...
+                    ...
+
     """
 
     @io_manager(

@@ -1,6 +1,7 @@
 import {LazyQueryExecFunction, QueryResult} from '@apollo/client';
-import {Colors} from '@dagster-io/ui';
+import {Caption, Colors} from '@dagster-io/ui';
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
 import {RepoSectionHeader} from '../runs/RepoSectionHeader';
 import {Row} from '../ui/VirtualizedTable';
@@ -48,6 +49,25 @@ export const LoadingOrNone: React.FC<{queryResult: QueryResult<any, any>}> = ({q
     <div style={{color: Colors.Gray500}}>{!called || (loading && !data) ? 'Loading' : 'None'}</div>
   );
 };
+
+export const CaptionText: React.FC = ({children}) => {
+  return (
+    <CaptionTextContainer>
+      <Caption>{children}</Caption>
+    </CaptionTextContainer>
+  );
+};
+
+const CaptionTextContainer = styled.div`
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  ${Caption} {
+    color: ${Colors.Gray500};
+    white-space: nowrap;
+  }
+`;
 
 const JOB_QUERY_DELAY = 100;
 

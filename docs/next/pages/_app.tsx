@@ -16,7 +16,7 @@ const BASE_URL = 'https://docs.dagster.io';
 const DEFAULT_SEO = {
   title: 'Dagster Docs',
   twitter: {
-    site: '@dagsterio',
+    site: '@dagster',
     cardType: 'summary_large_image',
     images: {
       url: `${BASE_URL}/assets/shared/dagster-og-share.png`,
