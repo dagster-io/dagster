@@ -199,6 +199,24 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
 
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
+        if context.has_asset_partitions:
+            return [
+                self._load_pickle(self._partition_path(context.asset_key, partition_key))
+                for partition_key in context.asset_partition_keys
+            ]
+        else:
+            return self._load_input(context)
+
+    def _partition_path(self, asset_key, partition_key):
+        return os.path.join(self.base_dir, *asset_key.path, partition_key)
+
+    def _load_pickle(self, filepath):
+        with open(filepath, self.read_mode) as read_obj:
+            return pickle.load(read_obj)
+
+    def _load_input(self, context):
+        """Unpickle the file and Load it to a data object."""
+
         check.inst_param(context, "context", InputContext)
 
         if context.dagster_type.typing_type == type(None):
