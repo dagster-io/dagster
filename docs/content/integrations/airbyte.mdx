@@ -72,13 +72,9 @@ airbyte_assets = with_resources(
             {
                 "host": "localhost",
                 "port": "8000",
-                # If using basic auth
-                "request_additional_params": {
-                    "auth": (
-                        "airbyte",
-                        os.getenv("AIRBYTE_PASSWORD"),
-                    )
-                },
+                # If using basic auth, include username and password:
+                "username": "airbyte",
+                "password": {"env": "AIRBYTE_PASSWORD"},
             }
         )
     },
@@ -96,13 +92,9 @@ airbyte_instance = airbyte_resource.configured(
     {
         "host": "localhost",
         "port": "8000",
-        # If using basic auth
-        "request_additional_params": {
-            "auth": (
-                "airbyte",
-                os.getenv("AIRBYTE_PASSWORD"),
-            )
-        },
+        # If using basic auth, include username and password:
+        "username": "airbyte",
+        "password": {"env": "AIRBYTE_PASSWORD"},
     }
 )
 airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
@@ -157,13 +149,9 @@ airbyte_assets = with_resources(
             {
                 "host": "localhost",
                 "port": "8000",
-                # If using basic auth
-                "request_additional_params": {
-                    "auth": (
-                        "airbyte",
-                        os.getenv("AIRBYTE_PASSWORD"),
-                    )
-                },
+                # If using basic auth, include username and password:
+                "username": "airbyte",
+                "password": {"env": "AIRBYTE_PASSWORD"},
             }
         )
     },
