@@ -1,14 +1,10 @@
 import itertools
 from datetime import datetime
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, cast
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import deserialize_as, serialize_dagster_namedtuple
-from typing import List, Mapping, NamedTuple
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG
-import dagster._check as check
+from dagster._core.storage.tags import get_multidimensional_partition_tag
 
 from .partition import Partition, PartitionsDefinition
 
@@ -86,8 +82,27 @@ class PartitionDimensionDefinition(
 
 @experimental
 class MultiPartitionsDefinition(PartitionsDefinition):
-    """The set of partitions is the cross product of partitions in the inner partitions
-    definitions"""
+    """
+    Takes the cross-product of partitions from two partitions definitions.
+
+    For example, with a static partitions definition where the partitions are ["a", "b", "c"]
+    and a daily partitions definition, this partitions definition will have the following
+    partitions:
+
+    2020-01-01|a
+    2020-01-01|b
+    2020-01-01|c
+    2020-01-02|a
+    2020-01-02|b
+    ...
+
+    Attributes:
+        partitions_defs (Sequence[PartitionDimensionDefinition]):
+            A sequence of PartitionDimensionDefinition objects, each of which contains a dimension
+            name and a PartitionsDefinition. The total set of partitions will be the cross-product
+            of the partitions from each PartitionsDefinition. This sequence is ordered by
+            dimension name, to ensure consistent ordering of the partitions.
+    """
 
     def __init__(self, partitions_defs: Mapping[str, PartitionsDefinition]):
         from dagster import DagsterInvalidInvocationError
@@ -119,7 +134,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
             for partition_dim in self._partitions_defs
         ]
 
-        def get_multi_dimensional_partition(partitions_tuple: Tuple[Partition]):
+        def get_multi_dimensional_partition(partitions_tuple: Tuple[Partition]) -> Partition:
             check.invariant(len(partitions_tuple) == len(self._partitions_defs))
 
             partitions_by_dimension: Dict[str, Partition] = {
@@ -129,7 +144,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
 
             return Partition(
                 value=partitions_by_dimension,
-                name=self.get_partition_key(
+                name=MultiPartitionKey(
                     {
                         dimension_key: partition.name
                         for dimension_key, partition in partitions_by_dimension.items()
@@ -151,33 +166,11 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def __hash__(self):
         return hash(tuple(self.partitions_defs))
 
-    def get_partition_key(self, partition_key_by_dimension: Mapping[str, str]) -> MultiPartitionKey:
-        check.mapping_param(
-            partition_key_by_dimension,
-            "partition_key_by_dimension",
-            key_type=str,
-            value_type=str,
-        )
-        partition_dim_names = set([partition_dim.name for partition_dim in self._partitions_defs])
-        if set(partition_key_by_dimension.keys()) != partition_dim_names:
-            extra_keys = set(partition_key_by_dimension.keys()) - partition_dim_names
-            missing_keys = partition_dim_names - set(partition_key_by_dimension.keys())
-
-            raise DagsterInvalidInvocationError(
-                "Invalid partition dimension keys provided. All provided keys must be defined as "
-                f"partition dimensions. Valid keys are {partition_dim_names}. "
-                "You provided: \n"
-                f"{f'Extra keys: {extra_keys}.' if extra_keys else ''}"
-                f"{f'Missing keys {missing_keys}.' if missing_keys else ''}"
-            )
-
-        return MultiPartitionKey(partition_key_by_dimension)
-
 
 def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:
     check.inst_param(multi_partition_key, "multi_partition_key", MultiPartitionKey)
 
     return {
-        MULTIDIMENSIONAL_PARTITION_TAG(dimension.dimension_name): dimension.partition_key
+        get_multidimensional_partition_tag(dimension.dimension_name): dimension.partition_key
         for dimension in multi_partition_key.dimension_keys
     }

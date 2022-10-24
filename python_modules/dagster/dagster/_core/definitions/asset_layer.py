@@ -48,13 +48,7 @@ class AssetOutputInfo(
         "_AssetOutputInfo",
         [
             ("key", AssetKey),
-            (
-                "partitions_fn",
-                Callable[
-                    ["OutputContext"],
-                    Optional[AbstractSet[str]],
-                ],
-            ),
+            ("partitions_fn", Callable[["OutputContext"], Optional[AbstractSet[str]]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("is_required", bool),
         ],

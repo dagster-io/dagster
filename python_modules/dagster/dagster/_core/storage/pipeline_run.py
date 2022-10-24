@@ -34,7 +34,6 @@ from dagster._serdes.serdes import (
 
 from .tags import (
     BACKFILL_ID_TAG,
-    MULTIDIMENSIONAL_PARTITION_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,

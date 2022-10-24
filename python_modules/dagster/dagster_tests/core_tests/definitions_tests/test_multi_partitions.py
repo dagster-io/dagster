@@ -13,7 +13,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_TAG
+from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -71,7 +71,7 @@ def test_tags_multi_dimensional_partitions():
         return 1
 
     @asset(partitions_def=composite)
-    def asset2(asset1):
+    def asset2(asset1):  # pylint: disable=unused-argument
         return 2
 
     @repository
@@ -83,13 +83,13 @@ def test_tags_multi_dimensional_partitions():
             my_repo()
             .get_job("my_job")
             .execute_in_process(
-                partition_key=composite.get_partition_key({"abc": "a", "date": "2021-06-01"}),
+                partition_key=MultiPartitionKey({"abc": "a", "date": "2021-06-01"}),
                 instance=instance,
             )
         )
         assert result.success
-        assert result.dagster_run.tags[MULTIDIMENSIONAL_PARTITION_TAG("abc")] == "a"
-        assert result.dagster_run.tags[MULTIDIMENSIONAL_PARTITION_TAG("date")] == "2021-06-01"
+        assert result.dagster_run.tags[get_multidimensional_partition_tag("abc")] == "a"
+        assert result.dagster_run.tags[get_multidimensional_partition_tag("date")] == "2021-06-01"
 
         materializations = sorted(
             instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)),
@@ -106,7 +106,7 @@ def test_tags_multi_dimensional_partitions():
             instance.get_event_records(
                 EventRecordsFilter(
                     DagsterEventType.ASSET_MATERIALIZATION,
-                    tags={MULTIDIMENSIONAL_PARTITION_TAG("abc"): "a"},
+                    tags={get_multidimensional_partition_tag("abc"): "a"},
                 )
             )
         )
@@ -116,7 +116,7 @@ def test_tags_multi_dimensional_partitions():
             instance.get_event_records(
                 EventRecordsFilter(
                     DagsterEventType.ASSET_MATERIALIZATION,
-                    tags={MULTIDIMENSIONAL_PARTITION_TAG("abc"): "nonexistent"},
+                    tags={get_multidimensional_partition_tag("abc"): "nonexistent"},
                 )
             )
         )
@@ -126,7 +126,7 @@ def test_tags_multi_dimensional_partitions():
             instance.get_event_records(
                 EventRecordsFilter(
                     DagsterEventType.ASSET_MATERIALIZATION,
-                    tags={MULTIDIMENSIONAL_PARTITION_TAG("date"): "2021-06-01"},
+                    tags={get_multidimensional_partition_tag("date"): "2021-06-01"},
                 )
             )
         )

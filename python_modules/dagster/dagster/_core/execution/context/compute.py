@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Dict,
@@ -9,7 +8,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Union,
     cast,
 )
 

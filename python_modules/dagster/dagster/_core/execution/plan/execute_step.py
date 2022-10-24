@@ -7,7 +7,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Mapping,
     Optional,
     Set,
     Tuple,
@@ -26,7 +25,6 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
-from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster._core.definitions.metadata import (
@@ -36,7 +34,6 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
-    MultiPartitionsDefinition,
     get_tags_from_multi_partition_key,
 )
 from dagster._core.errors import (
@@ -57,7 +54,7 @@ from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
 from dagster._core.storage.io_manager import IOManager
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG, MULTIDIMENSIONAL_PARTITION_TAG
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import ensure_gen, iterate_with_context
 from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
