@@ -5,11 +5,11 @@ description: Partitioned assets and jobs enable launching backfills, where each 
 
 # Partitioned Assets and Jobs
 
-Partitioning allows a job or software-defined asset to correspond to a set of entities with identical structure but different parameters.
-
-A _partitioned job_ is a job where each run corresponds to a partition key. Most commonly, each partition key represents a time window, so, when a job executes, it processes data within one of the time windows.
+Partitioning allows a software-defined asset or job to correspond to a set of entities with identical structure but different parameters.
 
 A _partitioned asset_ is an asset that's composed of a set of partitions, which can be materialized and tracked independently. Most commonly, each partition represents all the records in a data set that fall within a particular time window. Depending on where the asset is stored, each partition might correspond to a file or a slice of a table in a database.
+
+A _partitioned job_ is a job where each run corresponds to a partition key. Most commonly, each partition key represents a time window, so, when a job executes, it processes data within one of the time windows.
 
 It's common to construct a partitioned job that materializes a particular set of partitioned assets every time it runs.
 

@@ -1,6 +1,4 @@
 import inspect
-import warnings
-from collections import defaultdict
 from importlib import import_module
 from types import ModuleType
 from typing import (
@@ -20,7 +18,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.executor_definition import ExecutorDefinition, in_process_executor
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -29,29 +27,21 @@ from dagster._core.errors import (
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._utils import merge_dicts
-from dagster._utils.backcompat import ExperimentalWarning
 
 from .asset_layer import build_asset_selection_job
 from .assets import AssetsDefinition
-from .assets_job import build_assets_job, check_resources_satisfy_requirements
-from .dependency import NodeHandle
-from .events import AssetKey, CoercibleToAssetKeyPrefix
-from .executor_definition import ExecutorDefinition, in_process_executor
+from .assets_job import check_resources_satisfy_requirements
 from .job_definition import JobDefinition
 from .load_assets_from_modules import (
     assets_and_source_assets_from_modules,
     assets_and_source_assets_from_package_module,
     prefix_assets,
 )
-from .partition import PartitionsDefinition
 from .resource_definition import ResourceDefinition
 from .source_asset import SourceAsset
 
 if TYPE_CHECKING:
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
-
-# Prefix for auto created jobs that are used to materialize assets
-ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
 
 
 class AssetGroup:
@@ -149,10 +139,6 @@ class AssetGroup:
     @property
     def executor_def(self):
         return self._executor_def
-
-    @staticmethod
-    def is_base_job_name(name) -> bool:
-        return name.startswith(ASSET_BASE_JOB_PREFIX)
 
     def build_job(
         self,
@@ -403,42 +389,6 @@ class AssetGroup:
         return self.build_job(
             name="in_process_materialization_job", selection=selection
         ).execute_in_process(run_config=run_config)
-
-    def get_base_jobs(self) -> Sequence[JobDefinition]:
-        """For internal use only."""
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
-            assets_by_partitions_def: Dict[
-                Optional[PartitionsDefinition], List[AssetsDefinition]
-            ] = defaultdict(list)
-            for assets_def in self.assets:
-                assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
-
-            if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {
-                None
-            }:
-                return [self.build_job(ASSET_BASE_JOB_PREFIX)]
-            else:
-                unpartitioned_assets = assets_by_partitions_def.get(None, [])
-                jobs = []
-
-                # sort to ensure some stability in the ordering
-                for i, (partitions_def, assets_with_partitions) in enumerate(
-                    sorted(assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
-                ):
-                    if partitions_def is not None:
-                        jobs.append(
-                            build_assets_job(
-                                f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                                assets=assets_with_partitions + unpartitioned_assets,
-                                source_assets=[*self.source_assets, *self.assets],
-                                resource_defs=self.resource_defs,
-                                executor_def=self.executor_def,
-                            )
-                        )
-
-                return jobs
 
     def prefixed(self, key_prefix: CoercibleToAssetKeyPrefix):
         """

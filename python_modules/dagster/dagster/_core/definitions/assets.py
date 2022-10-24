@@ -593,7 +593,10 @@ class AssetsDefinition(ResourceAddable):
             },
             node_def=self.node_def,
             partitions_def=self.partitions_def,
-            partition_mappings=self._partition_mappings,
+            partition_mappings={
+                input_asset_key_replacements.get(key, key): partition_mapping
+                for key, partition_mapping in self._partition_mappings.items()
+            },
             asset_deps={
                 # replace both the keys and the values in this mapping
                 output_asset_key_replacements.get(key, key): {

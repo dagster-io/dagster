@@ -1,3 +1,5 @@
+from base64 import b64encode
+
 import pytest
 import responses
 from dagster_airbyte import AirbyteOutput, airbyte_resource, airbyte_sync_op
@@ -15,7 +17,11 @@ DEFAULT_CONNECTION_ID = "02087b3c-2037-4db9-ae7b-4a8e45dc20b1"
     "additional_request_params",
     [False, True],
 )
-def test_airbyte_sync_op(forward_logs, additional_request_params):
+@pytest.mark.parametrize(
+    "use_auth",
+    [False, True],
+)
+def test_airbyte_sync_op(forward_logs, additional_request_params, use_auth):
 
     ab_host = "some_host"
     ab_port = "8000"
@@ -30,6 +36,7 @@ def test_airbyte_sync_op(forward_logs, additional_request_params):
                 if additional_request_params
                 else {}
             ),
+            **({"username": "foo", "password": "bar"} if use_auth else {}),
         }
     )
 
@@ -85,3 +92,11 @@ def test_airbyte_sync_op(forward_logs, additional_request_params):
         if additional_request_params:
             for call in rsps.calls:
                 assert "my-cool-header" in call.request.headers
+
+        if use_auth:
+            for call in rsps.calls:
+                encoded = b64encode(b"foo:bar").decode("utf-8")
+                assert call.request.headers["Authorization"] == f"Basic {encoded}"
+        else:
+            for call in rsps.calls:
+                assert "Authorization" not in call.request.headers
