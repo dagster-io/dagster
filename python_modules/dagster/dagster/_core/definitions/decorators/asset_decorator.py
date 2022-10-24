@@ -17,7 +17,7 @@ import dagster._check as check
 from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
-from dagster._core.definitions.asset_data_sla import AssetRootDataSLA
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
@@ -67,7 +67,7 @@ def asset(
     op_tags: Optional[Dict[str, Any]] = ...,
     group_name: Optional[str] = ...,
     output_required: bool = ...,
-    sla: Optional[AssetRootDataSLA] = ...,
+    freshness_policy: Optional[FreshnessPolicy] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -92,7 +92,7 @@ def asset(
     op_tags: Optional[Dict[str, Any]] = None,
     group_name: Optional[str] = None,
     output_required: bool = True,
-    sla: Optional[AssetRootDataSLA] = None,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -147,7 +147,7 @@ def asset(
         output_required (bool): Whether the decorated function will always materialize an asset.
             Defaults to True. If False, the function can return None, which will not be materialized to
             storage and will halt execution of downstream assets.
-        sla (AssetRootDataSLA): A constraint telling Dagster how often this asset is intended to be updated
+        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
             with respect to its root data.
 
     Examples:
@@ -189,7 +189,7 @@ def asset(
             op_tags=op_tags,
             group_name=group_name,
             output_required=output_required,
-            sla=sla,
+            freshness_policy=freshness_policy,
         )(fn)
 
     return inner
@@ -214,7 +214,7 @@ class _Asset:
         op_tags: Optional[Dict[str, Any]] = None,
         group_name: Optional[str] = None,
         output_required: bool = True,
-        sla: Optional[AssetRootDataSLA] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
     ):
         self.name = name
 
@@ -237,7 +237,7 @@ class _Asset:
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         self.group_name = group_name
         self.output_required = output_required
-        self.sla = sla
+        self.freshness_policy = freshness_policy
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -301,7 +301,9 @@ class _Asset:
             partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=self.resource_defs,
             group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
-            slas_by_key={out_asset_key: self.sla} if self.sla else None,
+            freshness_policies_by_key={out_asset_key: self.freshness_policy}
+            if self.freshness_policy
+            else None,
         )
 
 
