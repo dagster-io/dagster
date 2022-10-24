@@ -1218,7 +1218,7 @@ class SqlEventLogStorage(EventLogStorage):
         query = (
             db.select([AssetEventTagsTable.c.key, AssetEventTagsTable.c.value])
             .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.value)
-            .where(SqlEventLogStorageTable.c.asset_key == asset_key.to_string())
+            .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
         )
 
         with self.index_connection() as conn:
