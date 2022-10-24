@@ -40,14 +40,14 @@ class MultiPartitionKey(str):
 
     dimension_keys: List[PartitionDimensionKey] = []
 
-    def __new__(cls, partition_dimension_mapping: Mapping[str, str]):
+    def __new__(cls, keys_by_dimension: Mapping[str, str]):
         check.mapping_param(
-            partition_dimension_mapping, "partitions_by_dimension", key_type=str, value_type=str
+            keys_by_dimension, "partitions_by_dimension", key_type=str, value_type=str
         )
 
         dimension_keys: List[PartitionDimensionKey] = [
-            PartitionDimensionKey(dimension, partition_dimension_mapping[dimension])
-            for dimension in sorted(list(partition_dimension_mapping.keys()))
+            PartitionDimensionKey(dimension, keys_by_dimension[dimension])
+            for dimension in sorted(list(keys_by_dimension.keys()))
         ]
 
         str_key = super(MultiPartitionKey, cls).__new__(
@@ -58,7 +58,8 @@ class MultiPartitionKey(str):
 
         return str_key
 
-    def keys_by_dimension(self):
+    @property
+    def keys_by_dimension(self) -> Mapping[str, str]:
         return {dim_key.dimension_name: dim_key.partition_key for dim_key in self.dimension_keys}
 
 
