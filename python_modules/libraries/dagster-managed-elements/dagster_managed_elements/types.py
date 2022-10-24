@@ -24,8 +24,32 @@ def _sanitize(key: str, value: str):
     return value
 
 
-DiffData = Tuple[str, str]
-ModifiedDiffData = Tuple[str, str, str]
+class DiffData(NamedTuple("_DiffData", [("key", str), ("value", str)])):
+    def __new__(cls, key: str, value: str):
+        return super(DiffData, cls).__new__(
+            cls,
+            key=check.str_param(key, "key"),
+            value=check.str_param(value, "value"),
+        )
+
+    def __str__(self):
+        return f"Key: {self.key}, Value: {self.value}"
+
+
+class ModifiedDiffData(
+    NamedTuple("_ModifiedDiffData", [("key", str), ("old_value", str), ("new_value", str)])
+):
+    def __new__(cls, key: str, old_value: Any, new_value: Any):
+
+        return super(ModifiedDiffData, cls).__new__(
+            cls,
+            key=check.str_param(key, "key"),
+            old_value=check.str_param(old_value, "old_value"),
+            new_value=check.str_param(new_value, "new_value"),
+        )
+
+    def __str__(self):
+        return f"Key: {self.key}, Old Value: {self.old_value}, New Value: {self.new_value}"
 
 
 class ManagedElementDiff(
@@ -50,15 +74,17 @@ class ManagedElementDiff(
         deletions: Optional[List[DiffData]] = None,
         modifications: Optional[List[ModifiedDiffData]] = None,
     ):
-        check.opt_list_param(additions, "additions", of_type=DiffData)
-        check.opt_list_param(deletions, "deletions", of_type=DiffData)
-        check.opt_list_param(modifications, "modifications", of_type=ModifiedDiffData)
+        additions = check.opt_list_param(additions, "additions", of_type=DiffData)
+        deletions = check.opt_list_param(deletions, "deletions", of_type=DiffData)
+        modifications = check.opt_list_param(
+            modifications, "modifications", of_type=ModifiedDiffData
+        )
 
         return super().__new__(
             cls,
-            additions or [],
-            deletions or [],
-            modifications or [],
+            additions,
+            deletions,
+            modifications,
             OrderedDict({}),
         )
 
@@ -69,7 +95,7 @@ class ManagedElementDiff(
         check.str_param(name, "name")
         check.str_param(value, "value")
 
-        return self._replace(additions=self.additions + [(name, value)])
+        return self._replace(additions=self.additions + [DiffData(name, value)])
 
     def delete(self, name: str, value: str) -> "ManagedElementDiff":
         """
@@ -78,7 +104,7 @@ class ManagedElementDiff(
         check.str_param(name, "name")
         check.str_param(value, "value")
 
-        return self._replace(deletions=self.deletions + [(name, value)])
+        return self._replace(deletions=self.deletions + [DiffData(name, value)])
 
     def modify(self, name: str, old_value: str, new_value: str) -> "ManagedElementDiff":
         """
@@ -88,7 +114,9 @@ class ManagedElementDiff(
         check.str_param(old_value, "old_value")
         check.str_param(new_value, "new_value")
 
-        return self._replace(modifications=self.modifications + [(name, old_value, new_value)])
+        return self._replace(
+            modifications=self.modifications + [ModifiedDiffData(name, old_value, new_value)]
+        )
 
     def with_nested(self, name: str, nested: "ManagedElementDiff") -> "ManagedElementDiff":
         """
@@ -98,9 +126,6 @@ class ManagedElementDiff(
         check.inst_param(nested, "nested", ManagedElementDiff)
 
         return self._replace(nested=OrderedDict(list(self.nested.items()) + [(name, nested)]))
-
-    def __add__(self, other: "ManagedElementDiff") -> "ManagedElementDiff":
-        return self.join(other)
 
     def join(self, other: "ManagedElementDiff") -> "ManagedElementDiff":
         """
