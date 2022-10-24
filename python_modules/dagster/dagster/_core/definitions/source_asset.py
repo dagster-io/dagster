@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dagster._core.definitions.logical_version import LogicalVersion
 import warnings
 from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
@@ -50,7 +51,9 @@ class SourceAssetObserveFunctionWithContext(Protocol):
     def __name__(self) -> str:
         ...
 
-    def __call__(self, context: "SourceAssetObserveContext") -> MetadataUserInput:
+    def __call__(
+        self, context: "SourceAssetObserveContext"
+    ) -> Union[MetadataUserInput, LogicalVersion]:
         ...
 
 
@@ -59,7 +62,7 @@ class SourceAssetObserveFunctionNoContext(Protocol):
     def __name__(self) -> str:
         ...
 
-    def __call__(self) -> MetadataUserInput:
+    def __call__(self) -> Union[MetadataUserInput, LogicalVersion]:
         ...
 
 
@@ -301,6 +304,8 @@ class SourceAsset(ResourceAddable):
 def _raw_observation_to_metadata(raw_observation: object) -> MetadataUserInput:
     if isinstance(raw_observation, dict):
         return raw_observation
+    elif isinstance(raw_observation, LogicalVersion):
+        return {"logical_version": raw_observation}
     else:
         raise DagsterInvalidObservationError(
             "Source asset observe function must return a metadata dictionary."
