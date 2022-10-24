@@ -1,7 +1,0 @@
-from dagster import execute_job
-
-from {{EXAMPLE_NAME}}.repository import my_job
-
-
-def test_{{EXAMPLE_NAME}}():
-    assert my_job.execute_in_process().success
