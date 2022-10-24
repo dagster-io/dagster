@@ -92,5 +92,9 @@ db.Index(
     mysql_length={"dagster_event_type": 64},
 )
 db.Index(
-    "idx_asset_event_tags", AssetEventTagsTable.c.key, AssetEventTagsTable.c.value, mysql_length=64
+    "idx_asset_event_tags",
+    AssetEventTagsTable.c.asset_key,
+    AssetEventTagsTable.c.key,
+    AssetEventTagsTable.c.value,
+    mysql_length=64,
 )
