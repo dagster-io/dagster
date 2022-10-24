@@ -1,9 +1,11 @@
+from typing_extensions import Protocol, TypeAlias
 import warnings
-from typing import Dict, Iterator, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,
@@ -11,6 +13,8 @@ from dagster._core.definitions.metadata import (
     PartitionMetadataEntry,
     normalize_metadata,
 )
+from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
@@ -29,22 +33,35 @@ from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
 
+if TYPE_CHECKING:
+    from dagster._core.execution.context.compute import SourceAssetObserveContext
 
-class SourceAsset(
-    NamedTuple(
-        "_SourceAsset",
-        [
-            ("key", PublicAttr[AssetKey]),
-            ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
-            ("io_manager_key", PublicAttr[Optional[str]]),
-            ("description", PublicAttr[Optional[str]]),
-            ("partitions_def", PublicAttr[Optional[PartitionsDefinition]]),
-            ("group_name", PublicAttr[str]),
-            ("resource_defs", PublicAttr[Dict[str, ResourceDefinition]]),
-        ],
-    ),
-    ResourceAddable,
-):
+class SourceAssetObserveFunctionWithContext(Protocol):
+    @property
+    def __name__(self) -> str:
+        ...
+
+    def __call__(
+        self, context: "SourceAssetObserveContext"
+    ) -> Union[MetadataUserInput, LogicalVersion]:
+        ...
+
+
+class SourceAssetObserveFunctionNoContext(Protocol):
+    @property
+    def __name__(self) -> str:
+        ...
+
+    def __call__(self) -> Union[MetadataUserInput, LogicalVersion]:
+        ...
+
+
+SourceAssetObserveFunction: TypeAlias = Union[
+    SourceAssetObserveFunctionWithContext, SourceAssetObserveFunctionNoContext
+]
+
+
+class SourceAsset(ResourceAddable):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
     Attributes:
@@ -58,10 +75,22 @@ class SourceAsset(
         description (Optional[str]): The description of the asset.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
+        observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
     """
 
-    def __new__(
-        cls,
+    key: PublicAttr[AssetKey]
+    metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
+    io_manager_key: PublicAttr[Optional[str]]
+    io_manager_def: PublicAttr[Optional[IOManagerDefinition]]
+    description: PublicAttr[Optional[str]]
+    partitions_def: PublicAttr[Optional[PartitionsDefinition]]
+    group_name: PublicAttr[str]
+    resource_defs: PublicAttr[Dict[str, ResourceDefinition]]
+    observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
+    _node_def: Optional[OpDefinition]
+
+    def __init__(
+        self,
         key: CoercibleToAssetKey,
         metadata: Optional[MetadataUserInput] = None,
         io_manager_key: Optional[str] = None,
@@ -71,6 +100,7 @@ class SourceAsset(
         _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        observe_fn: Optional[SourceAssetObserveFunction] = None,
         # Add additional fields to with_resources and with_group below
     ):
 
@@ -80,34 +110,36 @@ class SourceAsset(
         if io_manager_def is not None:
             experimental_arg_warning("io_manager_def", "SourceAsset.__new__")
 
-        key = AssetKey.from_coerceable(key)
+        self.key = AssetKey.from_coerceable(key)
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        metadata_entries = _metadata_entries or normalize_metadata(metadata, [], allow_invalid=True)
-        resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
-        io_manager_def = check.opt_inst_param(io_manager_def, "io_manager_def", IOManagerDefinition)
-        if io_manager_def:
+        self.metadata_entries = _metadata_entries or normalize_metadata(
+            metadata, [], allow_invalid=True
+        )
+        self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        self._io_manager_def = check.opt_inst_param(  # type: ignore
+            io_manager_def, "io_manager_def", IOManagerDefinition  # type: ignore
+        )
+        if self._io_manager_def:
             if not io_manager_key:
                 io_manager_key = key.to_python_identifier("io_manager")
 
-            if io_manager_key in resource_defs and resource_defs[io_manager_key] != io_manager_def:
+            if (
+                io_manager_key in self.resource_defs
+                and self.resource_defs[io_manager_key] != io_manager_def
+            ):
                 raise DagsterInvalidDefinitionError(
                     f"Provided conflicting definitions for io manager key '{io_manager_key}'. Please provide only one definition per key."
                 )
 
-            resource_defs[io_manager_key] = io_manager_def
+            self.resource_defs[io_manager_key] = self._io_manager_def
 
-        return super().__new__(
-            cls,
-            key=key,
-            metadata_entries=metadata_entries,
-            io_manager_key=check.opt_str_param(io_manager_key, "io_manager_key"),
-            description=check.opt_str_param(description, "description"),
-            partitions_def=check.opt_inst_param(
-                partitions_def, "partitions_def", PartitionsDefinition
-            ),
-            group_name=validate_group_name(group_name),
-            resource_defs=resource_defs,
+        self.io_manager_key = check.opt_str_param(io_manager_key, "io_manager_key")
+        self.partitions_def = check.opt_inst_param(
+            partitions_def, "partitions_def", PartitionsDefinition
         )
+        self.group_name = validate_group_name(group_name)
+        self.description = check.opt_str_param(description, "description")
+        self.observe_fn = check.opt_callable_param(observe_fn, "observe_fn")
 
     @public  # type: ignore
     @property
@@ -125,6 +157,34 @@ class SourceAsset(
             Optional[IOManagerDefinition],
             self.resource_defs.get(io_manager_key) if io_manager_key else None,
         )
+
+    @public  # type: ignore
+    @property
+    def op(self) -> OpDefinition:
+        check.invariant(
+            isinstance(self.node_def, OpDefinition),
+            "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
+        )
+        return cast(OpDefinition, self.node_def)
+
+    @public
+    @property
+    def is_versioned(self) -> bool:
+        return self.node_def is not None
+
+    @property
+    def node_def(self):
+        """Op that generates observation metadata for a source asset."""
+        if self.observe_fn is None:
+            return None
+        else:
+            if not self._node_def:
+                self._node_def = OpDefinition(
+                    compute_fn=self.observe_fn,
+                    name="__".join(self.key.path).replace("-", "_"),
+                    description=self.description,
+                )
+            return self._node_def
 
     def with_resources(self, resource_defs) -> "SourceAsset":
         from dagster._core.execution.resources_init import get_transitive_required_resource_keys
@@ -172,6 +232,7 @@ class SourceAsset(
                 _metadata_entries=self.metadata_entries,
                 resource_defs=relevant_resource_defs,
                 group_name=self.group_name,
+                observe_fn=self.observe_fn,
             )
 
     def with_group_name(self, group_name: str) -> "SourceAsset":
@@ -192,6 +253,7 @@ class SourceAsset(
                 partitions_def=self.partitions_def,
                 group_name=group_name,
                 resource_defs=self.resource_defs,
+                observe_fn=self.observe_fn,
             )
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
@@ -200,3 +262,6 @@ class SourceAsset(
         )
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
+
+    def __hash__(self):
+        return hash(self.key)
