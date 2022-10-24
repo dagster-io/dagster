@@ -42,6 +42,6 @@ def build_dagit_ui_steps() -> List[CommandStep]:
             "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
         )
         .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_dagit_changes)
+        .with_skip(skip_if_no_dagit_changes())
         .build(),
     ]
