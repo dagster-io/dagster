@@ -9,10 +9,12 @@ from dagster import (
     AssetsDefinition,
     DagsterEventType,
     DagsterInvalidDefinitionError,
+    DailyPartitionsDefinition,
     DependencyDefinition,
     Field,
     GraphIn,
     GraphOut,
+    HourlyPartitionsDefinition,
     IOManager,
     In,
     Nothing,
@@ -32,6 +34,7 @@ from dagster import (
 )
 from dagster._config import StringSource
 from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
+from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
@@ -1910,3 +1913,51 @@ def test_resolve_dependency_multi_asset_different_groups():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
             materialize_to_memory([upstream, assets])
+
+
+def test_get_base_asset_jobs_multiple_partitions_defs():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
+    def daily_asset():
+        ...
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
+    def daily_asset2():
+        ...
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-05-05"))
+    def daily_asset_different_start_date():
+        ...
+
+    @asset(partitions_def=HourlyPartitionsDefinition(start_date="2021-05-05-00:00"))
+    def hourly_asset():
+        ...
+
+    @asset
+    def unpartitioned_asset():
+        ...
+
+    jobs = get_base_asset_jobs(
+        assets=[
+            daily_asset,
+            daily_asset2,
+            daily_asset_different_start_date,
+            hourly_asset,
+            unpartitioned_asset,
+        ],
+        source_assets=[],
+        executor_def=None,
+        resource_defs={},
+    )
+    assert len(jobs) == 3
+    assert {job_def.name for job_def in jobs} == {
+        "__ASSET_JOB_0",
+        "__ASSET_JOB_1",
+        "__ASSET_JOB_2",
+    }
+    assert {
+        frozenset([node_def.name for node_def in job_def.all_node_defs]) for job_def in jobs
+    } == {
+        frozenset(["daily_asset", "daily_asset2", "unpartitioned_asset"]),
+        frozenset(["hourly_asset", "unpartitioned_asset"]),
+        frozenset(["daily_asset_different_start_date", "unpartitioned_asset"]),
+    }
