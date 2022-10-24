@@ -21,7 +21,7 @@ class ChangedFiles:
     all: Set[Path] = set()
 
     @classmethod
-    def load_repository(cls, git_info: GitInfo) -> None:
+    def load_from_git(cls, git_info: GitInfo) -> None:
         # Only do the expensive git diffing once
         if GitInfo.directory in cls._repositories:
             return None
