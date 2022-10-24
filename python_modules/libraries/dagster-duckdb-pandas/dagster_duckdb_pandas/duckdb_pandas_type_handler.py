@@ -1,15 +1,8 @@
 import pandas as pd
 from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb
 
-from dagster import (
-    DbTypeHandler,
-    InputContext,
-    MetadataValue,
-    OutputContext,
-    TableColumn,
-    TableSchema,
-    TableSlice,
-)
+from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):

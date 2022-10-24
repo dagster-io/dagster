@@ -21,7 +21,6 @@ from dagster import (
     Out,
     TableColumn,
     TableSchema,
-    TableSlice,
     build_input_context,
     build_output_context,
     job,

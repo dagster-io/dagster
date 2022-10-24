@@ -2,17 +2,13 @@ from typing import Sequence
 
 import duckdb
 
-from dagster import (
+from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
-    Field,
-    IOManagerDefinition,
-    OutputContext,
-    StringSource,
     TablePartition,
     TableSlice,
-    io_manager,
 )
 from dagster._utils.backoff import backoff
 
