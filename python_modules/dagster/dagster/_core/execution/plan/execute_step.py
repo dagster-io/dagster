@@ -14,13 +14,17 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
+from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
+from dagster._core.definitions.logical_version import get_logical_version_from_inputs
 from dagster._core.definitions.metadata import (
     MetadataEntry,
+    MetadataValue,
     PartitionMetadataEntry,
     normalize_metadata,
 )
+from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.errors import (
     DagsterExecutionHandleOutputError,
     DagsterInvariantViolationError,
@@ -30,7 +34,14 @@ from dagster._core.errors import (
     DagsterTypeMaterializationError,
     user_code_error_boundary,
 )
-from dagster._core.events import DagsterEvent
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import (
+    AssetObservationData,
+    DagsterEvent,
+    DagsterEventType,
+    StepMaterializationData,
+)
+from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.execution.plan.compute import execute_core_compute
@@ -38,6 +49,7 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
@@ -484,13 +496,25 @@ def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLin
 
 def _get_output_asset_materializations(
     asset_key: AssetKey,
+    asset_layer: AssetLayer,
     asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]],
+    instance: DagsterInstance,
 ) -> Iterator[AssetMaterialization]:
 
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
+    if asset_layer.is_versioned_for_asset(asset_key):
+        dep_keys = asset_layer.upstream_assets_for_asset(asset_key)
+        op_version = check.not_none(asset_layer.op_version_for_asset(asset_key))
+        dep_key_to_is_source_map = {key: asset_layer.is_source_for_asset(key) for key in dep_keys}
+        version = get_logical_version_from_inputs(
+            dep_keys, op_version, dep_key_to_is_source_map, instance
+        )
+        all_metadata.append(
+            MetadataEntry(label="logical_version", value=MetadataValue.logical_version(version))
+        )
 
     if asset_partitions:
         metadata_mapping: Dict[str, List[Union[MetadataEntry, PartitionMetadataEntry]]] = {
@@ -625,12 +649,15 @@ def _store_output(
         output_context, output_def, output_manager
     )
     if asset_key:
+        input_keys = step_context.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
         for materialization in _get_output_asset_materializations(
             asset_key,
+            step_context.pipeline_def.asset_layer,
             partitions,
             output,
             output_def,
             manager_metadata_entries,
+            step_context.instance,
         ):
             yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 

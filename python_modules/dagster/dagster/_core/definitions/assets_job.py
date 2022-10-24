@@ -84,7 +84,7 @@ def get_base_asset_jobs(
 @experimental
 def build_assets_job(
     name: str,
-    assets: Iterable[AssetsDefinition],
+    assets: Iterable[Union[AssetsDefinition, SourceAsset]],
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
@@ -127,14 +127,15 @@ def build_assets_job(
     Returns:
         JobDefinition: A job that materializes the given assets.
     """
-
     check.str_param(name, "name")
-    check.iterable_param(assets, "assets", of_type=AssetsDefinition)
+    check.iterable_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
     source_assets = check.opt_sequence_param(
         source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
     )
     check.opt_str_param(description, "description")
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
+
+    print("BUILD ASSETS JOB", source_assets, assets)
 
     # figure out what partitions (if any) exist for this job
     partitions_def = partitions_def or build_job_partitions_from_assets(assets)
@@ -160,9 +161,14 @@ def build_assets_job(
 
         deps, assets_defs_by_node_handle = build_node_deps(assets, resolved_asset_deps)
 
+    if len(assets) > 0:
+        node_defs = [asset.node_def for asset in assets]
+    else:
+        node_defs = list(filter(None, [asset.node_def for asset in [*source_assets]]))
+
     graph = GraphDefinition(
         name=name,
-        node_defs=[asset.node_def for asset in assets],
+        node_defs=node_defs,
         dependencies=deps,
         description=description,
         input_mappings=None,

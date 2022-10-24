@@ -668,7 +668,12 @@ class AssetLayer:
 
     @property
     def asset_keys(self) -> Iterable[AssetKey]:
-        return self._dependency_node_handles_by_asset_key.keys()
+        # return [*self._dependency_node_handles_by_asset_key.keys(), *self._source_assets_by_key.keys()]
+        from itertools import chain
+
+        return chain(
+            self._dependency_node_handles_by_asset_key.keys(), self._source_assets_by_key.keys()
+        )
 
     @property
     def source_assets_by_key(self) -> Mapping[AssetKey, "SourceAsset"]:
@@ -693,6 +698,15 @@ class AssetLayer:
 
     def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
         return self._io_manager_keys_by_asset_key.get(asset_key, "io_manager")
+
+    def is_source_for_asset(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.source_assets_by_key
+
+    def is_versioned_for_asset(self, asset_key: AssetKey) -> bool:
+        return self._assets_defs_by_key[asset_key].is_versioned
+
+    def op_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
+        return self._assets_defs_by_key[asset_key].op.version
 
     def metadata_for_asset(self, asset_key: AssetKey) -> Optional[MetadataUserInput]:
         if asset_key in self._source_assets_by_key:
@@ -792,14 +806,20 @@ def build_asset_selection_job(
     asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> "JobDefinition":
     from dagster._core.definitions import build_assets_job
+    from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
 
     if asset_selection:
-        included_assets, excluded_assets = _subset_assets_defs(
-            assets, source_assets, asset_selection
-        )
+        (
+            included_assets,
+            _excluded_assets,
+            included_source_assets,
+            _excluded_source_assets,
+        ) = _subset_assets_defs(assets, source_assets, asset_selection)
     else:
-        included_assets = cast(Iterable["AssetsDefinition"], assets)
-        excluded_assets = list(source_assets)
+        included_assets = list(assets)
+        _excluded_assets = []
+        included_source_assets = list(source_assets)
+        _excluded_source_assets = []
 
     if partitions_def:
         for asset in included_assets:
@@ -816,7 +836,7 @@ def build_asset_selection_job(
             name=name,
             assets=included_assets,
             config=config,
-            source_assets=excluded_assets,
+            source_assets=included_source_assets,
             resource_defs=resource_defs,
             executor_def=executor_def,
             partitions_def=partitions_def,
@@ -832,7 +852,12 @@ def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
     source_assets: Iterable["SourceAsset"],
     selected_asset_keys: AbstractSet[AssetKey],
-) -> Tuple[Iterable["AssetsDefinition"], Sequence[Union["AssetsDefinition", "SourceAsset"]]]:
+) -> Tuple[
+    Sequence["AssetsDefinition"],
+    Sequence["AssetsDefinition"],
+    Sequence["SourceAsset"],
+    Sequence["SourceAsset"],
+]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """
@@ -840,13 +865,12 @@ def _subset_assets_defs(
 
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
-
-    included_keys: Set[AssetKey] = set()
+    included_source_assets: Set[SourceAsset] = set()
+    excluded_source_assets: Set[SourceAsset] = set()
 
     for asset in set(assets):
         # intersection
         selected_subset = selected_asset_keys & asset.keys
-        included_keys.update(selected_subset)
         # all assets in this def are selected
         if selected_subset == asset.keys:
             included_assets.add(asset)
@@ -868,9 +892,24 @@ def _subset_assets_defs(
                 "asset keys produced by this asset."
             )
 
-    all_excluded_assets: Sequence[Union["AssetsDefinition", "SourceAsset"]] = [
-        *excluded_assets,
-        *source_assets,
-    ]
+    selected_source_asset_keys = selected_asset_keys & {
+        source_asset.key for source_asset in source_assets
+    }
+    print("SELECTED SOURCE ASSET KEYS")
+    for source_asset in set(source_assets):
+        # ignore source asset selection if selection contains regular assets
+        if (
+            len(included_assets) > 0
+            or len(selected_source_asset_keys) == 0
+            or source_asset.key in selected_asset_keys
+        ):
+            included_source_assets.add(source_asset)
+        else:
+            excluded_source_assets.add(source_asset)
 
-    return list(included_assets), all_excluded_assets
+    return (
+        list(included_assets),
+        list(excluded_assets),
+        list(included_source_assets),
+        list(excluded_source_assets),
+    )
