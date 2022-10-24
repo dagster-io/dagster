@@ -1,3 +1,4 @@
+from hashlib import sha256
 import logging
 import logging.config
 import os
@@ -11,6 +12,7 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -32,6 +34,7 @@ import yaml
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.logical_version import DEFAULT_LOGICAL_VERSION, LogicalVersion
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
     PipelineDefinition,
@@ -2113,6 +2116,70 @@ class DagsterInstance:
         )
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         return get_tick_retention_settings(tick_settings, default_tick_settings)
+
+    def get_logical_version_from_inputs(
+        self,
+        dependency_keys: AbstractSet[AssetKey],
+        op_version: str,
+        key_to_is_source_map: Mapping[AssetKey, bool],
+        logical_version_overrides: Optional[Mapping[AssetKey, LogicalVersion]] = None,
+    ) -> LogicalVersion:
+        logical_version_overrides = check.opt_mapping_param(
+            logical_version_overrides, "logical_version_overrides"
+        )
+        ordered_dependency_keys = sorted(dependency_keys, key=str)
+        dependency_logical_versions = [
+            logical_version_overrides[k]
+            if k in logical_version_overrides
+            else self.get_most_recent_logical_version(k, key_to_is_source_map[k])
+            for k in ordered_dependency_keys
+        ]
+        all_inputs = [op_version, *(v.value for v in dependency_logical_versions)]
+        hash_sig = sha256()
+        hash_sig.update(bytearray("".join(all_inputs), "utf8"))
+        return LogicalVersion(hash_sig.hexdigest())
+
+    def get_most_recent_logical_version(
+        self, key: AssetKey, is_source: bool,
+    ) -> LogicalVersion:
+        from dagster._core.event_api import EventRecordsFilter
+        from dagster._core.events import DagsterEventType
+
+        if is_source:
+            observations = self.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_OBSERVATION,
+                    asset_key=key,
+                ),
+                limit=1,
+            )
+            event_record = next(iter(observations), None)
+            event = event_record.event_log_entry if event_record else None
+        else:
+            event = self.get_latest_materialization_events([key]).get(key)
+
+        return DEFAULT_LOGICAL_VERSION if event is None else _extract_logical_version_from_event(event)
+
+
+def _extract_logical_version_from_event(event: EventLogEntry) -> LogicalVersion:
+    from dagster._core.events import AssetObservationData, StepMaterializationData
+
+    data = check.not_none(event.dagster_event).event_specific_data
+    if isinstance(data, StepMaterializationData):
+        event_data = data.materialization
+    elif isinstance(data, AssetObservationData):
+        event_data = data.asset_observation
+    else:
+        assert False, "Bad data"
+    value = next(
+        (
+            entry.value.value
+            for entry in event_data.metadata_entries
+            if entry.label == "logical_version"
+        ),
+        None,
+    )
+    return LogicalVersion(value) if value is not None else DEFAULT_LOGICAL_VERSION
 
 
 def is_dagit_telemetry_enabled(instance):
