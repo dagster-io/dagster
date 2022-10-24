@@ -438,9 +438,7 @@ class AssetMaterialization(
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionKey,
-        )
+        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)

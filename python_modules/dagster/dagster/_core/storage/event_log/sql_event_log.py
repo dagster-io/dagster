@@ -218,7 +218,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         return entry_values
 
-    def store_asset_event_tags(self, event: EventLogEntry, event_id: int):
+    def store_asset_event_tags(self, event: EventLogEntry, event_id: int) -> None:
 
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
@@ -647,7 +647,7 @@ class SqlEventLogStorage(EventLogStorage):
                     .values(migration_completed=datetime.now())
                 )
 
-    def _apply_tags_table_joins(
+    def _apply_tags_table_join(
         self,
         table: db.Table,
         tags: Mapping[str, Union[str, Sequence[str]]],
@@ -750,7 +750,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.bool_param(ascending, "ascending")
 
         if event_records_filter.tags:
-            table = self._apply_tags_table_joins(SqlEventLogStorageTable, event_records_filter.tags)
+            table = self._apply_tags_table_join(SqlEventLogStorageTable, event_records_filter.tags)
         else:
             table = SqlEventLogStorageTable
 
@@ -1330,7 +1330,6 @@ class SqlEventLogStorage(EventLogStorage):
     def get_materialization_count_by_partition(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Mapping[str, int]]:
-
         check.list_param(asset_keys, "asset_keys", AssetKey)
 
         query = (
@@ -1370,11 +1369,8 @@ class SqlEventLogStorage(EventLogStorage):
         }
         for row in results:
             asset_key = AssetKey.from_db_string(row[0])
-
-            partition = row[1]
-
-            if asset_key and partition:
-                materialization_count_by_partition[asset_key][partition] = row[2]
+            if asset_key:
+                materialization_count_by_partition[asset_key][row[1]] = row[2]
 
         return materialization_count_by_partition
 

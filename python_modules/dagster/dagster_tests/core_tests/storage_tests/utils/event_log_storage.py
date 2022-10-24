@@ -2414,7 +2414,7 @@ class TestEventLogStorage:
                 assert materialization.partition == MultiPartitionKey(
                     {"country": "US", "date": "2022-10-13"}
                 )
-                assert materialization.partition.keys_by_dimension() == {
+                assert materialization.partition.keys_by_dimension == {
                     "country": "US",
                     "date": "2022-10-13",
                 }
