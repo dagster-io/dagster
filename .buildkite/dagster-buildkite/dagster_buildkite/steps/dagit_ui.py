@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List
 
 from dagster_buildkite.git import ChangedFiles
-from dagster_buildkite.python_packages import PythonPackages
+from dagster_buildkite.package_spec import PackageSpec
 
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
@@ -19,9 +19,7 @@ def skip_if_no_dagit_changes():
 
     # If anything changes in python packages that our front end depend on
     # dagster and dagster-graphql might indicate changes to our graphql schema
-    # (once we can walk a dependency tree, we can  reduce this to just dagster-graphql)
-    # dagit might indicate changes to other non-graphql endpoints
-    if ["dagster", "dagit", "dagster-graphql"] in PythonPackages.with_changes:
+    if not PackageSpec("python_modules/dagster-graphql").skip_reason:
         return None
 
     return "No changes that affect the JS webapp"
