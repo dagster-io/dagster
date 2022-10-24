@@ -1028,6 +1028,13 @@ dagsterDaemon:
     # default value used by Python, which depends on the number of cores available.
     numWorkers: ~
 
+  schedules:
+    # Whether to evaluate schedules using an asynchronous thread pool.  Defaults to false
+    useThreads: false
+    # The max number of worker threads to use when asynchronously evaluating sensors. Will use the
+    # default value used by Python, which depends on the number of cores available.
+    numWorkers: ~
+
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
   # https://kubernetes.io/docs/concepts/configuration/configmap/

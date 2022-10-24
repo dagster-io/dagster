@@ -85,12 +85,22 @@ def docker_compose_down(docker_compose_yml, context, service):
     else:
         compose_command = ["docker-compose"]
 
-    compose_command += ["--file", str(docker_compose_yml), "down", "--volumes", "--remove-orphans"]
-
     if service:
+        compose_command += ["--file", str(docker_compose_yml), "rm", "--volumes"]
+
         compose_command.append(service)
 
-    subprocess.check_call(compose_command)
+        subprocess.check_call(compose_command)
+    else:
+        compose_command += [
+            "--file",
+            str(docker_compose_yml),
+            "down",
+            "--volumes",
+            "--remove-orphans",
+        ]
+
+        subprocess.check_call(compose_command)
 
 
 def list_containers():

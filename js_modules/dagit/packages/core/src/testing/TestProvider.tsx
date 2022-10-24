@@ -75,7 +75,7 @@ export const TestProvider: React.FC<Props> = (props) => {
   return (
     <AppContext.Provider value={{...testValue, ...appContextProps}}>
       <WebSocketContext.Provider value={websocketValue}>
-        <PermissionsContext.Provider value={permissions}>
+        <PermissionsContext.Provider value={{data: permissions, loading: false}}>
           <AnalyticsContext.Provider value={analytics}>
             <MemoryRouter {...routerProps}>
               <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>

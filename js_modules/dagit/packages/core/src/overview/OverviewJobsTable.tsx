@@ -1,11 +1,11 @@
-import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui';
+import {Tag, Tooltip} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {Container, HeaderCell, Inner} from '../ui/VirtualizedTable';
+import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
-import {VirtualizedJobRow} from '../workspace/VirtualizedJobRow';
+import {VirtualizedJobHeader, VirtualizedJobRow} from '../workspace/VirtualizedJobRow';
 import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -70,22 +70,7 @@ export const OverviewJobsTable: React.FC<Props> = ({repos}) => {
 
   return (
     <>
-      <Box
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '34% 30% 20% 8% 8%',
-          height: '32px',
-          fontSize: '12px',
-          color: Colors.Gray600,
-        }}
-      >
-        <HeaderCell>Job name</HeaderCell>
-        <HeaderCell>Schedules/sensors</HeaderCell>
-        <HeaderCell>Latest run</HeaderCell>
-        <HeaderCell>Run history</HeaderCell>
-        <HeaderCell>Actions</HeaderCell>
-      </Box>
+      <VirtualizedJobHeader />
       <div style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
@@ -107,7 +92,7 @@ export const OverviewJobsTable: React.FC<Props> = ({repos}) => {
                       content={row.jobCount === 1 ? '1 job' : `${row.jobCount} jobs`}
                       placement="top"
                     >
-                      <Tag intent="primary">{row.jobCount}</Tag>
+                      <Tag>{row.jobCount}</Tag>
                     </Tooltip>
                   }
                 />

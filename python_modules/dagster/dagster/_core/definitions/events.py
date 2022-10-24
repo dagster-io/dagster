@@ -103,7 +103,12 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
     def __eq__(self, other):
         if not isinstance(other, AssetKey):
             return False
-        return self.to_string() == other.to_string()
+        if len(self.path) != len(other.path):
+            return False
+        for i in range(0, len(self.path)):
+            if self.path[i] != other.path[i]:
+                return False
+        return True
 
     def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
         """

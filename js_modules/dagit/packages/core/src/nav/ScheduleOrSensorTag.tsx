@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Colors, Tag, Tooltip, FontFamily} from '@dagster-io/ui';
+import {Box, ButtonLink, Colors, Tag, Tooltip, FontFamily, MiddleTruncate} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -26,10 +26,10 @@ export const ScheduleOrSensorTag: React.FC<{
   if (scheduleCount > 1 || sensorCount > 1 || (scheduleCount && sensorCount)) {
     const buttonText =
       scheduleCount && sensorCount
-        ? `View ${scheduleCount + sensorCount} schedules/sensors`
+        ? `${scheduleCount + sensorCount} schedules/sensors`
         : scheduleCount
-        ? `View ${scheduleCount} schedules`
-        : `View ${sensorCount} sensors`;
+        ? `${scheduleCount} schedules`
+        : `${sensorCount} sensors`;
 
     const icon = scheduleCount > 1 ? 'schedule' : 'sensors';
 
@@ -75,8 +75,10 @@ const MatchingSchedule: React.FC<{
   const tag = (
     <Tag intent={running ? 'primary' : 'none'} icon="schedule">
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        Schedule:
-        <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
+        <Link
+          to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}
+          style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
+        >
           {humanCronString(cronSchedule, executionTimezone || 'UTC')}
         </Link>
         {showSwitch ? (
@@ -88,7 +90,7 @@ const MatchingSchedule: React.FC<{
 
   return schedule.cronSchedule ? (
     <Tooltip
-      placement="bottom"
+      placement="top-start"
       content={
         <Box flex={{direction: 'column', gap: 4}}>
           <div>
@@ -122,9 +124,11 @@ const MatchingSensor: React.FC<{
   return (
     <Tag intent={running ? 'primary' : 'none'} icon="sensors">
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        Sensor:
-        <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}>
-          {sensor.name}
+        <Link
+          to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
+          style={{maxWidth: 200, overflow: 'hidden'}}
+        >
+          <MiddleTruncate text={sensor.name} />
         </Link>
         {showSwitch ? (
           <SensorSwitch size="small" repoAddress={repoAddress} sensor={sensor} />

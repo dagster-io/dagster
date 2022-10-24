@@ -7,6 +7,7 @@ from schema.charts.dagster.subschema.daemon import (
     RunCoordinator,
     RunCoordinatorConfig,
     RunCoordinatorType,
+    Schedules,
     Sensors,
     TagConcurrencyLimit,
 )
@@ -15,7 +16,7 @@ from schema.charts.dagster_user_deployments.subschema.user_deployments import Us
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
-from dagster._core.instance.config import sensors_daemon_config
+from dagster._core.instance.config import schedules_daemon_config, sensors_daemon_config
 
 from .utils import create_simple_user_deployment
 
@@ -269,6 +270,25 @@ def test_sensor_threading(instance_template: HelmTemplate):
     assert sensors_config.keys() == sensors_daemon_config().config_type.fields.keys()
     assert instance["sensors"]["use_threads"] is True
     assert instance["sensors"]["num_workers"] == 4
+
+
+def test_scheduler_threading(instance_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            schedules=Schedules.construct(
+                useThreads=True,
+                numWorkers=4,
+            )
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    schedules_config = instance["schedules"]
+    assert schedules_config.keys() == schedules_daemon_config().config_type.fields.keys()
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
 
 
 def test_scheduler_name(template: HelmTemplate):

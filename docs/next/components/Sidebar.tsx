@@ -30,38 +30,38 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
       : item.children && (expanded ? Icons['ChevronDown'] : Icons['ChevronRight']);
 
     const itemClassName = cx(
-      'w-full transition group flex justify-between items-center rounded-md text-gray-700 dark:text-gray-200',
+      'w-full  transition group flex justify-between items-center rounded-md text-gray-800 text-left',
       {
         'hover:bg-lavender hover:bg-opacity-50 text-blurple': match,
         'hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50': !match,
-        'px-2 py-2 pl-3 pr-2 font-semibold': lvl === 0,
-        'py-2 pl-3 pr-2 font-medium': lvl >= 1,
-        'px-3 py-1 text-sm': lvl >= 2,
+        'px-2 py-2 pl-3 pr-2 font-medium': lvl === 0,
+        'py-2 ml-0 pl-2 pr-2 font-normal text-gray-500': lvl >= 1,
+        'text-sm content-box w-full ': lvl >= 2,
       },
     );
     const children: JSX.Element = (
       <>
-        <div className="flex justify-start">
+        <div className="flex justify-start content-box w-full">
           {item.icon && (
             <svg
-              className={cx('mr-3 h-6 w-6 text-gray-400 transition', {
+              className={cx('mr-2 h-6 w-6 text-gray-500 transition align-items-center', {
                 'text-blurple': match,
-                'group-hover:text-gray-600': !match,
+                'group-hover:text-gray-700': !match,
               })}
               xmlns="http://www.w3.org/2000/svg"
-              fill="none"
+              fill="currentColor"
               viewBox="0 0 24 24"
-              stroke="currentColor"
+              stroke="none"
               aria-hidden="true"
             >
               {Icons[item.icon]}
             </svg>
           )}
-          <span>{item.title}</span>
+          <span className="font-normal">{item.title}</span>
         </div>
         {rightIcon && (
           <svg
-            className={cx('mr-2 h-4 w-4 text-gray-400 transition flex-shrink-0', {
+            className={cx('mr-2 h-6 w-6 p-1 rounded-full text-gray-400 transition flex-shrink-0', {
               'text-blurple': match,
               'group-hover:text-gray-600': !match,
             })}
@@ -157,7 +157,7 @@ const RecursiveNavigation = ({
   return (
     <div
       className={cx({
-        'mt-1 ml-1 space-y-1': lvl >= 2,
+        'mt-0 ml-1 space-y-0': lvl >= 2,
       })}
       role="group"
       aria-labelledby={`${lvl + 1}-level-nav`}
@@ -225,14 +225,14 @@ const SidebarContents = () => {
       {/* Search Bar*/}
       <div className="flex-1 flex flex-col">
         <div className="px-3 mt-5">
-          <div className="block w-full pl-4 border-gray-300 rounded-full border bg-white">
+          <div className="block w-full pl-4 border-gray-200 rounded-full border bg-white">
             <Search />
           </div>
         </div>
         {/* End Search Bar */}
 
         {/* Navigation */}
-        <nav className="px-3 mt-6 overflow-y-scroll max-h-(screen-60)">
+        <nav className="px-3 mt-6 overflow-y-scroll max-h-screen pb-64">
           <TopLevelNavigation />
         </nav>
       </div>

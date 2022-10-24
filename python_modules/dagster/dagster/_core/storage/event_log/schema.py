@@ -52,26 +52,42 @@ AssetKeyTable = db.Table(
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
-db.Index("idx_run_id", SqlEventLogStorageTable.c.run_id)
 db.Index(
     "idx_step_key",
     SqlEventLogStorageTable.c.step_key,
     mysql_length=32,
 )
 db.Index(
-    "idx_asset_key",
-    SqlEventLogStorageTable.c.asset_key,
-    mysql_length=32,
-)
-db.Index(
-    "idx_asset_partition",
-    SqlEventLogStorageTable.c.asset_key,
-    SqlEventLogStorageTable.c.partition,
-    mysql_length=64,
-)
-db.Index(
     "idx_event_type",
     SqlEventLogStorageTable.c.dagster_event_type,
     SqlEventLogStorageTable.c.id,
     mysql_length={"dagster_event_type": 64},
+)
+db.Index(
+    "idx_events_by_run_id",
+    SqlEventLogStorageTable.c.run_id,
+    SqlEventLogStorageTable.c.id,
+    mysql_length={"run_id": 64},
+)
+db.Index(
+    "idx_events_by_asset",
+    SqlEventLogStorageTable.c.asset_key,
+    SqlEventLogStorageTable.c.dagster_event_type,
+    SqlEventLogStorageTable.c.id,
+    postgresql_where=(SqlEventLogStorageTable.c.asset_key != None),
+    mysql_length={"asset_key": 64, "dagster_event_type": 64},
+)
+db.Index(
+    "idx_events_by_asset_partition",
+    SqlEventLogStorageTable.c.asset_key,
+    SqlEventLogStorageTable.c.dagster_event_type,
+    SqlEventLogStorageTable.c.partition,
+    SqlEventLogStorageTable.c.id,
+    postgresql_where=(
+        db.and_(
+            SqlEventLogStorageTable.c.asset_key != None,
+            SqlEventLogStorageTable.c.partition != None,
+        )
+    ),
+    mysql_length={"asset_key": 64, "dagster_event_type": 64, "partition": 64},
 )

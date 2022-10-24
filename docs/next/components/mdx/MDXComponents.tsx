@@ -8,6 +8,7 @@
 import path from 'path';
 
 import {Tab, Transition} from '@headlessui/react';
+import cx from 'classnames';
 import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
@@ -206,7 +207,7 @@ const ADMONITION_STYLES = {
     colors: {
       bg: 'primary-100',
       borderIcon: 'primary-500',
-      text: 'primary-500',
+      text: 'gray-900',
     },
     icon: Icons.InfoCircle,
   },
@@ -621,6 +622,32 @@ const Image = ({children, ...props}) => {
   );
 };
 
+const Button = ({
+  children,
+  link,
+  style = 'primary',
+}: {
+  children: any;
+  link: string;
+  style?: 'primary' | 'secondary' | 'blurple';
+  icon: string;
+}) => {
+  return (
+    <a
+      href={link}
+      className={cx(
+        'py-2 px-4 rounded-full transition hover:no-underline cursor-pointer',
+        style === 'primary' && 'bg-gable-green text-white hover:bg-gable-green-darker',
+        style === 'secondary' &&
+          'border text-gable-green hover:text-gable-green-darker hover:border-gable-green',
+        style === 'blurple' && 'bg-blurple text-white hover:bg-blurple-darker',
+      )}
+    >
+      {children}
+    </a>
+  );
+};
+
 export default {
   a: ({children, ...props}) => {
     // Skip in-page links and external links
@@ -649,6 +676,7 @@ export default {
   LinkGrid,
   LinkGridItem,
   Note,
+  Button,
   Warning,
   CodeReferenceLink,
   InstanceDiagramBox,

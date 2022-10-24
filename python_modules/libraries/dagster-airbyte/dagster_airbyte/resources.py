@@ -287,6 +287,13 @@ def airbyte_resource(context) -> AirbyteResource:
             {
                 "host": {"env": "AIRBYTE_HOST"},
                 "port": {"env": "AIRBYTE_PORT"},
+                # If using basic auth
+                "request_additional_params": {
+                    "auth": (
+                        "airbyte",
+                        os.getenv("AIRBYTE_PASSWORD"),
+                    )
+                },
             }
         )
 
