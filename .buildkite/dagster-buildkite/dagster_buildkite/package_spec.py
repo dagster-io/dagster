@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
 
 import pkg_resources
-from dagster_buildkite import python_packages
-from dagster_buildkite.python_packages import walk_dependencies
+from dagster_buildkite.git import ChangedFiles
+from dagster_buildkite.python_packages import PythonPackages
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
 from .steps.tox import build_tox_step
-from .utils import BuildkiteLeafStep, GroupStep, get_changed_files, is_feature_branch
+from .utils import BuildkiteLeafStep, GroupStep, is_feature_branch
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -276,7 +276,7 @@ class PackageSpec(
     @property
     def requirements(self):
         # First try to infer requirements from the python package
-        package = python_packages.get(self.name)
+        package = PythonPackages.get(self.name)
         if package:
             return set.union(package.install_requires, *package.extras_require.values())
 
@@ -295,7 +295,7 @@ class PackageSpec(
         if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
             return None
 
-        for change in get_changed_files():
+        for change in ChangedFiles.all:
             if (
                 # Our change is in this package's directory
                 (Path(self.directory) in change.parents)
@@ -308,8 +308,8 @@ class PackageSpec(
         # Consider anything required by install or an extra to be in scope.
         # We might one day narrow this down to specific extras.
         for requirement in self.requirements:
-            in_scope_changes = python_packages.with_changes.intersection(
-                walk_dependencies(requirement)
+            in_scope_changes = PythonPackages.with_changes.intersection(
+                PythonPackages.walk_dependencies(requirement)
             )
             if in_scope_changes:
 
