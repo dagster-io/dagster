@@ -455,6 +455,7 @@ class DbtCloudResourceV2:
             run_results = self.get_run_results(run_id)
         # if you fail to get run_results for this job, just leave it empty
         except Failure as _:
+            self._log.info("run_results.json not available for this run")
             run_results = {}
         output = DbtCloudOutput(run_details=final_run_details, result=run_results)
         if output.docs_url:
