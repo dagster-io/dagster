@@ -5,6 +5,7 @@ import tempfile
 import time
 from collections import namedtuple
 from contextlib import contextmanager
+from pathlib import Path
 
 import docker
 import kubernetes
@@ -315,7 +316,7 @@ def upload_buildkite_artifact(artifact_file):
             "buildkite-agent",
             "artifact",
             "upload",
-            artifact_file,
+            str(artifact_file),
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -333,21 +334,27 @@ def check_export_runs(instance):
     current_test = get_current_test()
 
     for run in instance.get_runs():
-        output_file = f"{current_test}-{run.run_id}.dump"
+        tempdir = DagsterInstance.temp_storage()
+        output_file = Path(tempdir) / f"{current_test}-{run.run_id}.dump"
+        output_file.touch()
 
         try:
-            export_run(instance, run, output_file)
+            export_run(instance, run, str(output_file))
         except Exception as e:
             print(f"Hit an error exporting dagster-debug {output_file}: {e}")
             continue
         upload_buildkite_artifact(output_file)
 
 
-def export_postgres(url):
+def export_postgres(instance, url):
     if not IS_BUILDKITE:
         return
 
     current_test = get_current_test()
-    output_file = f"{current_test}-postgres.dump"
-    subprocess.run(["pg_dump", url, "-f", output_file], check=False)
+
+    tempdir = DagsterInstance.temp_storage()
+    output_file = Path(tempdir) / f"{current_test}-postgres.dump"
+    output_file.touch()
+
+    subprocess.run(["pg_dump", url, "-f", str(output_file)], check=False)
     upload_buildkite_artifact(output_file)
