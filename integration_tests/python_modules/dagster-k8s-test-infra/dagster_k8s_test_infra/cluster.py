@@ -346,7 +346,7 @@ def check_export_runs(instance):
         upload_buildkite_artifact(output_file)
 
 
-def export_postgres(instance, url):
+def export_postgres(url):
     if not IS_BUILDKITE:
         return
 
