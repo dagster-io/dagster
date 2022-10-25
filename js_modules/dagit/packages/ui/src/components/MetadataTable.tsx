@@ -25,7 +25,7 @@ export const MetadataTable = (props: Props) => {
           }
           const {key, label, value} = pair;
           return (
-            <tr key={key.toString()}>
+            <tr key={key}>
               <td>
                 <Box padding={{vertical: spacing, right: 32}}>
                   <MetadataKey $dark={dark}>{label ?? key}</MetadataKey>
