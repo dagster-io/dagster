@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime
 
+import mock
 import pytest
 import requests
 from dagster_airbyte import airbyte_resource, load_assets_from_connections
@@ -271,3 +272,37 @@ def test_change_source_and_destination(empty_airbyte_instance, airbyte_source_fi
 
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
     assert check_result == ManagedElementDiff()
+
+
+def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source_files):
+
+    # First, apply a stack and check that there's no diff after applying it
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert ManagedElementDiff() == check_result
+
+    # Ensure that a different config has a diff
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack_different_config:reconciler")
+    other_check_result = check(
+        TEST_ROOT_DIR, "example_airbyte_stack_different_config:reconciler_diff_secrets"
+    )
+    assert other_check_result == check_result
+    assert ManagedElementDiff() != check_result
+
+    # Next, mock to treat all config as secrets - now, we don't expect a diff
+    # because we ignore all the config fields which have changed
+    with mock.patch(
+        "dagster_airbyte.managed.reconciliation._ignore_secrets_compare_fn", return_value=True
+    ):
+        check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+        assert ManagedElementDiff() == check_result
+
+        check_result = check(TEST_ROOT_DIR, "example_airbyte_stack_different_config:reconciler")
+        assert ManagedElementDiff() == check_result
+
+        # This reconciler has mark_secrets_as_changed set to True, so we expect a diff
+        check_result = check(
+            TEST_ROOT_DIR, "example_airbyte_stack_different_config:reconciler_diff_secrets"
+        )
+        assert ManagedElementDiff() != check_result

@@ -13,14 +13,23 @@ class ManagedElementError(enum.Enum):
 
 SANITIZE_KEY_KEYWORDS = ["password", "token", "secret"]
 
+SECRET_MASK_VALUE = "**********"
+
+
+def is_key_secret(key: str):
+    """
+    Rudamentary check to see if a config key is a secret value.
+    """
+    return any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS)
+
 
 def _sanitize(key: str, value: str):
     """
     Rudamentary sanitization of values so we can avoid printing passwords
     to the console.
     """
-    if any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS):
-        return "**********"
+    if is_key_secret(key):
+        return SECRET_MASK_VALUE
     return value
 
 
