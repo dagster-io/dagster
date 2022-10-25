@@ -41,6 +41,7 @@ def upgrade():
             "asset_event_tags",
             ["asset_key", "key", "value"],
             unique=False,
+            postgresql_where=db.text("asset_key IS NOT NULL"),
             mysql_length={"key": 64, "value": 64, "asset_key": 64},
         )
 
