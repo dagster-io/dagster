@@ -669,9 +669,13 @@ def load_assets_from_connections(
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
     return AirbyteManagedElementCacheableAssetsDefinition(
-        airbyte,
-        key_prefix,
-        create_assets_for_normalization_tables,
-        connection_to_group_fn,
-        connections,
+        airbyte_resource_def=check.inst_param(airbyte, "airbyte", ResourceDefinition),
+        key_prefix=key_prefix,
+        create_assets_for_normalization_tables=check.bool_param(
+            create_assets_for_normalization_tables, "create_assets_for_normalization_tables"
+        ),
+        connection_to_group_fn=check.opt_callable_param(
+            connection_to_group_fn, "connection_to_group_fn"
+        ),
+        connections=check.iterable_param(connections, "connections", of_type=AirbyteConnection),
     )
