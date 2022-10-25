@@ -84,8 +84,12 @@ db.Index(
     AssetEventTagsTable.c.asset_key,
     AssetEventTagsTable.c.key,
     AssetEventTagsTable.c.value,
-    postgresql_where=(SqlEventLogStorageTable.c.asset_key != None),
+    postgresql_where=(AssetEventTagsTable.c.asset_key != None),
     mysql_length={"asset_key": 64, "key": 64, "value": 64},
+)
+db.Index(
+    "idx_asset_event_tags_event_id",
+    AssetEventTagsTable.c.event_id,
 )
 db.Index(
     "idx_events_by_run_id",

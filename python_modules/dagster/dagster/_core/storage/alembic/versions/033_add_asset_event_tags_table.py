@@ -44,10 +44,21 @@ def upgrade():
             mysql_length={"key": 64, "value": 64, "asset_key": 64},
         )
 
+    if not has_index("asset_event_tags", "idx_asset_event_tags_event_id"):
+        op.create_index(
+            "idx_asset_event_tags_event_id",
+            "asset_event_tags",
+            ["event_id"],
+            unique=False,
+        )
+
 
 def downgrade():
     if has_index("asset_event_tags", "idx_asset_event_tags"):
         op.drop_index("idx_asset_event_tags")
+
+    if has_index("asset_event_tags", "idx_asset_event_tags_event_id"):
+        op.drop_index("idx_asset_event_tags_event_id")
 
     if has_table("asset_event_tags"):
         op.drop_table("asset_event_tags")
