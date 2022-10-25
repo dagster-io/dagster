@@ -10,6 +10,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
+import {FeatureGateContext} from '../FeatureGatesContext';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
@@ -148,6 +149,7 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
             },
           ]}
         />
+        {React.useContext(FeatureGateContext).ExtraFeatureGates}
       </Box>
     </div>
   );
