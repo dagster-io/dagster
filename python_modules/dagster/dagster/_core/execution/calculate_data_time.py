@@ -1,4 +1,4 @@
-from typing import AbstractSet, Mapping, Tuple
+from typing import AbstractSet, Mapping, Optional, Tuple
 
 from ..definitions.events import AssetKey
 from ..instance import DagsterInstance
@@ -9,14 +9,14 @@ ROOT_DATA_TAG = ".dagster/root_data_ids"
 def get_upstream_materialization_times_for_key(
     instance: DagsterInstance,
     asset_key: AssetKey,
-    upstream_asset_keys: Mapping[str, AbstractSet[str]],
-) -> Mapping[str, Tuple[int, float]]:
+    upstream_asset_key_mapping: Mapping[str, AbstractSet[str]],
+) -> Mapping[str, Tuple[Optional[int], Optional[float]]]:
     from dagster._core.events import DagsterEventType
     from dagster._core.storage.event_log.base import EventRecordsFilter
 
-    def _get_root_keys(asset_key, upstream_asset_keys):
+    def _get_root_keys(asset_key):
         def _recursive(key_str):
-            upstream_key_strs = upstream_asset_keys[key_str]
+            upstream_key_strs = upstream_asset_key_mapping[key_str]
             if not upstream_key_strs:
                 return {key_str}
             return set().union(
@@ -31,7 +31,7 @@ def get_upstream_materialization_times_for_key(
             return cur_tags[ROOT_DATA_TAG]
 
         cur_key = record.event_log_entry.dagster_event.event_specific_data.materialization.asset_key
-        upstream_keys = upstream_asset_keys[cur_key.to_user_string()]
+        upstream_keys = upstream_asset_key_mapping[cur_key.to_user_string()]
 
         if not upstream_keys:
             root_data = {
@@ -42,30 +42,27 @@ def get_upstream_materialization_times_for_key(
             }
         else:
             root_data = {}
-            for upstream_key in upstream_keys:
+            for upstream_key_str in upstream_keys:
+                upstream_key = AssetKey.from_user_string(upstream_key_str)
                 upstream_records = instance.get_event_records(
                     EventRecordsFilter(
                         event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        asset_key=AssetKey.from_user_string(upstream_key),
+                        asset_key=upstream_key,
                         before_cursor=record.storage_id,
                     ),
                     ascending=False,
                     limit=1,
                 )
                 if not upstream_records:
-                    # set the root data timestamps to None for each of these
-                    for root_key in _get_root_keys(
-                        AssetKey.from_user_string(upstream_key),
-                        upstream_asset_keys,
-                    ):
+                    # set the root data timestamps to None for each of the upstream roots
+                    for root_key in _get_root_keys(upstream_key):
                         root_data[root_key] = (None, None)
 
                 else:
                     upstream_root_data = _get_root_data(upstream_records[0])
-                    print(upstream_key, "URD", upstream_root_data)
                     for key, tup in upstream_root_data.items():
                         tup = tuple(tup)
-                        # if root data is missing, this don't take max
+                        # if root data is missing, override other values
                         if tup == (None, None) or root_data.get(key) == (None, None):
                             root_data[key] = (None, None)
                         else:
@@ -74,6 +71,7 @@ def get_upstream_materialization_times_for_key(
         instance.add_asset_event_tags(record.storage_id, {ROOT_DATA_TAG: root_data})
         return root_data
 
+    # get most recent asset materialization event record
     records = instance.get_event_records(
         EventRecordsFilter(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -84,13 +82,6 @@ def get_upstream_materialization_times_for_key(
     )
 
     if len(records) == 0:
-        root_data = {}
+        return {root_key: (None, None) for root_key in _get_root_keys(asset_key)}
     else:
-        root_data = _get_root_data(records[0])
-
-    ret = {
-        root_key: root_data.get(root_key, (None, None))
-        for root_key in _get_root_keys(asset_key, upstream_asset_keys)
-    }
-    print("RET", ret)
-    return ret
+        return _get_root_data(records[0])

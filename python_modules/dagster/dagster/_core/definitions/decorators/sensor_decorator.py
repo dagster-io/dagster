@@ -11,10 +11,10 @@ from ...errors import DagsterInvariantViolationError
 from ..events import AssetKey
 from ..sensor_definition import (
     AssetMaterializationFunction,
-    FreshnessPolicyMaterializationFunction,
-    FreshnessPolicySensorDefinition,
     AssetSensorDefinition,
     DefaultSensorStatus,
+    FreshnessPolicyMaterializationFunction,
+    FreshnessPolicySensorDefinition,
     MultiAssetMaterializationFunction,
     MultiAssetSensorDefinition,
     RawSensorEvaluationFunction,

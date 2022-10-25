@@ -1,5 +1,4 @@
 import inspect
-import pendulum
 import json
 import warnings
 from collections import OrderedDict, defaultdict
@@ -21,6 +20,7 @@ from typing import (
     cast,
 )
 
+import pendulum
 from typing_extensions import TypeGuard
 
 import dagster._check as check
@@ -1138,9 +1138,8 @@ class FreshnessPolicySensorEvaluationContext(SensorEvaluationContext):
             root_data_ids_and_timestamps = get_upstream_materialization_times_for_key(
                 instance=self.instance,
                 asset_key=asset_key,
-                upstream_asset_keys=self._upstream_mapping,
+                upstream_asset_key_mapping=self._upstream_mapping,
             )
-            print("RDI", root_data_ids_and_timestamps)
             statuses[asset_key] = freshness_policy.minutes_late(
                 current_timestamp=current_timestamp,
                 upstream_materialization_timestamps={
