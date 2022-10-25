@@ -168,39 +168,6 @@ class SensorEvaluationContext:
         return self._repository_name
 
 
-def _get_partition_key_from_event_log_record(event_log_record: "EventLogRecord") -> Optional[str]:
-    """
-    Given an event log record, returns the partition key for the event log record if it exists."""
-    from dagster._core.storage.event_log.base import EventLogRecord
-
-    check.inst_param(event_log_record, "event_log_record", EventLogRecord)
-
-    dagster_event = event_log_record.event_log_entry.dagster_event
-    if dagster_event:
-        return dagster_event.partition
-    return None
-
-
-def _get_asset_key_from_event_log_record(event_log_record: "EventLogRecord") -> AssetKey:
-    """
-    Given an event log record, returns the asset key for the event log record if it exists.
-
-    If the asset key does not exist, raises an error.
-    """
-    from dagster._core.storage.event_log.base import EventLogRecord
-
-    check.inst_param(event_log_record, "event_log_record", EventLogRecord)
-
-    dagster_event = event_log_record.event_log_entry.dagster_event
-
-    if dagster_event and dagster_event.asset_key:
-        return dagster_event.asset_key
-
-    raise DagsterInvariantViolationError(
-        "Asset key must exist in event log record passed into _get_asset_key_from_event_log_record"
-    )
-
-
 MAX_NUM_UNCONSUMED_EVENTS = 25
 
 
@@ -666,7 +633,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 list(self._get_cursor(asset_key).trailing_unconsumed_partitioned_event_ids.values())
             )
         ):
-            partition = _get_partition_key_from_event_log_record(unconsumed_event)
+            partition = unconsumed_event.partition_key
             if isinstance(partition, str) and partition in partitions_to_fetch:
                 if partition in materialization_by_partition:
                     # Remove partition to ensure materialization_by_partition preserves
@@ -685,7 +652,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             ascending=True,
         )
         for materialization in partition_materializations:
-            partition = _get_partition_key_from_event_log_record(materialization)
+            partition = materialization.partition_key
 
             if isinstance(partition, str):
                 if partition in materialization_by_partition:
@@ -959,7 +926,7 @@ class MultiAssetSensorCursorAdvances:
 
                 self._partition_key_by_record_id[
                     materialization.storage_id
-                ] = _get_partition_key_from_event_log_record(materialization)
+                ] = materialization.partition_key
 
     def get_cursor_with_advances(
         self,
@@ -1032,7 +999,7 @@ class MultiAssetSensorCursorAdvances:
             # event for each partition. If an advanced event exists for a partition, clear
             # the prior unconsumed event for that partition.
             for event in unconsumed_events:
-                partition = _get_partition_key_from_event_log_record(event)
+                partition = event.partition_key
                 if partition is not None:  # Ignore unpartitioned events
                     if not event.storage_id in advanced_records:
                         latest_unconsumed_record_by_partition[partition] = event.storage_id
@@ -1493,9 +1460,7 @@ def get_cursor_from_latest_materializations(
             last_materialization = list(materializations)[-1]
 
             cursor_dict[str(asset_key)] = MultiAssetSensorAssetCursorComponent(
-                _get_partition_key_from_event_log_record(last_materialization),
-                last_materialization.storage_id,
-                {},
+                last_materialization.partition_key, last_materialization.storage_id, {}
             )
 
     cursor_str = json.dumps(cursor_dict)
@@ -1781,7 +1746,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
                 runs_yielded = False
                 if inspect.isgenerator(result) or isinstance(result, list):
                     for item in result:
-                        runs_yielded = True
+                        if isinstance(item, RunRequest):
+                            runs_yielded = True
                         yield item
                 elif isinstance(result, RunRequest):
                     runs_yielded = True

@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 import types
 
 import pytest
@@ -170,6 +171,7 @@ def test_run_step_stats():
     def simple():
         @solid
         def should_succeed(context):
+            time.sleep(0.001)
             context.log.info("succeed")
             return "yay"
 

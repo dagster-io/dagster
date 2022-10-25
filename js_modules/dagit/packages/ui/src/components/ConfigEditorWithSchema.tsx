@@ -18,8 +18,9 @@ interface Props {
 }
 
 // Force code editor hints to appear above the dialog modal
-const CodeMirrorShimStyle = createGlobalStyle`
-  .CodeMirror-hints {
+export const CodeMirrorInDialogStyle = createGlobalStyle`
+  .CodeMirror-hints,
+  .CodeMirror-hints.dagit {
     z-index: 100;
   }
 `;
@@ -39,7 +40,7 @@ export const ConfigEditorWithSchema: React.FC<Props> = ({
 
   return (
     <>
-      <CodeMirrorShimStyle />
+      <CodeMirrorInDialogStyle />
       <SplitPanelContainer
         ref={editorSplitPanelContainer}
         axis="horizontal"

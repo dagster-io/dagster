@@ -83,9 +83,7 @@ my_email_failure_sensor(run_failure_sensor_context)
 # start_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
 
-slack_on_run_failure = make_slack_on_run_failure_sensor(
-    "#my_channel", os.getenv("MY_SLACK_TOKEN")
-)
+slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv("MY_SLACK_TOKEN"))  # type: ignore[arg-type]
 
 
 # end_slack_marker
@@ -97,7 +95,7 @@ from dagster import make_email_on_run_failure_sensor
 
 email_on_run_failure = make_email_on_run_failure_sensor(
     email_from="no-reply@example.com",
-    email_password=os.getenv("ALERT_EMAIL_PASSWORD"),
+    email_password=os.getenv("ALERT_EMAIL_PASSWORD"),  # type: ignore[arg-type]
     email_to=["xxx@example.com", "xyz@example.com"],
 )
 
@@ -170,7 +168,10 @@ my_email_sensor(run_status_sensor_context)
 
 # end_run_status_sensor_testing_marker
 
-my_jobs = []
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from typing import List
+
+my_jobs: List[SensorDefinition] = []
 
 # start_repo_marker
 from dagster import repository

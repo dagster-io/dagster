@@ -17,11 +17,16 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["schema_tests"]),
-    install_requires=["click", "pydantic"],
+    install_requires=["click", "pydantic>=1.10.0"],
     extras_require={
         "test": [
             # remove pin once minimum supported kubernetes version is 1.19
-            "kubernetes<22.6.0"
+            "kubernetes<22.6.0",
+            "dagster",
+            "dagster-aws",
+            "dagster-azure",
+            "dagster-gcp",
+            "dagster-k8s",
         ]
     },
     entry_points={

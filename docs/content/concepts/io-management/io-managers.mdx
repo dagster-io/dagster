@@ -151,13 +151,13 @@ When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and
 In the multi-asset case, you can customize how each asset is materialized by specifying an `io_manager_key` on each output of the multi-asset.
 
 ```python file=/concepts/assets/multi_assets.py startafter=start_io_manager_multi_asset endbefore=end_io_manager_multi_asset
-from dagster import Out, multi_asset
+from dagster import AssetOut, multi_asset
 
 
 @multi_asset(
     outs={
-        "s3_asset": Out(io_manager_key="s3_io_manager"),
-        "adls_asset": Out(io_manager_key="adls2_io_manager"),
+        "s3_asset": AssetOut(io_manager_key="s3_io_manager"),
+        "adls_asset": AssetOut(io_manager_key="adls2_io_manager"),
     },
 )
 def my_assets():
@@ -428,7 +428,7 @@ class BetterPandasIOManager(IOManager):
             obj.to_csv(file_path, index=False)
 
     def load_input(self, context) -> pd.DataFrame:
-        return pd.read_csv(self._get_path(context.upstream_output))  # type: ignore
+        return pd.read_csv(self._get_path(context.upstream_output))
 
 
 # write a subclass that uses _get_path for your custom loading logic

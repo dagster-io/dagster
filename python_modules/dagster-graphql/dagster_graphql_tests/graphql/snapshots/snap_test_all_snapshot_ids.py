@@ -1235,7 +1235,7 @@ snapshots['test_all_snapshot_ids 1'] = '''{
       }
     ]
   },
-  "description": "",
+  "description": null,
   "graph_def_name": "__ASSET_JOB",
   "lineage_snapshot": null,
   "mode_def_snaps": [
@@ -21173,7 +21173,7 @@ snapshots['test_all_snapshot_ids 19'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 2'] = '0b14d79a0366128092d6331f738dad6417e5f014'
+snapshots['test_all_snapshot_ids 2'] = '5455eb33da58525aefcbdb156feb62e4f18edb35'
 
 snapshots['test_all_snapshot_ids 20'] = '40c4bcc1d6e381a7c61f2203a913493af2f6ff97'
 

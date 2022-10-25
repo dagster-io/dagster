@@ -114,6 +114,15 @@ data:
       {{- end }}
     {{- end }}
 
+    {{- $schedules := .Values.dagsterDaemon.schedules }}
+    {{- if and (.Values.dagsterDaemon.enabled) ($schedules.useThreads) }}
+    schedules:
+      use_threads: {{ $schedules.useThreads }}
+      {{- if $schedules.numWorkers }}
+      num_workers: {{ $schedules.numWorkers }}
+      {{- end }}
+    {{- end }}
+
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}
 

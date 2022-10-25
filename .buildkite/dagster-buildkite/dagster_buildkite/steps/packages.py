@@ -61,8 +61,10 @@ def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[Bu
         package_specs,
         key=lambda p: f"{_PACKAGE_TYPE_ORDER.index(p.package_type)} {p.name}",
     )
+
     for pkg in all_packages:
         steps += pkg.build_steps()
+
     return steps
 
 

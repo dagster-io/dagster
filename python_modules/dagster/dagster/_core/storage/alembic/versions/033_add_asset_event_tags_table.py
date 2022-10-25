@@ -1,19 +1,20 @@
-"""add asset event tags table
+"""add_asset_event_tags_table
 
-Revision ID: b205615425e4
-Revises: 5e139331e376
-Create Date: 2022-10-12 15:43:46.007624
+Revision ID: 958a9495162d
+Revises: a00dd8d936a1
+Create Date: 2022-10-25 10:00:50.954192
 
 """
 import sqlalchemy as db
 from alembic import op
 from sqlalchemy.dialects import sqlite
 
+
 from dagster._core.storage.migration.utils import has_index, has_table
 
 # revision identifiers, used by Alembic.
-revision = "b205615425e4"
-down_revision = "5e139331e376"
+revision = '958a9495162d'
+down_revision = 'a00dd8d936a1'
 branch_labels = None
 depends_on = None
 

@@ -74,17 +74,32 @@ const extractPermissions = (permissions: PermissionFragment[]) => {
 
 export type PermissionsMap = ReturnType<typeof extractPermissions>;
 
-export const PermissionsContext = React.createContext<PermissionFragment[]>([]);
+export const PermissionsContext = React.createContext<{
+  data: PermissionFragment[];
+  loading: boolean;
+}>({data: [], loading: true});
 
 export const PermissionsProvider: React.FC = (props) => {
-  const {data} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY);
-  const value = React.useMemo(() => data?.permissions || [], [data]);
+  const {data, loading} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY);
+  const value = React.useMemo(
+    () => ({
+      data: data?.permissions || [],
+      loading,
+    }),
+    [data, loading],
+  );
   return <PermissionsContext.Provider value={value}>{props.children}</PermissionsContext.Provider>;
 };
 
 export const usePermissions = () => {
-  const rawPermissions = React.useContext(PermissionsContext);
-  return React.useMemo(() => extractPermissions(rawPermissions), [rawPermissions]);
+  const {data, loading} = React.useContext(PermissionsContext);
+  return React.useMemo(
+    () => ({
+      ...extractPermissions(data),
+      loading,
+    }),
+    [data, loading],
+  );
 };
 
 const PERMISSIONS_QUERY = gql`

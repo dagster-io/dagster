@@ -7,7 +7,7 @@ def scope_load_assets_from_airbyte_project():
     from dagster_airbyte import load_assets_from_airbyte_project
 
     airbyte_assets = load_assets_from_airbyte_project(
-        project_dir="path/to/airbyte/project"
+        project_dir="path/to/airbyte/project",
     )
     # end_load_assets_from_airbyte_project
 
@@ -20,6 +20,9 @@ def scope_load_assets_from_airbyte_instance():
         {
             "host": "localhost",
             "port": "8000",
+            # If using basic auth, include username and password:
+            "username": "airbyte",
+            "password": {"env": "AIRBYTE_PASSWORD"},
         }
     )
     airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
@@ -33,12 +36,15 @@ def scope_airbyte_project_config():
     from dagster import with_resources
 
     airbyte_assets = with_resources(
-        load_assets_from_airbyte_project(project_dir="path/to/airbyte/project"),
+        [load_assets_from_airbyte_project(project_dir="path/to/airbyte/project")],
         {
             "airbyte": airbyte_resource.configured(
                 {
                     "host": "localhost",
                     "port": "8000",
+                    # If using basic auth, include username and password:
+                    "username": "airbyte",
+                    "password": {"env": "AIRBYTE_PASSWORD"},
                 }
             )
         },
@@ -73,6 +79,9 @@ def scope_airbyte_manual_config():
                 {
                     "host": "localhost",
                     "port": "8000",
+                    # If using basic auth, include username and password:
+                    "username": "airbyte",
+                    "password": {"env": "AIRBYTE_PASSWORD"},
                 }
             )
         },

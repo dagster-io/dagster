@@ -65,6 +65,11 @@ class Sensors(BaseModel):
     numWorkers: Optional[int]
 
 
+class Schedules(BaseModel):
+    useThreads: bool
+    numWorkers: Optional[int]
+
+
 class Daemon(BaseModel):
     enabled: bool
     image: kubernetes.Image
@@ -88,6 +93,7 @@ class Daemon(BaseModel):
     runMonitoring: Dict[str, Any]
     runRetries: Dict[str, Any]
     sensors: Sensors
+    schedules: Schedules
     schedulerName: Optional[str]
 
     class Config:

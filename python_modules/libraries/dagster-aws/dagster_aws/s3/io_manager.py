@@ -121,23 +121,56 @@ def s3_pickle_io_manager(init_context):
     `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
     with path "/my/base/path/one/two/".
 
-    Attach this resource definition to your job to make it available to your ops.
+    Example usage:
+
+    1. Attach this IO manager to a set of assets.
 
     .. code-block:: python
 
-        @job(resource_defs={'io_manager': s3_pickle_io_manager, "s3": s3_resource, ...})
+        from dagster import asset, repository, with_resources
+        from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+
+
+        @asset
+        def asset1():
+            # create df ...
+            return df
+
+        @asset
+        def asset2(asset1):
+            return df[:5]
+
+        @repository
+        def repo():
+            return with_resources(
+                [asset1, asset2],
+                resource_defs={
+                    "io_manager": s3_pickle_io_manager.configured(
+                        {"s3_bucket": "my-cool-bucket", "s3_prefix": "my-cool-prefix"}
+                    ),
+                    "s3": s3_resource,
+                },
+            )
+        )
+
+
+    2. Attach this IO manager to your job to make it available to your ops.
+
+    .. code-block:: python
+
+        from dagster import job
+        from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+
+        @job(
+            resource_defs={
+                "io_manager": s3_pickle_io_manager.configured(
+                    {"s3_bucket": "my-cool-bucket", "s3_prefix": "my-cool-prefix"}
+                ),
+                "s3": s3_resource,
+            },
+        )
         def my_job():
             ...
-
-    You may configure this storage as follows:
-
-    .. code-block:: YAML
-
-        resources:
-            io_manager:
-                config:
-                    s3_bucket: my-cool-bucket
-                    s3_prefix: good/prefix-for-files-
     """
     s3_session = init_context.resources.s3
     s3_bucket = init_context.resource_config["s3_bucket"]
