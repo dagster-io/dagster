@@ -347,5 +347,5 @@ def export_postgres(url):
 
     current_test = get_current_test()
     output_file = f"{current_test}-postgres.dump"
-    subprocess.run(["pg_dump", url, ">", output_file])
+    subprocess.run(["pg_dump", url, "-f", output_file], check=False)
     upload_buildkite_artifact(output_file)
