@@ -360,5 +360,5 @@ def export_postgres(url):
         current_test = get_current_test()
         output_file = Path(tempdir) / f"{current_test}-postgres.txt"
         output_file.touch()
-        subprocess.run(["pg_txt", url, "-f", output_file], check=False)
+        subprocess.run(["pg_dump", url, "-f", output_file], check=False)
         upload_buildkite_artifact(output_file)
