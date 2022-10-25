@@ -1,5 +1,10 @@
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, cast
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple, cast
 
+from dagster_airbyte.asset_defs import (
+    AirbyteConnectionMetadata,
+    AirbyteInstanceCacheableAssetsDefintion,
+    _clean_name,
+)
 from dagster_airbyte.managed.types import (
     AirbyteConnection,
     AirbyteDestination,
@@ -11,13 +16,19 @@ from dagster_airbyte.managed.types import (
 )
 from dagster_airbyte.resources import AirbyteResource
 from dagster_airbyte.utils import is_basic_normalization_operation
-from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDiff
+from dagster_managed_elements import (
+    ManagedElementCheckResult,
+    ManagedElementDiff,
+    ManagedElementError,
+)
 from dagster_managed_elements.types import ManagedElementReconciler
 from dagster_managed_elements.utils import diff_dicts
 
 import dagster._check as check
 from dagster import ResourceDefinition
 from dagster._annotations import experimental
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import deep_merge_dicts
 
@@ -593,3 +604,78 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
             dry_run=False,
             should_delete=self._delete_unmentioned_resources,
         )
+
+
+class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAssetsDefintion):
+    def __init__(
+        self,
+        airbyte_resource_def: ResourceDefinition,
+        key_prefix: List[str],
+        create_assets_for_normalization_tables: bool,
+        connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
+        connections: Iterable[AirbyteConnection],
+    ):
+        super().__init__(
+            airbyte_resource_def=airbyte_resource_def,
+            workspace_id=None,
+            key_prefix=key_prefix,
+            create_assets_for_normalization_tables=create_assets_for_normalization_tables,
+            connection_to_group_fn=connection_to_group_fn,
+            connection_filter=None,
+        )
+        self._connections: List[AirbyteConnection] = list(connections)
+
+    def _get_connections(self) -> List[Tuple[str, AirbyteConnectionMetadata]]:
+        diff = reconcile_config(self._airbyte_instance, self._connections, dry_run=True)
+        if isinstance(diff, ManagedElementDiff) and not diff.is_empty():
+            raise ValueError(
+                "Airbyte connections are not in sync with provided configuration, diff:\n{}".format(
+                    str(diff)
+                )
+            )
+        elif isinstance(diff, ManagedElementError):
+            raise ValueError("Error checking Airbyte connections: {}".format(str(diff)))
+
+        return super()._get_connections()
+
+
+@experimental
+def load_assets_from_connections(
+    airbyte: ResourceDefinition,
+    connections: Iterable[AirbyteConnection],
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    create_assets_for_normalization_tables: bool = True,
+    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+) -> CacheableAssetsDefinition:
+    """
+    Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
+
+    Args:
+        airbyte (ResourceDefinition): An AirbyteResource configured with the appropriate connection
+            details.
+        connections (Iterable[AirbyteConnection]): A list of AirbyteConnection objects to build assets for.
+        key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
+        create_assets_for_normalization_tables (bool): If True, assets will be created for tables
+            created by Airbyte's normalization feature. If False, only the destination tables
+            will be created. Defaults to True.
+        connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
+            group name for a given Airbyte connection name. If None, no groups will be created. Defaults
+            to a basic sanitization function.
+
+    """
+
+    if isinstance(key_prefix, str):
+        key_prefix = [key_prefix]
+    key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
+
+    return AirbyteManagedElementCacheableAssetsDefinition(
+        airbyte_resource_def=check.inst_param(airbyte, "airbyte", ResourceDefinition),
+        key_prefix=key_prefix,
+        create_assets_for_normalization_tables=check.bool_param(
+            create_assets_for_normalization_tables, "create_assets_for_normalization_tables"
+        ),
+        connection_to_group_fn=check.opt_callable_param(
+            connection_to_group_fn, "connection_to_group_fn"
+        ),
+        connections=check.iterable_param(connections, "connections", of_type=AirbyteConnection),
+    )
