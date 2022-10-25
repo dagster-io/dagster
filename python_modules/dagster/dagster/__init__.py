@@ -98,9 +98,8 @@ from dagster._config.source import (
     IntSource as IntSource,
     StringSource as StringSource,
 )
-from dagster._core.definitions.asset_data_sla import (
-    StalenessSLA as StalenessSLA,
-    CronStalenessSLA as CronStalenessSLA,
+from dagster._core.definitions.freshness_policy import (
+    FreshnessPolicy as FreshnessPolicy,
 )
 from dagster._core.definitions.asset_in import (
     AssetIn as AssetIn,
@@ -153,7 +152,7 @@ from dagster._core.definitions.decorators.sensor_decorator import (
     asset_sensor as asset_sensor,
     sensor as sensor,
     multi_asset_sensor as multi_asset_sensor,
-    asset_sla_sensor as asset_sla_sensor,
+    freshness_policy_sensor as freshness_policy_sensor,
 )
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
@@ -305,13 +304,13 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus as DefaultSensorStatus,
     MultiAssetSensorDefinition as MultiAssetSensorDefinition,
     MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
-    AssetSLASensorDefinition as AssetSLASensorDefinition,
-    AssetSLASensorEvaluationContext as AssetSLASensorEvaluationContext,
+    FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
+    FreshnessPolicySensorEvaluationContext as FreshnessPolicySensorEvaluationContext,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
     build_sensor_context as build_sensor_context,
     build_multi_asset_sensor_context as build_multi_asset_sensor_context,
-    build_asset_sla_sensor_context as build_asset_sla_sensor_context,
+    build_freshness_policy_sensor_context as build_freshness_policy_sensor_context,
 )
 from dagster._core.definitions.source_asset import (
     SourceAsset as SourceAsset,

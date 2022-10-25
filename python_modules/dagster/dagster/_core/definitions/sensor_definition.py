@@ -1,4 +1,5 @@
 import inspect
+import pendulum
 import json
 import warnings
 from collections import OrderedDict, defaultdict
@@ -1038,13 +1039,13 @@ class MultiAssetSensorCursorAdvances:
 
 
 @experimental
-class AssetSLASensorEvaluationContext(SensorEvaluationContext):
+class FreshnessPolicySensorEvaluationContext(SensorEvaluationContext):
     """The context object available as the argument to the evaluation function of a
-    :py:class:`dagster.AssetSLASensorDefinition`.
+    :py:class:`dagster.FreshnessPolicySensorDefinition`.
 
     Users should not instantiate this object directly. To construct a
-    `AssetSLASensorEvaluationContext` for testing purposes, use :py:func:`dagster.
-    build_asset_sla_sensor_context`.
+    `FreshnessPolicySensorEvaluationContext` for testing purposes, use :py:func:`dagster.
+    build_freshness_policy_sensor_context`.
 
     Attributes:
         asset_keys (Sequence[AssetKey]): The asset keys that the sensor is configured to monitor.
@@ -1059,10 +1060,10 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
 
     .. code-block:: python
 
-        from dagster import asset_sla_sensor, AssetSLASensorEvaluationContext
+        from dagster import freshness_policy_sensor, FreshnessPolicySensorEvaluationContext
 
-        @asset_sla_sensor(asset_keys=[AssetKey("asset_1), AssetKey("asset_2)])
-        def the_sensor(context: AssetSLASensorEvaluationContext):
+        @freshness_policy_sensor(asset_keys=[AssetKey("asset_1), AssetKey("asset_2)])
+        def the_sensor(context: FreshnessPolicySensorEvaluationContext):
             ...
 
     """
@@ -1090,7 +1091,7 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
             self._asset_keys = list(asset_keys)
         else:
             raise DagsterInvalidDefinitionError(
-                "AssetSLASensorEvaluationContext requires one of asset_selection or asset_keys"
+                "FreshnessPolicySensorEvaluationContext requires one of asset_selection or asset_keys"
             )
 
         self._assets_by_key: Dict[AssetKey, Optional[AssetsDefinition]] = {}
@@ -1117,42 +1118,64 @@ class AssetSLASensorEvaluationContext(SensorEvaluationContext):
             instance=instance,
         )
 
-    def current_sla_statuses_by_key(self) -> Mapping[AssetKey, bool]:
-        """Returns a mapping from each monitored AssetKey with an SLA defined to a boolean status."""
-        from dagster._core.execution.calculate_data_time import get_latest_root_data_for_key
+    def current_minutes_late_by_key(self) -> Mapping[AssetKey, Optional[float]]:
+        """Returns a mapping from each monitored AssetKey with a FreshnessPolicy defined to a number
+        of minutes by which this asset is out of date with respect to its policy.
+        """
+        from dagster._core.execution.calculate_data_time import (
+            get_upstream_materialization_times_for_key,
+        )
+
+        current_timestamp = pendulum.now().timestamp()
 
         statuses = {}
         for asset_key, assets_def in self._assets_by_key.items():
             if assets_def is None:
                 continue
-            sla = assets_def.slas_by_key.get(asset_key)
-            if sla is None:
+            freshness_policy = assets_def.freshness_policies_by_key.get(asset_key)
+            if freshness_policy is None:
                 continue
-            root_data_ids_and_timestamps = get_latest_root_data_for_key(
+            root_data_ids_and_timestamps = get_upstream_materialization_times_for_key(
                 instance=self.instance,
                 asset_key=asset_key,
                 upstream_asset_keys=self._upstream_mapping,
             )
-            statuses[asset_key] = sla.is_passing(
-                {
+            statuses[asset_key] = freshness_policy.minutes_late(
+                current_timestamp=current_timestamp,
+                upstream_materialization_timestamps={
                     AssetKey.from_user_string(k): v[1]
                     for k, v in root_data_ids_and_timestamps.items()
-                }
+                },
             )
 
         # update cursor with new information
         self.update_cursor(json.dumps({k.to_user_string(): v for k, v in statuses.items()}))
         return statuses
 
-    def changed_sla_statuses_by_key(self) -> Mapping[AssetKey, bool]:
-        """Returns a mapping from each monitored AssetKey with an SLA defined to a boolean status.
-        This mapping will contain keys for which the SLA status has changed since the last tick on
-        which statuses were evaluated.
+    def changed_freshness_statuses_by_key(self) -> Mapping[AssetKey, Optional[float]]:
+        """Returns a mapping from each monitored AssetKey with a FreshnessPolicy defined to a number
+        of minutes late.
+
+        This mapping will contain keys for which the freshness status has changed (i.e. started or
+        stopped being out of date) since the last tick on which statuses were evaluated.
         """
         return {
-            key: status
-            for key, status in self.current_sla_statuses_by_key().items()
-            if self._previous_statuses_by_key.get(key) != status
+            key: minutes_late
+            for key, minutes_late in self.current_minutes_late_by_key().items()
+            if (self._previous_statuses_by_key.get(key) == 0) != (minutes_late == 0)
+        }
+
+    def failing_freshness_statuses_by_key(self) -> Mapping[AssetKey, Optional[float]]:
+        """Returns a mapping from each monitored AssetKey with a FreshnessPolicy defined to a number
+        of minutes late.
+
+        This mapping will contain keys for which the data is currently out of date with respect to
+        their policy.
+        """
+        return {
+            key: minutes_late
+            for key, minutes_late in self.current_minutes_late_by_key().items()
+            if minutes_late != 0
         }
 
 
@@ -1686,15 +1709,15 @@ def build_multi_asset_sensor_context(
 
 
 @experimental
-def build_asset_sla_sensor_context(
+def build_freshness_policy_sensor_context(
     *,
     repository_def: "RepositoryDefinition",
     asset_keys: Optional[Sequence[AssetKey]] = None,
     asset_selection: Optional[AssetSelection] = None,
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
-) -> AssetSLASensorEvaluationContext:
-    """Builds asset sla sensor execution context for testing purposes using the provided parameters.
+) -> FreshnessPolicySensorEvaluationContext:
+    """Builds freshness policy sensor execution context for testing purposes using the provided parameters.
 
     This function can be used to provide a context to the invocation of a multi asset sensor definition. If
     provided, the dagster instance must be persistent; DagsterInstance.ephemeral() will result in an
@@ -1719,12 +1742,12 @@ def build_asset_sla_sensor_context(
                 ...
 
             with instance_for_test() as instance:
-                context = build_asset_sla_sensor_context(
+                context = build_freshness_policy_sensor_context(
                     repository_def=my_repo,
                     asset_keys=[AssetKey("asset_1"), AssetKey("asset_2")],
                     instance=instance,
                 )
-                my_asset_sla_sensor(context)
+                my_freshness_policy_sensor(context)
 
     """
     from dagster._core.definitions import RepositoryDefinition
@@ -1742,7 +1765,7 @@ def build_asset_sla_sensor_context(
         check.invariant(len(asset_keys) > 0, "Must provide at least one asset key")
         asset_selection = None
 
-    return AssetSLASensorEvaluationContext(
+    return FreshnessPolicySensorEvaluationContext(
         instance_ref=None,
         asset_selection=asset_selection,
         asset_keys=asset_keys,
@@ -1765,8 +1788,8 @@ MultiAssetMaterializationFunction = Callable[
     AssetMaterializationFunctionReturn,
 ]
 
-AssetSLAMaterializationFunction = Callable[
-    ["AssetSLASensorEvaluationContext"],
+FreshnessPolicyMaterializationFunction = Callable[
+    ["FreshnessPolicySensorEvaluationContext"],
     AssetMaterializationFunctionReturn,
 ]
 
@@ -2029,19 +2052,19 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
 
 @experimental
-class AssetSLASensorDefinition(SensorDefinition):
+class FreshnessPolicySensorDefinition(SensorDefinition):
     """Define an asset sensor that takes some action based on the SLA status of selected assets.
 
     Users should not instantiate this object directly. To construct a
-    `AssetSLASensor`, use :py:func:`dagster.
-    asset_sla_sensor`.
+    `FreshnessPolicySensor`, use :py:func:`dagster.
+    freshness_policy_sensor`.
 
     Args:
         name (str): The name of the sensor to create.
         asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
-        asset_materialization_fn (Callable[[AssetSLASensorEvaluationContext], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
+        asset_materialization_fn (Callable[[FreshnessPolicySensorEvaluationContext], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
             evaluation function for the sensor, which is run at an interval to determine whether a
-            run should be launched or not. Takes a :py:class:`~dagster.AssetSLASensorEvaluationContext`.
+            run should be launched or not. Takes a :py:class:`~dagster.FreshnessPolicySensorEvaluationContext`.
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
@@ -2063,7 +2086,7 @@ class AssetSLASensorDefinition(SensorDefinition):
         asset_selection: Optional[AssetSelection],
         job_name: Optional[str],
         asset_materialization_fn: Callable[
-            ["AssetSLASensorEvaluationContext"],
+            ["FreshnessPolicySensorEvaluationContext"],
             RawSensorEvaluationFunctionReturn,
         ],
         minimum_interval_seconds: Optional[int] = None,
@@ -2126,7 +2149,7 @@ class AssetSLASensorDefinition(SensorDefinition):
 
             if args:
                 context = check.inst_param(
-                    args[0], context_param_name, AssetSLASensorEvaluationContext
+                    args[0], context_param_name, FreshnessPolicySensorEvaluationContext
                 )
             else:
                 if context_param_name not in kwargs:
@@ -2136,7 +2159,7 @@ class AssetSLASensorDefinition(SensorDefinition):
                 context = check.inst_param(
                     kwargs[context_param_name],
                     context_param_name,
-                    AssetSLASensorEvaluationContext,
+                    FreshnessPolicySensorEvaluationContext,
                 )
 
             return self._raw_fn(context)

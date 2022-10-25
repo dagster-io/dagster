@@ -22,15 +22,12 @@ from dagster import (
     PartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
-<<<<<<< HEAD
     SkipReason,
-=======
-    StalenessSLA,
->>>>>>> passing tests
+    FreshnessPolicy,
     StaticPartitionsDefinition,
     asset,
-    asset_sla_sensor,
-    build_asset_sla_sensor_context,
+    freshness_policy_sensor,
+    build_freshness_policy_sensor_context,
     build_multi_asset_sensor_context,
     build_run_status_sensor_context,
     build_sensor_context,
@@ -1251,6 +1248,7 @@ def test_error_not_thrown_for_skip_reason():
         )
         list(test_unconsumed_events_sensor(ctx))
 
+
 @pytest.mark.parametrize(
     ["asset_keys", "materialization_effects"],
     [
@@ -1340,7 +1338,7 @@ def test_error_not_thrown_for_skip_reason():
         ),
     ],
 )
-def test_asset_sla_sensors(asset_keys, materialization_effects):
+def test_freshness_policy_sensors(asset_keys, materialization_effects):
     """
     A = B = D = F
      \\  //
@@ -1373,26 +1371,28 @@ def test_asset_sla_sensors(asset_keys, materialization_effects):
 
     @asset(
         non_argument_deps={AssetKey("c")},
-        sla=StalenessSLA(allowed_staleness_minutes=60),
+        freshness_policy=FreshnessPolicy.minimum_freshness(minimum_freshness_minutes=60),
     )
     def e():
         return 1
 
     @asset(
         non_argument_deps={AssetKey("d")},
-        sla=StalenessSLA(allowed_staleness_minutes=60),
+        freshness_policy=FreshnessPolicy.minimum_freshness(minimum_freshness_minutes=60),
     )
     def f():
         return 1
 
     asset_keys = [AssetKey(c) for c in asset_keys]
 
-    @asset_sla_sensor(asset_keys=asset_keys)
+    @freshness_policy_sensor(asset_keys=asset_keys)
     def my_sla_sensor(context):
         # just for testing, yield a RunRequest for each current status
-        for asset_key, current_status in context.current_sla_statuses_by_key().items():
+        for asset_key, current_minutes_late in context.current_minutes_late_by_key().items():
             yield RunRequest(
-                run_key=None, tags={"status": str(current_status)}, asset_selection=[asset_key]
+                run_key=None,
+                tags={"status": str(current_minutes_late == 0)},
+                asset_selection=[asset_key],
             )
 
     all_assets = [a, bcd, e, f]
@@ -1414,7 +1414,7 @@ def test_asset_sla_sensors(asset_keys, materialization_effects):
                 ),
             ).execute_in_process(instance=instance)
 
-            ctx = build_asset_sla_sensor_context(
+            ctx = build_freshness_policy_sensor_context(
                 asset_keys=asset_keys, repository_def=my_repo, instance=instance
             )
             ret = list(my_sla_sensor(ctx))
@@ -1429,7 +1429,127 @@ def test_asset_sla_sensors(asset_keys, materialization_effects):
 
         # 1.5 hours later, everything should be stale
         with pendulum.test(pendulum.now().add(hours=1.5)):
-            ctx = build_asset_sla_sensor_context(
+            ctx = build_freshness_policy_sensor_context(
+                asset_keys=asset_keys,
+                repository_def=my_repo,
+                cursor=ctx.cursor,
+                instance=instance,
+            )
+            ret = list(my_sla_sensor(ctx))
+            assert len(ret) == len(asset_keys)
+            for ak in asset_keys:
+                assert (
+                    RunRequest(run_key=None, tags={"status": "False"}, asset_selection=[ak]) in ret
+                )
+
+
+@pytest.mark.parametrize(
+    ["asset_keys", "materialization_effects"],
+    [
+        (
+            "f",
+            [
+                ("acd", {"f": False}),
+                ("bf", {"f": False}),
+                ("bdf", {"f": True}),
+            ],
+        ),
+    ],
+)
+def test_xxx(asset_keys, materialization_effects):
+    """
+    A = B = D = F
+     \\  //
+       C = E
+
+    B,C,D share an op
+    """
+
+    @asset
+    def a():
+        return 1
+
+    @multi_asset(
+        non_argument_deps={AssetKey("a")},
+        outs={
+            "b": AssetOut(is_required=False),
+            "c": AssetOut(is_required=False),
+            "d": AssetOut(is_required=False),
+        },
+        can_subset=True,
+        internal_asset_deps={
+            "b": {AssetKey("a")},
+            "c": {AssetKey("a")},
+            "d": {AssetKey("b"), AssetKey("c")},
+        },
+    )
+    def bcd(context):
+        for output_name in context.selected_output_names:
+            yield Output(output_name, output_name)
+
+    @asset(
+        non_argument_deps={AssetKey("c")},
+        freshness_policy=FreshnessPolicy.minimum_freshness(minimum_freshness_minutes=60),
+    )
+    def e():
+        return 1
+
+    @asset(
+        non_argument_deps={AssetKey("d")},
+        freshness_policy=FreshnessPolicy.minimum_freshness(minimum_freshness_minutes=60),
+    )
+    def f():
+        return 1
+
+    asset_keys = [AssetKey(c) for c in asset_keys]
+
+    @freshness_policy_sensor(asset_keys=asset_keys)
+    def my_sla_sensor(context):
+        # just for testing, yield a RunRequest for each current status
+        for asset_key, current_minutes_late in context.current_minutes_late_by_key().items():
+            yield RunRequest(
+                run_key=None,
+                tags={"status": str(current_minutes_late == 0)},
+                asset_selection=[asset_key],
+            )
+
+    all_assets = [a, bcd, e, f]
+
+    @repository
+    def my_repo():
+        return [all_assets, my_sla_sensor]
+
+    with instance_for_test() as instance:
+
+        for to_materialize, expected_results in materialization_effects:
+            # materialize selected assets
+            build_asset_selection_job(
+                "materialize_job",
+                assets=all_assets,
+                source_assets=[],
+                asset_selection=AssetSelection.keys(*(AssetKey(c) for c in to_materialize)).resolve(
+                    all_assets
+                ),
+            ).execute_in_process(instance=instance)
+
+            ctx = build_freshness_policy_sensor_context(
+                asset_keys=asset_keys, repository_def=my_repo, instance=instance
+            )
+            ret = list(my_sla_sensor(ctx))
+            assert len(ret) == len(expected_results)
+            for key, result in expected_results.items():
+                assert (
+                    RunRequest(
+                        run_key=None,
+                        tags={"status": str(result)},
+                        asset_selection=[AssetKey(key)],
+                    )
+                    in ret
+                )
+
+        # 1.5 hours later, everything should be stale
+        with pendulum.test(pendulum.now().add(hours=1.5)):
+            ctx = build_freshness_policy_sensor_context(
                 asset_keys=asset_keys,
                 repository_def=my_repo,
                 cursor=ctx.cursor,

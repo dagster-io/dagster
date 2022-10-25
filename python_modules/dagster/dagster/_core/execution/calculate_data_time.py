@@ -6,7 +6,7 @@ from ..instance import DagsterInstance
 ROOT_DATA_TAG = ".dagster/root_data_ids"
 
 
-def get_latest_root_data_for_key(
+def get_upstream_materialization_times_for_key(
     instance: DagsterInstance,
     asset_key: AssetKey,
     upstream_asset_keys: Mapping[str, AbstractSet[str]],

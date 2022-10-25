@@ -11,8 +11,8 @@ from ...errors import DagsterInvariantViolationError
 from ..events import AssetKey
 from ..sensor_definition import (
     AssetMaterializationFunction,
-    AssetSLAMaterializationFunction,
-    AssetSLASensorDefinition,
+    FreshnessPolicyMaterializationFunction,
+    FreshnessPolicySensorDefinition,
     AssetSensorDefinition,
     DefaultSensorStatus,
     MultiAssetMaterializationFunction,
@@ -275,7 +275,7 @@ def multi_asset_sensor(
 
 
 @experimental
-def asset_sla_sensor(
+def freshness_policy_sensor(
     asset_keys: Optional[Sequence[AssetKey]] = None,
     asset_selection: Optional[AssetSelection] = None,
     *,
@@ -286,7 +286,7 @@ def asset_sla_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[AssetSLASensorDefinition], AssetSLASensorDefinition]:
+) -> Callable[[FreshnessPolicySensorDefinition], FreshnessPolicySensorDefinition]:
     """
     Creates an asset sensor that can monitor multiple assets' SLA statuses
 
@@ -299,7 +299,7 @@ def asset_sla_sensor(
     4. Return nothing (skipping without providing a reason)
     5. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
 
-    Takes a :py:class:`~dagster.AssetSLASensorEvaluationContext`.
+    Takes a :py:class:`~dagster.FreshnessPolicySensorEvaluationContext`.
 
     Args:
         asset_keys (Optional[Sequence[AssetKey]]): The asset keys this sensor monitors. If not
@@ -323,7 +323,7 @@ def asset_sla_sensor(
 
     check.opt_str_param(name, "name")
 
-    def inner(fn: AssetSLAMaterializationFunction) -> AssetSLASensorDefinition:
+    def inner(fn: FreshnessPolicyMaterializationFunction) -> FreshnessPolicySensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
@@ -345,7 +345,7 @@ def asset_sla_sensor(
                     ).format(sensor_name=sensor_name, result=result, type_=type(result))
                 )
 
-        return AssetSLASensorDefinition(
+        return FreshnessPolicySensorDefinition(
             name=sensor_name,
             asset_keys=asset_keys,
             asset_selection=asset_selection,
