@@ -245,6 +245,7 @@ def dagster_instance_for_daemon(
         yield instance
 
         check_export_runs(instance)
+        export_postgres(helm_postgres_url_for_daemon)
 
 
 @pytest.fixture(scope="function")
@@ -302,14 +303,34 @@ def dagster_instance(helm_postgres_url):  # pylint: disable=redefined-outer-name
                 check_export_runs(instance)
 
 
+def get_current_test():
+    # example PYTEST_CURRENT_TEST: test_user_code_deployments.py::test_execute_on_celery_k8s (teardown)
+    return os.environ.get("PYTEST_CURRENT_TEST").split()[0].replace("::", "-").replace(".", "-")
+
+
+def upload_buildkite_artifact(artifact_file):
+    print(f"Uploading artifact to Buildkite: {artifact_file}")
+    p = subprocess.Popen(
+        [
+            "buildkite-agent",
+            "artifact",
+            "upload",
+            artifact_file,
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    stdout, stderr = p.communicate()
+    print("Buildkite artifact added with stdout: ", stdout)
+    print("Buildkite artifact added with stderr: ", stderr)
+    assert p.returncode == 0
+
+
 def check_export_runs(instance):
     if not IS_BUILDKITE:
         return
 
-    # example PYTEST_CURRENT_TEST: test_user_code_deployments.py::test_execute_on_celery_k8s (teardown)
-    current_test = (
-        os.environ.get("PYTEST_CURRENT_TEST").split()[0].replace("::", "-").replace(".", "-")
-    )
+    current_test = get_current_test()
 
     for run in instance.get_runs():
         output_file = f"{current_test}-{run.run_id}.dump"
@@ -319,18 +340,14 @@ def check_export_runs(instance):
         except Exception as e:
             print(f"Hit an error exporting dagster-debug {output_file}: {e}")
             continue
+        upload_buildkite_artifact(output_file)
 
-        p = subprocess.Popen(
-            [
-                "buildkite-agent",
-                "artifact",
-                "upload",
-                output_file,
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        stdout, stderr = p.communicate()
-        print("Buildkite artifact added with stdout: ", stdout)
-        print("Buildkite artifact added with stderr: ", stderr)
-        assert p.returncode == 0
+
+def export_postgres(url):
+    if not IS_BUILDKITE:
+        return
+
+    current_test = get_current_test()
+    output_file = f"{current_test}-postgres.dump"
+    subprocess.run(["pg_dump", url, ">", output_file])
+    upload_buildkite_artifact(output_file)
