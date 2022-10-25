@@ -13,6 +13,8 @@ import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
+import {OVERVIEW_EXPANSION_KEY} from './OverviewExpansionKey';
+
 type Repository = {
   repoAddress: RepoAddress;
   schedules: string[];
@@ -26,8 +28,6 @@ type RowType =
   | {type: 'header'; repoAddress: RepoAddress; scheduleCount: number}
   | {type: 'schedule'; repoAddress: RepoAddress; name: string};
 
-const SCHEDULES_EXPANSION_STATE_STORAGE_KEY = 'schedules-virtualized-expansion-state';
-
 export const OverviewScheduleTable: React.FC<Props> = ({repos}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
@@ -35,7 +35,7 @@ export const OverviewScheduleTable: React.FC<Props> = ({repos}) => {
     [repos],
   );
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
-    SCHEDULES_EXPANSION_STATE_STORAGE_KEY,
+    OVERVIEW_EXPANSION_KEY,
     allKeys,
   );
 
