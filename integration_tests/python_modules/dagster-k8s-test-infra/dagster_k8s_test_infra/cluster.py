@@ -306,7 +306,13 @@ def dagster_instance(helm_postgres_url):  # pylint: disable=redefined-outer-name
 
 def get_current_test():
     # example PYTEST_CURRENT_TEST: test_user_code_deployments.py::test_execute_on_celery_k8s (teardown)
-    return os.environ.get("PYTEST_CURRENT_TEST").split()[0].replace("::", "-").replace(".", "-")
+    return (
+        os.environ.get("PYTEST_CURRENT_TEST")
+        .split()[0]
+        .replace("::", "-")
+        .replace(".", "-")
+        .replace("/", "-")
+    )
 
 
 def upload_buildkite_artifact(artifact_file):
