@@ -3,8 +3,14 @@ from typing import Sequence
 from snowflake.connector import ProgrammingError
 
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster._core.storage.db_io_manager import (
+    DbClient,
+    DbIOManager,
+    DbTypeHandler,
+    TablePartition,
+    TableSlice,
+)
 
-from .db_io_manager import DbClient, DbIOManager, DbTypeHandler, TablePartition, TableSlice
 from .resources import SnowflakeConnection
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -32,7 +38,8 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
             @job(resource_defs={'io_manager': snowflake_io_manager})
             def my_job():
-                ...
+                    ...
+
     """
 
     @io_manager(

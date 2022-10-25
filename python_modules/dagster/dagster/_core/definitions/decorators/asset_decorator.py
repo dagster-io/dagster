@@ -250,8 +250,7 @@ class _Asset:
                 io_manager_def = check.inst_param(
                     self.io_manager, "io_manager", IOManagerDefinition
                 )
-                out_asset_resource_key = "__".join(out_asset_key.path)
-                io_manager_key = f"{out_asset_resource_key}__io_manager"
+                io_manager_key = out_asset_key.to_python_identifier("io_manager")
                 self.resource_defs[io_manager_key] = cast(ResourceDefinition, io_manager_def)
             else:
                 io_manager_key = DEFAULT_IO_MANAGER_KEY
@@ -265,7 +264,7 @@ class _Asset:
             )
 
             op = _Op(
-                name="__".join(out_asset_key.path).replace("-", "_"),
+                name=out_asset_key.to_python_identifier(),
                 description=self.description,
                 ins=dict(asset_ins.values()),
                 out=out,

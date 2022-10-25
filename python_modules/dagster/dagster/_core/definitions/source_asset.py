@@ -87,8 +87,7 @@ class SourceAsset(
         io_manager_def = check.opt_inst_param(io_manager_def, "io_manager_def", IOManagerDefinition)
         if io_manager_def:
             if not io_manager_key:
-                source_asset_path = "__".join(key.path)
-                io_manager_key = f"{source_asset_path}__io_manager"
+                io_manager_key = key.to_python_identifier("io_manager")
 
             if io_manager_key in resource_defs and resource_defs[io_manager_key] != io_manager_def:
                 raise DagsterInvalidDefinitionError(

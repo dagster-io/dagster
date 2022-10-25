@@ -42,6 +42,8 @@ class AirbyteResource:
         request_additional_params: Optional[Dict[str, Any]] = None,
         log: logging.Logger = get_dagster_logger(),
         forward_logs: bool = True,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         self._host = host
         self._port = port
@@ -54,6 +56,9 @@ class AirbyteResource:
         self._log = log
 
         self._forward_logs = forward_logs
+
+        self._username = username
+        self._password = password
 
     @property
     def api_base_url(self) -> str:
@@ -90,6 +95,9 @@ class AirbyteResource:
                             headers=headers,
                             json=data,
                             timeout=self._request_timeout,
+                            auth=(self._username, self._password)
+                            if self._username and self._password
+                            else None,
                         ),
                         self._additional_request_params,
                     ),
@@ -231,6 +239,16 @@ class AirbyteResource:
             is_required=True,
             description="Port for the Airbyte Server.",
         ),
+        "username": Field(
+            StringSource,
+            description="Username if using basic auth.",
+            is_required=False,
+        ),
+        "password": Field(
+            StringSource,
+            description="Password if using basic auth.",
+            is_required=False,
+        ),
         "use_https": Field(
             bool,
             default_value=False,
@@ -287,6 +305,9 @@ def airbyte_resource(context) -> AirbyteResource:
             {
                 "host": {"env": "AIRBYTE_HOST"},
                 "port": {"env": "AIRBYTE_PORT"},
+                # If using basic auth
+                "username": {"env": "AIRBYTE_USERNAME"},
+                "password": {"env": "AIRBYTE_PASSWORD"},
             }
         )
 
@@ -305,4 +326,6 @@ def airbyte_resource(context) -> AirbyteResource:
         request_additional_params=context.resource_config["request_additional_params"],
         log=context.log,
         forward_logs=context.resource_config["forward_logs"],
+        username=context.resource_config.get("username"),
+        password=context.resource_config.get("password"),
     )
