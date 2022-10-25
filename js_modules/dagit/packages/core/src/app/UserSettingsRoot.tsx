@@ -147,9 +147,9 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
                 />
               ),
             },
+            ...React.useContext(FeatureGateContext).ExtraFeatureGates,
           ]}
         />
-        {React.useContext(FeatureGateContext).ExtraFeatureGates}
       </Box>
     </div>
   );
