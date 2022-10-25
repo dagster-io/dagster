@@ -199,32 +199,35 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
 
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
-        if context.has_asset_partitions:
-            return [
-                self._load_pickle(self._partition_path(context.asset_key, partition_key))
-                for partition_key in context.asset_partition_keys
-            ]
-        else:
-            return self._load_input(context)
-
-    def _partition_path(self, asset_key, partition_key):
-        return os.path.join(self.base_dir, *asset_key.path, partition_key)
-
-    def _load_pickle(self, filepath):
-        with open(filepath, self.read_mode) as read_obj:
-            return pickle.load(read_obj)
-
-    def _load_input(self, context):
-        """Unpickle the file and Load it to a data object."""
 
         check.inst_param(context, "context", InputContext)
 
         if context.dagster_type.typing_type == type(None):
             return None
 
-        filepath = self._get_path(context)
-        context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
+        def has_multiple_partitions(context):
+            key_range = context.asset_partition_key_range
+            return key_range.start != key_range.end
 
+        if context.has_asset_partitions and has_multiple_partitions(context):
+            # Multiple partition load
+            partition_keys = context.asset_partition_keys
+            paths = [
+                self._partition_path(context.asset_key, partition_key)
+                for partition_key in partition_keys
+            ]
+            return {key: self._load_pickle(path) for (key, path) in zip(partition_keys, paths)}
+        else:
+            # Non-partitioned or single partition load
+            filepath = self._get_path(context)
+            context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
+            return self._load_pickle(filepath)
+
+    def _partition_path(self, asset_key: AssetKey, partition_key: str) -> str:
+        return os.path.join(self.base_dir, *asset_key.path, partition_key)
+
+    def _load_pickle(self, filepath: str):
+        """Unpickle the file and Load it to a data object."""
         with open(filepath, self.read_mode) as read_obj:
             return pickle.load(read_obj)
 
