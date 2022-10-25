@@ -199,7 +199,6 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
 
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
-
         check.inst_param(context, "context", InputContext)
 
         if context.dagster_type.typing_type == type(None):
