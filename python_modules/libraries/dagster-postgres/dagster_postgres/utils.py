@@ -18,6 +18,7 @@ class DagsterPostgresException(Exception):
 
 
 def get_conn(conn_string):
+    """Get a connection directly without SQLAlchemy for tests."""
     conn = psycopg2.connect(conn_string)
     conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     return conn
@@ -125,6 +126,7 @@ def retry_pg_connection_fn(fn, retry_limit=5, retry_wait=0.2):
 
 
 def wait_for_connection(conn_string, retry_limit=5, retry_wait=0.2):
+    """Get a connection with retries directly without SQLAlchemy for tests."""
     retry_pg_connection_fn(
         lambda: psycopg2.connect(conn_string), retry_limit=retry_limit, retry_wait=retry_wait
     )

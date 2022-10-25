@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Colors, MiddleTruncate} from '@dagster-io/ui';
+import {Box, Colors, MiddleTruncate} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -12,13 +12,15 @@ import {RunStatusPezList} from '../runs/RunStatusPez';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {Row, RowCell} from '../ui/VirtualizedTable';
+import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
-import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
+import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {buildPipelineSelector} from './WorkspaceContext';
 import {RepoAddress} from './types';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/SingleJobQuery';
 import {workspacePathFromAddress} from './workspacePath';
+
+const TEMPLATE_COLUMNS = '1.5fr 1fr 180px 96px 80px';
 
 interface JobRowProps {
   name: string;
@@ -68,38 +70,27 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
     <Row $height={height} $start={start}>
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <RowCell>
-          <div style={{whiteSpace: 'nowrap', fontWeight: 500}}>
+          <div style={{maxWidth: '100%', whiteSpace: 'nowrap', fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>
               <MiddleTruncate text={name} />
             </Link>
           </div>
-          <div
-            style={{
-              maxWidth: '100%',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            <Caption
-              style={{
-                color: Colors.Gray500,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {data?.pipelineOrError.__typename === 'Pipeline'
-                ? data.pipelineOrError.description
-                : ''}
-            </Caption>
-          </div>
+          <CaptionText>
+            {data?.pipelineOrError.__typename === 'Pipeline'
+              ? data.pipelineOrError.description
+              : ''}
+          </CaptionText>
         </RowCell>
         <RowCell>
           {schedules.length || sensors.length ? (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
-              <ScheduleOrSensorTag
-                schedules={schedules}
-                sensors={sensors}
-                repoAddress={repoAddress}
-              />
+              <ScheduleSensorTagContainer>
+                <ScheduleOrSensorTag
+                  schedules={schedules}
+                  sensors={sensors}
+                  repoAddress={repoAddress}
+                />
+              </ScheduleSensorTagContainer>
               {/* {schedules.length ? <NextTick schedules={schedules} /> : null} */}
             </Box>
           ) : (
@@ -108,32 +99,69 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
         </RowCell>
         <RowCell>
           {latestRuns.length ? (
-            <LastRunSummary run={latestRuns[0]} showButton={false} showHover name={name} />
+            <LastRunSummary
+              run={latestRuns[0]}
+              showButton={false}
+              showHover
+              showSummary={false}
+              name={name}
+            />
           ) : (
             <LoadingOrNone queryResult={queryResult} />
           )}
         </RowCell>
         <RowCell>
           {latestRuns.length ? (
-            <RunStatusPezList jobName={name} runs={[...latestRuns].reverse()} fade />
+            <Box padding={{top: 4}}>
+              <RunStatusPezList jobName={name} runs={[...latestRuns].reverse()} fade />
+            </Box>
           ) : (
             <LoadingOrNone queryResult={queryResult} />
           )}
         </RowCell>
         <RowCell>
-          <div>
+          <Box flex={{justifyContent: 'flex-end'}} style={{marginTop: '-2px'}}>
             <JobMenu job={{isJob, name, runs: latestRuns}} repoAddress={repoAddress} />
-          </div>
+          </Box>
         </RowCell>
       </RowGrid>
     </Row>
   );
 };
 
+export const VirtualizedJobHeader = () => {
+  return (
+    <Box
+      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: TEMPLATE_COLUMNS,
+        height: '32px',
+        fontSize: '12px',
+        color: Colors.Gray600,
+      }}
+    >
+      <HeaderCell>Name</HeaderCell>
+      <HeaderCell>Schedules/sensors</HeaderCell>
+      <HeaderCell>Latest run</HeaderCell>
+      <HeaderCell>Run history</HeaderCell>
+      <HeaderCell></HeaderCell>
+    </Box>
+  );
+};
+
 const RowGrid = styled(Box)`
   display: grid;
-  grid-template-columns: 34% 30% 20% 8% 8%;
+  grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
+`;
+
+const ScheduleSensorTagContainer = styled.div`
+  width: 100%;
+
+  > .bp3-popover2-target {
+    width: 100%;
+  }
 `;
 
 const SINGLE_JOB_QUERY = gql`

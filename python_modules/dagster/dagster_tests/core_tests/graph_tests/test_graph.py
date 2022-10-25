@@ -1,7 +1,7 @@
 import enum
 import json
 from datetime import datetime
-from typing import Optional
+from typing import Any, List, Optional
 
 import pendulum
 import pytest
@@ -14,7 +14,6 @@ from dagster import (
     DynamicOutput,
     Enum,
     Field,
-    GraphIn,
     In,
     InputMapping,
     Nothing,
@@ -1030,20 +1029,6 @@ def test_graph_top_level_input():
     assert result.output_for_node("my_graph.my_op") == 4
 
 
-def test_nothing_inputs_graph():
-    # Document that there is no way to use Nothing inputs on a top-level graph.
-    @op(ins={"sync_signal": In(Nothing)})
-    def my_op():
-        ...
-
-    @graph(ins={"sync_signal": GraphIn()})
-    def my_pipeline(sync_signal):
-        my_op(sync_signal)
-
-    with pytest.raises(DagsterInvalidConfigError):
-        my_pipeline.execute_in_process()
-
-
 def test_run_id_execute_in_process():
     @graph
     def blank():
@@ -1268,3 +1253,143 @@ def test_graph_with_mapped_out():
     result = mapped_out.execute_in_process()
     assert result.success
     assert result.output_value() == {"num_0": 0, "num_1": 1, "num_2": 2}
+
+
+def test_infer_graph_input_type_from_inner_input():
+    @op(ins={"in1": In(Nothing)})
+    def op1():
+        ...
+
+    @graph
+    def graph1(in1):
+        op1(in1)
+
+    assert graph1.input_defs[0].dagster_type.is_nothing
+
+    assert graph1.execute_in_process().success
+
+
+def test_infer_graph_input_type_from_inner_input_int():
+    @op
+    def op1(in1: int):
+        assert in1 == 5
+
+    @graph
+    def graph1(in1):
+        op1(in1)
+
+    assert graph1.input_defs[0].dagster_type.typing_type == int
+
+    assert graph1.execute_in_process(run_config={"inputs": {"in1": {"value": 5}}}).success
+
+
+def test_infer_graph_input_type_from_inner_input_explicit_any():
+    @op(ins={"in1": In(Nothing)})
+    def op1():
+        ...
+
+    @graph
+    def graph1(in1: Any):
+        op1(in1)
+
+    assert graph1.input_defs[0].dagster_type.is_nothing
+
+    assert graph1.execute_in_process().success
+
+
+def test_infer_graph_input_type_from_inner_input_explicit_graphin_type():
+    @op(ins={"in1": In(Nothing)})
+    def op1():
+        ...
+
+    @graph
+    def graph1(in1: int):
+        op1(in1)
+
+    assert graph1.input_defs[0].dagster_type.typing_type == int
+
+
+def test_infer_graph_input_type_from_multiple_inner_inputs():
+    @op(ins={"in1": In(Nothing)})
+    def op1():
+        ...
+
+    @op(ins={"in2": In(Nothing)})
+    def op2():
+        ...
+
+    @graph
+    def graph1(in1):
+        op1(in1)
+        op2(in1)
+
+    assert graph1.input_defs[0].dagster_type.is_nothing
+
+    assert graph1.execute_in_process().success
+
+
+def test_dont_infer_graph_input_type_from_different_inner_inputs():
+    @op(ins={"in1": In(Nothing)})
+    def op1():
+        ...
+
+    @op
+    def op2(in2):
+        del in2
+
+    @graph
+    def graph1(in1):
+        op1(in1)
+        op2(in1)
+
+    assert not graph1.input_defs[0].dagster_type.is_nothing
+
+    with pytest.raises(DagsterInvalidConfigError):
+        graph1.execute_in_process()
+
+
+def test_infer_graph_input_type_from_inner_inner_input():
+    @op(ins={"in1": In(Nothing)})
+    def op1():
+        ...
+
+    @graph
+    def inner(in1):
+        op1(in1)
+
+    @graph
+    def outer(in1):
+        inner(in1)
+
+    assert outer.input_defs[0].dagster_type.is_nothing
+
+    assert outer.execute_in_process().success
+
+
+def test_infer_graph_input_type_from_inner_input_fan_in():
+    @op
+    def op1(in1: List[int]):
+        assert in1 == [5]
+
+    @graph
+    def graph1(in1):
+        op1([in1])
+
+    assert graph1.input_defs[0].dagster_type.typing_type == int
+
+    assert graph1.execute_in_process(run_config={"inputs": {"in1": {"value": 5}}}).success
+
+
+def test_infer_graph_input_type_from_inner_input_mixed_fan_in():
+    @op
+    def op1(in1: List[int], in2: int):
+        assert in1 == [5]
+        assert in2 == 5
+
+    @graph
+    def graph1(in1):
+        op1([in1], in1)
+
+    assert graph1.input_defs[0].dagster_type.typing_type == int
+
+    assert graph1.execute_in_process(run_config={"inputs": {"in1": {"value": 5}}}).success

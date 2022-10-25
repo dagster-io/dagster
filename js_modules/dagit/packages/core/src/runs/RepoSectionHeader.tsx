@@ -6,7 +6,7 @@ export const SECTION_HEADER_HEIGHT = 32;
 
 interface Props {
   expanded: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
   repoName: string;
   repoLocation: string;
   showLocation: boolean;

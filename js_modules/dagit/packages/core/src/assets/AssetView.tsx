@@ -14,6 +14,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -37,6 +38,7 @@ import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNo
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
+import {AssetPlots} from './AssetPlots';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
@@ -46,7 +48,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'activity' | 'definition' | 'lineage';
+  view?: 'activity' | 'definition' | 'lineage' | 'plots';
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
   partition?: string;
@@ -56,6 +58,7 @@ export interface AssetViewParams {
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const {flagNewAssetDetails} = useFeatureFlags();
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
@@ -89,16 +92,17 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   );
 
   const {upstream, downstream} = useNeighborsFromGraph(assetGraphData, assetKey);
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
+  const {liveDataRefreshState, liveDataByNode, runWatchers} = useLiveDataForAssetKeys(
+    graphAssetKeys,
+  );
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
-    useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS),
+    liveDataRefreshState,
   );
 
   // Refresh immediately when a run is launched from this page
   useDidLaunchEvent(queryResult.refetch);
-  useDidLaunchEvent(liveResult.refetch);
 
   // Avoid thrashing the materializations UI (which chooses a different default query based on whether
   // data is partitioned) by waiting for the definition to be loaded. (null OR a valid definition)
@@ -108,6 +112,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
+      {runWatchers}
       <AssetPageHeader
         assetKey={assetKey}
         tags={
@@ -155,6 +160,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               title="Activity"
               onClick={() => setParams({...params, view: 'activity'})}
             />
+            {flagNewAssetDetails && (
+              <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
+            )}
             <Tab
               id="definition"
               title="Definition"
@@ -234,6 +242,13 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : (
             <AssetNoDefinitionState />
           )
+        ) : params.view === 'plots' ? (
+          <AssetPlots
+            assetKey={assetKey}
+            params={params}
+            setParams={setParams}
+            assetHasDefinedPartitions={!!definition?.partitionDefinition}
+          />
         ) : (
           <AssetEvents
             assetKey={assetKey}

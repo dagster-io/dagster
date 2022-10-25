@@ -18,6 +18,9 @@ import {RunTimelineQuery, RunTimelineQueryVariables} from './types/RunTimelineQu
 export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilter = {}) => {
   const [start, end] = range;
 
+  const startSec = start / 1000.0;
+  const endSec = end / 1000.0;
+
   const {data, previousData, loading} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(
     RUN_TIMELINE_QUERY,
     {
@@ -27,14 +30,16 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
         inProgressFilter: {
           ...runsFilter,
           statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-          createdBefore: end / 1000.0,
+          createdBefore: endSec,
         },
         terminatedFilter: {
           ...runsFilter,
           statuses: Array.from(doneStatuses),
-          createdBefore: end / 1000.0,
-          updatedAfter: start / 1000.0,
+          createdBefore: endSec,
+          updatedAfter: startSec,
         },
+        tickCursor: startSec,
+        ticksUntil: endSec,
       },
     },
   );
@@ -105,6 +110,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
         continue;
       }
 
+      const now = Date.now();
       for (const repository of locationEntry.locationOrLoadError.repositories) {
         const repoAddress = buildRepoAddress(
           repository.name,
@@ -121,7 +127,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
             if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
               schedule.futureTicks.results.forEach(({timestamp}) => {
                 const startTime = timestamp * 1000;
-                if (overlap({start, end}, {start: startTime, end: startTime})) {
+                if (startTime > now && overlap({start, end}, {start: startTime, end: startTime})) {
                   jobTicks.push({
                     id: `${schedule.pipelineName}-future-run-${timestamp}`,
                     status: 'SCHEDULED',
@@ -175,7 +181,12 @@ export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
   `${jobName}-${repoAddressAsString(repoAddress)}`;
 
 const RUN_TIMELINE_QUERY = gql`
-  query RunTimelineQuery($inProgressFilter: RunsFilter!, $terminatedFilter: RunsFilter!) {
+  query RunTimelineQuery(
+    $inProgressFilter: RunsFilter!
+    $terminatedFilter: RunsFilter!
+    $tickCursor: Float
+    $ticksUntil: Float
+  ) {
     unterminated: runsOrError(filter: $inProgressFilter) {
       ... on Runs {
         results {

@@ -17,15 +17,18 @@ import * as React from 'react';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
+import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
 import {OverviewTabs} from './OverviewTabs';
+import {sortRepoBuckets} from './sortRepoBuckets';
 import {OverviewSchedulesQuery} from './types/OverviewSchedulesQuery';
 import {UnloadableSchedulesQuery} from './types/UnloadableSchedulesQuery';
 
@@ -44,7 +47,7 @@ export const OverviewSchedulesRoot = () => {
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
-  const repoBuckets = useRepoBuckets(data);
+  const repoBuckets = React.useMemo(() => buildBuckets(data), [data]);
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
@@ -131,6 +134,12 @@ export const OverviewSchedulesRoot = () => {
               count={data.unloadableInstigationStatesOrError.results.length}
             />
           ) : null}
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+          >
+            <SchedulerInfo daemonHealth={data?.instance.daemonHealth} />
+          </Box>
           {content()}
         </>
       )}
@@ -213,37 +222,35 @@ type RepoBucket = {
   schedules: string[];
 };
 
-const useRepoBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
-  return React.useMemo(() => {
-    if (data?.workspaceOrError.__typename !== 'Workspace') {
-      return [];
+const buildBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
+  if (data?.workspaceOrError.__typename !== 'Workspace') {
+    return [];
+  }
+
+  const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+
+  const buckets = [];
+
+  for (const entry of entries) {
+    if (entry?.__typename !== 'RepositoryLocation') {
+      continue;
     }
 
-    const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+    for (const repo of entry.repositories) {
+      const {name, schedules} = repo;
+      const repoAddress = buildRepoAddress(name, entry.name);
+      const scheduleNames = schedules.map(({name}) => name);
 
-    const buckets = [];
-
-    for (const entry of entries) {
-      if (entry?.__typename !== 'RepositoryLocation') {
-        continue;
-      }
-
-      for (const repo of entry.repositories) {
-        const {name, schedules} = repo;
-        const repoAddress = buildRepoAddress(name, entry.name);
-        const scheduleNames = schedules.map(({name}) => name);
-
-        if (scheduleNames.length > 0) {
-          buckets.push({
-            repoAddress,
-            schedules: scheduleNames,
-          });
-        }
+      if (scheduleNames.length > 0) {
+        buckets.push({
+          repoAddress,
+          schedules: scheduleNames,
+        });
       }
     }
+  }
 
-    return buckets;
-  }, [data]);
+  return sortRepoBuckets(buckets);
 };
 
 const OVERVIEW_SCHEDULES_QUERY = gql`
@@ -279,9 +286,13 @@ const OVERVIEW_SCHEDULES_QUERY = gql`
         }
       }
     }
+    instance {
+      ...InstanceHealthFragment
+    }
   }
 
   ${PYTHON_ERROR_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
 `;
 
 const UNLOADABLE_SCHEDULES_QUERY = gql`

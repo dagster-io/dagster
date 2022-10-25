@@ -9,9 +9,7 @@ from dagster import (
     AssetsDefinition,
     DagsterEventType,
     DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
     EventRecordsFilter,
-    HourlyPartitionsDefinition,
     IOManager,
     Out,
     Output,
@@ -26,6 +24,7 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUnmetExecutorRequirementsError
 from dagster._core.test_utils import instance_for_test
 
@@ -76,7 +75,7 @@ def test_asset_group_from_list():
 
     assert len(the_repo.get_all_jobs()) == 1
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
-    assert AssetGroup.is_base_job_name(asset_group_underlying_job.name)
+    assert is_base_asset_job_name(asset_group_underlying_job.name)
 
     result = asset_group_underlying_job.execute_in_process()
     assert result.success
@@ -111,7 +110,7 @@ def test_asset_group_source_asset():
         return [group]
 
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
-    assert AssetGroup.is_base_job_name(asset_group_underlying_job.name)
+    assert is_base_asset_job_name(asset_group_underlying_job.name)
 
     result = asset_group_underlying_job.execute_in_process()
     assert result.success
@@ -133,7 +132,7 @@ def test_asset_group_with_resources():
         return [group]
 
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
-    assert AssetGroup.is_base_job_name(asset_group_underlying_job.name)
+    assert is_base_asset_job_name(asset_group_underlying_job.name)
 
     result = asset_group_underlying_job.execute_in_process()
     assert result.success
@@ -1063,53 +1062,6 @@ def test_materialize_with_selection():
     assert result.output_for_node("middle_asset", "o1") == "foo"
     assert result.output_for_node("follows_o2") == "foo"
     assert result.output_for_node("start_asset") == "foo"
-
-
-def test_multiple_partitions_defs():
-    @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
-    def daily_asset():
-        ...
-
-    @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
-    def daily_asset2():
-        ...
-
-    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-05-05"))
-    def daily_asset_different_start_date():
-        ...
-
-    @asset(partitions_def=HourlyPartitionsDefinition(start_date="2021-05-05-00:00"))
-    def hourly_asset():
-        ...
-
-    @asset
-    def unpartitioned_asset():
-        ...
-
-    group = AssetGroup(
-        [
-            daily_asset,
-            daily_asset2,
-            daily_asset_different_start_date,
-            hourly_asset,
-            unpartitioned_asset,
-        ]
-    )
-
-    jobs = group.get_base_jobs()
-    assert len(jobs) == 3
-    assert {job_def.name for job_def in jobs} == {
-        "__ASSET_JOB_0",
-        "__ASSET_JOB_1",
-        "__ASSET_JOB_2",
-    }
-    assert {
-        frozenset([node_def.name for node_def in job_def.all_node_defs]) for job_def in jobs
-    } == {
-        frozenset(["daily_asset", "daily_asset2", "unpartitioned_asset"]),
-        frozenset(["hourly_asset", "unpartitioned_asset"]),
-        frozenset(["daily_asset_different_start_date", "unpartitioned_asset"]),
-    }
 
 
 def test_assets_prefixed_single_asset():

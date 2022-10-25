@@ -25,6 +25,7 @@ from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor im
 )
 
 from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
+from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._utils import file_relative_path
@@ -299,7 +300,12 @@ def test_software_defined_assets_job():
 
 
 def test_partitioned_assets():
-    for job_def in partitioned_asset_group.get_base_jobs():
+    for job_def in get_base_asset_jobs(
+        assets=partitioned_asset_group.assets,
+        source_assets=[],
+        executor_def=None,
+        resource_defs=None,
+    ):
         partition_key = job_def.mode_definitions[
             0
         ].partitioned_config.partitions_def.get_partition_keys()[0]

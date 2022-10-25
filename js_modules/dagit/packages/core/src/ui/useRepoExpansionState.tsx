@@ -11,7 +11,7 @@ const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parse
  * Use localStorage to persist the expanded/collapsed visual state of repository containers,
  * e.g. for the left nav or run timeline.
  */
-export const useRepoExpansionState = (storageKey: string) => {
+export const useRepoExpansionState = (storageKey: string, allKeys: string[]) => {
   const {basePath} = React.useContext(AppContext);
   const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
     `${basePath}:dagit.${storageKey}`,
@@ -34,11 +34,19 @@ export const useRepoExpansionState = (storageKey: string) => {
     [setExpandedKeys],
   );
 
+  const onToggleAll = React.useCallback(
+    (expand: boolean) => {
+      setExpandedKeys(expand ? allKeys : []);
+    },
+    [allKeys, setExpandedKeys],
+  );
+
   return React.useMemo(
     () => ({
       expandedKeys,
       onToggle,
+      onToggleAll,
     }),
-    [expandedKeys, onToggle],
+    [expandedKeys, onToggle, onToggleAll],
   );
 };

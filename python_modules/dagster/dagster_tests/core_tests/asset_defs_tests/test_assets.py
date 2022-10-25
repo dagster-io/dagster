@@ -1,4 +1,5 @@
 import ast
+import datetime
 import tempfile
 
 import pytest
@@ -8,10 +9,12 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     DagsterEventType,
+    DailyPartitionsDefinition,
     EventRecordsFilter,
     GraphOut,
     IOManager,
     IOManagerDefinition,
+    LastPartitionMapping,
     Out,
     Output,
     ResourceDefinition,
@@ -125,6 +128,27 @@ def test_retain_group_subset():
 
     subset = ma.subset_for({AssetKey("b")})
     assert subset.group_names_by_key[AssetKey("b")] == "bar"
+
+
+def test_retain_partition_mappings():
+    @asset(
+        ins={"input_last": AssetIn(["input_last"], partition_mapping=LastPartitionMapping())},
+        partitions_def=DailyPartitionsDefinition(datetime.datetime(2022, 1, 1)),
+    )
+    def bar_(input_last):  # pylint: disable=unused-argument
+        pass
+
+    assert isinstance(bar_.get_partition_mapping(AssetKey(["input_last"])), LastPartitionMapping)
+
+    replaced = bar_.with_prefix_or_group(
+        input_asset_key_replacements={
+            AssetKey(["input_last"]): AssetKey(["input_last2"]),
+        }
+    )
+
+    assert isinstance(
+        replaced.get_partition_mapping(AssetKey(["input_last2"])), LastPartitionMapping
+    )
 
 
 def test_chain_replace_and_subset_for():

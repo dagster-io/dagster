@@ -3,6 +3,7 @@ from typing import Any, Dict, List, NamedTuple, Optional
 
 import requests
 
+import dagster._check as check
 from dagster._utils import merge_dicts
 from dagster._utils.backoff import backoff
 
@@ -14,18 +15,83 @@ class DagsterEcsTaskDefinitionConfig(
             ("family", str),
             ("image", str),
             ("container_name", str),
-            ("command", Optional[str]),
+            ("command", Optional[List[str]]),
             ("log_configuration", Optional[Dict[str, Any]]),
-            ("secrets", Optional[List[Dict[str, str]]]),
-            ("environment", Optional[List[Dict[str, str]]]),
+            ("secrets", List[Dict[str, str]]),
+            ("environment", List[Dict[str, str]]),
             ("execution_role_arn", Optional[str]),
             ("task_role_arn", Optional[str]),
             ("sidecars", List[Dict[str, Any]]),
+            ("requires_compatibilities", List[str]),
         ],
     )
 ):
-    """All the information that Dagster needs to compare two task definition to see if they
-    should be reused."""
+    """All the information that Dagster needs to create a task definition and compare two task
+    definitions to see if they should be reused."""
+
+    def __new__(
+        cls,
+        family: str,
+        image: str,
+        container_name: str,
+        command: Optional[List[str]],
+        log_configuration: Optional[Dict[str, Any]],
+        secrets: Optional[List[Dict[str, str]]],
+        environment: Optional[List[Dict[str, str]]],
+        execution_role_arn: Optional[str],
+        task_role_arn: Optional[str],
+        sidecars: Optional[List[Dict[str, Any]]],
+        requires_compatibilities: Optional[List[str]],
+    ):
+        return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
+            cls,
+            check.str_param(family, "family"),
+            check.str_param(image, "image"),
+            check.str_param(container_name, "container_name"),
+            check.opt_list_param(command, "command"),
+            check.opt_dict_param(log_configuration, "log_configuration"),
+            check.opt_list_param(secrets, "secrets"),
+            check.opt_list_param(environment, "environment"),
+            check.opt_str_param(execution_role_arn, "execution_role_arn"),
+            check.opt_str_param(task_role_arn, "task_role_arn"),
+            check.opt_list_param(sidecars, "sidecars"),
+            check.opt_list_param(requires_compatibilities, "requires_compatibilities"),
+        )
+
+    def task_definition_dict(self):
+        kwargs = dict(
+            family=self.family,
+            requiresCompatibilities=self.requires_compatibilities,
+            networkMode="awsvpc",
+            containerDefinitions=[
+                merge_dicts(
+                    {
+                        "name": self.container_name,
+                        "image": self.image,
+                    },
+                    (
+                        {"logConfiguration": self.log_configuration}
+                        if self.log_configuration
+                        else {}
+                    ),
+                    ({"command": self.command} if self.command else {}),
+                    ({"secrets": self.secrets} if self.secrets else {}),
+                    ({"environment": self.environment} if self.environment else {}),
+                ),
+                *self.sidecars,
+            ],
+            # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
+            cpu="256",
+            memory="512",
+        )
+
+        if self.execution_role_arn:
+            kwargs.update(dict(executionRoleArn=self.execution_role_arn))
+
+        if self.task_role_arn:
+            kwargs.update(dict(taskRoleArn=self.task_role_arn))
+
+        return kwargs
 
     @staticmethod
     def from_task_definition_dict(task_definition_dict, container_name):
@@ -52,12 +118,13 @@ class DagsterEcsTaskDefinitionConfig(
             image=container_definition["image"],
             container_name=container_name,
             command=container_definition.get("command"),
-            log_configuration=task_definition_dict.get("logConfiguration"),
+            log_configuration=container_definition.get("logConfiguration"),
             secrets=container_definition.get("secrets"),
             environment=container_definition.get("environment"),
             execution_role_arn=task_definition_dict.get("executionRoleArn"),
             task_role_arn=task_definition_dict.get("taskRoleArn"),
             sidecars=sidecars,
+            requires_compatibilities=task_definition_dict.get("requiresCompatibilities"),
         )
 
 

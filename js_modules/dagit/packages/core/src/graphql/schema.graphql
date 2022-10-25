@@ -2742,7 +2742,14 @@ type DagitSubscription {
   """
   Retrieve real-time event logs after applying a filter on run id and cursor.
   """
-  pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
+  pipelineRunLogs(
+    runId: ID!
+
+    """
+    A cursor retrieved from the API. Pass 'HEAD' to stream from the current event onward.
+    """
+    cursor: String
+  ): PipelineRunLogsSubscriptionPayload!
 
   """
   Retrieve real-time compute logs after applying a filter on run id, step name, log type, and cursor.
