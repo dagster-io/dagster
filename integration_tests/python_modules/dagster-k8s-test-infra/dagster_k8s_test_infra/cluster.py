@@ -321,8 +321,6 @@ def upload_buildkite_artifact(artifact_file):
         stderr=subprocess.PIPE,
     )
     stdout, stderr = p.communicate()
-    print("Buildkite artifact added with stdout: ", stdout)
-    print("Buildkite artifact added with stderr: ", stderr)
     assert p.returncode == 0
 
 
