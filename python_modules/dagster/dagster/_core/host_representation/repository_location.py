@@ -368,14 +368,16 @@ class InProcessRepositoryLocation(RepositoryLocation):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        step_keys_to_execute = check.opt_nullable_sequence_param(
+            step_keys_to_execute, "step_keys_to_execute", of_type=str
+        )
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
@@ -383,7 +385,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
             pipeline=self.get_reconstructable_pipeline(
                 external_pipeline.repository_handle.repository_name, external_pipeline.name
             ).subset_for_execution_from_existing_pipeline(
-                external_pipeline.solids_to_execute, external_pipeline.asset_selection
+                frozenset(check.not_none(external_pipeline.solids_to_execute)),
+                frozenset(check.not_none(external_pipeline.asset_selection)),
             ),
             run_config=run_config,
             mode=mode,
@@ -437,7 +440,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             )
 
         return get_partition_names(
-            self._get_repo_def(external_partition_set.repository_handle),
+            self._get_repo_def(external_partition_set.repository_handle.repository_name),
             partition_set_name=external_partition_set.name,
         )
 
@@ -690,14 +693,14 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, Any],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         run_config = check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
@@ -707,7 +710,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             run_config=run_config,
             mode=mode,
             pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
-            asset_selection=external_pipeline.asset_selection,
+            asset_selection=frozenset(
+                check.opt_set_param(external_pipeline.asset_selection, "asset_selection")
+            ),
             solid_selection=external_pipeline.solid_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,

@@ -84,7 +84,7 @@ class ExternalRepository:
             self._ref_to_data_fn = None
         elif external_repository_data.external_job_refs is not None:
             self._job_map = {r.name: r for r in external_repository_data.external_job_refs}
-            self._deferred_snapshots: bool = True
+            self._deferred_snapshots = True
             if ref_to_data_fn is None:
                 check.failed(
                     "ref_to_data_fn is required when ExternalRepositoryData is loaded with deferred snapshots"
@@ -264,7 +264,7 @@ class ExternalPipeline(RepresentedPipeline):
         self._repository_handle = repository_handle
 
         self._memo_lock = RLock()
-        self._index = None
+        self._index: Optional[PipelineIndex] = None
 
         self._data = external_pipeline_data
         self._ref = external_job_ref
@@ -296,7 +296,7 @@ class ExternalPipeline(RepresentedPipeline):
                     self.external_pipeline_data.pipeline_snapshot,
                     self.external_pipeline_data.parent_pipeline_snapshot,
                 )
-            return self._index
+            return self._index  # type: ignore
 
     @property
     def name(self) -> str:
