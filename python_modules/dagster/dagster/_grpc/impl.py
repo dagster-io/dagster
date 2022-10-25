@@ -10,13 +10,13 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
-from dagster._core.definitions.repository_definition import RepositoryDefinition
-from dagster._core.definitions.sensor_definition import (
+from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorDefinition,
     MultiAssetSensorEvaluationContext,
-    SensorEvaluationContext,
 )
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.definitions.sensor_definition import SensorEvaluationContext
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
     DagsterRunNotFoundError,
