@@ -14,6 +14,10 @@ def create_db_conn_string(base_dir, db_name):
 
 
 def create_in_memory_conn_string(db_name):
+    # Uses a named file-based URL for the in-memory connection (as opposed to the :memory: url) so
+    # that multiple instances can share the same logical DB across connections, while maintaining
+    # separate DBs for different db names.  The latter is required to have both the run / event_log
+    # in-memory implementations within the same process
     return f"sqlite:///file:{db_name}?mode=memory&uri=true"
 
 
