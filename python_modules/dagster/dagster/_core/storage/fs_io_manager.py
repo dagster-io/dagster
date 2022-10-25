@@ -145,6 +145,10 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
 
         return os.path.join(self.base_dir, *path)
 
+    def _get_path_partition(self, asset_key: AssetKey, partition_key: str) -> str:
+        """Construct filepath for a particular partition_key"""
+        return os.path.join(self.base_dir, *asset_key.path, partition_key)
+
     def has_output(self, context):
         filepath = self._get_path(context)
 
@@ -212,7 +216,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
             # Multiple partition load
             partition_keys = context.asset_partition_keys
             paths = [
-                self._partition_path(context.asset_key, partition_key)
+                self._get_path_partition(context.asset_key, partition_key)
                 for partition_key in partition_keys
             ]
             return {key: self._load_pickle(path) for (key, path) in zip(partition_keys, paths)}
@@ -221,9 +225,6 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
             filepath = self._get_path(context)
             context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
             return self._load_pickle(filepath)
-
-    def _partition_path(self, asset_key: AssetKey, partition_key: str) -> str:
-        return os.path.join(self.base_dir, *asset_key.path, partition_key)
 
     def _load_pickle(self, filepath: str):
         """Unpickle the file and Load it to a data object."""
