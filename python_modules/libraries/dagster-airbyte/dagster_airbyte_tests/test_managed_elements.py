@@ -1,17 +1,17 @@
 # pylint: disable=unused-argument
 
-
 from dagster_managed_elements import ManagedElementDiff
 from dagster_managed_elements.cli import apply, check
 from dagster_managed_elements.utils import diff_dicts
 
 from dagster._utils import file_relative_path
 
+TEST_ROOT_DIR = str(file_relative_path(__file__, "./example_stacks"))
+
 
 def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files):
     # First, check that we get the expected diff
-
-    check_result = check(file_relative_path(__file__, "./example_stacks/example_airbyte_stack.py"))
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack")
 
     config_dict = {
         "local-json-input": {
@@ -41,27 +41,25 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
 
     # Then, apply the diff and check that we get the expected diff again
 
-    apply_result = apply(file_relative_path(__file__, "./example_stacks/example_airbyte_stack.py"))
+    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack")
 
     assert expected_result == apply_result
 
     # Now, check that we get no diff after applying the stack
 
-    check_result = check(file_relative_path(__file__, "./example_stacks/example_airbyte_stack.py"))
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack")
 
     assert check_result == ManagedElementDiff()
 
     # Ensure that the empty stack w/o delete has no diff (it will not try to delete resources it
     # doesn't know about)
-    check_result = check(
-        file_relative_path(__file__, "./example_stacks/empty_airbyte_stack_no_delete.py")
-    )
+    check_result = check(TEST_ROOT_DIR, "empty_airbyte_stack_no_delete")
 
     # Inverted result (e.g. all deletions)
     expected_result = ManagedElementDiff()
 
     # Now, we try to remove everything
-    check_result = check(file_relative_path(__file__, "./example_stacks/empty_airbyte_stack.py"))
+    check_result = check(TEST_ROOT_DIR, "empty_airbyte_stack")
 
     # Inverted result (e.g. all deletions)
     expected_result = diff_dicts(
@@ -73,12 +71,12 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
 
     # Then, apply the diff to remove everything and check that we get the expected diff again
 
-    apply_result = apply(file_relative_path(__file__, "./example_stacks/empty_airbyte_stack.py"))
+    apply_result = apply(TEST_ROOT_DIR, "empty_airbyte_stack")
 
     assert expected_result == apply_result
 
     # Now, check that we get no diff after applying the stack
 
-    check_result = check(file_relative_path(__file__, "./example_stacks/empty_airbyte_stack.py"))
+    check_result = check(TEST_ROOT_DIR, "empty_airbyte_stack")
 
     assert check_result == ManagedElementDiff()

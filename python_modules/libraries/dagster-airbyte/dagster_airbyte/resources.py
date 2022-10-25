@@ -95,7 +95,10 @@ class AirbyteResource:
         if not self._cache_enabled > 0:
             return self.make_request(endpoint, data)
         data_json = json.dumps(data, sort_keys=True)
-        digest = hashlib.sha1(data_json.encode("utf-8")).hexdigest()
+        sha = hashlib.sha1()
+        sha.update(endpoint.encode("utf-8"))
+        sha.update(data_json.encode("utf-8"))
+        digest = sha.hexdigest()
 
         if digest not in self._request_cache:
             self._request_cache[digest] = self.make_request(endpoint, data)
@@ -186,7 +189,6 @@ class AirbyteResource:
                 )
             ),
         )
-
         return next(
             (
                 definition["destinationDefinitionId"]
