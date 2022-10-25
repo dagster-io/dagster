@@ -451,7 +451,12 @@ class DbtCloudResourceV2:
         final_run_details = self.poll_run(
             run_id, poll_interval=poll_interval, poll_timeout=poll_timeout, href=href
         )
-        output = DbtCloudOutput(run_details=final_run_details, result=self.get_run_results(run_id))
+        try:
+            run_results = self.get_run_results(run_id)
+        # if you fail to get run_results for this job, just leave it empty
+        except Failure as _:
+            run_results = {}
+        output = DbtCloudOutput(run_details=final_run_details, result=run_results)
         if output.docs_url:
             self._log.info(f"Docs for this run can be viewed here: {output.docs_url}")
         return output
