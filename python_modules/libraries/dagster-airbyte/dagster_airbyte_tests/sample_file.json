@@ -9,5 +9,16 @@
         {
             "foo": "qux"
         }
+    ],
+    "my_other_data_stream": [
+        {
+            "foo": "bar"
+        },
+        {
+            "foo": "baz"
+        },
+        {
+            "foo": "qux"
+        }
     ]
 }

@@ -179,6 +179,9 @@ def reconcile_sources(
                     )
                     source_id = create_result["sourceId"]
 
+            if source_name in initialized_sources:
+                # Preserve to be able to initialize old connection object
+                initialized_sources[f"{source_name}_old"] = initialized_sources[source_name]
             initialized_sources[source_name] = InitializedAirbyteSource(
                 source=configured_source,
                 source_id=source_id,
@@ -263,6 +266,11 @@ def reconcile_destinations(
                     )
                     destination_id = create_result["destinationId"]
 
+            if destination_name in initialized_destinations:
+                # Preserve to be able to initialize old connection object
+                initialized_destinations[f"{destination_name}_old"] = initialized_destinations[
+                    destination_name
+                ]
             initialized_destinations[destination_name] = InitializedAirbyteDestination(
                 destination=configured_destination,
                 destination_id=destination_id,
@@ -535,7 +543,7 @@ def reconcile_connections_post(
 
         if existing_conn:
             if not dry_run:
-                source = init_sources[conn_name]
+                source = init_sources[config_conn.source.name]
                 res.make_request(
                     endpoint="/connections/update",
                     data={

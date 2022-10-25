@@ -104,7 +104,7 @@ def docker_compose_airbyte_instance_fixture(
 
 @pytest.fixture(name="airbyte_source_files")
 def airbyte_source_files_fixture():
-    FILES = ["sample_file.json"]
+    FILES = ["sample_file.json", "different_sample_file.json"]
 
     for file in FILES:
         with open(file_relative_path(__file__, file), "r", encoding="utf8") as f:
@@ -132,7 +132,7 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
         )
 
     # First, check that we get the expected diff
-    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack")
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
 
     config_dict = {
         "local-json-input": {
@@ -162,13 +162,13 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
 
     # Then, apply the diff and check that we get the expected diff again
 
-    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack")
+    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
 
     assert expected_result == apply_result
 
     # Now, check that we get no diff after applying the stack
 
-    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack")
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
 
     assert check_result == ManagedElementDiff()
 
@@ -190,13 +190,13 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
 
     # Ensure that the empty stack w/o delete has no diff (it will not try to delete resources it
     # doesn't know about)
-    check_result = check(TEST_ROOT_DIR, "empty_airbyte_stack_no_delete")
+    check_result = check(TEST_ROOT_DIR, "empty_airbyte_stack:reconciler_no_delete")
 
     # Inverted result (e.g. all deletions)
     expected_result = ManagedElementDiff()
 
     # Now, we try to remove everything
-    check_result = check(TEST_ROOT_DIR, "empty_airbyte_stack")
+    check_result = check(TEST_ROOT_DIR, "empty_airbyte_stack:reconciler")
 
     # Inverted result (e.g. all deletions)
     expected_result = diff_dicts(
@@ -208,13 +208,13 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
 
     # Then, apply the diff to remove everything and check that we get the expected diff again
 
-    apply_result = apply(TEST_ROOT_DIR, "empty_airbyte_stack")
+    apply_result = apply(TEST_ROOT_DIR, "empty_airbyte_stack:reconciler")
 
     assert expected_result == apply_result
 
     # Now, check that we get no diff after applying the stack
 
-    check_result = check(TEST_ROOT_DIR, "empty_airbyte_stack")
+    check_result = check(TEST_ROOT_DIR, "empty_airbyte_stack:reconciler")
 
     assert check_result == ManagedElementDiff()
 
@@ -223,3 +223,54 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
         ab_assets = ab_cacheable_assets.build_definitions(
             ab_cacheable_assets.compute_cacheable_data()
         )
+
+
+def test_change_source_and_destination(docker_compose_airbyte_instance, airbyte_source_files):
+
+    # Set up example element and ensure no diff
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert check_result == ManagedElementDiff()
+
+    # Change the source, ensure that we get the proper diff
+    expected_diff = diff_dicts(
+        {
+            "local-json-input": {
+                "url": "/local/different_sample_file.json",
+            },
+        },
+        {
+            "local-json-input": {
+                "url": "/local/sample_file.json",
+            },
+        },
+    )
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_source")
+    assert check_result == expected_diff
+
+    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_source")
+    assert apply_result == expected_diff
+
+    # Return to original state
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+
+    # Change the destination, ensure that we get the proper diff
+    expected_diff = diff_dicts(
+        {
+            "local-json-output": {
+                "destination_path": "/local/different_destination_file.json",
+            },
+        },
+        {
+            "local-json-output": {
+                "destination_path": "/local/destination_file.json",
+            },
+        },
+    )
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
+    assert check_result == expected_diff
+
+    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
+    assert apply_result == expected_diff
