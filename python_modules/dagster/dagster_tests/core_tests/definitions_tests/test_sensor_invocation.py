@@ -24,7 +24,6 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SkipReason,
-    FreshnessPolicy,
     StaticPartitionsDefinition,
     asset,
     build_freshness_policy_sensor_context,
