@@ -316,7 +316,7 @@ def upload_buildkite_artifact(artifact_file):
             "buildkite-agent",
             "artifact",
             "upload",
-            str(artifact_file),
+            artifact_file,
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -334,12 +334,12 @@ def check_export_runs(instance):
     current_test = get_current_test()
 
     for run in instance.get_runs():
-        tempdir = DagsterInstance.temp_storage()
-        output_file = Path(tempdir) / f"{current_test}-{run.run_id}.dump"
-        output_file.touch()
+        with tempfile.TemporaryDirectory() as tempdir:
+            output_file = Path(tempdir) / f"{current_test}-{run.run_id}.dump"
+            output_file.touch()
 
         try:
-            export_run(instance, run, str(output_file))
+            export_run(instance, run, output_file)
         except Exception as e:
             print(f"Hit an error exporting dagster-debug {output_file}: {e}")
             continue
@@ -350,11 +350,9 @@ def export_postgres(instance, url):
     if not IS_BUILDKITE:
         return
 
-    current_test = get_current_test()
-
-    tempdir = DagsterInstance.temp_storage()
-    output_file = Path(tempdir) / f"{current_test}-postgres.dump"
-    output_file.touch()
-
-    subprocess.run(["pg_dump", url, "-f", str(output_file)], check=False)
-    upload_buildkite_artifact(output_file)
+    with tempfile.TemporaryDirectory() as tempdir:
+        current_test = get_current_test()
+        output_file = Path(tempdir) / f"{current_test}-postgres.dump"
+        output_file.touch()
+        subprocess.run(["pg_dump", url, "-f", output_file], check=False)
+        upload_buildkite_artifact(output_file)
