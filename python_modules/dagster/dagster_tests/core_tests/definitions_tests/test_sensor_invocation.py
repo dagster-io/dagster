@@ -1447,11 +1447,11 @@ def test_freshness_policy_sensors(asset_keys, materialization_effects):
     ["asset_keys", "materialization_effects"],
     [
         (
-            "f",
+            "ef",
             [
-                ("acd", {"f": False}),
-                ("bf", {"f": False}),
-                ("bdf", {"f": True}),
+                ("cdef", {"f": False, "e": False}),
+                ("ab", {"f": False, "e": False}),
+                ("cdef", {"f": True, "e": True}),
             ],
         ),
     ],
@@ -1507,6 +1507,7 @@ def test_xxx(asset_keys, materialization_effects):
     def my_sla_sensor(context):
         # just for testing, yield a RunRequest for each current status
         for asset_key, current_minutes_late in context.current_minutes_late_by_key().items():
+            print("---", asset_key, current_minutes_late)
             yield RunRequest(
                 run_key=None,
                 tags={"status": str(current_minutes_late == 0)},
@@ -1522,6 +1523,7 @@ def test_xxx(asset_keys, materialization_effects):
     with instance_for_test() as instance:
 
         for to_materialize, expected_results in materialization_effects:
+            print("running", to_materialize)
             # materialize selected assets
             build_asset_selection_job(
                 "materialize_job",

@@ -1140,6 +1140,7 @@ class FreshnessPolicySensorEvaluationContext(SensorEvaluationContext):
                 asset_key=asset_key,
                 upstream_asset_keys=self._upstream_mapping,
             )
+            print("RDI", root_data_ids_and_timestamps)
             statuses[asset_key] = freshness_policy.minutes_late(
                 current_timestamp=current_timestamp,
                 upstream_materialization_timestamps={

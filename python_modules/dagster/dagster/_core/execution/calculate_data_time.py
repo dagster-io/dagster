@@ -53,12 +53,23 @@ def get_upstream_materialization_times_for_key(
                     limit=1,
                 )
                 if not upstream_records:
-                    continue
+                    # set the root data timestamps to None for each of these
+                    for root_key in _get_root_keys(
+                        AssetKey.from_user_string(upstream_key),
+                        upstream_asset_keys,
+                    ):
+                        root_data[root_key] = (None, None)
 
-                upstream_root_data = _get_root_data(upstream_records[0])
-                for key, tup in upstream_root_data.items():
-                    tup = tuple(tup)
-                    root_data[key] = max(root_data.get(key, tup), tup)
+                else:
+                    upstream_root_data = _get_root_data(upstream_records[0])
+                    print(upstream_key, "URD", upstream_root_data)
+                    for key, tup in upstream_root_data.items():
+                        tup = tuple(tup)
+                        # if root data is missing, this don't take max
+                        if tup == (None, None) or root_data.get(key) == (None, None):
+                            root_data[key] = (None, None)
+                        else:
+                            root_data[key] = max(root_data.get(key, tup), tup)
 
         instance.add_asset_event_tags(record.storage_id, {ROOT_DATA_TAG: root_data})
         return root_data
@@ -77,7 +88,9 @@ def get_upstream_materialization_times_for_key(
     else:
         root_data = _get_root_data(records[0])
 
-    return {
+    ret = {
         root_key: root_data.get(root_key, (None, None))
         for root_key in _get_root_keys(asset_key, upstream_asset_keys)
     }
+    print("RET", ret)
+    return ret
