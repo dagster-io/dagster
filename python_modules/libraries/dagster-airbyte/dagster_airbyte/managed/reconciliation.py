@@ -566,9 +566,15 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
                 the set of connections provided. When True, all Airbyte instance contents are effectively
                 managed by the reconciler. Defaults to False.
         """
+        airbyte = check.inst_param(airbyte, "airbyte", ResourceDefinition)
+
         self._airbyte_instance: AirbyteResource = airbyte(build_init_resource_context())
-        self._connections = list(connections)
-        self._delete_unmentioned_resources = delete_unmented_resources
+        self._connections = list(
+            check.iterable_param(connections, "connections", of_type=AirbyteConnection)
+        )
+        self._delete_unmentioned_resources = check.bool_param(
+            delete_unmented_resources, "delete_unmented_resources"
+        )
 
         super().__init__()
 

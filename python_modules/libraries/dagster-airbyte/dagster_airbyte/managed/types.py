@@ -22,9 +22,11 @@ class AirbyteSource:
     """
 
     def __init__(self, name: str, source_type: str, source_configuration: Dict[str, Any]):
-        self.name = name
-        self.source_type = source_type
-        self.source_configuration = source_configuration
+        self.name = check.str_param(name, "name")
+        self.source_type = check.str_param(source_type, "source_type")
+        self.source_configuration = check.dict_param(
+            source_configuration, "source_configuration", key_type=str
+        )
 
     def must_be_recreated(self, other: "AirbyteSource") -> bool:
         return self.name != other.name or self.source_configuration != other.source_configuration
@@ -59,9 +61,11 @@ class AirbyteDestination:
     """
 
     def __init__(self, name: str, destination_type: str, destination_configuration: Dict[str, Any]):
-        self.name = name
-        self.destination_type = destination_type
-        self.destination_configuration = destination_configuration
+        self.name = check.str_param(name, "name")
+        self.destination_type = check.str_param(destination_type, "destination_type")
+        self.destination_configuration = check.dict_param(
+            destination_configuration, "destination_configuration", key_type=str
+        )
 
     def must_be_recreated(self, other: "AirbyteDestination") -> bool:
         return (
@@ -111,11 +115,13 @@ class AirbyteConnection:
         stream_config: Dict[str, AirbyteSyncMode],
         normalize_data: Optional[bool] = None,
     ):
-        self.name = name
-        self.source = source
-        self.destination = destination
-        self.stream_config = stream_config
-        self.normalize_data = normalize_data
+        self.name = check.str_param(name, "name")
+        self.source = check.inst_param(source, "source", AirbyteSource)
+        self.destination = check.inst_param(destination, "destination", AirbyteDestination)
+        self.stream_config = check.dict_param(
+            stream_config, "stream_config", key_type=str, value_type=AirbyteSyncMode
+        )
+        self.normalize_data = check.opt_bool_param(normalize_data, "normalize_data")
 
     def must_be_recreated(self, other: Optional["AirbyteConnection"]) -> bool:
         return (
