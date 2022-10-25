@@ -341,7 +341,7 @@ def check_export_runs(instance):
 
     for run in instance.get_runs():
         with tempfile.TemporaryDirectory() as tempdir:
-            output_file = Path(tempdir) / f"{current_test}-{run.run_id}.dump"
+            output_file = Path(tempdir) / f"{current_test}-{run.run_id}.txt"
             output_file.touch()
 
         try:
@@ -358,7 +358,7 @@ def export_postgres(url):
 
     with tempfile.TemporaryDirectory() as tempdir:
         current_test = get_current_test()
-        output_file = Path(tempdir) / f"{current_test}-postgres.dump"
+        output_file = Path(tempdir) / f"{current_test}-postgres.txt"
         output_file.touch()
-        subprocess.run(["pg_dump", url, "-f", output_file], check=False)
+        subprocess.run(["pg_txt", url, "-f", output_file], check=False)
         upload_buildkite_artifact(output_file)
