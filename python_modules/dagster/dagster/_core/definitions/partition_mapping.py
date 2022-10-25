@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
 from typing import Optional
 
 import dagster._check as check
+from dagster import PartitionKeyRange, PartitionsDefinition, TimeWindowPartitionsDefinition
 from dagster._annotations import experimental, public
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
 
 
 @experimental
@@ -108,6 +108,53 @@ class LastPartitionMapping(PartitionMapping):
     ) -> PartitionKeyRange:
         last_partition_key = upstream_partitions_def.get_last_partition_key()
         return PartitionKeyRange(last_partition_key, last_partition_key)
+
+    def get_downstream_partitions_for_partition_range(
+        self,
+        upstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        raise NotImplementedError()
+
+
+@experimental
+class TimeIntervalPartitionMapping(PartitionMapping):
+    """
+    Allows mapping arbitrary time intervals.
+    """
+
+    def __init__(self, interval: timedelta, offset: Optional[timedelta] = None):
+        super().__init__()
+
+        offset = offset or timedelta()  # zero timedelta
+
+        self.interval = interval
+        self.offset = offset
+
+    def get_upstream_partitions_for_partition_range(
+        self,
+        downstream_partition_key_range: Optional[PartitionKeyRange],
+        downstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        assert isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition)
+        assert isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition)
+
+        mapped_range = PartitionKeyRange(
+            start=(
+                datetime.strptime(
+                    downstream_partition_key_range.start, downstream_partitions_def.fmt
+                )
+                - self.interval
+                - self.offset
+            ).strftime(upstream_partitions_def.fmt),
+            end=(
+                datetime.strptime(downstream_partition_key_range.end, downstream_partitions_def.fmt)
+                - self.offset
+            ).strftime(upstream_partitions_def.fmt),
+        )
+        return mapped_range
 
     def get_downstream_partitions_for_partition_range(
         self,

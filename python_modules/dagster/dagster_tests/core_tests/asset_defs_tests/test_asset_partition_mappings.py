@@ -1,6 +1,8 @@
-from typing import Optional
+from datetime import datetime, timedelta
+from typing import Optional, Type
 
 import pendulum
+import pytest
 
 from dagster import (
     AllPartitionMapping,
@@ -10,7 +12,9 @@ from dagster import (
     DailyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
+    InputContext,
     LastPartitionMapping,
+    OpExecutionContext,
     Out,
     Output,
     PartitionsDefinition,
@@ -26,8 +30,15 @@ from dagster._core.definitions.asset_partitions import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import PartitionMapping
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partition_mapping import (
+    PartitionMapping,
+    TimeIntervalPartitionMapping,
+)
+from dagster._core.definitions.time_window_partitions import (
+    HourlyPartitionsDefinition,
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 
 
 def test_filter_mapping_partitions_dep():
@@ -504,3 +515,55 @@ def test_partition_keys_in_range():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     downstream_job.execute_in_process(partition_key="2022-09-11")
+
+
+@pytest.mark.parametize("interval", (timedelta(days=2), timedelta(hours=2)))
+@pytest.mark.parametize("offset", (timedelta(days=0), timedelta(days=1)))
+@pytest.mark.parametize(
+    "partitions_def_class", (DailyPartitionsDefinition, HourlyPartitionsDefinition)
+)
+def test_asset_partitions_time_window_time_interval_partition_mapping(
+    interval: timedelta,
+    offset: timedelta,
+    partitions_def_class: Type[TimeWindowPartitionsDefinition],
+):
+    start_date = "2020-01-01"
+
+    upstream_partitions_def = partitions_def_class(start_date=start_date)  # type: ignore
+    downstream_partitions_def = partitions_def_class(start_date=start_date)  # type: ignore
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            ...
+
+        def load_input(self, context: InputContext):
+            partitions_def = context.asset_partitions_def
+            assert isinstance(partitions_def, TimeWindowPartitionsDefinition)
+            partitions = partitions_def.get_partition_keys_in_range(
+                context.asset_partition_key_range
+            )
+            return partitions
+
+    @asset(partitions_def=upstream_partitions_def)
+    def upstream_asset():
+        pass
+
+    @asset(
+        partitions_def=downstream_partitions_def,
+        ins={
+            "upstream_asset": AssetIn(
+                partition_mapping=TimeIntervalPartitionMapping(interval=interval, offset=offset)
+            )
+        },
+    )
+    def downstream_asset(context: OpExecutionContext, upstream_asset):
+        partitions = upstream_asset
+
+        # assert the partitions are correct
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[upstream_asset, downstream_asset],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    my_job.execute_in_process(partition_key="2020-01-02")
