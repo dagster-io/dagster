@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from enum import Enum as PythonEnum
 from unittest import mock
 
 import pytest
@@ -1102,21 +1103,21 @@ def test_configured_decorator_with_fn_and_user_code_error():
     assert user_code_exc.value.user_exception.args[0] == "beep boop broke"
 
 
+class TestPythonEnum(PythonEnum):
+    VALUE_ONE = 0
+    OTHER = 1
+
+
+DagsterEnumType = Enum(
+    "ResourceTestEnum",
+    [
+        EnumValue("VALUE_ONE", TestPythonEnum.VALUE_ONE),
+        EnumValue("OTHER", TestPythonEnum.OTHER),
+    ],
+)
+
+
 def test_resource_with_enum_in_schema():
-    from enum import Enum as PythonEnum
-
-    class TestPythonEnum(PythonEnum):
-        VALUE_ONE = 0
-        OTHER = 1
-
-    DagsterEnumType = Enum(
-        "TestEnum",
-        [
-            EnumValue("VALUE_ONE", TestPythonEnum.VALUE_ONE),
-            EnumValue("OTHER", TestPythonEnum.OTHER),
-        ],
-    )
-
     @resource(config_schema={"enum": DagsterEnumType})
     def enum_resource(context):
         return context.resource_config["enum"]
@@ -1127,20 +1128,6 @@ def test_resource_with_enum_in_schema():
 
 
 def test_resource_with_enum_in_schema_configured():
-    from enum import Enum as PythonEnum
-
-    class TestPythonEnum(PythonEnum):
-        VALUE_ONE = 0
-        OTHER = 1
-
-    DagsterEnumType = Enum(
-        "TestEnum",
-        [
-            EnumValue("VALUE_ONE", TestPythonEnum.VALUE_ONE),
-            EnumValue("OTHER", TestPythonEnum.OTHER),
-        ],
-    )
-
     @resource(config_schema={"enum": DagsterEnumType})
     def enum_resource(context):
         return context.resource_config["enum"]
