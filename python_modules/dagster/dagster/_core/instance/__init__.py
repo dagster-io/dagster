@@ -25,6 +25,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    AbstractSet,
 )
 
 import yaml
@@ -1449,6 +1450,10 @@ class DagsterInstance:
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Iterable["AssetRecord"]:
         return self._event_storage.get_asset_records(asset_keys)
+
+    @traced
+    def get_asset_event_tags(self, asset_key: AssetKey) -> Sequence[Tuple[str, AbstractSet[str]]]:
+        return self._event_storage.get_asset_event_tags(asset_key)
 
     @traced
     def run_ids_for_asset_key(self, asset_key):

@@ -2332,7 +2332,7 @@ class TestEventLogStorage:
 
         assert storage.get_maximum_record_id() == index + 10
 
-    def test_get_materialization_tag(self, storage):
+    def test_get_materialization_tag(self, storage, instance):
         key = AssetKey("hello")
 
         @op
@@ -2347,12 +2347,10 @@ class TestEventLogStorage:
             )
             yield Output(5)
 
-        with instance_for_test() as instance:
-            if not storage._instance:  # pylint: disable=protected-access
-                storage.register_instance(instance)
+        run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id]):
 
-            events, _ = _synthesize_events(lambda: my_op(), instance=instance)
-
+            events, _ = _synthesize_events(lambda: my_op(), run_id)
             for event in events:
                 storage.store_event(event)
 
@@ -2367,7 +2365,7 @@ class TestEventLogStorage:
                 ("dagster/partition/date", {"2022-10-13"}),
             ]
 
-    def test_event_record_filter_tags(self, storage):
+    def test_event_record_filter_tags(self, storage, instance):
         key = AssetKey("hello")
 
         @op
@@ -2409,12 +2407,10 @@ class TestEventLogStorage:
             )
             yield Output(5)
 
-        with instance_for_test() as instance:
-            if not storage._instance:  # pylint: disable=protected-access
-                storage.register_instance(instance)
+        run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id]):
 
-            events, _ = _synthesize_events(lambda: my_op(), instance=instance)
-
+            events, _ = _synthesize_events(lambda: my_op(), run_id)
             for event in events:
                 storage.store_event(event)
 
@@ -2476,7 +2472,7 @@ class TestEventLogStorage:
                 ][0]
                 assert date_dimension.partition_key == "2022-10-13"
 
-    def test_multi_partitions_partition_deserialization(self, storage):
+    def test_multi_partitions_partition_deserialization(self, storage, instance):
         key = AssetKey("hello")
 
         @op
@@ -2499,12 +2495,10 @@ class TestEventLogStorage:
             )
             yield Output(5)
 
-        with instance_for_test() as instance:
-            if not storage._instance:  # pylint: disable=protected-access
-                storage.register_instance(instance)
+        run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id]):
 
-            events, _ = _synthesize_events(lambda: my_op(), instance=instance)
-
+            events, _ = _synthesize_events(lambda: my_op(), run_id)
             for event in events:
                 storage.store_event(event)
 
