@@ -212,7 +212,11 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
             key_range = context.asset_partition_key_range
             return key_range.start != key_range.end
 
-        if context.has_asset_partitions and has_multiple_partitions(context):
+        if (
+            context.has_input_name
+            and context.has_asset_partitions
+            and has_multiple_partitions(context)
+        ):
             # Multiple partition load
             partition_keys = context.asset_partition_keys
             paths = [
