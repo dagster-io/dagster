@@ -4,7 +4,6 @@ import dagster._check as check
 
 from .config_type import ConfigType
 from .field import Field
-from .iterate_types import config_schema_snapshot_from_config_type
 from .snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 from .stack import EvaluationStack
 
@@ -132,12 +131,13 @@ class TraversalContext(ContextData):
 
     @staticmethod
     def from_config_type(
-        config_type: ConfigType, stack: EvaluationStack, traversal_type: TraversalType
+        config_type: ConfigType,
+        stack: EvaluationStack,
+        traversal_type: TraversalType,
     ) -> "TraversalContext":
-        config_schema_snapshot = config_schema_snapshot_from_config_type(config_type)
         return TraversalContext(
-            config_schema_snapshot=config_schema_snapshot,
-            config_type_snap=config_schema_snapshot.get_config_snap(config_type.key),
+            config_schema_snapshot=config_type.get_schema_snapshot(),
+            config_type_snap=config_type.get_snapshot(),
             config_type=config_type,
             stack=stack,
             traversal_type=traversal_type,
