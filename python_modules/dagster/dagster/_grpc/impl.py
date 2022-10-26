@@ -10,11 +10,13 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness_policy_sensor_definition import (
+    FreshnessPolicySensorDefinition,
+    FreshnessPolicySensorEvaluationContext,
+)
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import (
-    FreshnessPolicySensorDefinition,
-    FreshnessPolicySensorEvaluationContext,
     MultiAssetSensorDefinition,
     MultiAssetSensorEvaluationContext,
     SensorEvaluationContext,

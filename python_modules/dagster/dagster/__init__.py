@@ -304,12 +304,14 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus as DefaultSensorStatus,
     MultiAssetSensorDefinition as MultiAssetSensorDefinition,
     MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
-    FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
-    FreshnessPolicySensorEvaluationContext as FreshnessPolicySensorEvaluationContext,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
     build_sensor_context as build_sensor_context,
     build_multi_asset_sensor_context as build_multi_asset_sensor_context,
+)
+from dagster._core.definitions.freshness_policy_sensor_definition import (
+    FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
+    FreshnessPolicySensorEvaluationContext as FreshnessPolicySensorEvaluationContext,
     build_freshness_policy_sensor_context as build_freshness_policy_sensor_context,
 )
 from dagster._core.definitions.source_asset import (
