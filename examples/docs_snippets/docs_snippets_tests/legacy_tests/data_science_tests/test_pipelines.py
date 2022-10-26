@@ -2,7 +2,7 @@ import tempfile
 
 import pytest
 
-from dagster import file_relative_path
+from dagster import execute_job, file_relative_path
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline
@@ -42,10 +42,11 @@ def test_pipelines_success(file_path, run_config_path):
                 run_config["resources"] = {
                     "io_manager": {"config": {"base_dir": temp_dir}}
                 }
-                pipeline_result = execute_pipeline(
+                result = execute_job(
                     recon_pipeline,
+                    instance,
                     run_config=run_config,
-                    instance=instance,
-                    solid_selection=["k_means_iris"],  # skip download_file in tests
+                    op_selection=["k_means_iris"],  # skip download_file in tests
                 )
-                assert pipeline_result.success
+
+                assert result.success

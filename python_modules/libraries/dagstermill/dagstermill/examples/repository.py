@@ -15,13 +15,15 @@ from dagster import (
     ResourceDefinition,
     String,
     fs_io_manager,
+    graph,
     job,
+    op,
     repository,
     resource,
 )
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.storage.file_manager import local_file_manager
-from dagster._legacy import InputDefinition, ModeDefinition, composite_solid, pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
 try:
@@ -32,14 +34,14 @@ except ImportError:
     DAGSTER_PANDAS_PRESENT = False
 
 try:
-    import sklearn as _
+    pass
 
     SKLEARN_PRESENT = True
 except ImportError:
     SKLEARN_PRESENT = False
 
 try:
-    import matplotlib as _
+    pass
 
     MATPLOTLIB_PRESENT = True
 except ImportError:
@@ -84,8 +86,8 @@ default_mode_defs = [
 hello_world = test_nb_op("hello_world", outs={})
 
 
-@pipeline(mode_defs=default_mode_defs)
-def hello_world_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def hello_world_job():
     hello_world()
 
 
@@ -117,8 +119,8 @@ hello_world_with_custom_tags_and_description = dagstermill.factory.define_dagste
 )
 
 
-@pipeline(mode_defs=default_mode_defs)
-def hello_world_with_custom_tags_and_description_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def hello_world_with_custom_tags_and_description_job():
     hello_world_with_custom_tags_and_description()
 
 
@@ -136,25 +138,25 @@ goodbye_config = dagstermill.factory.define_dagstermill_solid(
 )
 
 
-@pipeline(mode_defs=default_mode_defs)
-def hello_world_config_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def hello_world_config_job():
     hello_world_config()
     goodbye_config()
 
 
-@pipeline(mode_defs=default_mode_defs)
-def alias_config_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def alias_config_job():
     hello_world_config.alias("aliased_greeting")()
     goodbye_config.alias("aliased_goodbye")()
 
 
-@solid(input_defs=[InputDefinition("notebook")])
+@op(ins={"notebook": In()})
 def load_notebook(notebook):
     return notebook
 
 
-@pipeline(mode_defs=default_mode_defs)
-def hello_world_with_output_notebook_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def hello_world_with_output_notebook_job():
     notebook = hello_world()
     load_notebook(notebook)
 
@@ -165,8 +167,8 @@ hello_world_no_output_notebook_no_file_manager = dagstermill.factory.define_dags
 )
 
 
-@pipeline
-def hello_world_no_output_notebook_no_file_manager_pipeline():
+@job
+def hello_world_no_output_notebook_no_file_manager_job():
     hello_world_no_output_notebook_no_file_manager()
 
 
@@ -176,16 +178,16 @@ hello_world_no_output_notebook = dagstermill.factory.define_dagstermill_solid(
 )
 
 
-@pipeline(mode_defs=default_mode_defs)
-def hello_world_no_output_notebook_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def hello_world_no_output_notebook_job():
     hello_world_no_output_notebook()
 
 
 hello_world_output = test_nb_op("hello_world_output", outs={DEFAULT_OUTPUT: Out(str)})
 
 
-@pipeline(mode_defs=default_mode_defs)
-def hello_world_output_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def hello_world_output_job():
     hello_world_output()
 
 
@@ -194,16 +196,16 @@ hello_world_explicit_yield = test_nb_op(
 )
 
 
-@pipeline(mode_defs=default_mode_defs)
-def hello_world_explicit_yield_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def hello_world_explicit_yield_job():
     hello_world_explicit_yield()
 
 
 hello_logging = test_nb_op("hello_logging")
 
 
-@pipeline(mode_defs=default_mode_defs)
-def hello_logging_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def hello_logging_job():
     hello_logging()
 
 
@@ -215,48 +217,50 @@ add_two_numbers = test_nb_op(
 
 
 mult_two_numbers = test_nb_op(
-    "mult_two_numbers", ins={"a": In(int), "b": In(int)}, outs={DEFAULT_OUTPUT: Out(int)}
+    "mult_two_numbers",
+    ins={"a": In(int), "b": In(int)},
+    outs={DEFAULT_OUTPUT: Out(int)},
 )
 
 
-@solid
+@op
 def return_one():
     return 1
 
 
-@solid
+@op
 def return_two():
     return 2
 
 
-@solid
+@op
 def return_three():
     return 3
 
 
-@solid
+@op
 def return_four():
     return 4
 
 
-@pipeline(mode_defs=default_mode_defs)
-def add_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def add_job():
     add_two_numbers(return_one(), return_two())
 
 
-@pipeline(mode_defs=default_mode_defs)
-def double_add_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def double_add_job():
     add_two_numbers.alias("add_two_numbers_1")(return_one(), return_two())
     add_two_numbers.alias("add_two_numbers_2")(return_three(), return_four())
 
 
-@solid(input_defs=[], config_schema=Int)
+@op(ins={}, config_schema=Int)
 def load_constant(context):
-    return context.solid_config
+    return context.op_config
 
 
-@pipeline(mode_defs=default_mode_defs)
-def notebook_dag_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def notebook_dag_job():
     a = load_constant.alias("load_a")()
     b = load_constant.alias("load_b")()
     num, _ = add_two_numbers(a, b)
@@ -266,8 +270,8 @@ def notebook_dag_pipeline():
 error_notebook = test_nb_op("error_notebook")
 
 
-@pipeline(mode_defs=default_mode_defs)
-def error_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def error_job():
     error_notebook()
 
 
@@ -280,16 +284,16 @@ if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
 
     tutorial_RF = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})
 
-    @pipeline(mode_defs=default_mode_defs)
-    def tutorial_pipeline():
+    @job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+    def tutorial_job():
         dfr, _ = clean_data()
         # FIXME get better names for these
         tutorial_LR(dfr)
         tutorial_RF(dfr)
 
 
-@solid("resource_solid", required_resource_keys={"list"})
-def resource_solid(context):
+@op("resource_op", required_resource_keys={"list"})
+def resource_op(context):
     context.resources.list.append("Hello, solid!")
     return True
 
@@ -351,90 +355,84 @@ def filepicklelist_resource(init_context):
         filepicklelist.close()
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            name="test",
-            resource_defs={
-                "list": ResourceDefinition(lambda _: []),
-                "io_manager": fs_io_manager,
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            },
-        ),
-        ModeDefinition(
-            name="prod",
-            resource_defs={
-                "list": filepicklelist_resource,
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-                "io_manager": fs_io_manager,
-            },
-        ),
-    ]
-)
-def resource_pipeline():
-    hello_world_resource(resource_solid())
+@graph
+def resource_graph():
+    hello_world_resource(resource_op())
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "list": filepicklelist_resource,
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-                "io_manager": fs_io_manager,
-            }
-        )
-    ]
+resource_job_test = resource_graph.to_job(
+    "resource_job_test",
+    resource_defs={
+        "list": ResourceDefinition(lambda _: []),
+        "output_notebook_io_manager": local_output_notebook_io_manager,
+    },
 )
-def resource_with_exception_pipeline():
-    hello_world_resource_with_exception(resource_solid())
+
+resource_job_prod = resource_graph.to_job(
+    "resource_job_prod",
+    resource_defs={
+        "list": filepicklelist_resource,
+        "output_notebook_io_manager": local_output_notebook_io_manager,
+    },
+)
+
+
+@job(
+    resource_defs={
+        "list": filepicklelist_resource,
+        "output_notebook_io_manager": local_output_notebook_io_manager,
+        "io_manager": fs_io_manager,
+    }
+)
+def resource_with_exception_job():
+    hello_world_resource_with_exception(resource_op())
 
 
 bad_kernel = test_nb_op("bad_kernel")
 
 
-@pipeline(mode_defs=default_mode_defs)
-def bad_kernel_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def bad_kernel_job():
     bad_kernel()
 
 
 reimport = test_nb_op("reimport", ins={"l": In(List[int])}, outs={DEFAULT_OUTPUT: Out(int)})
 
 
-@solid
+@op
 def lister():
     return [1, 2, 3]
 
 
-@pipeline(mode_defs=default_mode_defs)
-def reimport_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def reimport_job():
     reimport(lister())
 
 
 yield_3 = test_nb_op("yield_3", outs={DEFAULT_OUTPUT: Out(int)})
 
 
-@pipeline(mode_defs=default_mode_defs)
-def yield_3_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def yield_3_job():
     yield_3()
 
 
 yield_obj = test_nb_op("yield_obj")
 
 
-@pipeline(mode_defs=default_mode_defs)
-def yield_obj_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def yield_obj_job():
     yield_obj()
 
 
-@pipeline(mode_defs=default_mode_defs)
-def retries_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def retries_job():
     test_nb_op("raise_retry")()
     test_nb_op("yield_retry")()
 
 
-@pipeline(mode_defs=default_mode_defs)
-def failure_pipeline():
+@job(resource_defs={"output_notebook_io_manager": local_output_notebook_io_manager})
+def failure_job():
     test_nb_op("raise_failure")()
     test_nb_op("yield_failure")()
 
@@ -444,58 +442,46 @@ yield_something = test_nb_op(
 )
 
 
-@solid
+@op
 def fan_in(a, b):
     return f"{a} {b}"
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            }
-        )
-    ]
+@job(
+    resource_defs={
+        "io_manager": fs_io_manager,
+        "output_notebook_io_manager": local_output_notebook_io_manager,
+    }
 )
-def fan_in_notebook_pipeline():
+def fan_in_notebook_job():
     val_a, _ = yield_something.alias("solid_1")()
     val_b, _ = yield_something.alias("solid_2")()
     fan_in(val_a, val_b)
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            }
-        )
-    ]
+@job(
+    resource_defs={
+        "output_notebook_io_manager": local_output_notebook_io_manager,
+    }
 )
-def fan_in_notebook_pipeline_in_mem():
+def fan_in_notebook_job_in_mem():
     val_a, _ = yield_something.alias("solid_1")()
     val_b, _ = yield_something.alias("solid_2")()
     fan_in(val_a, val_b)
 
 
-@composite_solid
+@graph
 def outer():
     yield_something()
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            }
-        )
-    ]
+@job(
+    resource_defs={
+        "io_manager": fs_io_manager,
+        "output_notebook_io_manager": local_output_notebook_io_manager,
+    }
 )
-def composite_pipeline():
+def composite_job():
     outer()
 
 
@@ -510,22 +496,18 @@ hello_world_legacy = dagstermill.factory.define_dagstermill_solid(
 )
 
 
-@solid(input_defs=[InputDefinition("notebook", dagster_type=FileHandle)])
+@op(ins={"notebook": In(dagster_type=FileHandle)})
 def load_notebook_legacy(notebook):
     return os.path.exists(notebook.path_desc)
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "file_manager": local_file_manager,
-            }
-        )
-    ]
+@job(
+    resource_defs={
+        "io_manager": fs_io_manager,
+        "file_manager": local_file_manager,
+    }
 )
-def hello_world_with_output_notebook_pipeline_legacy():
+def hello_world_with_output_notebook_job_legacy():
     notebook = hello_world_legacy()
     load_notebook_legacy(notebook)
 
@@ -533,30 +515,31 @@ def hello_world_with_output_notebook_pipeline_legacy():
 @repository
 def notebook_repo():
     pipelines = [
-        bad_kernel_pipeline,
-        error_pipeline,
-        hello_world_pipeline,
-        hello_world_with_custom_tags_and_description_pipeline,
-        hello_world_config_pipeline,
-        hello_world_explicit_yield_pipeline,
-        hello_world_output_pipeline,
-        hello_world_with_output_notebook_pipeline,
-        hello_logging_pipeline,
-        resource_pipeline,
-        resource_with_exception_pipeline,
-        add_pipeline,
-        notebook_dag_pipeline,
-        reimport_pipeline,
-        yield_3_pipeline,
-        yield_obj_pipeline,
-        retries_pipeline,
-        failure_pipeline,
-        fan_in_notebook_pipeline_in_mem,
-        fan_in_notebook_pipeline,
-        hello_world_no_output_notebook_no_file_manager_pipeline,
-        hello_world_with_output_notebook_pipeline_legacy,
+        bad_kernel_job,
+        error_job,
+        hello_world_job,
+        hello_world_with_custom_tags_and_description_job,
+        hello_world_config_job,
+        hello_world_explicit_yield_job,
+        hello_world_output_job,
+        hello_world_with_output_notebook_job,
+        hello_logging_job,
+        resource_job_test,
+        resource_job_prod,
+        resource_with_exception_job,
+        add_job,
+        notebook_dag_job,
+        reimport_job,
+        yield_3_job,
+        yield_obj_job,
+        retries_job,
+        failure_job,
+        fan_in_notebook_job_in_mem,
+        fan_in_notebook_job,
+        hello_world_no_output_notebook_no_file_manager_job,
+        hello_world_with_output_notebook_job_legacy,
     ]
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
-        pipelines += [tutorial_pipeline]
+        pipelines += [tutorial_job]
 
     return pipelines

@@ -1,17 +1,16 @@
-from dagster import repository
-from dagster._legacy import pipeline, solid
+from dagster import job, op, repository
 
 
-@solid
+@op
 def hello_world():
     pass
 
 
-@pipeline
-def hello_world_pipeline():
+@job
+def hello_world_job():
     hello_world()
 
 
 @repository
 def hello_world_repository():
-    return [hello_world_pipeline]
+    return [hello_world_job]

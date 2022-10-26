@@ -2,50 +2,50 @@
 
 import datetime
 
-from dagster import RunRequest, job, repository, sensor
-from dagster._legacy import InputDefinition, daily_schedule, pipeline, solid
+from dagster import In, RunRequest, job, op, repository, sensor
+from dagster._legacy import daily_schedule
 
 
-@solid
+@op
 def return_one():
     return 1
 
 
-@solid
+@op
 def return_two():
     return 2
 
 
-@solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
+@op(ins={"left": In(), "right": In()})
 def add(left, right):
     return left + right
 
 
-@solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
+@op(ins={"left": In(), "right": In()})
 def subtract(left, right):
     return left - right
 
 
 # start_lazy_repository_definition_marker_0
 def load_addition_pipeline():
-    @pipeline
-    def addition_pipeline():
+    @job
+    def addition_job():
         return add(return_one(), return_two())
 
-    return addition_pipeline
+    return addition_job
 
 
 def load_subtraction_pipeline():
-    @pipeline
-    def subtraction_pipeline():
+    @job
+    def subtraction_job():
         return subtract(return_one(), return_two())
 
-    return subtraction_pipeline
+    return subtraction_job
 
 
 def load_daily_addition_schedule():
     @daily_schedule(
-        pipeline_name="addition_pipeline",
+        pipeline_name="addition_job",
         start_date=datetime.datetime(2020, 1, 1),
     )
     def daily_addition_schedule(date):
@@ -55,7 +55,7 @@ def load_daily_addition_schedule():
 
 
 def load_addition_sensor():
-    @sensor(job_name="addition_pipeline")
+    @sensor(job_name="addition_job")
     def addition_sensor(context):
         should_run = True
         if should_run:
@@ -76,8 +76,8 @@ def my_lazy_repository():
     # if, e.g., initializing a pipeline involves any heavy compute
     return {
         "pipelines": {
-            "addition_pipeline": load_addition_pipeline,
-            "subtraction_pipeline": load_subtraction_pipeline,
+            "addition_job": load_addition_pipeline,
+            "subtraction_job": load_subtraction_pipeline,
         },
         "jobs": {"my_job": my_job},
         "schedules": {"daily_addition_schedule": load_daily_addition_schedule},
