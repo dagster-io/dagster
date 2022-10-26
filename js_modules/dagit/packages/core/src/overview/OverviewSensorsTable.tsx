@@ -10,6 +10,8 @@ import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
+import {OVERVIEW_EXPANSION_KEY} from './OverviewExpansionKey';
+
 type Repository = {
   repoAddress: RepoAddress;
   sensors: string[];
@@ -23,8 +25,6 @@ type RowType =
   | {type: 'header'; repoAddress: RepoAddress; sensorCount: number}
   | {type: 'sensor'; repoAddress: RepoAddress; name: string};
 
-const SENSORS_EXPANSION_STATE_STORAGE_KEY = 'sensors-virtualized-expansion-state';
-
 export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
@@ -32,7 +32,7 @@ export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
     [repos],
   );
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
-    SENSORS_EXPANSION_STATE_STORAGE_KEY,
+    OVERVIEW_EXPANSION_KEY,
     allKeys,
   );
 

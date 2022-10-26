@@ -24,6 +24,7 @@ import {UnloadableSchedules} from '../instigation/Unloadable';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
@@ -31,12 +32,13 @@ import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
 import {OverviewSchedulesQuery} from './types/OverviewSchedulesQuery';
 import {UnloadableSchedulesQuery} from './types/UnloadableSchedulesQuery';
+import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewSchedulesRoot = () => {
   useTrackPageView();
 
   const [searchValue, setSearchValue] = React.useState('');
-  const {allRepos} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
 
   const queryResultOverview = useQuery<OverviewSchedulesQuery>(OVERVIEW_SCHEDULES_QUERY, {
@@ -47,7 +49,13 @@ export const OverviewSchedulesRoot = () => {
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
-  const repoBuckets = React.useMemo(() => buildBuckets(data), [data]);
+  const repoBuckets = React.useMemo(() => {
+    const visibleKeys = visibleRepoKeys(visibleRepos);
+    return buildBuckets(data).filter(({repoAddress}) =>
+      visibleKeys.has(repoAddressAsString(repoAddress)),
+    );
+  }, [data, visibleRepos]);
+
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
@@ -73,6 +81,8 @@ export const OverviewSchedulesRoot = () => {
       );
     }
 
+    const anyReposHidden = allRepos.length > visibleRepos.length;
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -81,9 +91,17 @@ export const OverviewSchedulesRoot = () => {
               icon="search"
               title="No matching schedules"
               description={
-                <div>
-                  No schedules matching <strong>{searchValue}</strong> were found in this workspace
-                </div>
+                anyReposHidden ? (
+                  <div>
+                    No schedules matching <strong>{searchValue}</strong> were found in the selected
+                    repositories
+                  </div>
+                ) : (
+                  <div>
+                    No schedules matching <strong>{searchValue}</strong> were found in this
+                    workspace
+                  </div>
+                )
               }
             />
           </Box>
@@ -95,7 +113,11 @@ export const OverviewSchedulesRoot = () => {
           <NonIdealState
             icon="search"
             title="No schedules"
-            description="No schedules were found in this workspace"
+            description={
+              anyReposHidden
+                ? 'No schedules were found in the selected repositories'
+                : 'No schedules were found in this workspace'
+            }
           />
         </Box>
       );

@@ -6,7 +6,7 @@ from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from .python_version import AvailablePythonVersion
 from .utils import CommandStep, message_contains, safe_getenv
 
-DEFAULT_TIMEOUT_IN_MIN = 20
+DEFAULT_TIMEOUT_IN_MIN = 25
 
 DOCKER_PLUGIN = "docker#v3.7.0"
 ECR_PLUGIN = "ecr#v2.2.0"

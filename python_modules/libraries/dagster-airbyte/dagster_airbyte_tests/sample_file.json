@@ -1,0 +1,13 @@
+{
+    "my_data_stream": [
+        {
+            "foo": "bar"
+        },
+        {
+            "foo": "baz"
+        },
+        {
+            "foo": "qux"
+        }
+    ]
+}

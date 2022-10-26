@@ -17,6 +17,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
@@ -191,37 +192,49 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
       <Dialog
         isOpen={visibleDialog === 'config'}
         onClose={() => setVisibleDialog(null)}
-        style={{width: '800px'}}
+        style={{
+          width: '90vw',
+          maxWidth: '1000px',
+          minWidth: '600px',
+          height: '90vh',
+          maxHeight: '1000px',
+          minHeight: '600px',
+        }}
         title="Run configuration"
       >
-        <Box flex={{direction: 'column', gap: 20}}>
-          <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
-            <Subheading>Tags</Subheading>
-            <div>
-              <RunTags tags={run.tags} mode={isJob ? null : run.mode} />
-            </div>
-          </Box>
-          <div>
-            <Box
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-              padding={{left: 24, bottom: 16}}
-            >
-              <Subheading>Config</Subheading>
+        <Box flex={{direction: 'column'}} style={{flex: 1}}>
+          <Box flex={{direction: 'column', gap: 20}} style={{flex: 1}}>
+            <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
+              <Subheading>Tags</Subheading>
+              <div>
+                <RunTags tags={run.tags} mode={isJob ? null : run.mode} />
+              </div>
             </Box>
-            <StyledReadOnlyCodeMirror
-              value={runConfigYaml}
-              options={{lineNumbers: true, mode: 'yaml'}}
-            />
-          </div>
+            <Box flex={{direction: 'column'}} style={{flex: 1}}>
+              <Box
+                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                padding={{left: 24, bottom: 16}}
+              >
+                <Subheading>Config</Subheading>
+              </Box>
+              <CodeMirrorContainer>
+                <StyledReadOnlyCodeMirror
+                  value={runConfigYaml}
+                  options={{lineNumbers: true, mode: 'yaml'}}
+                  theme={['config-editor']}
+                />
+              </CodeMirrorContainer>
+            </Box>
+          </Box>
+          <DialogFooter topBorder>
+            <Button onClick={() => copyConfig()} intent="none">
+              Copy config
+            </Button>
+            <Button onClick={() => setVisibleDialog(null)} intent="primary">
+              OK
+            </Button>
+          </DialogFooter>
         </Box>
-        <DialogFooter topBorder>
-          <Button onClick={() => copyConfig()} intent="none">
-            Copy config
-          </Button>
-          <Button onClick={() => setVisibleDialog(null)} intent="primary">
-            OK
-          </Button>
-        </DialogFooter>
       </Dialog>
       {canDeletePipelineRun.enabled ? (
         <DeletionDialog
@@ -259,6 +272,15 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
     </div>
   );
 };
+
+const CodeMirrorContainer = styled.div`
+  flex: 1;
+
+  .react-codemirror2,
+  .CodeMirror {
+    height: 100%;
+  }
+`;
 
 export const RUN_DETAILS_FRAGMENT = gql`
   fragment RunDetailsFragment on Run {

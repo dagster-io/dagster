@@ -24,6 +24,7 @@ import {UnloadableSensors} from '../instigation/Unloadable';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OverviewSensorTable} from './OverviewSensorsTable';
@@ -31,12 +32,13 @@ import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
 import {OverviewSensorsQuery} from './types/OverviewSensorsQuery';
 import {UnloadableSensorsQuery} from './types/UnloadableSensorsQuery';
+import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewSensorsRoot = () => {
   useTrackPageView();
 
   const [searchValue, setSearchValue] = React.useState('');
-  const {allRepos} = React.useContext(WorkspaceContext);
+  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
 
   const queryResultOverview = useQuery<OverviewSensorsQuery>(OVERVIEW_SENSORS_QUERY, {
@@ -47,7 +49,13 @@ export const OverviewSensorsRoot = () => {
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
-  const repoBuckets = React.useMemo(() => buildBuckets(data), [data]);
+  const repoBuckets = React.useMemo(() => {
+    const visibleKeys = visibleRepoKeys(visibleRepos);
+    return buildBuckets(data).filter(({repoAddress}) =>
+      visibleKeys.has(repoAddressAsString(repoAddress)),
+    );
+  }, [data, visibleRepos]);
+
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
@@ -73,6 +81,8 @@ export const OverviewSensorsRoot = () => {
       );
     }
 
+    const anyReposHidden = allRepos.length > visibleRepos.length;
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -81,9 +91,16 @@ export const OverviewSensorsRoot = () => {
               icon="search"
               title="No matching sensors"
               description={
-                <div>
-                  No sensors matching <strong>{searchValue}</strong> were found in this workspace
-                </div>
+                anyReposHidden ? (
+                  <div>
+                    No sensors matching <strong>{searchValue}</strong> were found in the selected
+                    repositories
+                  </div>
+                ) : (
+                  <div>
+                    No sensors matching <strong>{searchValue}</strong> were found in this workspace
+                  </div>
+                )
               }
             />
           </Box>
@@ -95,7 +112,11 @@ export const OverviewSensorsRoot = () => {
           <NonIdealState
             icon="search"
             title="No sensors"
-            description="No sensors were found in this workspace"
+            description={
+              anyReposHidden
+                ? 'No sensors were found in the selected repositories'
+                : 'No sensors were found in this workspace'
+            }
           />
         </Box>
       );

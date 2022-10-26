@@ -221,3 +221,45 @@ def test_run_job_and_poll(final_status, expected_behavior):
         elif expected_behavior == 3:
             with pytest.raises(CheckError, match=f"Received unexpected status '{final_status}'"):
                 _do_thing()
+
+
+def test_no_run_results_job():
+    dc_resource = get_dbt_cloud_resource()
+    with responses.RequestsMock() as rsps:
+        # endpoint for job details info
+        rsps.add(rsps.GET, f"{SAMPLE_API_PREFIX}/jobs/{SAMPLE_JOB_ID}/", json=sample_run_details())
+        # endpoint for disabling job schedule
+        rsps.add(rsps.POST, f"{SAMPLE_API_PREFIX}/jobs/{SAMPLE_JOB_ID}/", json=sample_job_details())
+        # endpoint for launching run
+        rsps.add(
+            rsps.POST, f"{SAMPLE_API_PREFIX}/jobs/{SAMPLE_JOB_ID}/run/", json=sample_run_details()
+        )
+        # endpoint for polling run details
+        for i in range(10):
+            if i == 0:
+                status = "Queued"
+            elif i == 1:
+                status = "Starting"
+            elif i < 9:
+                status = "Running"
+            else:
+                status = "Success"
+            rsps.add(
+                rsps.GET,
+                f"{SAMPLE_API_PREFIX}/runs/{SAMPLE_RUN_ID}/",
+                json=sample_run_details(status_humanized=status),
+            )
+
+        # 404 when trying to access run results
+        rsps.add(
+            rsps.GET,
+            f"{SAMPLE_API_PREFIX}/runs/{SAMPLE_RUN_ID}/artifacts/run_results.json",
+            status=404,
+        )
+
+        dbt_cloud_output = dc_resource.run_job_and_poll(
+            SAMPLE_JOB_ID, poll_interval=0.05, poll_timeout=1
+        )
+
+        assert dbt_cloud_output.result == {}  # run_result.json not available
+        assert dbt_cloud_output.run_details == sample_run_details()["data"]
