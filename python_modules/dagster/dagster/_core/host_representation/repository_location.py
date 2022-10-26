@@ -3,7 +3,7 @@ import sys
 import threading
 from abc import abstractmethod
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._api.get_server_id import sync_get_server_id
@@ -178,7 +178,7 @@ class RepositoryLocation(AbstractContextManager):
         self,
         repository_handle: RepositoryHandle,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -495,12 +495,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
         self,
         repository_handle: RepositoryHandle,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
-        check.list_param(partition_names, "partition_names", of_type=str)
-
         return get_partition_set_execution_param_data(
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
@@ -821,12 +817,8 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         self,
         repository_handle: RepositoryHandle,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ) -> "ExternalPartitionSetExecutionParamData":
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
-        check.list_param(partition_names, "partition_names", of_type=str)
-
         return sync_get_external_partition_set_execution_param_data_grpc(
             self.client, repository_handle, partition_set_name, partition_names
         )
