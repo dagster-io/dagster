@@ -1,8 +1,10 @@
+from __future__ import annotations
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -18,7 +20,6 @@ from typing import (
     cast,
 )
 
-from dagster_graphql.schema.errors import GraphenePythonError
 from graphene import ResolveInfo
 from typing_extensions import ParamSpec, TypeAlias
 
@@ -27,6 +28,9 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.host_representation import GraphSelector, PipelineSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
+
+if TYPE_CHECKING:
+    from dagster_graphql.schema.errors import GraphenePythonError
 
 P = ParamSpec("P")
 T = TypeVar("T")

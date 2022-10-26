@@ -1,13 +1,7 @@
+from __future__ import annotations
 import sys
-from typing import Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union
 
-from dagster_graphql.schema.errors import GrapheneRepositoryNotFoundError
-from dagster_graphql.schema.external import (
-    GrapheneRepository,
-    GrapheneRepositoryConnection,
-    GrapheneWorkspace,
-)
-from dagster_graphql.schema.util import HasContext
 from graphene import ResolveInfo
 
 import dagster._check as check
@@ -20,6 +14,14 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .utils import UserFacingGraphQLError, capture_error
 
+if TYPE_CHECKING:
+    from dagster_graphql.schema.errors import GrapheneRepositoryNotFoundError
+    from dagster_graphql.schema.external import (
+        GrapheneRepository,
+        GrapheneRepositoryConnection,
+        GrapheneWorkspace,
+    )
+    from dagster_graphql.schema.util import HasContext
 
 def get_full_external_job_or_raise(
     graphene_info: HasContext, selector: PipelineSelector
