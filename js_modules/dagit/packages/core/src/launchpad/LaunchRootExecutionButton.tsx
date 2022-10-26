@@ -54,7 +54,7 @@ export function useLaunchWithTelemetry() {
       const result = await launchPipelineExecution({variables});
       logTelemetry(TelemetryAction.LAUNCH_RUN, metadata);
       try {
-        handleLaunchResult(jobName, result, history, {behavior});
+        handleLaunchResult(jobName, result.data?.launchPipelineExecution, history, {behavior});
       } catch (error) {
         showLaunchError(error as Error);
       }
