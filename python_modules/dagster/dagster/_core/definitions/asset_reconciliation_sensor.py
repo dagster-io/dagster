@@ -1,17 +1,13 @@
 # pylint: disable=anomalous-backslash-in-string
 import json
 from collections import defaultdict
-from datetime import datetime
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Set, Tuple, cast
+from typing import TYPE_CHECKING, Dict, Mapping, Optional, Set, Tuple
 
-import pendulum
 import toposort
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
-from dagster._utils import utc_datetime_from_timestamp
 
 from .asset_selection import AssetSelection
 from .events import AssetKey
@@ -21,6 +17,8 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition, SourceAsset
+    from dagster._core.event_api import RunShardedEventsCursor
+    from dagster._core.instance import DagsterInstance
     from dagster._core.storage.event_log.base import EventLogRecord
 
 
@@ -41,18 +39,45 @@ def _get_upstream_mapping(
     return upstream
 
 
+def _get_last_planned_materialization_record(
+    asset_key: AssetKey,
+    planned_materialization_cache: Dict[AssetKey, "EventLogRecord"],
+    instance: "DagsterInstance",
+) -> Optional["EventLogRecord"]:
+    from dagster._core.events import DagsterEventType
+    from dagster._core.storage.event_log.base import EventRecordsFilter
+
+    if asset_key in planned_materialization_cache.keys():
+        return planned_materialization_cache[asset_key]
+    else:
+        materialization_planned_event_records = instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                asset_key=asset_key,
+            ),
+            ascending=False,
+            limit=1,
+        )
+
+        if materialization_planned_event_records:
+            planned_materialization_cache[asset_key] = materialization_planned_event_records[0]
+            return materialization_planned_event_records[0]
+
+    return None
+
+
 def _get_parent_updates(
     context,
     current_asset: AssetKey,
     parent_assets: Set[AssetKey],
-    cursor_tuple: Tuple[float, int],
+    cursor: Optional["RunShardedEventsCursor"],
     will_materialize_set: Set[AssetKey],
     wait_for_in_progress_runs: bool,
     planned_materialization_cache: Dict[AssetKey, "EventLogRecord"],
-) -> Tuple[Mapping[AssetKey, Tuple[bool, Tuple[float, int]]], Dict[AssetKey, "EventLogRecord"],]:
+) -> Mapping[AssetKey, Tuple[bool, Optional["RunShardedEventsCursor"]]]:
     """The bulk of the logic in the sensor is in this function. At the end of the function we return a
     dictionary that maps each asset to a Tuple. The Tuple contains a boolean, indicating if the asset
-    has materialized or will materialize, and a tuple(float, int) representing the timestamp and storage id
+    has materialized or will materialize, and a RunShardedEventsCursor representing the timestamp and storage id
     the parent asset would update the cursor to if it is the most recent materialization of a parent asset.
     In some cases we set the tuple to (0.0, 0) so that the tuples of other parent materializations will take precedent.
 
@@ -60,8 +85,8 @@ def _get_parent_updates(
         current_asset: We want to determine if this asset should materialize, so we gather information about
             if its parents have materialized.
         parent_assets: the parents of current_asset.
-        cursor_tuple: In the cursor for the sensor we store the timestamp and storage id of the most recent materialization
-            of current_asset's parents. This allows us to see if any of the parents have been materialized
+        cursor: In the cursor for the sensor, we store the timestamp and storage id of the most recent materialization
+            of all of current_asset's parents. This allows us to see if any of the parents have been materialized
             more recently.
         will_materialize_set: A set of all of the assets the sensor has already determined it will materialize.
             We check if the parent assets are in this list when determining their materialization status
@@ -97,45 +122,28 @@ def _get_parent_updates(
     from dagster._core.events import DagsterEventType
     from dagster._core.storage.event_log.base import EventRecordsFilter
 
-    parent_asset_event_records: Dict[AssetKey, Tuple[bool, Tuple[float, int]]] = {}
+    parent_asset_event_records: Dict[AssetKey, Tuple[bool, Optional[RunShardedEventsCursor]]] = {}
 
     for p in parent_assets:
         if p in will_materialize_set:
             # if p will be materialized by this sensor, then we can also materialize current_asset
             # we don't know what time asset p will be materialized so we set the cursor val to (0.0, 0)
-            parent_asset_event_records[p] = (
-                True,
-                (0.0, 0),
-            )
+            parent_asset_event_records[p] = (True, None)
         # TODO - when source asset versioning lands, add a check here that will see if the version has
         # updated if p is a source asset
         else:
             if wait_for_in_progress_runs:
                 # if p is currently being materialized, then we don't want to materialize current_asset
 
-                # get the most recent planned materialization
-                if p in planned_materialization_cache.keys():
-                    # put it in a list so the indexing later works
-                    materialization_planned_event_records = [planned_materialization_cache[p]]
-                else:
-                    materialization_planned_event_records = context.instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                            asset_key=p,
-                        ),
-                        ascending=False,
-                        limit=1,
-                    )
+                materialization_planned_event_record = _get_last_planned_materialization_record(
+                    p, planned_materialization_cache, context.instance
+                )
 
-                if materialization_planned_event_records:
-                    # add it to the cache
-                    planned_materialization_cache[p] = materialization_planned_event_records[0]
+                if materialization_planned_event_record:
                     # see if the most recent planned materialization is part of an in progress run
                     in_progress = context.instance.get_runs(
                         filters=RunsFilter(
-                            run_ids=[
-                                materialization_planned_event_records[0].event_log_entry.run_id
-                            ],
+                            run_ids=[materialization_planned_event_record.run_id],
                             statuses=IN_PROGRESS_RUN_STATUSES,
                         )
                     )
@@ -143,64 +151,51 @@ def _get_parent_updates(
                         # we don't want to materialize current_asset because p is
                         # being materialized. We'll materialize the asset on the next tick when the
                         # materialization of p is complete
-                        parent_asset_event_records = {pp: (False, (0.0, 0)) for pp in parent_assets}
+                        parent_asset_event_records = {pp: (False, None) for pp in parent_assets}
 
-                        return (
-                            parent_asset_event_records,
-                            planned_materialization_cache,
-                        )
+                        return parent_asset_event_records
+
             # check if there is a completed materialization for p
-
-            event_records = context.instance.get_event_records(
+            parent_materialization_records = context.instance.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
                     asset_key=p,
-                    after_cursor=RunShardedEventsCursor(
-                        run_updated_after=cast(
-                            datetime,
-                            pendulum.parse(
-                                utc_datetime_from_timestamp(cursor_tuple[0]).isoformat()
-                            ),
-                        ),
-                        id=cursor_tuple[1],
-                    ),
+                    after_cursor=cursor,
                 ),
                 ascending=False,
                 limit=1,
             )
 
-            if event_records:
+            if parent_materialization_records:
+                parent_materialization_record = parent_materialization_records[0]
+
                 # if the run for the materialization of p also materialized current_asset, we
                 # don't consider p "updated" when determining if current_asset should materialize
                 other_materialized_asset_records = context.instance.get_records_for_run(
-                    run_id=event_records[0].event_log_entry.run_id,
+                    run_id=parent_materialization_record.run_id,
                     of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
                 ).records
-                other_materialized_assets = [
-                    event.event_log_entry.dagster_event.event_specific_data.asset_key
-                    for event in other_materialized_asset_records
-                ]
-                if current_asset in other_materialized_assets:
+
+                if any(
+                    event.asset_key == current_asset for event in other_materialized_asset_records
+                ):
                     # we still update the cursor for p so this materialization isn't considered
                     # on the next sensor tick
                     parent_asset_event_records[p] = (
                         False,
-                        (event_records[0].event_log_entry.timestamp, event_records[0].storage_id),
+                        RunShardedEventsCursor.from_event_log_record(parent_materialization_record),
                     )
                 else:
                     # current_asset was not updated along with p, so we consider p updated
                     parent_asset_event_records[p] = (
                         True,
-                        (event_records[0].event_log_entry.timestamp, event_records[0].storage_id),
+                        RunShardedEventsCursor.from_event_log_record(parent_materialization_record),
                     )
             else:
                 # p has not been materialized and will not be materialized by the sensor
-                parent_asset_event_records[p] = (False, (0.0, 0))
+                parent_asset_event_records[p] = (False, None)
 
-    return (
-        parent_asset_event_records,
-        planned_materialization_cache,
-    )
+    return parent_asset_event_records
 
 
 def _make_sensor(
@@ -239,9 +234,11 @@ def _make_sensor(
             source_assets=source_asset_defs_by_key.values(),
         )
 
-        cursor_dict: Dict[str, int] = json.loads(context.cursor) if context.cursor else {}
+        cursor_dict: Dict[str, "RunShardedEventsCursor"] = (
+            _deserialize_cursor_dict(context.cursor) if context.cursor else {}
+        )
         should_materialize: Set[AssetKey] = set()
-        cursor_update_dict: Dict[str, int] = {}
+        cursor_update_dict: Dict[str, "RunShardedEventsCursor"] = {}
         # keep track of the in planned materializations for each parent so we don't repeat
         # calls to the db
         planned_materialization_cache: Dict[AssetKey, "EventLogRecord"] = {}
@@ -255,18 +252,22 @@ def _make_sensor(
 
         # if the event storage is sharded we want to compare timestamps, otherwise we compare
         # storage ids. In the cursor, timestamp is index 0 and storage_id is 1
-        cursor_compare_idx = 0 if context.instance.event_log_storage.is_run_sharded else 1
+        if context.instance.event_log_storage.is_run_sharded:
+            cursor_key_fn = lambda cursor: cursor.run_updated_after
+        else:
+            cursor_key_fn = lambda cursor: cursor.id
 
         # determine which assets should materialize based on the materialization status of their
         # parents
         for a in toposort_assets:
-            a_cursor = cursor_dict.get(str(a), (0.0, 0))
-            cursor_update_dict[str(a)] = a_cursor
-            (parent_update_records, planned_materialization_cache,) = _get_parent_updates(
+            a_cursor = cursor_dict.get(str(a))
+            if a_cursor:
+                cursor_update_dict[str(a)] = a_cursor
+            parent_update_records = _get_parent_updates(
                 context,
                 current_asset=a,
                 parent_assets=upstream[a],
-                cursor_tuple=a_cursor,
+                cursor=a_cursor,
                 will_materialize_set=should_materialize,
                 wait_for_in_progress_runs=wait_for_in_progress_runs,
                 planned_materialization_cache=planned_materialization_cache,
@@ -274,23 +275,22 @@ def _make_sensor(
 
             condition = all if wait_for_all_upstream else any
             if condition(
-                [
-                    materialization_status
-                    for materialization_status, _ in parent_update_records.values()
-                ]
+                materialization_status
+                for materialization_status, _ in parent_update_records.values()
             ):
                 should_materialize.add(a)
 
-                # get the cursor value by selecting the max of all the cadidates. If we're using a
+                # get the cursor value by selecting the max of all the candidates. If we're using a
                 # sharded event log storage, compare timestamps, otherwise compare storage ids. See
                 # cursor_compare_idx for how this is determined
-                cursor_update_dict[str(a)] = max(
-                    [cursor_val for _, cursor_val in parent_update_records.values()] + [a_cursor],
-                    key=lambda cursor: cursor[cursor_compare_idx],
-                )
+                cursor_update_candidates = [
+                    cursor_val for _, cursor_val in parent_update_records.values() if cursor_val
+                ] + ([a_cursor] if a_cursor else [])
+                if cursor_update_candidates:
+                    cursor_update_dict[str(a)] = max(cursor_update_candidates, key=cursor_key_fn)
 
         if len(should_materialize) > 0:
-            context.update_cursor(json.dumps(cursor_update_dict))
+            context.update_cursor(_serialize_cursor_dict(cursor_update_dict))
             context._cursor_has_been_updated = True  # pylint: disable=protected-access
             return RunRequest(
                 run_key=f"{context.cursor}", asset_selection=list(should_materialize), tags=run_tags
@@ -304,6 +304,18 @@ def _make_sensor(
         description=description,
         default_status=default_status,
     )
+
+
+def _serialize_cursor_dict(cursor_update_dict: Dict[str, "RunShardedEventsCursor"]) -> str:
+    return json.dumps({k: v.to_json_serializable() for k, v in cursor_update_dict.items()})
+
+
+def _deserialize_cursor_dict(cursor: str) -> Dict[str, "RunShardedEventsCursor"]:
+    from dagster._core.event_api import RunShardedEventsCursor
+
+    return {
+        k: RunShardedEventsCursor.from_json_serializable(v) for k, v in json.loads(cursor).items()
+    }
 
 
 @experimental
