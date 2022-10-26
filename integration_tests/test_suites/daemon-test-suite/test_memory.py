@@ -5,44 +5,43 @@ from contextlib import contextmanager
 
 import objgraph
 
-from dagster import RunRequest, repository, schedule, sensor
+from dagster import job, op, RunRequest, repository, schedule, sensor
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon.controller import daemon_controller_from_instance
-from dagster._legacy import pipeline, solid
 
 
-@solid()
-def foo_solid(_):
+@op()
+def foo_op(_):
     pass
 
 
-@pipeline
-def foo_pipeline():
-    foo_solid()
+@job
+def foo_job():
+    foo_op()
 
 
-@pipeline
-def other_foo_pipeline():
-    foo_solid()
+@job
+def other_foo_job():
+    foo_op()
 
 
 @schedule(
-    job_name="foo_pipeline",
+    job_name="foo_job",
     cron_schedule="*/1 * * * *",
 )
 def always_run_schedule(_context):
     return {}
 
 
-@sensor(job_name="foo_pipeline", minimum_interval_seconds=10)
+@sensor(job_name="foo_job", minimum_interval_seconds=10)
 def always_on_sensor(_context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
 @repository
 def example_repo():
-    return [foo_pipeline, always_run_schedule, always_on_sensor]
+    return [foo_job, always_run_schedule, always_on_sensor]
 
 
 @contextmanager

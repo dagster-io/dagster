@@ -8,7 +8,6 @@ import uuid
 from contextlib import contextmanager
 
 import kubernetes
-from kubernetes.client import Configuration
 
 import dagster._check as check
 from dagster._utils import safe_tempfile_path
