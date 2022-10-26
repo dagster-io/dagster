@@ -18,7 +18,7 @@ import styled from 'styled-components/macro';
 import {useFeatureFlags} from '../app/Flags';
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
-import {OVERVIEW_EXPANSION_KEY} from '../overview/OverviewExpansionKey';
+import {OVERVIEW_COLLAPSED_KEY, OVERVIEW_EXPANSION_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -85,6 +85,7 @@ export const RunTimeline = (props: Props) => {
   const allKeys = Object.keys(buckets);
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
     OVERVIEW_EXPANSION_KEY,
+    OVERVIEW_COLLAPSED_KEY,
     allKeys,
   );
 
