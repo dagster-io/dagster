@@ -225,7 +225,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     elif dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
         return GrapheneExecutionStepSuccessEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_INPUT:
-        input_data = dagster_event.event_specific_data
+        input_data = check.not_none(dagster_event.event_specific_data)
         return GrapheneExecutionStepInputEvent(
             input_name=input_data.input_name,
             type_check=input_data.type_check_data,

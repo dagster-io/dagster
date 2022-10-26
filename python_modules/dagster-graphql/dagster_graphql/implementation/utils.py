@@ -118,8 +118,10 @@ class UserFacingGraphQLError(Exception):
 
 
 def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> PipelineSelector:
+    asset_selection = data.get("assetSelection")
     asset_selection = cast(
-        List[Dict[str, List[str]]], check.list_elem(data, "assetSelection", of_type=dict)
+        Optional[List[Dict[str, List[str]]]],
+        check.opt_nullable_list_param(asset_selection, "assetSelection", of_type=dict),
     )
     return PipelineSelector(
         location_name=data["repositoryLocationName"],
