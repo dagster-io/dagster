@@ -103,7 +103,7 @@ const AssetEventListPartitionRow: React.FC<{group: AssetEventGroup}> = ({group})
   const {partition, latest, timestamp} = group;
   return (
     <>
-      <Box flex={{gap: 4, direction: 'row'}}>
+      <Box flex={{gap: 4, direction: 'row', alignItems: 'flex-start'}}>
         <Icon name="partition" />
         {partition}
         <div style={{flex: 1}} />

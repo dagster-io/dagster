@@ -115,7 +115,7 @@ export const AssetEventDetail: React.FC<{
       </Box>
 
       {assetLineage.length > 0 && (
-        <Box padding={{top: 24}}>
+        <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
           <Subheading>Parent Materializations</Subheading>
           <AssetLineageElements elements={assetLineage} timestamp={event.timestamp} />
         </Box>

@@ -52,7 +52,7 @@ export const AssetPartitionDetail: React.FC<{
         <div style={{flex: 1}} />
       </Box>
       <Box
-        style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}
+        style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, minHeight: 76}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         padding={{vertical: 16}}
       >
@@ -64,7 +64,7 @@ export const AssetPartitionDetail: React.FC<{
               None
             </Box>
           ) : (
-            <Box flex={{gap: 4}}>
+            <Box flex={{gap: 4}} style={{whiteSpace: 'nowrap'}}>
               {latest.__typename === 'MaterializationEvent' ? (
                 <Icon name="materialization" />
               ) : (
