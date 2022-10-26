@@ -65,7 +65,7 @@ def _memoize_inst_in_field_cache(passed_cls, defined_cls, key):
         return FIELD_HASH_CACHE[key]
 
     defined_cls_inst = super(defined_cls, passed_cls).__new__(defined_cls)
-
+    defined_cls_inst._initialized = False  # pylint: disable=protected-access
     FIELD_HASH_CACHE[key] = defined_cls_inst
     return defined_cls_inst
 
@@ -138,6 +138,10 @@ class Shape(_ConfigHasFields):
         description=None,
         field_aliases=None,
     ):
+        # if we hit in the field cache - skip double init
+        if self._initialized:  # pylint: disable=access-member-before-definition
+            return
+
         fields = expand_fields_dict(fields)
         super(Shape, self).__init__(
             kind=ConfigTypeKind.STRICT_SHAPE,
@@ -148,6 +152,7 @@ class Shape(_ConfigHasFields):
         self.field_aliases = check.opt_dict_param(
             field_aliases, "field_aliases", key_type=str, value_type=str
         )
+        self._initialized = True
 
 
 class Map(ConfigType):
@@ -249,6 +254,10 @@ class Permissive(_ConfigHasFields):
         )
 
     def __init__(self, fields=None, description=None):
+        # if we hit in field cache avoid double init
+        if self._initialized:  # pylint: disable=access-member-before-definition
+            return
+
         fields = expand_fields_dict(fields) if fields else None
         super(Permissive, self).__init__(
             key=_define_permissive_dict_key(fields, description),
@@ -256,6 +265,7 @@ class Permissive(_ConfigHasFields):
             fields=fields or dict(),
             description=description,
         )
+        self._initialized = True
 
 
 def _define_selector_key(fields, description):
@@ -311,6 +321,10 @@ class Selector(_ConfigHasFields):
         )
 
     def __init__(self, fields, description=None):
+        # if we hit in field cache avoid double init
+        if self._initialized:  # pylint: disable=access-member-before-definition
+            return
+
         fields = expand_fields_dict(fields)
         super(Selector, self).__init__(
             key=_define_selector_key(fields, description),
@@ -318,6 +332,7 @@ class Selector(_ConfigHasFields):
             fields=fields,
             description=description,
         )
+        self._initialized = True
 
 
 # Config syntax expansion code below
