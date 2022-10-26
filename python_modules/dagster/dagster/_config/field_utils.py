@@ -1,6 +1,6 @@
 # encoding: utf-8
 import hashlib
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List
 
 import dagster._check as check
 from dagster._annotations import public
@@ -10,6 +10,8 @@ from .config_type import Array, ConfigType, ConfigTypeKind
 
 if TYPE_CHECKING:
     from dagster._config import Field
+
+    from .snap import ConfigTypeSnap
 
 
 def all_optional_type(config_type: ConfigType) -> bool:
@@ -48,6 +50,11 @@ class _ConfigHasFields(ConfigType):
     def __init__(self, fields, **kwargs):
         self.fields = expand_fields_dict(fields)
         super(_ConfigHasFields, self).__init__(**kwargs)
+
+    def type_iterator(self) -> Iterator["ConfigType"]:
+        for field in self.fields.values():
+            yield from field.config_type.type_iterator()
+        yield from super().type_iterator()
 
 
 FIELD_HASH_CACHE: Dict[str, Any] = {}
@@ -198,6 +205,11 @@ class Map(ConfigType):
     @property
     def key_label_name(self):
         return self.given_name
+
+    def type_iterator(self) -> Iterator["ConfigType"]:
+        yield from self.key_type.type_iterator()
+        yield from self.inner_type.type_iterator()
+        yield from super().type_iterator()
 
 
 def _define_permissive_dict_key(fields, description):
