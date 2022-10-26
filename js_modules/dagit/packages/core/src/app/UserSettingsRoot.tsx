@@ -13,7 +13,7 @@ import * as React from 'react';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
-import {FeatureFlag, getFeatureFlags, setFeatureFlags} from './Flags';
+import {FeatureFlag, FeatureFlagType, getFeatureFlags, setFeatureFlags} from './Flags';
 import {SHORTCUTS_STORAGE_KEY} from './ShortcutHandler';
 import {useTrackPageView} from './analytics';
 import {TimezoneSelect} from './time/TimezoneSelect';
@@ -26,7 +26,7 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
   useTrackPageView();
   useDocumentTitle('User settings');
 
-  const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());
+  const [flags, setFlags] = React.useState<FeatureFlagType[]>(() => getFeatureFlags());
   const [shortcutsEnabled, setShortcutsEnabled] = useStateWithStorage(
     SHORTCUTS_STORAGE_KEY,
     (value: any) => (typeof value === 'boolean' ? value : true),
@@ -36,7 +36,7 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
     setFeatureFlags(flags);
   });
 
-  const toggleFlag = (flag: FeatureFlag) => {
+  const toggleFlag = (flag: FeatureFlagType) => {
     setFlags(flags.includes(flag) ? flags.filter((f) => f !== flag) : [...flags, flag]);
     window.location.reload();
   };
@@ -94,64 +94,69 @@ const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
         <Box padding={{bottom: 8}}>
           <Subheading>Experimental features</Subheading>
         </Box>
-        <MetadataTable
-          rows={[
-            {
-              key: 'Debug console logging',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagDebugConsoleLogging)}
-                  onChange={() => toggleFlag(FeatureFlag.flagDebugConsoleLogging)}
-                />
-              ),
-            },
-            {
-              key: 'Disable WebSockets',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagDisableWebsockets)}
-                  onChange={() => toggleFlag(FeatureFlag.flagDisableWebsockets)}
-                />
-              ),
-            },
-            {
-              key: 'New workspace pages, overview pages, and top navigation',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagNewWorkspace)}
-                  onChange={() => toggleFlag(FeatureFlag.flagNewWorkspace)}
-                />
-              ),
-            },
-            {
-              key: 'New asset detail pages',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagNewAssetDetails)}
-                  onChange={() => toggleFlag(FeatureFlag.flagNewAssetDetails)}
-                />
-              ),
-            },
-            {
-              key: 'Experimental "groups-only" asset graph zoom level',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagAssetGraphExperimentalZoom)}
-                  onChange={() => toggleFlag(FeatureFlag.flagAssetGraphExperimentalZoom)}
-                />
-              ),
-            },
-          ]}
-        />
+        <MetadataTable rows={getFeatureFlagRows(flags, toggleFlag)} />
       </Box>
     </div>
   );
 };
+
+export function getFeatureFlagRows(
+  flags: FeatureFlagType[],
+  toggleFlag: (flag: FeatureFlagType) => void,
+) {
+  return [
+    {
+      key: 'Debug console logging',
+      value: (
+        <Checkbox
+          format="switch"
+          checked={flags.includes(FeatureFlag.flagDebugConsoleLogging)}
+          onChange={() => toggleFlag(FeatureFlag.flagDebugConsoleLogging)}
+        />
+      ),
+    },
+    {
+      key: 'Disable WebSockets',
+      value: (
+        <Checkbox
+          format="switch"
+          checked={flags.includes(FeatureFlag.flagDisableWebsockets)}
+          onChange={() => toggleFlag(FeatureFlag.flagDisableWebsockets)}
+        />
+      ),
+    },
+    {
+      key: 'New workspace pages, overview pages, and top navigation',
+      value: (
+        <Checkbox
+          format="switch"
+          checked={flags.includes(FeatureFlag.flagNewWorkspace)}
+          onChange={() => toggleFlag(FeatureFlag.flagNewWorkspace)}
+        />
+      ),
+    },
+    {
+      key: 'New asset detail pages',
+      value: (
+        <Checkbox
+          format="switch"
+          checked={flags.includes(FeatureFlag.flagNewAssetDetails)}
+          onChange={() => toggleFlag(FeatureFlag.flagNewAssetDetails)}
+        />
+      ),
+    },
+    {
+      key: 'Experimental "groups-only" asset graph zoom level',
+      value: (
+        <Checkbox
+          format="switch"
+          checked={flags.includes(FeatureFlag.flagAssetGraphExperimentalZoom)}
+          onChange={() => toggleFlag(FeatureFlag.flagAssetGraphExperimentalZoom)}
+        />
+      ),
+    },
+  ];
+}
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
