@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Union
 
 import packaging.version
 import yaml
-from dagster_buildkite.git import ChangedFiles
+from dagster_buildkite.git import ChangedFiles, get_commit_message
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
@@ -218,7 +218,7 @@ def skip_coverage_if_feature_branch():
 
 
 def message_contains(substring: str) -> bool:
-    return substring in os.getenv("BUILDKITE_MESSAGE", "")
+    return any(substring in [os.getenv("BUILDKITE_MESSAGE", ""), get_commit_message("HEAD")])
 
 
 def skip_if_no_docs_changes():
