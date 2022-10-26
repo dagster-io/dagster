@@ -24,59 +24,39 @@ if TYPE_CHECKING:
     )
     from dagster_graphql.schema.util import HasContext
 
-
-def get_full_external_job_or_raise(
-    graphene_info: HasContext, selector: PipelineSelector
-) -> ExternalPipeline:
-    from ..schema.errors import GraphenePipelineNotFoundError
-
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
-
-    if not graphene_info.context.has_external_job(selector):
-        raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
-
-    return graphene_info.context.get_full_external_job(selector)
-
-
 def get_external_pipeline_or_raise(
-    graphene_info: HasContext, selector: PipelineSelector
+    graphene_info: HasContext, selector: PipelineSelector, ignore_subset: bool = False
 ) -> ExternalPipeline:
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
-    full_pipeline = get_full_external_job_or_raise(graphene_info, selector)
-
-    if selector.solid_selection is None and selector.asset_selection is None:
-        return full_pipeline
-
-    return get_subset_external_pipeline(graphene_info.context, selector)
-
-
-def get_subset_external_pipeline(
-    context: WorkspaceRequestContext, selector: PipelineSelector
-) -> ExternalPipeline:
-    from ..schema.errors import GrapheneInvalidSubsetError
+    from ..schema.errors import GrapheneInvalidSubsetError, GraphenePipelineNotFoundError
     from ..schema.pipelines.pipeline import GraphenePipeline
 
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
 
-    repository_location = context.get_repository_location(selector.location_name)
-
-    try:
-        external_pipeline = repository_location.get_external_pipeline(selector)
-    except Exception:
-        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        raise UserFacingGraphQLError(
-            GrapheneInvalidSubsetError(
-                message="{message}{cause_message}".format(
-                    message=error_info.message,
-                    cause_message="\n{}".format(error_info.cause.message)
-                    if error_info.cause
-                    else "",
-                ),
-                pipeline=GraphenePipeline(context.get_full_external_job(selector)),
+    ctx = graphene_info.context
+    if not ctx.has_external_job(selector):
+        raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
+    elif ignore_subset:
+        external_pipeline = ctx.get_full_external_job(selector)
+    else:
+        print("GETTING EXTERNAL PIPELINE")
+        repository_location = ctx.get_repository_location(selector.location_name)
+        try:
+            print("REPO TYPE", type(repository_location))
+            external_pipeline = repository_location.get_external_pipeline(selector)
+        except Exception:
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            raise UserFacingGraphQLError(
+                GrapheneInvalidSubsetError(
+                    message="{message}{cause_message}".format(
+                        message=error_info.message,
+                        cause_message="\n{}".format(error_info.cause.message)
+                        if error_info.cause
+                        else "",
+                    ),
+                    pipeline=GraphenePipeline(ctx.get_full_external_job(selector)),
+                )
             )
-        )
 
     return external_pipeline
 

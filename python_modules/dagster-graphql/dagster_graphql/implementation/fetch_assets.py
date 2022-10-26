@@ -1,6 +1,6 @@
 import datetime
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
 from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 
@@ -10,6 +10,9 @@ from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.events import ASSET_EVENTS
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation.external_data import ExternalAssetNode
+from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -67,7 +70,9 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
     )
 
 
-def asset_node_iter(graphene_info):
+def asset_node_iter(
+    graphene_info,
+) -> Iterator[Tuple[RepositoryLocation, ExternalRepository, ExternalAssetNode]]:
     for location in graphene_info.context.repository_locations:
         for repository in location.get_repositories().values():
             for external_asset_node in repository.get_external_asset_nodes():
@@ -122,7 +127,7 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
     asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
         preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
-        if preexisting_node is None or preexisting_node.external_asset_node.op_name is None:
+        if preexisting_node is None or preexisting_node.external_asset_node.is_source:
             asset_nodes_by_asset_key[external_asset_node.asset_key] = GrapheneAssetNode(
                 repo_loc,
                 repo,

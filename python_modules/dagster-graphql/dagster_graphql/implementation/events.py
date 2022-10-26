@@ -21,6 +21,7 @@ from dagster import (
     TextMetadataValue,
     UrlMetadataValue,
 )
+from dagster._core.definitions.metadata import LogicalVersionMetadataValue
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import StepFailureData
@@ -37,6 +38,7 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJsonMetadataEntry,
+        GrapheneLogicalVersionMetadataEntry,
         GrapheneMarkdownMetadataEntry,
         GrapheneNotebookMetadataEntry,
         GraphenePathMetadataEntry,
@@ -159,6 +161,12 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
                     constraints=metadata_entry.entry_data.schema.constraints,
                     columns=metadata_entry.entry_data.schema.columns,
                 ),
+            )
+        elif isinstance(metadata_entry.entry_data, LogicalVersionMetadataValue):
+            yield GrapheneLogicalVersionMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                value=metadata_entry.value.value,
             )
         else:
             # skip rest for now

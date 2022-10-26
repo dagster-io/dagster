@@ -50,7 +50,11 @@ from ...implementation.fetch_schedules import (
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
-from ...implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
+from ...implementation.loader import (
+    BatchMaterializationLoader,
+    CrossRepoAssetDependedByLoader,
+    ProjectedLogicalVersionLoader,
+)
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
 from ..asset_graph import (
@@ -541,6 +545,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
         )
 
+        repo = None
         if "group" in kwargs:
             group_name = kwargs.get("group").get("groupName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("group"))
@@ -584,6 +589,22 @@ class GrapheneDagitQuery(graphene.ObjectType):
         )
 
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
+
+        if repo is not None:
+            repos = [repo]
+        else:
+            repos = []
+            used = set()
+            for node in results:
+                if not node.external_repository.name in used:
+                    repos.append(node.external_repository)
+
+        projected_logical_version_loader = ProjectedLogicalVersionLoader(
+            instance=graphene_info.context.instance,
+            key_to_node_map={node.assetKey: node.external_asset_node for node in results},
+            repositories=repos,
+        )
+
         return [
             GrapheneAssetNode(
                 node.repository_location,
@@ -591,6 +612,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 node.external_asset_node,
                 materialization_loader=materialization_loader,
                 depended_by_loader=depended_by_loader,
+                projected_logical_version_loader=projected_logical_version_loader,
             )
             for node in results
         ]

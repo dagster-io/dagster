@@ -2,7 +2,10 @@ import asyncio
 
 import graphene
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+from dagster_graphql.implementation.loader import (
+    ProjectedLogicalVersionLoader,
+    RepositoryScopedBatchLoader,
+)
 
 from dagster import DagsterInstance
 from dagster import _check as check
@@ -174,6 +177,11 @@ class GrapheneRepository(graphene.ObjectType):
         )
         check.inst_param(instance, "instance", DagsterInstance)
         self._batch_loader = RepositoryScopedBatchLoader(instance, repository)
+        self._projected_logical_version_loader = ProjectedLogicalVersionLoader(
+            instance=instance,
+            key_to_node_map={},
+            repositories=[repository],
+        )
         super().__init__(name=repository.name)
 
     def resolve_id(self, _graphene_info):
@@ -251,7 +259,12 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_assetNodes(self, _graphene_info):
         return [
-            GrapheneAssetNode(self._repository_location, self._repository, external_asset_node)
+            GrapheneAssetNode(
+                self._repository_location,
+                self._repository,
+                external_asset_node,
+                projected_logical_version_loader=self._projected_logical_version_loader,
+            )
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]
 
