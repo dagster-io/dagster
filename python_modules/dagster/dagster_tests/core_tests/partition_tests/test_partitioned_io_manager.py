@@ -1,15 +1,17 @@
+import datetime
+
+from pytest import fixture
+
 from dagster import (
-    asset,
     AssetKey,
-    build_op_context,
-    build_input_context,
-    build_output_context,
-    materialize,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    asset,
+    build_input_context,
+    build_op_context,
+    build_output_context,
+    materialize,
 )
-from pytest import fixture
-import datetime
 
 
 @fixture
