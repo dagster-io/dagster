@@ -8,6 +8,7 @@ import uuid
 from contextlib import contextmanager
 
 import kubernetes
+from dagster_k8s_test_infra import debug
 from kubernetes.client import Configuration
 
 import dagster._check as check
@@ -15,8 +16,6 @@ from dagster._utils import safe_tempfile_path
 
 from .cluster import ClusterConfig
 from .integration_utils import check_output, which_, within_docker
-
-CLUSTER_INFO_DUMP_DIR = "kind-info-dump"
 
 
 def kind_load_images(cluster_name, local_dagster_test_image, additional_images=None):
@@ -187,45 +186,4 @@ def kind_cluster(cluster_name=None, should_cleanup=False, kind_ready_timeout=60.
                     yield ClusterConfig(cluster_name, kubeconfig_file)
 
                 finally:
-                    IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-                    if IS_BUILDKITE:
-                        cluster_info_dump()
-
-
-def cluster_info_dump():
-    print(
-        "Writing out cluster info to {output_directory}".format(
-            output_directory=CLUSTER_INFO_DUMP_DIR
-        )
-    )
-
-    p = subprocess.Popen(
-        [
-            "kubectl",
-            "cluster-info",
-            "dump",
-            "--all-namespaces=true",
-            "--output-directory={output_directory}".format(output_directory=CLUSTER_INFO_DUMP_DIR),
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    stdout, stderr = p.communicate()
-    print("Cluster info dumped with stdout: ", stdout)
-    print("Cluster info dumped with stderr: ", stderr)
-    assert p.returncode == 0
-
-    p = subprocess.Popen(
-        [
-            "buildkite-agent",
-            "artifact",
-            "upload",
-            "{output_directory}/**/*".format(output_directory=CLUSTER_INFO_DUMP_DIR),
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    stdout, stderr = p.communicate()
-    print("Buildkite artifact added with stdout: ", stdout)
-    print("Buildkite artifact added with stderr: ", stderr)
-    assert p.returncode == 0
+                    debug.export_kind()

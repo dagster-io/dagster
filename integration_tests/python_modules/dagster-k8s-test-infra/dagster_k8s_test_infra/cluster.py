@@ -12,6 +12,7 @@ import kubernetes
 import psycopg2
 import pytest
 from dagster_k8s.utils import wait_for_pod
+from dagster_k8s_test_infra import debug
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
@@ -213,7 +214,8 @@ def dagster_instance_for_user_deployments_subchart_disabled(
     ) as instance:
         yield instance
 
-        check_export_runs(instance)
+        debug.export_runs(instance)
+        debug.export_postgres(helm_postgres_url_for_user_deployments_subchart_disabled)
 
 
 @pytest.fixture(scope="session")
@@ -245,8 +247,8 @@ def dagster_instance_for_daemon(
     ) as instance:
         yield instance
 
-        check_export_runs(instance)
-        export_postgres(helm_postgres_url_for_daemon)
+        debug.export_runs(instance)
+        debug.export_postgres(helm_postgres_url_for_daemon)
 
 
 @pytest.fixture(scope="function")
@@ -270,7 +272,8 @@ def dagster_instance_for_k8s_run_launcher(
     ) as instance:
         yield instance
 
-        check_export_runs(instance)
+        debug.export_runs(instance)
+        debug.export_postgres(helm_postgres_url_for_k8s_run_launcher)
 
 
 @pytest.fixture(scope="session")
@@ -301,64 +304,5 @@ def dagster_instance(helm_postgres_url):  # pylint: disable=redefined-outer-name
             ) as instance:
                 yield instance
 
-                check_export_runs(instance)
-
-
-def get_current_test():
-    # example PYTEST_CURRENT_TEST: test_user_code_deployments.py::test_execute_on_celery_k8s (teardown)
-    return (
-        os.environ.get("PYTEST_CURRENT_TEST")
-        .split()[0]
-        .replace("::", "-")
-        .replace(".", "-")
-        .replace("/", "-")
-    )
-
-
-def upload_buildkite_artifact(artifact_file):
-    print(f"Uploading artifact to Buildkite: {artifact_file}")
-    p = subprocess.Popen(
-        [
-            "buildkite-agent",
-            "artifact",
-            "upload",
-            artifact_file,
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    stdout, stderr = p.communicate()
-    print("Buildkite artifact added with stdout: ", stdout)
-    print("Buildkite artifact added with stderr: ", stderr)
-    assert p.returncode == 0
-
-
-def check_export_runs(instance):
-    if not IS_BUILDKITE:
-        return
-
-    current_test = get_current_test()
-
-    for run in instance.get_runs():
-        with tempfile.TemporaryDirectory() as tempdir:
-            output_file = Path(tempdir) / f"{current_test}-{run.run_id}.txt"
-            output_file.touch()
-
-        try:
-            export_run(instance, run, output_file)
-        except Exception as e:
-            print(f"Hit an error exporting dagster-debug {output_file}: {e}")
-            continue
-        upload_buildkite_artifact(output_file)
-
-
-def export_postgres(url):
-    if not IS_BUILDKITE:
-        return
-
-    with tempfile.TemporaryDirectory() as tempdir:
-        current_test = get_current_test()
-        output_file = Path(tempdir) / f"{current_test}-postgres.txt"
-        output_file.touch()
-        subprocess.run(["pg_dump", url, "-f", output_file], check=False)
-        upload_buildkite_artifact(output_file)
+                debug.export_runs(instance)
+                debug.export_postgres(helm_postgres_url)
