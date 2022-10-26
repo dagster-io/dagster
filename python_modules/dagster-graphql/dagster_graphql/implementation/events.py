@@ -1,5 +1,5 @@
 from math import isnan
-from typing import Any, Iterator, Sequence, cast
+from typing import Any, Iterator, Sequence, cast, no_type_check
 
 from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
@@ -47,7 +47,7 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
         GrapheneUrlMetadataEntry,
     )
 
-    check.list_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
+    check.sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
     for metadata_entry in metadata_entries:
         if isinstance(metadata_entry.entry_data, PathMetadataValue):
             yield GraphenePathMetadataEntry(
@@ -161,6 +161,9 @@ def _to_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Sequence[
     return list(iterate_metadata_entries(metadata_entries) or [])
 
 
+# We don't typecheck this due to the excessive number of type errors resulting from the
+# non-type-checker legible relationship between `event_type` and the class of `event_specific_data`.
+@no_type_check
 def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
     from ..schema.errors import GraphenePythonError
     from ..schema.logs.events import (
@@ -324,7 +327,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             output_name=dagster_event.event_specific_data.output_name,
             manager_key=dagster_event.event_specific_data.manager_key,
             metadataEntries=_to_metadata_entries(
-                dagster_event.event_specific_data.metadata_entries
+                dagster_event.event_specific_data.metadata_entries  # type: ignore
             ),
             **basic_params,
         )
@@ -335,7 +338,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             upstream_output_name=dagster_event.event_specific_data.upstream_output_name,
             upstream_step_key=dagster_event.event_specific_data.upstream_step_key,
             metadataEntries=_to_metadata_entries(
-                dagster_event.event_specific_data.metadata_entries
+                dagster_event.event_specific_data.metadata_entries  # type: ignore
             ),
             **basic_params,
         )
@@ -428,16 +431,17 @@ def construct_basic_params(event_record: EventLogEntry) -> Any:
     from ..schema.logs.log_level import GrapheneLogLevel
 
     check.inst_param(event_record, "event_record", EventLogEntry)
+    dagster_event = event_record.dagster_event
     return {
         "runId": event_record.run_id,
         "message": event_record.message,
         "timestamp": int(event_record.timestamp * 1000),
         "level": GrapheneLogLevel.from_level(event_record.level),
-        "eventType": event_record.dagster_event.event_type
-        if (event_record.dagster_event and event_record.dagster_event.event_type)
+        "eventType": dagster_event.event_type
+        if (dagster_event and dagster_event.event_type)
         else None,
         "stepKey": event_record.step_key,
-        "solidHandleID": event_record.dagster_event.solid_handle.to_string()
-        if event_record.is_dagster_event and event_record.dagster_event.solid_handle
+        "solidHandleID": event_record.dagster_event.solid_handle.to_string()  # type: ignore
+        if dagster_event and dagster_event.solid_handle
         else None,
     }

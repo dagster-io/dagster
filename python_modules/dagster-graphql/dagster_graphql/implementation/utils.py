@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 P = ParamSpec("P")
 T = TypeVar("T")
 
-GrapheneResolverFn: TypeAlias = Callable[P, T]
+GrapheneResolverFn: TypeAlias = Callable[..., object]
 T_Callable = TypeVar("T_Callable", bound=Callable)
 
 

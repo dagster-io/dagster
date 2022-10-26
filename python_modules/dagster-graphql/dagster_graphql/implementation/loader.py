@@ -131,7 +131,7 @@ class RepositoryScopedBatchLoader:
                         )
                     )
             for record in records:
-                tag = check.not_none(record.pipeline_run.tags.get(SCHEDULE_NAME_TAG))
+                tag: str = check.not_none(record.pipeline_run.tags.get(SCHEDULE_NAME_TAG))
                 fetched[tag].append(record)
 
         elif data_type == RepositoryDataType.SENSOR_RUNS:
