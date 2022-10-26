@@ -36,7 +36,7 @@ An [Airbyte connection](https://docs.airbyte.com/understanding-airbyte/connectio
 The first step in using Airbyte with Dagster is to tell Dagster how to connect to your Airbyte instance using an Airbyte [resource](/concepts/resources). This resource contains information on where the Airbyte instance is located and any credentials needed to access it.
 
 ```python startafter=start_define_instance endbefore=end_define_instance file=/integrations/airbyte/airbyte.py dedent=4
-from dagster import airbyte_resource
+from dagster_airbyte import airbyte_resource
 
 airbyte_instance = airbyte_resource.configured(
     {

@@ -4,7 +4,7 @@
 
 def scope_define_instance():
     # start_define_instance
-    from dagster import airbyte_resource
+    from dagster_airbyte import airbyte_resource
 
     airbyte_instance = airbyte_resource.configured(
         {
@@ -107,8 +107,6 @@ def scope_airbyte_manual_config():
         {"airbyte": airbyte_instance},
     )
     # end_airbyte_manual_config
-
-
 
 
 def scope_schedule_assets():
