@@ -5,8 +5,11 @@ from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.storage.tags import get_multidimensional_partition_tag
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidDefinitionError
 
-from .partition import Partition, PartitionsDefinition
+from .partition import Partition, PartitionsDefinition, StaticPartitionsDefinition
+
+INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
 
 
 class PartitionDimensionKey(
@@ -105,8 +108,6 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     """
 
     def __init__(self, partitions_defs: Mapping[str, PartitionsDefinition]):
-        from dagster import DagsterInvalidInvocationError
-
         if not len(partitions_defs.keys()) == 2:
             raise DagsterInvalidInvocationError(
                 "Dagster currently only supports multi-partitions definitions with 2 partitions definitions. "
@@ -115,6 +116,20 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         check.mapping_param(
             partitions_defs, "partitions_defs", key_type=str, value_type=PartitionsDefinition
         )
+
+        for dim_name, partitions_def in partitions_defs.items():
+            if isinstance(partitions_def, StaticPartitionsDefinition):
+                if any(
+                    [
+                        INVALID_STATIC_PARTITIONS_KEY_CHARACTERS & set(key)
+                        for key in partitions_def.get_partition_keys()
+                    ]
+                ):
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid character in partition key for dimension {dim_name}. "
+                        "A multi-partitions definition cannot contain partition keys with "
+                        "the following characters: |, [, ], ,"
+                    )
 
         self._partitions_defs: List[PartitionDimensionDefinition] = sorted(
             [
