@@ -42,7 +42,7 @@ class FooIoManager(PickledObjectFilesystemIOManager):
 
 
 foo_io_manager_def = IOManagerDefinition(
-    resource_fn=lambda ctx: FooIoManager(ctx),
+    resource_fn=FooIoManager,
     config_schema={},
 )
 
