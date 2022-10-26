@@ -13,7 +13,7 @@ import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-import {OVERVIEW_EXPANSION_KEY} from './OverviewExpansionKey';
+import {OVERVIEW_COLLAPSED_KEY, OVERVIEW_EXPANSION_KEY} from './OverviewExpansionKey';
 
 type Repository = {
   repoAddress: RepoAddress;
@@ -36,6 +36,7 @@ export const OverviewScheduleTable: React.FC<Props> = ({repos}) => {
   );
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
     OVERVIEW_EXPANSION_KEY,
+    OVERVIEW_COLLAPSED_KEY,
     allKeys,
   );
 
