@@ -2425,7 +2425,11 @@ class TestEventLogStorage:
 
             materializations = storage.get_event_records(
                 EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION, tags={"dagster/partition/country": "US"}
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    tags={
+                        "dagster/partition/date": "2022-10-13",
+                        "dagster/partition/country": "US",
+                    },
                 )
             )
             assert len(materializations) == 2
