@@ -1,17 +1,12 @@
 # pylint: disable=unused-argument,print-call
 
 import os
-import subprocess
 import time
 from datetime import datetime
 
 import pytest
 import requests
-from dagster_airbyte import (
-    AirbyteManagedElementReconciler,
-    airbyte_resource,
-    load_assets_from_connections,
-)
+from dagster_airbyte import airbyte_resource, load_assets_from_connections
 from dagster_managed_elements import ManagedElementDiff
 from dagster_managed_elements.cli import apply, check
 from dagster_managed_elements.utils import diff_dicts
