@@ -16,12 +16,14 @@ import {OverviewJobsTable} from './OverviewJobsTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
 import {OverviewJobsQuery} from './types/OverviewJobsQuery';
+import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewJobsRoot = () => {
   useTrackPageView();
 
   const [searchValue, setSearchValue] = React.useState('');
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+
   const repoCount = allRepos.length;
 
   const queryResultOverview = useQuery<OverviewJobsQuery>(OVERVIEW_JOBS_QUERY, {
@@ -33,33 +35,25 @@ export const OverviewJobsRoot = () => {
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.
-  const repoBuckets = React.useMemo(() => buildBuckets(data), [data]);
+  const repoBuckets = React.useMemo(() => {
+    const visibleKeys = visibleRepoKeys(visibleRepos);
+    return buildBuckets(data).filter(({repoAddress}) =>
+      visibleKeys.has(repoAddressAsString(repoAddress)),
+    );
+  }, [data, visibleRepos]);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const filteredRepoBuckets = React.useMemo(() => {
-    const visibleRepoKeys = new Set(
-      visibleRepos.map((option) =>
-        repoAddressAsString(
-          buildRepoAddress(option.repository.name, option.repositoryLocation.name),
-        ),
-      ),
-    );
-    return repoBuckets.filter(({repoAddress}) =>
-      visibleRepoKeys.has(repoAddressAsString(repoAddress)),
-    );
-  }, [repoBuckets, visibleRepos]);
-
   const filteredBySearch = React.useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
-    return filteredRepoBuckets
+    return repoBuckets
       .map(({repoAddress, jobs}) => ({
         repoAddress,
         jobs: jobs.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
       .filter(({jobs}) => jobs.length > 0);
-  }, [filteredRepoBuckets, sanitizedSearch]);
+  }, [repoBuckets, sanitizedSearch]);
 
   const content = () => {
     if (loading && !data) {
@@ -73,6 +67,8 @@ export const OverviewJobsRoot = () => {
       );
     }
 
+    const anyReposHidden = allRepos.length > visibleRepos.length;
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -81,9 +77,16 @@ export const OverviewJobsRoot = () => {
               icon="search"
               title="No matching jobs"
               description={
-                <div>
-                  No jobs matching <strong>{searchValue}</strong> were found in this workspace
-                </div>
+                anyReposHidden ? (
+                  <div>
+                    No jobs matching <strong>{searchValue}</strong> were found in the selected
+                    repositories
+                  </div>
+                ) : (
+                  <div>
+                    No jobs matching <strong>{searchValue}</strong> were found in this workspace
+                  </div>
+                )
               }
             />
           </Box>
@@ -95,7 +98,11 @@ export const OverviewJobsRoot = () => {
           <NonIdealState
             icon="search"
             title="No jobs"
-            description="No jobs were found in this workspace"
+            description={
+              anyReposHidden
+                ? 'No jobs were found in the selected repositories'
+                : 'No jobs were found in this workspace'
+            }
           />
         </Box>
       );

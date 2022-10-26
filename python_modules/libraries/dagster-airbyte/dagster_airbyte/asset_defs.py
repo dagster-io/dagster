@@ -590,6 +590,7 @@ class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
+        connection_directories: Optional[List[str]],
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -599,12 +600,15 @@ class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
         )
         self._workspace_id = workspace_id
         self._project_dir = project_dir
+        self._connection_directories = connection_directories
 
     def _get_connections(self) -> List[Tuple[str, AirbyteConnectionMetadata]]:
         connections_dir = os.path.join(self._project_dir, "connections")
 
         output_connections: List[Tuple[str, AirbyteConnectionMetadata]] = []
-        for connection_name in os.listdir(connections_dir):
+
+        connection_directories = self._connection_directories or os.listdir(connections_dir)
+        for connection_name in connection_directories:
 
             connection_dir = os.path.join(connections_dir, connection_name)
             with open(os.path.join(connection_dir, "configuration.yaml"), encoding="utf-8") as f:
@@ -733,6 +737,7 @@ def load_assets_from_airbyte_project(
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
     connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
+    connection_directories: Optional[List[str]] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads an Airbyte project into a set of Dagster assets.
@@ -754,6 +759,9 @@ def load_assets_from_airbyte_project(
             to a basic sanitization function.
         connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which
             takes in connection metadata and returns False if the connection should be excluded from the output assets.
+        connection_directories (Optional[List[str]]): Optional list of connection directories to load assets from.
+            If omitted, all connections in the Airbyte project are loaded. May be faster than connection_filter
+            if the project has many connections or if the connection yaml files are large.
 
     **Examples:**
 
@@ -790,4 +798,5 @@ def load_assets_from_airbyte_project(
         create_assets_for_normalization_tables,
         connection_to_group_fn,
         connection_filter,
+        connection_directories,
     )

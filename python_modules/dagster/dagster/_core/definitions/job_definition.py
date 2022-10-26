@@ -1,5 +1,6 @@
 import importlib
 import os
+import warnings
 from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
@@ -841,17 +842,28 @@ def default_job_io_manager(init_context: "InitResourceContext"):
     # support overriding the default io manager via environment variables
     module_name = os.getenv("DAGSTER_DEFAULT_IO_MANAGER_MODULE")
     attribute_name = os.getenv("DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE")
+    silence_failures = os.getenv("DAGSTER_DEFAULT_IO_MANAGER_SILENCE_FAILURES")
+
     if module_name and attribute_name:
         from dagster._core.execution.build_resources import build_resources
 
-        module = importlib.import_module(module_name)
-        attr = getattr(module, attribute_name)
-        check.invariant(
-            isinstance(attr, IOManagerDefinition),
-            "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE must specify an IOManagerDefinition",
-        )
-        with build_resources({"io_manager": attr}) as resources:
-            return resources.io_manager
+        try:
+            module = importlib.import_module(module_name)
+            attr = getattr(module, attribute_name)
+            check.invariant(
+                isinstance(attr, IOManagerDefinition),
+                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE must specify an IOManagerDefinition",
+            )
+            with build_resources({"io_manager": attr}) as resources:
+                return resources.io_manager
+        except Exception as e:
+            if not silence_failures:
+                raise
+            else:
+                warnings.warn(
+                    f"Failed to load io manager override with module: {module_name} attribute: {attribute_name}: {e}\n"
+                    "Falling back to default io manager."
+                )
 
     # normally, default to the fs_io_manager
     from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
