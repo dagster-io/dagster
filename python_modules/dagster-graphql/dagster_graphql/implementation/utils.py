@@ -9,6 +9,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -118,11 +119,7 @@ class UserFacingGraphQLError(Exception):
 
 
 def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> PipelineSelector:
-    asset_selection = data.get("assetSelection")
-    asset_selection = cast(
-        Optional[List[Dict[str, List[str]]]],
-        check.opt_nullable_list_param(asset_selection, "assetSelection", of_type=dict),
-    )
+    asset_selection = cast(Optional[Iterable[Dict[str, List[str]]]], data.get("assetSelection"))
     return PipelineSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],

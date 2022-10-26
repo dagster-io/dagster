@@ -1,4 +1,4 @@
-from typing import Mapping, Optional, Union, cast
+from typing import Mapping, Optional, cast
 from urllib.parse import urljoin, urlparse
 
 import click

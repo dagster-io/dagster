@@ -20,7 +20,6 @@ from dagster import (
     TextMetadataValue,
     UrlMetadataValue,
 )
-from dagster._core.event_api import EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import StepFailureData

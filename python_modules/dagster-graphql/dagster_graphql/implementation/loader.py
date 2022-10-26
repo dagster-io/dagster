@@ -3,8 +3,6 @@ from enum import Enum
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
-from typing_extensions import TypeAlias, TypedDict
-
 from dagster import DagsterInstance
 from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
