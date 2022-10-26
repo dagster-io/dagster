@@ -19,9 +19,10 @@ export const AssetEventList: React.FC<{
   hasLineage: boolean;
   groups: AssetEventGroup[];
   focused?: AssetEventGroup;
-  setFocused?: (timestamp: AssetEventGroup | undefined) => void;
+  setFocused?: (item: AssetEventGroup | undefined) => void;
 }> = ({groups, focused, setFocused, xAxis}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const focusedRowRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: groups.length,
@@ -31,6 +32,15 @@ export const AssetEventList: React.FC<{
   });
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
+
+  React.useEffect(() => {
+    if (focusedRowRef.current) {
+      const el = focusedRowRef.current;
+      if (el && el instanceof HTMLElement && 'scrollIntoView' in el) {
+        el.scrollIntoView({block: 'nearest'});
+      }
+    }
+  }, [focused]);
 
   return (
     <Container ref={parentRef}>
@@ -43,6 +53,7 @@ export const AssetEventList: React.FC<{
               $height={size}
               $start={start}
               $focused={group === focused}
+              ref={group === focused ? focusedRowRef : undefined}
               onClick={(e) => {
                 // If you're interacting with something in the row, don't trigger a focus change.
                 // Since focus is stored in the URL bar this overwrites any link click navigation.
@@ -80,11 +91,11 @@ const ClickableRow = styled(Row)<{$focused: boolean}>`
   :active,
   :hover {
     outline: none;
-    background: #faf9f7;
+    background: ${Colors.White};
   }
   ${(p) =>
     p.$focused &&
-    `background: #faf9f7;
+    `background: ${Colors.White};
     `}
 `;
 

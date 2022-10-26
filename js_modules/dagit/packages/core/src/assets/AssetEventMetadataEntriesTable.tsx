@@ -45,13 +45,17 @@ export const AssetEventMetadataEntriesTable: React.FC<{
           <React.Fragment key={obs.timestamp}>
             {obs.metadataEntries.map((entry) => (
               <tr key={`metadata-${obs.timestamp}-${entry.label}`}>
-                <td>{entry.label}</td>
                 <td>
-                  <MetadataEntry entry={entry} expandSmallValues={true} />
+                  <Mono>{entry.label}</Mono>
+                </td>
+                <td>
+                  <Mono>
+                    <MetadataEntry entry={entry} expandSmallValues={true} />
+                  </Mono>
                 </td>
                 <td style={{opacity: 0.7}}>
-                  <Box flex={{gap: 8, alignItems: 'center'}}>
-                    <Icon name="observation" size={16} />
+                  <Box flex={{gap: 8}}>
+                    <Icon name="observation" size={16} style={{marginTop: 2}} />
                     <span>
                       {`${obs.stepKey} in `}
                       <Link to={`/instance/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
@@ -85,6 +89,7 @@ const DetailsTable = styled.table`
     border: 1px solid ${Colors.KeylineGray};
     padding: 8px 12px;
     font-size: 14px;
+    vertical-align: top;
   }
 `;
 

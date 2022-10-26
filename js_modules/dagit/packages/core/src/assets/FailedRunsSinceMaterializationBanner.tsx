@@ -23,7 +23,7 @@ export const FailedRunsSinceMaterializationBanner: React.FC<{
               <Link to={`/instance/runs/${runWhichFailedToMaterialize.id}`}>
                 {titleForRun({runId: runWhichFailedToMaterialize.id})}
               </Link>{' '}
-              failed to materialize this asset
+              failed to materialize this asset.
             </span>
           }
         />

@@ -35,7 +35,7 @@ export const AssetPartitionDetail: React.FC<{
       : [];
 
   return (
-    <Box padding={{horizontal: 24}} background={Colors.Gray10} style={{flex: 1}}>
+    <Box padding={{horizontal: 24}} style={{flex: 1}}>
       <Box
         padding={{vertical: 24}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
@@ -47,7 +47,7 @@ export const AssetPartitionDetail: React.FC<{
             {latest ? <Tag intent="success">Materialized</Tag> : <Tag intent="none">Missing</Tag>}
           </Box>
         ) : (
-          <Heading>&nbsp;</Heading>
+          <Heading color={Colors.Gray400}>No Partition Selected</Heading>
         )}
         <div style={{flex: 1}} />
       </Box>

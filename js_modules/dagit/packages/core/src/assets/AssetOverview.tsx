@@ -78,6 +78,18 @@ export const AssetOverview: React.FC<Props> = ({
 
   const assetHasLineage = materializations.some((m) => m.assetLineage.length > 0);
 
+  const onKeyDown = (e: React.KeyboardEvent<any>) => {
+    const shift = {ArrowDown: 1, ArrowUp: -1}[e.key];
+    if (!shift || !focused || e.isDefaultPrevented()) {
+      return;
+    }
+    const next = grouped[grouped.indexOf(focused) + shift];
+    if (next) {
+      e.preventDefault();
+      onSetFocused(next);
+    }
+  };
+
   return (
     <>
       <FailedRunsSinceMaterializationBanner
@@ -94,7 +106,6 @@ export const AssetOverview: React.FC<Props> = ({
         flex={{justifyContent: 'space-between', alignItems: 'center'}}
         border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
         padding={{vertical: 16, left: 24, right: 12}}
-        style={{marginBottom: -1}}
       >
         <Subheading>Activity</Subheading>
         {assetHasDefinedPartitions ? (
@@ -117,8 +128,17 @@ export const AssetOverview: React.FC<Props> = ({
         ) : null}
       </Box>
 
-      <Box style={{flex: 1, minHeight: 0}} flex={{direction: 'row'}}>
-        <Box style={{display: 'flex', flex: 1}} flex={{direction: 'column'}}>
+      <Box
+        style={{flex: 1, minHeight: 0, outline: 'none'}}
+        flex={{direction: 'row'}}
+        onKeyDown={onKeyDown}
+        tabIndex={-1}
+      >
+        <Box
+          style={{display: 'flex', flex: 1}}
+          flex={{direction: 'column'}}
+          background={Colors.Gray50}
+        >
           {loading ? (
             <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
               <Spinner purpose="section" />

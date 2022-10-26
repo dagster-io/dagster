@@ -27,7 +27,7 @@ export const AssetEventDetail: React.FC<{
   const assetLineage = event.__typename === 'MaterializationEvent' ? event.assetLineage : [];
 
   return (
-    <Box padding={{horizontal: 24}} background={Colors.Gray10} style={{flex: 1}}>
+    <Box padding={{horizontal: 24}} style={{flex: 1}}>
       <Box
         padding={{vertical: 24}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
@@ -125,13 +125,13 @@ export const AssetEventDetail: React.FC<{
 };
 
 export const AssetEventDetailEmpty = () => (
-  <Box padding={{horizontal: 24}} background={Colors.Gray10} style={{flex: 1}}>
+  <Box padding={{horizontal: 24}} style={{flex: 1}}>
     <Box
       padding={{vertical: 24}}
       border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       flex={{alignItems: 'center', justifyContent: 'space-between'}}
     >
-      <Heading>&nbsp;</Heading>
+      <Heading color={Colors.Gray400}>No Event Selected</Heading>
     </Box>
     <Box
       style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16}}
