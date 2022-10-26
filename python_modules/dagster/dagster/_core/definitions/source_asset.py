@@ -1,8 +1,7 @@
-from typing_extensions import Protocol, TypeAlias
-from dagster._core.errors import DagsterInvalidObservationError
-from dagster._core.execution.context.compute import OpExecutionContext
 import warnings
 from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
+
+from typing_extensions import Protocol, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -28,7 +27,12 @@ from dagster._core.definitions.utils import (
     DEFAULT_IO_MANAGER_KEY,
     validate_group_name,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvalidObservationError,
+)
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
@@ -36,14 +40,13 @@ from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warn
 if TYPE_CHECKING:
     from dagster._core.execution.context.compute import SourceAssetObserveContext
 
+
 class SourceAssetObserveFunctionWithContext(Protocol):
     @property
     def __name__(self) -> str:
         ...
 
-    def __call__(
-        self, context: "SourceAssetObserveContext"
-    ) -> MetadataUserInput:
+    def __call__(self, context: "SourceAssetObserveContext") -> MetadataUserInput:
         ...
 
 
@@ -179,6 +182,7 @@ class SourceAsset(ResourceAddable):
             return None
         else:
             observe_fn = self.observe_fn
+
             def compute_fn(context: OpExecutionContext) -> None:
                 raw_observation = observe_fn(context)  # type: ignore
                 metadata = _raw_observation_to_metadata(raw_observation)
@@ -196,7 +200,6 @@ class SourceAsset(ResourceAddable):
                     description=self.description,
                 )
             return self._node_def
-
 
     def with_resources(self, resource_defs) -> "SourceAsset":
         from dagster._core.execution.resources_init import get_transitive_required_resource_keys
@@ -278,6 +281,7 @@ class SourceAsset(ResourceAddable):
     def __hash__(self):
         return hash(self.key)
 
+
 def _raw_observation_to_metadata(raw_observation: object) -> MetadataUserInput:
     if isinstance(raw_observation, dict):
         return raw_observation
@@ -285,4 +289,3 @@ def _raw_observation_to_metadata(raw_observation: object) -> MetadataUserInput:
         raise DagsterInvalidObservationError(
             "Source asset observe function must return a metadata dictionary."
         )
-

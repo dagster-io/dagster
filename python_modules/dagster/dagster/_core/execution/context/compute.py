@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
+
 from typing_extensions import TypeAlias
 
 import dagster._check as check
