@@ -51,5 +51,5 @@ reconciler = AirbyteManagedElementReconciler(
     connections=[
         local_json_conn,
     ],
-    delete_unmented_resources=True,
+    delete_unmentioned_resources=True,
 )

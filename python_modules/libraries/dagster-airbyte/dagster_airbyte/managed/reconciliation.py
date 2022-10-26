@@ -565,7 +565,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
         self,
         airbyte: ResourceDefinition,
         connections: Iterable[AirbyteConnection],
-        delete_unmented_resources: bool = False,
+        delete_unmentioned_resources: bool = False,
     ):
         """
         Reconciles Python-specified Airbyte resources with an Airbyte instance.
@@ -573,7 +573,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
         Args:
             airbyte (ResourceDefinition): The Airbyte resource definition to reconcile against.
             connections (Iterable[AirbyteConnection]): The Airbyte connection objects to reconcile.
-            delete_unmented_resources (bool): Whether to delete resources that are not mentioned in
+            delete_unmentioned_resources (bool): Whether to delete resources that are not mentioned in
                 the set of connections provided. When True, all Airbyte instance contents are effectively
                 managed by the reconciler. Defaults to False.
         """
@@ -584,7 +584,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
             check.iterable_param(connections, "connections", of_type=AirbyteConnection)
         )
         self._delete_unmentioned_resources = check.bool_param(
-            delete_unmented_resources, "delete_unmented_resources"
+            delete_unmentioned_resources, "delete_unmentioned_resources"
         )
 
         super().__init__()
