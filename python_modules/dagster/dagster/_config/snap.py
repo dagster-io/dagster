@@ -236,9 +236,7 @@ class ConfigFieldSnap(
         )
 
 
-def snap_from_field(name, field):
-    check.str_param(name, "name")
-    check.inst_param(field, "field", Field)
+def snap_from_field(name: str, field: Field):
     return ConfigFieldSnap(
         name=name,
         type_key=field.config_type.key,
@@ -253,7 +251,6 @@ def snap_from_field(name, field):
 
 # type-ignores here are temporary until config type system overhauled
 def snap_from_config_type(config_type: ConfigType) -> ConfigTypeSnap:
-    check.inst_param(config_type, "config_type", ConfigType)
     return ConfigTypeSnap(
         key=config_type.key,
         given_name=config_type.given_name,
