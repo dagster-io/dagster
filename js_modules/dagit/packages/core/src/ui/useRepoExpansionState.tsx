@@ -36,7 +36,13 @@ export const useRepoExpansionState = (storageKey: string, allKeys: string[]) => 
 
   const onToggleAll = React.useCallback(
     (expand: boolean) => {
-      setExpandedKeys(expand ? allKeys : []);
+      setExpandedKeys((current) => {
+        const nextExpandedKeys = new Set(current || []);
+        allKeys.forEach((key) => {
+          expand ? nextExpandedKeys.add(key) : nextExpandedKeys.delete(key);
+        });
+        return Array.from(nextExpandedKeys);
+      });
     },
     [allKeys, setExpandedKeys],
   );
