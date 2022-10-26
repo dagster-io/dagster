@@ -218,7 +218,10 @@ def skip_coverage_if_feature_branch():
 
 
 def message_contains(substring: str) -> bool:
-    return any(substring in [os.getenv("BUILDKITE_MESSAGE", ""), get_commit_message("HEAD")])
+    return any(
+        substring in message
+        for message in [os.getenv("BUILDKITE_MESSAGE", ""), get_commit_message("HEAD")]
+    )
 
 
 def skip_if_no_docs_changes():
