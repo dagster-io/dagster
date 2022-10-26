@@ -17,6 +17,8 @@ class OutputNotebookIOManager(IOManager):
         self.asset_key_prefix = asset_key_prefix if asset_key_prefix else []
 
     def get_output_asset_key(self, context: OutputContext):
+        if context.has_asset_key:
+            return None
         return AssetKey([*self.asset_key_prefix, f"{context.step_key}_output_notebook"])
 
     def handle_output(self, context: OutputContext, obj: bytes):

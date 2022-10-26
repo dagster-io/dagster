@@ -1,39 +1,25 @@
-import copy
 import os
 import sys
 import tempfile
 import uuid
-from base64 import b64encode
 from typing import Any, Dict, Mapping, Optional, Set, Union
 
-import cloudpickle as pickle
-import dagster._check as check
-import nbformat
 import papermill
-from dagster import (
-    AssetIn,
-    AssetKey,
-    MetadataValue,
-    Nothing,
-    Output,
-    PartitionsDefinition,
-    ResourceDefinition,
-    asset,
-)
+from dagstermill.compat import ExecutionError
+from dagstermill.factory import get_papermill_parameters, replace_parameters
 from papermill.engines import papermill_engines
+from papermill.iorw import load_notebook_node, write_ipynb
+
+import dagster._check as check
+from dagster import AssetIn, AssetKey, Output, PartitionsDefinition, ResourceDefinition, asset
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import SolidExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._utils import safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagstermill.compat import ExecutionError
-from dagstermill.factory import _find_first_tagged_cell_index, get_papermill_parameters, replace_parameters
-from papermill.iorw import load_notebook_node, write_ipynb
-from papermill.translators import PythonTranslator
 
 from .engine import DagstermillEngine
-
 
 
 def _dm_compute(
@@ -82,7 +68,7 @@ def _dm_compute(
 
                 try:
                     papermill_engines.register("dagstermill", DagstermillEngine)
-                    executed_nb = papermill.execute_notebook(
+                    papermill.execute_notebook(
                         input_path=parameterized_notebook_path,
                         output_path=executed_notebook_path,
                         engine_name="dagstermill",
@@ -106,14 +92,8 @@ def _dm_compute(
             step_execution_context.log.debug(
                 f"Notebook execution complete for {name} at {executed_notebook_path}."
             )
-            return Output(
-                None,
-                metadata={
-                    "latest_successful_executed_notebook": MetadataValue.path(
-                        executed_nb.metadata.get("executed_notebook_path")
-                    )
-                },
-            )
+            with open(executed_notebook_path, "rb") as fd:
+                return Output(fd.read())
 
     return _t_fn
 
@@ -208,7 +188,7 @@ def define_dagstermill_asset(
         op_tags={**user_tags, **default_tags},
         group_name=group_name,
         output_required=False,
-        dagster_type=Nothing,
+        io_manager_key="output_notebook_io_manager",
     )(
         _dm_compute(
             name=name,

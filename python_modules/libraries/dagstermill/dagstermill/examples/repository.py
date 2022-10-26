@@ -6,6 +6,7 @@ import dagstermill
 from dagstermill.io_managers import local_output_notebook_io_manager
 
 from dagster import (
+    AssetIn,
     Field,
     FileHandle,
     In,
@@ -14,10 +15,12 @@ from dagster import (
     Out,
     ResourceDefinition,
     String,
+    asset,
     fs_io_manager,
     job,
     repository,
     resource,
+    with_resources,
 )
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.storage.file_manager import local_file_manager
@@ -68,15 +71,6 @@ def test_nb_op(name, **kwargs):
         output_notebook_name="notebook",
         outs=outs,
         **kwargs,
-    )
-
-def test_nb_asset(name, **kwargs):
-    path = kwargs.pop("path", nb_test_path(name))
-
-    return dagstermill.define_dagstermill_asset(
-        name=name,
-        notebook_path=path,
-        **kwargs
     )
 
 
@@ -539,12 +533,6 @@ def hello_world_with_output_notebook_pipeline_legacy():
     load_notebook_legacy(notebook)
 
 
-###################################################################################################
-# Assets
-###################################################################################################
-
-hello_world_asset = test_nb_asset(name="hello_world")
-
 @repository
 def notebook_repo():
     pipelines = [
@@ -576,8 +564,79 @@ def notebook_repo():
 
     return pipelines
 
+
+###################################################################################################
+# Assets
+###################################################################################################
+
+hello_world_asset = dagstermill.define_dagstermill_asset(
+    name="hello_world_asset", notebook_path=nb_test_path("hello_world")
+)
+
+hello_world_with_custom_tags_and_description_asset = dagstermill.define_dagstermill_asset(
+    name="hello_world_custom_asset",
+    notebook_path=nb_test_path("hello_world"),
+    op_tags={"foo": "bar"},
+    description="custom description",
+)
+
+hello_world_config_asset = dagstermill.define_dagstermill_asset(
+    "hello_world_config_asset",
+    notebook_path=nb_test_path("hello_world_config"),
+    config_schema={"greeting": Field(String, is_required=False, default_value="hello")},
+)
+
+
+goodbye_config_asset = dagstermill.define_dagstermill_asset(
+    name="goodbye_config_asset",
+    notebook_path=nb_test_path("print_dagstermill_context_solid_config"),
+    config_schema={"farewell": Field(String, is_required=False, default_value="goodbye")},
+)
+
+hello_logging_asset = dagstermill.define_dagstermill_asset(
+    name="hello_logging_asset", notebook_path=nb_test_path("hello_logging")
+)
+
+
+@asset
+def a():
+    return 1
+
+
+@asset
+def b():
+    return 2
+
+
+add_two_number_asset = dagstermill.define_dagstermill_asset(
+    name="add_two_numbers_asset",
+    notebook_path=nb_test_path("add_two_numbers"),
+    ins={"a": AssetIn("a"), "b": AssetIn("b")},
+)
+
+hello_world_resource_asset = dagstermill.define_dagstermill_asset(
+    "hello_world_resource_asset",
+    notebook_path=nb_test_path("hello_world_resource"),
+    required_resource_keys={"list"},
+)
+
+
 @repository
 def notebook_assets_repo():
-    return [
-        hello_world_asset
-    ]
+    return with_resources(
+        [
+            hello_world_asset,
+            hello_world_with_custom_tags_and_description_asset,
+            hello_world_config_asset,
+            goodbye_config_asset,
+            hello_logging_asset,
+            a,
+            b,
+            add_two_number_asset,
+            hello_world_resource_asset,
+        ],
+        resource_defs={
+            "list": ResourceDefinition(lambda _: []),
+            "output_notebook_io_manager": local_output_notebook_io_manager,
+        },
+    )

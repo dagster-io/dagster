@@ -1,9 +1,9 @@
 from dagster._core.utils import check_dagster_package_version
 
+from .asset_factory import define_dagstermill_asset
 from .context import DagstermillExecutionContext
 from .errors import DagstermillError
 from .factory import define_dagstermill_op
-from .asset_factory import define_dagstermill_asset
 from .io_managers import local_output_notebook_io_manager
 from .manager import MANAGER_FOR_NOTEBOOK_INSTANCE as _MANAGER_FOR_NOTEBOOK_INSTANCE
 from .version import __version__
