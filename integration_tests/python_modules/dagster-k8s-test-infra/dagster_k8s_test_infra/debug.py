@@ -40,13 +40,14 @@ def upload_buildkite_artifact(artifact_file):
 
 
 def export_runs(instance):
+    print("Exporting runs")
     for run in instance.get_runs():
         with tempfile.TemporaryDirectory() as tempdir:
             output_file = Path(tempdir) / f"{current_test()}-{run.run_id}.txt"
             output_file.touch()
 
         try:
-            export_run(instance, run, output_file)
+            export_run(instance, run, str(output_file))
         except Exception as e:
             print(f"Hit an error exporting dagster-debug {output_file}: {e}")
             continue
@@ -54,6 +55,7 @@ def export_runs(instance):
 
 
 def export_postgres(url):
+    print("Exporting postgres")
     with tempfile.TemporaryDirectory() as tempdir:
         output_file = Path(tempdir) / f"{current_test()}-postgres.txt"
         output_file.touch()
@@ -62,6 +64,7 @@ def export_postgres(url):
 
 
 def export_kind():
+    print("Exporting kind")
     with tempfile.TemporaryDirectory() as tempdir:
         output_directory = Path(tempdir) / "kind-info-dump"
         subprocess.run(
