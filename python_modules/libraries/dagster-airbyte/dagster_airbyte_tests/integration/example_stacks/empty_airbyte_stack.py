@@ -20,5 +20,5 @@ reconciler = AirbyteManagedElementReconciler(
 reconciler_no_delete = AirbyteManagedElementReconciler(
     airbyte=airbyte_instance,
     connections=[],
-    delete_unmented_resources=False,
+    delete_unmentioned_resources=False,
 )

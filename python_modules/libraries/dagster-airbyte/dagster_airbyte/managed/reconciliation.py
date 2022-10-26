@@ -121,7 +121,7 @@ def reconcile_sources(
 
     diff = ManagedElementDiff()
 
-    initialized_sources = {}
+    initialized_sources: Dict[str, InitializedAirbyteSource] = {}
     for source_name in set(config_sources.keys()).union(existing_sources.keys()):
         configured_source = config_sources.get(source_name)
         existing_source = existing_sources.get(source_name)
@@ -206,7 +206,7 @@ def reconcile_destinations(
 
     diff = ManagedElementDiff()
 
-    initialized_destinations = {}
+    initialized_destinations: Dict[str, InitializedAirbyteDestination] = {}
     for destination_name in set(config_destinations.keys()).union(existing_destinations.keys()):
         configured_destination = config_destinations.get(destination_name)
         existing_destination = existing_destinations.get(destination_name)
@@ -233,7 +233,9 @@ def reconcile_destinations(
                     endpoint="/destinations/delete",
                     data={"destinationId": existing_destination.destination_id},
                 )
-        elif configured_destination:
+            existing_destination = None
+
+        if configured_destination:
             defn_id = res.get_destination_definition_by_name(
                 configured_destination.destination_type, workspace_id
             )
@@ -276,7 +278,6 @@ def reconcile_destinations(
                 destination_id=destination_id,
                 destination_definition_id=defn_id,
             )
-
     return initialized_destinations, diff
 
 
@@ -556,6 +557,7 @@ def reconcile_connections_post(
             if not dry_run:
                 source = init_sources[config_conn.source.name]
                 destination = init_dests[config_conn.destination.name]
+
                 res.make_request(
                     endpoint="/connections/create",
                     data={

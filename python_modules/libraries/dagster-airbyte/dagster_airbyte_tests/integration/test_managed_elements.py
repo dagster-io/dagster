@@ -7,7 +7,11 @@ from datetime import datetime
 
 import pytest
 import requests
-from dagster_airbyte import airbyte_resource, load_assets_from_connections
+from dagster_airbyte import (
+    AirbyteManagedElementReconciler,
+    airbyte_resource,
+    load_assets_from_connections,
+)
 from dagster_managed_elements import ManagedElementDiff
 from dagster_managed_elements.cli import apply, check
 from dagster_managed_elements.utils import diff_dicts
@@ -22,46 +26,25 @@ from .example_stacks import example_airbyte_stack
 pytest_plugins = ["dagster_test.fixtures"]
 
 
-@pytest.fixture(name="docker_compose_file")
+@pytest.fixture(name="docker_compose_file", scope="session")
 def docker_compose_file_fixture():
     return file_relative_path(__file__, "docker-compose.yml")
 
 
-@pytest.fixture(name="docker_compose_env_file")
+@pytest.fixture(name="docker_compose_env_file", scope="session")
 def docker_compose_env_file_fixture():
     return file_relative_path(__file__, "docker-compose.env")
 
 
 RETRY_DELAY_SEC = 5
 STARTUP_TIME_SEC = 120
-AIRBYTE_VOLUMES = [
-    "airbyte_integration_tests_data",
-    "airbyte_integration_tests_db",
-    "airbyte_integration_tests_workspace",
-]
 
 
-def _cleanup_docker(docker_compose_file, docker_compose_env_file):
-    subprocess.check_output(
-        ["docker-compose", "--env-file", docker_compose_env_file, "-f", docker_compose_file, "stop"]
-    )
-    subprocess.check_output(
-        [
-            "docker-compose",
-            "--env-file",
-            docker_compose_env_file,
-            "-f",
-            docker_compose_file,
-            "rm",
-            "-f",
-        ]
-    )
-    subprocess.check_output(["docker", "volume", "rm"] + AIRBYTE_VOLUMES)
-
-
-@pytest.fixture(name="docker_compose_airbyte_instance")
+@pytest.fixture(name="docker_compose_airbyte_instance", scope="module")
 def docker_compose_airbyte_instance_fixture(
-    docker_compose_cm, docker_compose_file, docker_compose_env_file
+    docker_compose_cm,
+    docker_compose_file,
+    docker_compose_env_file,
 ):
     """
     Spins up an Airbyte instance using docker-compose, and tears it down after the test.
@@ -102,6 +85,19 @@ def docker_compose_airbyte_instance_fixture(
             yield webapp_host
 
 
+@pytest.fixture(name="empty_airbyte_instance")
+def empty_airbyte_instance_fixture(docker_compose_airbyte_instance):
+    """
+    Ensures that the docker-compose Airbyte instance is empty before running a test.
+    """
+
+    apply(TEST_ROOT_DIR, "empty_airbyte_stack:reconciler")
+
+    yield docker_compose_airbyte_instance
+
+    apply(TEST_ROOT_DIR, "empty_airbyte_stack:reconciler")
+
+
 @pytest.fixture(name="airbyte_source_files")
 def airbyte_source_files_fixture():
     FILES = ["sample_file.json", "different_sample_file.json"]
@@ -113,7 +109,7 @@ def airbyte_source_files_fixture():
             f.write(contents)
 
 
-def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files):
+def test_basic_integration(empty_airbyte_instance, airbyte_source_files):
 
     ab_instance = airbyte_resource.configured(
         {
@@ -225,7 +221,7 @@ def test_basic_integration(docker_compose_airbyte_instance, airbyte_source_files
         )
 
 
-def test_change_source_and_destination(docker_compose_airbyte_instance, airbyte_source_files):
+def test_change_source_and_destination(empty_airbyte_instance, airbyte_source_files):
 
     # Set up example element and ensure no diff
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
@@ -252,6 +248,9 @@ def test_change_source_and_destination(docker_compose_airbyte_instance, airbyte_
     apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_source")
     assert apply_result == expected_diff
 
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_source")
+    assert check_result == ManagedElementDiff()
+
     # Return to original state
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
 
@@ -274,3 +273,6 @@ def test_change_source_and_destination(docker_compose_airbyte_instance, airbyte_
 
     apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
     assert apply_result == expected_diff
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
+    assert check_result == ManagedElementDiff()

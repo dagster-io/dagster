@@ -83,7 +83,7 @@ reconciler_different_source = AirbyteManagedElementReconciler(
     connections=[
         alt_source_local_json_conn,
     ],
-    delete_unmented_resources=True,
+    delete_unmentioned_resources=True,
 )
 
 
@@ -111,5 +111,5 @@ reconciler_different_dest = AirbyteManagedElementReconciler(
     connections=[
         alt_dest_local_json_conn,
     ],
-    delete_unmented_resources=True,
+    delete_unmentioned_resources=True,
 )
