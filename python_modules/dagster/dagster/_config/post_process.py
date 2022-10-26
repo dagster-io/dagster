@@ -44,7 +44,7 @@ def _recursively_process_config(
         return evr
 
 
-def _recursively_resolve_defaults( # type: ignore # mypy missing check.failed NoReturn
+def _recursively_resolve_defaults(  # type: ignore # mypy missing check.failed NoReturn
     context: TraversalContext, config_value: Any
 ) -> EvaluateValueResult:
     kind = context.config_type.kind
