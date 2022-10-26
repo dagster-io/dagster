@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union
 
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
         GrapheneWorkspace,
     )
     from dagster_graphql.schema.util import HasContext
+
 
 def get_full_external_job_or_raise(
     graphene_info: HasContext, selector: PipelineSelector
