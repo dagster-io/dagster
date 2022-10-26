@@ -296,12 +296,8 @@ class PackageSpec(
             return None
 
         for change in ChangedFiles.all:
-            if (
-                # Our change is in this package's directory
-                (Path(self.directory) in change.parents)
-                # The file can alter behavior - exclude things like README changes
-                and (change.suffix in [".py", ".cfg", ".toml"] or change.name == "requirements.txt")
-            ):
+            # Our change is in this package's directory
+            if Path(self.directory) in change.parents:
                 logging.info(f"Building {self.name} because it has changed")
                 return None
 
