@@ -32,13 +32,15 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidObservationError,
 )
-from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
 
 if TYPE_CHECKING:
-    from dagster._core.execution.context.compute import SourceAssetObserveContext
+    from dagster._core.execution.context.compute import (
+        OpExecutionContext,
+        SourceAssetObserveContext,
+    )
 
 
 class SourceAssetObserveFunctionWithContext(Protocol):
