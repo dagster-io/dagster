@@ -63,8 +63,8 @@ AssetEventTagsTable = db.Table(
         autoincrement=True,
     ),
     db.Column("event_id", db.Integer, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
-    db.Column("asset_key", db.Text),
-    db.Column("key", db.Text),
+    db.Column("asset_key", db.Text, nullable=False),
+    db.Column("key", db.Text, nullable=False),
     db.Column("value", db.Text),
 )
 
@@ -84,7 +84,6 @@ db.Index(
     AssetEventTagsTable.c.asset_key,
     AssetEventTagsTable.c.key,
     AssetEventTagsTable.c.value,
-    postgresql_where=(AssetEventTagsTable.c.asset_key != None),
     mysql_length={"asset_key": 64, "key": 64, "value": 64},
 )
 db.Index(
