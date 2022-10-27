@@ -19,7 +19,7 @@
 
 ### Community Contributions
 
-- Fixed a bug where asset keys with `-` were not being properly sanitized. Thanks @peay!
+- Fixed a bug where asset keys with `-` were not being properly sanitized in some situations. Thanks @peay!
 - [dagster-airbyte] A list of connection directories can now be specified in `load_assets_from_airbyte_project`. Thanks @adam-bloom!
 - [dagster-gcp] Dagster will now retry connecting to GCS if it gets a `ServiceUnavailable` error. Thanks @cavila-evoliq!
 - [dagster-postgres] Use of SQLAlchemy engine instead of psycopg2 when subscribing to PostgreSQL events. Thanks @peay!
