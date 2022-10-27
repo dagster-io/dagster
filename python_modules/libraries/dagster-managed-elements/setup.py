@@ -32,7 +32,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_managed_elements_tests*"]),
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.0.15",
         "requests",
     ],
     zip_safe=False,
