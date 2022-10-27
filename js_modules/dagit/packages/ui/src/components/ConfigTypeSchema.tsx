@@ -186,12 +186,79 @@ export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
   }
 
   return (
-    <TypeSchemaContainer>
-      <DictBlockComment content={type.description} indent="" />
-      {renderTypeRecursive(type, typeLookup, 0, props)}
-    </TypeSchemaContainer>
+    <HoveredDictEntryContextProvider>
+      <TypeSchemaContainer>
+        <DictBlockComment content={type.description} indent="" />
+        {renderTypeRecursive(type, typeLookup, 0, props)}
+      </TypeSchemaContainer>
+    </HoveredDictEntryContextProvider>
   );
 });
+
+const HoveredDictEntryContext = React.createContext<{setHovered: (unhover: () => void) => void}>({
+  setHovered: (_) => {},
+});
+
+/**
+ * Very cheap way to make sure only 1 dict entry is hovered at a time.
+ * We simply record the unhover function for thast hovered dict entry and call it whenever
+ * a new dict entry is hovered. This is cheaper than updating every dict entry via context
+ * because we don't cause every dict entry to re-render. Only the two being hovered/unhovered.
+ */
+const HoveredDictEntryContextProvider = React.memo(({children}: {children: React.ReactNode}) => {
+  const value = React.useMemo(() => {
+    let currentUnhover: null | (() => void) = null;
+    return {
+      setHovered(unhover: typeof currentUnhover) {
+        if (currentUnhover) {
+          currentUnhover();
+        }
+        currentUnhover = unhover;
+      },
+    };
+  }, []);
+  return (
+    <HoveredDictEntryContext.Provider value={value}>{children}</HoveredDictEntryContext.Provider>
+  );
+});
+
+const DictEntry = React.forwardRef(
+  (
+    props: React.ComponentProps<typeof DictEntryDiv>,
+    ref: React.ForwardedRef<HTMLButtonElement>,
+  ) => {
+    const [hovered, setHovered] = React.useState(false);
+    const {setHovered: setHoveredGlobally} = React.useContext(HoveredDictEntryContext);
+
+    return (
+      <DictEntryDiv
+        {...props}
+        $hovered={hovered}
+        onMouseEnter={() => {
+          setHovered(true);
+          setHoveredGlobally(() => {
+            setHovered(false);
+          });
+        }}
+        onMouseLeave={() => {
+          setHovered(false);
+        }}
+        ref={ref}
+      />
+    );
+  },
+);
+const DictEntryDiv = styled.div<{$hovered: boolean}>`
+  ${({$hovered}) =>
+    $hovered
+      ? `
+      box-shadow: inset 0 0 0 1px ${Colors.Gray200};
+      background-color: ${Colors.Gray100};
+      font-weight: 400;
+    `
+      : ``}
+  }
+`;
 
 const TypeSchemaContainer = styled.code`
   color: ${Colors.Gray400};
@@ -200,8 +267,6 @@ const TypeSchemaContainer = styled.code`
   font-size: 14px;
   line-height: 18px;
 `;
-
-const DictEntry = styled.div``;
 
 const DictKey = styled.span<{theme: ConfigTypeSchemaTheme | undefined}>`
   color: ${({theme}) => (theme === 'dark' ? Colors.White : Colors.Dark)};
