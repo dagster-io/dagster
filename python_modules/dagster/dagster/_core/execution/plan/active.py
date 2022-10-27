@@ -475,6 +475,21 @@ class ActiveExecution:
             parent_state=self._plan.known_state.parent_state,
         )
 
+    def get_known_state_for_step(self, step: ExecutionStep) -> KnownExecutionState:
+        ready_outputs_for_step = set()
+        for ready_output in self._step_outputs:
+            for step_input in step.step_inputs:
+                if ready_output in step_input.source.step_output_handle_dependencies:
+                    ready_outputs_for_step.add(ready_output)
+
+        return KnownExecutionState(
+            previous_retry_attempts=self._retry_state.snapshot_attempts(),
+            dynamic_mappings=dict(self._successful_dynamic_outputs),
+            ready_outputs=ready_outputs_for_step,
+            step_output_versions=self._plan.known_state.step_output_versions,
+            parent_state=self._plan.known_state.parent_state,
+        )
+
     def _prep_for_dynamic_outputs(self, step: ExecutionStep):
         dyn_outputs = [step_out for step_out in step.step_outputs if step_out.is_dynamic]
 

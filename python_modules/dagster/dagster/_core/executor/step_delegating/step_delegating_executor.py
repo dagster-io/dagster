@@ -71,6 +71,8 @@ class StepDelegatingExecutor(Executor):
     def _get_step_handler_context(
         self, plan_context, steps, active_execution
     ) -> StepHandlerContext:
+        step = steps[0]
+        known_state = active_execution.get_known_state_for_step(step.key)
         return StepHandlerContext(
             instance=plan_context.plan_data.instance,
             plan_context=plan_context,
@@ -81,7 +83,7 @@ class StepDelegatingExecutor(Executor):
                 step_keys_to_execute=[step.key for step in steps],
                 instance_ref=plan_context.plan_data.instance.get_ref(),
                 retry_mode=self.retries.for_inner_plan(),
-                known_state=active_execution.get_known_state(),
+                known_state=known_state,
                 should_verify_step=self._should_verify_step,
             ),
             pipeline_run=plan_context.pipeline_run,
