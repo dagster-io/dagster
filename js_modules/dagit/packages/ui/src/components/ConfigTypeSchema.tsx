@@ -273,23 +273,31 @@ const DictEntry = React.forwardRef(
     ).useDictEntryHover();
 
     return (
-      <DictEntryDiv
-        {...props}
-        $hovered={hovered}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        ref={ref}
-      />
+      <DictEntryDiv2>
+        <DictEntryDiv
+          {...props}
+          $hovered={hovered}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          ref={ref}
+        />
+      </DictEntryDiv2>
     );
   },
 );
+
+const DictEntryDiv2 = styled.div``;
 const DictEntryDiv = styled.div<{$hovered: boolean}>`
+  border: 1px solid transparent;
+
   ${({$hovered}) =>
     $hovered
       ? `
-      box-shadow: inset 0 0 0 1px ${Colors.Gray200};
+      border: 1px solid ${Colors.Gray200};
       background-color: ${Colors.Gray100};
-      font-weight: 400;
+      >${DictEntryDiv2} {
+        background-color: ${Colors.Gray50};
+      }
     `
       : ``}
   }
