@@ -1,5 +1,35 @@
 # Changelog
 
+# 1.0.15 (core) / 0.16.15 (libraries)
+
+### New
+
+- [dagit] The run timeline now shows all future schedule ticks for the visible time window, not just the next ten ticks.
+- [dagit] Asset graph views in Dagit refresh as materialization events arrive, making it easier to watch your assets update in real-time.
+- [dagster-airbyte] Added support for basic auth login to the Airbyte resource.
+- [Configuring a Python Log Level](https://docs.dagster.io/concepts/logging/python-logging#configuring-a-python-log-level-) will now also apply to system logs created by Dagster during a run.
+
+### Bugfixes
+
+- Fixed a bug that broke asset partition mappings when using the `key_prefix` with methods like `load_assets_from_modules`.
+- [dagster-dbt] When running dbt Cloud jobs with the dbt_cloud_run_op, the op would emit a failure if the targeted job did not create a run_results.json artifact, even if this was the expected behavior. This has been fixed.
+- Improved performance by adding database indexes which should speed up the run view as well as a range of asset-based queries.  These migrations can be applied by running `dagster instance migrate`.
+- An issue that would cause schedule/sensor latency in the daemon during workspace refreshes has been resolved.
+- [dagit] Shift-clicking Materialize for partitioned assets now shows the asset launchpad, allowing you to launch execution of a partition with config.
+
+### Community Contributions
+
+- Fixed a bug where asset keys with `-` were not being properly sanitized. Thanks @peay!
+- [dagster-airbyte] A list of connection directories can now be specified in `load_assets_from_airbyte_project`. Thanks @adam-bloom!
+- [dagster-gcp] Dagster will now retry connecting to GCS if it gets a `ServiceUnavailable` error. Thanks @cavila-evoliq!
+- [dagster-postgres] Use of SQLAlchemy engine instead of psycopg2 when subscribing to PostgreSQL events. Thanks @peay!
+
+### Experimental
+
+- [dagster-dbt] Added a `display_raw_sql` flag to the dbt asset loading functions. If set to False, this will remove the raw sql blobs from the asset descriptions. For large dbt projects, this can significantly reduce the size of the generated workspace snapshots.
+- [dagit] A “New asset detail pages” feature flag available in Dagit’s settings allows you to preview some upcoming changes to the way historical materializations and partitions are viewed.
+
+
 # 1.0.14 (core) / 0.16.14 (libraries)
 
 ### New
