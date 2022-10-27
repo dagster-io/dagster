@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from abc import abstractmethod
-from typing import Any, List
+from typing import Any, List, Union
 
 from upath import UPath
 
@@ -20,6 +20,12 @@ from dagster import _check as check
 class UPathIOManagerBase(MemoizableIOManager):
     """
     Abstract IOManager base class compatible with local and cloud storage via `fsspec` (using `universal-pathlib`).
+    What it handles for the use:
+     - working with any filesystem supported by `fsspec`
+     - handling loading multiple upstream asset partitions via PartitionMapping
+     - the `get_metadata` method can be customized to add additional metadata to the outputs
+     - the `allow_missing_partitions: bool` metadata value can control
+     either raising an error or skipping on missing partitions
     """
 
     extension: str = ""  # override in child class
@@ -36,33 +42,45 @@ class UPathIOManagerBase(MemoizableIOManager):
         return self.get_path(context).exists()
 
     @abstractmethod
-    def serialize(self, obj: Any, path: UPath, context: OutputContext):
+    def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
         """
-        Child classes should override this method.
-        :param obj:
-        :param path:
-        :return:
+        Child classes should override this method to write the object to the filesystem.
+
+        Args:
+            context:
+            obj:
+            path:
+
+        Returns:
+
         """
         ...
 
     @abstractmethod
-    def deserialize(self, path: UPath, context: InputContext) -> Any:
+    def load_from_path(self, context: InputContext, path: UPath) -> Any:
         """
-        Child classes should override this method.
-        The `context` argument can be used to control the IOManager behavior (via `context.metadata`).
-        :param path:
-        :param context:
-        :return:
+        Child classes should override this method to load the object from the filesystem.
+
+        Args:
+            context:
+            path:
+
+        Returns:
+
         """
         ...
 
     @staticmethod
-    def get_metadata(obj: Any, context: OutputContext) -> dict[str, MetadataValue]:
+    def get_metadata(context: OutputContext, obj: Any) -> dict[str, MetadataValue]:
         """
         Child classes should override this method to add custom metadata to the outputs.
-        :param obj:
-        :param context:
-        :return:
+
+        Args:
+            context:
+            obj:
+
+        Returns:
+
         """
         return {}
 
@@ -82,7 +100,7 @@ class UPathIOManagerBase(MemoizableIOManager):
 
         return self._base_path.joinpath(*context_path).with_suffix(self.extension)
 
-    def load_input(self, context: InputContext) -> Any | list[Any]:
+    def load_input(self, context: InputContext) -> Union[Any, List[Any]]:
         # In this load_input function, we vary the behavior based on the type of the downstream input
         # if the type is a List, we load a list of mapped partitions.
         path = self.get_path(context)
@@ -90,11 +108,12 @@ class UPathIOManagerBase(MemoizableIOManager):
         allow_missing_partitions = context.metadata.get("allow_missing_partitions", False)
 
         # unfortunately, this doesn't work for Python 3.7 : inspect.get_annotations(self.serialize)["obj"]
-        expected_type = inspect.signature(self.serialize).parameters["obj"].annotation
+        expected_type = inspect.signature(self.dump_to_path).parameters["obj"].annotation
 
         # FIXME: use a custom PartitionsList type instead of List
-        if context.dagster_type.typing_type.__origin__ in (List, list) and issubclass(
-            context.dagster_type.typing_type.__args__[0], expected_type
+        if (
+            context.dagster_type.typing_type.__origin__ in (List, list)
+            and context.dagster_type.typing_type.__args__[0] == expected_type
         ):
             # load multiple partitions
             if not context.has_asset_partitions:
@@ -123,7 +142,7 @@ class UPathIOManagerBase(MemoizableIOManager):
                     f"Loading partition from {path_with_partition} using {self.__class__.__name__}"
                 )
                 try:
-                    obj = self.deserialize(path_with_partition, context)
+                    obj = self.load_from_path(context=context, path=path_with_partition)
                     objs.append(obj)
                 except FileNotFoundError as e:
                     if not allow_missing_partitions:
@@ -134,7 +153,7 @@ class UPathIOManagerBase(MemoizableIOManager):
             return objs
         elif issubclass(context.dagster_type.typing_type.__args__[0], expected_type):
             context.log.debug(f"Loading from {path} using {self.__class__.__name__}")
-            obj = self.deserialize(path, context)
+            obj = self.load_from_path(context=context, path=path)
             context.add_input_metadata(
                 {
                     "path": MetadataValue.path(path),
@@ -143,16 +162,19 @@ class UPathIOManagerBase(MemoizableIOManager):
             return obj
         else:
             return check.failed(
-                f"Inputs of type {context.dagster_type} not supported. Please specify "
-                "for this input either in the op signature, corresponding In or in the IOManager annotations."
+                f"Inputs of type {context.dagster_type} are not supported. Expected {expected_type}. "
+                f"Please specify the correct type for this input either in the op signature, "
+                f"corresponding In or in the IOManager annotations."
             )
 
     def handle_output(self, context: OutputContext, obj: Any):
         path = self.get_path(context)
         path.parent.mkdir(parents=True, exist_ok=True)
         context.log.debug(f"Saving to {path} using {self.__class__.__name__}")
-        self.serialize(obj, path, context)
+        self.dump_to_path(context=context, obj=obj, path=path)
 
-        context.add_output_metadata(
-            {"path": MetadataValue.path(path), **self.get_metadata(obj, context)}
-        )
+        metadata = {"path": MetadataValue.path(path)}
+        custom_metadata = self.get_metadata(obj, context)
+        metadata.update(custom_metadata)  # type: ignore
+
+        context.add_output_metadata(metadata)
