@@ -539,24 +539,6 @@ class AssetsDefinition(ResourceAddable):
                 else AllPartitionMapping(),
             )
 
-    def with_freshness_policies(
-        self,
-        freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
-    ):
-        return self.__class__(
-            keys_by_input_name=self._keys_by_input_name,
-            keys_by_output_name=self._keys_by_output_name,
-            node_def=self.node_def,
-            partitions_def=self.partitions_def,
-            partition_mappings=self._partition_mappings,
-            asset_deps=self.asset_deps,
-            can_subset=self.can_subset,
-            selected_asset_keys=self._selected_asset_keys,
-            resource_defs=self.resource_defs,
-            group_names_by_key=self.group_names_by_key,
-            freshness_policies_by_key=freshness_policies_by_key,
-        )
-
     def get_output_name_for_asset_key(self, key: AssetKey) -> str:
         for output_name, asset_key in self.keys_by_output_name.items():
             if key == asset_key:
