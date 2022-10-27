@@ -166,7 +166,11 @@ def _get_parent_updates(
                 limit=1,
             )
 
-            if parent_materialization_records:
+            parent_materialization_record = (
+                parent_was_materialized_since_latest_planned_materialization()
+            )
+
+            if parent_materialization_record:
                 parent_materialization_record = parent_materialization_records[0]
 
                 # if the run for the materialization of p also materialized current_asset, we
@@ -196,6 +200,17 @@ def _get_parent_updates(
                 parent_asset_event_records[p] = (False, None)
 
     return parent_asset_event_records
+
+
+def parent_was_materialized_since_latest_planned_materialization():
+    """
+    Returns true if there exists a materialization of parent asset X that occurred after the latest
+    planned materialization of asset Y
+
+    Two different ways to know about the latest planned materialization of asset Y:
+    - It's recorded in the sensor cursor
+    - It's in the database
+    """
 
 
 def _make_sensor(
@@ -261,6 +276,23 @@ def _make_sensor(
         # parents
         for current_asset_key in toposort_assets:
             current_asset_cursor = cursor_dict.get(str(current_asset_key))
+
+            # find out whether each parent asset partition was updated since the latest time we care
+            # about for that parent asset partition
+
+            # what's the latest time we care about? after the latest planned materialization for that asset partition
+
+            # how do we represent whether each parent asset partition was updated?
+            # maybe brute-forcing it isn't so bad? it will only be a large amount in the case of a backfill, which isn't so bad
+
+            # for each partition of the current asset, decide whether to materialize it based on
+            # the combination of partition mappings and AND vs. OR policy
+
+            # we implement this with a forward pass and a backward pass:
+            # - forward pass: find every downstream asset partition of every updated parent partition
+            # - backward pass (only needed if AND): find every upstream asset partition of the downstream asset partition discovered in the forward pass
+
+            # launch those partitions
 
             parent_update_records = _get_parent_updates(
                 context,
