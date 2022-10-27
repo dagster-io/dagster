@@ -2,7 +2,18 @@ import inspect
 import os
 import sys
 from functools import lru_cache
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    List,
+    NamedTuple,
+    Optional,
+    Union,
+    overload,
+)
 
 import dagster._check as check
 import dagster._seven as seven
