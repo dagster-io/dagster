@@ -1,0 +1,8 @@
+load_from:
+  - python_package:
+      package_name: assets_notebook
+      attribute: jupyter_repository
+  # uncomment the lines below to show the Noteable repository in Dagit
+  # - python_package:
+  #     package_name: assets_notebook
+  #     attribute: noteable_repository
