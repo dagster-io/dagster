@@ -2,7 +2,6 @@ import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {Route, Switch, useParams} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
@@ -24,7 +23,6 @@ import {repoAddressFromPath} from './repoAddressFromPath';
 const RepoRouteContainer = () => {
   const {repoPath} = useParams<{repoPath: string}>();
   const workspaceState = React.useContext(WorkspaceContext);
-  const {flagNewWorkspace} = useFeatureFlags();
   const addressForPath = repoAddressFromPath(repoPath);
 
   // A RepoAddress could not be created for this path, which means it's invalid.
@@ -82,36 +80,24 @@ const RepoRouteContainer = () => {
 
   return (
     <Switch>
-      {flagNewWorkspace ? (
-        <Route path="/workspace/:repoPath/assets" exact>
-          <WorkspaceAssetsRoot repoAddress={addressForPath} />
-        </Route>
-      ) : null}
-      {flagNewWorkspace ? (
-        <Route path="/workspace/:repoPath/jobs" exact>
-          <WorkspaceJobsRoot repoAddress={addressForPath} />
-        </Route>
-      ) : null}
-      {flagNewWorkspace ? (
-        <Route path="/workspace/:repoPath/schedules" exact>
-          <WorkspaceSchedulesRoot repoAddress={addressForPath} />
-        </Route>
-      ) : null}
-      {flagNewWorkspace ? (
-        <Route path="/workspace/:repoPath/sensors" exact>
-          <WorkspaceSensorsRoot repoAddress={addressForPath} />
-        </Route>
-      ) : null}
-      {flagNewWorkspace ? (
-        <Route path="/workspace/:repoPath/graphs" exact>
-          <WorkspaceGraphsRoot repoAddress={addressForPath} />
-        </Route>
-      ) : null}
-      {flagNewWorkspace ? (
-        <Route path="/workspace/:repoPath/ops/:name?" exact>
-          <WorkspaceOpsRoot repoAddress={addressForPath} />
-        </Route>
-      ) : null}
+      <Route path="/workspace/:repoPath/assets" exact>
+        <WorkspaceAssetsRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/jobs" exact>
+        <WorkspaceJobsRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/schedules" exact>
+        <WorkspaceSchedulesRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/sensors" exact>
+        <WorkspaceSensorsRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/graphs" exact>
+        <WorkspaceGraphsRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/ops/:name?" exact>
+        <WorkspaceOpsRoot repoAddress={addressForPath} />
+      </Route>
       <Route path="/workspace/:repoPath/graphs/(/?.*)">
         <GraphRoot repoAddress={addressForPath} />
       </Route>
