@@ -93,7 +93,7 @@ def test_load_from_instance(
     ab_assets = with_resources(ab_assets, {"test_io_manager": test_io_manager})
 
     @asset
-    def downstream_asset(dagster_tags):
+    def downstream_asset(dagster_tags):  # pylint: disable=unused-argument
         return
 
     all_assets = [downstream_asset] + ab_assets
