@@ -2,18 +2,10 @@ import json
 import os
 
 import requests
-from assets_notebook.assets import iris_dataset, jupyter_iris_notebook, noteable_iris_notebook
 
-from dagster import job, load_assets_from_package_module, op, repository
+from dagster import job, op
 
-
-############ Repository with an asset backed by a Jupyter notebook ############
-@repository
-def jupyter_repository():
-    return [iris_dataset, jupyter_iris_notebook]
-
-
-############ Repository with an asset backed by a Noteable notebook ############
+# This file contains a helper job to confirm that you can connect to Noteable
 
 
 @op
@@ -35,8 +27,3 @@ def ping_noteable_op(context):
 @job
 def ping_noteable():
     ping_noteable_op()
-
-
-@repository
-def noteable_repository():
-    return [iris_dataset, noteable_iris_notebook, ping_noteable]
