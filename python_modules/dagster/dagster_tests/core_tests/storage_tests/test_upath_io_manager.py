@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 
 import pandas
 import pendulum
@@ -66,7 +66,7 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
     )
     manager.handle_output(context, json_data)
 
-    with manager.get_path(context).open("rb") as file:
+    with manager._get_path(context).open("rb") as file:
         assert json.loads(file.read()) == json_data
 
     context = build_input_context(
@@ -103,7 +103,9 @@ def test_upath_io_manager_multiple_partitions(tmp_path: Path):
     @asset(
         partitions_def=downstream_partitions_def,
     )
-    def downstream_asset(context: OpExecutionContext, upstream_asset: List[str]) -> List[str]:
+    def downstream_asset(
+        context: OpExecutionContext, upstream_asset: Dict[str, str]
+    ) -> Dict[str, str]:
         return upstream_asset
 
     # period = pendulum.period(pendulum.DateTime(2022, 1, 1), pendulum.DateTime(2022, 1, 2))
