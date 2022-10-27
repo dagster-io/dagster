@@ -40,8 +40,6 @@ function hueForTag(text = '') {
 function getTag(tag: IOpTag) {
   if (tag.label === 'noteable') {
     return <Icon name="noteable_logo" />;
-  } else if (tag.label === 'ipynb') {
-    return <Icon name="jupyter_logo" />;
   } else {
     return (
       <div
