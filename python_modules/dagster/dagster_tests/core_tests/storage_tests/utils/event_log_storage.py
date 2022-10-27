@@ -2495,14 +2495,20 @@ class TestEventLogStorage:
             )
             yield Output(5)
 
-        run_id = make_new_run_id()
-        with create_and_delete_test_runs(instance, [run_id]):
+        with instance_for_test() as created_instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(created_instance)
 
-            events, _ = _synthesize_events(lambda: my_op(), run_id)
-            for event in events:
-                storage.store_event(event)
+            run_id_1 = make_new_run_id()
 
-            materialization_counts = instance.get_materialization_count_by_partition([key])
+            with create_and_delete_test_runs(instance, [run_id_1]):
+                events_one, _ = _synthesize_events(
+                    lambda: my_op(), instance=created_instance, run_id=run_id_1
+                )
+                for event in events_one:
+                    storage.store_event(event)
+
+            materialization_counts = created_instance.get_materialization_count_by_partition([key])
             assert (
                 materialization_counts[key][
                     MultiPartitionKey({"country": "US", "date": "2022-10-13"})
