@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import inspect
 from abc import abstractmethod
-from typing import Any, List, Union, Dict
+from typing import Any, Dict, List, Union
 
 from upath import UPath
 
 from dagster import (
+    AssetKey,
     IOManager,
     InputContext,
     MemoizableIOManager,
     MetadataValue,
     OutputContext,
     TimeWindowPartitionsDefinition,
-    AssetKey,
 )
 from dagster import _check as check
 

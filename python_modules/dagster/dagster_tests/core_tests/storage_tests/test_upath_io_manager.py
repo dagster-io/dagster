@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, List, Optional, Dict
+from typing import Any, Dict, List, Optional
 
 import pandas
 import pendulum
@@ -36,6 +36,28 @@ from dagster import (
 )
 from dagster._core.definitions import AssetGroup, build_assets_job
 from dagster._core.storage.upath_io_manager import UPathIOManagerBase
+
+
+class DummyIOManager(UPathIOManagerBase):
+    def dump_to_path(self, obj: str, path: UPath, context: OutputContext):
+        return str(path)
+
+    def load_from_path(self, path: UPath, context: InputContext) -> str:
+        return str(path)
+
+
+@pytest.fixture
+def dummy_io_manager(tmp_path: Path) -> DummyIOManager:
+    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
+    def dummy_io_manager(init_context: InitResourceContext):
+        base_path = UPath(
+            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
+        )
+        return DummyIOManager(base_path=base_path)
+
+    io_manager_def = dummy_io_manager.configured({"base_path": str(tmp_path)})
+
+    return io_manager_def
 
 
 @pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
@@ -77,22 +99,7 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
     assert manager.load_input(context) == json_data
 
 
-def test_upath_io_manager_multiple_partitions(tmp_path: Path):
-    class DummyIOManager(UPathIOManagerBase):
-        def dump_to_path(self, obj: str, path: UPath, context: OutputContext):
-            return str(path)
-
-        def load_from_path(self, path: UPath, context: InputContext) -> str:
-            return str(path)
-
-    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
-    def dummy_io_manager(init_context: InitResourceContext):
-        base_path = UPath(
-            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
-        )
-        return DummyIOManager(base_path=base_path)
-
-    io_manager_def = dummy_io_manager.configured({"base_path": str(tmp_path)})
+def test_upath_io_manager_multiple_time_partitions(dummy_io_manager: DummyIOManager):
     upstream_partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
     downstream_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
@@ -120,8 +127,38 @@ def test_upath_io_manager_multiple_partitions(tmp_path: Path):
     result = materialize(
         [*upstream_asset.to_source_assets(), downstream_asset],
         partition_key="2022-01-01",
-        resources={"io_manager": io_manager_def},
+        resources={"io_manager": dummy_io_manager},
     )
     downstream_asset_data = result._get_output_for_handle("downstream_asset", "result")
     assert len(downstream_asset_data) == 24, "downstream day should map to upstream 24 hours"
     # assert downstream_asset_data == upstream_asset_datas
+
+
+def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOManager):
+    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
+    def dummy_io_manager(init_context: InitResourceContext):
+        base_path = UPath(
+            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
+        )
+        return DummyIOManager(base_path=base_path)
+
+    upstream_partitions_def = StaticPartitionsDefinition(["A", "B"])
+
+    @asset(partitions_def=upstream_partitions_def)
+    def upstream_asset(context: OpExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(ins={"upstream_asset": AssetIn(partition_mapping=AllPartitionMapping())})
+    def downstream_asset(
+        context: OpExecutionContext, upstream_asset: Dict[str, str]
+    ) -> Dict[str, str]:
+        return upstream_asset
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[upstream_asset, downstream_asset],
+        resource_defs={"io_manager": dummy_io_manager},
+    )
+    result = my_job.execute_in_process(partition_key="A")
+    downstream_asset_data = result._get_output_for_handle("downstream_asset", "result")
+    assert list(downstream_asset_data.keys()) == ["A", "B"]
