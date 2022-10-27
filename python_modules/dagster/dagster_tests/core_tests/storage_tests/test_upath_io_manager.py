@@ -39,8 +39,12 @@ from dagster._core.storage.upath_io_manager import UPathIOManagerBase
 
 
 class DummyIOManager(UPathIOManagerBase):
+    """
+    This IOManager simply outputs the object path without loading or writing anything
+    """
+
     def dump_to_path(self, obj: str, path: UPath, context: OutputContext):
-        return str(path)
+        pass
 
     def load_from_path(self, path: UPath, context: InputContext) -> str:
         return str(path)
@@ -58,6 +62,21 @@ def dummy_io_manager(tmp_path: Path) -> DummyIOManager:
     io_manager_def = dummy_io_manager.configured({"base_path": str(tmp_path)})
 
     return io_manager_def
+
+
+@pytest.fixture
+def start():
+    return datetime(2022, 1, 1)
+
+
+@pytest.fixture
+def hourly(start):
+    return HourlyPartitionsDefinition(start_date=f"{start:%Y-%m-%d-%H:%M}")
+
+
+@pytest.fixture
+def daily(start):
+    return DailyPartitionsDefinition(start_date=f"{start:%Y-%m-%d}")
 
 
 @pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
@@ -129,7 +148,7 @@ def test_upath_io_manager_multiple_time_partitions(dummy_io_manager: DummyIOMana
         partition_key="2022-01-01",
         resources={"io_manager": dummy_io_manager},
     )
-    downstream_asset_data = result._get_output_for_handle("downstream_asset", "result")
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert len(downstream_asset_data) == 24, "downstream day should map to upstream 24 hours"
     # assert downstream_asset_data == upstream_asset_datas
 
@@ -160,5 +179,24 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
         resource_defs={"io_manager": dummy_io_manager},
     )
     result = my_job.execute_in_process(partition_key="A")
-    downstream_asset_data = result._get_output_for_handle("downstream_asset", "result")
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert list(downstream_asset_data.keys()) == ["A", "B"]
+
+
+def test_partitioned_io_manager_preserves_single_partition_dependency(
+    daily: DailyPartitionsDefinition, dummy_io_manager: DummyIOManager
+):
+    @asset(partitions_def=daily)
+    def upstream_asset():
+        return 42
+
+    @asset(partitions_def=daily)
+    def daily_asset(upstream_asset: str):
+        return upstream_asset
+
+    result = materialize(
+        [upstream_asset, daily_asset],
+        partition_key="2022-01-01",
+        resources={"io_manager": dummy_io_manager},
+    )
+    assert result.output_for_node("daily_asset").endswith("2022-01-01")
