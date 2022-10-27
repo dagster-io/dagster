@@ -2,12 +2,7 @@ import datetime
 
 from pytest import fixture
 
-from dagster import (
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    asset,
-    materialize,
-)
+from dagster import DailyPartitionsDefinition, HourlyPartitionsDefinition, asset, materialize
 
 
 @fixture
