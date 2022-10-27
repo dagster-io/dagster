@@ -12,6 +12,7 @@ interface Props {
   intent: AlertIntent;
   title: React.ReactNode;
   description?: React.ReactNode;
+  icon?: React.ReactNode;
   onClose?: () => void;
 }
 
@@ -65,7 +66,7 @@ export const Alert: React.FC<Props> = (props) => {
     >
       <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
         <Group direction="row" spacing={12} alignItems="flex-start">
-          <Icon name={icon as IconName} color={iconColor} />
+          {props.icon || <Icon name={icon as IconName} color={iconColor} />}
           <Group direction="column" spacing={8}>
             <AlertTitle>{title}</AlertTitle>
             {description ? <AlertDescription>{description}</AlertDescription> : null}
