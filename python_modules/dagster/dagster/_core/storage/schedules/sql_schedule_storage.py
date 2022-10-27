@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from typing import Callable, Iterable, Mapping, Optional, Sequence, cast
+from typing import Callable, Iterable, Mapping, Optional, Sequence, cast, List
 
 import pendulum
 import sqlalchemy as db
@@ -323,6 +323,26 @@ class SqlScheduleStorage(ScheduleStorage):
         rows = self.execute(query)
         return list(
             map(lambda r: InstigatorTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
+        )
+
+    def get_ticks_for_all_instigators_by_tick_id(
+        self,
+        after_cursor: int = -1,
+    ) -> List[InstigatorTick]:
+        query = (
+            db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
+            .where(JobTickTable.c.id > after_cursor)
+            .select_from(JobTickTable)
+            .order_by(JobTickTable.c.id.asc())
+        )
+        rows = self.execute(query)
+        return list(
+            map(
+                lambda r: InstigatorTick(
+                    r[0], cast(TickData, deserialize_json_to_dagster_namedtuple(r[1]))
+                ),
+                rows,
+            )
         )
 
     def create_tick(self, tick_data):

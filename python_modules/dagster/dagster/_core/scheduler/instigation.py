@@ -402,6 +402,13 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     def log_key(self) -> Optional[List[str]]:
         return self.tick_data.log_key
 
+    def is_success(self) -> bool:
+        return self.tick_data.status == TickStatus.SUCCESS
+
+    @property
+    def is_failure(self) -> bool:
+        return self.tick_data.status == TickStatus.FAILURE
+
 
 register_serdes_tuple_fallbacks({"JobTick": InstigatorTick})
 # for internal backcompat
