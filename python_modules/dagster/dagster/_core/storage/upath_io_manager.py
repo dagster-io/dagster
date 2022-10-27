@@ -119,7 +119,8 @@ class UPathIOManagerBase(MemoizableIOManager):
             context
         ):
             return check.failed(
-                f"Received `{context.dagster_type.typing_type.__name__}` op/asset type annotation, "
+                f"Received `{context.dagster_type.typing_type.__name__}` type "
+                f"in input DagsterType {context.dagster_type}, "
                 f"but the input has multiple partitions. "
                 f"`Dict[str, {context.dagster_type.typing_type.__name__}]` should be used in this case."
             )
@@ -175,7 +176,8 @@ class UPathIOManagerBase(MemoizableIOManager):
             return objs
         else:
             return check.failed(
-                f"Received {context.dagster_type.typing_type} op/asset type annotation, "
+                f"Received `{context.dagster_type.typing_type.__name__}` type "
+                f"in input DagsterType {context.dagster_type}, "
                 f"but `{self.dump_to_path}` has {expected_type} type annotation. "
                 f"They should match."
             )

@@ -214,7 +214,7 @@ def test_user_forgot_dict_type_annotation_for_multiple_partitions(
 
     with pytest.raises(
         CheckError,
-        match=r"Failure condition: Received .* op/asset type annotation, "
+        match=r"Failure condition: Received .*"
         "but the input has multiple partitions. .* should be used in this case.",
     ):
         materialize(
