@@ -90,12 +90,12 @@ class UPathIOManagerBase(MemoizableIOManager):
         allow_missing_partitions = context.metadata.get("allow_missing_partitions", False)
 
         # unfortunately, this doesn't work for Python 3.7 : inspect.get_annotations(self.serialize)["obj"]
-        # expected_type = inspect.signature(self.serialize).parameters["obj"].annotation
+        expected_type = inspect.signature(self.serialize).parameters["obj"].annotation
 
         # FIXME: use a custom PartitionsList type instead of List
-        if context.dagster_type.typing_type.__origin__ in (List, list):  # type: ignore
-            # FIXME: check if the inner type (context.dagster_type.typing_type.__args__[0])
-            # is a subtype of the expected_type
+        if context.dagster_type.typing_type.__origin__ in (List, list) and issubclass(
+            context.dagster_type.typing_type.__args__[0], expected_type
+        ):
             # load multiple partitions
             if not context.has_asset_partitions:
                 raise TypeError(
@@ -132,10 +132,7 @@ class UPathIOManagerBase(MemoizableIOManager):
                         f"Couldn't load partition {path_with_partition} and skipped it"
                     )
             return objs
-        else:
-            # FIXME: check if the type (context.dagster_type.typing_type)
-            # is a subtype of the expected_type
-
+        elif issubclass(context.dagster_type.typing_type.__args__[0], expected_type):
             context.log.debug(f"Loading from {path} using {self.__class__.__name__}")
             obj = self.deserialize(path, context)
             context.add_input_metadata(
@@ -144,12 +141,11 @@ class UPathIOManagerBase(MemoizableIOManager):
                 }
             )
             return obj
-        #
-        # else:
-        #     return check.failed(
-        #         f"Inputs of type {context.dagster_type} not supported. Please specify "
-        #         "for this input either in the op signature, corresponding In or in the IOManager annotations."
-        #     )
+        else:
+            return check.failed(
+                f"Inputs of type {context.dagster_type} not supported. Please specify "
+                "for this input either in the op signature, corresponding In or in the IOManager annotations."
+            )
 
     def handle_output(self, context: OutputContext, obj: Any):
         path = self.get_path(context)
