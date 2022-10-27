@@ -228,7 +228,7 @@ def _make_airflow_dag(
                 execution_plan, pipeline_snapshot_id=pipeline.get_pipeline_snapshot_id()
             ),
         )
-        task = operator(operator_parameters)
+        task = operator(dagster_operator_parameters=operator_parameters)
 
         tasks[solid_handle] = task
 

@@ -7,11 +7,11 @@ from dagster._utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvariantViolationError
 from ..instance import DagsterInstance
-from ..storage.fs_io_manager import fs_io_manager
 from ..storage.io_manager import IOManagerDefinition
 from ..storage.mem_io_manager import mem_io_manager
 from .assets import AssetsDefinition
 from .assets_job import build_assets_job
+from .job_definition import default_job_io_manager_with_fs_io_manager_schema
 from .source_asset import SourceAsset
 from .utils import DEFAULT_IO_MANAGER_KEY
 
@@ -55,7 +55,9 @@ def materialize(
     partition_key = check.opt_str_param(partition_key, "partition_key")
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     resource_defs = wrap_resources_for_execution(resources)
-    resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: fs_io_manager}, resource_defs)
+    resource_defs = merge_dicts(
+        {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema}, resource_defs
+    )
 
     with warnings.catch_warnings():
         warnings.filterwarnings(

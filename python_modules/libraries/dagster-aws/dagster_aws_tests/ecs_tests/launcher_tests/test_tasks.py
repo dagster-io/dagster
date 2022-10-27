@@ -74,3 +74,8 @@ def test_create_dagster_task_definition_dict():
         "memory": "512",
         "taskRoleArn": "fake-task-role",
     }
+
+    new_cpu_mem = task_config._replace(cpu="512", memory="1024")
+
+    assert new_cpu_mem.task_definition_dict()["cpu"] == "512"
+    assert new_cpu_mem.task_definition_dict()["memory"] == "1024"

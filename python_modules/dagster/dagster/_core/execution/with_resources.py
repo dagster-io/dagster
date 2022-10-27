@@ -67,14 +67,18 @@ def with_resources(
 
     """
     from dagster._config import validate_config
-    from dagster._core.storage.fs_io_manager import fs_io_manager
+    from dagster._core.definitions.job_definition import (
+        default_job_io_manager_with_fs_io_manager_schema,
+    )
 
     check.mapping_param(resource_defs, "resource_defs")
     resource_config_by_key = check.opt_mapping_param(
         resource_config_by_key, "resource_config_by_key"
     )
 
-    resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: fs_io_manager}, resource_defs)
+    resource_defs = merge_dicts(
+        {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema}, resource_defs
+    )
 
     for key, resource_def in resource_defs.items():
         if key in resource_config_by_key:

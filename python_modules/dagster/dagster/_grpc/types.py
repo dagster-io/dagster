@@ -399,7 +399,7 @@ class PartitionSetExecutionParamArgs(
         [
             ("repository_origin", ExternalRepositoryOrigin),
             ("partition_set_name", str),
-            ("partition_names", List[str]),
+            ("partition_names", Sequence[str]),
         ],
     )
 ):
@@ -407,7 +407,7 @@ class PartitionSetExecutionParamArgs(
         cls,
         repository_origin: ExternalRepositoryOrigin,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ):
         return super(PartitionSetExecutionParamArgs, cls).__new__(
             cls,

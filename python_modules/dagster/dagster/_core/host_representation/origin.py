@@ -115,10 +115,6 @@ class RepositoryLocationOrigin(ABC, tuple):
     def create_location(self) -> "RepositoryLocation":
         pass
 
-    @property
-    def supports_server_watch(self):
-        return False
-
 
 @whitelist_for_serdes
 class RegisteredRepositoryLocationOrigin(
@@ -331,10 +327,6 @@ class GrpcServerRepositoryLocationOrigin(
         )
 
         return GrpcServerRepositoryLocation(self)
-
-    @property
-    def supports_server_watch(self) -> bool:
-        return True
 
     def create_client(self) -> "DagsterGrpcClient":
         from dagster._grpc.client import DagsterGrpcClient
