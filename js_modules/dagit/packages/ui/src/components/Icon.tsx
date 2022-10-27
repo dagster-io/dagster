@@ -61,6 +61,7 @@ import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
 import info from '../icon-svgs/info.svg';
 import job from '../icon-svgs/job.svg';
+import jupyter_logo from '../icon-svgs/jupyter_logo.svg';
 import layers from '../icon-svgs/layers.svg';
 import line_style from '../icon-svgs/line_style.svg';
 import linear_scale from '../icon-svgs/linear_scale.svg';
@@ -83,7 +84,6 @@ import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
 import panel_show_left from '../icon-svgs/panel_show_left.svg';
 import panel_show_right from '../icon-svgs/panel_show_right.svg';
 import panel_show_top from '../icon-svgs/panel_show_top.svg';
-import partition from '../icon-svgs/partition.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
@@ -143,7 +143,6 @@ export const Icons = {
   op_selector,
   op_dynamic: bolt,
   partition_set: schedule,
-  partition,
   repo: source,
   resource: layers,
   run: history,
@@ -268,9 +267,10 @@ export const Icons = {
 
   // Integration icons
   noteable_logo,
+  jupyter_logo,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([slack, noteable_logo]);
+const SVGS_WITH_COLORS = new Set([slack, noteable_logo, jupyter_logo]);
 
 export type IconName = keyof typeof Icons;
 
