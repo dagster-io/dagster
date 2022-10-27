@@ -602,8 +602,8 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
       // Scroll page to the hash after re-render
       setSelectedTab(tabIdx);
       setTimeout(() => {
-        window.location.hash = '';
-        window.location.hash = anchor;
+        const elem = document.getElementById(anchorWithoutHash);
+        elem.scrollIntoView();
       }, 10);
     }
   }, [anchor, anchorsInChildren]);
