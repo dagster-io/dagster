@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
@@ -92,7 +94,7 @@ class SourceAsset(ResourceAddable):
     group_name: PublicAttr[str]
     resource_defs: PublicAttr[Dict[str, ResourceDefinition]]
     observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
-    _node_def: Optional[OpDefinition]
+    _node_def: Optional[OpDefinition]  # computed lazily
 
     def __init__(
         self,
@@ -178,7 +180,7 @@ class SourceAsset(ResourceAddable):
         return self.node_def is not None
 
     @property
-    def node_def(self):
+    def node_def(self) -> Optional[OpDefinition]:
         """Op that generates observation metadata for a source asset."""
         if self.observe_fn is None:
             return None
@@ -279,9 +281,6 @@ class SourceAsset(ResourceAddable):
         )
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
-
-    def __hash__(self):
-        return hash(self.key)
 
 
 def _raw_observation_to_metadata(raw_observation: object) -> MetadataUserInput:

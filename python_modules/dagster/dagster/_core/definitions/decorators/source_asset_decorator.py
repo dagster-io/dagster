@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union, overload
 
+from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import (
     MetadataEntry,
@@ -39,6 +40,7 @@ def observable_source_asset(
     ...
 
 
+@experimental
 def observable_source_asset(
     observe_fn: Optional[SourceAssetObserveFunction] = None,
     *,
@@ -53,7 +55,36 @@ def observable_source_asset(
     group_name: Optional[str] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
+    """Create a `SourceAsset` with an associated observation function.
 
+    The observation function of a source asset is wrapped inside of an op and can be executed as
+    part of a job. Each execution generates an `AssetObservation` event associated with the source
+    asset. The source asset observation function should return a metadata dictionary that will be
+    attached to the `AssetObservation`.
+
+    Args:
+        name (Optional[str]): The name of the source asset.  If not provided, defaults to the name of the
+            decorated function. The asset's name must be a valid name in dagster (ie only contains
+            letters, numbers, and _) and may not contain python reserved keywords.
+        key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the source asset's key is the
+            concatenation of the key_prefix and the asset's name, which defaults to the name of
+            the decorated function. Each item in key_prefix must be a valid name in dagster (ie only
+            contains letters, numbers, and _) and may not contain python reserved keywords.
+        metadata (Mapping[str, RawMetadataValue]): Metadata associated with the asset.
+        io_manager_key (Optional[str]): The key for the IOManager that will be used to load the contents of
+            the source asset when it's used as an input to other assets inside a job.
+        io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager that will be used to load the contents of
+            the source asset when it's used as an input to other assets inside a job.
+        description (Optional[str]): The description of the asset.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the source asset.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
+            the name "default" is used.
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource
+            definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in
+            the `io_manager_def` argument.
+        observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
+    """
     if observe_fn is not None:
         return _ObservableSourceAsset()(observe_fn)
 
