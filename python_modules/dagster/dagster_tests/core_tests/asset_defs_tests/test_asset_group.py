@@ -1229,7 +1229,6 @@ def test_to_source_assets():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
-    print(AssetGroup([my_asset, my_multi_asset]).to_source_assets()[0])
     assert AssetGroup([my_asset, my_multi_asset]).to_source_assets() == [
         SourceAsset(
             AssetKey(["my_asset"]),
