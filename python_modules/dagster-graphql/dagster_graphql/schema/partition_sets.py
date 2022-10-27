@@ -1,4 +1,9 @@
-from dagster._core.definitions.multi_dimensional_partitions import MultiDimensionalPartitionKey
+from dagster._core.host_representation.external_data import (
+    ExternalPartitionsDefinitionData,
+    ExternalStaticPartitionsDefinitionData,
+    ExternalTimeWindowPartitionsDefinitionData,
+    ExternalMultiPartitionsDefinitionData,
+)
 import graphene
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
@@ -280,22 +285,41 @@ class GraphenePartitionSetsOrError(graphene.Union):
         name = "PartitionSetsOrError"
 
 
-class GraphenePartitionDimensionKey(graphene.ObjectType):
-    dimension_name = graphene.NonNull(graphene.String)
-    partition_key = graphene.NonNull(graphene.String)
+class GraphenePartitionDefinitionType(graphene.Enum):
+    TIME_WINDOW = "TIME_WINDOW"
+    STATIC = "STATIC"
+    MULTIPARTITIONED = "MULTIPARTITIONED"
 
     class Meta:
-        name = "PartitionDimensionKey"
+        name = "PartitionDefinitionType"
+
+    @classmethod
+    def from_partition_def_data(cls, partition_def_data):
+        check.inst_param(partition_def_data, "partition_def_data", ExternalPartitionsDefinitionData)
+        if isinstance(partition_def_data, ExternalStaticPartitionsDefinitionData):
+            return GraphenePartitionDefinitionType.STATIC
+        elif isinstance(partition_def_data, ExternalTimeWindowPartitionsDefinitionData):
+            return GraphenePartitionDefinitionType.TIME_WINDOW
+        elif isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData):
+            return GraphenePartitionDefinitionType.MULTIPARTITIONED
+        else:
+            check.failed(
+                f"Invalid external partitions definition data type: {type(partition_def_data)}"
+            )
 
 
-class GrapheneMultiDimensionalPartitionKey(graphene.ObjectType):
-    dimension_keys = non_null_list(GraphenePartitionDimensionKey)
+class GraphenePartitionDefinition(graphene.ObjectType):
+    description = graphene.NonNull(graphene.String)
+    type = graphene.NonNull(GraphenePartitionDefinitionType)
 
     class Meta:
-        name = "PartitionDimensionKeys"
+        name = "PartitionDefinition"
 
-    def __init__(self, multi_dim_partition_key: MultiDimensionalPartitionKey):
-        self.dimension_keys = multi_dim_partition_key.dimension_keys
+    def __init__(self, partition_def_data: ExternalPartitionsDefinitionData):
+        super().__init__(
+            description=str(partition_def_data.get_partitions_definition()),
+            type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
+        )
 
 
 types = [

@@ -21,8 +21,7 @@ from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster_graphql.schema.partition_sets import (
-    GrapheneMultiDimensionalPartitionKey,
-    GraphenePartitionDimensionKeys,
+    GraphenePartitionDefinition,
 )
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
@@ -144,7 +143,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     opName = graphene.String()
     opNames = non_null_list(graphene.String)
     partitionKeys = non_null_list(graphene.String)
-    partitionDefinition = graphene.String()
+    partitionDefinition = graphene.Field(GraphenePartitionDefinition)
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
     type = graphene.Field(GrapheneDagsterType)
@@ -229,21 +228,18 @@ class GrapheneAssetNode(graphene.ObjectType):
         # weird mypy bug causes mistyped _node_definition_snap
         return check.not_none(self._node_definition_snap)  # type: ignore
 
-    def get_partition_keys(self) -> Union[Sequence[str], Sequence[GraphenePartitionDimensionKeys]]:
+    def get_partition_keys(self) -> Sequence[str]:
         # TODO: Add functionality for dynamic partitions definition
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
-            if isinstance(
-                partitions_def_data, ExternalStaticPartitionsDefinitionData
-            ) or isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData):
+            if (
+                isinstance(partitions_def_data, ExternalStaticPartitionsDefinitionData)
+                or isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData)
+                or isinstance(partitions_def_data, ExternalMultiPartitionsDefinitionData)
+            ):
                 return [
                     partition.name
                     for partition in partitions_def_data.get_partitions_definition().get_partitions()
-                ]
-            if isinstance(partitions_def_data, ExternalMultiPartitionsDefinitionData):
-                return [
-                    GrapheneMultiDimensionalPartitionKey(partition)
-                    for partition in partitions_def_data.get_partitions_definition().get_multi_dimensional_partition_keys()
                 ]
         return []
 
@@ -504,10 +500,10 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_graphName(self, _graphene_info) -> Optional[str]:
         return self._external_asset_node.graph_name
 
-    def resolve_partitionDefinition(self, _graphene_info) -> Optional[str]:
+    def resolve_partitionDefinition(self, _graphene_info) -> Optional[GraphenePartitionDefinition]:
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
-            return str(partitions_def_data.get_partitions_definition())
+            return GraphenePartitionDefinition(partitions_def_data)
         return None
 
     def resolve_partitionKeys(self, _graphene_info) -> Sequence[str]:

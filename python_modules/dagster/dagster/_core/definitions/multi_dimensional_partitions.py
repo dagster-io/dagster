@@ -181,11 +181,15 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def __hash__(self):
         return hash(tuple(self.partitions_defs))
 
-    # def get_multi_dimensional_partition_keys(self) -> List[MultiPartitionKey]:
-    #     return [
-    #         MultiPartitionKey(partition.value)
-    #         for partition in self.get_partitions()
-    #     ]
+    def __str__(self) -> str:
+        dimension_1 = self._partitions_defs[0]
+        dimension_2 = self._partitions_defs[1]
+        partition_str = (
+            "Multi-partitioned, with dimensions: \n"
+            f"{dimension_1.name.capitalize()}: {str(dimension_1.partitions_def)} \n"
+            f"{dimension_2.name.capitalize()}: {str(dimension_2.partitions_def)}"
+        )
+        return partition_str
 
 
 def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:
