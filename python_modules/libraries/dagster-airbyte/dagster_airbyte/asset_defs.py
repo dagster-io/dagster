@@ -30,7 +30,6 @@ from dagster_airbyte.utils import (
 
 from dagster import AssetKey, AssetOut, Output, ResourceDefinition
 from dagster import _check as check
-from dagster import with_resources
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.cacheable_assets import (
@@ -588,7 +587,7 @@ class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefiniti
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
         return [
-            asset._with_resources(
+            asset._with_resources(  # pylint: disable=protected-access
                 {"airbyte": self._airbyte_resource_def}, enforce_all_requirements_satisfied=False
             )
             for asset in super().build_definitions(data)
