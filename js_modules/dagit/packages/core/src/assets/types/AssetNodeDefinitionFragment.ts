@@ -524,6 +524,11 @@ export interface AssetNodeDefinitionFragment_configField {
   configType: AssetNodeDefinitionFragment_configField_configType;
 }
 
+export interface AssetNodeDefinitionFragment_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
 export interface AssetNodeDefinitionFragment_repository_location {
   __typename: "RepositoryLocation";
   id: string;
@@ -3095,7 +3100,7 @@ export interface AssetNodeDefinitionFragment {
   graphName: string | null;
   opNames: string[];
   jobNames: string[];
-  partitionDefinition: string | null;
+  partitionDefinition: AssetNodeDefinitionFragment_partitionDefinition | null;
   repository: AssetNodeDefinitionFragment_repository;
   computeKind: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;

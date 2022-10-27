@@ -293,7 +293,9 @@ const ASSET_QUERY = gql`
         definition {
           id
           groupName
-          partitionDefinition
+          partitionDefinition {
+            description
+          }
           repository {
             id
             name

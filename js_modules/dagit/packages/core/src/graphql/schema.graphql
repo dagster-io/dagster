@@ -413,7 +413,7 @@ type AssetNode {
   opName: String
   opNames: [String!]!
   partitionKeys: [String!]!
-  partitionDefinition: String
+  partitionDefinition: PartitionDefinition
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   type: DagsterType
@@ -1406,6 +1406,17 @@ type AssetDependency {
 type MaterializationCountByPartition {
   partition: String!
   materializationCount: Int!
+}
+
+type PartitionDefinition {
+  description: String!
+  type: PartitionDefinitionType!
+}
+
+enum PartitionDefinitionType {
+  TIME_WINDOW
+  STATIC
+  MULTIPARTITIONED
 }
 
 type ResourceRequirement {

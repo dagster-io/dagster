@@ -607,14 +607,18 @@ class ExternalStaticPartitionsDefinitionData(
 class ExternalPartitionDimensionDefinition(
     NamedTuple(
         "_ExternalPartitionDimensionDefinition",
-        [("name", str), ("partitions_def", PartitionsDefinition)],
+        [("name", str), ("external_partitions_def_data", ExternalPartitionsDefinitionData)],
     )
 ):
-    def __new__(cls, name: str, partitions_def: PartitionsDefinition):
+    def __new__(cls, name: str, external_partitions_def_data: ExternalPartitionsDefinitionData):
         return super(ExternalPartitionDimensionDefinition, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            partitions_def=check.inst_param(partitions_def, "partitions_def", PartitionsDefinition),
+            external_partitions_def_data=check.inst_param(
+                external_partitions_def_data,
+                "external_partitions_def_data",
+                ExternalPartitionsDefinitionData,
+            ),
         )
 
 
@@ -634,7 +638,7 @@ class ExternalMultiPartitionsDefinitionData(
     def get_partitions_definition(self):
         return MultiPartitionsDefinition(
             {
-                partition_dimension.name: partition_dimension.partitions_def
+                partition_dimension.name: partition_dimension.external_partitions_def_data.get_partitions_definition()
                 for partition_dimension in self.external_partition_dimension_definitions
             }
         )
@@ -1193,7 +1197,9 @@ def external_multi_partitions_definition_from_def(
 
     return ExternalMultiPartitionsDefinitionData(
         external_partition_dimension_definitions=[
-            ExternalPartitionDimensionDefinition(dimension.name, dimension.partitions_def)
+            ExternalPartitionDimensionDefinition(
+                dimension.name, external_partitions_definition_from_def(dimension.partitions_def)
+            )
             for dimension in partitions_def.partitions_defs
         ]
     )

@@ -682,6 +682,11 @@ export interface SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry {
 
 export type SidebarAssetFragment_metadataEntries = SidebarAssetFragment_metadataEntries_PathMetadataEntry | SidebarAssetFragment_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_metadataEntries_TextMetadataEntry | SidebarAssetFragment_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_metadataEntries_IntMetadataEntry | SidebarAssetFragment_metadataEntries_BoolMetadataEntry | SidebarAssetFragment_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_metadataEntries_TableMetadataEntry | SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry;
 
+export interface SidebarAssetFragment_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
 export interface SidebarAssetFragment_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -3106,7 +3111,7 @@ export interface SidebarAssetFragment {
   description: string | null;
   configField: SidebarAssetFragment_configField | null;
   metadataEntries: SidebarAssetFragment_metadataEntries[];
-  partitionDefinition: string | null;
+  partitionDefinition: SidebarAssetFragment_partitionDefinition | null;
   assetKey: SidebarAssetFragment_assetKey;
   op: SidebarAssetFragment_op | null;
   repository: SidebarAssetFragment_repository;

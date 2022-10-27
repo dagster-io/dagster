@@ -397,7 +397,9 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     opNames
     jobNames
     graphName
-    partitionDefinition
+    partitionDefinition {
+      description
+    }
     assetKey {
       path
     }

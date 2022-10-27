@@ -23,6 +23,11 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations {
   timestamp: string;
 }
 
+export interface AssetQuery_assetOrError_Asset_definition_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
 export interface AssetQuery_assetOrError_Asset_definition_repository_location {
   __typename: "RepositoryLocation";
   id: string;
@@ -3146,7 +3151,7 @@ export interface AssetQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
   groupName: string | null;
-  partitionDefinition: string | null;
+  partitionDefinition: AssetQuery_assetOrError_Asset_definition_partitionDefinition | null;
   repository: AssetQuery_assetOrError_Asset_definition_repository;
   jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
   configField: AssetQuery_assetOrError_Asset_definition_configField | null;
