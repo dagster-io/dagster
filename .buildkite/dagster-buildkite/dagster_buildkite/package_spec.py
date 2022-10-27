@@ -300,7 +300,10 @@ class PackageSpec(
                 # Our change is in this package's directory
                 (Path(self.directory) in change.parents)
                 # The file can alter behavior - exclude things like README changes
-                and (change.suffix in [".py", ".cfg", ".toml"] or change.name == "requirements.txt")
+                and (
+                    change.suffix in [".py", ".cfg", ".toml", ".ini"]
+                    or change.name == "requirements.txt"
+                )
             ):
                 logging.info(f"Building {self.name} because it has changed")
                 return None
