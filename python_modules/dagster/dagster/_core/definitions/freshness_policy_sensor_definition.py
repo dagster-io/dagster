@@ -98,6 +98,11 @@ class FreshnessPolicySensorEvaluationContext(SensorEvaluationContext):
                     asset_key
                 )
             )
+            if assets_def is None:
+                raise DagsterInvalidDefinitionError(
+                    f"{asset_key} was not found in the provided RepositoryDefinition when constructing "
+                    "FreshnessPolicySensorEvaluationContext."
+                )
             self._assets_by_key[asset_key] = assets_def
 
         self._previous_statuses_by_key = (
@@ -123,7 +128,7 @@ class FreshnessPolicySensorEvaluationContext(SensorEvaluationContext):
             get_upstream_materialization_times_for_key,
         )
 
-        current_timestamp = pendulum.now().timestamp()
+        current_time = pendulum.now()
 
         statuses = {}
         for asset_key, assets_def in self._assets_by_key.items():
@@ -138,8 +143,8 @@ class FreshnessPolicySensorEvaluationContext(SensorEvaluationContext):
                 upstream_asset_key_mapping=self._upstream_mapping,
             )
             statuses[asset_key] = freshness_policy.minutes_late(
-                current_timestamp=current_timestamp,
-                upstream_materialization_timestamps={
+                evaluation_time=current_time,
+                upstream_materialization_times={
                     AssetKey.from_user_string(k): v[1]
                     for k, v in root_data_ids_and_timestamps.items()
                 },
