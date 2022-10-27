@@ -128,7 +128,7 @@ class SourceAsset(ResourceAddable):
         )
         if self._io_manager_def:
             if not io_manager_key:
-                io_manager_key = key.to_python_identifier("io_manager")
+                io_manager_key = self.key.to_python_identifier("io_manager")
 
             if (
                 io_manager_key in self.resource_defs
@@ -174,7 +174,7 @@ class SourceAsset(ResourceAddable):
         )
         return cast(OpDefinition, self.node_def)
 
-    @public
+    @public  # type: ignore
     @property
     def is_versioned(self) -> bool:
         return self.node_def is not None

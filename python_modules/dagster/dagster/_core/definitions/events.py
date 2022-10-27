@@ -371,7 +371,7 @@ class AssetObservation(
         description: Optional[str] = None,
         metadata_entries: Optional[List[MetadataEntry]] = None,
         partition: Optional[str] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -384,7 +384,7 @@ class AssetObservation(
             check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )

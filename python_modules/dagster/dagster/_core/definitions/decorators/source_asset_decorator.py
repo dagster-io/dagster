@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union, overload
+from typing import Mapping, Optional, Sequence, Union, overload
 
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
@@ -11,12 +11,6 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
 from dagster._core.storage.io_manager import IOManagerDefinition
-
-from ..decorators.op_decorator import _Op
-
-if TYPE_CHECKING:
-    from dagster._core.execution.context.compute import SourceAssetObserveContext
-
 
 @overload
 def observable_source_asset(observe_fn: SourceAssetObserveFunction) -> SourceAsset:
