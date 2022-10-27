@@ -1,5 +1,5 @@
 from __future__ import annotations
-from hashlib import sha256
+
 import logging
 import logging.config
 import os
@@ -10,6 +10,7 @@ import weakref
 from collections import defaultdict
 from contextlib import ExitStack
 from enum import Enum
+from hashlib import sha256
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
@@ -2141,7 +2142,9 @@ class DagsterInstance:
         return LogicalVersion(hash_sig.hexdigest())
 
     def get_most_recent_logical_version(
-        self, key: AssetKey, is_source: bool,
+        self,
+        key: AssetKey,
+        is_source: bool,
     ) -> LogicalVersion:
         from dagster._core.event_api import EventRecordsFilter
         from dagster._core.events import DagsterEventType
@@ -2159,7 +2162,9 @@ class DagsterInstance:
         else:
             event = self.get_latest_materialization_events([key]).get(key)
 
-        return DEFAULT_LOGICAL_VERSION if event is None else _extract_logical_version_from_event(event)
+        return (
+            DEFAULT_LOGICAL_VERSION if event is None else _extract_logical_version_from_event(event)
+        )
 
 
 def _extract_logical_version_from_event(event: EventLogEntry) -> LogicalVersion:

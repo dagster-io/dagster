@@ -9,6 +9,7 @@ from typing_extensions import Protocol, TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
+from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,

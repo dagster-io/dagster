@@ -4,6 +4,7 @@ from typing_extensions import Final
 
 from dagster import _check as check
 
+
 class LogicalVersion:
     """Class that represents a logical version for an asset.
 
