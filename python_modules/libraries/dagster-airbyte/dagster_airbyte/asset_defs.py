@@ -587,9 +587,12 @@ class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefiniti
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
-        return with_resources(
-            super().build_definitions(data), {"airbyte": self._airbyte_resource_def}
-        )
+        return [
+            asset._with_resources(
+                {"airbyte": self._airbyte_resource_def}, enforce_all_requirements_satisfied=False
+            )
+            for asset in super().build_definitions(data)
+        ]
 
 
 class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):

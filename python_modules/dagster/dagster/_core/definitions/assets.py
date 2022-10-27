@@ -813,7 +813,11 @@ class AssetsDefinition(ResourceAddable):
             )
             return f"AssetsDefinition with keys {asset_keys}"
 
-    def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
+    def _with_resources(
+        self,
+        resource_defs: Mapping[str, ResourceDefinition],
+        enforce_all_requirements_satisfied: bool = True,
+    ) -> "AssetsDefinition":
         from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
         overlapping_keys = get_resource_key_conflicts(self.resource_defs, resource_defs)
@@ -829,9 +833,12 @@ class AssetsDefinition(ResourceAddable):
 
         merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
 
-        # Ensure top-level resource requirements are met - except for
-        # io_manager, since that is a default it can be resolved later.
-        ensure_requirements_satisfied(merged_resource_defs, list(self.get_resource_requirements()))
+        if enforce_all_requirements_satisfied:
+            # Ensure top-level resource requirements are met - except for
+            # io_manager, since that is a default it can be resolved later.
+            ensure_requirements_satisfied(
+                merged_resource_defs, list(self.get_resource_requirements())
+            )
 
         # Get all transitive resource dependencies from other resources.
         relevant_keys = get_transitive_required_resource_keys(
@@ -856,6 +863,9 @@ class AssetsDefinition(ResourceAddable):
             group_names_by_key=self.group_names_by_key,
             freshness_policies_by_key=self.freshness_policies_by_key,
         )
+
+    def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
+        return self._with_resources(resource_defs, enforce_all_requirements_satisfied=True)
 
 
 def _infer_keys_by_input_names(
