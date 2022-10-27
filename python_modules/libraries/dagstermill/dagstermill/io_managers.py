@@ -39,7 +39,10 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
 
     def _get_path(self, context: OutputContext) -> str:
         """Automatically construct filepath."""
-        keys = context.get_run_scoped_output_identifier()
+        if context.has_asset_key:
+            keys = context.get_asset_identifier()
+        else:
+            keys = context.get_run_scoped_output_identifier()
         return str(Path(self.base_dir, *keys).with_suffix(".ipynb"))
 
     def handle_output(self, context: OutputContext, obj: bytes):
