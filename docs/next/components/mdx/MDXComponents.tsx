@@ -12,7 +12,7 @@ import cx from 'classnames';
 import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
-import React, {ReactElement, useContext, useRef, useState} from 'react';
+import React, {ReactElement, useContext, useEffect, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
 import {useVersion} from '../../util/useVersion';
@@ -26,6 +26,47 @@ import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx'
 import DbtModelAssetExplanation from './includes/dagster/integrations/DbtModelAssetExplanation.mdx';
 
 export const SearchIndexContext = React.createContext(null);
+
+// https://www.30secondsofcode.org/react/s/use-hash
+// Modified to check for window existence (for nextjs) before accessing
+const useHash = (): [string, (newHash: any) => void] => {
+  const [hash, setHash] = React.useState('');
+
+  const windowExists = typeof window !== 'undefined';
+  useEffect(() => {
+    if (windowExists) {
+      setHash(window.location.hash);
+    }
+  }, [windowExists]);
+
+  const hashChangeHandler = React.useCallback(() => {
+    if (!windowExists) {
+      return;
+    }
+    setHash(window.location.hash);
+  }, [windowExists]);
+
+  React.useEffect(() => {
+    if (!windowExists) {
+      return;
+    }
+    window.addEventListener('hashchange', hashChangeHandler);
+    return () => {
+      window.removeEventListener('hashchange', hashChangeHandler);
+    };
+  }, [windowExists, hashChangeHandler]);
+
+  const updateHash = React.useCallback(
+    (newHash) => {
+      if (newHash !== hash) {
+        window.location.hash = newHash;
+      }
+    },
+    [hash],
+  );
+
+  return [hash, updateHash];
+};
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -535,6 +576,35 @@ function classNames(...classes) {
 }
 
 const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, persistentKey}) => {
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [anchor, _setAnchor] = useHash();
+
+  const anchorsInChildren: {[anchor: string]: number} = React.useMemo(() => {
+    const out = {};
+    React.Children.map(children, (tab, idx) => {
+      React.Children.map(tab.props.children, (child) => {
+        if (child.props.id) {
+          out[child.props.id] = idx;
+        }
+      });
+    });
+    return out;
+  }, [children]);
+
+  useEffect(() => {
+    const anchorWithoutHash = anchor.substring(1);
+    if (anchorWithoutHash in anchorsInChildren) {
+      const tabIdx = anchorsInChildren[anchorWithoutHash];
+
+      // Scroll page to the hash after re-render
+      setSelectedTab(tabIdx);
+      setTimeout(() => {
+        window.location.hash = '';
+        window.location.hash = anchor;
+      }, 10);
+    }
+  }, [anchor, anchorsInChildren]);
+
   const contents = (
     <>
       <Tab.List className="flex space-x-2 m-2">
@@ -583,7 +653,9 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
           )}
         </PersistentTabContext.Consumer>
       ) : (
-        <Tab.Group>{contents}</Tab.Group>
+        <Tab.Group selectedIndex={selectedTab} onChange={(idx) => setSelectedTab(idx)}>
+          {contents}
+        </Tab.Group>
       )}
     </div>
   );
