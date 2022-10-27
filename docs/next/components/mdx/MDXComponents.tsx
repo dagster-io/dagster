@@ -12,7 +12,7 @@ import cx from 'classnames';
 import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
-import React, {ReactElement, useContext, useEffect, useRef, useState} from 'react';
+import React, {ReactElement, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
 import {useVersion} from '../../util/useVersion';
@@ -579,17 +579,20 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
   const [selectedTab, setSelectedTab] = useState(0);
   const [anchor, _setAnchor] = useHash();
 
-  const anchorsInChildren: {[anchor: string]: number} = React.useMemo(() => {
+  const [anchorsInChildren, setAnchorsInChildren] = useState<{[anchor: string]: number}>({});
+  const handleTabs = useCallback((node: HTMLElement) => {
     const out = {};
-    React.Children.map(children, (tab, idx) => {
-      React.Children.map(tab.props.children, (child) => {
-        if (child.props.id) {
-          out[child.props.id] = idx;
-        }
-      });
-    });
-    return out;
-  }, [children]);
+
+    // Once the tabs render, get the list of element IDs and the map to the
+    // tab index they are in
+    for (let i = 0; i < node.children.length; i++) {
+      const tab = node.children[i] as HTMLElement;
+      for (const element of tab.querySelectorAll('[id]')) {
+        out[element.id] = i;
+      }
+    }
+    setAnchorsInChildren(out);
+  }, []);
 
   useEffect(() => {
     const anchorWithoutHash = anchor.substring(1);
@@ -627,10 +630,10 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
           );
         })}
       </Tab.List>
-      <Tab.Panels>
+      <Tab.Panels ref={handleTabs}>
         {React.Children.map(children, (child, idx) => {
           return (
-            <Tab.Panel key={idx} className={classNames('p-3')}>
+            <Tab.Panel key={idx} className={classNames('p-3')} unmount={false}>
               {child.props.children}
             </Tab.Panel>
           );
