@@ -30,8 +30,8 @@ def upgrade():
                 autoincrement=True,
             ),
             db.Column("event_id", db.Integer, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
-            db.Column("asset_key", db.Text),
-            db.Column("key", db.Text),
+            db.Column("asset_key", db.Text, nullable=False),
+            db.Column("key", db.Text, nullable=False),
             db.Column("value", db.Text),
         )
 
@@ -41,7 +41,6 @@ def upgrade():
             "asset_event_tags",
             ["asset_key", "key", "value"],
             unique=False,
-            postgresql_where=db.text("asset_key IS NOT NULL"),
             mysql_length={"key": 64, "value": 64, "asset_key": 64},
         )
 
