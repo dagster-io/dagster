@@ -86,6 +86,11 @@ class UPathIOManagerBase(MemoizableIOManager):
     def has_output(self, context: OutputContext) -> bool:
         return self._get_path(context).exists()
 
+    @staticmethod
+    def _has_multiple_partitions(context: Union[InputContext, OutputContext]):
+        key_range = context.asset_partition_key_range
+        return key_range.start != key_range.end
+
     def _get_path(self, context: Union[InputContext, OutputContext]) -> UPath:
         if context.has_asset_key:
             # we are dealing with an asset
@@ -110,7 +115,18 @@ class UPathIOManagerBase(MemoizableIOManager):
         # unfortunately, this doesn't work for Python 3.7 : inspect.get_annotations(self.serialize)["obj"]
         expected_type = inspect.signature(self.dump_to_path).parameters["obj"].annotation
 
-        if context.dagster_type.typing_type == expected_type:
+        if context.dagster_type.typing_type == expected_type and self._has_multiple_partitions(
+            context
+        ):
+            return check.failed(
+                f"Received `{context.dagster_type.typing_type.__name__}` op/asset type annotation, "
+                f"but the input has multiple partitions. "
+                f"`Dict[str, {context.dagster_type.typing_type.__name__}]` should be used in this case."
+            )
+
+        if context.dagster_type.typing_type == expected_type and not self._has_multiple_partitions(
+            context
+        ):
             context.log.debug(f"Loading from {path} using {self.__class__.__name__}")
             obj = self.load_from_path(context=context, path=path)
             context.add_input_metadata(
@@ -125,6 +141,7 @@ class UPathIOManagerBase(MemoizableIOManager):
             hasattr(context.dagster_type.typing_type, "__origin__")
             and context.dagster_type.typing_type.__origin__ in (Dict, dict)
             and context.dagster_type.typing_type.__args__[1] == expected_type
+            and self._has_multiple_partitions(context)
         ):
             # load multiple partitions
             if not context.has_asset_partitions:
@@ -158,9 +175,9 @@ class UPathIOManagerBase(MemoizableIOManager):
             return objs
         else:
             return check.failed(
-                f"Inputs of type {context.dagster_type} are not supported. Expected {expected_type}. "
-                f"Please specify the correct type for this input either in the op signature, "
-                f"corresponding In or in the {self.__class__.__name__}.dump_to_path type annotation."
+                f"Received {context.dagster_type.typing_type} op/asset type annotation, "
+                f"but `{self.dump_to_path}` has {expected_type} type annotation. "
+                f"They should match."
             )
 
     def handle_output(self, context: OutputContext, obj: Any):
