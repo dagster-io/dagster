@@ -137,7 +137,7 @@ class AssetSelection(ABC):
         self, all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]
     ) -> FrozenSet[AssetKey]:
         check.sequence_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
-        return Resolver(all_assets).resolve(self)
+        return AssetSelectionResolver(all_assets).resolve(self)
 
 
 class AllAssetSelection(AssetSelection):
@@ -208,7 +208,7 @@ class UpstreamAssetSelection(AssetSelection):
 # ########################
 
 
-class Resolver:
+class AssetSelectionResolver:
     def __init__(self, all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]):
         assets_defs = []
         source_assets = []

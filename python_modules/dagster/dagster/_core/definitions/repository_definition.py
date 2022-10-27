@@ -706,6 +706,7 @@ class CachingRepositoryData(RepositoryData):
                 definitions.
         """
         from dagster._core.definitions import AssetGroup, AssetsDefinition
+        from dagster._core.definitions.asset_selection import AssetSelectionResolver
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         coerced_graphs: Dict[str, JobDefinition] = {}
@@ -840,6 +841,12 @@ class CachingRepositoryData(RepositoryData):
                 )
 
         # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
+        # create a single resolver to reduce duplicated computations
+        asset_selection_resolver = (
+            AssetSelectionResolver(combined_asset_group.assets + combined_asset_group.source_assets)
+            if combined_asset_group
+            else None
+        )
         for name, unresolved_job_def in unresolved_jobs.items():
             if not combined_asset_group:
                 raise DagsterInvalidDefinitionError(
@@ -850,6 +857,7 @@ class CachingRepositoryData(RepositoryData):
                 assets=combined_asset_group.assets,
                 source_assets=combined_asset_group.source_assets,
                 default_executor_def=default_executor_def,
+                asset_selection_resolver=asset_selection_resolver,
             )
             pipelines_or_jobs[name] = resolved_job
 

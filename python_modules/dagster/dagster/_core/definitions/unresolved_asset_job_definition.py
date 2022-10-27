@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         PartitionsDefinition,
         SourceAsset,
     )
+    from dagster._core.defintions.asset_selection import AssetSelectionResolver
 
 
 class UnresolvedAssetJobDefinition(
@@ -138,10 +139,18 @@ class UnresolvedAssetJobDefinition(
         assets: Sequence["AssetsDefinition"],
         source_assets: Sequence["SourceAsset"],
         default_executor_def: Optional["ExecutorDefinition"] = None,
+        asset_selection_resolver: Optional["AssetSelectionResolver"] = None,
     ) -> "JobDefinition":
         """
         Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
         """
+        # when resolving many AssetSelection objects at once (e.g. in a repository), more efficient
+        # to create the AssetSelectionResolver object a single time
+        if asset_selection_resolver is not None:
+            asset_selection = asset_selection_resolver.resolve(self.selection)
+        else:
+            asset_selection = self.selection.resolve([*assets, *source_assets])
+
         return build_asset_selection_job(
             name=self.name,
             assets=assets,
@@ -149,7 +158,7 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
-            asset_selection=self.selection.resolve([*assets, *source_assets]),
+            asset_selection=asset_selection,
             partitions_def=self.partitions_def,
             executor_def=self.executor_def or default_executor_def,
         )

@@ -713,7 +713,6 @@ class DagsterEvent(
         )
         return cast(StepMaterializationData, self.event_specific_data).materialization
 
-
     @property
     def pipeline_failure_data(self) -> "PipelineFailureData":
         _assert_type("pipeline_failure_data", DagsterEventType.RUN_FAILURE, self.event_type)
