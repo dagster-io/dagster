@@ -19,7 +19,7 @@ from dagster import _check as check
 
 class UPathIOManagerBase(MemoizableIOManager):
     """
-    Abstract IOManager base class compatible with local and cloud storage via `fsspec` (using `iniversal-pathlib`).
+    Abstract IOManager base class compatible with local and cloud storage via `fsspec` (using `universal-pathlib`).
     """
 
     extension: str = ""  # override in child class
