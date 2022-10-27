@@ -33,6 +33,8 @@ To complete the steps in this guide, you'll need:
 
   Dagster Cloud supports a handful of agents, each with its own prerequisites for setup. Refer to the [Agent documentation](/dagster-cloud/deployment/agents) for more info.
 
+- For all but the local agent, you will need **access to a container registry** to store Docker images containing your Dagster code.
+
 ---
 
 ## Step 1: Create a Dagster Cloud account and organization
@@ -60,17 +62,11 @@ Continue to the next step when finished.
 
 ## Step 3: Deploy your code
 
-Now that you've set up your deployment, you'll need to tell it the location of your Dagster code.
+There are two options for deploying your code. For most Hybrid deployments, with the exception of those using a local agent, you will need to create a Docker image containing your code and then add a code location to Dagster Cloud that references the image. Typically, this build and deploy is done through CI/CD. It is also possible to deploy a code location manually, and this manual process would be used with the local agent.
 
-A code location specifies a single Python package or file that defines your Dagster code. Each Dagster Cloud deployment can include code from one or more code locations. Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations) for more info.
+- For continunous integration with GitHub, begin by copying the GitHub action deploy workflow in [this repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart). You will need to set a variety of secrets as outlined in the action, and should uncomment the step that is relevant to your Docker container registry. If you are not using GitHub but are using a different CI/CD tool, you will want to follow the same steps outlined in the GitHub action, but use the `dagster-cloud` CLI to deploy your code location. Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations) for more info.
 
-To complete this step, you can use your own Dagster code or a [project scaffold](/getting-started/create-new-project). Our examples use the scaffold. Scaffold a new project by running:
-
-```shell
-dagster project from-example \
-  --name <PROJECT_NAME> \
-  --example <EXAMPLE_PROJECT_NAME>
-```
+- For manual code deployments, you will follow these steps:
 
 1. In Dagster Cloud, click **Workspace**.
 
@@ -102,7 +98,9 @@ In this step, you'll run your first job in Dagster Cloud.
 
 ---
 
-## Step 5: Set up Continuous Integration
+## Step 5: Set up Branch Deployments
+
+In Step 3, you most likely setup CI/CD to automatically deploy code changes in your main branch to Dagster Cloud. Dagster Cloud also supports continuous integration testing through Branch Deployments. For example, you may wish to create an isolated deployment in Dagster Cloud when a pull request is created in your Git repository.
 
 Branch Deployments allow you to quickly and collaboratively develop your Dagster jobs. When a branch is created or updated in your Dagster repository, Branch Deployments will create a testing environment in the current Dagster Cloud deployment. For example, `prod`.
 
