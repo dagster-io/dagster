@@ -159,7 +159,11 @@ def reconcile_sources(
             continue
 
         diff = diff.join(
-            diff_sources(configured_source, existing_source.source if existing_source else None)
+            diff_sources(
+                configured_source,
+                existing_source.source if existing_source else None,
+                ignore_secrets,
+            )
         )
 
         if existing_source and (
