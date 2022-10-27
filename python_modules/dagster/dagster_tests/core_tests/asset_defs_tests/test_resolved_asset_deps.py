@@ -1,4 +1,4 @@
-from dagster import AssetIn, asset
+from dagster import AssetIn, AssetKey, AssetOut, asset, multi_asset
 from dagster._core.definitions.resolved_asset_deps import resolve_assets_def_deps
 
 
@@ -16,3 +16,19 @@ def test_same_name_twice_and_downstream():
         del apple
 
     assert len(resolve_assets_def_deps([asset1, asset2, asset3], [])) == 0
+
+
+def test_multi_asset_group_name():
+    @asset(group_name="somegroup", key_prefix=["some", "path"])
+    def upstream():
+        pass
+
+    @multi_asset(group_name="somegroup", outs={"a": AssetOut(), "b": AssetOut()})
+    def multi_downstream(upstream):  # pylint: disable=unused-argument
+        pass
+
+    resolved = resolve_assets_def_deps([upstream, multi_downstream], [])
+    assert len(resolved) == 1
+
+    resolution = next(iter(resolved.values()))
+    assert resolution == {AssetKey(["upstream"]): AssetKey(["some", "path", "upstream"])}
