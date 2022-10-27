@@ -385,8 +385,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
             pipeline=self.get_reconstructable_pipeline(
                 external_pipeline.repository_handle.repository_name, external_pipeline.name
             ).subset_for_execution_from_existing_pipeline(
-                frozenset(check.not_none(external_pipeline.solids_to_execute)),
-                frozenset(check.not_none(external_pipeline.asset_selection)),
+                external_pipeline.solids_to_execute,
+                external_pipeline.asset_selection,
             ),
             run_config=run_config,
             mode=mode,

@@ -2,7 +2,7 @@ import inspect
 import os
 import sys
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, overload
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, overload
 
 import dagster._check as check
 import dagster._seven as seven
@@ -206,9 +206,9 @@ class ReconstructablePipeline(
 
     def _subset_for_execution(
         self,
-        solids_to_execute: Optional[Optional[FrozenSet[str]]],
+        solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[List[str]],
-        asset_selection: Optional[FrozenSet[AssetKey]],
+        asset_selection: Optional[AbstractSet[AssetKey]],
     ) -> "ReconstructablePipeline":
         # no selection
         if solid_selection is None and solids_to_execute is None and asset_selection is None:
@@ -273,8 +273,8 @@ class ReconstructablePipeline(
 
     def subset_for_execution_from_existing_pipeline(
         self,
-        solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "ReconstructablePipeline":
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
