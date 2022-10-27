@@ -13,8 +13,6 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Final
-
 import dagster._check as check
 from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
@@ -41,9 +39,6 @@ from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
-
-DEFAULT_OP_VERSION: Final[str] = "DEFAULT"
-
 
 @overload
 def asset(
@@ -74,7 +69,7 @@ def asset(
     output_required: bool = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
-    version: Union[bool, str] = ...,
+    op_version: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -101,7 +96,7 @@ def asset(
     output_required: bool = True,
     freshness_policy: Optional[FreshnessPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
-    version: Union[bool, str] = False,
+    op_version: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -159,11 +154,8 @@ def asset(
         freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
             with respect to its root data.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
-        version (Union[bool, str]): (Experimental) If `false` is passed, the asset is unversioned.
-            If `true` is passed, the asset is opted into version-based reconciliation, with the
-            version of the underlying op set to a default value. If a string is passed, the asset is
-            opted into version-based reconciliation and the passed value is set as the version on
-            the underlying op.
+        op_version (Optional[str]): (Experimental) Version string passed to the op underlying the
+            asset.
 
     Examples:
 
@@ -206,7 +198,7 @@ def asset(
             output_required=output_required,
             freshness_policy=freshness_policy,
             retry_policy=retry_policy,
-            version=version,
+            op_version=op_version,
         )(fn)
 
     return inner
@@ -233,7 +225,7 @@ class _Asset:
         output_required: bool = True,
         freshness_policy: Optional[FreshnessPolicy] = None,
         retry_policy: Optional[RetryPolicy] = None,
-        version: Union[bool, str] = False,
+        op_version: Optional[str] = None,
     ):
         self.name = name
 
@@ -258,7 +250,7 @@ class _Asset:
         self.output_required = output_required
         self.freshness_policy = freshness_policy
         self.retry_policy = retry_policy
-        self.version = version
+        self.op_version = op_version
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -292,13 +284,6 @@ class _Asset:
                 is_required=self.output_required,
             )
 
-            if self.version is True:
-                version = DEFAULT_OP_VERSION
-            elif self.version is False:
-                version = None
-            else:
-                version = self.version
-
             op = _Op(
                 name=out_asset_key.to_python_identifier(),
                 description=self.description,
@@ -311,7 +296,7 @@ class _Asset:
                 },
                 config_schema=self.config_schema,
                 retry_policy=self.retry_policy,
-                version=version,
+                version=self.op_version,
             )(fn)
 
         keys_by_input_name = {
