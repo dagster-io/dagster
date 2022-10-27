@@ -282,6 +282,17 @@ class SourceAsset(ResourceAddable):
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
 
+    def __eq__(self, other: SourceAsset) -> bool:
+        return (
+            self.key == other.key
+            and self.metadata_entries == other.metadata_entries
+            and self.io_manager_key == other.io_manager_key
+            and self.description == other.description
+            and self.group_name == other.group_name
+            and self.resource_defs == other.resource_defs
+            and self.observe_fn == other.observe_fn
+        )
+
 
 def _raw_observation_to_metadata(raw_observation: object) -> MetadataUserInput:
     if isinstance(raw_observation, dict):
