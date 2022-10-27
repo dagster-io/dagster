@@ -704,15 +704,19 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
+        asset_selection = (
+            frozenset(check.opt_set_param(external_pipeline.asset_selection, "asset_selection"))
+            if external_pipeline.asset_selection is not None
+            else None
+        )
+
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self.client,
             pipeline_origin=external_pipeline.get_external_origin(),
             run_config=run_config,
             mode=mode,
             pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
-            asset_selection=frozenset(
-                check.opt_set_param(external_pipeline.asset_selection, "asset_selection")
-            ),
+            asset_selection=asset_selection,
             solid_selection=external_pipeline.solid_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
