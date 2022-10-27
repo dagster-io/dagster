@@ -88,9 +88,29 @@ dagster-cloud serverless deploy \
 
 Often you'll need to securely access secrets from your jobs. With Dagster Cloud Serverless, secrets are added as environment variables that can be read using APIs like [StringSource](/guides/dagster/transitioning-data-pipelines-from-development-to-production#part-two-deployment).
 
-- If you're using our GitHub integration, you can pass in secrets as a JSON string input to the serverless deploy step in your repository's Github action script.
+- If you're using our GitHub integration, you can create secrets in GitHub and then pass those secrets to Dagster by modifying the serverless deploy step in your repository's GitHub action script.
+
+```shell
+# .github/workflows/deploy.yml AND .github/workflows/branch_deployments.yml
+...
+jobs:
+  ...
+  dagster_cloud_build_push:
+  ...
+    steps:
+    ...
+    - name: Build and deploy to Dagster Cloud serverless
+          uses: dagster-io/dagster-cloud-action/actions/serverless_prod_deploy
+          with:
+            dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+            location: ${{ toJson(matrix.location) }}
+            # Uncomment to pass through Github Action secrets as a JSON string of key-value pairs
+            # env_vars: ${{ toJson(secrets) }}
+```
+
 - If you're using the CLI directly, you can pass `KEY=VALUE` pairs using the `--env` flag. Run `dagster-cloud serverless deploy --help` to learn more.
 
+<<<<<<< HEAD
 ### Adding dependencies
 
 Any dependencies specified in either `requirements.txt` or `setup.py` will be installed for you automatically by the Dagster Cloud Serverless infrastructure.
@@ -133,6 +153,15 @@ The default base image is `debian:bullseye-slim`, but it can be changed.
 ```shell
     dagster-cloud serverless deploy --location-name=my_location --base-image=my_base_image:latest
 ```
+=======
+### Adding Non-Python Dependencies
+
+While Python dependencies will be installed via `setup.py` or `requirements.txt`, occasionally a project will require additional dependencies. For example, dbt dependencies that are installed with `dbt deps`.
+
+- If you're using our GitHub integration, you can create a shell script called `dagster_cloud_pre_install.sh` that will be run before the Python dependencies are installed or you can create a shell script called `dagster_cloud_post_install.sh` that will be run after the Python dependencies are installed. The scripts should be executable, e.g. run `chmod +x dagster_cloud_post_install.sh` prior to committing the file to your Git repo.
+
+- If you're using the CLI directly, you should create a custom base image with your dependencies and include it by specifying `--base-image` in the `deploy serverless` command.
+>>>>>>> 26bdce8b8b (document serverless pre and post install hooks)
 
 ---
 
