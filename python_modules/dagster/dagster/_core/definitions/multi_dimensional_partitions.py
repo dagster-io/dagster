@@ -4,8 +4,8 @@ from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
-from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidDefinitionError
 
 from .partition import Partition, PartitionsDefinition, StaticPartitionsDefinition
 

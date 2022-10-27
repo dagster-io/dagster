@@ -1,18 +1,7 @@
 import inspect
 import warnings
 from collections import defaultdict
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import (

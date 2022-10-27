@@ -330,9 +330,7 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def partition_key(self) -> str:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionKey,
-        )
+        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 
         tags = self._plan_data.pipeline_run.tags
 

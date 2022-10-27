@@ -1,5 +1,7 @@
 from datetime import datetime
+
 import pytest
+
 from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
@@ -13,9 +15,9 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
-from dagster._core.errors import DagsterInvalidDefinitionError
 
 DATE_FORMAT = "%Y-%m-%d"
 

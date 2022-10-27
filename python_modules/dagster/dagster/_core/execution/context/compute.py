@@ -1,15 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    cast,
-)
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import public

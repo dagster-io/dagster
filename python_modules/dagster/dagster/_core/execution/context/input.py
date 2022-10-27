@@ -1,14 +1,4 @@
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import public
