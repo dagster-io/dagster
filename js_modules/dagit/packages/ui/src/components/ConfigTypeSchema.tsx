@@ -195,8 +195,12 @@ export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
   );
 });
 
-const HoveredDictEntryContext = React.createContext<{setHovered: (unhover: () => void) => void}>({
-  setHovered: (_) => {},
+const HoveredDictEntryContext = React.createContext<{
+  useDictEntryHover: () => {hovered: boolean; onMouseEnter: () => void; onMouseLeave: () => void};
+}>({
+  useDictEntryHover() {
+    return {hovered: false, onMouseEnter: () => {}, onMouseLeave: () => {}};
+  },
 });
 
 /**
@@ -207,15 +211,52 @@ const HoveredDictEntryContext = React.createContext<{setHovered: (unhover: () =>
  */
 const HoveredDictEntryContextProvider = React.memo(({children}: {children: React.ReactNode}) => {
   const value = React.useMemo(() => {
-    let currentUnhover: null | (() => void) = null;
-    return {
-      setHovered(unhover: typeof currentUnhover) {
-        if (currentUnhover) {
-          currentUnhover();
-        }
-        currentUnhover = unhover;
-      },
-    };
+    // We need to keep a stack of the entries that are hovered because they are nested.
+    // The `MouseEnter` handler only fires when we first hover the entry, but it does not
+    // fire when exiting a nested dict entry because technically we never left.
+    // To handle that case whenever we `MouseLeave` fires we restore the last element in the
+    // stack before the leaving element as hovered
+
+    let currentHoveredStack: Array<{setHovered: (hovered: boolean) => void}> = [];
+    function useDictEntryHover() {
+      const [hovered, setHovered] = React.useState(false);
+      const self = React.useMemo(() => ({setHovered}), []);
+      return {
+        hovered,
+        onMouseEnter: React.useCallback(() => {
+          const lastHovered = currentHoveredStack[currentHoveredStack.length - 1];
+          if (lastHovered) {
+            // If there is already a hovered element, unhover it.
+            lastHovered.setHovered(false);
+          }
+          // Record that we're now the last entry to be hovered
+          currentHoveredStack.push(self);
+          setHovered(true);
+        }, [self]),
+        onMouseLeave: React.useCallback(() => {
+          const lastHovered = currentHoveredStack[currentHoveredStack.length - 1];
+          if (!lastHovered) {
+            // This should never happen but if it does we're fine.
+            return;
+          }
+          // We should be the last hovered element, if not lets proceed anyways because
+          // we'll hover the correct element later.
+          lastHovered.setHovered(false);
+          const currentIndex = currentHoveredStack.indexOf(self);
+          if (currentIndex !== -1) {
+            // This should only remove 1 entry, the last hovered entry
+            currentHoveredStack = currentHoveredStack.slice(0, currentIndex);
+          }
+          const nextLastHovered = currentHoveredStack[currentHoveredStack.length - 1];
+          if (nextLastHovered) {
+            // If something is still on the stack after this dict entry is no longer hovered then
+            // its a parent dict entry and should be hovered
+            nextLastHovered.setHovered(true);
+          }
+        }, [self]),
+      };
+    }
+    return {useDictEntryHover};
   }, []);
   return (
     <HoveredDictEntryContext.Provider value={value}>{children}</HoveredDictEntryContext.Provider>
@@ -227,22 +268,16 @@ const DictEntry = React.forwardRef(
     props: React.ComponentProps<typeof DictEntryDiv>,
     ref: React.ForwardedRef<HTMLButtonElement>,
   ) => {
-    const [hovered, setHovered] = React.useState(false);
-    const {setHovered: setHoveredGlobally} = React.useContext(HoveredDictEntryContext);
+    const {hovered, onMouseEnter, onMouseLeave} = React.useContext(
+      HoveredDictEntryContext,
+    ).useDictEntryHover();
 
     return (
       <DictEntryDiv
         {...props}
         $hovered={hovered}
-        onMouseEnter={() => {
-          setHovered(true);
-          setHoveredGlobally(() => {
-            setHovered(false);
-          });
-        }}
-        onMouseLeave={() => {
-          setHovered(false);
-        }}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         ref={ref}
       />
     );
