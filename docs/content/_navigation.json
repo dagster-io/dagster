@@ -705,6 +705,10 @@
           {
             "title": "Using custom run coordinators",
             "path": "/guides/dagster/run-attribution"
+          },
+          {
+            "title": "Managed elements",
+            "path": "/guides/dagster/managed-elements"
           }
         ]
       }
