@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Mapping, Optional
 
 import pendulum
@@ -19,8 +20,8 @@ class FreshnessPolicy(ABC):
     @abstractmethod
     def minutes_late(
         self,
-        current_timestamp: float,
-        upstream_materialization_timestamps: Mapping[AssetKey, Optional[float]],
+        evaluation_time: datetime,
+        upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
     ) -> Optional[float]:
         raise NotImplementedError()
 
@@ -61,23 +62,21 @@ class MinimumFreshnessPolicy(FreshnessPolicy):
 
     def minutes_late(
         self,
-        current_timestamp: float,
-        upstream_materialization_timestamps: Mapping[AssetKey, Optional[float]],
+        evaluation_time: datetime,
+        upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
     ) -> Optional[float]:
-        current_datetime = pendulum.from_timestamp(current_timestamp)
-
-        minimum_freshness_duration = pendulum.duration(minutes=self.minimum_freshness_minutes)
-        minimum_datetime = current_datetime - minimum_freshness_duration
+        minimum_time = evaluation_time - pendulum.duration(minutes=self.minimum_freshness_minutes)
 
         minutes_late = 0.0
-        for upstream_materialization_timestamp in upstream_materialization_timestamps.values():
+        for upstream_time in upstream_materialization_times.values():
             # if any upstream materialization data is missing, then exit early
-            if upstream_materialization_timestamp is None:
+            if upstream_time is None:
                 return None
 
-            upstream_datetime = pendulum.from_timestamp(upstream_materialization_timestamp)
-            if upstream_datetime < minimum_datetime:
-                minutes_late = max(minutes_late, (minimum_datetime - upstream_datetime).minutes)
+            if upstream_time < minimum_time:
+                minutes_late = max(
+                    minutes_late, (minimum_time - upstream_time).total_seconds() / 60
+                )
         return minutes_late
 
 
@@ -101,35 +100,33 @@ class CronMinimumFreshnessPolicy(FreshnessPolicy):
 
     def minutes_late(
         self,
-        current_timestamp: float,
-        upstream_materialization_timestamps: Mapping[AssetKey, Optional[float]],
+        evaluation_time: datetime,
+        upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
     ) -> Optional[float]:
-        current_datetime = pendulum.from_timestamp(current_timestamp)
         minimum_freshness_duration = pendulum.duration(minutes=self.minimum_freshness_minutes)
 
         # find the most recent schedule tick which is more than minimum_freshness_duration old,
         # i.e. the most recent schedule tick which could be failing this constraint
         schedule_ticks = croniter(
-            self.cron_schedule, current_datetime, ret_type=pendulum.DateTime, is_prev=True
+            self.cron_schedule, evaluation_time, ret_type=datetime, is_prev=True
         )
         latest_required_tick = next(schedule_ticks)
-        while latest_required_tick + minimum_freshness_duration > current_datetime:
+        while latest_required_tick + minimum_freshness_duration > evaluation_time:
             latest_required_tick = next(schedule_ticks)
 
         minutes_late = 0.0
-        for upstream_materialization_timestamp in upstream_materialization_timestamps.values():
+        for upstream_materialization_time in upstream_materialization_times.values():
 
             # if any upstream materialization data is missing, then exit early
-            if upstream_materialization_timestamp is None:
+            if upstream_materialization_time is None:
                 return None
 
-            upstream_datetime = pendulum.from_timestamp(upstream_materialization_timestamp)
-            if upstream_datetime < latest_required_tick:
+            if upstream_materialization_time < latest_required_tick:
                 # find the difference between the actual data time and the latest time that you would
                 # have expected to get this data by
                 expected_by_time = latest_required_tick + minimum_freshness_duration
                 minutes_late = max(
-                    minutes_late, current_datetime.diff(expected_by_time).in_minutes()
+                    minutes_late, (evaluation_time - expected_by_time).total_seconds() / 60
                 )
 
         return minutes_late

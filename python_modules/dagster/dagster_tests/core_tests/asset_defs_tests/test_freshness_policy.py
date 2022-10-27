@@ -6,7 +6,7 @@ from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 @pytest.mark.parametrize(
-    ["sla", "materialization_time", "evaluation_time", "expected_minutes_late"],
+    ["policy", "materialization_time", "evaluation_time", "expected_minutes_late"],
     [
         (
             FreshnessPolicy.minimum_freshness(30),
@@ -82,14 +82,14 @@ from dagster._seven.compat.pendulum import create_pendulum_time
         ),
     ],
 )
-def test_slas(sla, materialization_time, evaluation_time, expected_minutes_late):
+def test_policies(policy, materialization_time, evaluation_time, expected_minutes_late):
     if materialization_time:
-        upstream_materialization_times = {AssetKey("root"): materialization_time.timestamp()}
+        upstream_materialization_times = {AssetKey("root"): materialization_time}
     else:
         upstream_materialization_times = {AssetKey("root"): None}
-    minutes_late = sla.minutes_late(
-        current_timestamp=evaluation_time.timestamp(),
-        upstream_materialization_timestamps=upstream_materialization_times,
+    minutes_late = policy.minutes_late(
+        evaluation_time=evaluation_time,
+        upstream_materialization_times=upstream_materialization_times,
     )
 
     assert minutes_late == expected_minutes_late
