@@ -1,9 +1,11 @@
-import requests
-import os
 import json
-from dagster import load_assets_from_package_module, repository, op, job
+import os
 
-from assets_notebook.assets import iris_dataset, noteable_iris_notebook, jupyter_iris_notebook
+import requests
+from assets_notebook.assets import iris_dataset, jupyter_iris_notebook, noteable_iris_notebook
+
+from dagster import job, load_assets_from_package_module, op, repository
+
 
 ############ Repository with an asset backed by a Jupyter notebook ############
 @repository

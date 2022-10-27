@@ -1,12 +1,6 @@
-from papermill_origami.noteable_dagstermill import (
-    define_noteable_dagster_asset,
-)
-from dagster import (
-    Field,
-    Int,
-    AssetIn,
-    AssetKey,
-)
+from papermill_origami.noteable_dagstermill import define_noteable_dagster_asset
+
+from dagster import AssetIn, AssetKey, Field, Int
 
 notebook_id = "c38b1d2b-53b7-428f-801b-c465e8f84255" # TODO remove and uncomment the line below
 # notebook_id = "your-notebook-id-here"
