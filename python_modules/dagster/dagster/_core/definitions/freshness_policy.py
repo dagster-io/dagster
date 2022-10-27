@@ -5,9 +5,12 @@ from typing import Mapping, Optional
 import pendulum
 from croniter import croniter
 
+from dagster._annotations import experimental
+
 from .events import AssetKey
 
 
+@experimental
 class FreshnessPolicy(ABC):
     """A FreshnessPolicy is a policy that defines how up-to-date a given asset is expected to be.
     We calculate the current time of the data within an asset by traversing the history of asset
@@ -47,6 +50,7 @@ class FreshnessPolicy(ABC):
         )
 
 
+@experimental
 class MinimumFreshnessPolicy(FreshnessPolicy):
     """A freshness policy which specifies that the upstream data that was used for the most recent
     asset materialization must have been materialized no more than `minimum_freshness_minutes` ago,
@@ -80,6 +84,7 @@ class MinimumFreshnessPolicy(FreshnessPolicy):
         return minutes_late
 
 
+@experimental
 class CronMinimumFreshnessPolicy(FreshnessPolicy):
     """A freshness policy which specifies that the upstream data that was used for the most recent
     asset materialization must have been materialized no more than `minimum_freshness_minutes` ago,
