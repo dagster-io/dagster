@@ -238,7 +238,7 @@ def _make_sensor(
             _deserialize_cursor_dict(context.cursor) if context.cursor else {}
         )
         should_materialize: Set[AssetKey] = set()
-        cursor_update_dict: Dict[str, "RunShardedEventsCursor"] = {}
+        cursor_update_dict: Dict[str, "RunShardedEventsCursor"] = cursor_dict.copy()
         # keep track of the in planned materializations for each parent so we don't repeat
         # calls to the db
         planned_materialization_cache: Dict[AssetKey, "EventLogRecord"] = {}
@@ -259,15 +259,14 @@ def _make_sensor(
 
         # determine which assets should materialize based on the materialization status of their
         # parents
-        for a in toposort_assets:
-            a_cursor = cursor_dict.get(str(a))
-            if a_cursor:
-                cursor_update_dict[str(a)] = a_cursor
+        for current_asset_key in toposort_assets:
+            current_asset_cursor = cursor_dict.get(str(current_asset_key))
+
             parent_update_records = _get_parent_updates(
                 context,
-                current_asset=a,
-                parent_assets=upstream[a],
-                cursor=a_cursor,
+                current_asset=current_asset_key,
+                parent_assets=upstream[current_asset_key],
+                cursor=current_asset_cursor,
                 will_materialize_set=should_materialize,
                 wait_for_in_progress_runs=wait_for_in_progress_runs,
                 planned_materialization_cache=planned_materialization_cache,
@@ -278,16 +277,18 @@ def _make_sensor(
                 materialization_status
                 for materialization_status, _ in parent_update_records.values()
             ):
-                should_materialize.add(a)
+                should_materialize.add(current_asset_key)
 
                 # get the cursor value by selecting the max of all the candidates. If we're using a
                 # sharded event log storage, compare timestamps, otherwise compare storage ids. See
                 # cursor_compare_idx for how this is determined
                 cursor_update_candidates = [
                     cursor_val for _, cursor_val in parent_update_records.values() if cursor_val
-                ] + ([a_cursor] if a_cursor else [])
+                ] + ([current_asset_cursor] if current_asset_cursor else [])
                 if cursor_update_candidates:
-                    cursor_update_dict[str(a)] = max(cursor_update_candidates, key=cursor_key_fn)
+                    cursor_update_dict[str(current_asset_key)] = max(
+                        cursor_update_candidates, key=cursor_key_fn
+                    )
 
         if len(should_materialize) > 0:
             context.update_cursor(_serialize_cursor_dict(cursor_update_dict))
