@@ -110,9 +110,20 @@ class UPathIOManagerBase(MemoizableIOManager):
         # unfortunately, this doesn't work for Python 3.7 : inspect.get_annotations(self.serialize)["obj"]
         expected_type = inspect.signature(self.dump_to_path).parameters["obj"].annotation
 
+        if context.dagster_type.typing_type == expected_type:
+            context.log.debug(f"Loading from {path} using {self.__class__.__name__}")
+            obj = self.load_from_path(context=context, path=path)
+            context.add_input_metadata(
+                {
+                    "path": MetadataValue.path(path),
+                }
+            )
+            return obj
+
         # FIXME: use a custom PartitionsList type instead of List
-        if (
-            context.dagster_type.typing_type.__origin__ in (List, list)
+        elif (
+            hasattr(context.dagster_type.typing_type, "__origin__")
+            and context.dagster_type.typing_type.__origin__ in (List, list)
             and context.dagster_type.typing_type.__args__[0] == expected_type
         ):
             # load multiple partitions
@@ -151,15 +162,6 @@ class UPathIOManagerBase(MemoizableIOManager):
                         f"Couldn't load partition {path_with_partition} and skipped it"
                     )
             return objs
-        elif issubclass(context.dagster_type.typing_type.__args__[0], expected_type):
-            context.log.debug(f"Loading from {path} using {self.__class__.__name__}")
-            obj = self.load_from_path(context=context, path=path)
-            context.add_input_metadata(
-                {
-                    "path": MetadataValue.path(path),
-                }
-            )
-            return obj
         else:
             return check.failed(
                 f"Inputs of type {context.dagster_type} are not supported. Expected {expected_type}. "
