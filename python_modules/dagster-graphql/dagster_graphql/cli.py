@@ -2,9 +2,9 @@ from typing import Mapping, Optional, cast
 from urllib.parse import urljoin, urlparse
 
 import click
-from graphql.execution import ExecutionResult
 import requests
 from graphql import graphql
+from graphql.execution import ExecutionResult
 
 import dagster._check as check
 import dagster._seven as seven
@@ -43,12 +43,15 @@ def execute_query(
 
     context = workspace_process_context.create_request_context()
 
-    result = cast(ExecutionResult, graphql(
-        request_string=query,
-        schema=create_schema(),
-        context_value=context,
-        variable_values=variables,
-    ))
+    result = cast(
+        ExecutionResult,
+        graphql(
+            request_string=query,
+            schema=create_schema(),
+            context_value=context,
+            variable_values=variables,
+        ),
+    )
 
     result_dict = result.to_dict()
 
@@ -62,7 +65,7 @@ def execute_query(
     if "errors" in result_dict:
         result_dict_errors = check.list_elem(result_dict, "errors", of_type=Exception)
         result_errors = check.is_list(result.errors, of_type=Exception)
-        check.invariant(len(result_dict_errors) == len(result_errors))  # 
+        check.invariant(len(result_dict_errors) == len(result_errors))  #
         for python_error, error_dict in zip(result_errors, result_dict_errors):
             if hasattr(python_error, "original_error") and python_error.original_error:
                 error_dict["stack_trace"] = get_stack_trace_array(python_error.original_error)
