@@ -84,7 +84,6 @@ db.Index(
     AssetEventTagsTable.c.asset_key,
     AssetEventTagsTable.c.key,
     AssetEventTagsTable.c.value,
-    AssetEventTagsTable.c.event_id,
     mysql_length={"asset_key": 64, "key": 64, "value": 64},
 )
 db.Index(
