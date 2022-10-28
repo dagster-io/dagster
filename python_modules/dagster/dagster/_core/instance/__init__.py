@@ -1285,6 +1285,22 @@ class DagsterInstance:
         return self._run_storage.add_run_tags(run_id, new_tags)
 
     @traced
+    def add_asset_event_tags(self, asset_event_id: int, new_tags: Dict[str, str]):
+        import json
+
+        cur_tags = self.get_asset_event_tags(asset_event_id)
+
+        self._run_storage.kvs_set({str(asset_event_id): json.dumps({**cur_tags, **new_tags})})
+
+    @traced
+    def get_asset_event_tags(self, asset_event_id: int) -> Dict[str, str]:
+        import json
+
+        return json.loads(
+            self._run_storage.kvs_get({str(asset_event_id)}).get(str(asset_event_id), "{}")
+        )
+
+    @traced
     def has_run(self, run_id: str) -> bool:
         return self._run_storage.has_run(run_id)
 
