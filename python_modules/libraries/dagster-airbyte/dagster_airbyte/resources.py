@@ -1,13 +1,16 @@
+import hashlib
+import json
 import logging
 import sys
 import time
+from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, cast
 
 import requests
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 
-from dagster import Failure, Field, StringSource, __version__
+from dagster import Failure, Field, StringSource
 from dagster import _check as check
 from dagster import get_dagster_logger, resource
 from dagster._config.field_utils import Permissive
@@ -56,6 +59,9 @@ class AirbyteResource:
         self._log = log
 
         self._forward_logs = forward_logs
+        self._request_cache: Dict[str, Optional[Dict[str, object]]] = {}
+        # Int in case we nest contexts
+        self._cache_enabled = 0
 
         self._username = username
         self._password = password
@@ -67,6 +73,36 @@ class AirbyteResource:
             + (f"{self._host}:{self._port}" if self._port else self._host)
             + "/api/v1"
         )
+
+    @contextmanager
+    def cache_requests(self):
+        """
+        Context manager that enables caching certain requests to the Airbyte API,
+        cleared when the context is exited.
+        """
+        self.clear_request_cache()
+        self._cache_enabled += 1
+        try:
+            yield
+        finally:
+            self.clear_request_cache()
+            self._cache_enabled -= 1
+
+    def clear_request_cache(self):
+        self._request_cache = {}
+
+    def make_request_cached(self, endpoint: str, data: Optional[Dict[str, object]]):
+        if not self._cache_enabled > 0:
+            return self.make_request(endpoint, data)
+        data_json = json.dumps(data, sort_keys=True)
+        sha = hashlib.sha1()
+        sha.update(endpoint.encode("utf-8"))
+        sha.update(data_json.encode("utf-8"))
+        digest = sha.hexdigest()
+
+        if digest not in self._request_cache:
+            self._request_cache[digest] = self.make_request(endpoint, data)
+        return self._request_cache[digest]
 
     def make_request(
         self, endpoint: str, data: Optional[Dict[str, object]]
@@ -117,6 +153,83 @@ class AirbyteResource:
 
     def cancel_job(self, job_id: int):
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})
+
+    def get_default_workspace(self):
+        workspaces = cast(
+            List[Dict[str, Any]],
+            check.not_none(self.make_request_cached(endpoint="/workspaces/list", data={})).get(
+                "workspaces", []
+            ),
+        )
+        return workspaces[0].get("workspaceId")
+
+    def get_source_definition_by_name(self, name: str, workspace_id: str) -> Optional[str]:
+        name_lower = name.lower()
+        definitions = self.make_request_cached(
+            endpoint="/source_definitions/list_for_workspace", data={"workspaceId": workspace_id}
+        )
+
+        return next(
+            (
+                definition["sourceDefinitionId"]
+                for definition in definitions["sourceDefinitions"]
+                if definition["name"].lower() == name_lower
+            ),
+            None,
+        )
+
+    def get_destination_definition_by_name(self, name: str, workspace_id: str):
+        name_lower = name.lower()
+        definitions = cast(
+            Dict[str, List[Dict[str, str]]],
+            check.not_none(
+                self.make_request_cached(
+                    endpoint="/destination_definitions/list_for_workspace",
+                    data={"workspaceId": workspace_id},
+                )
+            ),
+        )
+        return next(
+            (
+                definition["destinationDefinitionId"]
+                for definition in definitions["destinationDefinitions"]
+                if definition["name"].lower() == name_lower
+            ),
+            None,
+        )
+
+    def get_source_catalog_id(self, source_id: str):
+        result = cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
+            ),
+        )
+        return result["catalogId"]
+
+    def get_source_schema(self, source_id: str) -> Dict[str, Any]:
+        return cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
+            ),
+        )
+
+    def does_dest_support_normalization(
+        self, destination_definition_id: str, workspace_id: str
+    ) -> Dict[str, Any]:
+        return cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request_cached(
+                    endpoint="/destination_definition_specifications/get",
+                    data={
+                        "destinationDefinitionId": destination_definition_id,
+                        "workspaceId": workspace_id,
+                    },
+                )
+            ),
+        ).get("supportsNormalization", False)
 
     def get_job_status(self, connection_id: str, job_id: int) -> dict:
         if self._forward_logs:

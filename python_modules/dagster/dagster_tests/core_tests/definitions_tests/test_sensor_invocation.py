@@ -1112,7 +1112,7 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
             # Test that materialization exists
             assert context.latest_materialization_records_by_key()[
                 my_asset.key
-            ].event_log_entry.dagster_event.step_materialization_data.materialization.metadata_entries[
+            ].event_log_entry.dagster_event.materialization.metadata_entries[
                 0
             ].entry_data == BoolMetadataValue(
                 value=True

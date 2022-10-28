@@ -32,6 +32,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
             "yarn test",
             "yarn build-master",
         )
+        .with_skip(skip_if_no_docs_changes())
         .on_test_image(AvailablePythonVersion.V3_7)
         .build(),
         # Make sure docs sphinx build runs.

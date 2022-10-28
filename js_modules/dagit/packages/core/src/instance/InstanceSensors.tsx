@@ -2,9 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
@@ -17,33 +15,19 @@ import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
-import {InstancePageContext} from './InstancePageContext';
-import {InstanceTabs} from './InstanceTabs';
 import {InstanceSensorsQuery} from './types/InstanceSensorsQuery';
 
 export const InstanceSensors = React.memo(() => {
   useTrackPageView();
-  const {flagNewWorkspace} = useFeatureFlags();
 
-  const {pageTitle} = React.useContext(InstancePageContext);
   const queryData = useQuery<InstanceSensorsQuery>(INSTANCE_SENSORS_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
-  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
 
   return (
     <>
-      <PageHeader
-        title={<Heading>{flagNewWorkspace ? 'Overview' : pageTitle}</Heading>}
-        tabs={
-          flagNewWorkspace ? (
-            <OverviewTabs tab="sensors" />
-          ) : (
-            <InstanceTabs tab="sensors" refreshState={refreshState} />
-          )
-        }
-      />
+      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="sensors" />} />
       <Loading queryResult={queryData} allowStaleData={true}>
         {(data) => <AllSensors data={data} />}
       </Loading>

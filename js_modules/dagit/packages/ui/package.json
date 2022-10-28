@@ -1,6 +1,6 @@
 {
   "name": "@dagster-io/ui",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Dagster UI Component Library",
   "license": "Apache-2.0",
   "main": "lib/index.js",
@@ -90,7 +90,7 @@
     "rollup-plugin-node-globals": "^1.4.0",
     "rollup-plugin-polyfill-node": "^0.8.0",
     "rollup-plugin-styles": "^4.0.0",
-    "typescript": "4.7.3",
+    "typescript": "4.8.4",
     "webpack": "^5.0.0"
   },
   "browserslist": {

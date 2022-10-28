@@ -24,12 +24,12 @@ def _sanitize(key: str, value: str):
     return value
 
 
-class DiffData(NamedTuple("_DiffData", [("key", str), ("value", str)])):
+class DiffData(NamedTuple("_DiffData", [("key", str), ("value", Any)])):
     def __new__(cls, key: str, value: str):
         return super(DiffData, cls).__new__(
             cls,
             key=check.str_param(key, "key"),
-            value=check.str_param(value, "value"),
+            value=value,
         )
 
     def __str__(self):
@@ -37,15 +37,12 @@ class DiffData(NamedTuple("_DiffData", [("key", str), ("value", str)])):
 
 
 class ModifiedDiffData(
-    NamedTuple("_ModifiedDiffData", [("key", str), ("old_value", str), ("new_value", str)])
+    NamedTuple("_ModifiedDiffData", [("key", str), ("old_value", Any), ("new_value", Any)])
 ):
     def __new__(cls, key: str, old_value: Any, new_value: Any):
 
         return super(ModifiedDiffData, cls).__new__(
-            cls,
-            key=check.str_param(key, "key"),
-            old_value=check.str_param(old_value, "old_value"),
-            new_value=check.str_param(new_value, "new_value"),
+            cls, key=check.str_param(key, "key"), old_value=old_value, new_value=new_value
         )
 
     def __str__(self):
@@ -88,31 +85,27 @@ class ManagedElementDiff(
             OrderedDict({}),
         )
 
-    def add(self, name: str, value: str) -> "ManagedElementDiff":
+    def add(self, name: str, value: Any) -> "ManagedElementDiff":
         """
         Adds an addition entry to the diff.
         """
         check.str_param(name, "name")
-        check.str_param(value, "value")
 
         return self._replace(additions=self.additions + [DiffData(name, value)])
 
-    def delete(self, name: str, value: str) -> "ManagedElementDiff":
+    def delete(self, name: str, value: Any) -> "ManagedElementDiff":
         """
         Adds a deletion entry to the diff.
         """
         check.str_param(name, "name")
-        check.str_param(value, "value")
 
         return self._replace(deletions=self.deletions + [DiffData(name, value)])
 
-    def modify(self, name: str, old_value: str, new_value: str) -> "ManagedElementDiff":
+    def modify(self, name: str, old_value: Any, new_value: Any) -> "ManagedElementDiff":
         """
         Adds a modification entry to the diff.
         """
         check.str_param(name, "name")
-        check.str_param(old_value, "old_value")
-        check.str_param(new_value, "new_value")
 
         return self._replace(
             modifications=self.modifications + [ModifiedDiffData(name, old_value, new_value)]

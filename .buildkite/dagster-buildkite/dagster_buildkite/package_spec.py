@@ -214,12 +214,12 @@ class PackageSpec(
                     else:
                         extra_commands_post = []
 
-                    if isinstance(self.pytest_step_dependencies, list):
-                        dependencies = self.pytest_step_dependencies
-                    elif callable(self.pytest_step_dependencies):
-                        dependencies = self.pytest_step_dependencies(py_version, other_factor)
-                    else:
-                        dependencies = []
+                    dependencies = []
+                    if not self.skip_reason:
+                        if isinstance(self.pytest_step_dependencies, list):
+                            dependencies = self.pytest_step_dependencies
+                        elif callable(self.pytest_step_dependencies):
+                            dependencies = self.pytest_step_dependencies(py_version, other_factor)
 
                     steps.append(
                         build_tox_step(
@@ -300,7 +300,10 @@ class PackageSpec(
                 # Our change is in this package's directory
                 (Path(self.directory) in change.parents)
                 # The file can alter behavior - exclude things like README changes
-                and (change.suffix in [".py", ".cfg", ".toml"] or change.name == "requirements.txt")
+                and (
+                    change.suffix in [".py", ".cfg", ".toml", ".ini"]
+                    or change.name == "requirements.txt"
+                )
             ):
                 logging.info(f"Building {self.name} because it has changed")
                 return None

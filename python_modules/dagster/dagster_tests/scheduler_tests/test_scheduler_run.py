@@ -2389,3 +2389,9 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
             ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
+
+
+def test_settings():
+    settings = {"use_threads": True, "num_workers": 4}
+    with instance_for_test(overrides={"schedules": settings}) as thread_inst:
+        assert thread_inst.get_settings("schedules") == settings

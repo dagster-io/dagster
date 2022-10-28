@@ -25,13 +25,12 @@ from dagster._core.errors import (
     DagsterUnmetExecutorRequirementsError,
 )
 from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._utils import merge_dicts
 
 from .asset_layer import build_asset_selection_job
 from .assets import AssetsDefinition
 from .assets_job import check_resources_satisfy_requirements
-from .job_definition import JobDefinition
+from .job_definition import JobDefinition, default_job_io_manager_with_fs_io_manager_schema
 from .load_assets_from_modules import (
     assets_and_source_assets_from_modules,
     assets_and_source_assets_from_package_module,
@@ -114,7 +113,10 @@ class AssetGroup:
         resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
-        resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: fs_io_manager}, resource_defs)
+        resource_defs = merge_dicts(
+            {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema},
+            resource_defs,
+        )
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
 
         check_resources_satisfy_requirements(assets, source_assets, resource_defs)
