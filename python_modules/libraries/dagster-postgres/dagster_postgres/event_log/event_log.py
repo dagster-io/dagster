@@ -41,8 +41,17 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
-    To use Postgres for event log storage, you can add a block such as the following to your
-    ``dagster.yaml``:
+    To use Postgres for all of the components of your instance storage, you can add the following
+    block to your ``dagster.yaml``:
+
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+       :caption: dagster.yaml
+       :lines: 1-8
+       :language: YAML
+
+    If you are configuring the different storage components separately and are specifically
+    configuring your event log storage to use Postgres, you can add a block such as the following
+    to your ``dagster.yaml``:
 
     .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg-legacy.yaml
        :caption: dagster.yaml
