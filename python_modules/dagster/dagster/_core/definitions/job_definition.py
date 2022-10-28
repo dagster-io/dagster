@@ -383,10 +383,6 @@ class JobDefinition(PipelineDefinition):
                 check.failed(
                     f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
                 )
-            check.invariant(
-                not run_config,
-                "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
-            )
             partition_set = self.get_partition_set_def()
             if not partition_set:
                 check.failed(
@@ -394,7 +390,9 @@ class JobDefinition(PipelineDefinition):
                 )
 
             partition = partition_set.get_partition(partition_key)
-            run_config = partition_set.run_config_for_partition(partition)
+            run_config = (
+                run_config if run_config else partition_set.run_config_for_partition(partition)
+            )
             tags = partition_set.tags_for_partition(partition)
 
         return core_execute_in_process(
