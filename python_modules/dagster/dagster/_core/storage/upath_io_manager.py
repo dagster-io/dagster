@@ -40,7 +40,7 @@ class UPathIOManagerBase(MemoizableIOManager):
         Returns:
 
         """
-        ...
+        pass
 
     @abstractmethod
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
@@ -54,9 +54,11 @@ class UPathIOManagerBase(MemoizableIOManager):
         Returns:
 
         """
-        ...
+        pass
 
-    def get_metadata(self, context: OutputContext, obj: Any) -> Dict[str, MetadataValue]:
+    def get_metadata(
+        self, context: OutputContext, obj: Any  # pylint: disable=unused-argument
+    ) -> Dict[str, MetadataValue]:
         """
         Child classes should override this method to add custom metadata to the outputs.
 
