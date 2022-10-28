@@ -133,9 +133,7 @@ def test_upath_io_manager_multiple_time_partitions(
     @asset(
         partitions_def=daily,
     )
-    def downstream_asset(
-        context: OpExecutionContext, upstream_asset: Dict[str, str]
-    ) -> Dict[str, str]:
+    def downstream_asset(upstream_asset: Dict[str, str]) -> Dict[str, str]:
         return upstream_asset
 
     result = materialize(
