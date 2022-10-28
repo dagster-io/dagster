@@ -29,7 +29,7 @@ export const SearchIndexContext = React.createContext(null);
 
 // https://www.30secondsofcode.org/react/s/use-hash
 // Modified to check for window existence (for nextjs) before accessing
-const useHash = (): [string, (newHash: any) => void] => {
+const useHash = (): string => {
   const [hash, setHash] = React.useState('');
 
   const windowExists = typeof window !== 'undefined';
@@ -56,16 +56,7 @@ const useHash = (): [string, (newHash: any) => void] => {
     };
   }, [windowExists, hashChangeHandler]);
 
-  const updateHash = React.useCallback(
-    (newHash) => {
-      if (newHash !== hash) {
-        window.location.hash = newHash;
-      }
-    },
-    [hash],
-  );
-
-  return [hash, updateHash];
+  return hash;
 };
 
 const PyObject: React.FunctionComponent<{
@@ -577,16 +568,20 @@ function classNames(...classes) {
 
 const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, persistentKey}) => {
   const [selectedTab, setSelectedTab] = useState(0);
-  const [anchor, _setAnchor] = useHash();
+  const anchor = useHash();
 
   const [anchorsInChildren, setAnchorsInChildren] = useState<{[anchor: string]: number}>({});
   const handleTabs = useCallback((node: HTMLElement) => {
+    if (!node) {
+      return;
+    }
     const out = {};
 
     // Once the tabs render, get the list of element IDs and the map to the
     // tab index they are in
-    for (let i = 0; i < node.children.length; i++) {
-      const tab = node.children[i] as HTMLElement;
+    const tabs = node.querySelectorAll("[role='tabpanel']");
+    for (let i = 0; i < tabs.length; i++) {
+      const tab = tabs[i] as HTMLElement;
       for (const element of tab.querySelectorAll('[id]')) {
         out[element.id] = i;
       }
@@ -596,14 +591,14 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
 
   useEffect(() => {
     const anchorWithoutHash = anchor.substring(1);
-    if (anchorWithoutHash in anchorsInChildren) {
+    if (Object.hasOwn(anchorsInChildren, anchorWithoutHash)) {
       const tabIdx = anchorsInChildren[anchorWithoutHash];
 
       // Scroll page to the hash after re-render
       setSelectedTab(tabIdx);
       setTimeout(() => {
         const elem = document.getElementById(anchorWithoutHash);
-        elem.scrollIntoView();
+        elem?.scrollIntoView();
       }, 10);
     }
   }, [anchor, anchorsInChildren]);
@@ -632,6 +627,8 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
       </Tab.List>
       <Tab.Panels ref={handleTabs}>
         {React.Children.map(children, (child, idx) => {
+          // Set unmount={false} to ensure all tabs render (some are hidden)
+          // this way we can gather all the ids in the tab group
           return (
             <Tab.Panel key={idx} className={classNames('p-3')} unmount={false}>
               {child.props.children}
