@@ -9,12 +9,11 @@ import sqlalchemy as db
 from alembic import op
 from sqlalchemy.dialects import sqlite
 
-
 from dagster._core.storage.migration.utils import has_index, has_table
 
 # revision identifiers, used by Alembic.
-revision = '958a9495162d'
-down_revision = 'a00dd8d936a1'
+revision = "958a9495162d"
+down_revision = "a00dd8d936a1"
 branch_labels = None
 depends_on = None
 
@@ -39,7 +38,7 @@ def upgrade():
         op.create_index(
             "idx_asset_event_tags",
             "asset_event_tags",
-            ["asset_key", "key", "value"],
+            ["asset_key", "key", "value", "event_id"],
             unique=False,
             mysql_length={"key": 64, "value": 64, "asset_key": 64},
         )
