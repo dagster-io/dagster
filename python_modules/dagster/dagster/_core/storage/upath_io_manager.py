@@ -13,7 +13,8 @@ from dagster import _check as check
 class UPathIOManagerBase(MemoizableIOManager):
     """
     Abstract IOManager base class compatible with local and cloud storage via `fsspec` (using `universal-pathlib`).
-    What it handles for the use:
+
+    Features:
      - working with any filesystem supported by `fsspec`
      - handling loading multiple upstream asset partitions via PartitionMapping
      (returns a dictionary with mappings from partition_keys to loaded objects)
