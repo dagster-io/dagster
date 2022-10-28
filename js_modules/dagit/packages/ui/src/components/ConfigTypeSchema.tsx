@@ -223,6 +223,8 @@ const HoveredDictEntryContextProvider = React.memo(({children}: {children: React
       const self = React.useMemo(() => ({setHovered}), []);
       return {
         hovered,
+
+        // Unset the previous hovered target and set the current one
         onMouseEnter: React.useCallback(() => {
           const lastHovered = currentHoveredStack[currentHoveredStack.length - 1];
           if (lastHovered) {
@@ -233,24 +235,30 @@ const HoveredDictEntryContextProvider = React.memo(({children}: {children: React
           currentHoveredStack.push(self);
           setHovered(true);
         }, [self]),
+
+        // Unset the current hovered target and use its parent as the next hovered target if it has one
         onMouseLeave: React.useCallback(() => {
           const lastHovered = currentHoveredStack[currentHoveredStack.length - 1];
           if (!lastHovered) {
-            // This should never happen but if it does we're fine.
+            // This should never happen since we can't MouseLeave something we never MouseEnter'd
             return;
           }
           // We should be the last hovered element, if not lets proceed anyways because
           // we'll hover the correct element later.
           lastHovered.setHovered(false);
+
+          // Find the index of this element and remove it.
+          // There shouldn't be anything after it since MouseLeave events should bubble upwards
           const currentIndex = currentHoveredStack.indexOf(self);
           if (currentIndex !== -1) {
             // This should only remove 1 entry, the last hovered entry
             currentHoveredStack = currentHoveredStack.slice(0, currentIndex);
           }
+
+          // If something is still on the stack after this dict entry is no longer hovered then
+          // its a parent dict entry and should be hovered
           const nextLastHovered = currentHoveredStack[currentHoveredStack.length - 1];
           if (nextLastHovered) {
-            // If something is still on the stack after this dict entry is no longer hovered then
-            // its a parent dict entry and should be hovered
             nextLastHovered.setHovered(true);
           }
         }, [self]),
