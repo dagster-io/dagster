@@ -216,8 +216,8 @@ const HoveredDictEntryContextProvider = React.memo(({children}: {children: React
     // fire when exiting a nested dict entry because technically we never left.
     // To handle that case whenever we `MouseLeave` fires we restore the last element in the
     // stack before the leaving element as hovered
-
     let currentHoveredStack: Array<{setHovered: (hovered: boolean) => void}> = [];
+
     function useDictEntryHover() {
       const [hovered, setHovered] = React.useState(false);
       const self = React.useMemo(() => ({setHovered}), []);
@@ -241,10 +241,10 @@ const HoveredDictEntryContextProvider = React.memo(({children}: {children: React
           const lastHovered = currentHoveredStack[currentHoveredStack.length - 1];
           if (!lastHovered) {
             // This should never happen since we can't MouseLeave something we never MouseEnter'd
+            // We should be the last hovered element since events bubble up
             return;
           }
-          // We should be the last hovered element, if not lets proceed anyways because
-          // we'll hover the correct element later.
+          // Unhover the current element
           lastHovered.setHovered(false);
 
           // Find the index of this element and remove it.
