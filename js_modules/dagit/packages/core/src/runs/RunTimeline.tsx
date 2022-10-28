@@ -15,9 +15,9 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
+import {OVERVIEW_COLLAPSED_KEY, OVERVIEW_EXPANSION_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -66,8 +66,6 @@ interface Props {
   range: [number, number];
 }
 
-const EXPANSION_STATE_STORAGE_KEY = 'timeline-expansion-state';
-
 export const RunTimeline = (props: Props) => {
   const {loading = false, jobs, range} = props;
   const [width, setWidth] = React.useState<number | null>(null);
@@ -85,7 +83,8 @@ export const RunTimeline = (props: Props) => {
 
   const allKeys = Object.keys(buckets);
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
-    EXPANSION_STATE_STORAGE_KEY,
+    OVERVIEW_EXPANSION_KEY,
+    OVERVIEW_COLLAPSED_KEY,
     allKeys,
   );
 
@@ -585,7 +584,6 @@ const RunTimelineRow = ({
 
 const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
   const {loading, includesTicks} = props;
-  const {flagNewWorkspace} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -605,10 +603,7 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
             : 'No runs in this time period.'}
         </div>
         <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-          <AnchorButton
-            icon={<Icon name="add_circle" />}
-            to={flagNewWorkspace ? '/overview/jobs' : '/workspace'}
-          >
+          <AnchorButton icon={<Icon name="add_circle" />} to="/overview/jobs">
             Launch a run
           </AnchorButton>
           <span>or</span>

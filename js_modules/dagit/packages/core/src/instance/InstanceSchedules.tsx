@@ -2,9 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Group, NonIdealState, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
@@ -18,33 +16,19 @@ import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
-import {InstancePageContext} from './InstancePageContext';
-import {InstanceTabs} from './InstanceTabs';
 import {InstanceSchedulesQuery} from './types/InstanceSchedulesQuery';
 
 export const InstanceSchedules = React.memo(() => {
   useTrackPageView();
-  const {flagNewWorkspace} = useFeatureFlags();
 
-  const {pageTitle} = React.useContext(InstancePageContext);
   const queryData = useQuery<InstanceSchedulesQuery>(INSTANCE_SCHEDULES_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
-  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
 
   return (
     <>
-      <PageHeader
-        title={<Heading>{flagNewWorkspace ? 'Overview' : pageTitle}</Heading>}
-        tabs={
-          flagNewWorkspace ? (
-            <OverviewTabs tab="schedules" />
-          ) : (
-            <InstanceTabs tab="schedules" refreshState={refreshState} />
-          )
-        }
-      />
+      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="schedules" />} />
       <Loading queryResult={queryData} allowStaleData={true}>
         {(data) => <AllSchedules data={data} />}
       </Loading>
