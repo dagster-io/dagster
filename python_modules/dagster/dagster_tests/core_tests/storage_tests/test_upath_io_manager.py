@@ -77,12 +77,13 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
         extension: str = ".json"
 
         def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
-            with path.open("wb") as file:
-                file.write(json.dumps(obj).encode())
+            with path.open("w") as file:
+                json.dump(obj, file)
+                # file.write(json.dumps(obj).encode())
 
         def load_from_path(self, context: InputContext, path: UPath) -> Any:
-            with path.open("rb") as file:
-                return json.loads(file.read())
+            with path.open("r") as file:
+                return json.load(file)
 
     @io_manager(config_schema={"base_path": Field(str, is_required=False)})
     def json_io_manager(init_context: InitResourceContext):
