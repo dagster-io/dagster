@@ -262,10 +262,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         is_asset_query = event_records_filter and (
             event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION
             or event_records_filter.event_type == DagsterEventType.ASSET_OBSERVATION
+            or event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
         )
         if is_asset_query:
-            # asset materializations and observations get mirrored into the index shard, so no
-            # custom run shard-aware cursor logic needed
+            # asset materializations, observations and materialization planned events
+            # get mirrored into the index shard, so no custom run shard-aware cursor logic needed
             return super(SqliteEventLogStorage, self).get_event_records(
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
