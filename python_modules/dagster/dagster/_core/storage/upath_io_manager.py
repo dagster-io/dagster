@@ -89,10 +89,12 @@ class UPathIOManagerBase(MemoizableIOManager):
     def _get_path_without_extension(self, context: Union[InputContext, OutputContext]) -> UPath:
         if context.has_asset_key:
             # we are dealing with an asset
-            context_path = ["assets"] + list(context.asset_key.path)
+
+            # we are not using context.get_asset_identifier() because it already includes the partition_key
+            context_path = list(context.asset_key.path)
         else:
             # we are dealing with an op output
-            context_path = ["runs"] + list(context.get_identifier())
+            context_path = list(context.get_identifier())
 
         return self._base_path.joinpath(*context_path)
 

@@ -35,10 +35,10 @@ class DummyIOManager(UPathIOManagerBase):
     This IOManager simply outputs the object path without loading or writing anything
     """
 
-    def dump_to_path(self, obj: str, path: UPath, context: OutputContext):
+    def dump_to_path(self, context: OutputContext, obj: str, path: UPath):
         pass
 
-    def load_from_path(self, path: UPath, context: InputContext) -> str:
+    def load_from_path(self, context: InputContext, path: UPath) -> str:
         return str(path)
 
 
@@ -76,11 +76,11 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
     class JSONIOManager(UPathIOManagerBase):
         extension: str = ".json"
 
-        def dump_to_path(self, obj: Any, path: UPath, context: OutputContext):
+        def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
             with path.open("wb") as file:
                 file.write(json.dumps(obj).encode())
 
-        def load_from_path(self, path: UPath, context: InputContext) -> Any:
+        def load_from_path(self, context: InputContext, path: UPath) -> Any:
             with path.open("rb") as file:
                 return json.loads(file.read())
 
