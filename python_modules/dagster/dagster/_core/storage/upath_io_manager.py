@@ -8,8 +8,10 @@ from upath import UPath
 
 from dagster import InputContext, MemoizableIOManager, MetadataValue, OutputContext
 from dagster import _check as check
+from dagster._annotations import experimental
 
 
+@experimental
 class UPathIOManagerBase(MemoizableIOManager):
     """
     Abstract IOManager base class compatible with local and cloud storage via `fsspec` (using `universal-pathlib`).
