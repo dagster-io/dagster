@@ -11,6 +11,7 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -25,7 +26,6 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    AbstractSet,
 )
 
 import yaml

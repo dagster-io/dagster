@@ -715,9 +715,21 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.where(SqlEventLogStorageTable.c.id.in_(event_records_filter.storage_ids))
 
         if event_records_filter.tags:
+            # Also filter by asset key in asset key table to take advantage of asset key tags index
             intersections = [
                 db.select([AssetEventTagsTable.c.event_id]).where(
                     db.and_(
+                        AssetEventTagsTable.c.asset_key
+                        == event_records_filter.asset_key.to_string(),
+                        AssetEventTagsTable.c.key == key,
+                        (
+                            AssetEventTagsTable.c.value == value
+                            if isinstance(value, str)
+                            else AssetEventTagsTable.c.value.in_(value)
+                        ),
+                    )
+                    if event_records_filter.asset_key
+                    else db.and_(
                         AssetEventTagsTable.c.key == key,
                         (
                             AssetEventTagsTable.c.value == value
