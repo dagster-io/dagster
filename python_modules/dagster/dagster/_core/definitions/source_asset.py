@@ -184,7 +184,7 @@ class SourceAsset(ResourceAddable):
         """Op that generates observation metadata for a source asset."""
         if self.observe_fn is None:
             return None
-        else:
+        elif self._node_def is None:
             observe_fn = self.observe_fn
 
             def compute_fn(context: OpExecutionContext) -> None:
@@ -197,12 +197,13 @@ class SourceAsset(ResourceAddable):
                     )
                 )
 
-            if not self._node_def:
-                self._node_def = OpDefinition(
-                    compute_fn=compute_fn,
-                    name="__".join(self.key.path).replace("-", "_"),
-                    description=self.description,
-                )
+            self._node_def = OpDefinition(
+                compute_fn=compute_fn,
+                name="__".join(self.key.path).replace("-", "_"),
+                description=self.description,
+            )
+            return self._node_def
+        else:
             return self._node_def
 
     def with_resources(self, resource_defs) -> "SourceAsset":
