@@ -38,7 +38,7 @@ def upgrade():
         op.create_index(
             "idx_asset_event_tags",
             "asset_event_tags",
-            ["asset_key", "key", "value", "event_id"],
+            ["asset_key", "key", "value"],
             unique=False,
             mysql_length={"key": 64, "value": 64, "asset_key": 64},
         )
