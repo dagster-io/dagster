@@ -61,8 +61,7 @@ class UPathIOManagerBase(MemoizableIOManager):
         """
         ...
 
-    @staticmethod
-    def get_metadata(context: OutputContext, obj: Any) -> Dict[str, MetadataValue]:
+    def get_metadata(self, context: OutputContext, obj: Any) -> Dict[str, MetadataValue]:
         """
         Child classes should override this method to add custom metadata to the outputs.
 
