@@ -24,9 +24,22 @@ from dagster._utils.calculate_data_time import get_upstream_materialization_time
     ["relative_to", "runs_to_expected_data_times_index"],
     [
         (
+            # materialization times are calculated relative to the root assets
+            # in this case, the root of all assets in the graph is AssetKey("a")
             "ROOTS",
             [
+                # EXPLANATION FOR THIS FORMAT:
+                #
+                # run assets a,c,e
+                # expect assets a,c,e to have upstream materialization times:
+                #    {AssetKey("a"): <timestamp of a's asset materialization in run 0 (this run)>}
                 ("ace", {"ace": {"a": 0}}),
+                #
+                # run assets a,b,d
+                # expect assets a,b to have upstream materialization times:
+                #    {AssetKey("a"): <timestamp of a's asset materialization in run 1 (this run)>}
+                # expect assets c,d,e to have upstream materialization times:
+                #    {AssetKey("a"): <timestamp of a's asset materialization in run 0 (previous run)>}
                 ("abd", {"ab": {"a": 1}, "cde": {"a": 0}}),
                 ("ac", {"ac": {"a": 2}, "b": {"a": 1}, "ed": {"a": 0}}),
                 ("e", {"ace": {"a": 2}, "b": {"a": 1}, "d": {"a": 0}}),
@@ -45,6 +58,8 @@ from dagster._utils.calculate_data_time import get_upstream_materialization_time
             ],
         ),
         (
+            # materialization times are calculated relative to the asset itself
+            # this sidesteps any of the recursion, you're just looking at the latest materialization
             "SELF",
             [
                 ("abcdef", {a: {a: 0} for a in "abcdef"}),
@@ -56,6 +71,7 @@ from dagster._utils.calculate_data_time import get_upstream_materialization_time
             ],
         ),
         (
+            # materialization times are calculated relative to assets b and c
             "bc",
             [
                 ("abcd", {"d": {"b": 0, "c": 0}}),
@@ -65,6 +81,7 @@ from dagster._utils.calculate_data_time import get_upstream_materialization_time
             ],
         ),
         (
+            # materialization times are calculated relative to assets a and c
             "ac",
             [
                 ("abcd", {"d": {"a": 0, "c": 0}}),
