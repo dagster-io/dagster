@@ -1,7 +1,7 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 import pytest
 from upath import UPath
@@ -100,8 +100,8 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
     )
     manager.handle_output(context, json_data)
 
-    with manager._get_path(context).open("rb") as file:
-        assert json.loads(file.read()) == json_data
+    with manager._get_path(context).open("r") as file:  # pylint: disable=W0212
+        assert json.load(file) == json_data
 
     context = build_input_context(
         name="abc",
@@ -152,7 +152,7 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
 
     @asset(ins={"upstream_asset": AssetIn(partition_mapping=AllPartitionMapping())})
     def downstream_asset(
-        context: OpExecutionContext, upstream_asset: Dict[str, str]
+        upstream_asset: Dict[str, str]
     ) -> Dict[str, str]:
         return upstream_asset
 
@@ -198,7 +198,7 @@ def test_user_forgot_dict_type_annotation_for_multiple_partitions(
     @asset(
         partitions_def=daily,
     )
-    def downstream_asset(context: OpExecutionContext, upstream_asset: str) -> str:
+    def downstream_asset(upstream_asset: str) -> str:
         return upstream_asset
 
     with pytest.raises(
