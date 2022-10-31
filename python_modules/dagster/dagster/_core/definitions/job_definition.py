@@ -176,21 +176,7 @@ class JobDefinition(PipelineDefinition):
         partitioned_config = None
 
         if partitions_def:
-            check.invariant(
-                not isinstance(config, ConfigMapping),
-                "Can't supply a ConfigMapping for 'config' when 'partitions_def' is supplied.",
-            )
-
-            if isinstance(config, PartitionedConfig):
-                check.invariant(
-                    config.partitions_def == partitions_def,
-                    "Can't supply a PartitionedConfig for 'config' with a different "
-                    "PartitionsDefinition than supplied for 'partitions_def'.",
-                )
-                partitioned_config = config
-            else:
-                hardcoded_config = config if config else {}
-                partitioned_config = PartitionedConfig(partitions_def, lambda _: hardcoded_config)
+            partitioned_config = PartitionedConfig.from_flexible_config(config, partitions_def)
         else:
             if isinstance(config, ConfigMapping):
                 config_mapping = config
