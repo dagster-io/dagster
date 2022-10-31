@@ -146,9 +146,7 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
         return context.partition_key
 
     @asset(ins={"upstream_asset": AssetIn(partition_mapping=AllPartitionMapping())})
-    def downstream_asset(
-        upstream_asset: Dict[str, str]
-    ) -> Dict[str, str]:
+    def downstream_asset(upstream_asset: Dict[str, str]) -> Dict[str, str]:
         return upstream_asset
 
     my_job = build_assets_job(
