@@ -1,5 +1,7 @@
+import json
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Union
+
 
 import dagster._check as check
 
@@ -192,4 +194,31 @@ class InitializedAirbyteConnection:
                 normalize_data=len(api_dict["operationIds"]) > 0,
             ),
             api_dict["connectionId"],
+        )
+
+
+def _remove_none_values(obj: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: v for k, v in obj.items() if v is not None}
+
+
+def _dump_class(obj: Any) -> Dict[str, Any]:
+    return json.loads(json.dumps(obj, default=lambda o: _remove_none_values(o.__dict__)))
+
+
+class GeneratedAirbyteSource(AirbyteSource):
+    def __init__(self, source_type: str, name: str):
+        source_configuration = _dump_class(self)
+        print(source_configuration)
+        super().__init__(
+            name=name, source_type=source_type, source_configuration=source_configuration
+        )
+
+
+class GeneratedAirbyteDestination(AirbyteDestination):
+    def __init__(self, source_type: str, name: str):
+        destination_configuration = _dump_class(self)
+        super().__init__(
+            name=name,
+            destination_type=source_type,
+            destination_configuration=destination_configuration,
         )
