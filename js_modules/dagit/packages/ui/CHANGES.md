@@ -1,3 +1,7 @@
+## 1.0.7 (October 25, 2022)
+
+- The Asset details event view has been updated 
+- The YAML editor used throughout dagit (eg. for launching runs / adding code locations) now highlights types and their descriptions as you hover over them. This makes it easier to discern which comment description belongs to which type.
 ## 1.0.6 (October 25, 2022)
 
 - Allow overriding colored SVGs with a custom color
