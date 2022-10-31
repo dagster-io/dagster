@@ -30,31 +30,24 @@ export const SearchIndexContext = React.createContext(null);
 // https://www.30secondsofcode.org/react/s/use-hash
 // Modified to check for window existence (for nextjs) before accessing
 const useHash = (): string => {
-  const [hash, setHash] = React.useState('');
+  const [hash, setHash] = React.useState(() => {
+    return typeof window === 'undefined' ? '' : window.location.hash;
+  });
 
-  const windowExists = typeof window !== 'undefined';
   useEffect(() => {
-    if (windowExists) {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handler = () => {
       setHash(window.location.hash);
-    }
-  }, [windowExists]);
-
-  const hashChangeHandler = React.useCallback(() => {
-    if (!windowExists) {
-      return;
-    }
-    setHash(window.location.hash);
-  }, [windowExists]);
-
-  React.useEffect(() => {
-    if (!windowExists) {
-      return;
-    }
-    window.addEventListener('hashchange', hashChangeHandler);
-    return () => {
-      window.removeEventListener('hashchange', hashChangeHandler);
     };
-  }, [windowExists, hashChangeHandler]);
+
+    window.addEventListener('hashchange', handler);
+    return () => {
+      window.removeEventListener('hashchange', handler);
+    };
+  }, []);
 
   return hash;
 };
