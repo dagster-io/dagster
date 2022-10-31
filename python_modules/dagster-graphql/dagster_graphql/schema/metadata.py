@@ -27,6 +27,7 @@ class GraphenePathMetadataEntry(graphene.ObjectType):
         interfaces = (GrapheneMetadataEntry,)
         name = "PathMetadataEntry"
 
+
 class GrapheneNotebookMetadataEntry(graphene.ObjectType):
     path = graphene.NonNull(graphene.String)
 

@@ -139,7 +139,7 @@ class ConfigurableDocumenter(DataDocumenter):
             config_field = check.not_none(self.object.config_schema).as_field()
         elif isinstance(obj, type) and issubclass(obj, ConfigurableClass):
             config_field = Field(self.object.config_type())
-git
+
         for line in config_field_to_lines(config_field):
             self.add_line(line, source_name)
 

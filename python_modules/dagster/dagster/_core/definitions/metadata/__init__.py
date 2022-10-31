@@ -606,6 +606,7 @@ class PathMetadataValue(  # type: ignore
     def value(self) -> Optional[str]:
         return self.path
 
+
 @whitelist_for_serdes(storage_name="NotebookMetadataEntryData")
 class NotebookMetadataValue(  # type: ignore
     NamedTuple("_NotebookMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue
@@ -625,7 +626,6 @@ class NotebookMetadataValue(  # type: ignore
     @property
     def value(self) -> Optional[str]:
         return self.path
-
 
 
 @whitelist_for_serdes(storage_name="JsonMetadataEntryData")
