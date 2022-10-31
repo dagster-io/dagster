@@ -1698,6 +1698,27 @@ class ComputeLogsDataSerializer(DefaultNamedTupleSerializer):
             storage_dict, klass, args_for_class, whitelist_map, descent_path
         )
 
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # For backcompat, we store:
+        # file_key as log_key
+        return replace_storage_keys(
+            storage,
+            {
+                "file_key": "log_key",
+            },
+        )
+
 
 @whitelist_for_serdes(serializer=ComputeLogsDataSerializer)
 class ComputeLogsCaptureData(
@@ -1706,7 +1727,6 @@ class ComputeLogsCaptureData(
         [
             ("file_key", List[str]),  # renamed log_key => file_key to avoid confusion
             ("step_keys", List[str]),
-            # ("log_key", str),
         ],
     )
 ):
