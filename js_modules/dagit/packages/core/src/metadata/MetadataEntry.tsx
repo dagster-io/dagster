@@ -183,37 +183,49 @@ export const MetadataEntry: React.FC<{
     case 'TableSchemaMetadataEntry':
       return <TableSchema schema={entry.schema} />;
     case 'NotebookMetadataEntry':
+      if (repoLocation) {
+        return (
+          <div>
+            <Button icon={<Icon name="content_copy" />} onClick={() => setOpen(true)}>
+              View Notebook
+            </Button>
+            <Dialog
+              icon="info"
+              onClose={() => setOpen(false)}
+              style={{width: '80vw', maxWidth: 900}}
+              title={entry.path.split('/').pop()}
+              usePortal={true}
+              isOpen={open}
+            >
+              <DialogBody>
+                <iframe
+                  title={entry.path}
+                  src={`${rootServerURI}/dagit/notebook?path=${encodeURIComponent(
+                    entry.path,
+                  )}&repoLocName=${repoLocation}`}
+                  sandbox=""
+                  style={{border: 0, background: 'white'}}
+                  seamless={true}
+                  width="100%"
+                  height={500}
+                />
+              </DialogBody>
+              <DialogFooter>
+                <Button onClick={() => setOpen(false)}>Close</Button>
+              </DialogFooter>
+            </Dialog>
+          </div>
+        );
+      }
       return (
-        <div>
-          <Button icon={<Icon name="content_copy" />} onClick={() => setOpen(true)}>
-            View Notebook
-          </Button>
-          <Dialog
-            icon="info"
-            onClose={() => setOpen(false)}
-            style={{width: '80vw', maxWidth: 900}}
-            title={entry.path.split('/').pop()}
-            usePortal={true}
-            isOpen={open}
-          >
-            <DialogBody>
-              <iframe
-                title={entry.path}
-                src={`${rootServerURI}/dagit/notebook?path=${encodeURIComponent(
-                  entry.path,
-                )}&repoLocName=${repoLocation}`}
-                sandbox=""
-                style={{border: 0, background: 'white'}}
-                seamless={true}
-                width="100%"
-                height={500}
-              />
-            </DialogBody>
-            <DialogFooter>
-              <Button onClick={() => setOpen(false)}>Close</Button>
-            </DialogFooter>
-          </Dialog>
-        </div>
+        <Group direction="row" spacing={8} alignItems="center">
+          <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
+            {entry.path}
+          </MetadataEntryAction>
+          <IconButton onClick={(e) => copyValue(e, entry.path)}>
+            <Icon name="assignment" color={Colors.Gray500} />
+          </IconButton>
+        </Group>
       );
     default:
       return assertUnreachable(entry);

@@ -27,6 +27,13 @@ class GraphenePathMetadataEntry(graphene.ObjectType):
         interfaces = (GrapheneMetadataEntry,)
         name = "PathMetadataEntry"
 
+class GrapheneNotebookMetadataEntry(graphene.ObjectType):
+    path = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "NotebookMetadataEntry"
+
 
 class GrapheneTableMetadataEntry(graphene.ObjectType):
     table = graphene.NonNull(GrapheneTable)
@@ -144,6 +151,7 @@ def types():
         GrapheneMarkdownMetadataEntry,
         GrapheneMetadataItemDefinition,
         GraphenePathMetadataEntry,
+        GrapheneNotebookMetadataEntry,
         GraphenePythonArtifactMetadataEntry,
         GrapheneTextMetadataEntry,
         GrapheneUrlMetadataEntry,

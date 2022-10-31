@@ -54,7 +54,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         mkdir_p(os.path.dirname(output_notebook_path))
         with open(output_notebook_path, self.write_mode) as dest_file_obj:
             dest_file_obj.write(obj)
-        yield MetadataEntry("path", value=MetadataValue.path(output_notebook_path))
+        yield MetadataEntry("path", value=MetadataValue.notebook(output_notebook_path))
 
     def load_input(self, context) -> bytes:
         check.inst_param(context, "context", InputContext)
