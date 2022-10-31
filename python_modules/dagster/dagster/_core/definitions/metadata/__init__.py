@@ -251,6 +251,28 @@ class MetadataValue(ABC):
 
     @public
     @staticmethod
+    def notebook(path: Union[str, os.PathLike]) -> "NotebookMetadataValue":
+        """Static constructor for a metadata value wrapping a notebook path as
+        :py:class:`NotebookMetadataValue`. For example:
+
+        .. code-block:: python
+
+            @op
+            def emit_metadata(context):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "notebook_path": MetadataValue.notebook("path/to/notebook.ipynb"),
+                    }
+                )
+
+        Args:
+            path (str): The path to a notebook for a metadata entry.
+        """
+        return NotebookMetadataValue(path)
+
+    @public
+    @staticmethod
     def json(data: Dict[str, Any]) -> "JsonMetadataValue":
         """Static constructor for a metadata value wrapping a path as
         :py:class:`JsonMetadataValue`. Can be used as the value type for the `metadata`
@@ -576,6 +598,27 @@ class PathMetadataValue(  # type: ignore
 
     def __new__(cls, path: Optional[Union[str, os.PathLike]]):
         return super(PathMetadataValue, cls).__new__(
+            cls, check.opt_path_param(path, "path", default="")
+        )
+
+    @public  # type: ignore
+    @property
+    def value(self) -> Optional[str]:
+        return self.path
+
+
+@whitelist_for_serdes(storage_name="NotebookMetadataEntryData")
+class NotebookMetadataValue(  # type: ignore
+    NamedTuple("_NotebookMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue
+):
+    """Container class for path metadata entry data.
+
+    Args:
+        path (Optional[str]): The path to the notebook as a string or conforming to os.PathLike.
+    """
+
+    def __new__(cls, path: Optional[Union[str, os.PathLike]]):
+        return super(NotebookMetadataValue, cls).__new__(
             cls, check.opt_path_param(path, "path", default="")
         )
 
