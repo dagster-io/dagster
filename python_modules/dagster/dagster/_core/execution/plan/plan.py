@@ -104,7 +104,7 @@ class _PlanBuilder:
         self,
         pipeline: IPipeline,
         resolved_run_config: ResolvedRunConfig,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: KnownExecutionState,
         instance_ref: Optional[InstanceRef],
         tags: Dict[str, str],
@@ -121,7 +121,7 @@ class _PlanBuilder:
         self.resolved_run_config = check.inst_param(
             resolved_run_config, "resolved_run_config", ResolvedRunConfig
         )
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", str)
+        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", str)
         self.step_keys_to_execute = step_keys_to_execute
         self.mode_definition = (
             pipeline.get_definition().get_mode_definition(resolved_run_config.mode)
@@ -780,12 +780,12 @@ class ExecutionPlan(
 
     def build_subset_plan(
         self,
-        step_keys_to_execute: List[str],
+        step_keys_to_execute: Sequence[str],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
         step_output_versions=None,
     ) -> "ExecutionPlan":
-        check.list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         step_output_versions = check.opt_dict_param(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
@@ -876,7 +876,7 @@ class ExecutionPlan(
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
         instance: DagsterInstance,
-        selected_step_keys: Optional[List[str]],
+        selected_step_keys: Optional[Sequence[str]],
     ) -> "ExecutionPlan":
         """
         Returns:
@@ -1005,7 +1005,7 @@ class ExecutionPlan(
     def build(
         pipeline: IPipeline,
         resolved_run_config: ResolvedRunConfig,
-        step_keys_to_execute: Optional[List[str]] = None,
+        step_keys_to_execute: Optional[Sequence[str]] = None,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
         tags: Optional[Dict[str, str]] = None,
@@ -1021,7 +1021,7 @@ class ExecutionPlan(
         """
         check.inst_param(pipeline, "pipeline", IPipeline)
         check.inst_param(resolved_run_config, "resolved_run_config", ResolvedRunConfig)
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         known_state = check.opt_inst_param(
             known_state,
             "known_state",
