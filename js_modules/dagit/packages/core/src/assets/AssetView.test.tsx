@@ -1,4 +1,5 @@
-import {render, screen, waitForElementToBeRemoved} from '@testing-library/react';
+import {act, render, screen} from '@testing-library/react';
+import faker from 'faker';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
@@ -11,8 +12,21 @@ jest.mock('../graph/asyncGraphLayout', () => ({}));
 
 describe('AssetView', () => {
   const defaultMocks = {
+    AssetNode: () => ({
+      partitionKeys: () => [...new Array(0)],
+    }),
+    Asset: () => ({
+      assetMaterializations: () => [...new Array(2)],
+    }),
     MaterializationEvent: () => ({
-      timestamp: 100,
+      timestamp: () => `${Math.random() * 100}`,
+    }),
+    ObservationEvent: () => ({
+      timestamp: () => `${Math.random() * 100}`,
+    }),
+    MetadataEntry: () => ({
+      __typename: 'TextMetadataEntry',
+      label: () => faker.random.word().toLocaleLowerCase(),
     }),
   };
 
@@ -30,30 +44,30 @@ describe('AssetView', () => {
 
   describe('Historical view alert', () => {
     it('shows historical view alert if `asOf` is old', async () => {
-      render(<Test path="/foo?asOf=10" />);
-      const spinner = screen.queryByTitle(/loading…/i);
-      await waitForElementToBeRemoved(spinner);
+      await act(async () => {
+        render(<Test path="/foo?asOf=10" />);
+      });
       expect(screen.queryByText(MESSAGE)).toBeVisible();
     });
 
     it('does not show historical view alert if `asOf` is past latest materialization', async () => {
-      render(<Test path="/foo?asOf=200" />);
-      const spinner = screen.queryByTitle(/loading…/i);
-      await waitForElementToBeRemoved(spinner);
+      await act(async () => {
+        render(<Test path="/foo?asOf=200" />);
+      });
       expect(screen.queryByText(MESSAGE)).toBeNull();
     });
 
     it('does not show historical view alert if `asOf` is equal to latest materialization', async () => {
-      render(<Test path="/foo?asOf=100" />);
-      const spinner = screen.queryByTitle(/loading…/i);
-      await waitForElementToBeRemoved(spinner);
+      await act(async () => {
+        render(<Test path="/foo?asOf=100" />);
+      });
       expect(screen.queryByText(MESSAGE)).toBeNull();
     });
 
     it('does not show historical view alert if no `asOf` is specified', async () => {
-      render(<Test path="/foo" />);
-      const spinner = screen.queryByTitle(/loading…/i);
-      await waitForElementToBeRemoved(spinner);
+      await act(async () => {
+        render(<Test path="/foo" />);
+      });
       expect(screen.queryByText(MESSAGE)).toBeNull();
     });
   });

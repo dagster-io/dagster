@@ -23,17 +23,14 @@ from dagster._core.definitions import (
     SourceAsset,
 )
 from dagster._core.definitions.asset_layer import AssetOutputInfo
+from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster._core.definitions.sensor_definition import (
-    AssetSensorDefinition,
-    DefaultSensorStatus,
-    SensorDefinition,
-)
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError

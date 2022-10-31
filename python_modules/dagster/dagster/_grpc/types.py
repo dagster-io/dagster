@@ -23,10 +23,10 @@ class ExecutionPlanSnapshotArgs(
         "_ExecutionPlanSnapshotArgs",
         [
             ("pipeline_origin", ExternalPipelineOrigin),
-            ("solid_selection", List[str]),
+            ("solid_selection", Sequence[str]),
             ("run_config", Mapping[str, object]),
             ("mode", str),
-            ("step_keys_to_execute", Optional[List[str]]),
+            ("step_keys_to_execute", Optional[Sequence[str]]),
             ("pipeline_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
@@ -37,10 +37,10 @@ class ExecutionPlanSnapshotArgs(
     def __new__(
         cls,
         pipeline_origin: ExternalPipelineOrigin,
-        solid_selection: List[str],
+        solid_selection: Sequence[str],
         run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         pipeline_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
@@ -51,10 +51,12 @@ class ExecutionPlanSnapshotArgs(
             pipeline_origin=check.inst_param(
                 pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
             ),
-            solid_selection=check.opt_list_param(solid_selection, "solid_selection", of_type=str),
+            solid_selection=check.opt_sequence_param(
+                solid_selection, "solid_selection", of_type=str
+            ),
             run_config=check.dict_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),
-            step_keys_to_execute=check.opt_nullable_list_param(
+            step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
