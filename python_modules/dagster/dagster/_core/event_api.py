@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Mapping, NamedTuple, Optional, Tuple, Union
+from typing import List, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -8,7 +8,6 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import utc_datetime_from_timestamp
 
 
 class RunShardedEventsCursor(NamedTuple):
@@ -19,20 +18,6 @@ class RunShardedEventsCursor(NamedTuple):
 
     id: int
     run_updated_after: datetime
-
-    @classmethod
-    def from_event_log_record(cls, record: "EventLogRecord") -> "RunShardedEventsCursor":
-        return cls(
-            id=record.storage_id, run_updated_after=utc_datetime_from_timestamp(record.timestamp)
-        )
-
-    def to_json_serializable(self) -> Tuple[int, float]:
-        return (self.id, self.run_updated_after.timestamp())
-
-    @classmethod
-    def from_json_serializable(cls, value: Tuple[int, float]) -> "RunShardedEventsCursor":
-        storage_id, run_updated_after = value
-        return cls(id=storage_id, run_updated_after=utc_datetime_from_timestamp(run_updated_after))
 
 
 class EventLogRecord(NamedTuple):

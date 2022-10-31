@@ -1,7 +1,7 @@
 # pylint: disable=anomalous-backslash-in-string
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Tuple
 
 import toposort
 
@@ -45,19 +45,19 @@ def _get_parent_updates(
     cursor: Optional[int],
     will_materialize_set: Set[AssetKey],
     wait_for_in_progress_runs: bool,
-    instance_queryer: "CachingInstanceQueryer",
+    instance_queryer: "TickInstanceQueryer",
 ) -> Mapping[AssetKey, Tuple[bool, Optional[int]]]:
     """The bulk of the logic in the sensor is in this function. At the end of the function we return a
     dictionary that maps each asset to a Tuple. The Tuple contains a boolean, indicating if the asset
     has materialized or will materialize, and a storage ID
     the parent asset would update the cursor to if it is the most recent materialization of a parent asset.
-    In some cases we set the tuple to (0.0, 0) so that the tuples of other parent materializations will take precedent.
+    In some cases we set the storage_id to 0 so that the tuples of other parent materializations will take precedent.
 
     Args:
         current_asset: We want to determine if this asset should materialize, so we gather information about
             if its parents have materialized.
         parent_assets: the parents of current_asset.
-        cursor: In the cursor for the sensor, we store the timestamp and storage id of the most recent materialization
+        cursor: In the cursor for the sensor, we store the storage id of the most recent materialization
             of all of current_asset's parents. This allows us to see if any of the parents have been materialized
             more recently.
         will_materialize_set: A set of all of the assets the sensor has already determined it will materialize.
@@ -95,7 +95,7 @@ def _get_parent_updates(
     for p in parent_assets:
         if p in will_materialize_set:
             # if p will be materialized by this sensor, then we can also materialize current_asset
-            # we don't know what time asset p will be materialized so we set the cursor val to (0.0, 0)
+            # we don't know what time asset p will be materialized so we set the cursor val to 0
             parent_asset_event_records[p] = (True, None)
 
         # TODO - when source asset versioning lands, add a check here that will see if the version has
@@ -142,17 +142,6 @@ def _get_parent_updates(
     return parent_asset_event_records
 
 
-def parent_was_materialized_since_latest_planned_materialization():
-    """
-    Returns true if there exists a materialization of parent asset X that occurred after the latest
-    planned materialization of asset Y
-
-    Two different ways to know about the latest planned materialization of asset Y:
-    - It's recorded in the sensor cursor
-    - It's in the database
-    """
-
-
 def _make_sensor(
     selection: AssetSelection,
     name: str,
@@ -166,14 +155,12 @@ def _make_sensor(
     """Creates the sensor that will monitor the parents of all provided assets and determine
     which assets should be materialized (ie their parents have been updated).
 
-    The cursor for this sensor is a dictionary mapping stringified AssetKeys to a tuple of timestamp and storage_id (float, int). For each
-    asset we keep track of the timestamps and storage_id of the most recent materialization of a parent asset. For example
+    The cursor for this sensor is a dictionary mapping stringified AssetKeys to storage_id. For each
+    asset we keep track of the storage_id of the most recent materialization of a parent asset. For example
     if asset X has parents A, B, and C where A was materialized at 5:00 w/ storage_id 1, B at 5: 15  w/ storage_id 2 and
-    C at 5:16 w/ storage_id 3. When the sensor runs, the cursor for X will be set to (5:16, 3). This way, the next time
-    the sensor runs, we can ignore the materializations prior to time 5:16 and storage_id 3. If asset A materialized
+    C at 5:16 w/ storage_id 3. When the sensor runs, the cursor for X will be set to 3. This way, the next time
+    the sensor runs, we can ignore the materializations prior to storage_id 3. If asset A materialized
     again at 5:20 w/ storage_id 4, we would know that this materialization has not been incorporated into the child asset yet.
-
-    We keep track of timestamp and storage id so that we can support sharded event log storages (SqliteEventLogStorage).
     """
 
     def sensor_fn(context):
@@ -181,7 +168,7 @@ def _make_sensor(
             _deserialize_cursor_dict(context.cursor) if context.cursor else {}
         )
         run_requests, newly_consumed_storage_ids_by_asset_key_str = reconcile(
-            repository_def=context._repository_def,
+            repository_def=context._repository_def,  # pylint: disable=protected-access
             asset_selection=selection,
             wait_for_all_upstream=wait_for_all_upstream,
             wait_for_in_progress_runs=wait_for_in_progress_runs,
@@ -219,7 +206,7 @@ def reconcile(
     wait_for_all_upstream: bool,
     latest_consumed_storage_ids_by_asset_key_str: Mapping[str, int],
     run_tags: Mapping[str, str],
-) -> Union[Sequence[RunRequest], Mapping[str, int]]:
+) -> Tuple[Sequence[RunRequest], Mapping[str, int]]:
     asset_defs_by_key = repository_def._assets_defs_by_key  # pylint: disable=protected-access
     source_asset_defs_by_key = (
         repository_def.source_assets_by_key  # pylint: disable=protected-access
@@ -240,7 +227,7 @@ def reconcile(
         asset for layer in toposort_assets for asset in layer if asset in upstream.keys()
     ]
 
-    instance_queryer = CachingInstanceQueryer(instance)
+    instance_queryer = TickInstanceQueryer(instance)
 
     # determine which assets should materialize based on the materialization status of their
     # parents
@@ -248,23 +235,6 @@ def reconcile(
         current_asset_cursor = latest_consumed_storage_ids_by_asset_key_str.get(
             str(current_asset_key)
         )
-
-        # find out whether each parent asset partition was updated since the latest time we care
-        # about for that parent asset partition
-
-        # what's the latest time we care about? after the latest planned materialization for that asset partition
-
-        # how do we represent whether each parent asset partition was updated?
-        # maybe brute-forcing it isn't so bad? it will only be a large amount in the case of a backfill, which isn't so bad
-
-        # for each partition of the current asset, decide whether to materialize it based on
-        # the combination of partition mappings and AND vs. OR policy
-
-        # we implement this with a forward pass and a backward pass:
-        # - forward pass: find every downstream asset partition of every updated parent partition
-        # - backward pass (only needed if AND): find every upstream asset partition of the downstream asset partition discovered in the forward pass
-
-        # launch those partitions
 
         parent_update_records = _get_parent_updates(
             current_asset=current_asset_key,
@@ -281,9 +251,7 @@ def reconcile(
         ):
             should_materialize.add(current_asset_key)
 
-            # get the cursor value by selecting the max of all the candidates. If we're using a
-            # sharded event log storage, compare timestamps, otherwise compare storage ids. See
-            # cursor_compare_idx for how this is determined
+            # get the cursor value by selecting the max of all the candidates.
             cursor_update_candidates = [
                 cursor_val for _, cursor_val in parent_update_records.values() if cursor_val
             ] + ([current_asset_cursor] if current_asset_cursor else [])
@@ -311,7 +279,7 @@ def _deserialize_cursor_dict(cursor: str) -> Dict[str, int]:
     return json.loads(cursor)
 
 
-class CachingInstanceQueryer:
+class TickInstanceQueryer:
     def __init__(self, instance: "DagsterInstance"):
         self._instance = instance
         self._latest_materialization_record_cache: Dict[AssetKey, "EventLogRecord"] = {}
