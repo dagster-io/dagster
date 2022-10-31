@@ -4,7 +4,7 @@ import logging
 import sys
 import time
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast, get_args
 
 import requests
 from dagster_airbyte.types import AirbyteOutput
@@ -30,41 +30,50 @@ class AirbyteState:
 
 
 class AirbyteResource:
+    # TODO: need to figure out the API for embedding descriptions here, likely some docstring format?
+    # Alternatively we could use pydantic, which has Field which has a description argument.
+    # Pydantic would also provide an incremental migration path to json schema if desirable.
+    # Guidance an interet is unclear
     """
     This class exposes methods on top of the Airbyte REST API.
+
+    Attributes
+        host: The Airbyte Server Address.
+        port: Port for the Airbyte Server.
+        username: Username if using basic auth.
+        password: Password if using basic auth.
+        use_https: Use https to connect in Airbyte Server.
+        request_max_retries: The maximum number of times requests to the Airbyte API should be retried.
+        request_retry_delay: Time (in seconds) to wait between each request retry.
+        request_timeout: Time (in seconds) after which the requests to Airbyte are declared timed out.
+        request_additional_params: Any additional kwargs to pass to the requests library when making requests to Airbyte.
+        forward_logs: Whether to forward Airbyte logs to the compute log, can be expensive for long-running syncs.
     """
 
-    def __init__(
-        self,
-        host: str,
-        port: str,
-        use_https: bool,
-        request_max_retries: int = 3,
-        request_retry_delay: float = 0.25,
-        request_timeout: int = 15,
-        request_additional_params: Optional[Dict[str, Any]] = None,
-        log: logging.Logger = get_dagster_logger(),
-        forward_logs: bool = True,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-    ):
-        self._host = host
-        self._port = port
-        self._use_https = use_https
-        self._request_max_retries = request_max_retries
-        self._request_retry_delay = request_retry_delay
-        self._request_timeout = request_timeout
-        self._additional_request_params = request_additional_params or dict()
+    host: str
+    port: str
+    use_https: bool
+    request_max_retries: int = 3
+    request_retry_delay: float = 0.25
+    request_timeout: int = 15
+    request_additional_params: Optional[Dict[str, Any]] = None
+    forward_logs: bool = True
+    username: Optional[str] = None
+    password: Optional[str] = None
 
-        self._log = log
-
-        self._forward_logs = forward_logs
-        self._request_cache: Dict[str, Optional[Dict[str, object]]] = {}
+    # dataclass feature to init members not in ctor
+    def __post_init__(self):
         # Int in case we nest contexts
         self._cache_enabled = 0
+        self._log: logging.Logger = get_dagster_logger()
+        self._request_cache: Dict[str, Optional[Dict[str, object]]] = {}
 
-        self._username = username
-        self._password = password
+    # alternative approach is to implement method that returns different object
+    # def manage_resource_object(self) -> AirbyteClient:
+    #     # AirbyteClient would contain the request cache
+    #     return AirbyteClient(
+    #         # ... pass all config
+    #     )
 
     @property
     def api_base_url(self) -> str:
@@ -338,107 +347,3 @@ class AirbyteResource:
                 self.cancel_job(job_id)
 
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
-
-
-@resource(
-    config_schema={
-        "host": Field(
-            StringSource,
-            is_required=True,
-            description="The Airbyte Server Address.",
-        ),
-        "port": Field(
-            StringSource,
-            is_required=True,
-            description="Port for the Airbyte Server.",
-        ),
-        "username": Field(
-            StringSource,
-            description="Username if using basic auth.",
-            is_required=False,
-        ),
-        "password": Field(
-            StringSource,
-            description="Password if using basic auth.",
-            is_required=False,
-        ),
-        "use_https": Field(
-            bool,
-            default_value=False,
-            description="Use https to connect in Airbyte Server.",
-        ),
-        "request_max_retries": Field(
-            int,
-            default_value=3,
-            description="The maximum number of times requests to the Airbyte API should be retried "
-            "before failing.",
-        ),
-        "request_retry_delay": Field(
-            float,
-            default_value=0.25,
-            description="Time (in seconds) to wait between each request retry.",
-        ),
-        "request_timeout": Field(
-            int,
-            default_value=15,
-            description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
-        ),
-        "request_additional_params": Field(
-            Permissive(),
-            description="Any additional kwargs to pass to the requests library when making requests to Airbyte.",
-        ),
-        "forward_logs": Field(
-            bool,
-            default_value=True,
-            description="Whether to forward Airbyte logs to the compute log, can be expensive for long-running syncs.",
-        ),
-    },
-    description="This resource helps manage Airbyte connectors",
-)
-def airbyte_resource(context) -> AirbyteResource:
-    """
-    This resource allows users to programatically interface with the Airbyte REST API to launch
-    syncs and monitor their progress. This currently implements only a subset of the functionality
-    exposed by the API.
-
-    For a complete set of documentation on the Airbyte REST API, including expected response JSON
-    schema, see the `Airbyte API Docs <https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#overview>`_.
-
-    To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
-
-    **Examples:**
-
-    .. code-block:: python
-
-        from dagster import job
-        from dagster_airbyte import airbyte_resource
-
-        my_airbyte_resource = airbyte_resource.configured(
-            {
-                "host": {"env": "AIRBYTE_HOST"},
-                "port": {"env": "AIRBYTE_PORT"},
-                # If using basic auth
-                "username": {"env": "AIRBYTE_USERNAME"},
-                "password": {"env": "AIRBYTE_PASSWORD"},
-            }
-        )
-
-        @job(resource_defs={"airbyte":my_airbyte_resource})
-        def my_airbyte_job():
-            ...
-
-    """
-    return AirbyteResource(
-        host=context.resource_config["host"],
-        port=context.resource_config["port"],
-        use_https=context.resource_config["use_https"],
-        request_max_retries=context.resource_config["request_max_retries"],
-        request_retry_delay=context.resource_config["request_retry_delay"],
-        request_timeout=context.resource_config["request_timeout"],
-        request_additional_params=context.resource_config["request_additional_params"],
-        log=context.log,
-        forward_logs=context.resource_config["forward_logs"],
-        username=context.resource_config.get("username"),
-        password=context.resource_config.get("password"),
-    )

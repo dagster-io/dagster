@@ -1,4 +1,4 @@
-from dagster_airbyte import airbyte_resource
+from dagster_airbyte import AirbyteResource
 from dagster_dbt import dbt_cli_resource
 
 from dagster import (
@@ -20,7 +20,7 @@ def assets_modern_data_stack():
         with_resources(
             load_assets_from_package_module(assets),
             resource_defs={
-                "airbyte": airbyte_resource.configured(AIRBYTE_CONFIG),
+                "airbyte": AirbyteResource(host="localhost", port=8000),
                 "dbt": dbt_cli_resource.configured(DBT_CONFIG),
                 "db_io_manager": db_io_manager.configured(POSTGRES_CONFIG),
             },
