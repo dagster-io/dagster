@@ -25,7 +25,6 @@ from .errors import (
 )
 from .evaluate_value_result import EvaluateValueResult
 from .field import resolve_to_config_type
-from .iterate_types import config_schema_snapshot_from_config_type
 from .post_process import post_process_config
 from .snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 from .stack import EvaluationStack
@@ -59,10 +58,8 @@ def validate_config(config_schema: object, config_value: T) -> EvaluateValueResu
     config_type = resolve_to_config_type(config_schema)
     config_type = check.inst(cast(ConfigType, config_type), ConfigType)
 
-    config_schema_snapshot = config_schema_snapshot_from_config_type(config_type)
-
     return validate_config_from_snap(
-        config_schema_snapshot=config_schema_snapshot,
+        config_schema_snapshot=config_type.get_schema_snapshot(),
         config_type_key=config_type.key,
         config_value=config_value,
     )

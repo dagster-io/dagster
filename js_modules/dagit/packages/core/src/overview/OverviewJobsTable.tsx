@@ -10,6 +10,8 @@ import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
+import {OVERVIEW_COLLAPSED_KEY, OVERVIEW_EXPANSION_KEY} from './OverviewExpansionKey';
+
 type Repository = {
   repoAddress: RepoAddress;
   jobs: {
@@ -26,16 +28,16 @@ type RowType =
   | {type: 'header'; repoAddress: RepoAddress; jobCount: number}
   | {type: 'job'; repoAddress: RepoAddress; isJob: boolean; name: string};
 
-const JOBS_EXPANSION_STATE_STORAGE_KEY = 'jobs-virtualized-expansion-state';
-
 export const OverviewJobsTable: React.FC<Props> = ({repos}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsString(repoAddress)),
     [repos],
   );
+
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
-    JOBS_EXPANSION_STATE_STORAGE_KEY,
+    OVERVIEW_EXPANSION_KEY,
+    OVERVIEW_COLLAPSED_KEY,
     allKeys,
   );
 

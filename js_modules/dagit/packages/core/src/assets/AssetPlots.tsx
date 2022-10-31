@@ -36,8 +36,8 @@ export const AssetPlots: React.FC<Props> = ({
       <Box>
         <Box
           flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          padding={{vertical: 16, horizontal: 24}}
           border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+          padding={{vertical: 16, left: 24, right: 12}}
           style={{marginBottom: -1}}
         >
           <Subheading>Asset Plots</Subheading>
@@ -53,8 +53,8 @@ export const AssetPlots: React.FC<Props> = ({
     <Box>
       <Box
         flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        padding={{vertical: 16, horizontal: 24}}
         border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
+        padding={{vertical: 16, left: 24, right: 12}}
         style={{marginBottom: -1}}
       >
         <Subheading>Asset Plots</Subheading>
@@ -64,8 +64,8 @@ export const AssetPlots: React.FC<Props> = ({
             <ButtonGroup
               activeItems={activeItems}
               buttons={[
-                {id: 'partition', label: 'By partition'},
-                {id: 'time', label: 'By timestamp'},
+                {id: 'partition', label: 'Partitions', icon: 'partition'},
+                {id: 'time', label: 'Events', icon: 'materialization'},
               ]}
               onClick={(id: string) =>
                 setParams(

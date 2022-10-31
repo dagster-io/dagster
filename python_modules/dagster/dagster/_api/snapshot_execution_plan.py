@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, FrozenSet, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, FrozenSet, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -24,8 +24,8 @@ def sync_get_external_execution_plan_grpc(
     mode: str,
     pipeline_snapshot_id: str,
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
-    solid_selection: Optional[List[str]] = None,
-    step_keys_to_execute: Optional[List[str]] = None,
+    solid_selection: Optional[Sequence[str]] = None,
+    step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> ExecutionPlanSnapshot:
@@ -33,11 +33,11 @@ def sync_get_external_execution_plan_grpc(
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     check.inst_param(pipeline_origin, "pipeline_origin", ExternalPipelineOrigin)
-    solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+    solid_selection = check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
     check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
     run_config = check.dict_param(run_config, "run_config", key_type=str)
     check.str_param(mode, "mode")
-    check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+    check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
     check.opt_inst_param(known_state, "known_state", KnownExecutionState)
     check.opt_inst_param(instance, "instance", DagsterInstance)

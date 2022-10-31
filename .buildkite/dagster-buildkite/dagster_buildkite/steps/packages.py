@@ -397,6 +397,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-airbyte",
+        pytest_tox_factors=["unit", "integration"],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-airflow",
         # omit python 3.9 until we add support
         unsupported_python_versions=[

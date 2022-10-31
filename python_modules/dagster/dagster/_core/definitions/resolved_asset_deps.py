@@ -71,11 +71,9 @@ def resolve_assets_def_deps(
 
     result: Dict[int, Mapping[AssetKey, AssetKey]] = {}
     for assets_def in assets_defs:
-        group_name = (
-            next(iter(assets_def.group_names_by_key.values()))
-            if len(assets_def.group_names_by_key) == 1
-            else None
-        )
+        # If all keys have the same group name, use that
+        group_names = set(assets_def.group_names_by_key.values())
+        group_name = next(iter(group_names)) if len(group_names) == 1 else None
 
         resolved_keys_by_unresolved_key: Dict[AssetKey, AssetKey] = {}
         for input_name, upstream_key in assets_def.keys_by_input_name.items():

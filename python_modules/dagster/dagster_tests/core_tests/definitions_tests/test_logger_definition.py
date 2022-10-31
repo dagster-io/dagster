@@ -56,7 +56,7 @@ def test_logger_with_enum_in_schema_using_configured():
         OTHER = 1
 
     DagsterEnumType = Enum(
-        "TestEnum",
+        "LoggerTestEnum",
         [
             EnumValue("VALUE_ONE", TestPythonEnum.VALUE_ONE),
             EnumValue("OTHER", TestPythonEnum.OTHER),

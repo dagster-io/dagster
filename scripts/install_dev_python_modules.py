@@ -80,6 +80,7 @@ def main(quiet: bool, extra_packages: List[str]) -> None:
         "-e python_modules/libraries/dagster-duckdb-pandas",
         "-e python_modules/libraries/dagster-duckdb-pyspark",
         "-e helm/dagster/schema[test]",
+        "-e .buildkite/dagster-buildkite",
     ]
 
     if sys.version_info > (3, 7):
