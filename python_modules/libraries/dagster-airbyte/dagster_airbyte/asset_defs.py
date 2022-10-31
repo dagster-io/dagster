@@ -512,7 +512,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _build_definitions_with_resources(
         self,
         data: Sequence[AssetsDefinitionCacheableData],
-        resource_defs: Mapping[str, ResourceDefinition] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ) -> Sequence[AssetsDefinition]:
         return [_build_airbyte_assets_from_metadata(meta, resource_defs) for meta in data]
 
