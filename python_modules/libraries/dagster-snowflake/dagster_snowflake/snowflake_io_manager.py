@@ -27,19 +27,6 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
     Returns:
         IOManagerDefinition
 
-    The returned Snowflake IOManager can be configured with the following values:
-
-    .. code-block:: YAML
-
-        database: my_database  # name of the database in snowflake
-        account: my_account  # snowflake account
-        user: user@email.com  # user account
-        password: abc123  # account password
-        warehouse: my_warehouse # snowflake warehouse
-        schema: my_schema  # name of the schema for the tables
-
-    You can also point all configuration to environment variables where dagster will find the values
-
     Examples:
 
         .. code-block:: python
@@ -95,12 +82,19 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
     @io_manager(
         config_schema={
-            "database": StringSource,
-            "account": StringSource,
-            "user": StringSource,
-            "password": StringSource,
-            "warehouse": Field(StringSource, is_required=False),
-            "schema": Field(StringSource, is_required=False),
+            "database": Field(StringSource, description="Name of the database to use."),
+            "account": Field(
+                StringSource,
+                description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+            ),
+            "user": Field(StringSource, description="User login name."),
+            "password": Field(StringSource, description="User password."),
+            "warehouse": Field(
+                StringSource, description="Name of the warehouse to use.", is_required=False
+            ),
+            "schema": Field(
+                StringSource, description="Name of the schema to use", is_required=False
+            ),
         }
     )
     def snowflake_io_manager():
