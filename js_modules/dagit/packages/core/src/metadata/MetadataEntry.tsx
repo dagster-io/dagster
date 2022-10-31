@@ -228,6 +228,9 @@ export const METADATA_ENTRY_FRAGMENT = gql`
     ... on PathMetadataEntry {
       path
     }
+    ... on NotebookMetadataEntry {
+      path
+    }
     ... on JsonMetadataEntry {
       jsonString
     }
