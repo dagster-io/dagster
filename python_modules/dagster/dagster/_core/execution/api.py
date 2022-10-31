@@ -1025,7 +1025,7 @@ def create_execution_plan(
     pipeline: Union[IPipeline, PipelineDefinition],
     run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
-    step_keys_to_execute: Optional[List[str]] = None,
+    step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
     instance_ref: Optional[InstanceRef] = None,
     tags: Optional[Dict[str, str]] = None,
@@ -1042,7 +1042,7 @@ def create_execution_plan(
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
-    check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+    check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
     tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
     known_state = check.opt_inst_param(

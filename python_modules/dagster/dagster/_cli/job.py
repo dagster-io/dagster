@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import textwrap
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, cast
 
 import click
 import pendulum
@@ -563,10 +563,10 @@ def _check_execute_external_pipeline_args(
     mode: Optional[str],
     preset: Optional[str],
     tags: Optional[Mapping[str, object]],
-    solid_selection: Optional[List[str]],
-) -> Tuple[Dict[str, object], str, Mapping[str, object], Optional[List[str]]]:
+    solid_selection: Optional[Sequence[str]],
+) -> Tuple[Mapping[str, object], str, Mapping[str, object], Optional[Sequence[str]]]:
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-    run_config = check.opt_dict_param(run_config, "run_config")
+    run_config = check.opt_mapping_param(run_config, "run_config")
     check.opt_str_param(mode, "mode")
     check.opt_str_param(preset, "preset")
     check.invariant(
@@ -577,7 +577,7 @@ def _check_execute_external_pipeline_args(
     )
 
     tags = check.opt_dict_param(tags, "tags", key_type=str)
-    check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
 
     if preset is not None:
         pipeline_preset = external_pipeline.get_preset(preset)

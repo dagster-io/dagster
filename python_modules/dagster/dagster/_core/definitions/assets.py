@@ -18,6 +18,7 @@ from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
@@ -91,6 +92,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
+        freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
     ):
@@ -155,6 +157,12 @@ class AssetsDefinition(ResourceAddable):
                 node_def.resolve_output_to_origin(output_name, None)[0].metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+        self._freshness_policies_by_key = check.opt_dict_param(
+            freshness_policies_by_key,
+            "freshness_policies_by_key",
+            key_type=AssetKey,
+            value_type=FreshnessPolicy,
+        )
 
     def __call__(self, *args, **kwargs):
         from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
@@ -506,6 +514,10 @@ class AssetsDefinition(ResourceAddable):
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
 
+    @property
+    def freshness_policies_by_key(self) -> Mapping[AssetKey, FreshnessPolicy]:
+        return self._freshness_policies_by_key
+
     @public  # type: ignore
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
@@ -582,6 +594,11 @@ class AssetsDefinition(ResourceAddable):
             for key, group_name in self.group_names_by_key.items()
         }
 
+        replaced_freshness_policies_by_key = {
+            output_asset_key_replacements.get(key, key): policy
+            for key, policy in self._freshness_policies_by_key.items()
+        }
+
         return self.__class__(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -617,6 +634,7 @@ class AssetsDefinition(ResourceAddable):
                 **replaced_group_names_by_key,
                 **group_names_by_key,
             },
+            freshness_policies_by_key=replaced_freshness_policies_by_key,
         )
 
     def _subset_graph_backed_asset(
@@ -723,6 +741,7 @@ class AssetsDefinition(ResourceAddable):
                 selected_asset_keys=selected_asset_keys & self.keys,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
+                freshness_policies_by_key=self.freshness_policies_by_key,
             )
         else:
             # multi_asset subsetting
@@ -830,6 +849,7 @@ class AssetsDefinition(ResourceAddable):
             can_subset=self._can_subset,
             resource_defs=relevant_resource_defs,
             group_names_by_key=self.group_names_by_key,
+            freshness_policies_by_key=self.freshness_policies_by_key,
         )
 
 

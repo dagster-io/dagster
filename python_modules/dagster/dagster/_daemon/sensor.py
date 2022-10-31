@@ -612,7 +612,9 @@ def _evaluate_sensor(
     )
 
     for run_request in sensor_runtime_data.run_requests:
-        target_data: ExternalTargetData = external_sensor.get_target_data(run_request.job_name)
+        target_data: ExternalTargetData = check.not_none(
+            external_sensor.get_target_data(run_request.job_name)
+        )
 
         pipeline_selector = PipelineSelector(
             location_name=repo_location.name,

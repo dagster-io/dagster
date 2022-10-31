@@ -10,7 +10,6 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -21,8 +20,6 @@ import {Loading} from '../ui/Loading';
 
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './BackfillTable';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
-import {InstancePageContext} from './InstancePageContext';
-import {InstanceTabs} from './InstanceTabs';
 import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
@@ -34,8 +31,6 @@ const PAGE_SIZE = 10;
 export const InstanceBackfills = () => {
   useTrackPageView();
 
-  const {flagNewWorkspace} = useFeatureFlags();
-  const {pageTitle} = React.useContext(InstancePageContext);
   const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
@@ -60,14 +55,8 @@ export const InstanceBackfills = () => {
   return (
     <Page>
       <PageHeader
-        title={<Heading>{flagNewWorkspace ? 'Overview' : pageTitle}</Heading>}
-        tabs={
-          flagNewWorkspace ? (
-            <OverviewTabs tab="backfills" refreshState={refreshState} />
-          ) : (
-            <InstanceTabs tab="backfills" refreshState={refreshState} />
-          )
-        }
+        title={<Heading>Overview</Heading>}
+        tabs={<OverviewTabs tab="backfills" refreshState={refreshState} />}
       />
       <Loading queryResult={queryResult} allowStaleData={true}>
         {({partitionBackfillsOrError}) => {
