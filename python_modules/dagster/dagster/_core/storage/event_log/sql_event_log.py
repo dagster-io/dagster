@@ -715,21 +715,15 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.where(SqlEventLogStorageTable.c.id.in_(event_records_filter.storage_ids))
 
         if event_records_filter.tags:
-            # Also filter by asset key in asset key table to take advantage of asset key tags index
+            check.invariant(
+                isinstance(event_records_filter.asset_key, AssetKey),
+                "Asset key must be set in event records filter to filter by tags.",
+            )
             intersections = [
                 db.select([AssetEventTagsTable.c.event_id]).where(
                     db.and_(
                         AssetEventTagsTable.c.asset_key
                         == event_records_filter.asset_key.to_string(),
-                        AssetEventTagsTable.c.key == key,
-                        (
-                            AssetEventTagsTable.c.value == value
-                            if isinstance(value, str)
-                            else AssetEventTagsTable.c.value.in_(value)
-                        ),
-                    )
-                    if event_records_filter.asset_key
-                    else db.and_(
                         AssetEventTagsTable.c.key == key,
                         (
                             AssetEventTagsTable.c.value == value
@@ -1213,7 +1207,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         return query
 
-    def get_asset_event_tags(self, asset_key: AssetKey) -> Sequence[Tuple[str, AbstractSet[str]]]:
+    def get_all_event_tags_for_asset(
+        self, asset_key: AssetKey
+    ) -> Sequence[Tuple[str, AbstractSet[str]]]:
         tags = defaultdict(set)
         query = (
             db.select([AssetEventTagsTable.c.key, AssetEventTagsTable.c.value])

@@ -305,7 +305,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def get_asset_event_tags(self, asset_key: AssetKey) -> Sequence[Tuple[str, AbstractSet[str]]]:
+    def get_all_event_tags_for_asset(self, asset_key: AssetKey) -> Sequence[Tuple[str, AbstractSet[str]]]:
         """Get a list of tag keys and the values that have been associated with them for a specific
         asset key.
 

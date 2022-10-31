@@ -2359,7 +2359,7 @@ class TestEventLogStorage:
             )
             assert len(materializations) == 1
 
-            asset_event_tags = storage.get_asset_event_tags(key)
+            asset_event_tags = storage.get_all_event_tags_for_asset(key)
             assert asset_event_tags == [
                 ("dagster/partition/country", {"US"}),
                 ("dagster/partition/date", {"2022-10-13"}),
@@ -2422,6 +2422,7 @@ class TestEventLogStorage:
             materializations = storage.get_event_records(
                 EventRecordsFilter(
                     DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=key,
                     tags={
                         "dagster/partition/date": "2022-10-13",
                         "dagster/partition/country": "US",
@@ -2449,7 +2450,9 @@ class TestEventLogStorage:
 
             materializations = storage.get_event_records(
                 EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION, tags={"nonexistent": "tag"}
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=key,
+                    tags={"nonexistent": "tag"},
                 )
             )
             assert len(materializations) == 0
@@ -2457,6 +2460,7 @@ class TestEventLogStorage:
             materializations = storage.get_event_records(
                 EventRecordsFilter(
                     DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=key,
                     tags={"dagster/partition/date": "2022-10-13"},
                 )
             )
@@ -2471,6 +2475,15 @@ class TestEventLogStorage:
                     if dimension.dimension_name == "date"
                 ][0]
                 assert date_dimension.partition_key == "2022-10-13"
+
+    def test_event_records_filter_tags_requires_asset_key(self, storage):
+        with pytest.raises(Exception, match="Asset key must be set in event records"):
+            storage.get_event_records(
+                EventRecordsFilter(
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    tags={"dagster/partition/date": "2022-10-13"},
+                )
+            )
 
     def test_multi_partitions_partition_deserialization(self, storage, instance):
         key = AssetKey("hello")
