@@ -7,6 +7,7 @@ from dagster import (
     load_assets_from_package_module,
     repository,
     with_resources,
+    EnvVar,
 )
 
 from . import assets
@@ -20,7 +21,14 @@ def assets_modern_data_stack():
         with_resources(
             load_assets_from_package_module(assets),
             resource_defs={
-                "airbyte": AirbyteResource(host="localhost", port=8000),
+                "airbyte": AirbyteResource(
+                    host="localhost",
+                    port=8000,
+                    # special feature (class that inherits from str) of new config-api
+                    # to enable deferring evaluation of envvars at runtime
+                    username=EnvVar("AIRBYTE_USERNAME"),
+                    password=EnvVar("AIRBYTE_PASSWORD"),
+                ),
                 "dbt": dbt_cli_resource.configured(DBT_CONFIG),
                 "db_io_manager": db_io_manager.configured(POSTGRES_CONFIG),
             },
