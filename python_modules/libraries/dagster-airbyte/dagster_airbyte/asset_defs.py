@@ -112,7 +112,7 @@ def _build_airbyte_asset_defn_metadata(
 
 def _build_airbyte_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
-    resource_defs: Mapping[str, ResourceDefinition],
+    resource_defs: Optional[Mapping[str, ResourceDefinition]],
 ) -> AssetsDefinition:
 
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
