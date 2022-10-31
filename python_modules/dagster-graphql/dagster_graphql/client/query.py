@@ -41,9 +41,6 @@ fragment metadataEntryFragment on MetadataEntry {
   ... on PathMetadataEntry {
     path
   }
-  ... on NotebookMetadataEntry {
-    path
-  }
   ... on PythonArtifactMetadataEntry {
     module
     name
