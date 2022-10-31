@@ -5,6 +5,7 @@ import {
   Colors,
   DialogFooter,
   Dialog,
+  DialogBody,
   Group,
   Icon,
   Markdown,
@@ -16,6 +17,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {AppContext} from '../app/AppContext';
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
@@ -72,7 +74,16 @@ export const MetadataEntries: React.FC<{
 export const MetadataEntry: React.FC<{
   entry: MetadataEntryFragment;
   expandSmallValues?: boolean;
-}> = ({entry, expandSmallValues}) => {
+  repoLocation?: string;
+}> = ({entry, expandSmallValues, repoLocation}) => {
+  const {rootServerURI} = React.useContext(AppContext);
+  const [open, setOpen] = React.useState(false);
+  React.useEffect(() => {
+    const onOpen = () => setOpen(true);
+    document.addEventListener('show-kind-info', onOpen);
+    return () => document.removeEventListener('show-kind-info', onOpen);
+  }, []);
+
   switch (entry.__typename) {
     case 'PathMetadataEntry':
       return (
@@ -171,6 +182,39 @@ export const MetadataEntry: React.FC<{
       return null;
     case 'TableSchemaMetadataEntry':
       return <TableSchema schema={entry.schema} />;
+    case 'NotebookMetadataEntry':
+      return (
+        <div>
+          <Button icon={<Icon name="content_copy" />} onClick={() => setOpen(true)}>
+            View Notebook
+          </Button>
+          <Dialog
+            icon="info"
+            onClose={() => setOpen(false)}
+            style={{width: '80vw', maxWidth: 900}}
+            title={entry.path.split('/').pop()}
+            usePortal={true}
+            isOpen={open}
+          >
+            <DialogBody>
+              <iframe
+                title={entry.path}
+                src={`${rootServerURI}/dagit/notebook?path=${encodeURIComponent(
+                  entry.path,
+                )}&repoLocName=${repoLocation}`}
+                sandbox=""
+                style={{border: 0, background: 'white'}}
+                seamless={true}
+                width="100%"
+                height={500}
+              />
+            </DialogBody>
+            <DialogFooter>
+              <Button onClick={() => setOpen(false)}>Close</Button>
+            </DialogFooter>
+          </Dialog>
+        </div>
+      );
     default:
       return assertUnreachable(entry);
   }
