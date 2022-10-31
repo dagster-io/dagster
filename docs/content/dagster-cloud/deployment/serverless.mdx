@@ -88,7 +88,7 @@ dagster-cloud serverless deploy \
 
 Often you'll need to securely access secrets from your jobs. With Dagster Cloud Serverless, secrets are added as environment variables that can be read using APIs like [StringSource](/guides/dagster/transitioning-data-pipelines-from-development-to-production#part-two-deployment).
 
-- If you're using our GitHub integration, you can create secrets in GitHub and then pass those secrets to Dagster by modifying the serverless deploy step in your repository's GitHub action script.
+- If you're using our GitHub integration, you can [create secrets in GitHub](https://docs.github.com/en/actions/security-guides/encrypted-secrets) and then pass those secrets to Dagster by modifying the serverless deploy step in your repository's GitHub action script.
 
 ```shell
 # .github/workflows/deploy.yml AND .github/workflows/branch_deployments.yml
@@ -110,50 +110,6 @@ jobs:
 
 - If you're using the CLI directly, you can pass `KEY=VALUE` pairs using the `--env` flag. Run `dagster-cloud serverless deploy --help` to learn more.
 
-<<<<<<< HEAD
-### Adding dependencies
-
-Any dependencies specified in either `requirements.txt` or `setup.py` will be installed for you automatically by the Dagster Cloud Serverless infrastructure.
-
----
-
-## Customizing the container
-
-Many apps will work fine with the default Dagster Cloud Serverless setup. However, some apps may need to make changes to the base image, either to use a different OS, different Python version, or install some native dependencies. You can customize your image through our Serverless lifecycle hooks, and/or changing the base image.
-
-### Lifecycle hooks
-
-This method is the easiest to set up, and does not require setting up any additional infrastructure.
-
-In the root of your repo, you can provide two optional shell scripts: `dagster_cloud_pre_install.sh` and `dagster_cloud_post_install.sh`. These will run before and after Python dependencies are installed. They are useful for installing any non-Python dependencies or otherwise configuring your environment.
-
-### Changing the base image
-
-This method is the most flexible, but requires setting up a pipeline outside of Dagster to build a custom base image.
-
-The default base image is `debian:bullseye-slim`, but it can be changed.
-
-- **With GitHub**: you can provide a `base_image` input parameter to the "build and deploy" step in your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
-
-```yaml
-- name: Build and deploy to Dagster Cloud serverless
-  uses: dagster-io/dagster-cloud-action/actions/serverless_prod_deploy@v0.1
-  with:
-    dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
-    location: ${{ toJson(matrix.location) }}
-    # Use a custom base image
-    base_image: "my_base_image:latest"
-    organization_id: ${{ secrets.ORGANIZATION_ID }}
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
-
-- **With the CLI**: add the `--base-image` CLI argument to the deploy command to specify the registry path to the desired base image.
-
-```shell
-    dagster-cloud serverless deploy --location-name=my_location --base-image=my_base_image:latest
-```
-=======
 ### Adding Non-Python Dependencies
 
 While Python dependencies will be installed via `setup.py` or `requirements.txt`, occasionally a project will require additional dependencies. For example, dbt dependencies that are installed with `dbt deps`.
@@ -161,7 +117,6 @@ While Python dependencies will be installed via `setup.py` or `requirements.txt`
 - If you're using our GitHub integration, you can create a shell script called `dagster_cloud_pre_install.sh` that will be run before the Python dependencies are installed or you can create a shell script called `dagster_cloud_post_install.sh` that will be run after the Python dependencies are installed. The scripts should be executable, e.g. run `chmod +x dagster_cloud_post_install.sh` prior to committing the file to your Git repo.
 
 - If you're using the CLI directly, you should create a custom base image with your dependencies and include it by specifying `--base-image` in the `deploy serverless` command.
->>>>>>> 26bdce8b8b (document serverless pre and post install hooks)
 
 ---
 
