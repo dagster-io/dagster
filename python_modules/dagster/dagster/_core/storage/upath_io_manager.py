@@ -6,9 +6,10 @@ from typing import Any, Dict, Mapping, Union
 
 from upath import UPath
 
-from dagster import InputContext, MemoizableIOManager, MetadataValue, OutputContext
+from dagster import InputContext, MetadataValue, OutputContext
 from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 
 
 @experimental
@@ -26,6 +27,14 @@ class UPathIOManager(MemoizableIOManager):
     """
 
     extension: str = ""  # override in child class
+
+    def __init__(
+        self,
+        base_path: UPath,
+    ):
+        assert self.extension == "" or "." in self.extension
+
+        self._base_path = base_path
 
     @abstractmethod
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
@@ -68,14 +77,6 @@ class UPathIOManager(MemoizableIOManager):
 
         """
         return {}
-
-    def __init__(
-        self,
-        base_path: UPath,
-    ):
-        assert self.extension == "" or "." in self.extension
-
-        self._base_path = base_path
 
     def has_output(self, context: OutputContext) -> bool:
         return self._get_path(context).exists()
@@ -215,7 +216,12 @@ class UPathIOManager(MemoizableIOManager):
                 )
 
     def handle_output(self, context: OutputContext, obj: Any):
-        path = self._get_path(context)
+        if context.has_asset_partitions:
+            paths = self._get_paths_for_partitions(context)
+            assert len(paths) == 1
+            path = list(paths.values())[0]
+        else:
+            path = self._get_path(context)
         path.parent.mkdir(parents=True, exist_ok=True)
         context.log.debug(f"Saving to {path} using {self.__class__.__name__}")
         self.dump_to_path(context=context, obj=obj, path=path)

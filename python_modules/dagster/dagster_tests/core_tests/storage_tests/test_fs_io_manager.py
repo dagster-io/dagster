@@ -392,7 +392,7 @@ def test_fs_io_manager_none():
         assert len(handled_output_events) == 2
 
         for event in handled_output_events:
-            assert len(event.event_specific_data.metadata_entries) == 0
+            assert len(event.event_specific_data.metadata_entries) == 1
 
 
 def test_fs_io_manager_ops_none():
@@ -419,4 +419,4 @@ def test_fs_io_manager_ops_none():
         assert len(handled_output_events) == 2
 
         for event in handled_output_events:
-            assert len(event.event_specific_data.metadata_entries) == 0
+            assert len(event.event_specific_data.metadata_entries) == 1
