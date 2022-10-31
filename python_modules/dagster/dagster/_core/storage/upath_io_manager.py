@@ -12,7 +12,7 @@ from dagster._annotations import experimental
 
 
 @experimental
-class UPathIOManagerBase(MemoizableIOManager):
+class UPathIOManager(MemoizableIOManager):
     """
     Abstract IOManager base class compatible with local and cloud storage via `fsspec` (using `universal-pathlib`).
 
@@ -40,7 +40,6 @@ class UPathIOManagerBase(MemoizableIOManager):
         Returns:
 
         """
-        pass  # pylint: disable=W0107
 
     @abstractmethod
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
@@ -54,7 +53,6 @@ class UPathIOManagerBase(MemoizableIOManager):
         Returns:
 
         """
-        pass  # pylint: disable=W0107
 
     def get_metadata(
         self, context: OutputContext, obj: Any  # pylint: disable=unused-argument

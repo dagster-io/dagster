@@ -27,10 +27,10 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import build_assets_job
-from dagster._core.storage.upath_io_manager import UPathIOManagerBase
+from dagster._core.storage.upath_io_manager import UPathIOManager
 
 
-class DummyIOManager(UPathIOManagerBase):
+class DummyIOManager(UPathIOManager):
     """
     This IOManager simply outputs the object path without loading or writing anything
     """
@@ -46,6 +46,7 @@ class DummyIOManager(UPathIOManagerBase):
 def dummy_io_manager(tmp_path: Path) -> DummyIOManager:
     @io_manager(config_schema={"base_path": Field(str, is_required=False)})
     def dummy_io_manager(init_context: InitResourceContext):
+        assert init_context.instance is not None
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
@@ -73,7 +74,7 @@ def daily(start: datetime):
 
 @pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
 def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
-    class JSONIOManager(UPathIOManagerBase):
+    class JSONIOManager(UPathIOManager):
         extension: str = ".json"
 
         def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
@@ -87,6 +88,7 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
 
     @io_manager(config_schema={"base_path": Field(str, is_required=False)})
     def json_io_manager(init_context: InitResourceContext):
+        assert init_context.instance is not None
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
@@ -136,14 +138,7 @@ def test_upath_io_manager_multiple_time_partitions(
     assert len(downstream_asset_data) == 24, "downstream day should map to upstream 24 hours"
 
 
-def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOManager):
-    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
-    def dummy_io_manager(init_context: InitResourceContext):
-        base_path = UPath(
-            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
-        )
-        return DummyIOManager(base_path=base_path)
-
+def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOManager):  # type: ignore[no-redef]
     upstream_partitions_def = StaticPartitionsDefinition(["A", "B"])
 
     @asset(partitions_def=upstream_partitions_def)
@@ -159,7 +154,7 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
     my_job = build_assets_job(
         "my_job",
         assets=[upstream_asset, downstream_asset],
-        resource_defs={"io_manager": dummy_io_manager},
+        resource_defs={"io_manager": dummy_io_manager},  # type: ignore[dict-item]
     )
     result = my_job.execute_in_process(partition_key="A")
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
