@@ -112,6 +112,7 @@ def _build_airbyte_asset_defn_metadata(
 
 def _build_airbyte_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
+    resource_defs: Mapping[str, ResourceDefinition],
 ) -> AssetsDefinition:
 
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
@@ -143,6 +144,7 @@ def _build_airbyte_assets_from_metadata(
         required_resource_keys={"airbyte"},
         compute_kind="airbyte",
         group_name=group_name,
+        resource_defs=resource_defs,
     )
     def _assets(context):
         ab_output = context.resources.airbyte.sync_and_poll(connection_id=connection_id)
@@ -507,10 +509,17 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
 
         return asset_defn_data
 
+    def _build_definitions_with_resources(
+        self,
+        data: Sequence[AssetsDefinitionCacheableData],
+        resource_defs: Mapping[str, ResourceDefinition] = None,
+    ) -> Sequence[AssetsDefinition]:
+        return [_build_airbyte_assets_from_metadata(meta, resource_defs) for meta in data]
+
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
-        return [_build_airbyte_assets_from_metadata(meta) for meta in data]
+        return self._build_definitions_with_resources(data)
 
 
 class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
@@ -586,12 +595,9 @@ class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefiniti
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
-        return [
-            asset._with_resources(  # pylint: disable=protected-access
-                {"airbyte": self._airbyte_resource_def}, enforce_all_requirements_satisfied=False
-            )
-            for asset in super().build_definitions(data)
-        ]
+        return super()._build_definitions_with_resources(
+            data, {"airbyte": self._airbyte_resource_def}
+        )
 
 
 class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
