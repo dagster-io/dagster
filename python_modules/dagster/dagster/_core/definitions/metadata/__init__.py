@@ -611,7 +611,7 @@ class PathMetadataValue(  # type: ignore
 class NotebookMetadataValue(  # type: ignore
     NamedTuple("_NotebookMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue
 ):
-    """Container class for path metadata entry data.
+    """Container class for notebook metadata entry data.
 
     Args:
         path (Optional[str]): The path to the notebook as a string or conforming to os.PathLike.
