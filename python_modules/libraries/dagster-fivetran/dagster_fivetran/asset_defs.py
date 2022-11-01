@@ -1,16 +1,7 @@
 import hashlib
 import inspect
 import re
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-)
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Sequence, Set, cast
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 from dagster_fivetran.utils import (
@@ -103,11 +94,15 @@ def build_fivetran_assets(
         table: AssetKey(asset_key_prefix + table.split(".")) for table in destination_tables
     }
 
+    metadata_by_table_name = check.opt_dict_param(
+        metadata_by_table_name, "metadata_by_table_name", key_type=str
+    )
+
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
         outs={
             "_".join(key.path): AssetOut(
-                io_manager_key=io_manager_key, key=key, metadata=metadata_by_table_name[table]
+                io_manager_key=io_manager_key, key=key, metadata=metadata_by_table_name.get(table)
             )
             for table, key in tracked_asset_keys.items()
         },
@@ -146,7 +141,7 @@ class FivetranConnectionMetadata(
             ("name", str),
             ("connector_id", str),
             ("connector_url", str),
-            ("schemas", List[Dict[str, Any]]),
+            ("schemas", Dict[str, Any]),
         ],
     )
 ):
@@ -156,20 +151,22 @@ class FivetranConnectionMetadata(
         group_name: Optional[str],
     ) -> AssetsDefinitionCacheableData:
 
-        schema_tables: Dict[str, Dict[str, Any]] = {}
+        schema_table_meta: Dict[str, MetadataUserInput] = {}
         if "schemas" in self.schemas:
-            for schema in self.schemas["schemas"].values():
+            schemas_inner = cast(Dict[str, Any], self.schemas["schemas"])
+            for schema in schemas_inner.values():
                 schema_name = schema["name_in_destination"]
-                for table in schema["tables"].values():
+                schema_tables = cast(Dict[str, Dict[str, Any]], schema["tables"])
+                for table in schema_tables.values():
                     if table["enabled"]:
                         table_name = table["name_in_destination"]
-                        schema_tables[f"{schema_name}.{table_name}"] = metadata_for_table(
+                        schema_table_meta[f"{schema_name}.{table_name}"] = metadata_for_table(
                             table, self.connector_url
                         )
         else:
-            schema_tables[self.name] = {}
+            schema_table_meta[self.name] = {}
 
-        outputs = {table: AssetKey(key_prefix + [table]) for table in schema_tables.keys()}
+        outputs = {table: AssetKey(key_prefix + [table]) for table in schema_table_meta.keys()}
 
         internal_deps: Dict[str, Set[AssetKey]] = {}
 
@@ -180,7 +177,7 @@ class FivetranConnectionMetadata(
             group_name=group_name,
             key_prefix=key_prefix,
             can_subset=False,
-            metadata_by_output_name=schema_tables,
+            metadata_by_output_name=schema_table_meta,
             extra_metadata={
                 "connector_id": self.connector_id,
             },
@@ -190,14 +187,20 @@ class FivetranConnectionMetadata(
 def _build_fivetran_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
 ) -> AssetsDefinition:
-    connector_id = assets_defn_meta.extra_metadata["connector_id"]
+    connector_id = check.not_none(assets_defn_meta.extra_metadata)["connector_id"]
 
     return with_group(
         build_fivetran_assets(
             connector_id=connector_id,
-            destination_tables=list(assets_defn_meta.keys_by_output_name.keys()),
-            asset_key_prefix=assets_defn_meta.key_prefix,
-            metadata_by_table_name=assets_defn_meta.metadata_by_output_name,
+            destination_tables=list(
+                assets_defn_meta.keys_by_output_name.keys()
+                if assets_defn_meta.keys_by_output_name
+                else []
+            ),
+            asset_key_prefix=list(assets_defn_meta.key_prefix or []),
+            metadata_by_table_name=cast(
+                Dict[str, MetadataUserInput], assets_defn_meta.metadata_by_output_name
+            ),
         ),
         assets_defn_meta.group_name,
     )[0]

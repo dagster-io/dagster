@@ -4,8 +4,8 @@ from dagster_fivetran import fivetran_resource
 from dagster_fivetran.asset_defs import build_fivetran_assets
 from dagster_fivetran.resources import (
     FIVETRAN_API_BASE,
-    FIVETRAN_CONNECTOR_PATH,
     FIVETRAN_API_VERSION_PATH,
+    FIVETRAN_CONNECTOR_PATH,
 )
 
 from dagster import AssetKey, DagsterStepOutputNotFoundError
@@ -44,7 +44,6 @@ def test_fivetran_asset_run(tables, should_error, schema_prefix):
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
     api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION_PATH}{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"
-    raise Exception(api_prefix)
 
     if schema_prefix:
         tables = [f"{schema_prefix}_{t}" for t in tables]

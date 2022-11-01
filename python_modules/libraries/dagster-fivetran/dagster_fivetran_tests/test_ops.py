@@ -3,8 +3,8 @@ import responses
 from dagster_fivetran import FivetranOutput, fivetran_resource, fivetran_resync_op, fivetran_sync_op
 from dagster_fivetran.resources import (
     FIVETRAN_API_BASE,
-    FIVETRAN_CONNECTOR_PATH,
     FIVETRAN_API_VERSION_PATH,
+    FIVETRAN_CONNECTOR_PATH,
 )
 
 from dagster import AssetKey, job, op

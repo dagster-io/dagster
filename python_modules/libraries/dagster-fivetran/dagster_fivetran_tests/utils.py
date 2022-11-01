@@ -121,8 +121,7 @@ def get_complex_sample_connector_schema_config():
                             "enabled": True,
                             "enabled_patch_settings": {"allowed": True},
                             "columns": {
-                                "name_in_destination": "column_1",
-                                "column_1": {"enabled": False},
+                                "column_1": {"name_in_destination": "column_1", "enabled": False},
                             },
                         },
                         "table_2": {

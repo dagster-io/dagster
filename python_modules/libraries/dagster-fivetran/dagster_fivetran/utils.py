@@ -20,13 +20,16 @@ def get_fivetran_logs_url(connector_details: Dict[str, Any]) -> str:
 
 def metadata_for_table(
     table_data: Dict[str, Any], connector_url: str, include_column_info: bool = False
-) -> Dict[str, MetadataUserInput]:
+) -> MetadataUserInput:
     metadata: Dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
     if table_data.get("columns"):
         columns = check.dict_elem(table_data, "columns")
-
         table_columns = sorted(
-            [TableColumn(name=col["name_in_destination"], type="any") for col in columns.values()],
+            [
+                TableColumn(name=col["name_in_destination"], type="any")
+                for col in columns.values()
+                if "name_in_destination" in col
+            ],
             key=lambda col: col.name,
         )
         metadata["table_schema"] = MetadataValue.table_schema(TableSchema(table_columns))
