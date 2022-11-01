@@ -6,11 +6,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, 
 from dagster import DagsterInstance
 from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import (
-    LogicalVersion,
-    get_logical_version_from_inputs,
-    get_most_recent_logical_version,
-)
+from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -487,17 +483,16 @@ class ProjectedLogicalVersionLoader:
     def _compute_version(self, key: AssetKey) -> None:
         node = self._fetch_node(key)
         if node.is_source:
-            version = get_most_recent_logical_version(key, True, self._instance)
+            version = self._instance.get_most_recent_logical_version(key, True)
         else:
             dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
             for dep_key in dep_keys:
                 if not self._has_version(dep_key):
                     self._compute_version(dep_key)
-            version = get_logical_version_from_inputs(
+            version = self._instance.get_logical_version_from_inputs(
                 dep_keys,
                 check.not_none(node.op_version),
                 {key: node.is_source for key in dep_keys},
-                self._instance,
                 self._key_to_version_map,
             )
         self._key_to_version_map[key] = version

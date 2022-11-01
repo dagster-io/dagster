@@ -7,6 +7,12 @@
 // GraphQL fragment: MetadataEntryFragment
 // ====================================================
 
+export interface MetadataEntryFragment_LogicalVersionMetadataEntry {
+  __typename: "LogicalVersionMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
 export interface MetadataEntryFragment_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -170,4 +176,4 @@ export interface MetadataEntryFragment_TableSchemaMetadataEntry {
   schema: MetadataEntryFragment_TableSchemaMetadataEntry_schema;
 }
 
-export type MetadataEntryFragment = MetadataEntryFragment_PathMetadataEntry | MetadataEntryFragment_NotebookMetadataEntry | MetadataEntryFragment_JsonMetadataEntry | MetadataEntryFragment_UrlMetadataEntry | MetadataEntryFragment_TextMetadataEntry | MetadataEntryFragment_MarkdownMetadataEntry | MetadataEntryFragment_PythonArtifactMetadataEntry | MetadataEntryFragment_FloatMetadataEntry | MetadataEntryFragment_IntMetadataEntry | MetadataEntryFragment_BoolMetadataEntry | MetadataEntryFragment_PipelineRunMetadataEntry | MetadataEntryFragment_AssetMetadataEntry | MetadataEntryFragment_TableMetadataEntry | MetadataEntryFragment_TableSchemaMetadataEntry;
+export type MetadataEntryFragment = MetadataEntryFragment_LogicalVersionMetadataEntry | MetadataEntryFragment_PathMetadataEntry | MetadataEntryFragment_NotebookMetadataEntry | MetadataEntryFragment_JsonMetadataEntry | MetadataEntryFragment_UrlMetadataEntry | MetadataEntryFragment_TextMetadataEntry | MetadataEntryFragment_MarkdownMetadataEntry | MetadataEntryFragment_PythonArtifactMetadataEntry | MetadataEntryFragment_FloatMetadataEntry | MetadataEntryFragment_IntMetadataEntry | MetadataEntryFragment_BoolMetadataEntry | MetadataEntryFragment_PipelineRunMetadataEntry | MetadataEntryFragment_AssetMetadataEntry | MetadataEntryFragment_TableMetadataEntry | MetadataEntryFragment_TableSchemaMetadataEntry;

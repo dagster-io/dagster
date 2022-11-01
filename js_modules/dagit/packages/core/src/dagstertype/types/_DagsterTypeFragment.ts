@@ -7,6 +7,12 @@
 // GraphQL fragment: _DagsterTypeFragment
 // ====================================================
 
+export interface _DagsterTypeFragment_metadataEntries_LogicalVersionMetadataEntry {
+  __typename: "LogicalVersionMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
 export interface _DagsterTypeFragment_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -170,7 +176,7 @@ export interface _DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry {
   schema: _DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type _DagsterTypeFragment_metadataEntries = _DagsterTypeFragment_metadataEntries_PathMetadataEntry | _DagsterTypeFragment_metadataEntries_NotebookMetadataEntry | _DagsterTypeFragment_metadataEntries_JsonMetadataEntry | _DagsterTypeFragment_metadataEntries_UrlMetadataEntry | _DagsterTypeFragment_metadataEntries_TextMetadataEntry | _DagsterTypeFragment_metadataEntries_MarkdownMetadataEntry | _DagsterTypeFragment_metadataEntries_PythonArtifactMetadataEntry | _DagsterTypeFragment_metadataEntries_FloatMetadataEntry | _DagsterTypeFragment_metadataEntries_IntMetadataEntry | _DagsterTypeFragment_metadataEntries_BoolMetadataEntry | _DagsterTypeFragment_metadataEntries_PipelineRunMetadataEntry | _DagsterTypeFragment_metadataEntries_AssetMetadataEntry | _DagsterTypeFragment_metadataEntries_TableMetadataEntry | _DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry;
+export type _DagsterTypeFragment_metadataEntries = _DagsterTypeFragment_metadataEntries_LogicalVersionMetadataEntry | _DagsterTypeFragment_metadataEntries_PathMetadataEntry | _DagsterTypeFragment_metadataEntries_NotebookMetadataEntry | _DagsterTypeFragment_metadataEntries_JsonMetadataEntry | _DagsterTypeFragment_metadataEntries_UrlMetadataEntry | _DagsterTypeFragment_metadataEntries_TextMetadataEntry | _DagsterTypeFragment_metadataEntries_MarkdownMetadataEntry | _DagsterTypeFragment_metadataEntries_PythonArtifactMetadataEntry | _DagsterTypeFragment_metadataEntries_FloatMetadataEntry | _DagsterTypeFragment_metadataEntries_IntMetadataEntry | _DagsterTypeFragment_metadataEntries_BoolMetadataEntry | _DagsterTypeFragment_metadataEntries_PipelineRunMetadataEntry | _DagsterTypeFragment_metadataEntries_AssetMetadataEntry | _DagsterTypeFragment_metadataEntries_TableMetadataEntry | _DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface _DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";

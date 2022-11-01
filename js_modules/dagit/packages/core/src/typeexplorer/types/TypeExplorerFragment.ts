@@ -7,6 +7,12 @@
 // GraphQL fragment: TypeExplorerFragment
 // ====================================================
 
+export interface TypeExplorerFragment_metadataEntries_LogicalVersionMetadataEntry {
+  __typename: "LogicalVersionMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -170,7 +176,7 @@ export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry {
   schema: TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type TypeExplorerFragment_metadataEntries = TypeExplorerFragment_metadataEntries_PathMetadataEntry | TypeExplorerFragment_metadataEntries_NotebookMetadataEntry | TypeExplorerFragment_metadataEntries_JsonMetadataEntry | TypeExplorerFragment_metadataEntries_UrlMetadataEntry | TypeExplorerFragment_metadataEntries_TextMetadataEntry | TypeExplorerFragment_metadataEntries_MarkdownMetadataEntry | TypeExplorerFragment_metadataEntries_PythonArtifactMetadataEntry | TypeExplorerFragment_metadataEntries_FloatMetadataEntry | TypeExplorerFragment_metadataEntries_IntMetadataEntry | TypeExplorerFragment_metadataEntries_BoolMetadataEntry | TypeExplorerFragment_metadataEntries_PipelineRunMetadataEntry | TypeExplorerFragment_metadataEntries_AssetMetadataEntry | TypeExplorerFragment_metadataEntries_TableMetadataEntry | TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry;
+export type TypeExplorerFragment_metadataEntries = TypeExplorerFragment_metadataEntries_LogicalVersionMetadataEntry | TypeExplorerFragment_metadataEntries_PathMetadataEntry | TypeExplorerFragment_metadataEntries_NotebookMetadataEntry | TypeExplorerFragment_metadataEntries_JsonMetadataEntry | TypeExplorerFragment_metadataEntries_UrlMetadataEntry | TypeExplorerFragment_metadataEntries_TextMetadataEntry | TypeExplorerFragment_metadataEntries_MarkdownMetadataEntry | TypeExplorerFragment_metadataEntries_PythonArtifactMetadataEntry | TypeExplorerFragment_metadataEntries_FloatMetadataEntry | TypeExplorerFragment_metadataEntries_IntMetadataEntry | TypeExplorerFragment_metadataEntries_BoolMetadataEntry | TypeExplorerFragment_metadataEntries_PipelineRunMetadataEntry | TypeExplorerFragment_metadataEntries_AssetMetadataEntry | TypeExplorerFragment_metadataEntries_TableMetadataEntry | TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";

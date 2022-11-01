@@ -1,6 +1,5 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union, cast
 from hashlib import sha256
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union, cast
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -51,7 +50,7 @@ from .asset_key import GrapheneAssetKey
 from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
-from .logs.events import GrapheneMaterializationEvent
+from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
 from .pipelines.pipeline import (  # GraphenePartitionMaterializationS,
     GrapheneMaterializationCountGroupedByDimension,
     GrapheneMaterializationCountSingleDimension,
@@ -59,8 +58,6 @@ from .pipelines.pipeline import (  # GraphenePartitionMaterializationS,
     GraphenePipeline,
     GrapheneRun,
 )
-from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
-from .pipelines.pipeline import GrapheneMaterializationCount, GraphenePipeline, GrapheneRun
 from .util import non_null_list
 
 if TYPE_CHECKING:
@@ -459,10 +456,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not self.external_asset_node.is_versioned:
             return None
         else:
-            return get_most_recent_logical_version(
+            return graphene_info.context.instance.get_most_recent_logical_version(
                 self._external_asset_node.asset_key,
                 self._external_asset_node.is_source,
-                graphene_info.context.instance,
             ).value
 
     def resolve_projectedLogicalVersion(self, _graphene_info) -> Optional[str]:
