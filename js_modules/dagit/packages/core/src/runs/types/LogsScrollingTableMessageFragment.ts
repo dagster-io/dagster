@@ -2157,8 +2157,9 @@ export interface LogsScrollingTableMessageFragment_LogsCapturedEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
-  logKey: string;
+  fileKey: string;
   stepKeys: string[] | null;
+  externalUrl: string | null;
 }
 
 export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent | LogsScrollingTableMessageFragment_ResourceInitFailureEvent | LogsScrollingTableMessageFragment_ResourceInitStartedEvent | LogsScrollingTableMessageFragment_HandledOutputEvent | LogsScrollingTableMessageFragment_LoadedInputEvent | LogsScrollingTableMessageFragment_MaterializationEvent | LogsScrollingTableMessageFragment_ObservationEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent | LogsScrollingTableMessageFragment_ExecutionStepInputEvent | LogsScrollingTableMessageFragment_StepExpectationResultEvent | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent | LogsScrollingTableMessageFragment_LogsCapturedEvent;

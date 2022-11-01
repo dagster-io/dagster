@@ -95,6 +95,8 @@ class Daemon(BaseModel):
     sensors: Sensors
     schedules: Schedules
     schedulerName: Optional[str]
+    volumeMounts: Optional[List[kubernetes.VolumeMount]]
+    volumes: Optional[List[kubernetes.Volume]]
 
     class Config:
         extra = Extra.forbid

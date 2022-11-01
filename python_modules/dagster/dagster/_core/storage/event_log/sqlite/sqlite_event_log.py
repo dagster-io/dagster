@@ -17,7 +17,7 @@ from watchdog.observers import Observer
 import dagster._check as check
 import dagster._seven as seven
 from dagster._config import StringSource
-from dagster._core.events import DagsterEventType
+from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
@@ -227,9 +227,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if event.is_dagster_event and event.dagster_event.asset_key:
             check.invariant(
-                event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-                or event.dagster_event_type == DagsterEventType.ASSET_OBSERVATION
-                or event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                event.dagster_event_type in ASSET_EVENTS,
                 "Can only store asset materializations, materialization_planned, and observations in index database",
             )
 
@@ -237,12 +235,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             with self.index_connection() as conn:
                 conn.execute(insert_event_statement)
 
-            if (
-                event.dagster_event.is_step_materialization
-                or event.dagster_event.is_asset_observation
-                or event.dagster_event.is_asset_materialization_planned
-            ):
-                self.store_asset_event(event)
+            self.store_asset_event(event)
 
     def get_event_records(
         self,
@@ -259,13 +252,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.opt_int_param(limit, "limit")
         check.bool_param(ascending, "ascending")
 
-        is_asset_query = event_records_filter and (
-            event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION
-            or event_records_filter.event_type == DagsterEventType.ASSET_OBSERVATION
-        )
+        is_asset_query = event_records_filter and event_records_filter.event_type in ASSET_EVENTS
         if is_asset_query:
-            # asset materializations and observations get mirrored into the index shard, so no
-            # custom run shard-aware cursor logic needed
+            # asset materializations, observations and materialization planned events
+            # get mirrored into the index shard, so no custom run shard-aware cursor logic needed
             return super(SqliteEventLogStorage, self).get_event_records(
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
