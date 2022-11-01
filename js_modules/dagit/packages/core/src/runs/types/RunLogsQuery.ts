@@ -2189,8 +2189,9 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_LogsCapturedEven
   level: LogLevel;
   stepKey: string | null;
   eventType: DagsterEventType | null;
-  logKey: string;
+  fileKey: string;
   stepKeys: string[] | null;
+  externalUrl: string | null;
   pid: number | null;
 }
 

@@ -3,15 +3,12 @@ from dagster._utils.indenting_printer import IndentingPrinter
 
 from .config_type import ConfigType, ConfigTypeKind
 from .field import resolve_to_config_type
-from .iterate_types import config_schema_snapshot_from_config_type
 from .snap import ConfigSchemaSnapshot
 
 
 def _print_type_from_config_type(config_type, print_fn=print, with_lines=True):
     check.inst_param(config_type, "config_type", ConfigType)
-    return _print_type(
-        config_schema_snapshot_from_config_type(config_type), config_type.key, print_fn, with_lines
-    )
+    return _print_type(config_type.get_schema_snapshot(), config_type.key, print_fn, with_lines)
 
 
 def _print_type(config_schema_snapshot, config_type_key, print_fn, with_lines):

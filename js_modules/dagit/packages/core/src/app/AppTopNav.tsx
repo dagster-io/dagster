@@ -5,10 +5,8 @@ import styled from 'styled-components/macro';
 
 import {DeploymentStatusIcon} from '../nav/DeploymentStatusIcon';
 import {VersionNumber} from '../nav/VersionNumber';
-import {WorkspaceStatus} from '../nav/WorkspaceStatus';
 import {SearchDialog} from '../search/SearchDialog';
 
-import {useFeatureFlags} from './Flags';
 import {LayoutContext} from './LayoutProvider';
 import {ShortcutHandler} from './ShortcutHandler';
 import {WebSocketStatus} from './WebSocketProvider';
@@ -21,72 +19,24 @@ interface Props {
 
 export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPlaceholder}) => {
   const history = useHistory();
-  const {flagNewWorkspace} = useFeatureFlags();
 
   const navLinks = () => {
-    const overviewItem = flagNewWorkspace ? (
-      <ShortcutHandler
-        key="overview"
-        onShortcut={() => history.push('/overview')}
-        shortcutLabel="⌥1"
-        shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
-      >
-        <TopNavLink to="/overview" data-cy="AppTopNav_StatusLink">
-          Overview
-        </TopNavLink>
-      </ShortcutHandler>
-    ) : null;
-
-    const deploymentItem = (
-      <ShortcutHandler
-        key="deployment"
-        onShortcut={() => history.push('/instance')}
-        shortcutLabel={flagNewWorkspace ? '⌥5' : '⌥3'}
-        shortcutFilter={(e) => e.altKey && e.code === (flagNewWorkspace ? 'Digit5' : 'Digit3')}
-      >
-        <TopNavLink
-          to="/instance"
-          data-cy="AppTopNav_StatusLink"
-          isActive={(_, location) => {
-            const {pathname} = location;
-            return (
-              pathname.startsWith('/instance') &&
-              !pathname.startsWith('/instance/runs') &&
-              !pathname.startsWith('/instance/assets')
-            );
-          }}
-        >
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-            Deployment
-            <DeploymentStatusIcon />
-          </Box>
-        </TopNavLink>
-      </ShortcutHandler>
-    );
-
-    const workspaceItem = (
-      <ShortcutHandler
-        key="workspace"
-        onShortcut={() => history.push('/workspace')}
-        shortcutLabel="⌥4"
-        shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
-      >
-        <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-            Workspace
-            {flagNewWorkspace ? null : <WorkspaceStatus placeholder />}
-          </Box>
-        </TopNavLink>
-      </ShortcutHandler>
-    );
-
     return (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-        {flagNewWorkspace ? overviewItem : null}
+        <ShortcutHandler
+          key="overview"
+          onShortcut={() => history.push('/overview')}
+          shortcutLabel="⌥1"
+          shortcutFilter={(e) => e.altKey && e.code === 'Digit1'}
+        >
+          <TopNavLink to="/overview" data-cy="AppTopNav_StatusLink">
+            Overview
+          </TopNavLink>
+        </ShortcutHandler>
         <ShortcutHandler
           onShortcut={() => history.push('/instance/runs')}
-          shortcutLabel={flagNewWorkspace ? '⌥2' : '⌥1'}
-          shortcutFilter={(e) => e.altKey && e.code === (flagNewWorkspace ? 'Digit2' : 'Digit1')}
+          shortcutLabel="⌥2"
+          shortcutFilter={(e) => e.altKey && e.code === 'Digit2'}
         >
           <TopNavLink to="/instance/runs" data-cy="AppTopNav_RunsLink">
             Runs
@@ -94,59 +44,62 @@ export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPl
         </ShortcutHandler>
         <ShortcutHandler
           onShortcut={() => history.push('/instance/assets')}
-          shortcutLabel={flagNewWorkspace ? '⌥3' : '⌥2'}
-          shortcutFilter={(e) => e.altKey && e.code === (flagNewWorkspace ? 'Digit3' : 'Digit2')}
+          shortcutLabel="⌥3"
+          shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
         >
           <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
             Assets
           </TopNavLink>
         </ShortcutHandler>
-        {flagNewWorkspace ? [workspaceItem, deploymentItem] : [deploymentItem, workspaceItem]}
-      </Box>
-    );
-  };
-
-  const left = () => {
-    if (flagNewWorkspace) {
-      return (
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-          <AppTopNavLogo />
-          <Box margin={{left: 8}}>{navLinks()}</Box>
-          {rightOfSearchBar}
-        </Box>
-      );
-    }
-    return (
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-        <AppTopNavLogo />
-        <SearchDialog searchPlaceholder={searchPlaceholder} />
-        {rightOfSearchBar}
-      </Box>
-    );
-  };
-
-  const right = () => {
-    if (flagNewWorkspace) {
-      return (
-        <Box flex={{direction: 'row', alignItems: 'center'}}>
-          <SearchDialog searchPlaceholder={searchPlaceholder} />
-          {children}
-        </Box>
-      );
-    }
-
-    return (
-      <Box flex={{direction: 'row', alignItems: 'center'}}>
-        {navLinks()}
-        {children}
+        <ShortcutHandler
+          key="workspace"
+          onShortcut={() => history.push('/workspace')}
+          shortcutLabel="⌥4"
+          shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
+        >
+          <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
+            Workspace
+          </TopNavLink>
+        </ShortcutHandler>
+        <ShortcutHandler
+          key="deployment"
+          onShortcut={() => history.push('/instance')}
+          shortcutLabel="⌥5"
+          shortcutFilter={(e) => e.altKey && e.code === 'Digit5'}
+        >
+          <TopNavLink
+            to="/instance"
+            data-cy="AppTopNav_StatusLink"
+            isActive={(_, location) => {
+              const {pathname} = location;
+              return (
+                pathname.startsWith('/instance') &&
+                !pathname.startsWith('/instance/runs') &&
+                !pathname.startsWith('/instance/assets')
+              );
+            }}
+          >
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+              Deployment
+              <DeploymentStatusIcon />
+            </Box>
+          </TopNavLink>
+        </ShortcutHandler>
       </Box>
     );
   };
 
   return (
     <AppTopNavContainer>
-      {left()}
-      {right()}
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+        <AppTopNavLogo />
+        <Box margin={{left: 8}}>{navLinks()}</Box>
+        {rightOfSearchBar}
+      </Box>
+      <Box flex={{direction: 'row', alignItems: 'center'}}>
+        <SearchDialog searchPlaceholder={searchPlaceholder} />
+        {children}
+      </Box>
     </AppTopNavContainer>
   );
 };

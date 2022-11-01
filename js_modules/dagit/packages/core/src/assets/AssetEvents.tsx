@@ -125,8 +125,14 @@ export const AssetEvents: React.FC<Props> = ({
     <Box style={{display: 'flex', flex: 1}}>
       <Box style={{flex: 1}}>
         {header}
-        <FailedRunsSinceMaterializationBanner liveData={liveData} />
-        <CurrentRunsBanner liveData={liveData} />
+        <FailedRunsSinceMaterializationBanner
+          liveData={liveData}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        />
+        <CurrentRunsBanner
+          liveData={liveData}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        />
         {grouped.length > 0 ? (
           <AssetEventsTable
             hasPartitions={assetHasDefinedPartitions}

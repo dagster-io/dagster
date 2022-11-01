@@ -111,11 +111,19 @@ export async function makeSVGPortable(svg: SVGElement) {
     }
   }
 
-  // Find all the stylesheets on the page and embed the font-face declarations into
-  // the SVG document.
-  const fontFaces = Array.from(document.querySelectorAll('style'))
-    .flatMap((style) => (style.textContent || '').match(/@font-face ?{[^\}]*}/gim))
-    .filter(Boolean);
+  // Find all the stylesheets on the page and embed the font-face declarations
+  // into the SVG document.
+  const cssSources = Array.from<HTMLStyleElement | HTMLLinkElement>(
+    document.querySelectorAll('style,link[rel=stylesheet]'),
+  );
+  const fontFaces = cssSources.flatMap((el) =>
+    el.sheet
+      ? Array.from(el.sheet.cssRules)
+          .filter((r) => r instanceof CSSFontFaceRule)
+          .map((r) => r.cssText)
+      : [],
+  );
+
   const styleEl = document.createElement('style');
   styleEl.textContent = fontFaces.join('\n\n');
   svg.appendChild(styleEl);

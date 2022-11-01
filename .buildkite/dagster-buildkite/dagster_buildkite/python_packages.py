@@ -70,7 +70,11 @@ class PythonPackages:
         # We're inconsistent about whether we use dashes or undrescores and we
         # get away with it because pip converts all underscores to dashes. So
         # mimic that behavior.
-        return cls.all.get(name) or cls.all.get(name.replace("_", "-"))
+        return (
+            cls.all.get(name)
+            or cls.all.get(name.replace("_", "-"))
+            or cls.all.get(name.replace("-", "_"))
+        )
 
     @classmethod
     def walk_dependencies(cls, requirement: Requirement) -> Set[PythonPackage]:

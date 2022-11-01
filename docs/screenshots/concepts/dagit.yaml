@@ -40,7 +40,7 @@
 
 - id: re-execution.png
   base_url: https://demo.elementl.show
-  route: /instance/runs/57ea168a-3e2d-4137-8a4c-beb93122c684?logKey=build_comment_stories&logs=query%3Arecommender_model_perf&selection=recommender_model_perf
+  route: /instance/runs/57ea168a-3e2d-4137-8a4c-beb93122c684?logFileKey=build_comment_stories&logs=query%3Arecommender_model_perf&selection=recommender_model_perf
   vetted: false
 
 - id: asset.png

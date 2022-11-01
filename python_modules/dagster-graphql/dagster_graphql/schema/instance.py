@@ -5,6 +5,7 @@ import graphene
 import dagster._check as check
 from dagster._core.instance import DagsterInstance, is_dagit_telemetry_enabled
 from dagster._core.launcher.base import RunLauncher
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._daemon.types import DaemonStatus
 
 from .errors import GraphenePythonError
@@ -95,6 +96,7 @@ class GrapheneInstance(graphene.ObjectType):
     daemonHealth = graphene.NonNull(GrapheneDaemonHealth)
     hasInfo = graphene.NonNull(graphene.Boolean)
     dagitTelemetryEnabled = graphene.NonNull(graphene.Boolean)
+    hasCapturedLogManager = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "Instance"
@@ -129,3 +131,6 @@ class GrapheneInstance(graphene.ObjectType):
 
     def resolve_dagitTelemetryEnabled(self, _graphene_info):
         return is_dagit_telemetry_enabled(self._instance)
+
+    def resolve_hasCapturedLogManager(self, _graphene_info):
+        return isinstance(self._instance.compute_log_manager, CapturedLogManager)
