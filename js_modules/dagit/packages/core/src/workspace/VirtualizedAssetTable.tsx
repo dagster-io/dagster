@@ -181,15 +181,14 @@ const AssetRow = (props: JobRowProps) => {
     <Row $height={height} $start={start}>
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <RowCell>
-          <div
-            style={{
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              fontWeight: 500,
-            }}
-          >
-            <AssetLink path={path} url={linkUrl} isGroup={false} icon="asset" />
+          <div style={{fontWeight: 500, maxWidth: '100%', overflow: 'hidden'}}>
+            <AssetLink
+              path={path}
+              url={linkUrl}
+              isGroup={false}
+              icon="asset"
+              textStyle="middle-truncate"
+            />
           </div>
           <div
             style={{
