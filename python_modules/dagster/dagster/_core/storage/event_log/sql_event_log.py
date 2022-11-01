@@ -256,7 +256,7 @@ class SqlEventLogStorage(EventLogStorage):
                             value=value,
                             # Postgres requires a datetime that is in UTC but has no timezone info
                             # set in order to be stored correctly
-                            materialization_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                            event_timestamp=datetime.utcfromtimestamp(event.timestamp),
                         )
                         for key, value in tags.items()
                     ],
@@ -1237,6 +1237,12 @@ class SqlEventLogStorage(EventLogStorage):
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         key = check.opt_str_param(key, "key")
 
+        if not self.has_table(AssetEventTagsTable.name):
+            raise DagsterInvalidInvocationError(
+                "In order to search for asset event tags, you must run "
+                "`dagster instance migrate` to create the AssetEventTags table."
+            )
+
         tags = defaultdict(set)
         query = (
             db.select([AssetEventTagsTable.c.key, AssetEventTagsTable.c.value])
@@ -1250,7 +1256,7 @@ class SqlEventLogStorage(EventLogStorage):
         asset_details = self._get_assets_details([asset_key])[0]
         if asset_details and asset_details.last_wipe_timestamp:
             query = query.where(
-                AssetEventTagsTable.c.materialization_timestamp
+                AssetEventTagsTable.c.event_timestamp
                 > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
             )
 
