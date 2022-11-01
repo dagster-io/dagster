@@ -164,7 +164,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   });
 
   const [computeLogKey, setComputeLogKey] = useQueryPersistedState<string>({
-    queryKey: 'logKey',
+    queryKey: 'logFileKey',
   });
 
   const logType = logTypeFromQuery(queryLogType);
@@ -188,14 +188,15 @@ const RunWithData: React.FC<RunWithDataProps> = ({
     }
 
     if (metadata.logCaptureSteps) {
-      const logKeys = Object.keys(metadata.logCaptureSteps);
-      const selectedLogKey = logKeys.find((logKey) => {
+      const logFileKeys = Object.keys(metadata.logCaptureSteps);
+      const selectedLogKey = logFileKeys.find((logFileKey) => {
         return selectionStepKeys.every(
           (stepKey) =>
-            metadata.logCaptureSteps && metadata.logCaptureSteps[logKey].stepKeys.includes(stepKey),
+            metadata.logCaptureSteps &&
+            metadata.logCaptureSteps[logFileKey].stepKeys.includes(stepKey),
         );
       });
-      setComputeLogKey(selectedLogKey || logKeys[0]);
+      setComputeLogKey(selectedLogKey || logFileKeys[0]);
     } else if (!stepKeys.includes(computeLogKey)) {
       setComputeLogKey(selectionStepKeys.length === 1 ? selectionStepKeys[0] : stepKeys[0]);
     } else if (selectionStepKeys.length === 1 && computeLogKey !== selectionStepKeys[0]) {
@@ -203,8 +204,8 @@ const RunWithData: React.FC<RunWithDataProps> = ({
     }
   }, [stepKeys, computeLogKey, selectionStepKeys, metadata.logCaptureSteps, setComputeLogKey]);
 
-  const onSetComputeLogKey = (logKey: string) => {
-    setComputeLogKey(logKey);
+  const onSetComputeLogKey = (logFileKey: string) => {
+    setComputeLogKey(logFileKey);
   };
 
   const logsFilterStepKeys = runtimeGraph

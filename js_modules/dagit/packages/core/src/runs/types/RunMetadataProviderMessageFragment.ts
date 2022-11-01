@@ -202,7 +202,7 @@ export interface RunMetadataProviderMessageFragment_LogsCapturedEvent {
   message: string;
   timestamp: string;
   stepKey: string | null;
-  logKey: string;
+  fileKey: string;
   stepKeys: string[] | null;
   pid: number | null;
 }
