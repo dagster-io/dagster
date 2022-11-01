@@ -1,5 +1,4 @@
 import ast
-import json
 from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException, AirflowSkipException
@@ -12,7 +11,7 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
 from dagster._grpc.types import ExecuteStepArgs
-from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
 from .util import check_events_for_failures, check_events_for_skips, get_aws_environment
 
@@ -173,16 +172,15 @@ class DagsterDockerOperator(DockerOperator):
 
         recon_pipeline = self.recon_repo.get_reconstructable_pipeline(self.pipeline_name)
 
-        input_json = serialize_dagster_namedtuple(
-            ExecuteStepArgs(
-                pipeline_origin=recon_pipeline.get_python_origin(),
-                pipeline_run_id=self.run_id,
-                instance_ref=self.instance_ref,
-                step_keys_to_execute=self.step_keys,
-            )
+        execute_step_args = ExecuteStepArgs(
+            pipeline_origin=recon_pipeline.get_python_origin(),
+            pipeline_run_id=self.run_id,
+            instance_ref=self.instance_ref,
+            step_keys_to_execute=self.step_keys,
         )
 
-        command = "dagster api execute_step {}".format(json.dumps(input_json))
+        command = execute_step_args.get_command_args()
+
         self.log.info("Executing: {command}\n".format(command=command))
         return command
 

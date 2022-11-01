@@ -1,3 +1,5 @@
+import base64
+import zlib
 from typing import Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
@@ -238,15 +240,24 @@ class ExecuteStepArgs(
             ),
         )
 
+    def _get_compressed_args(self) -> str:
+        # Compress, then base64 encode so we can pass it around as a str
+        return base64.b64encode(zlib.compress(serialize_dagster_namedtuple(self).encode())).decode()
+
     def get_command_args(self, skip_serialized_namedtuple=False) -> List[str]:
         """
         Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
         be used to pass the args to Click using an env var.
         """
+
         return (
             _get_entry_point(self.pipeline_origin)
             + ["api", "execute_step"]
-            + ([serialize_dagster_namedtuple(self)] if not skip_serialized_namedtuple else [])
+            + (
+                ["--compressed-input-json", self._get_compressed_args()]
+                if not skip_serialized_namedtuple
+                else []
+            )
         )
 
     def get_command_env(self) -> List[Dict[str, str]]:
@@ -254,7 +265,9 @@ class ExecuteStepArgs(
         Get the env vars for overriding the Click args of this step. Used in conjuction with
         get_command_args(skip_serialized_namedtuple=True).
         """
-        return [{"name": "DAGSTER_EXECUTE_STEP_ARGS", "value": serialize_dagster_namedtuple(self)}]
+        return [
+            {"name": "DAGSTER_COMPRESSED_EXECUTE_STEP_ARGS", "value": self._get_compressed_args()},
+        ]
 
 
 @whitelist_for_serdes
