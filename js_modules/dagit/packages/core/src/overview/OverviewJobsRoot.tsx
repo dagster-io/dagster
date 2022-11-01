@@ -14,13 +14,16 @@ import {RepoAddress} from '../workspace/types';
 
 import {OverviewJobsTable} from './OverviewJobsTable';
 import {OverviewTabs} from './OverviewTabs';
+import {sortRepoBuckets} from './sortRepoBuckets';
 import {OverviewJobsQuery} from './types/OverviewJobsQuery';
+import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewJobsRoot = () => {
   useTrackPageView();
 
   const [searchValue, setSearchValue] = React.useState('');
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+
   const repoCount = allRepos.length;
 
   const queryResultOverview = useQuery<OverviewJobsQuery>(OVERVIEW_JOBS_QUERY, {
@@ -32,33 +35,25 @@ export const OverviewJobsRoot = () => {
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.
-  const repoBuckets = useRepoBuckets(data);
+  const repoBuckets = React.useMemo(() => {
+    const visibleKeys = visibleRepoKeys(visibleRepos);
+    return buildBuckets(data).filter(({repoAddress}) =>
+      visibleKeys.has(repoAddressAsString(repoAddress)),
+    );
+  }, [data, visibleRepos]);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const filteredRepoBuckets = React.useMemo(() => {
-    const visibleRepoKeys = new Set(
-      visibleRepos.map((option) =>
-        repoAddressAsString(
-          buildRepoAddress(option.repository.name, option.repositoryLocation.name),
-        ),
-      ),
-    );
-    return repoBuckets.filter(({repoAddress}) =>
-      visibleRepoKeys.has(repoAddressAsString(repoAddress)),
-    );
-  }, [repoBuckets, visibleRepos]);
-
   const filteredBySearch = React.useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
-    return filteredRepoBuckets
+    return repoBuckets
       .map(({repoAddress, jobs}) => ({
         repoAddress,
         jobs: jobs.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower)),
       }))
       .filter(({jobs}) => jobs.length > 0);
-  }, [filteredRepoBuckets, sanitizedSearch]);
+  }, [repoBuckets, sanitizedSearch]);
 
   const content = () => {
     if (loading && !data) {
@@ -72,6 +67,8 @@ export const OverviewJobsRoot = () => {
       );
     }
 
+    const anyReposHidden = allRepos.length > visibleRepos.length;
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -80,9 +77,16 @@ export const OverviewJobsRoot = () => {
               icon="search"
               title="No matching jobs"
               description={
-                <div>
-                  No jobs matching <strong>{searchValue}</strong> were found in this workspace
-                </div>
+                anyReposHidden ? (
+                  <div>
+                    No jobs matching <strong>{searchValue}</strong> were found in the selected
+                    repositories
+                  </div>
+                ) : (
+                  <div>
+                    No jobs matching <strong>{searchValue}</strong> were found in this workspace
+                  </div>
+                )
               }
             />
           </Box>
@@ -94,7 +98,11 @@ export const OverviewJobsRoot = () => {
           <NonIdealState
             icon="search"
             title="No jobs"
-            description="No jobs were found in this workspace"
+            description={
+              anyReposHidden
+                ? 'No jobs were found in the selected repositories'
+                : 'No jobs were found in this workspace'
+            }
           />
         </Box>
       );
@@ -141,44 +149,41 @@ type RepoBucket = {
   }[];
 };
 
-const useRepoBuckets = (data?: OverviewJobsQuery): RepoBucket[] => {
-  return React.useMemo(() => {
-    if (data?.workspaceOrError.__typename !== 'Workspace') {
-      return [];
+const buildBuckets = (data?: OverviewJobsQuery): RepoBucket[] => {
+  if (data?.workspaceOrError.__typename !== 'Workspace') {
+    return [];
+  }
+
+  const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+  const buckets = [];
+
+  for (const entry of entries) {
+    if (entry?.__typename !== 'RepositoryLocation') {
+      continue;
     }
 
-    const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+    for (const repo of entry.repositories) {
+      const {name, pipelines} = repo;
+      const repoAddress = buildRepoAddress(name, entry.name);
+      const jobs = pipelines
+        .filter(({name}) => !isHiddenAssetGroupJob(name))
+        .map((pipeline) => {
+          return {
+            isJob: pipeline.isJob,
+            name: pipeline.name,
+          };
+        });
 
-    const buckets = [];
-
-    for (const entry of entries) {
-      if (entry?.__typename !== 'RepositoryLocation') {
-        continue;
-      }
-
-      for (const repo of entry.repositories) {
-        const {name, pipelines} = repo;
-        const repoAddress = buildRepoAddress(name, entry.name);
-        const jobs = pipelines
-          .filter(({name}) => !isHiddenAssetGroupJob(name))
-          .map((pipeline) => {
-            return {
-              isJob: pipeline.isJob,
-              name: pipeline.name,
-            };
-          });
-
-        if (jobs.length > 0) {
-          buckets.push({
-            repoAddress,
-            jobs,
-          });
-        }
+      if (jobs.length > 0) {
+        buckets.push({
+          repoAddress,
+          jobs,
+        });
       }
     }
+  }
 
-    return buckets;
-  }, [data]);
+  return sortRepoBuckets(buckets);
 };
 
 export const OVERVIEW_JOBS_QUERY = gql`

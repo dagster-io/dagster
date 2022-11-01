@@ -1,7 +1,7 @@
 import pickle
 from typing import Union
 
-from google.api_core.exceptions import Forbidden, TooManyRequests
+from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud import storage  # type: ignore
 
 from dagster import Field, IOManager, InputContext, OutputContext, StringSource
@@ -83,7 +83,7 @@ class PickledObjectGCSIOManager(IOManager):
         backoff(
             self.bucket_obj.blob(key).upload_from_string,
             args=[pickled_obj],
-            retry_on=(TooManyRequests, Forbidden),
+            retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
         )
 
 
@@ -110,23 +110,55 @@ def gcs_pickle_io_manager(init_context):
     `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
     with path "/my/base/path/one/two/".
 
-    Attach this resource definition to your job to make it available to your ops.
+    Example usage:
+
+    1. Attach this IO manager to a set of assets.
 
     .. code-block:: python
 
-        @job(resource_defs={'io_manager': gcs_pickle_io_manager, 'gcs': gcs_resource, ...})
+        from dagster import asset, repository, with_resources
+        from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+
+        @asset
+        def asset1():
+            # create df ...
+            return df
+
+        @asset
+        def asset2(asset1):
+            return df[:5]
+
+        @repository
+        def repo():
+            return with_resources(
+                [asset1, asset2],
+                resource_defs={
+                    "io_manager": gcs_pickle_io_manager.configured(
+                        {"gcs_bucket": "my-cool-bucket", "gcs_prefix": "my-cool-prefix"}
+                    ),
+                    "gcs": gcs_resource,
+                },
+            )
+        )
+
+
+    2. Attach this IO manager to your job to make it available to your ops.
+
+    .. code-block:: python
+
+        from dagster import job
+        from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+
+        @job(
+            resource_defs={
+                "io_manager": gcs_pickle_io_manager.configured(
+                    {"gcs_bucket": "my-cool-bucket", "gcs_prefix": "my-cool-prefix"}
+                ),
+                "gcs": gcs_resource,
+            },
+        )
         def my_job():
-            my_op()
-
-    You may configure this storage as follows:
-
-    .. code-block:: YAML
-
-        resources:
-            io_manager:
-                config:
-                    gcs_bucket: my-cool-bucket
-                    gcs_prefix: good/prefix-for-files-
+            ...
     """
     client = init_context.resources.gcs
     pickled_io_manager = PickledObjectGCSIOManager(

@@ -274,10 +274,14 @@ class StubbedEcs:
 
         # Container definitions default to empty secret lists
         container_definitions = kwargs.get("containerDefinitions", [])
+
+        new_container_definitions = []
         for container_definition in container_definitions:
-            if not container_definition.get("secrets"):
-                container_definition["secrets"] = []
-        kwargs["containerDefinitions"] = container_definitions
+            new_container_definitions.append(
+                {**container_definition, "secrets": container_definition.get("secrets", [])}
+            )
+
+        kwargs["containerDefinitions"] = new_container_definitions
 
         if self._valid_cpu_and_memory(cpu=cpu, memory=memory):
             task_definition = {

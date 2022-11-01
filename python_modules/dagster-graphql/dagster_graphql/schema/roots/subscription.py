@@ -18,7 +18,10 @@ class GrapheneDagitSubscription(graphene.ObjectType):
     pipelineRunLogs = graphene.Field(
         graphene.NonNull(GraphenePipelineRunLogsSubscriptionPayload),
         runId=graphene.Argument(graphene.NonNull(graphene.ID)),
-        cursor=graphene.Argument(graphene.String),
+        cursor=graphene.Argument(
+            graphene.String,
+            description="A cursor retrieved from the API. Pass 'HEAD' to stream from the current event onward.",
+        ),
         description="Retrieve real-time event logs after applying a filter on run id and cursor.",
     )
 

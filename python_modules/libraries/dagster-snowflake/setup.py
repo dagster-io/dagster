@@ -33,7 +33,10 @@ setup(
     packages=find_packages(exclude=["dagster_snowflake_tests*"]),
     install_requires=[f"dagster{pin}", "snowflake-connector-python>=2.1.0"],
     extras_require={
-        "snowflake.sqlalchemy": ["sqlalchemy", "snowflake-sqlalchemy"],
+        "snowflake.sqlalchemy": [
+            "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
+            "snowflake-sqlalchemy",
+        ],
         "pandas": ["pandas"],
     },
     zip_safe=False,

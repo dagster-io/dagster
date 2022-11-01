@@ -5,21 +5,23 @@ import {getJSONForKey} from '../hooks/useStateWithStorage';
 
 export const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
-export enum FeatureFlag {
-  flagDebugConsoleLogging = 'flagDebugConsoleLogging',
-  flagDisableWebsockets = 'flagDisableWebsockets',
-  flagNewWorkspace = 'flagNewWorkspace',
-  flagAssetGraphExperimentalZoom = 'flagAssetGraphExperimentalZoom',
-}
+// Use const because we need to extend this in cloud. https://blog.logrocket.com/extend-enums-typescript/
+export const FeatureFlag = {
+  flagDebugConsoleLogging: 'flagDebugConsoleLogging' as const,
+  flagDisableWebsockets: 'flagDisableWebsockets' as const,
+  flagNewAssetDetails: 'flagNewAssetDetails' as const,
+  flagAssetGraphExperimentalZoom: 'flagAssetGraphExperimentalZoom' as const,
+};
+export type FeatureFlagType = keyof typeof FeatureFlag;
 
-export const getFeatureFlags: () => FeatureFlag[] = memoize(
+export const getFeatureFlags: () => FeatureFlagType[] = memoize(
   () => getJSONForKey(DAGIT_FLAGS_KEY) || [],
 );
 
-export const featureEnabled = memoize((flag: FeatureFlag) => getFeatureFlags().includes(flag));
+export const featureEnabled = memoize((flag: FeatureFlagType) => getFeatureFlags().includes(flag));
 
 type FlagMap = {
-  readonly [F in FeatureFlag]: boolean;
+  readonly [F in FeatureFlagType]: boolean;
 };
 
 export const useFeatureFlags = () => {
@@ -27,13 +29,13 @@ export const useFeatureFlags = () => {
     const flagSet = new Set(getFeatureFlags());
     const all = {};
     for (const flag in FeatureFlag) {
-      all[flag] = flagSet.has(flag as FeatureFlag);
+      all[flag] = flagSet.has(flag as FeatureFlagType);
     }
     return all as FlagMap;
   }, []);
 };
 
-export const setFeatureFlags = (flags: FeatureFlag[]) => {
+export const setFeatureFlags = (flags: FeatureFlagType[]) => {
   if (!(flags instanceof Array)) {
     throw new Error('flags must be an array');
   }

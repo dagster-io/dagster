@@ -421,6 +421,8 @@ def launch_scheduled_runs_for_schedule_iterator(
     else:
         start_timestamp_utc = instigator_data.start_timestamp
 
+    start_timestamp_utc = check.not_none(start_timestamp_utc)
+
     schedule_name = external_schedule.name
 
     timezone_str = external_schedule.execution_timezone
@@ -690,7 +692,7 @@ def _create_scheduler_run(
     external_execution_plan = repo_location.get_external_execution_plan(
         external_pipeline,
         run_config,
-        external_schedule.mode,
+        check.not_none(external_schedule.mode),
         step_keys_to_execute=None,
         known_state=None,
     )

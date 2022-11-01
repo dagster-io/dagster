@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql} from '@apollo/client';
 import {Tabs, TokenizingFieldValue} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
@@ -8,31 +8,15 @@ import {RunStatus} from '../types/globalTypes';
 import {TabLink} from '../ui/TabLink';
 
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
-import {
-  runsFilterForSearchTokens,
-  runsPathWithFilters,
-  useQueryPersistedRunFilters,
-} from './RunsFilterInput';
-import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunTabsCountQuery';
+import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
 
-export const RunListTabs = React.memo(() => {
+interface Props {
+  queuedCount: number | null;
+  inProgressCount: number | null;
+}
+
+export const RunListTabs: React.FC<Props> = React.memo(({queuedCount, inProgressCount}) => {
   const [filterTokens] = useQueryPersistedRunFilters();
-  const runsFilter = runsFilterForSearchTokens(filterTokens);
-
-  const {data} = useQuery<RunTabsCountQuery, RunTabsCountQueryVariables>(RUN_TABS_COUNT_QUERY, {
-    variables: {
-      queuedFilter: {...runsFilter, statuses: Array.from(queuedStatuses)},
-      inProgressFilter: {...runsFilter, statuses: Array.from(inProgressStatuses)},
-    },
-  });
-
-  const counts = React.useMemo(() => {
-    return {
-      queued: data?.queuedCount?.__typename === 'Runs' ? data.queuedCount.count : null,
-      inProgress: data?.inProgressCount?.__typename === 'Runs' ? data.inProgressCount.count : null,
-    };
-  }, [data]);
-
   const selectedTab = useSelectedRunsTab(filterTokens);
 
   const urlForStatus = (statuses: RunStatus[]) => {
@@ -46,13 +30,13 @@ export const RunListTabs = React.memo(() => {
       <TabLink title="All runs" to={urlForStatus([])} id="all" />
       <TabLink
         title="Queued"
-        count={counts.queued ?? 'indeterminate'}
+        count={queuedCount ?? 'indeterminate'}
         to={urlForStatus(Array.from(queuedStatuses))}
         id="queued"
       />
       <TabLink
         title="In progress"
-        count={counts.inProgress ?? 'indeterminate'}
+        count={inProgressCount ?? 'indeterminate'}
         to={urlForStatus(Array.from(inProgressStatuses))}
         id="in-progress"
       />
@@ -89,7 +73,7 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   return 'all';
 };
 
-const RUN_TABS_COUNT_QUERY = gql`
+export const RUN_TABS_COUNT_QUERY = gql`
   query RunTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
     queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
       ... on Runs {

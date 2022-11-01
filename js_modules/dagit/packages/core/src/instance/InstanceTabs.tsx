@@ -2,7 +2,6 @@ import {QueryResult} from '@apollo/client';
 import {Box, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
 import {WorkspaceStatus} from '../nav/WorkspaceStatus';
@@ -21,36 +20,23 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
   const {refreshState, tab} = props;
 
   const {healthTitle} = React.useContext(InstancePageContext);
-  const {flagNewWorkspace} = useFeatureFlags();
   const canSeeConfig = useCanSeeConfig();
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
-        {flagNewWorkspace ? null : (
-          <TabLink id="overview" title="Overview" to="/instance/overview" />
-        )}
-        {flagNewWorkspace ? (
-          <TabLink
-            id="code-locations"
-            title="Code locations"
-            to="/instance/code-locations"
-            icon={<WorkspaceStatus placeholder={false} />}
-          />
-        ) : null}
+        <TabLink
+          id="code-locations"
+          title="Code locations"
+          to="/instance/code-locations"
+          icon={<WorkspaceStatus placeholder={false} />}
+        />
         <TabLink
           id="health"
           title={healthTitle}
           to="/instance/health"
           icon={<InstanceWarningIcon />}
         />
-        {flagNewWorkspace ? null : (
-          <TabLink id="schedules" title="Schedules" to="/instance/schedules" />
-        )}
-        {flagNewWorkspace ? null : <TabLink id="sensors" title="Sensors" to="/instance/sensors" />}
-        {flagNewWorkspace ? null : (
-          <TabLink id="backfills" title="Backfills" to="/instance/backfills" />
-        )}
         {canSeeConfig ? <TabLink id="config" title="Configuration" to="/instance/config" /> : null}
       </Tabs>
       {refreshState ? (

@@ -16,10 +16,11 @@ interface Props {
   run: RunTimeFragment;
   showHover?: boolean;
   showButton?: boolean;
+  showSummary?: boolean;
 }
 
 export const LastRunSummary: React.FC<Props> = React.memo(
-  ({name, run, showHover = false, showButton = true}) => {
+  ({name, run, showHover = false, showButton = true, showSummary = true}) => {
     const {status} = run;
 
     const intent = React.useMemo(() => {
@@ -77,9 +78,9 @@ export const LastRunSummary: React.FC<Props> = React.memo(
         <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
             {tag()}
-            <RunStateSummary run={run} />
+            {showSummary ? <RunStateSummary run={run} /> : null}
           </Box>
-          {failedStatuses.has(run.status) || inProgressStatuses.has(run.status) ? (
+          {showSummary && (failedStatuses.has(run.status) || inProgressStatuses.has(run.status)) ? (
             <StepSummaryForRun runId={run.id} />
           ) : undefined}
         </Box>

@@ -15,6 +15,7 @@ snapshots["test_instance_yaml 1"] = [
     "run_launcher",
     "run_monitoring",
     "run_retries",
+    "schedules",
     "sensors",
     "storage",
     "telemetry",

@@ -149,7 +149,7 @@ def host_dagit_ui_with_workspace_process_context(
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )
-    check.opt_str_param(host, "host")
+    host = check.opt_str_param(host, "host", "127.0.0.1")
     check.int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
 

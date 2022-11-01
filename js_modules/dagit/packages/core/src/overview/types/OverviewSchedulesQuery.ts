@@ -85,7 +85,43 @@ export interface OverviewSchedulesQuery_unloadableInstigationStatesOrError_Insti
 
 export type OverviewSchedulesQuery_unloadableInstigationStatesOrError = OverviewSchedulesQuery_unloadableInstigationStatesOrError_PythonError | OverviewSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates;
 
+export interface OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  causes: OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
+}
+
+export interface OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses {
+  __typename: "DaemonStatus";
+  id: string;
+  daemonType: string;
+  required: boolean;
+  healthy: boolean | null;
+  lastHeartbeatErrors: OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
+  lastHeartbeatTime: number | null;
+}
+
+export interface OverviewSchedulesQuery_instance_daemonHealth {
+  __typename: "DaemonHealth";
+  id: string;
+  allDaemonStatuses: OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses[];
+}
+
+export interface OverviewSchedulesQuery_instance {
+  __typename: "Instance";
+  daemonHealth: OverviewSchedulesQuery_instance_daemonHealth;
+  hasInfo: boolean;
+}
+
 export interface OverviewSchedulesQuery {
   workspaceOrError: OverviewSchedulesQuery_workspaceOrError;
   unloadableInstigationStatesOrError: OverviewSchedulesQuery_unloadableInstigationStatesOrError;
+  instance: OverviewSchedulesQuery_instance;
 }

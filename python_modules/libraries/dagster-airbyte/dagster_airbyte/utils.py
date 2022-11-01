@@ -1,9 +1,28 @@
-from typing import Any, Dict, Iterator, List
+from typing import Any, Dict, Iterator, List, Mapping
 
 from dagster_airbyte.types import AirbyteOutput
 
 from dagster import AssetMaterialization, MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+
+
+def generate_table_schema(stream_schema_props: Mapping[str, Any]) -> TableSchema:
+    return TableSchema(
+        columns=sorted(
+            [
+                TableColumn(name=name, type=str(info.get("type", "unknown")))
+                for name, info in stream_schema_props.items()
+            ],
+            key=lambda col: col.name,
+        )
+    )
+
+
+def is_basic_normalization_operation(operation_def: Dict[str, Any]) -> bool:
+    return (
+        operation_def.get("operatorType", operation_def.get("operator_type")) == "normalization"
+        and operation_def.get("normalization", {}).get("option") == "basic"
+    )
 
 
 def _materialization_for_stream(
@@ -16,14 +35,7 @@ def _materialization_for_stream(
     return AssetMaterialization(
         asset_key=asset_key_prefix + [name],
         metadata={
-            "schema": MetadataValue.table_schema(
-                TableSchema(
-                    columns=[
-                        TableColumn(name=name, type=str(info.get("type", "unknown")))
-                        for name, info in stream_schema_props.items()
-                    ]
-                )
-            ),
+            "schema": MetadataValue.table_schema(generate_table_schema(stream_schema_props)),
             **{k: v for k, v in stream_stats.items() if v is not None},
         },
     )

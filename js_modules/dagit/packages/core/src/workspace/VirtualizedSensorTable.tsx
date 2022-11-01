@@ -1,10 +1,9 @@
-import {Box, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {Container, HeaderCell, Inner} from '../ui/VirtualizedTable';
+import {Container, Inner} from '../ui/VirtualizedTable';
 
-import {VirtualizedSensorRow} from './VirtualizedSensorRow';
+import {VirtualizedSensorHeader, VirtualizedSensorRow} from './VirtualizedSensorRow';
 import {RepoAddress} from './types';
 type Sensor = {name: string};
 
@@ -28,22 +27,7 @@ export const VirtualizedSensorTable: React.FC<Props> = ({repoAddress, sensors}) 
 
   return (
     <>
-      <Box
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '76px 38% 30% 10% 20%',
-          height: '32px',
-          fontSize: '12px',
-          color: Colors.Gray600,
-        }}
-      >
-        <HeaderCell />
-        <HeaderCell>Sensor name</HeaderCell>
-        <HeaderCell>Frequency</HeaderCell>
-        <HeaderCell>Last tick</HeaderCell>
-        <HeaderCell>Last run</HeaderCell>
-      </Box>
+      <VirtualizedSensorHeader />
       <div style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>

@@ -21,6 +21,7 @@ from dagster import (
     PartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
+    SkipReason,
     StaticPartitionsDefinition,
     asset,
     build_multi_asset_sensor_context,
@@ -1111,7 +1112,7 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
             # Test that materialization exists
             assert context.latest_materialization_records_by_key()[
                 my_asset.key
-            ].event_log_entry.dagster_event.step_materialization_data.materialization.metadata_entries[
+            ].event_log_entry.dagster_event.materialization.metadata_entries[
                 0
             ].entry_data == BoolMetadataValue(
                 value=True
@@ -1227,3 +1228,17 @@ def test_error_exec_in_process_to_build_multi_asset_sensor_context():
                 cursor_from_latest_materializations=True,
                 cursor="alskdjalsjk",
             )
+
+
+def test_error_not_thrown_for_skip_reason():
+    @multi_asset_sensor(asset_keys=[july_asset.key])
+    def test_unconsumed_events_sensor(_):
+        return SkipReason("I am skipping")
+
+    with instance_for_test() as instance:
+        ctx = build_multi_asset_sensor_context(
+            asset_keys=[july_asset.key],
+            repository_def=my_repo,
+            instance=instance,
+        )
+        list(test_unconsumed_events_sensor(ctx))

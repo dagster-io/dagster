@@ -716,6 +716,7 @@ def asset_sensor_repo():
             name="just_y_AND",
             wait_for_all_upstream=True,
             wait_for_in_progress_runs=False,
+            run_tags={"hello": "world"},
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(d),
@@ -2628,3 +2629,9 @@ def test_repository_namespacing(executor):
                 external_sensor.get_external_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 2
+
+
+def test_settings():
+    settings = {"use_threads": True, "num_workers": 4}
+    with instance_for_test(overrides={"sensors": settings}) as thread_inst:
+        assert thread_inst.get_settings("sensors") == settings

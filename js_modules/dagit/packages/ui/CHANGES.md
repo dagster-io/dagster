@@ -1,3 +1,26 @@
+## 1.0.6 (October 25, 2022)
+
+- Allow overriding colored SVGs with a custom color
+- Add right padding to clearable text input to avoid text overlapping button
+- Support `12` as an `Icon` size
+- Repair CodeMirror hints when rendered within a `Dialog`
+- Add `MiddleTruncate`
+- Allow `Table` not to use monospace font
+- New icons: `asset_plot`, `noteable_logo`, `add`, `subtract`, `forum`, `concept-book`, `youtube`, `chat-support`, `github`, `github_pr_closed`, `github_pr_merged`, `github_pr_open`
+- Make pretty-printing JSON a bit more defensive against invalid JSON
+- Add a prop to `Tooltip` to fix disabled button issues
+- Support dark background on `MetadataTable`, e.g. for tooltip contents
+- Swap `CursorControls` buttons for "Older"/"Newer"
+- Support `Spinner` as a `Tag` "icon"
+- Use dark gray background for `Toast` by default, and dark blue for "success" intent
+- Use `JoinedButton` "segmented" control style for `ButtonGroup`
+- Fix disabled `Button`, which should not have a visible "active" state
+- Repair nullable config types in `ConfigEditor` yaml typeahead
+- Add ability to supply `TokenizingField` with raw tokens
+- Add `canShow` prop to `Tooltip`, simplifying situations where a tooltip may or may not be rendered on a component
+- In CodeMirror yaml mode, send editor to `checkConfig` as-is, without parsing to JSON
+- Ensure that `JoinedButtons` can support buttons within `Popover` or other wrapper components
+
 ## 1.0.5 (June 16, 2022)
 
 - Add `ConfigEditor`, `StyledCodeMirror`, and associated components

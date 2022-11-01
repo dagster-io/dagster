@@ -104,7 +104,7 @@ class StepOutputData(
             ("step_output_handle", "StepOutputHandle"),
             ("type_check_data", Optional[TypeCheckData]),
             ("version", Optional[str]),
-            ("metadata_entries", Optional[List[MetadataEntry]]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):

@@ -107,6 +107,9 @@ from dagster._core.definitions.asset_out import (
 from dagster._core.definitions.asset_selection import (
     AssetSelection as AssetSelection,
 )
+from dagster._core.definitions.asset_sensor_definition import (
+    AssetSensorDefinition as AssetSensorDefinition,
+)
 from dagster._core.definitions.assets import (
     AssetsDefinition as AssetsDefinition,
 )
@@ -228,6 +231,11 @@ from dagster._core.definitions.metadata.table import (
     TableRecord as TableRecord,
     TableSchema as TableSchema,
 )
+from dagster._core.definitions.multi_asset_sensor_definition import (
+    MultiAssetSensorDefinition as MultiAssetSensorDefinition,
+    MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
+    build_multi_asset_sensor_context as build_multi_asset_sensor_context,
+)
 from dagster._core.definitions.op_definition import (
     OpDefinition as OpDefinition,
 )
@@ -296,14 +304,10 @@ from dagster._core.definitions.schedule_definition import (
     build_schedule_context as build_schedule_context,
 )
 from dagster._core.definitions.sensor_definition import (
-    AssetSensorDefinition as AssetSensorDefinition,
     DefaultSensorStatus as DefaultSensorStatus,
-    MultiAssetSensorDefinition as MultiAssetSensorDefinition,
-    MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
     build_sensor_context as build_sensor_context,
-    build_multi_asset_sensor_context as build_multi_asset_sensor_context,
 )
 from dagster._core.definitions.source_asset import (
     SourceAsset as SourceAsset,

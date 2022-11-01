@@ -30,21 +30,21 @@ export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
   }
   minIntervalSeconds = Math.max(30, minIntervalSeconds);
   if (minIntervalSeconds < 60 || minIntervalSeconds % 60) {
-    return `~ ${minIntervalSeconds} sec`;
+    return `~${minIntervalSeconds} sec`;
   }
   if (minIntervalSeconds === 3600) {
-    return `~ 1 hour`;
+    return `~1 hour`;
   }
   if (minIntervalSeconds < 3600 || minIntervalSeconds % 3600) {
-    return `~ ${minIntervalSeconds / 60} min`;
+    return `~${minIntervalSeconds / 60} min`;
   }
   if (minIntervalSeconds === 86400) {
-    return `~ 1 day`;
+    return `~1 day`;
   }
   if (minIntervalSeconds < 86400 || minIntervalSeconds % 86400) {
-    return `~ ${minIntervalSeconds / 3600} hours`;
+    return `~${minIntervalSeconds / 3600} hours`;
   }
-  return `~ ${minIntervalSeconds / 86400} days`;
+  return `~${minIntervalSeconds / 86400} days`;
 };
 
 export const SensorDetails: React.FC<{

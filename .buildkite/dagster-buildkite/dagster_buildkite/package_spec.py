@@ -1,14 +1,16 @@
+import logging
 import os
-from distutils.core import run_setup  # pylint: disable=deprecated-module
 from pathlib import Path
 from typing import Callable, List, Mapping, NamedTuple, Optional, Union
 
-from setuptools.dist import Distribution
+import pkg_resources
+from dagster_buildkite.git import ChangedFiles
+from dagster_buildkite.python_packages import PythonPackages
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
 from .steps.tox import build_tox_step
-from .utils import BuildkiteLeafStep, GroupStep
+from .utils import BuildkiteLeafStep, GroupStep, is_feature_branch
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -212,12 +214,12 @@ class PackageSpec(
                     else:
                         extra_commands_post = []
 
-                    if isinstance(self.pytest_step_dependencies, list):
-                        dependencies = self.pytest_step_dependencies
-                    elif callable(self.pytest_step_dependencies):
-                        dependencies = self.pytest_step_dependencies(py_version, other_factor)
-                    else:
-                        dependencies = []
+                    dependencies = []
+                    if not self.skip_reason:
+                        if isinstance(self.pytest_step_dependencies, list):
+                            dependencies = self.pytest_step_dependencies
+                        elif callable(self.pytest_step_dependencies):
+                            dependencies = self.pytest_step_dependencies(py_version, other_factor)
 
                     steps.append(
                         build_tox_step(
@@ -234,6 +236,7 @@ class PackageSpec(
                             timeout_in_minutes=self.timeout_in_minutes,
                             queue=self.queue,
                             retries=self.retries,
+                            skip_reason=self.skip_reason,
                         )
                     )
 
@@ -245,6 +248,7 @@ class PackageSpec(
                     base_label=base_name,
                     command_type="mypy",
                     python_version=supported_python_versions[-1],
+                    skip_reason=self.skip_reason,
                 )
             )
 
@@ -256,6 +260,7 @@ class PackageSpec(
                     base_label=base_name,
                     command_type="pylint",
                     python_version=supported_python_versions[-1],
+                    skip_reason=self.skip_reason,
                 )
             )
 
@@ -269,9 +274,49 @@ class PackageSpec(
         ]
 
     @property
-    def distribution(self):
-        setup = Path(self.directory) / "setup.py"
-        if setup.exists():
-            return run_setup(Path(self.directory) / "setup.py")
-        else:
-            return Distribution()
+    def requirements(self):
+        # First try to infer requirements from the python package
+        package = PythonPackages.get(self.name)
+        if package:
+            return set.union(package.install_requires, *package.extras_require.values())
+
+        # If we don't have a distribution (like many of our integration test suites)
+        # we can use a requirements.txt file to capture requirements
+        requirements_txt = Path(self.directory) / "requirements.txt"
+        if requirements_txt.exists():
+            parsed = pkg_resources.parse_requirements(requirements_txt.read_text())
+            return [requirement for requirement in parsed]
+
+        # Otherwise return nothing
+        return []
+
+    @property
+    def skip_reason(self) -> Optional[str]:
+        if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
+            return None
+
+        for change in ChangedFiles.all:
+            if (
+                # Our change is in this package's directory
+                (Path(self.directory) in change.parents)
+                # The file can alter behavior - exclude things like README changes
+                and (
+                    change.suffix in [".py", ".cfg", ".toml", ".ini"]
+                    or change.name == "requirements.txt"
+                )
+            ):
+                logging.info(f"Building {self.name} because it has changed")
+                return None
+
+        # Consider anything required by install or an extra to be in scope.
+        # We might one day narrow this down to specific extras.
+        for requirement in self.requirements:
+            in_scope_changes = PythonPackages.with_changes.intersection(
+                PythonPackages.walk_dependencies(requirement)
+            )
+            if in_scope_changes:
+
+                logging.info(f"Building {self.name} because of changes to f{in_scope_changes}")
+                return None
+
+        return "Package unaffected by these changes"

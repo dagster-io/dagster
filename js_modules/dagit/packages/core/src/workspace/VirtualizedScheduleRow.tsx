@@ -25,13 +25,15 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
-import {Row, RowCell} from '../ui/VirtualizedTable';
+import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext';
 import {RepoAddress} from './types';
 import {SingleScheduleQuery, SingleScheduleQueryVariables} from './types/SingleScheduleQuery';
 import {workspacePathFromAddress} from './workspacePath';
+
+const TEMPLATE_COLUMNS = '76px 1fr 1fr 148px 180px 80px';
 
 interface ScheduleRowProps {
   name: string;
@@ -75,6 +77,10 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
 
   const isJob = !!(scheduleData && isThisThingAJob(repo, scheduleData.pipelineName));
 
+  const cronString = scheduleData
+    ? humanCronString(scheduleData.cronSchedule, scheduleData.executionTimezone || 'UTC')
+    : '';
+
   return (
     <Row $height={height} $start={start}>
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
@@ -113,29 +119,42 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
         <RowCell>
           {scheduleData ? (
             <Box flex={{direction: 'column', gap: 4}}>
-              <div>
-                <Tooltip position="top" content={scheduleData.cronSchedule}>
-                  <span style={{color: Colors.Dark}}>
-                    {humanCronString(
-                      scheduleData.cronSchedule,
-                      scheduleData.executionTimezone || 'UTC',
-                    )}
-                  </span>
+              <ScheduleStringContainer style={{maxWidth: '100%'}}>
+                <Tooltip position="top-left" content={scheduleData.cronSchedule} display="block">
+                  <div
+                    style={{
+                      color: Colors.Dark,
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '100%',
+                      textOverflow: 'ellipsis',
+                    }}
+                    title={cronString}
+                  >
+                    {cronString}
+                  </div>
                 </Tooltip>
-              </div>
-              <Caption>
-                Next tick:&nbsp;
-                {scheduleData.scheduleState.nextTick &&
-                scheduleData.scheduleState.status === InstigationStatus.RUNNING ? (
-                  <TimestampDisplay
-                    timestamp={scheduleData.scheduleState.nextTick.timestamp}
-                    timezone={scheduleData.executionTimezone}
-                    timeFormat={{showSeconds: false, showTimezone: true}}
-                  />
-                ) : (
-                  'None'
-                )}
-              </Caption>
+              </ScheduleStringContainer>
+              {scheduleData.scheduleState.nextTick &&
+              scheduleData.scheduleState.status === InstigationStatus.RUNNING ? (
+                <Caption>
+                  <div
+                    style={{
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '100%',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    Next tick:&nbsp;
+                    <TimestampDisplay
+                      timestamp={scheduleData.scheduleState.nextTick.timestamp}
+                      timezone={scheduleData.executionTimezone}
+                      timeFormat={{showSeconds: false, showTimezone: true}}
+                    />
+                  </div>
+                </Caption>
+              ) : null}
             </Box>
           ) : (
             <LoadingOrNone queryResult={queryResult} />
@@ -160,6 +179,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               name={name}
               showButton={false}
               showHover
+              showSummary={false}
             />
           ) : (
             <LoadingOrNone queryResult={queryResult} />
@@ -201,10 +221,44 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
   );
 };
 
+export const VirtualizedScheduleHeader = () => {
+  return (
+    <Box
+      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: TEMPLATE_COLUMNS,
+        height: '32px',
+        fontSize: '12px',
+        color: Colors.Gray600,
+      }}
+    >
+      <HeaderCell />
+      <HeaderCell>Schedule name</HeaderCell>
+      <HeaderCell>Schedule</HeaderCell>
+      <HeaderCell>Last tick</HeaderCell>
+      <HeaderCell>Last run</HeaderCell>
+      <HeaderCell />
+    </Box>
+  );
+};
+
 const RowGrid = styled(Box)`
   display: grid;
-  grid-template-columns: 76px 28% 30% 10% 20% 10%;
+  grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
+`;
+
+const ScheduleStringContainer = styled.div`
+  max-width: 100%;
+
+  .bp3-popover2-target {
+    max-width: 100%;
+
+    :focus {
+      outline: none;
+    }
+  }
 `;
 
 const SINGLE_SCHEDULE_QUERY = gql`

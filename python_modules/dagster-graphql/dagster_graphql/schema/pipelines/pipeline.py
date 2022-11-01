@@ -277,7 +277,7 @@ class GrapheneRun(graphene.ObjectType):
         interfaces = (GraphenePipelineRun,)
         name = "Run"
 
-    def __init__(self, record):
+    def __init__(self, record: RunRecord):
         check.inst_param(record, "record", RunRecord)
         pipeline_run = record.pipeline_run
         super().__init__(

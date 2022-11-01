@@ -8,13 +8,15 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
+from ..asset_sensor_definition import AssetSensorDefinition
 from ..events import AssetKey
-from ..sensor_definition import (
+from ..multi_asset_sensor_definition import (
     AssetMaterializationFunction,
-    AssetSensorDefinition,
-    DefaultSensorStatus,
     MultiAssetMaterializationFunction,
     MultiAssetSensorDefinition,
+)
+from ..sensor_definition import (
+    DefaultSensorStatus,
     RawSensorEvaluationFunction,
     RunRequest,
     SensorDefinition,

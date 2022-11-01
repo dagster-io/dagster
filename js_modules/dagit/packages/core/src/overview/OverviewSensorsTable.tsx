@@ -1,14 +1,16 @@
-import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui';
+import {Tag, Tooltip} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {Container, HeaderCell, Inner} from '../ui/VirtualizedTable';
+import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
-import {VirtualizedSensorRow} from '../workspace/VirtualizedSensorRow';
+import {VirtualizedSensorHeader, VirtualizedSensorRow} from '../workspace/VirtualizedSensorRow';
 import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+
+import {OVERVIEW_COLLAPSED_KEY, OVERVIEW_EXPANSION_KEY} from './OverviewExpansionKey';
 
 type Repository = {
   repoAddress: RepoAddress;
@@ -23,11 +25,17 @@ type RowType =
   | {type: 'header'; repoAddress: RepoAddress; sensorCount: number}
   | {type: 'sensor'; repoAddress: RepoAddress; name: string};
 
-const SENSORS_EXPANSION_STATE_STORAGE_KEY = 'sensors-virtualized-expansion-state';
-
 export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const {expandedKeys, onToggle} = useRepoExpansionState(SENSORS_EXPANSION_STATE_STORAGE_KEY);
+  const allKeys = React.useMemo(
+    () => repos.map(({repoAddress}) => repoAddressAsString(repoAddress)),
+    [repos],
+  );
+  const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
+    OVERVIEW_EXPANSION_KEY,
+    OVERVIEW_COLLAPSED_KEY,
+    allKeys,
+  );
 
   const flattened: RowType[] = React.useMemo(() => {
     const flat: RowType[] = [];
@@ -60,22 +68,7 @@ export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
 
   return (
     <>
-      <Box
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '76px 38% 30% 10% 20%',
-          height: '32px',
-          fontSize: '12px',
-          color: Colors.Gray600,
-        }}
-      >
-        <HeaderCell />
-        <HeaderCell>Sensor name</HeaderCell>
-        <HeaderCell>Frequency</HeaderCell>
-        <HeaderCell>Last tick</HeaderCell>
-        <HeaderCell>Last run</HeaderCell>
-      </Box>
+      <VirtualizedSensorHeader />
       <div style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
@@ -89,13 +82,15 @@ export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
                   height={size}
                   start={start}
                   onToggle={onToggle}
+                  onToggleAll={onToggleAll}
+                  expanded={expandedKeys.includes(repoAddressAsString(row.repoAddress))}
                   showLocation={duplicateRepoNames.has(row.repoAddress.name)}
                   rightElement={
                     <Tooltip
                       content={row.sensorCount === 1 ? '1 sensor' : `${row.sensorCount} sensors`}
                       placement="top"
                     >
-                      <Tag intent="primary">{row.sensorCount}</Tag>
+                      <Tag>{row.sensorCount}</Tag>
                     </Tooltip>
                   }
                 />
