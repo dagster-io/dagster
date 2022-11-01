@@ -2257,6 +2257,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   eventType: DagsterEventType | null;
   fileKey: string;
   stepKeys: string[] | null;
+  externalUrl: string | null;
   pid: number | null;
 }
 

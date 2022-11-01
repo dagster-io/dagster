@@ -3,21 +3,21 @@ import * as React from 'react';
 
 import {ComputeIOType} from '../types/globalTypes';
 
-import {COMPUTE_LOG_CONTENT_FRAGMENT, MAX_STREAMING_LOG_BYTES} from './ComputeLogContent';
-import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
 import {
   ComputeLogsSubscription,
+  ComputeLogsSubscription_computeLogs,
   ComputeLogsSubscriptionVariables,
 } from './types/ComputeLogsSubscription';
-import {ComputeLogsSubscriptionFragment} from './types/ComputeLogsSubscriptionFragment';
+
+const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 
 const slice = (s: string) =>
   s.length < MAX_STREAMING_LOG_BYTES ? s : s.slice(-MAX_STREAMING_LOG_BYTES);
 
 const merge = (
-  a: ComputeLogContentFileFragment | null,
-  b: ComputeLogContentFileFragment | null,
-): ComputeLogContentFileFragment | null => {
+  a: ComputeLogsSubscription_computeLogs | null,
+  b: ComputeLogsSubscription_computeLogs | null,
+): ComputeLogsSubscription_computeLogs | null => {
   if (!b) {
     return a;
   }
@@ -38,14 +38,14 @@ const merge = (
 
 interface State {
   stepKey: string;
-  stdout: ComputeLogsSubscriptionFragment | null;
-  stderr: ComputeLogsSubscriptionFragment | null;
+  stdout: ComputeLogsSubscription_computeLogs | null;
+  stderr: ComputeLogsSubscription_computeLogs | null;
   isLoading: boolean;
 }
 
 type Action =
-  | {type: 'stdout'; stepKey: string; log: ComputeLogsSubscriptionFragment | null}
-  | {type: 'stderr'; stepKey: string; log: ComputeLogsSubscriptionFragment | null};
+  | {type: 'stdout'; stepKey: string; log: ComputeLogsSubscription_computeLogs | null}
+  | {type: 'stderr'; stepKey: string; log: ComputeLogsSubscription_computeLogs | null};
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
@@ -97,15 +97,6 @@ export const useComputeLogs = (runId: string, stepKey: string) => {
   return state;
 };
 
-const COMPUTE_LOGS_SUBSCRIPTION_FRAGMENT = gql`
-  fragment ComputeLogsSubscriptionFragment on ComputeLogFile {
-    data
-    cursor
-    ...ComputeLogContentFileFragment
-  }
-  ${COMPUTE_LOG_CONTENT_FRAGMENT}
-`;
-
 const COMPUTE_LOGS_SUBSCRIPTION = gql`
   subscription ComputeLogsSubscription(
     $runId: ID!
@@ -114,8 +105,10 @@ const COMPUTE_LOGS_SUBSCRIPTION = gql`
     $cursor: String
   ) {
     computeLogs(runId: $runId, stepKey: $stepKey, ioType: $ioType, cursor: $cursor) {
-      ...ComputeLogsSubscriptionFragment
+      path
+      cursor
+      data
+      downloadUrl
     }
   }
-  ${COMPUTE_LOGS_SUBSCRIPTION_FRAGMENT}
 `;

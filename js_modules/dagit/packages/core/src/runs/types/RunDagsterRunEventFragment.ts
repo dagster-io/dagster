@@ -2243,6 +2243,7 @@ export interface RunDagsterRunEventFragment_LogsCapturedEvent {
   eventType: DagsterEventType | null;
   fileKey: string;
   stepKeys: string[] | null;
+  externalUrl: string | null;
   pid: number | null;
 }
 
