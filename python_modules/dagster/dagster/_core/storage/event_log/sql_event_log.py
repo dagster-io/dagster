@@ -24,7 +24,11 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._core.errors import DagsterEventLogInvalidForRun, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterEventLogInvalidForRun,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import MARKER_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -219,9 +223,15 @@ class SqlEventLogStorage(EventLogStorage):
         return entry_values
 
     def store_asset_event_tags(self, event: EventLogEntry, event_id: int) -> None:
-
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
+
+        if not self.has_table(AssetEventTagsTable.name):
+            raise DagsterInvalidInvocationError(
+                "In order to store multi-dimensional partition information, you must run "
+                "`dagster instance migrate` to create the AssetEventTags table."
+            )
+
         if (
             event.dagster_event
             and event.dagster_event.asset_key
@@ -647,6 +657,11 @@ class SqlEventLogStorage(EventLogStorage):
                     .values(migration_completed=datetime.now())
                 )
 
+    def has_table(self, table_name: str) -> bool:
+        """This method checks if a table exists in the database."""
+        with self.index_connection() as conn:
+            return db.inspect(conn).has_table(table_name)
+
     def _apply_filter_to_query(
         self,
         query,
@@ -715,6 +730,12 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.where(SqlEventLogStorageTable.c.id.in_(event_records_filter.storage_ids))
 
         if event_records_filter.tags:
+            if not self.has_table(AssetEventTagsTable.name):
+                raise DagsterInvalidInvocationError(
+                    "Cannot filter by asset event tags because AssetEventTags table does not "
+                    "exist. Run `dagster instance migrate` to create the table."
+                )
+
             check.invariant(
                 isinstance(event_records_filter.asset_key, AssetKey),
                 "Asset key must be set in event records filter to filter by tags.",
