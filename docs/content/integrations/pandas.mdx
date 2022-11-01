@@ -9,6 +9,7 @@ description: The dagster-pandas library provides the ability to perform data val
 - [Dagster DataFrame Level Validation](#dagster-dataframe-level-validation)
 - [Dagster DataFrame Summary Statistics](#dagster-dataframe-summary-statistics)
 
+The recommended approach for dealing with pandas dataframe types is to use [`dagster-pandera`](https://docs.dagster.io/integrations/pandera).
 The `dagster_pandas` library provides the ability to perform data validation, emit summary statistics, and enable reliable dataframe serialization/deserialization. On top of this, the Dagster type system generates documentation of your dataframe constraints and makes it accessible in the Dagit UI.
 
 ## Creating Dagster DataFrame Types
