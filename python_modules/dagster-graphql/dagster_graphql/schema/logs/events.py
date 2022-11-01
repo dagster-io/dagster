@@ -294,6 +294,7 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
     # renamed to fileKey for newer versions of dagit
     logKey = graphene.NonNull(graphene.String)
     stepKeys = graphene.List(graphene.NonNull(graphene.String))
+    externalUrl = graphene.String()
     pid = graphene.Int()
 
 
