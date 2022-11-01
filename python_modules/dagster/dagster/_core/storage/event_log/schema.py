@@ -66,6 +66,7 @@ AssetEventTagsTable = db.Table(
     db.Column("asset_key", db.Text, nullable=False),
     db.Column("key", db.Text, nullable=False),
     db.Column("value", db.Text),
+    db.Column("materialization_timestamp", db.types.TIMESTAMP),
 )
 
 db.Index(
