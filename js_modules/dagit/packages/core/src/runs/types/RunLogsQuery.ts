@@ -2191,6 +2191,7 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_LogsCapturedEven
   eventType: DagsterEventType | null;
   fileKey: string;
   stepKeys: string[] | null;
+  externalUrl: string | null;
   pid: number | null;
 }
 

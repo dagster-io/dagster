@@ -1,14 +1,112 @@
-import {gql} from '@apollo/client';
 import {Colors, Group, Icon, Spinner, FontFamily} from '@dagster-io/ui';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
-import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
-
+const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 const TRUNCATE_PREFIX = '\u001b[33m...logs truncated...\u001b[39m\n';
 const SCROLLER_LINK_TIMEOUT_MS = 3000;
-export const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
+
+export const RawLogContent: React.FC<{
+  logData: string | null;
+  isLoading: boolean;
+  isVisible: boolean;
+  downloadUrl?: string | null;
+  location?: string;
+}> = React.memo(({logData, location, isLoading, isVisible, downloadUrl}) => {
+  const contentContainer = React.useRef<ScrollContainer | null>(null);
+  const timer = React.useRef<number>();
+  const [showScrollToTop, setShowScrollToTop] = React.useState(false);
+  const scrollToTop = () => {
+    contentContainer.current && contentContainer.current.scrollToTop();
+  };
+  const cancelHideWarning = () => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = 0;
+    }
+  };
+  const hideWarning = () => {
+    setShowScrollToTop(false);
+    cancelHideWarning();
+  };
+  const scheduleHideWarning = () => {
+    timer.current = window.setTimeout(hideWarning, SCROLLER_LINK_TIMEOUT_MS);
+  };
+  const onScrollUp = (position: number) => {
+    cancelHideWarning();
+
+    if (!position) {
+      hideWarning();
+    } else {
+      setShowScrollToTop(true);
+      scheduleHideWarning();
+    }
+  };
+  let content = logData;
+  const isTruncated = shouldTruncate(content);
+
+  if (content && isTruncated) {
+    const nextLine = content.indexOf('\n') + 1;
+    const truncated = nextLine < content.length ? content.slice(nextLine) : content;
+    content = TRUNCATE_PREFIX + truncated;
+  }
+  const warning = isTruncated ? (
+    <FileWarning>
+      <Group direction="row" spacing={8} alignItems="center">
+        <Icon name="warning" color={Colors.Yellow500} />
+        <div>
+          This log has exceeded the 5MB limit.{' '}
+          {downloadUrl ? (
+            <a href={downloadUrl} download>
+              Download the full log file
+            </a>
+          ) : null}
+          .
+        </div>
+      </Group>
+    </FileWarning>
+  ) : null;
+
+  return (
+    <>
+      <FileContainer isVisible={isVisible}>
+        {showScrollToTop ? (
+          <ScrollToast>
+            <ScrollToTop
+              onClick={scrollToTop}
+              onMouseOver={cancelHideWarning}
+              onMouseOut={scheduleHideWarning}
+            >
+              <Group direction="row" spacing={8} alignItems="center">
+                <Icon name="arrow_upward" color={Colors.White} />
+                Scroll to top
+              </Group>
+            </ScrollToTop>
+          </ScrollToast>
+        ) : null}
+        <FileContent>
+          {warning}
+          <RelativeContainer>
+            <LogContent
+              isSelected={true}
+              content={logData}
+              onScrollUp={onScrollUp}
+              onScrollDown={hideWarning}
+              ref={contentContainer}
+            />
+          </RelativeContainer>
+        </FileContent>
+        {isLoading ? (
+          <LoadingContainer>
+            <Spinner purpose="page" />
+          </LoadingContainer>
+        ) : null}
+      </FileContainer>
+      {location ? <FileFooter isVisible={isVisible}>{location}</FileFooter> : null}
+    </>
+  );
+});
 
 const shouldTruncate = (content: string | null | undefined) => {
   if (!content) {
@@ -18,144 +116,6 @@ const shouldTruncate = (content: string | null | undefined) => {
   return encoder.encode(content).length >= MAX_STREAMING_LOG_BYTES;
 };
 
-export class ComputeLogContent extends React.Component<{
-  logData?: ComputeLogContentFileFragment | null;
-  downloadUrl?: string | null;
-  isLoading?: boolean;
-  isVisible: boolean;
-}> {
-  private timeout: number | null = null;
-  private contentContainer = React.createRef<ScrollContainer>();
-
-  state = {
-    showScrollToTop: false,
-  };
-
-  hideWarning = () => {
-    this.setState({showScrollToTop: false});
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-      this.timeout = 0;
-    }
-  };
-
-  scheduleHideWarning = () => {
-    this.timeout = window.setTimeout(this.hideWarning, SCROLLER_LINK_TIMEOUT_MS);
-  };
-
-  cancelHideWarning = () => {
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-      this.timeout = 0;
-    }
-  };
-
-  onScrollUp = (position: number) => {
-    this.cancelHideWarning();
-
-    if (!position) {
-      this.hideWarning();
-    } else {
-      this.setState({showScrollToTop: true});
-      this.scheduleHideWarning();
-    }
-  };
-
-  onScrollDown = (_position: number) => {
-    this.hideWarning();
-  };
-
-  scrollToTop = () => {
-    this.contentContainer.current && this.contentContainer.current.scrollToTop();
-  };
-
-  renderScrollToTop() {
-    const {showScrollToTop} = this.state;
-
-    if (!showScrollToTop) {
-      return null;
-    }
-
-    return (
-      <ScrollToast>
-        <ScrollToTop
-          onClick={() => this.scrollToTop()}
-          onMouseOver={this.cancelHideWarning}
-          onMouseOut={this.scheduleHideWarning}
-        >
-          <Group direction="row" spacing={8} alignItems="center">
-            <Icon name="arrow_upward" color={Colors.White} />
-            Scroll to top
-          </Group>
-        </ScrollToTop>
-      </ScrollToast>
-    );
-  }
-
-  render() {
-    const {logData, isLoading, isVisible, downloadUrl} = this.props;
-    let content = logData?.data;
-    const isTruncated = shouldTruncate(content);
-
-    if (content && isTruncated) {
-      const nextLine = content.indexOf('\n') + 1;
-      const truncated = nextLine < content.length ? content.slice(nextLine) : content;
-      content = TRUNCATE_PREFIX + truncated;
-    }
-    const warning = isTruncated ? (
-      <FileWarning>
-        <Group direction="row" spacing={8} alignItems="center">
-          <Icon name="warning" color={Colors.Yellow500} />
-          <div>
-            This log has exceeded the 5MB limit.{' '}
-            {downloadUrl ? (
-              <a href={downloadUrl} download>
-                Download the full log file
-              </a>
-            ) : null}
-            .
-          </div>
-        </Group>
-      </FileWarning>
-    ) : null;
-
-    return (
-      <>
-        <FileContainer isVisible={isVisible}>
-          {this.renderScrollToTop()}
-          <FileContent>
-            {warning}
-            <RelativeContainer>
-              <LogContent
-                isSelected={true}
-                content={content}
-                onScrollUp={this.onScrollUp}
-                onScrollDown={this.onScrollDown}
-                ref={this.contentContainer}
-              />
-            </RelativeContainer>
-          </FileContent>
-          {isLoading ? (
-            <LoadingContainer>
-              <Spinner purpose="page" />
-            </LoadingContainer>
-          ) : null}
-        </FileContainer>
-        <FileFooter isVisible={isVisible}>{logData?.path}</FileFooter>
-      </>
-    );
-  }
-}
-
-export const COMPUTE_LOG_CONTENT_FRAGMENT = gql`
-  fragment ComputeLogContentFileFragment on ComputeLogFile {
-    path
-    cursor
-    data
-    downloadUrl
-  }
-`;
-
 interface IScrollContainerProps {
   content: string | null | undefined;
   isSelected?: boolean;
@@ -164,7 +124,7 @@ interface IScrollContainerProps {
   onScrollDown?: (position: number) => void;
 }
 
-class ScrollContainer extends React.Component<IScrollContainerProps> {
+export class ScrollContainer extends React.Component<IScrollContainerProps> {
   private container = React.createRef<HTMLDivElement>();
   private lastScroll = 0;
 
@@ -282,35 +242,6 @@ const LineNumbers = (props: IScrollContainerProps) => {
   );
 };
 
-const FileContainer = styled.div`
-  flex: 1;
-  height: 100%;
-  position: relative;
-  &:first-child {
-    border-right: 0.5px solid #5c7080;
-  }
-  display: flex;
-  flex-direction: column;
-  ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
-`;
-const FileFooter = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  height: 30px;
-  background-color: ${Colors.Gray900};
-  border-top: 0.5px solid #5c7080;
-  color: #aaaaaa;
-  padding: 2px 5px;
-  font-size: 0.85em;
-  ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
-`;
-const ContentContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  min-height: 100%;
-  background-color: ${Colors.Gray900};
-`;
 const Content = styled.div`
   padding: 10px;
   background-color: ${Colors.Gray900};
@@ -353,6 +284,36 @@ const SolarizedColors = createGlobalStyle`
     color: #eee8d5;
   }
 `;
+const ContentContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  min-height: 100%;
+  background-color: ${Colors.Gray900};
+`;
+const FileContainer = styled.div`
+  flex: 1;
+  height: 100%;
+  position: relative;
+  &:first-child {
+    border-right: 0.5px solid #5c7080;
+  }
+  display: flex;
+  flex-direction: column;
+  ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
+`;
+const FileFooter = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 30px;
+  background-color: ${Colors.Gray900};
+  border-top: 0.5px solid #5c7080;
+  color: #aaaaaa;
+  padding: 2px 5px;
+  font-size: 0.85em;
+  ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
+`;
+
 const FileContent = styled.div`
   flex: 1;
   display: flex;
@@ -374,12 +335,19 @@ const LogContent = styled(ScrollContainer)`
   left: 0;
   right: 0;
 `;
-const FileWarning = styled.div`
-  background-color: #fffae3;
-  padding: 10px 20px;
-  margin: 20px 70px;
-  border-radius: 5px;
+const LoadingContainer = styled.div`
+  display: flex;
+  justifycontent: center;
+  alignitems: center;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  backgroundcolor: ${Colors.Gray800};
+  opacity: 0.3;
 `;
+
 const ScrollToast = styled.div`
   position: absolute;
   height: 30px;
@@ -403,15 +371,10 @@ const ScrollToTop = styled.div`
   border-right: 0.5px solid #5c7080;
   cursor: pointer;
 `;
-const LoadingContainer = styled.div`
-  display: flex;
-  justifycontent: center;
-  alignitems: center;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  backgroundcolor: ${Colors.Gray800};
-  opacity: 0.3;
+
+const FileWarning = styled.div`
+  background-color: #fffae3;
+  padding: 10px 20px;
+  margin: 20px 70px;
+  border-radius: 5px;
 `;
