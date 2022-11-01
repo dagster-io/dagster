@@ -110,7 +110,11 @@ export const LatestMaterializationMetadata: React.FC<{
           <tr key={`metadata-${entry.label}`}>
             <td>{entry.label}</td>
             <td>
-              <MetadataEntry entry={entry} expandSmallValues={true} />
+              <MetadataEntry
+                entry={entry}
+                expandSmallValues={true}
+                repoLocation={repoAddress?.location}
+              />
             </td>
             <td>{entry.description}</td>
           </tr>
