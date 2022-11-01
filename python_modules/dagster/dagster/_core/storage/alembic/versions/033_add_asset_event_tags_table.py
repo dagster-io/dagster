@@ -32,6 +32,7 @@ def upgrade():
             db.Column("asset_key", db.Text, nullable=False),
             db.Column("key", db.Text, nullable=False),
             db.Column("value", db.Text),
+            db.Column("event_timestamp", db.types.TIMESTAMP),
         )
 
     if not has_index("asset_event_tags", "idx_asset_event_tags"):
