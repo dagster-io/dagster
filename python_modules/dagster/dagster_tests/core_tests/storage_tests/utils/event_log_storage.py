@@ -2365,6 +2365,65 @@ class TestEventLogStorage:
                 ("dagster/partition/date", {"2022-10-13"}),
             ]
 
+    def test_materialization_tag_on_wipe(self, storage, instance):
+        key = AssetKey("hello")
+
+        @op
+        def us_op():
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield Output(5)
+
+        @op
+        def brazil_op():
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "Brazil", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "Brazil",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield Output(5)
+
+        run_id = make_new_run_id()
+        run_id_2 = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id, run_id_2]):
+
+            events, _ = _synthesize_events(lambda: us_op(), run_id)
+            for event in events:
+                storage.store_event(event)
+
+            asset_event_tags = storage.get_all_event_tags_for_asset(
+                asset_key=key, key="dagster/partition/country"
+            )
+            assert asset_event_tags == [
+                ("dagster/partition/country", {"US"}),
+            ]
+            if self.can_wipe():
+                storage.wipe_asset(key)
+                asset_event_tags = storage.get_all_event_tags_for_asset(
+                    asset_key=key, key="dagster/partition/country"
+                )
+                assert asset_event_tags == []
+
+                events, _ = _synthesize_events(lambda: brazil_op(), run_id_2)
+                for event in events:
+                    storage.store_event(event)
+
+                asset_event_tags = storage.get_all_event_tags_for_asset(
+                    asset_key=key, key="dagster/partition/country"
+                )
+                assert asset_event_tags == [
+                    ("dagster/partition/country", {"Brazil"}),
+                ]
+
     def test_event_record_filter_tags(self, storage, instance):
         key = AssetKey("hello")
 

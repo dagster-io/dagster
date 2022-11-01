@@ -254,6 +254,9 @@ class SqlEventLogStorage(EventLogStorage):
                             asset_key=asset_key_str,
                             key=key,
                             value=value,
+                            # Postgres requires a datetime that is in UTC but has no timezone info
+                            # set in order to be stored correctly
+                            materialization_timestamp=datetime.utcfromtimestamp(event.timestamp),
                         )
                         for key, value in tags.items()
                     ],
@@ -1229,14 +1232,27 @@ class SqlEventLogStorage(EventLogStorage):
         return query
 
     def get_all_event_tags_for_asset(
-        self, asset_key: AssetKey
+        self, asset_key: AssetKey, key: Optional[str] = None
     ) -> Sequence[Tuple[str, AbstractSet[str]]]:
+        asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
+        key = check.opt_str_param(key, "key")
+
         tags = defaultdict(set)
         query = (
             db.select([AssetEventTagsTable.c.key, AssetEventTagsTable.c.value])
             .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.value)
             .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
         )
+
+        if key:
+            query = query.where(AssetEventTagsTable.c.key == key)
+
+        asset_details = self._get_assets_details([asset_key])[0]
+        if asset_details and asset_details.last_wipe_timestamp:
+            query = query.where(
+                AssetEventTagsTable.c.materialization_timestamp
+                > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+            )
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
