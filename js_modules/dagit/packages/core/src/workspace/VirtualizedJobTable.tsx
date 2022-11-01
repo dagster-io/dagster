@@ -1,10 +1,9 @@
-import {Box, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {Container, HeaderCell, Inner} from '../ui/VirtualizedTable';
+import {Container, Inner} from '../ui/VirtualizedTable';
 
-import {VirtualizedJobRow} from './VirtualizedJobRow';
+import {VirtualizedJobHeader, VirtualizedJobRow} from './VirtualizedJobRow';
 import {RepoAddress} from './types';
 
 type Job = {isJob: boolean; name: string};
@@ -29,22 +28,7 @@ export const VirtualizedJobTable: React.FC<Props> = ({repoAddress, jobs}) => {
 
   return (
     <>
-      <Box
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '34% 30% 20% 8% 8%',
-          height: '32px',
-          fontSize: '12px',
-          color: Colors.Gray600,
-        }}
-      >
-        <HeaderCell>Job name</HeaderCell>
-        <HeaderCell>Schedules/sensors</HeaderCell>
-        <HeaderCell>Latest run</HeaderCell>
-        <HeaderCell>Run history</HeaderCell>
-        <HeaderCell>Actions</HeaderCell>
-      </Box>
+      <VirtualizedJobHeader />
       <div style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>

@@ -40,7 +40,7 @@ export const useJobReExecution = (run: RunFragment | undefined | null) => {
 
       try {
         const result = await launchPipelineReexecution({variables});
-        handleLaunchResult(run.pipelineName, result, history, {
+        handleLaunchResult(run.pipelineName, result.data?.launchPipelineReexecution, history, {
           preserveQuerystring: true,
           behavior: 'open',
         });

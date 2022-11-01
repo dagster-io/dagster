@@ -263,4 +263,7 @@ def test_add_asset_event_tags_table(hostname, conn_string):
 
             instance.upgrade()
             assert "asset_event_tags" in get_tables(instance)
-            assert "idx_asset_event_tags" in get_indexes(instance, "asset_event_tags")
+
+            indexes = get_indexes(instance, "asset_event_tags")
+            assert "idx_asset_event_tags" in indexes
+            assert "idx_asset_event_tags_event_id" in indexes

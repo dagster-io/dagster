@@ -256,6 +256,11 @@ def test_reuse_task_definition(instance, ecs):
                 "name": instance.run_launcher.container_name,
                 "secrets": secrets,
                 "environment": environment,
+                "command": ["echo", "HELLO"],
+            },
+            {
+                "image": "other_image",
+                "name": "the_sidecar",
             },
         ],
         "cpu": "256",
@@ -330,6 +335,15 @@ def test_reuse_task_definition(instance, ecs):
         )
     )
 
+    # Changed command fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["command"] = ["echo", "GOODBYE"]
+    assert not instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
+    )
+
     # Any other diff passes
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["somethingElse"] = "boom"
@@ -338,6 +352,151 @@ def test_reuse_task_definition(instance, ecs):
             task_definition, instance.run_launcher.container_name
         )
     )
+
+    # Different sidecar image fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][1]["image"] = "new_sidecar_image"
+
+    assert not instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
+    )
+
+    # Different sidecar name fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][1]["name"] = "new_sidecar_name"
+
+    assert not instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
+    )
+
+    # Different sidecar environments fail
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][1]["environment"] = environment
+
+    assert not instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
+    )
+
+    # Different sidecar secrets fail
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][1]["secrets"] = [
+        {"name": "a_secret", "valueFrom": "an_arn"}
+    ]
+
+    assert not instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
+    )
+
+    # Other changes to sidecars do not fail
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][1]["cpu"] = "256"
+    assert instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            task_definition, instance.run_launcher.container_name
+        )
+    )
+
+    # Fails if the existing task definition has a different container name
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["name"] = "foobar"
+    ecs.register_task_definition(**task_definition)
+
+    assert not instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            original_task_definition, instance.run_launcher.container_name
+        )
+    )
+
+
+def test_launching_with_task_definition_dict(
+    ecs, instance_cm, run, workspace, pipeline, external_pipeline
+):
+    container_name = "dagster"
+
+    task_role_arn = "fake-task-role"
+    execution_role_arn = "fake-execution-role"
+    sidecar = {
+        "name": "DatadogAgent",
+        "image": "public.ecr.aws/datadog/agent:latest",
+        "environment": [
+            {"name": "ECS_FARGATE", "value": "true"},
+        ],
+    }
+    log_group = "my-log-group"
+    # You can provide a family or a task definition ARN
+    with instance_cm(
+        {
+            "task_definition": {
+                "log_group": log_group,
+                "task_role_arn": task_role_arn,
+                "execution_role_arn": execution_role_arn,
+                "sidecar_containers": [sidecar],
+                "requires_compatibilities": ["FARGATE"],
+            },
+            "container_name": container_name,
+        }
+    ) as instance:
+        run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+
+        initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        instance.launch_run(run.run_id, workspace)
+
+        new_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+
+        # A new task definition is created
+        assert new_task_definitions != initial_task_definitions
+
+        # A new task is launched
+        tasks = ecs.list_tasks()["taskArns"]
+        assert len(tasks) == len(initial_tasks) + 1
+        task_arn = list(set(tasks).difference(initial_tasks))[0]
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+        task_definition_arn = task["taskDefinitionArn"]
+
+        task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)[
+            "taskDefinition"
+        ]
+
+        assert task_definition["taskRoleArn"] == task_role_arn
+        assert task_definition["executionRoleArn"] == execution_role_arn
+
+        assert [container["name"] for container in task_definition["containerDefinitions"]] == [
+            container_name,
+            sidecar["name"],
+        ]
+
+        # We set pipeline-specific overides
+        overrides = task["overrides"]["containerOverrides"]
+        assert len(overrides) == 1
+        override = overrides[0]
+        assert override["name"] == container_name
+        assert "execute_run" in override["command"]
+        assert run.run_id in str(override["command"])
+
+        second_run = run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+
+        instance.launch_run(second_run.run_id, workspace)
+
+        # A new task definition is not created
+        assert ecs.list_task_definitions()["taskDefinitionArns"] == new_task_definitions
 
 
 def test_launching_custom_task_definition(

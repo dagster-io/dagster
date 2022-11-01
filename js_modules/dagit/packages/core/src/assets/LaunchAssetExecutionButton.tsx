@@ -65,16 +65,16 @@ export const LaunchAssetExecutionButton: React.FC<{
   preferredJobName?: string;
 }> = ({assetKeys, preferredJobName, context, intent = 'primary'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
-  const launchWithTelemetry = useLaunchWithTelemetry();
-
-  const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
-  const client = useApolloClient();
-  const confirm = useConfirmation();
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
   const label = `Materialize${
     context === 'all' ? ` all${count}` : context === 'selected' ? ` selected${count}` : count
   }`;
+
+  const {onClick, loading, launchpadElement} = useMaterializationAction(
+    assetKeys,
+    preferredJobName,
+  );
 
   if (!assetKeys.length || !canLaunchPipelineExecution.enabled) {
     return (
@@ -91,6 +91,29 @@ export const LaunchAssetExecutionButton: React.FC<{
       </Tooltip>
     );
   }
+
+  return (
+    <>
+      <Tooltip content="Shift+click to add configuration">
+        <Button
+          intent={intent}
+          onClick={onClick}
+          icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
+        >
+          {label}
+        </Button>
+      </Tooltip>
+      {launchpadElement}
+    </>
+  );
+};
+
+export const useMaterializationAction = (assetKeys: AssetKey[], preferredJobName?: string) => {
+  const launchWithTelemetry = useLaunchWithTelemetry();
+  const client = useApolloClient();
+  const confirm = useConfirmation();
+
+  const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
 
   const onClick = async (e: React.MouseEvent<any>) => {
     if (state.type === 'loading') {
@@ -157,24 +180,9 @@ export const LaunchAssetExecutionButton: React.FC<{
     }
   };
 
-  return (
-    <>
-      <Tooltip content="Shift+click to add configuration">
-        <Button
-          intent={intent}
-          onClick={onClick}
-          icon={
-            state.type === 'loading' ? (
-              <Spinner purpose="body-text" />
-            ) : (
-              <Icon name="materialization" />
-            )
-          }
-        >
-          {label}
-        </Button>
-      </Tooltip>
-      {state.type === 'launchpad' && (
+  const launchpad = () => {
+    if (state.type === 'launchpad') {
+      return (
         <AssetLaunchpad
           assetJobName={state.jobName}
           repoAddress={state.repoAddress}
@@ -182,8 +190,11 @@ export const LaunchAssetExecutionButton: React.FC<{
           open={true}
           setOpen={() => setState({type: 'none'})}
         />
-      )}
-      {state.type === 'partitions' && (
+      );
+    }
+
+    if (state.type === 'partitions') {
+      return (
         <LaunchAssetChoosePartitionsDialog
           assets={state.assets}
           upstreamAssetKeys={state.upstreamAssetKeys}
@@ -192,9 +203,13 @@ export const LaunchAssetExecutionButton: React.FC<{
           open={true}
           setOpen={() => setState({type: 'none'})}
         />
-      )}
-    </>
-  );
+      );
+    }
+
+    return null;
+  };
+
+  return {onClick, loading: state.type === 'loading', launchpadElement: launchpad()};
 };
 
 async function stateForLaunchingAssets(
@@ -250,38 +265,27 @@ async function stateForLaunchingAssets(
   >({
     query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
     variables: {
-      pipelineSelector: {
-        pipelineName: jobName,
-        repositoryName: assets[0].repository.name,
-        repositoryLocationName: assets[0].repository.location.name,
-      },
+      pipelineName: jobName,
+      repositoryName: assets[0].repository.name,
+      repositoryLocationName: assets[0].repository.location.name,
     },
   });
   const pipeline = resourceResult.data.pipelineOrError;
   if (pipeline.__typename !== 'Pipeline') {
-    return {
-      type: 'error',
-      error: `Pipeline ${jobName} does not exist.`,
-    };
+    return {type: 'error', error: pipeline.message};
   }
+  const partitionSets = resourceResult.data.partitionSetsOrError;
+  if (partitionSets.__typename !== 'PartitionSets') {
+    return {type: 'error', error: partitionSets.message};
+  }
+
   const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
   const resources = pipeline.modes[0].resources.filter((r) =>
     requiredResourceKeys.includes(r.name),
   );
   const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
-
   const anyAssetsHaveRequiredConfig = assets.some((a) => a.configField?.isRequired);
 
-  if (partitionDefinition) {
-    const upstreamAssetKeys = getUpstreamAssetKeys(assets);
-    return {
-      type: 'partitions',
-      assets,
-      jobName,
-      repoAddress,
-      upstreamAssetKeys,
-    };
-  }
   if (anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
@@ -292,7 +296,24 @@ async function stateForLaunchingAssets(
         flattenGraphs: true,
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
+        base: partitionSets.results.length
+          ? {
+              partitionsSetName: partitionSets.results[0].name,
+              partitionName: null,
+              tags: [],
+            }
+          : undefined,
       },
+    };
+  }
+  if (partitionDefinition) {
+    const upstreamAssetKeys = getUpstreamAssetKeys(assets);
+    return {
+      type: 'partitions',
+      assets,
+      jobName,
+      repoAddress,
+      upstreamAssetKeys,
     };
   }
   return {
@@ -446,8 +467,48 @@ const LAUNCH_ASSET_LOADER_QUERY = gql`
 `;
 
 const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
-  query LaunchAssetLoaderResourceQuery($pipelineSelector: PipelineSelector!) {
-    pipelineOrError(params: $pipelineSelector) {
+  query LaunchAssetLoaderResourceQuery(
+    $pipelineName: String!
+    $repositoryLocationName: String!
+    $repositoryName: String!
+  ) {
+    partitionSetsOrError(
+      pipelineName: $pipelineName
+      repositorySelector: {
+        repositoryName: $repositoryName
+        repositoryLocationName: $repositoryLocationName
+      }
+    ) {
+      ... on PythonError {
+        message
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on PartitionSets {
+        results {
+          id
+          name
+        }
+      }
+    }
+
+    pipelineOrError(
+      params: {
+        pipelineName: $pipelineName
+        repositoryName: $repositoryName
+        repositoryLocationName: $repositoryLocationName
+      }
+    ) {
+      ... on PythonError {
+        message
+      }
+      ... on InvalidSubsetError {
+        message
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
       ... on Pipeline {
         id
         modes {

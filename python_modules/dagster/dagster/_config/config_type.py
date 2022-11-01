@@ -1,12 +1,15 @@
 import typing
 from enum import Enum as PythonEnum
-from typing import Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
 from dagster._config import UserConfigSchema
 from dagster._serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from .snap import ConfigSchemaSnapshot, ConfigTypeSnap
 
 
 @whitelist_for_serdes
@@ -66,15 +69,18 @@ class ConfigType:
         type_params: Optional[List["ConfigType"]] = None,
     ):
 
-        self.key: str = check.str_param(key, "key")
-        self.kind: ConfigTypeKind = check.inst_param(kind, "kind", ConfigTypeKind)
-        self.given_name: Optional[str] = check.opt_str_param(given_name, "given_name")
-        self._description: Optional[str] = check.opt_str_param(description, "description")
-        self.type_params: Optional[List[ConfigType]] = (
+        self.key = check.str_param(key, "key")
+        self.kind = check.inst_param(kind, "kind", ConfigTypeKind)
+        self.given_name = check.opt_str_param(given_name, "given_name")
+        self._description = check.opt_str_param(description, "description")
+        self.type_params = (
             check.list_param(type_params, "type_params", of_type=ConfigType)
             if type_params
             else None
         )
+
+        # memoized snap representation
+        self._snap: Optional["ConfigTypeSnap"] = None
 
     @property
     def description(self) -> Optional[str]:
@@ -94,6 +100,22 @@ class ConfigType:
         PostProcessingError. Otherwise return the coerced value.
         """
         return value
+
+    def get_snapshot(self) -> "ConfigTypeSnap":
+        from .snap import snap_from_config_type
+
+        if self._snap is None:
+            self._snap = snap_from_config_type(self)
+
+        return self._snap
+
+    def type_iterator(self) -> Iterator["ConfigType"]:
+        yield self
+
+    def get_schema_snapshot(self) -> "ConfigSchemaSnapshot":
+        from .snap import ConfigSchemaSnapshot
+
+        return ConfigSchemaSnapshot({ct.key: ct.get_snapshot() for ct in self.type_iterator()})
 
 
 @whitelist_for_serdes
@@ -187,6 +209,10 @@ class Noneable(ConfigType):
             type_params=[self.inner_type],
         )
 
+    def type_iterator(self) -> Iterator["ConfigType"]:
+        yield from self.inner_type.type_iterator()
+        yield from super().type_iterator()
+
 
 class Array(ConfigType):
     """Defines an array (list) configuration type that contains values of type ``inner_type``.
@@ -210,6 +236,10 @@ class Array(ConfigType):
     @property
     def description(self):
         return "List of {inner_type}".format(inner_type=self.key)
+
+    def type_iterator(self) -> Iterator["ConfigType"]:
+        yield from self.inner_type.type_iterator()
+        yield from super().type_iterator()
 
 
 class EnumValue:
@@ -397,6 +427,11 @@ class ScalarUnion(ConfigType):
             kind=ConfigTypeKind.SCALAR_UNION,
             type_params=[self.scalar_type, self.non_scalar_type],
         )
+
+    def type_iterator(self) -> Iterator["ConfigType"]:
+        yield from self.scalar_type.type_iterator()
+        yield from self.non_scalar_type.type_iterator()
+        yield from super().type_iterator()
 
 
 ConfigAnyInstance = Any()

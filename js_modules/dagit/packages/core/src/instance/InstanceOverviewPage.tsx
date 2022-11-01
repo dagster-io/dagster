@@ -24,7 +24,6 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {JobItem, JobItemWithRuns, JobTable} from './JobTable';
-import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
 import {RepoFilterButton} from './RepoFilterButton';
 import {RunTimelineSection} from './RunTimelineSection';
 import {
@@ -394,7 +393,12 @@ export const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
                     id
                     status
                   }
-                  ...ScheduleFutureTicksFragment
+                  executionTimezone
+                  futureTicks(limit: 10) {
+                    results {
+                      timestamp
+                    }
+                  }
                   ...ScheduleSwitchFragment
                 }
                 sensors {
@@ -421,7 +425,6 @@ export const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
 
   ${OVERVIEW_JOB_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
-  ${SCHEDULE_FUTURE_TICKS_FRAGMENT}
   ${SCHEDULE_SWITCH_FRAGMENT}
   ${SENSOR_SWITCH_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}

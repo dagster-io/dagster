@@ -9,7 +9,6 @@ import pandas
 import pytest
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
-from dagster_snowflake.snowflake_io_manager import TableSlice
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
     _convert_string_to_timestamp,
@@ -27,6 +26,7 @@ from dagster import (
     job,
     op,
 )
+from dagster._core.storage.db_io_manager import TableSlice
 
 resource_config = {
     "database": "database_abc",

@@ -6,8 +6,6 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePath, workspacePipelinePath} from '../workspace/workspacePath';
 
-import {useFeatureFlags} from './Flags';
-
 const InstanceRedirect = () => {
   const location = useLocation();
   const path = `${location.pathname}${location.search}`;
@@ -36,8 +34,6 @@ const getVisibleJobs = (r: DagsterRepoOption) =>
 const FinalRedirectOrLoadingRoot = () => {
   const workspaceContext = React.useContext(WorkspaceContext);
   const {allRepos, loading, locationEntries} = workspaceContext;
-
-  const {flagNewWorkspace} = useFeatureFlags();
 
   if (loading) {
     return (
@@ -92,7 +88,7 @@ const FinalRedirectOrLoadingRoot = () => {
 
   // If we have more than one repo with a job, route to the instance overview
   if (reposWithVisibleJobs.length > 0) {
-    return <Redirect to={flagNewWorkspace ? '/overview' : '/instance'} />;
+    return <Redirect to="/overview" />;
   }
 
   const repoWithNoJob = allRepos[0];

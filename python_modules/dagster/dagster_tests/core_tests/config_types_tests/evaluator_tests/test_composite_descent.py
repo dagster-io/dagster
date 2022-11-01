@@ -483,7 +483,7 @@ def test_config_mapped_enum():
         OTHER = 1
 
     DagsterEnumType = Enum(
-        "TestEnum",
+        "MappedTestEnum",
         [
             EnumValue("VALUE_ONE", TestPythonEnum.VALUE_ONE),
             EnumValue("OTHER", TestPythonEnum.OTHER),

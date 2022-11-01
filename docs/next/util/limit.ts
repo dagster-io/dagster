@@ -1,6 +1,6 @@
 const SPLIT_PATTERN = /\r?\n/;
 const JOIN_PATTERN = '\n';
-
+const MYPY_IGNORE = '# type: ignore';
 /**
  * Use this method to apply a limit for file snippets generated
  * using the ::literalinclude directive
@@ -50,8 +50,11 @@ export const limitSnippetLines = (content, fromTo, dedent, startAfter, endBefore
   }
 
   const dedentedElements = elements.map((x) => x.substring(dedentLevel));
+  const mypyStrippedElements = dedentedElements.map((x) =>
+    x.includes(MYPY_IGNORE) ? x.substring(0, x.indexOf(MYPY_IGNORE)).trimEnd() : x,
+  );
 
-  let result = dedentedElements;
+  let result = mypyStrippedElements;
   if (fromTo) {
     const desiredLineNumbers = parseLineNumbersToSet(fromTo, dedentedElements.length);
     result = result.filter((_, i) => desiredLineNumbers.has(i));

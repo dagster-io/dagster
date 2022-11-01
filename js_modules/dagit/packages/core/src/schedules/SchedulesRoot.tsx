@@ -88,9 +88,10 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
         return (
           <>
-            <Box padding={{horizontal: 24, vertical: 16}}>
-              <SchedulerInfo daemonHealth={instance.daemonHealth} />
-            </Box>
+            <SchedulerInfo
+              daemonHealth={instance.daemonHealth}
+              padding={{horizontal: 24, vertical: 16}}
+            />
             {schedulesSection}
             {unloadableInstigationStatesOrError.__typename === 'PythonError' ? (
               <PythonErrorInfo error={unloadableInstigationStatesOrError} />

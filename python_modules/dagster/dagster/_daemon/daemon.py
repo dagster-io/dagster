@@ -23,7 +23,7 @@ from dagster._scheduler.scheduler import execute_scheduler_iteration_loop
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
-def get_default_daemon_logger(daemon_name):
+def get_default_daemon_logger(daemon_name) -> logging.Logger:
     return logging.getLogger(f"dagster.daemon.{daemon_name}")
 
 

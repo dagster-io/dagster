@@ -10,6 +10,7 @@ import {
   Popover,
   Table,
   Tag,
+  Mono,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
@@ -105,7 +106,7 @@ export const BackfillTable = ({
 
   return (
     <>
-      <Table>
+      <Table $monospaceFont={false}>
         <thead>
           <tr>
             <th style={{width: 120}}>Backfill ID</th>
@@ -181,7 +182,9 @@ const BackfillRow = ({
 
   return (
     <tr>
-      <td style={{width: 120}}>{backfill.backfillId}</td>
+      <td style={{width: 120}}>
+        <Mono style={{fontSize: '16px', lineHeight: '18px'}}>{backfill.backfillId}</Mono>
+      </td>
       <td style={{width: 240}}>
         {backfill.timestamp ? <TimestampDisplay timestamp={backfill.timestamp} /> : '-'}
       </td>
@@ -372,14 +375,14 @@ const BackfillTarget: React.FC<{
   const repo = useRepository(repoAddress);
 
   if (!partitionSet || !repoAddress) {
-    return <span>{partitionSetName}</span>;
+    return <span style={{fontWeight: 500}}>{partitionSetName}</span>;
   }
 
   const isJob = !!(repo && isThisThingAJob(repo, partitionSet.pipelineName));
   const isHiddenAssetJob = isHiddenAssetGroupJob(partitionSet.pipelineName);
 
   const repoLink = (
-    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} style={{fontSize: '12px'}}>
       <Icon name="repo" color={Colors.Gray400} />
       <Link to={workspacePathFromAddress(repoAddress)}>{repoAddressAsString(repoAddress)}</Link>
     </Box>
@@ -389,7 +392,7 @@ const BackfillTarget: React.FC<{
     return (
       <Box flex={{direction: 'column', gap: 8}}>
         {repoLink}
-        <AssetKeyTagCollection assetKeys={assetSelection} modalTitle="Assets in Backfill" />
+        <AssetKeyTagCollection assetKeys={assetSelection} modalTitle="Assets in backfill" />
       </Box>
     );
   }
@@ -404,20 +407,23 @@ const BackfillTarget: React.FC<{
           isJob,
           path: `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
         })}
+        style={{fontWeight: 500}}
       >
         {partitionSet.name}
       </Link>
-      {repoLink}
-      <PipelineReference
-        showIcon
-        size="small"
-        pipelineName={partitionSet.pipelineName}
-        pipelineHrefContext={{
-          name: partitionSet.repositoryOrigin.repositoryName,
-          location: partitionSet.repositoryOrigin.repositoryLocationName,
-        }}
-        isJob={isJob}
-      />
+      <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
+        {repoLink}
+        <PipelineReference
+          showIcon
+          size="small"
+          pipelineName={partitionSet.pipelineName}
+          pipelineHrefContext={{
+            name: partitionSet.repositoryOrigin.repositoryName,
+            location: partitionSet.repositoryOrigin.repositoryLocationName,
+          }}
+          isJob={isJob}
+        />
+      </Box>
     </Box>
   );
 };

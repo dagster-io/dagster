@@ -36,8 +36,9 @@ from typing import Iterator, List, Optional
 from psycopg2.extensions import Notify
 
 import dagster._check as check
+from dagster._core.storage.sql import create_engine
 
-from .utils import get_conn
+from .utils import create_pg_connection
 
 
 def get_wakeup_fd():
@@ -103,28 +104,32 @@ def await_pg_notifications(
     check.float_param(timeout, "timeout")
     check.bool_param(yield_on_timeout, "yield_on_timeout")
 
-    conn = get_conn(conn_string)
+    engine = create_engine(
+        conn_string,
+        isolation_level="AUTOCOMMIT",
+    )
 
-    if channels:
-        start_listening(conn, channels)
+    with create_pg_connection(engine) as conn:
+        connection = conn.connection.connection  # DBAPI connection
 
-    if started_event:
-        started_event.set()
+        if channels:
+            start_listening(connection, channels)
 
-    try:
+        if started_event:
+            started_event.set()
 
         while True and not (exit_event and exit_event.is_set()):
             try:
-                r, w, x = select.select([conn], [], [], max(0, timeout))
+                r, w, x = select.select([connection], [], [], max(0, timeout))
                 if (r, w, x) == ([], [], []):
                     if yield_on_timeout:
                         yield None
 
-                if conn in r:
-                    conn.poll()
+                if connection in r:
+                    connection.poll()
 
                     # copy the conn.notifies list/queue & empty it
-                    notify_list, conn.notifies = conn.notifies, []
+                    notify_list, connection.notifies = connection.notifies, []
                     for notif in notify_list:
                         yield notif
 
@@ -133,5 +138,3 @@ def await_pg_notifications(
                     pass
                 else:
                     raise
-    finally:
-        conn.close()

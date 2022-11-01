@@ -14,6 +14,7 @@ import arrow_upward from '../icon-svgs/arrow_upward.svg';
 import asset from '../icon-svgs/asset.svg';
 import asset_group from '../icon-svgs/asset_group.svg';
 import asset_non_sda from '../icon-svgs/asset_non_sda.svg';
+import asset_plot from '../icon-svgs/asset_plot.svg';
 import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
@@ -82,6 +83,7 @@ import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
 import panel_show_left from '../icon-svgs/panel_show_left.svg';
 import panel_show_right from '../icon-svgs/panel_show_right.svg';
 import panel_show_top from '../icon-svgs/panel_show_top.svg';
+import partition from '../icon-svgs/partition.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
@@ -130,6 +132,7 @@ import {Colors} from './Colors';
 export const Icons = {
   // Core icons
   asset,
+  asset_plot,
   asset_non_sda,
   asset_group,
   expectation,
@@ -140,6 +143,7 @@ export const Icons = {
   op_selector,
   op_dynamic: bolt,
   partition_set: schedule,
+  partition,
   repo: source,
   resource: layers,
   run: history,
@@ -279,7 +283,7 @@ export const IconNames = Object.keys(Icons) as IconName[];
 interface Props {
   color?: string;
   name: IconName;
-  size?: 16 | 20 | 24 | 48;
+  size?: 12 | 16 | 20 | 24 | 48;
   style?: React.CSSProperties;
 }
 
@@ -290,10 +294,7 @@ export const Icon = React.memo((props: Props) => {
     // in Dagit but not in Storybook due to webpack config differences
     img = (img as {default: any}).default;
   }
-  let color: string | null = props.color || Colors.Dark;
-  if (SVGS_WITH_COLORS.has(img)) {
-    color = null;
-  }
+  const color: string | null = props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.Dark);
   return (
     <IconWrapper
       role="img"

@@ -3,7 +3,7 @@ import sys
 import threading
 from abc import abstractmethod
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._api.get_server_id import sync_get_server_id
@@ -120,7 +120,7 @@ class RepositoryLocation(AbstractContextManager):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
@@ -178,7 +178,7 @@ class RepositoryLocation(AbstractContextManager):
         self,
         repository_handle: RepositoryHandle,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -368,14 +368,16 @@ class InProcessRepositoryLocation(RepositoryLocation):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        step_keys_to_execute = check.opt_nullable_sequence_param(
+            step_keys_to_execute, "step_keys_to_execute", of_type=str
+        )
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
@@ -383,7 +385,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
             pipeline=self.get_reconstructable_pipeline(
                 external_pipeline.repository_handle.repository_name, external_pipeline.name
             ).subset_for_execution_from_existing_pipeline(
-                external_pipeline.solids_to_execute, external_pipeline.asset_selection
+                external_pipeline.solids_to_execute,
+                external_pipeline.asset_selection,
             ),
             run_config=run_config,
             mode=mode,
@@ -437,7 +440,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             )
 
         return get_partition_names(
-            self._get_repo_def(external_partition_set.repository_handle),
+            self._get_repo_def(external_partition_set.repository_handle.repository_name),
             partition_set_name=external_partition_set.name,
         )
 
@@ -495,12 +498,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
         self,
         repository_handle: RepositoryHandle,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
-        check.list_param(partition_names, "partition_names", of_type=str)
-
         return get_partition_set_execution_param_data(
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
@@ -694,16 +693,22 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, Any],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         run_config = check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
+
+        asset_selection = (
+            frozenset(check.opt_set_param(external_pipeline.asset_selection, "asset_selection"))
+            if external_pipeline.asset_selection is not None
+            else None
+        )
 
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self.client,
@@ -711,7 +716,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             run_config=run_config,
             mode=mode,
             pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
-            asset_selection=external_pipeline.asset_selection,
+            asset_selection=asset_selection,
             solid_selection=external_pipeline.solid_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
@@ -821,12 +826,8 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         self,
         repository_handle: RepositoryHandle,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ) -> "ExternalPartitionSetExecutionParamData":
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
-        check.list_param(partition_names, "partition_names", of_type=str)
-
         return sync_get_external_partition_set_execution_param_data_grpc(
             self.client, repository_handle, partition_set_name, partition_names
         )

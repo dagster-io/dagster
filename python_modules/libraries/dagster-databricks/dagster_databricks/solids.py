@@ -36,7 +36,7 @@ def create_databricks_job_op(
             sparkpi = create_databricks_job_op().configured(
                 {
                     "job": {
-                        "name": "SparkPi Python job",
+                        "run_name": "SparkPi Python job",
                         "new_cluster": {
                             "spark_version": "7.3.x-scala2.12",
                             "node_type_id": "i3.xlarge",

@@ -30,6 +30,22 @@ class EventLogRecord(NamedTuple):
     storage_id: PublicAttr[int]
     event_log_entry: PublicAttr[EventLogEntry]
 
+    @property
+    def asset_key(self) -> Optional[AssetKey]:
+        dagster_event = self.event_log_entry.dagster_event
+        if dagster_event:
+            return dagster_event.asset_key
+
+        return None
+
+    @property
+    def partition_key(self) -> Optional[str]:
+        dagster_event = self.event_log_entry.dagster_event
+        if dagster_event:
+            return dagster_event.partition
+
+        return None
+
 
 @whitelist_for_serdes
 class EventRecordsFilter(

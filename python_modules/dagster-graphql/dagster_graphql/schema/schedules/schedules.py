@@ -125,7 +125,8 @@ class GrapheneSchedule(graphene.ObjectType):
             for tick_time in tick_times
         ]
 
-        return GrapheneFutureInstigationTicks(results=future_ticks, cursor=tick_times[-1] + 1)
+        new_cursor = tick_times[-1] + 1 if tick_times else cursor
+        return GrapheneFutureInstigationTicks(results=future_ticks, cursor=new_cursor)
 
     def resolve_futureTick(self, _graphene_info, tick_timestamp):
         return GrapheneFutureInstigationTick(self._schedule_state, float(tick_timestamp))

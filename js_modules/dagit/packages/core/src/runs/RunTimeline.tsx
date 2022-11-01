@@ -17,8 +17,10 @@ import styled from 'styled-components/macro';
 
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
+import {OVERVIEW_COLLAPSED_KEY, OVERVIEW_EXPANSION_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {AnchorButton} from '../ui/AnchorButton';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -35,7 +37,7 @@ import {mergeStatusToBackground} from './mergeStatusToBackground';
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;
 const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
-const EMPTY_STATE_HEIGHT = 66;
+const EMPTY_STATE_HEIGHT = 110;
 const LEFT_SIDE_SPACE_ALLOTTED = 320;
 const LABEL_WIDTH = 268;
 const MIN_DATE_WIDTH_PCT = 10;
@@ -64,12 +66,27 @@ interface Props {
   range: [number, number];
 }
 
-const EXPANSION_STATE_STORAGE_KEY = 'timeline-expansion-state';
-
 export const RunTimeline = (props: Props) => {
   const {loading = false, jobs, range} = props;
   const [width, setWidth] = React.useState<number | null>(null);
-  const {expandedKeys, onToggle} = useRepoExpansionState(EXPANSION_STATE_STORAGE_KEY);
+
+  const now = Date.now();
+  const [_, end] = range;
+  const includesTicks = now <= end;
+
+  const buckets = jobs.reduce((accum, job) => {
+    const {repoAddress} = job;
+    const repoKey = repoAddressAsString(repoAddress);
+    const jobsForRepo = accum[repoKey] || [];
+    return {...accum, [repoKey]: [...jobsForRepo, job]};
+  }, {});
+
+  const allKeys = Object.keys(buckets);
+  const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
+    OVERVIEW_EXPANSION_KEY,
+    OVERVIEW_COLLAPSED_KEY,
+    allKeys,
+  );
 
   const observer = React.useRef<ResizeObserver | null>(null);
 
@@ -93,20 +110,7 @@ export const RunTimeline = (props: Props) => {
     );
   }
 
-  const now = Date.now();
-  const [_, end] = range;
-  const includesTicks = now <= end;
-
-  const buckets = jobs.reduce((accum, job) => {
-    const {repoAddress} = job;
-    const repoKey = repoAddressAsString(repoAddress);
-    const jobsForRepo = accum[repoKey] || [];
-    return {...accum, [repoKey]: [...jobsForRepo, job]};
-  }, {});
-
-  const repoOrder = Object.keys(buckets).sort((a, b) =>
-    a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()),
-  );
+  const repoOrder = Object.keys(buckets).sort((a, b) => a.localeCompare(b));
 
   let nextTop = DATE_TIME_HEIGHT;
   const expandedRepos = repoOrder.filter((repoKey) => expandedKeys.includes(repoKey));
@@ -149,6 +153,7 @@ export const RunTimeline = (props: Props) => {
               isDuplicateRepoName={!!(name && duplicateRepoNames.has(name))}
               jobs={buckets[repoKey]}
               onToggle={onToggle}
+              onToggleAll={onToggleAll}
               width={width}
             />
           );
@@ -169,16 +174,35 @@ interface TimelineSectionProps {
   range: [number, number];
   width: number;
   onToggle: (repoAddress: RepoAddress) => void;
+  onToggleAll: (expanded: boolean) => void;
 }
 
 const TimelineSection = (props: TimelineSectionProps) => {
-  const {expanded, onToggle, repoKey, isDuplicateRepoName, jobs, range, top, width} = props;
+  const {
+    expanded,
+    onToggle,
+    onToggleAll,
+    repoKey,
+    isDuplicateRepoName,
+    jobs,
+    range,
+    top,
+    width,
+  } = props;
   const repoAddress = repoAddressFromPath(repoKey);
   const repoName = repoAddress?.name || 'Unknown repo';
   const repoLocation = repoAddress?.location || 'Unknown location';
-  const onClick = React.useCallback(() => {
-    repoAddress && onToggle(repoAddress);
-  }, [onToggle, repoAddress]);
+
+  const onClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      if (e.getModifierState('Shift')) {
+        onToggleAll(!expanded);
+      } else {
+        repoAddress && onToggle(repoAddress);
+      }
+    },
+    [expanded, onToggle, onToggleAll, repoAddress],
+  );
 
   return (
     <div>
@@ -571,11 +595,24 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
       );
     }
 
-    if (includesTicks) {
-      return <span>No runs or scheduled ticks in this time period.</span>;
-    }
-
-    return <span>No runs in this time period.</span>;
+    return (
+      <Box flex={{direction: 'column', gap: 12, alignItems: 'center'}}>
+        <div>
+          {includesTicks
+            ? 'No runs or scheduled ticks in this time period.'
+            : 'No runs in this time period.'}
+        </div>
+        <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+          <AnchorButton icon={<Icon name="add_circle" />} to="/overview/jobs">
+            Launch a run
+          </AnchorButton>
+          <span>or</span>
+          <AnchorButton icon={<Icon name="materialization" />} to="/instance/asset-groups">
+            Materialize an asset
+          </AnchorButton>
+        </Box>
+      </Box>
+    );
   };
 
   return (

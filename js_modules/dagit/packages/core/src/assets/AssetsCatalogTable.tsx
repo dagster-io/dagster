@@ -127,11 +127,13 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     () => displayed.map<AssetKey>((a) => ({path: a.key.path})),
     [displayed],
   );
-  const {liveDataByNode, liveResult} = useLiveDataForAssetKeys(displayedKeys);
+  const {liveDataByNode, liveDataRefreshState, runWatchers} = useLiveDataForAssetKeys(
+    displayedKeys,
+  );
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(query, FIFTEEN_SECONDS),
-    useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS),
+    liveDataRefreshState,
   );
 
   React.useEffect(() => {
@@ -166,7 +168,9 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
 
   return (
     <Wrapper>
-      <StickyTableContainer $top={0}>
+      {runWatchers}
+      {/* 48px allows for the toolbar to be sticky as well */}
+      <StickyTableContainer $top={48}>
         <AssetTable
           view={view}
           assets={displayed}
