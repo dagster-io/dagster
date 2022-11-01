@@ -16,8 +16,9 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
     InputDefinition,
@@ -455,22 +456,26 @@ def test_crash_multiprocessing():
 
         assert failure_data.user_failure_data is None
 
-        assert (
-            "Crashy output to stdout"
-            in instance.compute_log_manager.read_logs_file(
-                result.run_id, "sys_exit", ComputeIOType.STDOUT
-            ).data
+        capture_events = [
+            event
+            for event in result.event_list
+            if event.event_type == DagsterEventType.LOGS_CAPTURED
+        ]
+        event = capture_events[0]
+        assert isinstance(instance.compute_log_manager, CapturedLogManager)
+        log_key = instance.compute_log_manager.build_log_key_for_run(
+            result.run_id, event.logs_captured_data.file_key
         )
+        log_data = instance.compute_log_manager.get_log_data(log_key)
+
+        assert "Crashy output to stdout" in log_data.stdout.decode("utf-8")
 
         # The argument to sys.exit won't (reliably) make it to the compute logs for stderr b/c the
         # LocalComputeLogManger is in-process -- documenting this behavior here though we may want to
         # change it
 
         # assert (
-        #     'Crashy output to stderr'
-        #     not in instance.compute_log_manager.read_logs_file(
-        #         result.run_id, 'sys_exit', ComputeIOType.STDERR
-        #     ).data
+        #     'Crashy output to stderr' not in log_data.stdout.decode("utf-8")
         # )
 
 

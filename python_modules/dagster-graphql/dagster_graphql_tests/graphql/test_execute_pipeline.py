@@ -353,6 +353,30 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             "ExecutionStepOutputEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
+            "ExecutionStepStartEvent",
+            "LoadedInputEvent",
+            "ExecutionStepInputEvent",
+            "ExecutionStepOutputEvent",
+            "HandledOutputEvent",
+            "ExecutionStepSuccessEvent",
+            "RunSuccessEvent",
+        ]
+
+    def _legacy_csv_hello_world_event_sequence(self):
+        # same as above, but matching when the instance has a legacy compute log manager which emits
+        # event for every step
+
+        return [
+            "RunStartingEvent",
+            "RunStartEvent",
+            "ResourceInitStartedEvent",
+            "ResourceInitSuccessEvent",
+            "LogsCapturedEvent",
+            "ExecutionStepStartEvent",
+            "ExecutionStepInputEvent",
+            "ExecutionStepOutputEvent",
+            "HandledOutputEvent",
+            "ExecutionStepSuccessEvent",
             "LogsCapturedEvent",
             "ExecutionStepStartEvent",
             "LoadedInputEvent",
@@ -389,7 +413,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
 
-        assert non_engine_event_types == self._csv_hello_world_event_sequence()
+        assert non_engine_event_types == self._csv_hello_world_event_sequence() or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
 
     def test_basic_start_pipeline_and_fetch(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -433,7 +457,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             for message in events_result.data["logsForRun"]["events"]
             if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
-        assert non_engine_event_types == self._csv_hello_world_event_sequence()
+        assert non_engine_event_types == self._csv_hello_world_event_sequence() or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
 
     def test_basic_start_pipeline_and_poll(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -498,7 +522,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             for message in full_logs
             if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
-        assert non_engine_event_types == self._csv_hello_world_event_sequence()
+        assert non_engine_event_types == self._csv_hello_world_event_sequence() or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
 
     def test_step_failure(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "naughty_programmer_pipeline")
