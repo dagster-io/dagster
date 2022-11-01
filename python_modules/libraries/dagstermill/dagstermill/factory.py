@@ -118,6 +118,11 @@ def get_papermill_parameters(step_context, inputs, output_log_path, compute_desc
                 "Can't execute a dagstermill solid from a pipeline that is not reconstructable. "
                 "Use the reconstructable() function if executing from python"
             )
+        elif compute_descriptor == "asset":
+            raise DagstermillError(
+                "Can't execute a dagstermill asset that is not reconstructable. "
+                "Use the reconstructable() function if executing from python"
+            )
         else:
             raise DagstermillError(
                 "Can't execute a dagstermill op from a job that is not reconstructable. "
