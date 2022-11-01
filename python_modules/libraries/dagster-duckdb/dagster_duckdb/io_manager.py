@@ -48,13 +48,6 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
                     {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
                 )
 
-    The returned DuckDB IOManager can be configured with the following values:
-
-    .. code-block:: YAML
-
-        database: path/to/database.duckdb  # path to the duckdb database
-        schema: my_schema  # name of the schema for the tables
-
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
     the IO Manager. For assets, the schema will be determined from the asset key. For ops, the schema can be
     specified by including a "schema" entry in output metadata. If none of these is provided, the schema will
@@ -84,8 +77,10 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
 
     @io_manager(
         config_schema={
-            "database": StringSource,
-            "schema": Field(StringSource, is_required=False),
+            "database": Field(StringSource, description="Path to the DuckDB database."),
+            "schema": Field(
+                StringSource, description="Name of the schema to use.", is_required=False
+            ),
         }
     )
     def duckdb_io_manager(_):

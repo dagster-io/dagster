@@ -6,5 +6,5 @@ This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ d
 
 .. currentmodule:: dagster_duckdb
 
-.. autofunction:: build_duckdb_io_manager
-
+.. autoconfigurable:: build_duckdb_io_manager
+  :annotation: IOManagerDefinition
