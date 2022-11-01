@@ -17,7 +17,6 @@ from dagster._core.definitions import (
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
-from dagster._core.definitions.logical_version import get_logical_version_from_inputs
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataValue,
@@ -509,8 +508,8 @@ def _get_output_asset_materializations(
         dep_keys = asset_layer.upstream_assets_for_asset(asset_key)
         op_version = check.not_none(asset_layer.op_version_for_asset(asset_key))
         dep_key_to_is_source_map = {key: asset_layer.is_source_for_asset(key) for key in dep_keys}
-        version = get_logical_version_from_inputs(
-            dep_keys, op_version, dep_key_to_is_source_map, instance
+        version = instance.get_logical_version_from_inputs(
+            dep_keys, op_version, dep_key_to_is_source_map
         )
         all_metadata.append(
             MetadataEntry(label="logical_version", value=MetadataValue.logical_version(version))
