@@ -72,7 +72,9 @@ class UnresolvedAssetJobDefinition(
         if self.partitions_def is None:
             return None
 
-        partitioned_config = self.config if isinstance(self.config, PartitionedConfig) else None
+        partitioned_config = PartitionedConfig.from_flexible_config(
+            self.config, self.partitions_def
+        )
 
         tags_fn = (
             partitioned_config

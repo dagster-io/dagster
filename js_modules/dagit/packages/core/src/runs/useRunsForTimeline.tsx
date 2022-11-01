@@ -21,29 +21,29 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
   const startSec = start / 1000.0;
   const endSec = end / 1000.0;
 
-  const {data, previousData, loading} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(
-    RUN_TIMELINE_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-      notifyOnNetworkStatusChange: true,
-      variables: {
-        inProgressFilter: {
-          ...runsFilter,
-          statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-          createdBefore: endSec,
-        },
-        terminatedFilter: {
-          ...runsFilter,
-          statuses: Array.from(doneStatuses),
-          createdBefore: endSec,
-          updatedAfter: startSec,
-        },
-        tickCursor: startSec,
-        ticksUntil: endSec,
+  const queryData = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
+    fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true,
+    variables: {
+      inProgressFilter: {
+        ...runsFilter,
+        statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+        createdBefore: endSec,
       },
+      terminatedFilter: {
+        ...runsFilter,
+        statuses: Array.from(doneStatuses),
+        createdBefore: endSec,
+        updatedAfter: startSec,
+      },
+      tickCursor: startSec,
+      ticksUntil: endSec,
     },
-  );
+  });
 
+  const {data, previousData, loading} = queryData;
+
+  const initialLoading = loading && !data;
   const {unterminated, terminated, workspaceOrError} = data || previousData || {};
 
   const runsByJobKey = React.useMemo(() => {
@@ -171,10 +171,14 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
     return jobs.sort((a, b) => earliest[a.key] - earliest[b.key]);
   }, [workspaceOrError, runsByJobKey, start, end]);
 
-  return {
-    jobs: jobsWithRuns,
-    loading: loading && !data,
-  };
+  return React.useMemo(
+    () => ({
+      jobs: jobsWithRuns,
+      initialLoading,
+      queryData,
+    }),
+    [initialLoading, jobsWithRuns, queryData],
+  );
 };
 
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>

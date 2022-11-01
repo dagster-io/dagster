@@ -149,18 +149,18 @@ const ComputeLogToolbar = ({
     metadata.logCaptureSteps || extractLogCaptureStepsFromLegacySteps(Object.keys(metadata.steps));
   const isValidStepSelection = computeLogKey && logCaptureSteps[computeLogKey];
 
-  const logKeyText = (logKey?: string) => {
-    if (!logKey || !logCaptureSteps[logKey]) {
+  const fileKeyText = (fileKey?: string) => {
+    if (!fileKey || !logCaptureSteps[fileKey]) {
       return null;
     }
-    const captureInfo = logCaptureSteps[logKey];
-    if (captureInfo.stepKeys.length === 1 && logKey === captureInfo.stepKeys[0]) {
-      return logKey;
+    const captureInfo = logCaptureSteps[fileKey];
+    if (captureInfo.stepKeys.length === 1 && fileKey === captureInfo.stepKeys[0]) {
+      return fileKey;
     }
     if (captureInfo.pid) {
       return `pid: ${captureInfo.pid} (${captureInfo.stepKeys.length} steps)`;
     }
-    return `${logKey} (${captureInfo.stepKeys.length} steps)`;
+    return `${fileKey} (${captureInfo.stepKeys.length} steps)`;
   };
 
   return (
@@ -179,17 +179,17 @@ const ComputeLogToolbar = ({
             <MenuItem
               key={item}
               onClick={options.handleClick}
-              text={logKeyText(item)}
+              text={fileKeyText(item)}
               active={options.modifiers.active}
             />
           )}
           activeItem={computeLogKey}
-          onItemSelect={(logKey) => {
-            onSetComputeLogKey(logKey);
+          onItemSelect={(fileKey) => {
+            onSetComputeLogKey(fileKey);
           }}
         >
           <Button disabled={!steps.length} rightIcon={<Icon name="expand_more" />}>
-            {logKeyText(computeLogKey) || 'Select a step...'}
+            {fileKeyText(computeLogKey) || 'Select a step...'}
           </Button>
         </Select>
         {isValidStepSelection ? (

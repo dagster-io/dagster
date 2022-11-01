@@ -85,9 +85,10 @@ def resolve_assets_def_deps(
                 pass
             elif (
                 group_name is not None
-                and len(upstream_key) == 1
+                and len(upstream_key.path) == 1
                 and matching_asset_keys
                 and len(matching_asset_keys) == 1
+                and matching_asset_keys[0] not in assets_def.keys
             ):
                 resolved_key = matching_asset_keys[0]
                 resolved_keys_by_unresolved_key[upstream_key] = resolved_key
