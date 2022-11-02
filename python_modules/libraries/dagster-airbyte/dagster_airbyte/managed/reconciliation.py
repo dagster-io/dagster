@@ -644,7 +644,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
             self._connections,
             dry_run=True,
             should_delete=self._delete_unmentioned_resources,
-            ignore_secrets=(not kwargs.get("force_update_secrets", False)),
+            ignore_secrets=(not kwargs.get("include_all_secrets", False)),
         )
 
     def apply(self, **kwargs) -> ManagedElementCheckResult:
@@ -653,7 +653,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
             self._connections,
             dry_run=False,
             should_delete=self._delete_unmentioned_resources,
-            ignore_secrets=(not kwargs.get("force_update_secrets", False)),
+            ignore_secrets=(not kwargs.get("include_all_secrets", False)),
         )
 
 

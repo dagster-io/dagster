@@ -287,7 +287,7 @@ def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source
     other_check_result = check(
         TEST_ROOT_DIR,
         "example_airbyte_stack:reconciler_different_dest",
-        force_update_secrets=True,
+        include_all_secrets=True,
     )
     assert other_check_result == check_result
     assert ManagedElementDiff() != check_result
@@ -307,6 +307,6 @@ def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source
         check_result = check(
             TEST_ROOT_DIR,
             "example_airbyte_stack:reconciler_different_dest",
-            force_update_secrets=True,
+            include_all_secrets=True,
         )
         assert ManagedElementDiff() != check_result
