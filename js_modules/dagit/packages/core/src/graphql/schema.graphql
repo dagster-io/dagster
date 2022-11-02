@@ -408,7 +408,9 @@ type AssetNode {
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
   materializationCountByPartition: [MaterializationCountByPartition!]!
-  partitionsMaterializedByDimension: [PartitionDimensionMaterializationStatus!]!
+  materializationCountByDimensionPartition(
+    primaryDimension: String
+  ): [PrimaryPartitionDimensionMaterializationCount!]!
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
@@ -1409,14 +1411,25 @@ type MaterializationCountByPartition {
   materializationCount: Int!
 }
 
-type PartitionDimensionMaterializationStatus {
-  dimension: String!
-  materializationStatusPerPartition: [PartitionMaterializationStatus!]!
-}
+"""
+This object is used to return the number of materializations for a given partition
+in the primary dimension of a multi-partitioned asset.
 
-type PartitionMaterializationStatus {
-  partition: String!
-  materialized: Boolean!
+For example, with a multipartitions definition with two dimensions:
+color: ["red", "blue"]
+numbers: [1, 2, 3]
+
+One instance of this class, if the primary dimension is "color", would be:
+
+primaryDimensionPartitionKey: "red"
+materializationCountForSecondaryDimension: ["1": 1, "2": 0, "3": 1]
+
+Each entry in materializationCountPerPartition represents the number of materializations
+for the given partition in the secondary dimension: ["red|1", "red|2", "red|3"]
+"""
+type PrimaryPartitionDimensionMaterializationCount {
+  primaryDimensionPartitionKey: String!
+  materializationCountForSecondaryDimension: [MaterializationCountByPartition!]!
 }
 
 type PartitionDefinition {

@@ -86,20 +86,12 @@ def parse_time_range_args(args):
     return before_timestamp, after_timestamp
 
 
-class GraphenePartitionMaterializationStatus(graphene.ObjectType):
-    partition = graphene.NonNull(graphene.String)
-    materialized = graphene.NonNull(graphene.Boolean)
+# class GraphenePartitionMaterializationStatus(graphene.ObjectType):
+#     partition = graphene.NonNull(graphene.String)
+#     materialized = graphene.NonNull(graphene.Boolean)
 
-    class Meta:
-        name = "PartitionMaterializationStatus"
-
-
-class GraphenePartitionDimensionMaterializationStatus(graphene.ObjectType):
-    dimension = graphene.NonNull(graphene.String)
-    materializationStatusPerPartition = non_null_list(GraphenePartitionMaterializationStatus)
-
-    class Meta:
-        name = "PartitionDimensionMaterializationStatus"
+#     class Meta:
+#         name = "PartitionMaterializationStatus"
 
 
 class GrapheneMaterializationCount(graphene.ObjectType):
@@ -108,6 +100,31 @@ class GrapheneMaterializationCount(graphene.ObjectType):
 
     class Meta:
         name = "MaterializationCountByPartition"
+
+
+class GraphenePrimaryPartitionDimensionMaterializationCount(graphene.ObjectType):
+    """
+    This object is used to return the number of materializations for a given partition
+    in the primary dimension of a multi-partitioned asset.
+
+    For example, with a multipartitions definition with two dimensions:
+    color: ["red", "blue"]
+    numbers: [1, 2, 3]
+
+    One instance of this class, if the primary dimension is "color", would be:
+
+    primaryDimensionPartitionKey: "red"
+    materializationCountForSecondaryDimension: ["1": 1, "2": 0, "3": 1]
+
+    Each entry in materializationCountPerPartition represents the number of materializations
+    for the given partition in the secondary dimension: ["red|1", "red|2", "red|3"]
+    """
+
+    primaryDimensionPartitionKey = graphene.NonNull(graphene.String)
+    materializationCountForSecondaryDimension = non_null_list(GrapheneMaterializationCount)
+
+    class Meta:
+        name = "PrimaryPartitionDimensionMaterializationCount"
 
 
 class GrapheneAsset(graphene.ObjectType):
@@ -158,7 +175,6 @@ class GrapheneAsset(graphene.ObjectType):
         partitionInLast = kwargs.get("partitionInLast")
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
-
         events = get_asset_materializations(
             graphene_info,
             self.key,
