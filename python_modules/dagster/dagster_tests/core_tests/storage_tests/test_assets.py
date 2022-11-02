@@ -95,7 +95,7 @@ def test_backcompat_asset_materializations():
         assert isinstance(event, EventLogEntry)
         assert event.dagster_event
         assert event.dagster_event.is_step_materialization
-        assert event.dagster_event.materialization.asset_key == asset_key
+        assert event.dagster_event.step_materialization_data.materialization.asset_key == asset_key
 
     a = AssetKey("a")
     b = AssetKey("b")
@@ -151,7 +151,7 @@ def test_backcompat_get_asset_records():
         assert isinstance(event, EventLogEntry)
         assert event.dagster_event
         assert event.dagster_event.is_step_materialization
-        assert event.dagster_event.materialization.asset_key == asset_key
+        assert event.dagster_event.step_materialization_data.materialization.asset_key == asset_key
 
     b = AssetKey("b")
 

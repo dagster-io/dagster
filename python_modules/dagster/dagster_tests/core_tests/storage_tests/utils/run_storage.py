@@ -332,9 +332,6 @@ class TestRunStorage:
         }
 
     def test_fetch_by_filter(self, storage):
-
-        now = pendulum.now()
-
         assert storage
         one = make_new_run_id()
         two = make_new_run_id()
@@ -475,12 +472,6 @@ class TestRunStorage:
         count = storage.get_runs_count(RunsFilter())
         assert len(some_runs) == 4
         assert count == 4
-
-        old_runs = storage.get_runs(RunsFilter(created_before=now.add(days=-1)))
-        assert len(old_runs) == 0
-
-        new_runs = storage.get_runs(RunsFilter(created_before=now.add(days=1)))
-        assert len(new_runs) == 4
 
     def test_fetch_count_by_tag(self, storage):
         assert storage
