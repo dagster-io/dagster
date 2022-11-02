@@ -1,3 +1,4 @@
+# pylint: disable=unused-import
 from typing import Any, List, Optional, Union
 
 from dagster_airbyte.managed.types import GeneratedAirbyteDestination
@@ -37,23 +38,23 @@ class BigqueryDestination(GeneratedAirbyteDestination):
         ):
             self.method = "Standard"
 
-    class HmacKey:
+    class HMACKey:
         def __init__(self, hmac_key_access_id: str, hmac_key_secret: str):
             self.credential_type = "HMAC_KEY"
             self.hmac_key_access_id = check.str_param(hmac_key_access_id, "hmac_key_access_id")
             self.hmac_key_secret = check.str_param(hmac_key_secret, "hmac_key_secret")
 
-    class GcsStaging:
+    class GCSStaging:
         def __init__(
             self,
-            credential: "BigqueryDestination.HmacKey",
+            credential: "BigqueryDestination.HMACKey",
             gcs_bucket_name: str,
             gcs_bucket_path: str,
             keep_files_in_gcs_bucket: Optional[str] = None,
         ):
             self.method = "GCS Staging"
             self.credential = check.inst_param(
-                credential, "credential", BigqueryDestination.HmacKey
+                credential, "credential", BigqueryDestination.HMACKey
             )
             self.gcs_bucket_name = check.str_param(gcs_bucket_name, "gcs_bucket_name")
             self.gcs_bucket_path = check.str_param(gcs_bucket_path, "gcs_bucket_path")
@@ -67,7 +68,7 @@ class BigqueryDestination(GeneratedAirbyteDestination):
         project_id: str,
         dataset_location: str,
         dataset_id: str,
-        loading_method: Union[StandardInserts, GcsStaging],
+        loading_method: Union[StandardInserts, GCSStaging],
         credentials_json: Optional[str] = None,
         transformation_priority: Optional[str] = None,
         big_query_client_buffer_size_mb: Optional[int] = None,
@@ -83,7 +84,7 @@ class BigqueryDestination(GeneratedAirbyteDestination):
         self.loading_method = check.inst_param(
             loading_method,
             "loading_method",
-            (BigqueryDestination.StandardInserts, BigqueryDestination.GcsStaging),
+            (BigqueryDestination.StandardInserts, BigqueryDestination.GCSStaging),
         )
         self.credentials_json = check.opt_str_param(credentials_json, "credentials_json")
         self.transformation_priority = check.opt_str_param(
@@ -241,12 +242,12 @@ class KinesisDestination(GeneratedAirbyteDestination):
 
 
 class AzureBlobStorageDestination(GeneratedAirbyteDestination):
-    class CsvCommaSeparatedValues:
+    class CSVCommaSeparatedValues:
         def __init__(self, flattening: str):
             self.format_type = "CSV"
             self.flattening = check.str_param(flattening, "flattening")
 
-    class JsonLinesNewlineDelimitedJson:
+    class JSONLinesNewlineDelimitedJSON:
         def __init__(
             self,
         ):
@@ -257,7 +258,7 @@ class AzureBlobStorageDestination(GeneratedAirbyteDestination):
         name: str,
         azure_blob_storage_account_name: str,
         azure_blob_storage_account_key: str,
-        format: Union[CsvCommaSeparatedValues, JsonLinesNewlineDelimitedJson],
+        format: Union[CSVCommaSeparatedValues, JSONLinesNewlineDelimitedJSON],
         azure_blob_storage_endpoint_domain_name: Optional[str] = None,
         azure_blob_storage_container_name: Optional[str] = None,
         azure_blob_storage_output_buffer_size: Optional[int] = None,
@@ -286,25 +287,25 @@ class AzureBlobStorageDestination(GeneratedAirbyteDestination):
             format,
             "format",
             (
-                AzureBlobStorageDestination.CsvCommaSeparatedValues,
-                AzureBlobStorageDestination.JsonLinesNewlineDelimitedJson,
+                AzureBlobStorageDestination.CSVCommaSeparatedValues,
+                AzureBlobStorageDestination.JSONLinesNewlineDelimitedJSON,
             ),
         )
         super().__init__("Azure Blob Storage", name)
 
 
 class KafkaDestination(GeneratedAirbyteDestination):
-    class Plaintext:
+    class PLAINTEXT:
         def __init__(self, security_protocol: str):
             self.security_protocol = check.str_param(security_protocol, "security_protocol")
 
-    class SaslPlaintext:
+    class SASLPLAINTEXT:
         def __init__(self, security_protocol: str, sasl_mechanism: str, sasl_jaas_config: str):
             self.security_protocol = check.str_param(security_protocol, "security_protocol")
             self.sasl_mechanism = check.str_param(sasl_mechanism, "sasl_mechanism")
             self.sasl_jaas_config = check.str_param(sasl_jaas_config, "sasl_jaas_config")
 
-    class SaslSsl:
+    class SASLSSL:
         def __init__(self, security_protocol: str, sasl_mechanism: str, sasl_jaas_config: str):
             self.security_protocol = check.str_param(security_protocol, "security_protocol")
             self.sasl_mechanism = check.str_param(sasl_mechanism, "sasl_mechanism")
@@ -315,7 +316,7 @@ class KafkaDestination(GeneratedAirbyteDestination):
         name: str,
         bootstrap_servers: str,
         topic_pattern: str,
-        protocol: Union[Plaintext, SaslPlaintext, SaslSsl],
+        protocol: Union[PLAINTEXT, SASLPLAINTEXT, SASLSSL],
         acks: str,
         enable_idempotence: bool,
         compression_type: str,
@@ -349,7 +350,7 @@ class KafkaDestination(GeneratedAirbyteDestination):
         self.protocol = check.inst_param(
             protocol,
             "protocol",
-            (KafkaDestination.Plaintext, KafkaDestination.SaslPlaintext, KafkaDestination.SaslSsl),
+            (KafkaDestination.PLAINTEXT, KafkaDestination.SASLPLAINTEXT, KafkaDestination.SASLSSL),
         )
         self.client_id = check.opt_str_param(client_id, "client_id")
         self.acks = check.str_param(acks, "acks")
@@ -474,7 +475,7 @@ class SftpJsonDestination(GeneratedAirbyteDestination):
 
 
 class GcsDestination(GeneratedAirbyteDestination):
-    class HmacKey:
+    class HMACKey:
         def __init__(self, credential_type: str, hmac_key_access_id: str, hmac_key_secret: str):
             self.credential_type = check.str_param(credential_type, "credential_type")
             self.hmac_key_access_id = check.str_param(hmac_key_access_id, "hmac_key_access_id")
@@ -540,32 +541,32 @@ class GcsDestination(GeneratedAirbyteDestination):
                 ),
             )
 
-    class Gzip:
+    class GZIP:
         def __init__(self, compression_type: Optional[str] = None):
             self.compression_type = check.opt_str_param(compression_type, "compression_type")
 
-    class CsvCommaSeparatedValues:
+    class CSVCommaSeparatedValues:
         def __init__(
             self,
             format_type: str,
-            compression: Union["GcsDestination.NoCompression", "GcsDestination.Gzip"],
+            compression: Union["GcsDestination.NoCompression", "GcsDestination.GZIP"],
             flattening: Optional[str] = None,
         ):
             self.format_type = check.str_param(format_type, "format_type")
             self.flattening = check.opt_str_param(flattening, "flattening")
             self.compression = check.inst_param(
-                compression, "compression", (GcsDestination.NoCompression, GcsDestination.Gzip)
+                compression, "compression", (GcsDestination.NoCompression, GcsDestination.GZIP)
             )
 
-    class JsonLinesNewlineDelimitedJson:
+    class JSONLinesNewlineDelimitedJSON:
         def __init__(
             self,
             format_type: str,
-            compression: Union["GcsDestination.NoCompression", "GcsDestination.Gzip"],
+            compression: Union["GcsDestination.NoCompression", "GcsDestination.GZIP"],
         ):
             self.format_type = check.str_param(format_type, "format_type")
             self.compression = check.inst_param(
-                compression, "compression", (GcsDestination.NoCompression, GcsDestination.Gzip)
+                compression, "compression", (GcsDestination.NoCompression, GcsDestination.GZIP)
             )
 
     class ParquetColumnarStorage:
@@ -598,11 +599,11 @@ class GcsDestination(GeneratedAirbyteDestination):
         name: str,
         gcs_bucket_name: str,
         gcs_bucket_path: str,
-        credential: HmacKey,
+        credential: HMACKey,
         format: Union[
             AvroApacheAvro,
-            CsvCommaSeparatedValues,
-            JsonLinesNewlineDelimitedJson,
+            CSVCommaSeparatedValues,
+            JSONLinesNewlineDelimitedJSON,
             ParquetColumnarStorage,
         ],
         gcs_bucket_region: Optional[str] = None,
@@ -615,14 +616,14 @@ class GcsDestination(GeneratedAirbyteDestination):
         self.gcs_bucket_name = check.str_param(gcs_bucket_name, "gcs_bucket_name")
         self.gcs_bucket_path = check.str_param(gcs_bucket_path, "gcs_bucket_path")
         self.gcs_bucket_region = check.opt_str_param(gcs_bucket_region, "gcs_bucket_region")
-        self.credential = check.inst_param(credential, "credential", GcsDestination.HmacKey)
+        self.credential = check.inst_param(credential, "credential", GcsDestination.HMACKey)
         self.format = check.inst_param(
             format,
             "format",
             (
                 GcsDestination.AvroApacheAvro,
-                GcsDestination.CsvCommaSeparatedValues,
-                GcsDestination.JsonLinesNewlineDelimitedJson,
+                GcsDestination.CSVCommaSeparatedValues,
+                GcsDestination.JSONLinesNewlineDelimitedJSON,
                 GcsDestination.ParquetColumnarStorage,
             ),
         )
@@ -657,7 +658,7 @@ class CassandraDestination(GeneratedAirbyteDestination):
 
 
 class FireboltDestination(GeneratedAirbyteDestination):
-    class SqlInserts:
+    class SQLInserts:
         def __init__(
             self,
         ):
@@ -677,7 +678,7 @@ class FireboltDestination(GeneratedAirbyteDestination):
         username: str,
         password: str,
         database: str,
-        loading_method: Union[SqlInserts, ExternalTableViaS3],
+        loading_method: Union[SQLInserts, ExternalTableViaS3],
         account: Optional[str] = None,
         host: Optional[str] = None,
         engine: Optional[str] = None,
@@ -696,19 +697,19 @@ class FireboltDestination(GeneratedAirbyteDestination):
         self.loading_method = check.inst_param(
             loading_method,
             "loading_method",
-            (FireboltDestination.SqlInserts, FireboltDestination.ExternalTableViaS3),
+            (FireboltDestination.SQLInserts, FireboltDestination.ExternalTableViaS3),
         )
         super().__init__("Firebolt", name)
 
 
 class GoogleSheetsDestination(GeneratedAirbyteDestination):
-    class AuthenticationViaGoogleOauth:
+    class AuthenticationViaGoogleOAuth:
         def __init__(self, client_id: str, client_secret: str, refresh_token: str):
             self.client_id = check.str_param(client_id, "client_id")
             self.client_secret = check.str_param(client_secret, "client_secret")
             self.refresh_token = check.str_param(refresh_token, "refresh_token")
 
-    def __init__(self, name: str, spreadsheet_id: str, credentials: AuthenticationViaGoogleOauth):
+    def __init__(self, name: str, spreadsheet_id: str, credentials: AuthenticationViaGoogleOAuth):
         """
         Airbyte Destination for Google Sheets
 
@@ -716,7 +717,7 @@ class GoogleSheetsDestination(GeneratedAirbyteDestination):
         """
         self.spreadsheet_id = check.str_param(spreadsheet_id, "spreadsheet_id")
         self.credentials = check.inst_param(
-            credentials, "credentials", GoogleSheetsDestination.AuthenticationViaGoogleOauth
+            credentials, "credentials", GoogleSheetsDestination.AuthenticationViaGoogleOAuth
         )
         super().__init__("Google Sheets", name)
 
@@ -809,23 +810,23 @@ class BigqueryDenormalizedDestination(GeneratedAirbyteDestination):
         ):
             self.method = "Standard"
 
-    class HmacKey:
+    class HMACKey:
         def __init__(self, hmac_key_access_id: str, hmac_key_secret: str):
             self.credential_type = "HMAC_KEY"
             self.hmac_key_access_id = check.str_param(hmac_key_access_id, "hmac_key_access_id")
             self.hmac_key_secret = check.str_param(hmac_key_secret, "hmac_key_secret")
 
-    class GcsStaging:
+    class GCSStaging:
         def __init__(
             self,
-            credential: "BigqueryDenormalizedDestination.HmacKey",
+            credential: "BigqueryDenormalizedDestination.HMACKey",
             gcs_bucket_name: str,
             gcs_bucket_path: str,
             keep_files_in_gcs_bucket: Optional[str] = None,
         ):
             self.method = "GCS Staging"
             self.credential = check.inst_param(
-                credential, "credential", BigqueryDenormalizedDestination.HmacKey
+                credential, "credential", BigqueryDenormalizedDestination.HMACKey
             )
             self.gcs_bucket_name = check.str_param(gcs_bucket_name, "gcs_bucket_name")
             self.gcs_bucket_path = check.str_param(gcs_bucket_path, "gcs_bucket_path")
@@ -838,7 +839,7 @@ class BigqueryDenormalizedDestination(GeneratedAirbyteDestination):
         name: str,
         project_id: str,
         dataset_id: str,
-        loading_method: Union[StandardInserts, GcsStaging],
+        loading_method: Union[StandardInserts, GCSStaging],
         credentials_json: Optional[str] = None,
         dataset_location: Optional[str] = None,
         big_query_client_buffer_size_mb: Optional[int] = None,
@@ -855,7 +856,7 @@ class BigqueryDenormalizedDestination(GeneratedAirbyteDestination):
             "loading_method",
             (
                 BigqueryDenormalizedDestination.StandardInserts,
-                BigqueryDenormalizedDestination.GcsStaging,
+                BigqueryDenormalizedDestination.GCSStaging,
             ),
         )
         self.credentials_json = check.opt_str_param(credentials_json, "credentials_json")
@@ -878,7 +879,7 @@ class SqliteDestination(GeneratedAirbyteDestination):
 
 
 class MongodbDestination(GeneratedAirbyteDestination):
-    class StandaloneMongodbInstance:
+    class StandaloneMongoDbInstance:
         def __init__(self, instance: str, host: str, port: int, tls: Optional[bool] = None):
             self.instance = check.str_param(instance, "instance")
             self.host = check.str_param(host, "host")
@@ -891,7 +892,7 @@ class MongodbDestination(GeneratedAirbyteDestination):
             self.server_addresses = check.str_param(server_addresses, "server_addresses")
             self.replica_set = check.opt_str_param(replica_set, "replica_set")
 
-    class MongodbAtlas:
+    class MongoDBAtlas:
         def __init__(self, instance: str, cluster_url: str):
             self.instance = check.str_param(instance, "instance")
             self.cluster_url = check.str_param(cluster_url, "cluster_url")
@@ -911,7 +912,7 @@ class MongodbDestination(GeneratedAirbyteDestination):
     def __init__(
         self,
         name: str,
-        instance_type: Union[StandaloneMongodbInstance, ReplicaSet, MongodbAtlas],
+        instance_type: Union[StandaloneMongoDbInstance, ReplicaSet, MongoDBAtlas],
         database: str,
         auth_type: Union[None_, LoginPassword],
     ):
@@ -924,9 +925,9 @@ class MongodbDestination(GeneratedAirbyteDestination):
             instance_type,
             "instance_type",
             (
-                MongodbDestination.StandaloneMongodbInstance,
+                MongodbDestination.StandaloneMongoDbInstance,
                 MongodbDestination.ReplicaSet,
-                MongodbDestination.MongodbAtlas,
+                MongodbDestination.MongoDBAtlas,
             ),
         )
         self.database = check.str_param(database, "database")
@@ -956,14 +957,14 @@ class OracleDestination(GeneratedAirbyteDestination):
         ):
             self.encryption_method = "unencrypted"
 
-    class NativeNetworkEncryptionNne:
+    class NativeNetworkEncryptionNNE:
         def __init__(self, encryption_algorithm: Optional[str] = None):
             self.encryption_method = "client_nne"
             self.encryption_algorithm = check.opt_str_param(
                 encryption_algorithm, "encryption_algorithm"
             )
 
-    class TlsEncryptedVerifyCertificate:
+    class TLSEncryptedVerifyCertificate:
         def __init__(self, ssl_certificate: str):
             self.encryption_method = "encrypted_verify_certificate"
             self.ssl_certificate = check.str_param(ssl_certificate, "ssl_certificate")
@@ -975,7 +976,7 @@ class OracleDestination(GeneratedAirbyteDestination):
         port: int,
         sid: str,
         username: str,
-        encryption: Union[Unencrypted, NativeNetworkEncryptionNne, TlsEncryptedVerifyCertificate],
+        encryption: Union[Unencrypted, NativeNetworkEncryptionNNE, TLSEncryptedVerifyCertificate],
         password: Optional[str] = None,
         jdbc_url_params: Optional[str] = None,
         schema: Optional[str] = None,
@@ -997,8 +998,8 @@ class OracleDestination(GeneratedAirbyteDestination):
             "encryption",
             (
                 OracleDestination.Unencrypted,
-                OracleDestination.NativeNetworkEncryptionNne,
-                OracleDestination.TlsEncryptedVerifyCertificate,
+                OracleDestination.NativeNetworkEncryptionNNE,
+                OracleDestination.TLSEncryptedVerifyCertificate,
             ),
         )
         super().__init__("Oracle", name)
@@ -1073,32 +1074,32 @@ class S3Destination(GeneratedAirbyteDestination):
                 ),
             )
 
-    class Gzip:
+    class GZIP:
         def __init__(self, compression_type: Optional[str] = None):
             self.compression_type = check.opt_str_param(compression_type, "compression_type")
 
-    class CsvCommaSeparatedValues:
+    class CSVCommaSeparatedValues:
         def __init__(
             self,
             format_type: str,
             flattening: str,
-            compression: Union["S3Destination.NoCompression", "S3Destination.Gzip"],
+            compression: Union["S3Destination.NoCompression", "S3Destination.GZIP"],
         ):
             self.format_type = check.str_param(format_type, "format_type")
             self.flattening = check.str_param(flattening, "flattening")
             self.compression = check.inst_param(
-                compression, "compression", (S3Destination.NoCompression, S3Destination.Gzip)
+                compression, "compression", (S3Destination.NoCompression, S3Destination.GZIP)
             )
 
-    class JsonLinesNewlineDelimitedJson:
+    class JSONLinesNewlineDelimitedJSON:
         def __init__(
             self,
             format_type: str,
-            compression: Union["S3Destination.NoCompression", "S3Destination.Gzip"],
+            compression: Union["S3Destination.NoCompression", "S3Destination.GZIP"],
         ):
             self.format_type = check.str_param(format_type, "format_type")
             self.compression = check.inst_param(
-                compression, "compression", (S3Destination.NoCompression, S3Destination.Gzip)
+                compression, "compression", (S3Destination.NoCompression, S3Destination.GZIP)
             )
 
     class ParquetColumnarStorage:
@@ -1134,8 +1135,8 @@ class S3Destination(GeneratedAirbyteDestination):
         s3_bucket_region: str,
         format: Union[
             AvroApacheAvro,
-            CsvCommaSeparatedValues,
-            JsonLinesNewlineDelimitedJson,
+            CSVCommaSeparatedValues,
+            JSONLinesNewlineDelimitedJSON,
             ParquetColumnarStorage,
         ],
         access_key_id: Optional[str] = None,
@@ -1159,8 +1160,8 @@ class S3Destination(GeneratedAirbyteDestination):
             "format",
             (
                 S3Destination.AvroApacheAvro,
-                S3Destination.CsvCommaSeparatedValues,
-                S3Destination.JsonLinesNewlineDelimitedJson,
+                S3Destination.CSVCommaSeparatedValues,
+                S3Destination.JSONLinesNewlineDelimitedJSON,
                 S3Destination.ParquetColumnarStorage,
             ),
         )
@@ -1171,12 +1172,12 @@ class S3Destination(GeneratedAirbyteDestination):
 
 
 class AwsDatalakeDestination(GeneratedAirbyteDestination):
-    class IamRole:
+    class IAMRole:
         def __init__(self, role_arn: str):
             self.credentials_title = "IAM Role"
             self.role_arn = check.str_param(role_arn, "role_arn")
 
-    class IamUser:
+    class IAMUser:
         def __init__(self, aws_access_key_id: str, aws_secret_access_key: str):
             self.credentials_title = "IAM User"
             self.aws_access_key_id = check.str_param(aws_access_key_id, "aws_access_key_id")
@@ -1188,7 +1189,7 @@ class AwsDatalakeDestination(GeneratedAirbyteDestination):
         self,
         name: str,
         region: str,
-        credentials: Union[IamRole, IamUser],
+        credentials: Union[IAMRole, IAMUser],
         bucket_name: str,
         bucket_prefix: str,
         aws_account_id: Optional[str] = None,
@@ -1204,7 +1205,7 @@ class AwsDatalakeDestination(GeneratedAirbyteDestination):
         self.credentials = check.inst_param(
             credentials,
             "credentials",
-            (AwsDatalakeDestination.IamRole, AwsDatalakeDestination.IamUser),
+            (AwsDatalakeDestination.IAMRole, AwsDatalakeDestination.IAMUser),
         )
         self.bucket_name = check.str_param(bucket_name, "bucket_name")
         self.bucket_prefix = check.str_param(bucket_prefix, "bucket_prefix")
@@ -1341,32 +1342,32 @@ class R2Destination(GeneratedAirbyteDestination):
                 ),
             )
 
-    class Gzip:
+    class GZIP:
         def __init__(self, compression_type: Optional[str] = None):
             self.compression_type = check.opt_str_param(compression_type, "compression_type")
 
-    class CsvCommaSeparatedValues:
+    class CSVCommaSeparatedValues:
         def __init__(
             self,
             format_type: str,
             flattening: str,
-            compression: Union["R2Destination.NoCompression", "R2Destination.Gzip"],
+            compression: Union["R2Destination.NoCompression", "R2Destination.GZIP"],
         ):
             self.format_type = check.str_param(format_type, "format_type")
             self.flattening = check.str_param(flattening, "flattening")
             self.compression = check.inst_param(
-                compression, "compression", (R2Destination.NoCompression, R2Destination.Gzip)
+                compression, "compression", (R2Destination.NoCompression, R2Destination.GZIP)
             )
 
-    class JsonLinesNewlineDelimitedJson:
+    class JSONLinesNewlineDelimitedJSON:
         def __init__(
             self,
             format_type: str,
-            compression: Union["R2Destination.NoCompression", "R2Destination.Gzip"],
+            compression: Union["R2Destination.NoCompression", "R2Destination.GZIP"],
         ):
             self.format_type = check.str_param(format_type, "format_type")
             self.compression = check.inst_param(
-                compression, "compression", (R2Destination.NoCompression, R2Destination.Gzip)
+                compression, "compression", (R2Destination.NoCompression, R2Destination.GZIP)
             )
 
     def __init__(
@@ -1377,7 +1378,7 @@ class R2Destination(GeneratedAirbyteDestination):
         secret_access_key: str,
         s3_bucket_name: str,
         s3_bucket_path: str,
-        format: Union[AvroApacheAvro, CsvCommaSeparatedValues, JsonLinesNewlineDelimitedJson],
+        format: Union[AvroApacheAvro, CSVCommaSeparatedValues, JSONLinesNewlineDelimitedJSON],
         s3_path_format: Optional[str] = None,
         file_name_pattern: Optional[str] = None,
     ):
@@ -1396,8 +1397,8 @@ class R2Destination(GeneratedAirbyteDestination):
             "format",
             (
                 R2Destination.AvroApacheAvro,
-                R2Destination.CsvCommaSeparatedValues,
-                R2Destination.JsonLinesNewlineDelimitedJson,
+                R2Destination.CSVCommaSeparatedValues,
+                R2Destination.JSONLinesNewlineDelimitedJSON,
             ),
         )
         self.s3_path_format = check.opt_str_param(s3_path_format, "s3_path_format")
@@ -1576,7 +1577,7 @@ class RedshiftDestination(GeneratedAirbyteDestination):
         ):
             self.encryption_type = "none"
 
-    class AesCbcEnvelopeEncryption:
+    class AESCBCEnvelopeEncryption:
         def __init__(self, key_encrypting_key: Optional[str] = None):
             self.encryption_type = "aes_cbc_envelope"
             self.key_encrypting_key = check.opt_str_param(key_encrypting_key, "key_encrypting_key")
@@ -1589,7 +1590,7 @@ class RedshiftDestination(GeneratedAirbyteDestination):
             access_key_id: str,
             secret_access_key: str,
             encryption: Union[
-                "RedshiftDestination.NoEncryption", "RedshiftDestination.AesCbcEnvelopeEncryption"
+                "RedshiftDestination.NoEncryption", "RedshiftDestination.AESCBCEnvelopeEncryption"
             ],
             s3_bucket_path: Optional[str] = None,
             file_name_pattern: Optional[str] = None,
@@ -1606,7 +1607,7 @@ class RedshiftDestination(GeneratedAirbyteDestination):
             self.encryption = check.inst_param(
                 encryption,
                 "encryption",
-                (RedshiftDestination.NoEncryption, RedshiftDestination.AesCbcEnvelopeEncryption),
+                (RedshiftDestination.NoEncryption, RedshiftDestination.AESCBCEnvelopeEncryption),
             )
 
     def __init__(
@@ -1693,7 +1694,7 @@ class PulsarDestination(GeneratedAirbyteDestination):
 
 
 class SnowflakeDestination(GeneratedAirbyteDestination):
-    class Oauth20:
+    class OAuth20:
         def __init__(
             self,
             access_token: str,
@@ -1739,12 +1740,12 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
         ):
             self.encryption_type = "none"
 
-    class AesCbcEnvelopeEncryption:
+    class AESCBCEnvelopeEncryption:
         def __init__(self, key_encrypting_key: Optional[str] = None):
             self.encryption_type = "aes_cbc_envelope"
             self.key_encrypting_key = check.opt_str_param(key_encrypting_key, "key_encrypting_key")
 
-    class AwsS3Staging:
+    class AWSS3Staging:
         def __init__(
             self,
             method: str,
@@ -1752,7 +1753,7 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
             access_key_id: str,
             secret_access_key: str,
             encryption: Union[
-                "SnowflakeDestination.NoEncryption", "SnowflakeDestination.AesCbcEnvelopeEncryption"
+                "SnowflakeDestination.NoEncryption", "SnowflakeDestination.AESCBCEnvelopeEncryption"
             ],
             s3_bucket_region: Optional[str] = None,
             purge_staging_data: Optional[bool] = None,
@@ -1767,7 +1768,7 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
             self.encryption = check.inst_param(
                 encryption,
                 "encryption",
-                (SnowflakeDestination.NoEncryption, SnowflakeDestination.AesCbcEnvelopeEncryption),
+                (SnowflakeDestination.NoEncryption, SnowflakeDestination.AESCBCEnvelopeEncryption),
             )
             self.file_name_pattern = check.opt_str_param(file_name_pattern, "file_name_pattern")
 
@@ -1810,11 +1811,11 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
         database: str,
         schema: str,
         username: str,
-        credentials: Union[Oauth20, KeyPairAuthentication, UsernameAndPassword],
+        credentials: Union[OAuth20, KeyPairAuthentication, UsernameAndPassword],
         loading_method: Union[
             SelectAnotherOption,
             RecommendedInternalStaging,
-            AwsS3Staging,
+            AWSS3Staging,
             GoogleCloudStorageStaging,
             AzureBlobStorageStaging,
         ],
@@ -1835,7 +1836,7 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
             credentials,
             "credentials",
             (
-                SnowflakeDestination.Oauth20,
+                SnowflakeDestination.OAuth20,
                 SnowflakeDestination.KeyPairAuthentication,
                 SnowflakeDestination.UsernameAndPassword,
             ),
@@ -1847,7 +1848,7 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
             (
                 SnowflakeDestination.SelectAnotherOption,
                 SnowflakeDestination.RecommendedInternalStaging,
-                SnowflakeDestination.AwsS3Staging,
+                SnowflakeDestination.AWSS3Staging,
                 SnowflakeDestination.GoogleCloudStorageStaging,
                 SnowflakeDestination.AzureBlobStorageStaging,
             ),

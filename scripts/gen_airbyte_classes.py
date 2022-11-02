@@ -23,8 +23,12 @@ def _remove_invalid_chars(name: str) -> str:
 KEYWORDS = ["None", "Any", "Union", "List", "Dict", "Optional", "T"]
 
 
+def _capitalize(s: str) -> str:
+    return s[:1].upper() + s[1:]
+
+
 def _to_class_name(name: str) -> str:
-    class_name = "".join([_remove_invalid_chars(x).capitalize() for x in re.split("\W+", name)])
+    class_name = "".join([_capitalize(_remove_invalid_chars(x)) for x in re.split("\W+", name)])
     if class_name in KEYWORDS:
         class_name += "_"
     return class_name
@@ -117,7 +121,7 @@ class ListType(SchemaType):
         return f"List[{self.inner.annotation(scope, quote)}]"
 
     def get_check(self, name: str, scope: Optional[str] = None):
-        return "check.list_param({}, '{}', {})".format(name, name, str(self.inner))
+        return "check.list_param({}, '{}', {})".format(name, name, self.inner.annotation(scope))
 
 
 class UnionType(SchemaType):
@@ -131,9 +135,9 @@ class UnionType(SchemaType):
         return f"Union[{', '.join([x.annotation(scope, quote) for x in self.inner])}]"
 
     def get_check(self, name: str, scope: Optional[str] = None):
-        scope = f"{scope}." if scope else ""
+        scoped_names = [x.annotation(scope) for x in self.inner]
         return "check.inst_param({}, '{}', {})".format(
-            name, name, "({})".format(", ".join([scope + str(x) for x in self.inner]))
+            name, name, "({})".format(", ".join(scoped_names))
         )
 
 
@@ -187,7 +191,21 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
                 if field_type == "array":
                     array_type = field.get("items", {}).get("type") or field.get("item") or "string"
                     check.not_none(array_type)
-                    fields[field_name] = ListType(RawType(array_type))
+
+                    if array_type == "object":
+                        items_data = field.get("items", {})
+                        title = _to_class_name(
+                            items_data.get("title")
+                            or items_data.get("description")
+                            or f"{field.get('title')}Entry"
+                        )
+                        class_definitions = {
+                            **class_definitions,
+                            **get_class_definitions(title, items_data),
+                        }
+                        fields[field_name] = ListType(RawType(title))
+                    else:
+                        fields[field_name] = ListType(RawType(array_type))
                 else:
                     fields[field_name] = RawType(field_type, const_value=field.get("const"))
                 if field_name not in required_fields:
@@ -436,7 +454,8 @@ def gen_airbyte_classes(airbyte_repo_root, airbyte_tag):
 
             click.secho(f"\n\nGenerating Airbyte {title} Classes...\n\n\n", fg="green")
 
-            out = f"""from typing import Any, List, Optional, Union
+            out = f"""# pylint: disable=unused-import
+from typing import Any, List, Optional, Union
 
 from dagster_airbyte.managed.types import {imp}
 

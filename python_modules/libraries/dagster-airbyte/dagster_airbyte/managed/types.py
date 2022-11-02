@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, Mapping, Optional
 
 import dagster._check as check
 
@@ -205,15 +205,28 @@ def _dump_class(obj: Any) -> Dict[str, Any]:
 
 
 class GeneratedAirbyteSource(AirbyteSource):
+    """
+    Base class used by the codegen Airbyte sources. This class is not intended to be used directly.
+
+    Converts all of its attributes into a source configuration dict which is passed down to the base
+    AirbyteSource class.
+    """
+
     def __init__(self, source_type: str, name: str):
         source_configuration = _dump_class(self)
-        print(source_configuration)
         super().__init__(
             name=name, source_type=source_type, source_configuration=source_configuration
         )
 
 
 class GeneratedAirbyteDestination(AirbyteDestination):
+    """
+    Base class used by the codegen Airbyte destinations. This class is not intended to be used directly.
+
+    Converts all of its attributes into a destination configuration dict which is passed down to the
+    base AirbyteDestination class.
+    """
+
     def __init__(self, source_type: str, name: str):
         destination_configuration = _dump_class(self)
         super().__init__(
