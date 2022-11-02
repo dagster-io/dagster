@@ -10,6 +10,7 @@ from dagster import (
     LoggerDefinition,
     ResourceDefinition,
     TypeCheck,
+    AssetObservation,
 )
 from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
@@ -358,6 +359,7 @@ class Manager:
         valid_types = (
             Materialization,
             AssetMaterialization,
+            AssetObservation,
             ExpectationResult,
             TypeCheck,
             Failure,
