@@ -133,7 +133,7 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
             manager will be stored in.
     """
 
-    extension: str = ""  # TODO: change this to .pickle. Leaving black for compatibility.
+    extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.
 
     def __init__(self, base_dir=None):
         self.base_dir = check.opt_str_param(base_dir, "base_dir")
