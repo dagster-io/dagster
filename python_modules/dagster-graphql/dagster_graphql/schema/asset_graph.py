@@ -32,7 +32,14 @@ from .asset_key import GrapheneAssetKey
 from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .errors import GrapheneAssetNotFoundError
 from .logs.events import GrapheneMaterializationEvent
-from .pipelines.pipeline import GrapheneMaterializationCount, GraphenePipeline, GrapheneRun
+from .pipelines.pipeline import (
+    GrapheneMaterializationCount,
+    GraphenePipeline,
+    GrapheneRun,
+    GraphenePartitionDimensionMaterializationStatus,
+    GraphenePartitionMaterializationStatus,
+)
+from dagster._core.storage.tags import get_multidimensional_partition_tag
 from .util import non_null_list
 
 if TYPE_CHECKING:
@@ -138,6 +145,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions=graphene.List(graphene.String),
     )
     materializationCountByPartition = non_null_list(GrapheneMaterializationCount)
+    partitionsMaterializedByDimension = non_null_list(
+        GraphenePartitionDimensionMaterializationStatus
+    )
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
@@ -460,6 +470,76 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneMaterializationEvent(event=event) if event else None
             for event in ordered_materializations
         ]
+
+    def resolve_partitionsMaterializedByDimension(
+        self, graphene_info
+    ) -> Sequence[GraphenePartitionDimensionMaterializationStatus]:
+        check.invariant(
+            isinstance(
+                self._external_asset_node.partitions_def_data, ExternalMultiPartitionsDefinitionData
+            )
+        )
+
+        partition_keys_by_dimension: Dict[str, List[str]] = {}
+
+        for (
+            dimension
+        ) in self._external_asset_node.partitions_def_data.external_partition_dimension_definitions:
+            partition_keys_by_dimension[
+                dimension.name
+            ] = (
+                dimension.external_partitions_def_data.get_partitions_definition().get_partition_keys()
+            )
+        print(partition_keys_by_dimension)
+
+        partitions_materialized_by_dimension: List[
+            GraphenePartitionDimensionMaterializationStatus
+        ] = []
+        for dimension_name, partition_keys in partition_keys_by_dimension.items():
+            tags_for_dimension = graphene_info.context.instance.get_all_event_tags_for_asset(
+                self._external_asset_node.asset_key,
+                get_multidimensional_partition_tag(dimension_name),
+            )
+            if len(tags_for_dimension) == 0:
+                partitions_materialized_by_dimension.append(
+                    GraphenePartitionDimensionMaterializationStatus(
+                        dimension=dimension_name,
+                        materializationStatusPerPartition=[
+                            GraphenePartitionMaterializationStatus(
+                                partition=partition_key, materialized=False
+                            )
+                            for partition_key in partition_keys
+                        ],
+                    )
+                )
+            else:
+                _, materialized_partitions = next(
+                    iter(
+                        graphene_info.context.instance.get_all_event_tags_for_asset(
+                            self._external_asset_node.asset_key,
+                            get_multidimensional_partition_tag(dimension_name),
+                        )
+                    )
+                )
+
+                materialization_status_by_partition = {}
+                for partition_key in partition_keys:
+                    materialization_status_by_partition[partition_key] = (
+                        partition_key in materialized_partitions
+                    )
+
+                partitions_materialized_by_dimension.append(
+                    GraphenePartitionDimensionMaterializationStatus(
+                        dimension=dimension_name,
+                        materializationStatusPerPartition=[
+                            GraphenePartitionMaterializationStatus(
+                                partition=partition_key, materialized=materialized
+                            )
+                            for partition_key, materialized in materialization_status_by_partition.items()
+                        ],
+                    )
+                )
+        return partitions_materialized_by_dimension
 
     def resolve_materializationCountByPartition(
         self, graphene_info

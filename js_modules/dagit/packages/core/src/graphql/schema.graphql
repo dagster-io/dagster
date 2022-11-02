@@ -408,6 +408,7 @@ type AssetNode {
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
   materializationCountByPartition: [MaterializationCountByPartition!]!
+  partitionsMaterializedByDimension: [PartitionDimensionMaterializationStatus!]!
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
@@ -1406,6 +1407,16 @@ type AssetDependency {
 type MaterializationCountByPartition {
   partition: String!
   materializationCount: Int!
+}
+
+type PartitionDimensionMaterializationStatus {
+  dimension: String!
+  materializationStatusPerPartition: [PartitionMaterializationStatus!]!
+}
+
+type PartitionMaterializationStatus {
+  partition: String!
+  materialized: Boolean!
 }
 
 type PartitionDefinition {
