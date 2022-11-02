@@ -6,7 +6,7 @@ T = TypeVar("T")
 import dagster._check as check
 
 
-def backoff_delay_generator():
+def backoff_delay_generator() -> Generator[float, None, None]:
     i = 0.1
     while True:
         yield i
@@ -22,7 +22,7 @@ def backoff(
     args: Optional[Sequence[object]] = None,
     kwargs: Optional[Mapping[str, object]] = None,
     max_retries: int = BACKOFF_MAX_RETRIES,
-    delay_generator: Generator = backoff_delay_generator(),
+    delay_generator: Generator[float, None, None] = backoff_delay_generator(),
 ) -> T:
     """Straightforward backoff implementation.
 
