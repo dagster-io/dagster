@@ -4,7 +4,17 @@ import tempfile
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Generator, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    Generator,
+    Mapping,
+    Optional,
+    Union,
+    overload,
+)
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -16,7 +26,18 @@ from dagster import (
     TypeCheck,
 )
 from dagster import _check as check
-from dagster._core.definitions import ModeDefinition, PipelineDefinition, lambda_solid
+from dagster._core.definitions import (
+    GraphDefinition,
+    GraphIn,
+    GraphOut,
+    InputMapping,
+    ModeDefinition,
+    OpDefinition,
+    OutputMapping,
+    PipelineDefinition,
+    ResourceDefinition,
+    lambda_solid,
+)
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -38,6 +59,7 @@ from dagster._core.execution.context_creation_pipeline import (
     create_log_manager,
     create_plan_data,
 )
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
 from dagster._core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
@@ -196,6 +218,62 @@ def execute_solids_within_pipeline(
     )
 
     return {sr.solid.name: sr for sr in result.solid_result_list}
+
+
+def wrap_op_in_graph(
+    op_def: OpDefinition, tags: Optional[Mapping[str, Any]] = None
+) -> GraphDefinition:
+    """Wraps op in a graph with the same inputs/outputs as the original op."""
+    check.inst_param(op_def, "op_def", OpDefinition)
+    check.opt_mapping_param(tags, "tags", key_type=str)
+
+    input_mappings = []
+    for input_name in op_def.ins.keys():
+        # create an input mapping to the inner node with the same name.
+        input_mappings.append(
+            InputMapping(
+                graph_input_name=input_name,
+                mapped_node_name=op_def.name,
+                mapped_node_input_name=input_name,
+            )
+        )
+
+    output_mappings = []
+    for output_name in op_def.outs.keys():
+        out = op_def.outs[output_name]
+        output_mappings.append(
+            OutputMapping(
+                graph_output_name=output_name,
+                mapped_node_name=op_def.name,
+                mapped_node_output_name=output_name,
+                from_dynamic_mapping=out.is_dynamic,
+            )
+        )
+    return GraphDefinition(
+        name=f"wraps_{op_def.name}",
+        node_defs=[op_def],
+        input_mappings=input_mappings,
+        output_mappings=output_mappings,
+        tags=tags,
+    )
+
+
+def wrap_op_in_graph_and_execute(
+    op_def: OpDefinition,
+    resources: Optional[Mapping[str, Any]] = None,
+    input_values: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
+    run_config: Optional[Mapping[str, object]] = None,
+    raise_on_error: bool = True,
+) -> ExecuteInProcessResult:
+    """Run a dagster op in an actual execution.
+    For internal use."""
+    return wrap_op_in_graph(op_def, tags).execute_in_process(
+        resources=resources,
+        input_values=input_values,
+        raise_on_error=raise_on_error,
+        run_config=run_config,
+    )
 
 
 def execute_solid_within_pipeline(
