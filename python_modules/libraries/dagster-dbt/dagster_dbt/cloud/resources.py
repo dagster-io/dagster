@@ -8,7 +8,7 @@ from urllib.parse import urlencode, urljoin
 import requests
 from requests.exceptions import RequestException
 
-from dagster import Failure, Field, MetadataValue, StringSource, __version__
+from dagster import Failure, Field, MetadataValue, StringSource, IntSource, __version__
 from dagster import _check as check
 from dagster import get_dagster_logger, resource
 from dagster._utils.merger import deep_merge_dicts
@@ -476,7 +476,7 @@ class DbtCloudResourceV2:
             "for instructions on creating a Service Account token.",
         ),
         "account_id": Field(
-            int,
+            IntSource,
             is_required=True,
             description="dbt Cloud Account ID. This value can be found in the url of a variety of "
             "views in the dbt Cloud UI, e.g. https://cloud.getdbt.com/#/accounts/{account_id}/settings/.",
