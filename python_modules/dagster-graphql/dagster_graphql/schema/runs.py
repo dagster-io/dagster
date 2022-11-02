@@ -106,8 +106,6 @@ class GrapheneRuns(graphene.ObjectType):
     def __init__(self, filters, cursor, limit):
         super().__init__()
 
-        print(filters)
-
         self._filters = filters
         self._cursor = cursor
         self._limit = limit

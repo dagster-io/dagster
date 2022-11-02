@@ -2,7 +2,6 @@ import json
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-
 import dagster._check as check
 
 

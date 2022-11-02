@@ -3,8 +3,14 @@ from dagster._core.utils import check_dagster_package_version
 try:
     import dagster_managed_elements
 
-    from .managed import *
-
+    from .managed import (
+        AirbyteConnection,
+        AirbyteDestination,
+        AirbyteManagedElementReconciler,
+        AirbyteSource,
+        AirbyteSyncMode,
+        load_assets_from_connections,
+    )
 
 except ImportError:
     pass
