@@ -23,7 +23,7 @@ def named_io_manager(storage_dict, name):
     return my_io_manager
 
 
-def test_graph_output():
+def test_composite_solid_output():
     @op(out=Out(io_manager_key="inner_manager"))
     def my_op(_):
         return 5
@@ -59,7 +59,7 @@ def test_graph_output():
     }
 
 
-def test_graph_upstream_output():
+def test_composite_solid_upstream_output():
     # Only use the io managers on inner ops for loading downstream inputs.
 
     @op(out=Out(io_manager_key="inner_manager"))
