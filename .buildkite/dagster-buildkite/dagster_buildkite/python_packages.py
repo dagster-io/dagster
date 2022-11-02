@@ -142,6 +142,7 @@ class PythonPackages:
                     and (change.suffix in [".py", ".cfg", ".toml"])
                     # The file is not part of a test suite. We treat this differently
                     # because we don't want to run tests in dependent packages
+                    and "_tests/" not in str(change)
                 ):
                     packages_with_changes.add(package)
 
