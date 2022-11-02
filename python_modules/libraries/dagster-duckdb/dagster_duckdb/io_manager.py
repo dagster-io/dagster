@@ -53,25 +53,25 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
     specified by including a "schema" entry in output metadata. If none of these is provided, the schema will
     default to "public".
 
-        .. code-block:: python
+    .. code-block:: python
 
-            @op(
-                out={"my_table": Out(metadata={"schema": "my_schema"})}
-            )
-            def make_my_table() -> pd.DataFrame:
-                ...
+        @op(
+            out={"my_table": Out(metadata={"schema": "my_schema"})}
+        )
+        def make_my_table() -> pd.DataFrame:
+            ...
 
     To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
     In or AssetIn.
 
-        .. code-block:: python
+    .. code-block:: python
 
-            @asset(
-                ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
-            )
-            def my_table_a(my_table: pd.DataFrame):
-                # my_table will just contain the data from column "a"
-                ...
+        @asset(
+            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+        )
+        def my_table_a(my_table: pd.DataFrame):
+            # my_table will just contain the data from column "a"
+            ...
 
     """
 
