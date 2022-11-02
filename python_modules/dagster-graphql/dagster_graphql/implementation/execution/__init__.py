@@ -6,6 +6,7 @@ from rx import Observable
 import dagster._check as check
 from dagster._core.events import DagsterEventType, EngineEventData
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.captured_log_manager import CapturedLogSubscription
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
@@ -178,6 +179,17 @@ def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=
     return graphene_info.context.instance.compute_log_manager.observable(
         run_id, step_key, io_type, cursor
     ).map(lambda update: from_compute_log_file(graphene_info, update))
+
+
+def get_captured_log_observable(graphene_info, log_key, cursor=None):
+    from ...schema.logs.compute_logs import from_captured_log_data
+
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+
+    compute_log_manager = graphene_info.context.instance.compute_log_manager
+    subscription = compute_log_manager.subscribe(log_key, cursor)
+    observable = Observable.create(subscription)
+    return observable.map(lambda log_data: from_captured_log_data(graphene_info, log_data))
 
 
 @capture_error

@@ -36,12 +36,13 @@ def test_default_io_manager(instance):
 
 
 class FooIoManager(PickledObjectFilesystemIOManager):
-    def __init__(self):
+    def __init__(self, ctx):
         super().__init__(base_dir="/tmp/dagster/foo-io-manager")
+        assert ctx.instance
 
 
 foo_io_manager_def = IOManagerDefinition(
-    resource_fn=lambda _: FooIoManager(),
+    resource_fn=FooIoManager,
     config_schema={},
 )
 

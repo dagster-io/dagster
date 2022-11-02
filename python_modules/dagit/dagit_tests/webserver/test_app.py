@@ -9,6 +9,7 @@ from starlette.testclient import TestClient
 
 from dagster import __version__ as dagster_version
 from dagster import job, op
+from dagster._core.events import DagsterEventType
 from dagster._seven import json
 
 EVENT_LOG_SUBSCRIPTION = """
@@ -242,8 +243,10 @@ def test_download_debug_file(instance, test_client: TestClient):
 
 def test_download_compute(instance, test_client: TestClient):
     run_id = _add_run(instance)
-
-    response = test_client.get(f"/download/{run_id}/my_op/stdout")
+    logs = instance.all_logs(run_id, of_type=DagsterEventType.LOGS_CAPTURED)
+    entry = logs[0]
+    file_key = entry.dagster_event.logs_captured_data.file_key
+    response = test_client.get(f"/download/{run_id}/{file_key}/stdout")
     assert response.status_code == 200
     assert "STDOUT RULEZ" in str(response.content)
 

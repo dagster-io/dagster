@@ -2,6 +2,7 @@ import {Box, NonIdealState, FirstOrSecondPanelToggle, SplitPanelContainer} from 
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {CapturedOrExternalLogPanel} from '../CapturedLogPanel';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -11,6 +12,7 @@ import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 import {RunStatus} from '../types/globalTypes';
 
 import {ComputeLogPanel} from './ComputeLogPanel';
@@ -19,7 +21,7 @@ import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
-import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
+import {ILogCaptureInfo, IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {
   RunDagsterRunEventFragment,
   RunDagsterRunEventFragment_ExecutionStepFailureEvent,
@@ -132,6 +134,15 @@ const logTypeFromQuery = (queryLogType: string) => {
   }
 };
 
+const matchingComputeLogKeyFromStepKey = (
+  logCaptureSteps: {[fileKey: string]: ILogCaptureInfo} | undefined,
+  stepKey: string,
+) => {
+  const stepsInfo = logCaptureSteps ? Object.values(logCaptureSteps) : [];
+  const matching = stepsInfo.find((info) => info.stepKeys.includes(stepKey));
+  return matching && matching?.fileKey;
+};
+
 /**
  * Note: There are two places we keep a "step query string" in the Run view:
  * selectionQuery and logsFilter.logsQuery.
@@ -157,14 +168,15 @@ const RunWithData: React.FC<RunWithDataProps> = ({
 }) => {
   const onLaunch = useJobReExecution(run);
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
+  const supportsCapturedLogs = useSupportsCapturedLogs();
 
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
     defaults: {logType: 'structured'},
   });
 
-  const [computeLogKey, setComputeLogKey] = useQueryPersistedState<string>({
-    queryKey: 'logKey',
+  const [computeLogFileKey, setComputeLogFileKey] = useQueryPersistedState<string>({
+    queryKey: 'logFileKey',
   });
 
   const logType = logTypeFromQuery(queryLogType);
@@ -183,28 +195,43 @@ const RunWithData: React.FC<RunWithDataProps> = ({
   }, [runtimeGraph, selectionQuery]);
 
   React.useEffect(() => {
-    if (!stepKeys?.length || computeLogKey) {
+    if (!stepKeys?.length || computeLogFileKey) {
       return;
     }
 
     if (metadata.logCaptureSteps) {
-      const logKeys = Object.keys(metadata.logCaptureSteps);
-      const selectedLogKey = logKeys.find((logKey) => {
+      const logFileKeys = Object.keys(metadata.logCaptureSteps);
+      const selectedLogKey = logFileKeys.find((logFileKey) => {
         return selectionStepKeys.every(
           (stepKey) =>
-            metadata.logCaptureSteps && metadata.logCaptureSteps[logKey].stepKeys.includes(stepKey),
+            metadata.logCaptureSteps &&
+            metadata.logCaptureSteps[logFileKey].stepKeys.includes(stepKey),
         );
       });
-      setComputeLogKey(selectedLogKey || logKeys[0]);
-    } else if (!stepKeys.includes(computeLogKey)) {
-      setComputeLogKey(selectionStepKeys.length === 1 ? selectionStepKeys[0] : stepKeys[0]);
-    } else if (selectionStepKeys.length === 1 && computeLogKey !== selectionStepKeys[0]) {
-      setComputeLogKey(selectionStepKeys[0]);
+      setComputeLogFileKey(selectedLogKey || logFileKeys[0]);
+    } else if (!stepKeys.includes(computeLogFileKey)) {
+      const matching = matchingComputeLogKeyFromStepKey(
+        metadata.logCaptureSteps,
+        selectionStepKeys.length === 1 ? selectionStepKeys[0] : stepKeys[0],
+      );
+      matching && setComputeLogFileKey(matching);
+    } else if (selectionStepKeys.length === 1 && computeLogFileKey !== selectionStepKeys[0]) {
+      const matching = matchingComputeLogKeyFromStepKey(
+        metadata.logCaptureSteps,
+        selectionStepKeys[0],
+      );
+      matching && setComputeLogFileKey(matching);
     }
-  }, [stepKeys, computeLogKey, selectionStepKeys, metadata.logCaptureSteps, setComputeLogKey]);
+  }, [
+    stepKeys,
+    computeLogFileKey,
+    selectionStepKeys,
+    metadata.logCaptureSteps,
+    setComputeLogFileKey,
+  ]);
 
-  const onSetComputeLogKey = (logKey: string) => {
-    setComputeLogKey(logKey);
+  const onSetComputeLogKey = (logFileKey: string) => {
+    setComputeLogFileKey(logFileKey);
   };
 
   const logsFilterStepKeys = runtimeGraph
@@ -241,7 +268,8 @@ const RunWithData: React.FC<RunWithDataProps> = ({
         newSelected = [filterForExactStep];
 
         // When only one step is selected, set the compute log key as well.
-        setComputeLogKey(stepKey);
+        const matchingLogKey = matchingComputeLogKeyFromStepKey(metadata.logCaptureSteps, stepKey);
+        matchingLogKey && setComputeLogFileKey(matchingLogKey);
       }
     }
 
@@ -289,6 +317,11 @@ const RunWithData: React.FC<RunWithDataProps> = ({
     return <NonIdealState icon="error" title="Unable to build execution plan" />;
   };
 
+  const logCaptureInfo: ILogCaptureInfo | undefined =
+    metadata.logCaptureSteps && computeLogFileKey in metadata.logCaptureSteps
+      ? metadata.logCaptureSteps[computeLogFileKey]
+      : undefined;
+
   return (
     <>
       <SplitPanelContainer
@@ -307,19 +340,28 @@ const RunWithData: React.FC<RunWithDataProps> = ({
               onSetFilter={onSetLogsFilter}
               steps={stepKeys}
               metadata={metadata}
-              computeLogKey={computeLogKey}
+              computeLogFileKey={computeLogFileKey}
               onSetComputeLogKey={onSetComputeLogKey}
               computeLogUrl={computeLogUrl}
               counts={logs.counts}
             />
             {logType !== LogType.structured ? (
-              <ComputeLogPanel
-                runId={runId}
-                stepKeys={stepKeys}
-                computeLogKey={computeLogKey}
-                ioType={LogType[logType]}
-                setComputeLogUrl={setComputeLogUrl}
-              />
+              supportsCapturedLogs ? (
+                <CapturedOrExternalLogPanel
+                  logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
+                  externalUrl={logCaptureInfo?.externalUrl}
+                  visibleIOType={LogType[logType]}
+                  onSetDownloadUrl={setComputeLogUrl}
+                />
+              ) : (
+                <ComputeLogPanel
+                  runId={runId}
+                  stepKeys={stepKeys}
+                  computeLogFileKey={computeLogFileKey}
+                  ioType={LogType[logType]}
+                  setComputeLogUrl={setComputeLogUrl}
+                />
+              )
             ) : (
               <LogsScrollingTable
                 logs={logs}

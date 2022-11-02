@@ -1,8 +1,10 @@
+from typing import Mapping, Optional, cast
 from urllib.parse import urljoin, urlparse
 
 import click
 import requests
 from graphql import graphql
+from graphql.execution import ExecutionResult
 
 import dagster._check as check
 import dagster._seven as seven
@@ -26,7 +28,11 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query(workspace_process_context, query, variables=None):
+def execute_query(
+    workspace_process_context: WorkspaceProcessContext,
+    query: str,
+    variables: Optional[Mapping[str, object]] = None,
+):
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )
@@ -37,11 +43,14 @@ def execute_query(workspace_process_context, query, variables=None):
 
     context = workspace_process_context.create_request_context()
 
-    result = graphql(
-        request_string=query,
-        schema=create_schema(),
-        context_value=context,
-        variable_values=variables,
+    result = cast(
+        ExecutionResult,
+        graphql(
+            request_string=query,
+            schema=create_schema(),
+            context_value=context,
+            variable_values=variables,
+        ),
     )
 
     result_dict = result.to_dict()
@@ -54,8 +63,10 @@ def execute_query(workspace_process_context, query, variables=None):
     # in the 'stack_trace' property of each error to ease debugging
 
     if "errors" in result_dict:
-        check.invariant(len(result_dict["errors"]) == len(result.errors))
-        for python_error, error_dict in zip(result.errors, result_dict["errors"]):
+        result_dict_errors = check.list_elem(result_dict, "errors", of_type=Exception)
+        result_errors = check.is_list(result.errors, of_type=Exception)
+        check.invariant(len(result_dict_errors) == len(result_errors))  #
+        for python_error, error_dict in zip(result_errors, result_dict_errors):
             if hasattr(python_error, "original_error") and python_error.original_error:
                 error_dict["stack_trace"] = get_stack_trace_array(python_error.original_error)
 

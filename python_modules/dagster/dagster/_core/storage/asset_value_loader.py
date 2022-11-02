@@ -4,6 +4,9 @@ from typing import Dict, Mapping, Optional, Type, cast
 from dagster._annotations import public
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.job_definition import (
+    default_job_io_manager_with_fs_io_manager_schema,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
@@ -13,7 +16,6 @@ from dagster._core.instance import DagsterInstance, is_dagster_home_set
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._utils import merge_dicts
 
-from .fs_io_manager import fs_io_manager
 from .io_manager import IOManager
 
 
@@ -80,7 +82,8 @@ class AssetValueLoader:
 
         assets_def = self._assets_defs_by_key[asset_key]
         resource_defs = merge_dicts(
-            {DEFAULT_IO_MANAGER_KEY: fs_io_manager}, assets_def.resource_defs
+            {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema},
+            assets_def.resource_defs,
         )
         io_manager_key = assets_def.get_io_manager_key_for_asset_key(asset_key)
         io_manager_def = resource_defs[io_manager_key]

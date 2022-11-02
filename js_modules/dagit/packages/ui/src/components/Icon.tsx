@@ -23,6 +23,7 @@ import expectation from '../icon-svgs/bp-automatic-updates.svg';
 import op from '../icon-svgs/bp-git-commit.svg';
 import op_selector from '../icon-svgs/bp-send-to-graph.svg';
 import cached from '../icon-svgs/cached.svg';
+import calendar from '../icon-svgs/calendar.svg';
 import cancel from '../icon-svgs/cancel.svg';
 import chat_support from '../icon-svgs/chat-support.svg';
 import check_circle from '../icon-svgs/check_circle.svg';
@@ -83,6 +84,7 @@ import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
 import panel_show_left from '../icon-svgs/panel_show_left.svg';
 import panel_show_right from '../icon-svgs/panel_show_right.svg';
 import panel_show_top from '../icon-svgs/panel_show_top.svg';
+import partition from '../icon-svgs/partition.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
@@ -142,6 +144,7 @@ export const Icons = {
   op_selector,
   op_dynamic: bolt,
   partition_set: schedule,
+  partition,
   repo: source,
   resource: layers,
   run: history,
@@ -159,6 +162,7 @@ export const Icons = {
   panel_hide_right,
   panel_show_bottom,
   panel_show_both,
+  calendar,
   copy_to_clipboard: assignment,
   copy_to_clipboard_done: assignment_turned_in,
   chat_support,

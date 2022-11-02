@@ -20,7 +20,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._config import Field, Shape
+from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
 from dagster._core.definitions.composition import MappedInputPlaceholder
@@ -176,21 +176,7 @@ class JobDefinition(PipelineDefinition):
         partitioned_config = None
 
         if partitions_def:
-            check.invariant(
-                not isinstance(config, ConfigMapping),
-                "Can't supply a ConfigMapping for 'config' when 'partitions_def' is supplied.",
-            )
-
-            if isinstance(config, PartitionedConfig):
-                check.invariant(
-                    config.partitions_def == partitions_def,
-                    "Can't supply a PartitionedConfig for 'config' with a different "
-                    "PartitionsDefinition than supplied for 'partitions_def'.",
-                )
-                partitioned_config = config
-            else:
-                hardcoded_config = config if config else {}
-                partitioned_config = PartitionedConfig(partitions_def, lambda _: hardcoded_config)
+            partitioned_config = PartitionedConfig.from_flexible_config(config, partitions_def)
         else:
             if isinstance(config, ConfigMapping):
                 config_mapping = config
@@ -383,10 +369,6 @@ class JobDefinition(PipelineDefinition):
                 check.failed(
                     f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
                 )
-            check.invariant(
-                not run_config,
-                "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
-            )
             partition_set = self.get_partition_set_def()
             if not partition_set:
                 check.failed(
@@ -394,7 +376,9 @@ class JobDefinition(PipelineDefinition):
                 )
 
             partition = partition_set.get_partition(partition_key)
-            run_config = partition_set.run_config_for_partition(partition)
+            run_config = (
+                run_config if run_config else partition_set.run_config_for_partition(partition)
+            )
             tags = partition_set.tags_for_partition(partition)
 
         return core_execute_in_process(
@@ -577,6 +561,7 @@ class JobDefinition(PipelineDefinition):
         run_key: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -589,6 +574,9 @@ class JobDefinition(PipelineDefinition):
                 value means that a run will always be launched per evaluation.
             tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
                 to the launched run.
+            run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
+                a :py:class:`PartitionedConfig`, this value will override replace the config
+                provided by it.
 
         Returns:
             RunRequest: an object that requests a run to process the given partition.
@@ -598,7 +586,6 @@ class JobDefinition(PipelineDefinition):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
         partition = partition_set.get_partition(partition_key)
-        run_config = partition_set.run_config_for_partition(partition)
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags
@@ -607,7 +594,9 @@ class JobDefinition(PipelineDefinition):
 
         return RunRequest(
             run_key=run_key,
-            run_config=run_config,
+            run_config=run_config
+            if run_config is not None
+            else partition_set.run_config_for_partition(partition),
             tags=run_request_tags,
             job_name=self.name,
             asset_selection=asset_selection,
@@ -854,7 +843,7 @@ def default_job_io_manager(init_context: "InitResourceContext"):
                 isinstance(attr, IOManagerDefinition),
                 "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE must specify an IOManagerDefinition",
             )
-            with build_resources({"io_manager": attr}) as resources:
+            with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
                 return resources.io_manager
         except Exception as e:
             if not silence_failures:
@@ -870,6 +859,46 @@ def default_job_io_manager(init_context: "InitResourceContext"):
 
     instance = check.not_none(init_context.instance)
     return PickledObjectFilesystemIOManager(base_dir=instance.storage_directory())
+
+
+@io_manager(
+    description="Built-in filesystem IO manager that stores and retrieves values using pickling.",
+    config_schema={"base_dir": Field(StringSource, is_required=False)},
+)
+def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResourceContext"):
+    # support overriding the default io manager via environment variables
+    module_name = os.getenv("DAGSTER_DEFAULT_IO_MANAGER_MODULE")
+    attribute_name = os.getenv("DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE")
+    silence_failures = os.getenv("DAGSTER_DEFAULT_IO_MANAGER_SILENCE_FAILURES")
+
+    if module_name and attribute_name:
+        from dagster._core.execution.build_resources import build_resources
+
+        try:
+            module = importlib.import_module(module_name)
+            attr = getattr(module, attribute_name)
+            check.invariant(
+                isinstance(attr, IOManagerDefinition),
+                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE must specify an IOManagerDefinition",
+            )
+            with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
+                return resources.io_manager
+        except Exception as e:
+            if not silence_failures:
+                raise
+            else:
+                warnings.warn(
+                    f"Failed to load io manager override with module: {module_name} attribute: {attribute_name}: {e}\n"
+                    "Falling back to default io manager."
+                )
+    from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+
+    # normally, default to the fs_io_manager
+    base_dir = init_context.resource_config.get(
+        "base_dir", init_context.instance.storage_directory() if init_context.instance else None
+    )
+
+    return PickledObjectFilesystemIOManager(base_dir=base_dir)
 
 
 def _config_mapping_with_default_value(

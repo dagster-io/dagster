@@ -61,9 +61,10 @@ export interface IStepMetadata {
 }
 
 export interface ILogCaptureInfo {
-  logKey: string;
+  fileKey: string;
   stepKeys: string[];
   pid?: string;
+  externalUrl?: string;
 }
 
 export interface IRunMetadataDict {
@@ -79,7 +80,7 @@ export interface IRunMetadataDict {
     [stepKey: string]: IStepMetadata;
   };
   logCaptureSteps?: {
-    [logKey: string]: ILogCaptureInfo;
+    [fileKey: string]: ILogCaptureInfo;
   };
 }
 
@@ -93,7 +94,7 @@ export const EMPTY_RUN_METADATA: IRunMetadataDict = {
 export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
   const logCaptureSteps = {};
   stepKeys.forEach(
-    (stepKey) => (logCaptureSteps[stepKey] = {logKey: stepKey, stepKeys: [stepKey]}),
+    (stepKey) => (logCaptureSteps[stepKey] = {fileKey: stepKey, stepKeys: [stepKey]}),
   );
   return logCaptureSteps;
 };
@@ -238,10 +239,11 @@ export function extractMetadataFromLogs(
       if (!metadata.logCaptureSteps) {
         metadata.logCaptureSteps = {};
       }
-      metadata.logCaptureSteps[log.logKey] = {
-        logKey: log.logKey,
+      metadata.logCaptureSteps[log.fileKey] = {
+        fileKey: log.fileKey,
         stepKeys: log.stepKeys || [],
         pid: String(log.pid),
+        externalUrl: log.externalUrl || undefined,
       };
     }
 
@@ -356,9 +358,10 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       }
     }
     ... on LogsCapturedEvent {
-      logKey
+      fileKey
       stepKeys
       pid
+      externalUrl
     }
   }
   ${METADATA_ENTRY_FRAGMENT}

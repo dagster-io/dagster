@@ -121,6 +121,27 @@ dagit:
   #   my-label-key: my_label-value
   labels: {}
 
+  # Additional volumes that should be included. See:
+  # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+  #
+  # Example:
+  #
+  # volumes:
+  #   - name: my-volume
+  #     configMap: my-config-map
+  volumes: []
+
+  # Additional volume mounts that should be included. See:
+  # See: https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+  #
+  # Example:
+  #
+  # volumeMounts:
+  #   - name: test-volume
+  #     mountPath: /opt/dagster/test_folder
+  #     subPath: test_file.yaml
+  volumeMounts: []
+
   # Support Node, affinity and tolerations for Dagit pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -1079,6 +1100,27 @@ dagsterDaemon:
   # labels:
   #   my-label-key: my_label-value
   labels: {}
+
+  # Additional volumes that should be included. See:
+  # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+  #
+  # Example:
+  #
+  # volumes:
+  #   - name: my-volume
+  #     configMap: my-config-map
+  volumes: []
+
+  # Additional volume mounts that should be included. See:
+  # See: https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+  #
+  # Example:
+  #
+  # volumeMounts:
+  #   - name: test-volume
+  #     mountPath: /opt/dagster/test_folder
+  #     subPath: test_file.yaml
+  volumeMounts: []
 
   annotations: {}
   nodeSelector: {}
