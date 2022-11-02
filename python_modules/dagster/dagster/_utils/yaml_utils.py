@@ -1,6 +1,6 @@
 import functools
 import glob
-from typing import Any, Dict, Mapping, Sequence
+from typing import Any, Dict, List, Mapping, Sequence, Type
 
 import yaml
 
@@ -63,7 +63,7 @@ def load_yaml_from_glob_list(
 ) -> Mapping[str, Any]:
     check.sequence_param(glob_list, "glob_list", of_type=str)
 
-    all_files_list = []
+    all_files_list: List[str] = []
 
     for env_file_pattern in glob_list:
         all_files_list.extend(glob.glob(env_file_pattern))
@@ -71,7 +71,7 @@ def load_yaml_from_glob_list(
     return merge_yamls(all_files_list, loader=loader)
 
 
-def merge_yamls(file_list: Sequence[str], loader=DagsterRunConfigYamlLoader) -> Dict[str, Any]:
+def merge_yamls(file_list: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> Dict[object, object]:
     """Combine a list of YAML files into a dictionary.
 
     Args:
@@ -102,7 +102,7 @@ def merge_yamls(file_list: Sequence[str], loader=DagsterRunConfigYamlLoader) -> 
     return merged
 
 
-def merge_yaml_strings(yaml_strs: Sequence[str], loader=DagsterRunConfigYamlLoader) -> Mapping:
+def merge_yaml_strings(yaml_strs: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> Dict[object, object]:
     """Combine a list of YAML strings into a dictionary.  Right-most overrides left-most.
 
     Args:

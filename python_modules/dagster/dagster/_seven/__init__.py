@@ -11,9 +11,11 @@ import time
 from contextlib import contextmanager
 from datetime import timezone
 from types import ModuleType
-from typing import Any, Type
+from typing import Any, Callable, List, Sequence, Type, TypeVar, Union
+from typing_extensions import TypeGuard
 
 import pendulum
+from pendulum.datetime import DateTime
 
 from .compat.pendulum import PendulumDateTime
 from .json import JSONDecodeError, dump, dumps
@@ -66,7 +68,7 @@ def is_ascii(str_):
 time_fn = time.perf_counter
 
 
-def get_arg_names(callable_):
+def get_arg_names(callable_: Callable[..., Any]) -> Sequence[str]:
     return [
         parameter.name
         for parameter in inspect.signature(callable_).parameters.values()
@@ -113,20 +115,20 @@ def kill_process(process):
 
 
 # https://stackoverflow.com/a/58437485/324449
-def is_module_available(module_name):
+def is_module_available(module_name: str) -> bool:
     # python 3.4 and above
-    import importlib
+    import importlib.util
 
     loader = importlib.util.find_spec(module_name)
 
     return loader is not None
 
 
-def builtin_print():
+def builtin_print() -> str:
     return "builtins.print"
 
 
-def get_current_datetime_in_utc():
+def get_current_datetime_in_utc() -> DateTime:
     return pendulum.now("UTC")
 
 
@@ -140,27 +142,26 @@ def get_timestamp_from_utc_datetime(utc_datetime):
 
     return utc_datetime.timestamp()
 
+def is_lambda(target: object) -> TypeGuard[Callable[..., Any]]:
+    return callable(target) and getattr(target, "__name__", None) == "<lambda>"
 
-def is_lambda(target):
-    return callable(target) and (hasattr(target, "__name__") and target.__name__ == "<lambda>")
 
-
-def is_function_or_decorator_instance_of(target, kls):
+def is_function_or_decorator_instance_of(target: object, kls: Type[Any]) -> TypeGuard[Callable[..., Any]]:
     return inspect.isfunction(target) or (isinstance(target, kls) and hasattr(target, "__name__"))
 
 
-def qualname_differs(target):
-    return hasattr(target, "__qualname__") and (target.__qualname__ != target.__name__)
+def qualname_differs(target: object) -> bool:
+    return hasattr(target, "__qualname__") and getattr(target, "__qualname__") != getattr(target, "__name__")
 
 
-def xplat_shlex_split(s):
+def xplat_shlex_split(s: str) -> List[str]:
     if IS_WINDOWS:
         return shlex.split(s, posix=False)
 
     return shlex.split(s)
 
 
-def get_import_error_message(import_error):
+def get_import_error_message(import_error: Exception) -> str:
     return import_error.msg
 
 

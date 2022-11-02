@@ -22,19 +22,14 @@ from typing import (
     Any,
     Callable,
     ContextManager,
+    Dict,
     Generator,
     Generic,
     Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
+    List,
 )
+from typing import Mapping
+from typing import Optional, Sequence, Tuple, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
 import packaging.version
@@ -264,7 +259,22 @@ class frozenlist(list):
         return hash(tuple(self))
 
 
-def make_readonly_value(value):
+@overload
+def make_readonly_value(value: List[T]) -> Sequence[T]:
+    ...
+
+
+@overload
+def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:
+    ...
+
+
+@overload
+def make_readonly_value(value: T) -> T:
+    ...
+
+
+def make_readonly_value(value: Any) -> Any:
     if isinstance(value, list):
         return frozenlist(list(map(make_readonly_value, value)))
     elif isinstance(value, dict):
@@ -569,7 +579,7 @@ def find_free_port() -> int:
 
 
 @contextlib.contextmanager
-def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Generator[None, None, None]:
+def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Iterator[None]:
     to_restore = [path for path in sys.path]
 
     # remove paths
@@ -588,7 +598,7 @@ def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Generator
 
 
 @contextlib.contextmanager
-def restore_sys_modules():
+def restore_sys_modules() -> Iterator[None]:
     sys_modules = {k: v for k, v in sys.modules.items()}
     try:
         yield
@@ -598,7 +608,7 @@ def restore_sys_modules():
             del sys.modules[key]
 
 
-def process_is_alive(pid):
+def process_is_alive(pid: int) -> bool:
     if seven.IS_WINDOWS:
         import psutil  # pylint: disable=import-error
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import os
 import sys
@@ -8,14 +10,18 @@ from typing import (
     Any,
     Callable,
     FrozenSet,
+    List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
     Union,
     overload,
 )
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -41,7 +47,11 @@ from .events import AssetKey
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.repository_definition import RepositoryLoadData
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import (
+        PendingRepositoryDefinition,
+        RepositoryLoadData,
+    )
 
     from .asset_group import AssetGroup
     from .graph_definition import GraphDefinition
@@ -70,12 +80,12 @@ class ReconstructableRepository(
 ):
     def __new__(
         cls,
-        pointer,
-        container_image=None,
-        executable_path=None,
-        entry_point=None,
-        container_context=None,
-        repository_load_data=None,
+        pointer: CodePointer,
+        container_image: Optional[str] = None,
+        executable_path: Optional[str] = None,
+        entry_point: Optional[Sequence[str]] = None,
+        container_context: Optional[Mapping[str, Any]] = None,
+        repository_load_data: Optional[RepositoryLoadData] = None,
     ):
         from dagster._core.definitions.repository_definition import RepositoryLoadData
 
@@ -85,12 +95,12 @@ class ReconstructableRepository(
             container_image=check.opt_str_param(container_image, "container_image"),
             executable_path=check.opt_str_param(executable_path, "executable_path"),
             entry_point=(
-                frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
+                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
                 if entry_point != None
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
             container_context=(
-                make_readonly_value(check.opt_dict_param(container_context, "container_context"))
+                make_readonly_value(check.mapping_param(container_context, "container_context"))
                 if container_context != None
                 else None
             ),
@@ -104,16 +114,21 @@ class ReconstructableRepository(
     ) -> "ReconstructableRepository":
         return self._replace(repository_load_data=metadata)
 
-    def get_definition(self):
+    def get_definition(self) -> RepositoryDefinition:
         return repository_def_from_pointer(self.pointer, self.repository_load_data)
 
-    def get_reconstructable_pipeline(self, name):
+    def get_reconstructable_pipeline(self, name: str) -> ReconstructablePipeline:
         return ReconstructablePipeline(self, name)
 
     @classmethod
     def for_file(
-        cls, file, fn_name, working_directory=None, container_image=None, container_context=None
-    ):
+        cls,
+        file: str,
+        fn_name: str,
+        working_directory: Optional[str] = None,
+        container_image: Optional[str] = None,
+        container_context: Optional[Mapping[str, Any]] = None,
+    ) -> ReconstructableRepository:
         if not working_directory:
             working_directory = os.getcwd()
         return cls(
@@ -124,15 +139,20 @@ class ReconstructableRepository(
 
     @classmethod
     def for_module(
-        cls, module, fn_name, working_directory=None, container_image=None, container_context=None
-    ):
+        cls,
+        module: str,
+        fn_name: str,
+        working_directory: Optional[str] = None,
+        container_image: Optional[str] = None,
+        container_context: Optional[Mapping[str, Any]] = None,
+    ) -> ReconstructableRepository:
         return cls(
             ModuleCodePointer(module, fn_name, working_directory),
             container_image=container_image,
             container_context=container_context,
         )
 
-    def get_python_origin(self):
+    def get_python_origin(self) -> RepositoryPythonOrigin:
         return RepositoryPythonOrigin(
             executable_path=self.executable_path if self.executable_path else sys.executable,
             code_pointer=self.pointer,
@@ -141,7 +161,7 @@ class ReconstructableRepository(
             container_context=self.container_context,
         )
 
-    def get_python_origin_id(self):
+    def get_python_origin_id(self) -> str:
         return self.get_python_origin().get_id()
 
 
@@ -177,11 +197,11 @@ class ReconstructablePipeline(
 
     def __new__(
         cls,
-        repository,
-        pipeline_name,
-        solid_selection_str=None,
-        solids_to_execute=None,
-        asset_selection=None,
+        repository: ReconstructableRepository,
+        pipeline_name: str,
+        solid_selection_str: Optional[str] = None,
+        solids_to_execute: Optional[FrozenSet[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", AssetKey)
@@ -196,7 +216,7 @@ class ReconstructablePipeline(
 
     def with_repository_load_data(
         self, metadata: Optional["RepositoryLoadData"]
-    ) -> "ReconstructablePipeline":
+    ) -> ReconstructablePipeline:
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
     @property
@@ -205,8 +225,8 @@ class ReconstructablePipeline(
 
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
-    @lru_cache(maxsize=1)
-    def get_definition(self):
+    @lru_cache(maxsize=1)  # type: ignore
+    def get_definition(self) -> Union[JobDefinition, PipelineDefinition]:
         return self.repository.get_definition().get_maybe_subset_job_def(
             self.pipeline_name,
             self.solid_selection,
@@ -214,7 +234,7 @@ class ReconstructablePipeline(
             self.solids_to_execute,
         )
 
-    def get_reconstructable_repository(self):
+    def get_reconstructable_repository(self) -> ReconstructableRepository:
         return self.repository
 
     def _subset_for_execution(
@@ -249,7 +269,7 @@ class ReconstructablePipeline(
                 solids_to_execute=None,
                 asset_selection=asset_selection,
             )
-        elif isinstance(pipeline_def, PipelineDefinition):
+        elif isinstance(pipeline_def, PipelineDefinition):  # type: ignore
             # when subselecting a pipeline
             # * pipeline subselection depend on solids_to_excute rather than solid_selection
             # * we resolve a list of solid selection queries to a frozenset of qualified solid names
@@ -286,9 +306,9 @@ class ReconstructablePipeline(
 
     def subset_for_execution_from_existing_pipeline(
         self,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
-        asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> "ReconstructablePipeline":
+        solids_to_execute: Optional[FrozenSet[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+    ) -> ReconstructablePipeline:
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
 
@@ -306,27 +326,27 @@ class ReconstructablePipeline(
             asset_selection=asset_selection,
         )
 
-    def describe(self):
+    def describe(self) -> str:
         return '"{name}" in repository ({repo})'.format(
             repo=self.repository.pointer.describe, name=self.pipeline_name
         )
 
     @staticmethod
-    def for_file(python_file, fn_name):
+    def for_file(python_file: str, fn_name: str) -> ReconstructablePipeline:
         return bootstrap_standalone_recon_pipeline(
             FileCodePointer(python_file, fn_name, os.getcwd())
         )
 
     @staticmethod
-    def for_module(module, fn_name):
+    def for_module(module: str, fn_name: str) -> ReconstructablePipeline:
         return bootstrap_standalone_recon_pipeline(ModuleCodePointer(module, fn_name, os.getcwd()))
 
-    def to_dict(self):
+    def to_dict(self) -> Mapping[str, object]:
         return pack_value(self)
 
     @staticmethod
-    def from_dict(val):
-        check.dict_param(val, "val")
+    def from_dict(val: Mapping[str, object]) -> ReconstructablePipeline:
+        check.mapping_param(val, "val")
 
         inst = unpack_value(val)
         check.invariant(
@@ -337,10 +357,10 @@ class ReconstructablePipeline(
         )
         return inst
 
-    def get_python_origin(self):
+    def get_python_origin(self) -> PipelinePythonOrigin:
         return PipelinePythonOrigin(self.pipeline_name, self.repository.get_python_origin())
 
-    def get_python_origin_id(self):
+    def get_python_origin_id(self) -> str:
         return self.get_python_origin().get_id()
 
     def get_module(self) -> Optional[str]:
@@ -451,7 +471,7 @@ def reconstructable(target: Callable[..., "PipelineDefinition"]) -> Reconstructa
         if (
             hasattr(target, "__module__")
             and hasattr(target, "__name__")
-            and check.not_none(inspect.getmodule(target)).__name__ != "__main__"
+            and getattr(inspect.getmodule(target), "__name__", None) != "__main__"
         ):
             return ReconstructablePipeline.for_module(target.__module__, target.__name__)
     except:
@@ -548,10 +568,10 @@ def build_reconstructable_job(
         reconstructor_working_directory, "reconstructor_working_directory", os.getcwd()
     )
 
-    _reconstructable_args = list(
+    _reconstructable_args: List[object] = list(
         check.opt_tuple_param(reconstructable_args, "reconstructable_args")
     )
-    _reconstructable_kwargs = list(
+    _reconstructable_kwargs: List[List[Union[str, object]]] = list(
         (
             [key, value]
             for key, value in check.opt_mapping_param(
@@ -581,7 +601,7 @@ build_reconstructable_pipeline = build_reconstructable_job
 build_reconstructable_target = build_reconstructable_job
 
 
-def bootstrap_standalone_recon_pipeline(pointer):
+def bootstrap_standalone_recon_pipeline(pointer: CodePointer) -> ReconstructablePipeline:
     # So this actually straps the the pipeline for the sole
     # purpose of getting the pipeline name. If we changed ReconstructablePipeline
     # to get the pipeline on demand in order to get name, we could avoid this.
@@ -592,7 +612,18 @@ def bootstrap_standalone_recon_pipeline(pointer):
     )
 
 
-def _check_is_loadable(definition):
+LoadableDefinition: TypeAlias = Union[
+    PipelineDefinition,
+    RepositoryDefinition,
+    PendingRepositoryDefinition,
+    GraphDefinition,
+    AssetGroup,
+]
+
+T_LoadableDefinition = TypeVar("T_LoadableDefinition", bound=LoadableDefinition)
+
+
+def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
     from dagster._core.definitions import AssetGroup
 
     from .definitions_class import Definitions
@@ -620,23 +651,29 @@ def _check_is_loadable(definition):
     return definition
 
 
-def load_def_in_module(module_name, attribute, working_directory):
+def load_def_in_module(
+    module_name: str, attribute: str, working_directory: Optional[str]
+) -> LoadableDefinition:
     return def_from_pointer(CodePointer.from_module(module_name, attribute, working_directory))
 
 
-def load_def_in_package(package_name, attribute, working_directory):
+def load_def_in_package(
+    package_name: str, attribute: str, working_directory: Optional[str]
+) -> LoadableDefinition:
     return def_from_pointer(
         CodePointer.from_python_package(package_name, attribute, working_directory)
     )
 
 
-def load_def_in_python_file(python_file, attribute, working_directory):
+def load_def_in_python_file(
+    python_file: str, attribute: str, working_directory: Optional[str]
+) -> LoadableDefinition:
     return def_from_pointer(CodePointer.from_python_file(python_file, attribute, working_directory))
 
 
 def def_from_pointer(
     pointer: CodePointer,
-) -> Union["PipelineDefinition", "RepositoryDefinition", "GraphDefinition"]:
+) -> LoadableDefinition:
     target = pointer.load_target()
 
     from dagster._core.definitions import AssetGroup
@@ -655,7 +692,7 @@ def def_from_pointer(
             AssetGroup,
         ),
     ) or not callable(target):
-        return _check_is_loadable(target)
+        return _check_is_loadable(target)  # type: ignore
 
     # if its a function invoke it - otherwise we are pointing to a
     # artifact in module scope, likely decorator output
@@ -668,7 +705,7 @@ def def_from_pointer(
             )
         )
 
-    return _check_is_loadable(target())
+    return _check_is_loadable(target())  # type: ignore
 
 
 def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
