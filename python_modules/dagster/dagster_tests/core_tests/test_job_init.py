@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import DagsterInstance, resource
+from dagster import DagsterInstance, GraphDefinition, op, resource
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
@@ -12,7 +12,6 @@ from dagster._core.execution.resources_init import (
 from dagster._core.execution.retries import RetryMode
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import ModeDefinition, PipelineDefinition, solid
 
 
 def test_generator_exit():
@@ -51,15 +50,14 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
         finally:
             cleaned.append("B")
 
-    @solid(required_resource_keys={"a", "b"})
-    def resource_solid(_):
+    @op(required_resource_keys={"a", "b"})
+    def resource_op(_):
         pass
 
-    return PipelineDefinition(
+    return GraphDefinition(
         name="basic_resource_pipeline",
-        solid_defs=[resource_solid],
-        mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
-    )
+        node_defs=[resource_op],
+    ).to_job(resource_defs={"a": resource_a, "b": resource_b})
 
 
 def test_clean_event_generator_exit():
@@ -119,6 +117,6 @@ def test_clean_event_generator_exit():
     generator.close()
 
 
-@solid
-def fake_solid(_):
+@op
+def fake_op(_):
     pass

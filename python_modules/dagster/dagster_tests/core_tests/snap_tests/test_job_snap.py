@@ -16,7 +16,6 @@ from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
-from dagster._legacy import pipeline
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -63,7 +62,7 @@ def test_pipeline_snap_all_props(snapshot):
     def noop_op(_):
         pass
 
-    @pipeline(description="desc", tags={"key": "value"})
+    @job(description="desc", tags={"key": "value"})
     def noop_job():
         noop_op()
 

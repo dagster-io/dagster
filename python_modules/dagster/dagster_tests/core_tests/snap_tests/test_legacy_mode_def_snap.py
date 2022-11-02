@@ -1,6 +1,5 @@
-from dagster import logger, resource
+from dagster import job, logger, resource
 from dagster._core.snap import PipelineSnapshot
-from dagster._legacy import ModeDefinition, pipeline
 from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
@@ -21,26 +20,20 @@ def test_mode_snap(snapshot):
     def no_config_logger(_):
         pass
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                name="a_mode",
-                description="a_desc",
-                resource_defs={
-                    "some_resource": a_resource,
-                    "no_config_resource": no_config_resource,
-                },
-                logger_defs={
-                    "some_logger": a_logger,
-                    "no_config_logger": no_config_logger,
-                },
-            )
-        ]
+    @job(
+        resource_defs={
+            "some_resource": a_resource,
+            "no_config_resource": no_config_resource,
+        },
+        logger_defs={
+            "some_logger": a_logger,
+            "no_config_logger": no_config_logger,
+        },
     )
-    def a_pipeline():
+    def a_job():
         pass
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(a_pipeline)
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(a_job)
     assert len(pipeline_snapshot.mode_def_snaps) == 1
     mode_def_snap = pipeline_snapshot.mode_def_snaps[0]
 

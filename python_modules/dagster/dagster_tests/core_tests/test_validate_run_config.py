@@ -1,51 +1,59 @@
 import pytest
 
-from dagster import validate_run_config
+from dagster import job, op, validate_run_config
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._legacy import pipeline, solid
 
 
 def test_validate_run_config():
-    @solid
+    @op
     def basic():
         pass
 
-    @pipeline
-    def basic_pipeline():
+    @job
+    def basic_job():
         basic()
 
-    validate_run_config(basic_pipeline)
+    validate_run_config(basic_job)
 
-    @solid(config_schema={"foo": str})
+    @op(config_schema={"foo": str})
     def requires_config(_):
         pass
 
-    @pipeline
-    def pipeline_requires_config():
+    @job
+    def job_requires_config():
         requires_config()
 
     result = validate_run_config(
-        pipeline_requires_config, {"solids": {"requires_config": {"config": {"foo": "bar"}}}}
+        job_requires_config,
+        {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
     )
 
     assert result == {
         "solids": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
-        "execution": {"in_process": {"retries": {"enabled": {}}}},
+        "execution": {
+            "multi_or_in_process_executor": {
+                "multiprocess": {"retries": {"enabled": {}}, "max_concurrent": 0}
+            }
+        },
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }
 
     result_with_storage = validate_run_config(
-        pipeline_requires_config,
-        {"solids": {"requires_config": {"config": {"foo": "bar"}}}},
+        job_requires_config,
+        {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
     )
 
     assert result_with_storage == {
         "solids": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
-        "execution": {"in_process": {"retries": {"enabled": {}}}},
+        "execution": {
+            "multi_or_in_process_executor": {
+                "multiprocess": {"retries": {"enabled": {}}, "max_concurrent": 0}
+            }
+        },
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }
 
     with pytest.raises(DagsterInvalidConfigError):
-        validate_run_config(pipeline_requires_config)
+        validate_run_config(job_requires_config)

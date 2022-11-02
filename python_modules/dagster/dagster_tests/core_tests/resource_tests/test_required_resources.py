@@ -4,8 +4,10 @@ from dagster import (
     AssetMaterialization,
     DagsterType,
     DagsterUnknownResourceError,
+    GraphDefinition,
     In,
     Out,
+    OutputMapping,
     ResourceDefinition,
     String,
     dagster_type_loader,
@@ -17,10 +19,8 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.configurable import configured
-from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import OutputDefinition
 
 
 def get_resource_init_pipeline(resources_initted):
@@ -453,15 +453,21 @@ def define_composite_materialization_pipeline(
     def output_op(_context):
         return "hello"
 
-    wrap_solid = GraphDefinition(
-        name="wrap_solid",
+    graph_wraps_op = GraphDefinition(
+        name="graph_wraps_op",
         node_defs=[output_op],
-        output_mappings=[OutputDefinition(CustomDagsterType).mapping_from("output_op")],
+        output_mappings=[
+            OutputMapping(
+                graph_output_name="result",
+                mapped_node_name="output_op",
+                mapped_node_output_name="result",
+            )
+        ],
     )
 
     @job(resource_defs={"a": resource_a})
     def output_job():
-        wrap_solid()
+        graph_wraps_op()
 
     return output_job
 
@@ -472,14 +478,14 @@ def test_custom_type_with_resource_dependent_composite_materialization():
     )
     with pytest.raises(DagsterUnknownResourceError):
         under_required_pipeline.execute_in_process(
-            {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
+            {"solids": {"graph_wraps_op": {"outputs": [{"result": "hello"}]}}},
         )
 
     sufficiently_required_pipeline = define_composite_materialization_pipeline(
         should_require_resources=True
     )
     assert sufficiently_required_pipeline.execute_in_process(
-        {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
+        {"solids": {"graph_wraps_op": {"outputs": [{"result": "hello"}]}}},
     ).success
 
     # test that configured output materialization of the wrapping composite initializes resource
@@ -487,7 +493,7 @@ def test_custom_type_with_resource_dependent_composite_materialization():
     assert (
         define_composite_materialization_pipeline(resources_initted=resources_initted)
         .execute_in_process(
-            {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
+            {"solids": {"graph_wraps_op": {"outputs": [{"result": "hello"}]}}},
         )
         .success
     )
@@ -500,7 +506,7 @@ def test_custom_type_with_resource_dependent_composite_materialization():
         .execute_in_process(
             {
                 "solids": {
-                    "wrap_solid": {"solids": {"output_op": {"outputs": [{"result": "hello"}]}}}
+                    "graph_wraps_op": {"solids": {"output_op": {"outputs": [{"result": "hello"}]}}}
                 }
             },
         )

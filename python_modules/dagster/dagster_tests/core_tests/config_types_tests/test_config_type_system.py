@@ -570,8 +570,8 @@ def test_config_defaults():
         assert prev_sum == 6
         return prev_sum + _context.solid_config["sum"]
 
-    # addition_graph
-    def addition_graph_config_fn(config):
+    # addition_composite_solid
+    def addition_composite_solid_config_fn(config):
         child_config = {"config": {"sum": config["a"] + config["b"] + config["c"]}}
         return {"one": child_config, "two": child_config}
 
@@ -582,7 +582,7 @@ def test_config_defaults():
                 "b": Field(Int, is_required=False, default_value=2),
                 "c": Int,
             },
-            config_fn=addition_graph_config_fn,
+            config_fn=addition_composite_solid_config_fn,
         )
     )
     def addition_graph():

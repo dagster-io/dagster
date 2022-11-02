@@ -1,58 +1,57 @@
-from dagster import Field, Output, String
+from dagster import Field, Out, Output, String
 from dagster import _check as check
-from dagster._legacy import OutputDefinition, execute_pipeline, pipeline, solid
+from dagster import job, op
 
 
-def define_pass_value_solid(name, description=None):
+def define_pass_value_op(name, description=None):
     check.str_param(name, "name")
     check.opt_str_param(description, "description")
 
-    @solid(
+    @op(
         name=name,
         description=description,
-        input_defs=[],
-        output_defs=[OutputDefinition(String)],
+        ins={},
+        out=Out(String),
         config_schema={"value": Field(String)},
     )
-    def pass_value_solid(context):
-        yield Output(context.solid_config["value"])
+    def pass_value_op(context):
+        yield Output(context.op_config["value"])
 
-    return pass_value_solid
+    return pass_value_op
 
 
 def test_execute_solid_with_input_same_name():
-    @solid(output_defs=[OutputDefinition()])
+    @op(out=Out())
     def a_thing(_, a_thing):
         return a_thing + a_thing
 
-    @pipeline
+    @job
     def pipe():
-        pass_value = define_pass_value_solid("pass_value")
+        pass_value = define_pass_value_op("pass_value")
         a_thing(pass_value())
 
-    result = execute_pipeline(
-        pipe, run_config={"solids": {"pass_value": {"config": {"value": "foo"}}}}
+    result = pipe.execute_in_process(
+        run_config={"solids": {"pass_value": {"config": {"value": "foo"}}}}
     )
 
-    assert result.result_for_solid("a_thing").output_value() == "foofoo"
+    assert result.output_for_node("a_thing") == "foofoo"
 
 
 def test_execute_two_solids_with_same_input_name():
-    @solid
-    def solid_one(_, a_thing):
+    @op
+    def op_one(_, a_thing):
         return a_thing + a_thing
 
-    @solid
-    def solid_two(_, a_thing):
+    @op
+    def op_two(_, a_thing):
         return a_thing + a_thing
 
-    @pipeline
+    @job
     def pipe():
-        solid_one(define_pass_value_solid("pass_to_one")())
-        solid_two(define_pass_value_solid("pass_to_two")())
+        op_one(define_pass_value_op("pass_to_one")())
+        op_two(define_pass_value_op("pass_to_two")())
 
-    result = execute_pipeline(
-        pipe,
+    result = pipe.execute_in_process(
         run_config={
             "solids": {
                 "pass_to_one": {"config": {"value": "foo"}},
@@ -62,31 +61,31 @@ def test_execute_two_solids_with_same_input_name():
     )
 
     assert result.success
-    assert result.result_for_solid("solid_one").output_value() == "foofoo"
-    assert result.result_for_solid("solid_two").output_value() == "barbar"
+    assert result.output_for_node("op_one") == "foofoo"
+    assert result.output_for_node("op_two") == "barbar"
 
 
 def test_execute_dep_solid_different_input_name():
-    pass_to_first = define_pass_value_solid("pass_to_first")
+    pass_to_first = define_pass_value_op("pass_to_first")
 
-    @solid
-    def first_solid(_, a_thing):
+    @op
+    def first_op(_, a_thing):
         return a_thing + a_thing
 
-    @solid
-    def second_solid(_, an_input):
+    @op
+    def second_op(_, an_input):
         return an_input + an_input
 
-    @pipeline
+    @job
     def pipe():
-        second_solid(first_solid(pass_to_first()))
+        second_op(first_op(pass_to_first()))
 
-    result = execute_pipeline(
-        pipe, run_config={"solids": {"pass_to_first": {"config": {"value": "bar"}}}}
+    result = pipe.execute_in_process(
+        run_config={"solids": {"pass_to_first": {"config": {"value": "bar"}}}}
     )
 
     assert result.success
-    assert len(result.solid_result_list) == 3
-    assert result.result_for_solid("pass_to_first").output_value() == "bar"
-    assert result.result_for_solid("first_solid").output_value() == "barbar"
-    assert result.result_for_solid("second_solid").output_value() == "barbarbarbar"
+    assert len(result.filter_events(lambda evt: evt.is_step_success)) == 3
+    assert result.output_for_node("pass_to_first") == "bar"
+    assert result.output_for_node("first_op") == "barbar"
+    assert result.output_for_node("second_op") == "barbarbarbar"

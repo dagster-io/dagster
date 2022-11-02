@@ -1,12 +1,11 @@
-from dagster import resource
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster import job, op, resource
 
 
 def test_configured_solids_and_resources():
     # idiomatic usage
-    @solid(config_schema={"greeting": str}, required_resource_keys={"animal", "plant"})
+    @op(config_schema={"greeting": str}, required_resource_keys={"animal", "plant"})
     def emit_greet_creature(context):
-        greeting = context.solid_config["greeting"]
+        greeting = context.op_config["greeting"]
         return f"{greeting}, {context.resources.animal}, {context.resources.plant}"
 
     emit_greet_salutation = emit_greet_creature.configured(
@@ -19,19 +18,15 @@ def test_configured_solids_and_resources():
     def emit_creature(context):
         return context.resource_config["creature"]
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "animal": emit_creature.configured({"creature": "dog"}),
-                    "plant": emit_creature.configured({"creature": "tree"}),
-                }
-            )
-        ]
+    @job(
+        resource_defs={
+            "animal": emit_creature.configured({"creature": "dog"}),
+            "plant": emit_creature.configured({"creature": "tree"}),
+        }
     )
-    def mypipeline():
+    def myjob():
         return emit_greet_salutation(), emit_greet_howdy()
 
-    result = execute_pipeline(mypipeline)
+    result = myjob.execute_in_process()
 
     assert result.success

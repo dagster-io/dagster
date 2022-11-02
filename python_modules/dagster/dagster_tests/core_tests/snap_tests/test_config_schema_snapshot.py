@@ -9,7 +9,6 @@ from dagster import (
     Shape,
     job,
     op,
-    resource,
 )
 from dagster._config import ConfigTypeKind, Map, resolve_to_config_type
 from dagster._core.snap import (
@@ -17,7 +16,6 @@ from dagster._core.snap import (
     build_config_schema_snapshot,
     snap_from_config_type,
 )
-from dagster._legacy import ModeDefinition, pipeline
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,
@@ -354,37 +352,6 @@ def test_kitchen_sink_break_out():
     assert len(map_dict.fields) == 2
     map_a = config_snaps[map_dict.get_field("map_a").type_key]
     assert map_a.kind == ConfigTypeKind.SCALAR
-
-
-def test_multiple_modes():
-    @op
-    def noop_op(_):
-        pass
-
-    @resource(config_schema={"a": int})
-    def a_resource(_):
-        pass
-
-    @resource(config_schema={"b": int})
-    def b_resource(_):
-        pass
-
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(name="mode_a", resource_defs={"resource": a_resource}),
-            ModeDefinition(name="mode_b", resource_defs={"resource": b_resource}),
-        ]
-    )
-    def modez():
-        noop_op()
-
-    config_snaps = build_config_schema_snapshot(modez).all_config_snaps_by_key
-
-    assert a_resource.config_schema.config_type.key in config_snaps
-    assert b_resource.config_schema.config_type.key in config_snaps
-
-    assert get_config_snap(modez, a_resource.config_schema.config_type.key)
-    assert get_config_snap(modez, b_resource.config_schema.config_type.key)
 
 
 def get_config_snap(pipeline_def, key):

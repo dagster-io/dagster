@@ -8,13 +8,20 @@ import time
 
 import pytest
 
-from dagster import DagsterEventType, fs_io_manager, reconstructable, resource
+from dagster import (
+    DagsterEventType,
+    In,
+    execute_job,
+    fs_io_manager,
+    job,
+    op,
+    reconstructable,
+    resource,
+)
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import create_run_for_test, instance_for_test
-from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, solid
 from dagster._utils import ensure_dir, touch_file
 
 HELLO_SOLID = "HELLO SOLID"
@@ -28,25 +35,23 @@ def resource_a(_):
     return "A"
 
 
-@solid
+@op
 def spawn(_):
     return 1
 
 
-@solid(input_defs=[InputDefinition("num", int)], required_resource_keys={"a"})
+@op(ins={"num": In(int)}, required_resource_keys={"a"})
 def spew(_, num):
     print(HELLO_SOLID)  # pylint: disable=print-call
     return num
 
 
 def define_pipeline():
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "io_manager": fs_io_manager})]
-    )
-    def spew_pipeline():
+    @job(resource_defs={"a": resource_a, "io_manager": fs_io_manager})
+    def spew_job():
         spew(spew(spawn()))
 
-    return spew_pipeline
+    return spew_job
 
 
 def normalize_file_content(s):
@@ -59,53 +64,46 @@ def normalize_file_content(s):
 def test_compute_log_to_disk():
     with instance_for_test() as instance:
 
-        spew_pipeline = define_pipeline()
+        spew_job = define_pipeline()
         manager = instance.compute_log_manager
-        result = execute_pipeline(spew_pipeline, instance=instance)
+        result = spew_job.execute_in_process(instance=instance)
         assert result.success
 
-        capture_events = [
-            event
-            for event in result.event_list
-            if event.event_type == DagsterEventType.LOGS_CAPTURED
+        compute_steps = [
+            event.step_key
+            for event in result.all_events
+            if event.event_type == DagsterEventType.STEP_START
         ]
-        assert len(capture_events) == 1
-        event = capture_events[0]
-        assert len(event.logs_captured_data.step_keys) == 3
-        file_key = event.logs_captured_data.file_key
-        compute_io_path = manager.get_local_path(result.run_id, file_key, ComputeIOType.STDOUT)
-        assert os.path.exists(compute_io_path)
-        with open(compute_io_path, "r", encoding="utf8") as stdout_file:
-            assert normalize_file_content(stdout_file.read()) == f"{HELLO_SOLID}\n{HELLO_SOLID}"
+        for step_key in compute_steps:
+            if step_key.startswith("spawn"):
+                continue
+            compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
+            assert os.path.exists(compute_io_path)
+            with open(compute_io_path, "r", encoding="utf8") as stdout_file:
+                assert normalize_file_content(stdout_file.read()) == HELLO_SOLID
 
 
 @pytest.mark.skipif(
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
 def test_compute_log_to_disk_multiprocess():
-    spew_pipeline = reconstructable(define_pipeline)
     with instance_for_test() as instance:
         manager = instance.compute_log_manager
-        result = execute_pipeline(
-            spew_pipeline,
-            run_config={"execution": {"multiprocess": {}}},
-            instance=instance,
-        )
+        result = execute_job(reconstructable(define_pipeline), instance=instance)
         assert result.success
 
-        capture_events = [
-            event
-            for event in result.event_list
-            if event.event_type == DagsterEventType.LOGS_CAPTURED
+        compute_steps = [
+            event.step_key
+            for event in result.all_events
+            if event.event_type == DagsterEventType.STEP_START
         ]
-        assert len(capture_events) == 3  # one for each step
-        last_spew_event = capture_events[-1]
-        assert len(last_spew_event.logs_captured_data.step_keys) == 1
-        file_key = last_spew_event.logs_captured_data.file_key
-        compute_io_path = manager.get_local_path(result.run_id, file_key, ComputeIOType.STDOUT)
-        assert os.path.exists(compute_io_path)
-        with open(compute_io_path, "r", encoding="utf8") as stdout_file:
-            assert normalize_file_content(stdout_file.read()) == HELLO_SOLID
+        for step_key in compute_steps:
+            if step_key.startswith("spawn"):
+                continue
+            compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
+            assert os.path.exists(compute_io_path)
+            with open(compute_io_path, "r", encoding="utf8") as stdout_file:
+                assert normalize_file_content(stdout_file.read()) == HELLO_SOLID
 
 
 @pytest.mark.skipif(
@@ -114,59 +112,28 @@ def test_compute_log_to_disk_multiprocess():
 def test_compute_log_manager():
     with instance_for_test() as instance:
         manager = instance.compute_log_manager
-        spew_pipeline = define_pipeline()
-        result = execute_pipeline(spew_pipeline, instance=instance)
+        spew_job = define_pipeline()
+        result = spew_job.execute_in_process(instance=instance)
         assert result.success
-
-        capture_events = [
-            event
-            for event in result.event_list
-            if event.event_type == DagsterEventType.LOGS_CAPTURED
+        compute_steps = [
+            event.step_key
+            for event in result.all_events
+            if event.event_type == DagsterEventType.STEP_START
         ]
-        assert len(capture_events) == 1
-        event = capture_events[0]
-        file_key = event.logs_captured_data.file_key
-        assert manager.is_watch_completed(result.run_id, file_key)
+        assert len(compute_steps) == 3
+        step_key = "spew"
+        assert manager.is_watch_completed(result.run_id, step_key)
 
-        stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-        assert normalize_file_content(stdout.data) == f"{HELLO_SOLID}\n{HELLO_SOLID}"
+        stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+        assert normalize_file_content(stdout.data) == HELLO_SOLID
 
-        stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
+        stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
         cleaned_logs = stderr.data.replace("\x1b[34m", "").replace("\x1b[0m", "")
-        assert "dagster - DEBUG - spew_pipeline - " in cleaned_logs
+        assert "dagster - DEBUG - spew_job - " in cleaned_logs
 
-        bad_logs = manager.read_logs_file("not_a_run_id", file_key, ComputeIOType.STDOUT)
+        bad_logs = manager.read_logs_file("not_a_run_id", step_key, ComputeIOType.STDOUT)
         assert bad_logs.data is None
-        assert not manager.is_watch_completed("not_a_run_id", file_key)
-
-
-@pytest.mark.skipif(
-    should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
-)
-def test_captured_log_manager():
-    with instance_for_test() as instance:
-        manager = instance.compute_log_manager
-        assert isinstance(manager, CapturedLogManager)
-
-        spew_pipeline = define_pipeline()
-        result = execute_pipeline(spew_pipeline, instance=instance)
-        assert result.success
-
-        capture_events = [
-            event
-            for event in result.event_list
-            if event.event_type == DagsterEventType.LOGS_CAPTURED
-        ]
-        assert len(capture_events) == 1
-        event = capture_events[0]
-        log_key = manager.build_log_key_for_run(result.run_id, event.logs_captured_data.file_key)
-        assert manager.is_capture_complete(log_key)
-        log_data = manager.get_log_data(log_key)
-        stdout = normalize_file_content(log_data.stdout.decode("utf-8"))
-        assert stdout == f"{HELLO_SOLID}\n{HELLO_SOLID}"
-        stderr = normalize_file_content(log_data.stderr.decode("utf-8"))
-        cleaned_logs = stderr.replace("\x1b[34m", "").replace("\x1b[0m", "")
-        assert "dagster - DEBUG - spew_pipeline - " in cleaned_logs
+        assert not manager.is_watch_completed("not_a_run_id", step_key)
 
 
 @pytest.mark.skipif(
@@ -174,21 +141,14 @@ def test_captured_log_manager():
 )
 def test_compute_log_manager_subscriptions():
     with instance_for_test() as instance:
-        spew_pipeline = define_pipeline()
-        result = execute_pipeline(spew_pipeline, instance=instance)
-        capture_events = [
-            event
-            for event in result.event_list
-            if event.event_type == DagsterEventType.LOGS_CAPTURED
-        ]
-        assert len(capture_events) == 1
-        event = capture_events[0]
-        file_key = event.logs_captured_data.file_key
+        spew_job = define_pipeline()
+        step_key = "spew"
+        result = spew_job.execute_in_process(instance=instance)
         stdout_observable = instance.compute_log_manager.observable(
-            result.run_id, file_key, ComputeIOType.STDOUT
+            result.run_id, step_key, ComputeIOType.STDOUT
         )
         stderr_observable = instance.compute_log_manager.observable(
-            result.run_id, file_key, ComputeIOType.STDERR
+            result.run_id, step_key, ComputeIOType.STDERR
         )
         stdout = []
         stdout_observable(stdout.append)
@@ -196,7 +156,7 @@ def test_compute_log_manager_subscriptions():
         stderr_observable(stderr.append)
         assert len(stdout) == 1
         assert stdout[0].data.startswith(HELLO_SOLID)
-        assert stdout[0].cursor in range(24, 27)
+        assert stdout[0].cursor in [12, 13]
         assert len(stderr) == 1
         assert stderr[0].cursor == len(stderr[0].data)
         assert stderr[0].cursor > 400
@@ -250,32 +210,30 @@ def gen_solid_name(length):
 def test_long_solid_names():
     solid_name = gen_solid_name(300)
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
-    def long_pipeline():
+    @job(resource_defs={"a": resource_a})
+    def long_job():
         spew.alias(name=solid_name)()
 
     with instance_for_test() as instance:
         manager = instance.compute_log_manager
 
-        result = execute_pipeline(
-            long_pipeline,
+        result = long_job.execute_in_process(
             instance=instance,
             run_config={"solids": {solid_name: {"inputs": {"num": 1}}}},
         )
         assert result.success
 
-        capture_events = [
-            event
-            for event in result.event_list
-            if event.event_type == DagsterEventType.LOGS_CAPTURED
+        compute_steps = [
+            event.step_key
+            for event in result.all_events
+            if event.event_type == DagsterEventType.STEP_START
         ]
-        assert len(capture_events) == 1
-        event = capture_events[0]
-        file_key = event.logs_captured_data.file_key
 
-        assert manager.is_watch_completed(result.run_id, file_key)
+        assert len(compute_steps) == 1
+        step_key = compute_steps[0]
+        assert manager.is_watch_completed(result.run_id, step_key)
 
-        stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
+        stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
         assert normalize_file_content(stdout.data) == HELLO_SOLID
 
 

@@ -295,7 +295,7 @@ snapshots['test_create_with_composite 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "f0f5868a704d2383fb5c1b87f636dec04664d7b1",
+  "pipeline_snapshot_id": "ce73ae4eb7e5be67e53cd59c8151634c659a9abd",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "comp_1.return_one",

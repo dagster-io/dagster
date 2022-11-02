@@ -448,7 +448,8 @@ class BoundOpExecutionContext(OpExecutionContext):
     def run_config(self) -> Mapping[str, object]:
         run_config: Dict[str, object] = {}
         if self._op_config:
-            run_config["solids"] = {self._op_def.name: {"config": self._op_config}}
+            run_config["ops"] = {self._op_def.name: {"config": self._op_config}}
+            run_config["solids"] = run_config["ops"]
         run_config["resources"] = self._resources_config
         return run_config
 

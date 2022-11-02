@@ -1,19 +1,15 @@
 from dagster import (
+    In,
+    Out,
     String,
     dagster_type_loader,
     dagster_type_materializer,
+    job,
+    op,
     resource,
     usable_as_dagster_type,
 )
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
 
 
 class UserError(Exception):
@@ -22,15 +18,15 @@ class UserError(Exception):
 
 
 def test_user_error_boundary_solid_compute():
-    @solid
+    @op
     def throws_user_error(_):
         raise UserError()
 
-    @pipeline
-    def pipeline_def():
+    @job
+    def job_def():
         throws_user_error()
 
-    pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
+    pipeline_result = job_def.execute_in_process(raise_on_error=False)
     assert not pipeline_result.success
 
 
@@ -43,17 +39,16 @@ def test_user_error_boundary_input_hydration():
     class CustomType(str):
         pass
 
-    @solid(input_defs=[InputDefinition("custom_type", CustomType)])
-    def input_hydration_solid(context, custom_type):
+    @op(ins={"custom_type": In(CustomType)})
+    def input_hydration_op(context, custom_type):
         context.log.info(custom_type)
 
-    @pipeline
-    def input_hydration_pipeline():
-        input_hydration_solid()
+    @job
+    def input_hydration_job():
+        input_hydration_op()
 
-    pipeline_result = execute_pipeline(
-        input_hydration_pipeline,
-        {"solids": {"input_hydration_solid": {"inputs": {"custom_type": "hello"}}}},
+    pipeline_result = input_hydration_job.execute_in_process(
+        {"solids": {"input_hydration_op": {"inputs": {"custom_type": "hello"}}}},
         raise_on_error=False,
     )
     assert not pipeline_result.success
@@ -66,17 +61,16 @@ def test_user_error_boundary_output_materialization():
 
     CustomDagsterType = create_any_type(name="CustomType", materializer=materialize)
 
-    @solid(output_defs=[OutputDefinition(CustomDagsterType)])
-    def output_solid(_context):
+    @op(out=Out(CustomDagsterType))
+    def output_op(_context):
         return "hello"
 
-    @pipeline
-    def output_materialization_pipeline():
-        output_solid()
+    @job
+    def output_materialization_job():
+        output_op()
 
-    pipeline_result = execute_pipeline(
-        output_materialization_pipeline,
-        {"solids": {"output_solid": {"outputs": [{"result": "hello"}]}}},
+    pipeline_result = output_materialization_job.execute_in_process(
+        {"solids": {"output_op": {"outputs": [{"result": "hello"}]}}},
         raise_on_error=False,
     )
     assert not pipeline_result.success
@@ -87,13 +81,13 @@ def test_user_error_boundary_resource_init():
     def resource_a(_):
         raise UserError()
 
-    @solid(required_resource_keys={"a"})
-    def resource_solid(_context):
+    @op(required_resource_keys={"a"})
+    def resource_op(_context):
         return "hello"
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
-    def resource_pipeline():
-        resource_solid()
+    @job(resource_defs={"a": resource_a})
+    def resource_job():
+        resource_op()
 
-    pipeline_result = execute_pipeline(resource_pipeline, raise_on_error=False)
+    pipeline_result = resource_job.execute_in_process(raise_on_error=False)
     assert not pipeline_result.success
