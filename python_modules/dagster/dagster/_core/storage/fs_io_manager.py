@@ -127,18 +127,21 @@ def fs_io_manager(init_context):
 
 class PickledObjectFilesystemIOManager(UPathIOManager):
     """Built-in filesystem IO manager that stores and retrieves values using pickling.
+    Is compatible with local and remote filesystems via `universal-pathlib` and `fsspec`.
+    Learn more about how to use remote filesystems here: https://github.com/fsspec/universal_pathlib
 
     Args:
         base_dir (Optional[str]): base directory where all the step outputs which use this object
             manager will be stored in.
+        kwargs (Optional[Dict[str, Any]]): additional keyword arguments for `universal_pathlib.UPath`.
     """
 
     extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.
 
-    def __init__(self, base_dir=None):
+    def __init__(self, base_dir=None, **kwargs):
         self.base_dir = check.opt_str_param(base_dir, "base_dir")
 
-        super().__init__(base_path=UPath(base_dir))
+        super().__init__(base_path=UPath(base_dir, **kwargs))
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
         if context.dagster_type.typing_type == type(None):
