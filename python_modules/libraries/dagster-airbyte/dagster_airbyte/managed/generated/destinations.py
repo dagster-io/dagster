@@ -1,4 +1,4 @@
-# pylint: disable=unused-import
+# pylint: disable=unused-import,redefined-builtin
 from typing import Any, List, Optional, Union
 
 from dagster_airbyte.managed.types import GeneratedAirbyteDestination

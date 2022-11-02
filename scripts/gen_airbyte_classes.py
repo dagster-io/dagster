@@ -6,11 +6,12 @@ import subprocess
 import sys
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import click
 import yaml
 
+import itertools
 import dagster._check as check
 from dagster._utils import file_relative_path, mkdir_p
 
@@ -34,20 +35,6 @@ def _to_class_name(name: str) -> str:
     return class_name
 
 
-class SchemaType(ABC):
-    @abstractmethod
-    def get_check(self, name: str, scope: Optional[str] = None):
-        pass
-
-    @abstractmethod
-    def annotation(self, scope: Optional[str] = None, quote: bool = False):
-        pass
-
-    @property
-    def const_value(self):
-        return None
-
-
 TYPE_MAPPING = {
     "string": "str",
     "integer": "int",
@@ -62,6 +49,32 @@ CHECK_MAPPING = {
     "float": "check.float_param({}, '{}')",
     "bool": "check.bool_param({}, '{}')",
 }
+
+
+class SchemaType(ABC):
+    """
+    Corresponds to the Python type of a field in a schema, has methods to generate
+    the Python code to annotate that type or check it at runtime.
+    """
+
+    @abstractmethod
+    def get_check(self, name: str, scope: Optional[str] = None):
+        """
+        Returns the dagster._check check for this type, e.g. check.str_param(name, 'name')
+        """
+
+    @abstractmethod
+    def annotation(self, scope: Optional[str] = None, quote: bool = False):
+        """
+        Returns the Python type annotation for this type, e.g. str or Union[str, int]
+        """
+
+    @property
+    def const_value(self):
+        """
+        If this is a constant field, returns the constant value, otherwise returns None
+        """
+        return None
 
 
 class RawType(SchemaType):
@@ -148,7 +161,15 @@ def _union_or_singular(inner: List[SchemaType]) -> SchemaType:
 
 
 def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, SchemaType]]:
-    class_definitions = {}
+    """
+    Parses an Airbyte source or destination schema, turning it into a representation of the
+    corresponding Python class structure - a dictionary mapping class names with the fields
+    that the new classes should have.
+
+    Each class will be turned into a Python class definition with the given name and fields.
+    """
+
+    class_definitions: Dict[str, Dict[str, SchemaType]] = {}
 
     fields = {}
 
@@ -160,7 +181,8 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
         field_name = _remove_invalid_chars(field_name)
 
         if "oneOf" in field:
-            union_type = []
+            # Union type, parse all subfields
+            union_type: List[SchemaType] = []
             for sub_field in field["oneOf"]:
                 title = sub_field.get("properties", {}).get("option_title", {}).get("const")
                 if not title:
@@ -175,6 +197,7 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
         else:
             field_type = field.get("type", "string")
             if field_type == "object":
+                # Object type requires subclass
                 title = _to_class_name(field.get("title") or field.get("description"))
                 class_definitions = {
                     **class_definitions,
@@ -182,6 +205,7 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
                 }
                 fields[field_name] = RawType(title)
             elif type(field_type) == list:
+                # List becomes a union type
                 fields[field_name] = _union_or_singular(
                     [RawType(sub_type) for sub_type in field_type if sub_type != "null"]
                 )
@@ -192,6 +216,7 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
                     array_type = field.get("items", {}).get("type") or field.get("item") or "string"
                     check.not_none(array_type)
 
+                    # Arrays with complex, object members requires a subclass
                     if array_type == "object":
                         items_data = field.get("items", {})
                         title = _to_class_name(
@@ -454,7 +479,7 @@ def gen_airbyte_classes(airbyte_repo_root, airbyte_tag):
 
             click.secho(f"\n\nGenerating Airbyte {title} Classes...\n\n\n", fg="green")
 
-            out = f"""# pylint: disable=unused-import
+            out = f"""# pylint: disable=unused-import,redefined-builtin
 from typing import Any, List, Optional, Union
 
 from dagster_airbyte.managed.types import {imp}
@@ -471,44 +496,52 @@ import dagster._check as check
                 connector_name = "".join(connector_name_parts[1:] + connector_name_parts[:1])
 
                 if connector_package.startswith(prefix):
-                    for root, _dirs, files in os.walk(
-                        os.path.join(connectors_root, connector_package)
-                    ):
-                        for file in files:
-                            if file == "spec.json" or file == "spec.yml" or file == "spec.yaml":
+                    files: List[Tuple[str, str]] = list(
+                        itertools.chain.from_iterable(
+                            [
+                                [(root, file) for file in files]
+                                for root, _, files in os.walk(
+                                    os.path.join(connectors_root, connector_package)
+                                )
+                            ]
+                        )
+                    )
+                    for root, file in files:
+                        if file == "spec.json" or file == "spec.yml" or file == "spec.yaml":
 
-                                # First, attempt to load the spec file and generate
-                                # the class definition
-                                new_out = out
-                                try:
-                                    new_out += load_from_spec_file(
-                                        connector_name_human_readable,
-                                        connector_name,
-                                        os.path.join(root, file),
-                                        is_source,
-                                    )
-                                except Exception as e:
-                                    failures.append((connector_name_human_readable, e))
-                                    continue
+                            # First, attempt to load the spec file and generate
+                            # the class definition
+                            new_out = out
+                            try:
+                                new_out += load_from_spec_file(
+                                    connector_name_human_readable,
+                                    connector_name,
+                                    os.path.join(root, file),
+                                    is_source,
+                                )
+                            except Exception as e:
+                                failures.append((connector_name_human_readable, e))
+                                continue
 
-                                with open(out_file, "w", encoding="utf8") as f:
-                                    f.write(new_out)
+                            with open(out_file, "w", encoding="utf8") as f:
+                                f.write(new_out)
 
-                                # Next, attempt to load the spec file and
-                                # abort if it fails, recording the failure
-                                try:
-                                    spec = importlib.util.spec_from_file_location(
-                                        "module.name", out_file
-                                    )
-                                    foo = importlib.util.module_from_spec(spec)
-                                    sys.modules["module.name"] = foo
-                                    spec.loader.exec_module(foo)
+                            # Next, attempt to load the spec file and
+                            # abort if it fails, recording the failure
+                            try:
+                                spec = importlib.util.spec_from_file_location(
+                                    "module.name", out_file
+                                )
+                                foo = importlib.util.module_from_spec(spec)
+                                sys.modules["module.name"] = foo
+                                spec.loader.exec_module(foo)
 
-                                    out = new_out
-                                    successes += 1
-                                except Exception as e:
-                                    failures.append((connector_name_human_readable, e))
-                                    continue
+                                out = new_out
+                                successes += 1
+                                break
+                            except Exception as e:
+                                failures.append((connector_name_human_readable, e))
+                                continue
 
                 print("\033[1A\033[K\033[1A\033[K\033[1A\033[K")
                 click.secho(f"{successes} successes", fg="green")

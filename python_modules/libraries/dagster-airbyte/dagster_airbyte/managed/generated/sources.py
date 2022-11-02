@@ -1,4 +1,4 @@
-# pylint: disable=unused-import
+# pylint: disable=unused-import,redefined-builtin
 from typing import Any, List, Optional, Union
 
 from dagster_airbyte.managed.types import GeneratedAirbyteSource
@@ -384,46 +384,6 @@ class ZoomSingerSource(GeneratedAirbyteSource):
         """
         self.jwt = check.str_param(jwt, "jwt")
         super().__init__("Zoom Singer", name)
-
-
-class TiktokMarketingSource(GeneratedAirbyteSource):
-    class OAuth20:
-        def __init__(
-            self, app_id: str, secret: str, access_token: str, auth_type: Optional[str] = None
-        ):
-            self.auth_type = check.opt_str_param(auth_type, "auth_type")
-            self.app_id = check.str_param(app_id, "app_id")
-            self.secret = check.str_param(secret, "secret")
-            self.access_token = check.str_param(access_token, "access_token")
-
-    class SandboxAccessToken:
-        def __init__(self, advertiser_id: str, access_token: str, auth_type: Optional[str] = None):
-            self.auth_type = check.opt_str_param(auth_type, "auth_type")
-            self.advertiser_id = check.str_param(advertiser_id, "advertiser_id")
-            self.access_token = check.str_param(access_token, "access_token")
-
-    def __init__(
-        self,
-        name: str,
-        credentials: Union[OAuth20, SandboxAccessToken],
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-        report_granularity: Optional[str] = None,
-    ):
-        """
-        Airbyte Source for Tiktok Marketing
-
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/tiktok-marketing
-        """
-        self.credentials = check.inst_param(
-            credentials,
-            "credentials",
-            (TiktokMarketingSource.OAuth20, TiktokMarketingSource.SandboxAccessToken),
-        )
-        self.start_date = check.opt_str_param(start_date, "start_date")
-        self.end_date = check.opt_str_param(end_date, "end_date")
-        self.report_granularity = check.opt_str_param(report_granularity, "report_granularity")
-        super().__init__("Tiktok Marketing", name)
 
 
 class TiktokMarketingSource(GeneratedAirbyteSource):
@@ -1421,41 +1381,6 @@ class AmazonAdsSource(GeneratedAirbyteSource):
         super().__init__("Amazon Ads", name)
 
 
-class AmazonAdsSource(GeneratedAirbyteSource):
-    def __init__(
-        self,
-        name: str,
-        client_id: str,
-        client_secret: str,
-        refresh_token: str,
-        auth_type: Optional[str] = None,
-        region: Optional[str] = None,
-        report_wait_timeout: Optional[int] = None,
-        report_generation_max_retries: Optional[int] = None,
-        start_date: Optional[str] = None,
-        profiles: Optional[List[int]] = None,
-        state_filter: Optional[List[str]] = None,
-    ):
-        """
-        Airbyte Source for Amazon Ads
-
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/amazon-ads
-        """
-        self.auth_type = check.opt_str_param(auth_type, "auth_type")
-        self.client_id = check.str_param(client_id, "client_id")
-        self.client_secret = check.str_param(client_secret, "client_secret")
-        self.refresh_token = check.str_param(refresh_token, "refresh_token")
-        self.region = check.opt_str_param(region, "region")
-        self.report_wait_timeout = check.opt_int_param(report_wait_timeout, "report_wait_timeout")
-        self.report_generation_max_retries = check.opt_int_param(
-            report_generation_max_retries, "report_generation_max_retries"
-        )
-        self.start_date = check.opt_str_param(start_date, "start_date")
-        self.profiles = check.opt_list_param(profiles, "profiles", int)
-        self.state_filter = check.opt_list_param(state_filter, "state_filter", str)
-        super().__init__("Amazon Ads", name)
-
-
 class MixpanelSource(GeneratedAirbyteSource):
     class ServiceAccount:
         def __init__(self, username: str, secret: str):
@@ -2398,40 +2323,6 @@ class MicrosoftTeamsSource(GeneratedAirbyteSource):
             ),
         )
         super().__init__("Microsoft Teams", name)
-
-
-class LeverHiringSource(GeneratedAirbyteSource):
-    class OAuthCredentials:
-        def __init__(
-            self,
-            refresh_token: str,
-            auth_type: Optional[str] = None,
-            client_id: Optional[str] = None,
-            client_secret: Optional[str] = None,
-        ):
-            self.auth_type = check.opt_str_param(auth_type, "auth_type")
-            self.client_id = check.opt_str_param(client_id, "client_id")
-            self.client_secret = check.opt_str_param(client_secret, "client_secret")
-            self.refresh_token = check.str_param(refresh_token, "refresh_token")
-
-    def __init__(
-        self,
-        name: str,
-        credentials: OAuthCredentials,
-        start_date: str,
-        environment: Optional[str] = None,
-    ):
-        """
-        Airbyte Source for Lever Hiring
-
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/lever-hiring
-        """
-        self.credentials = check.inst_param(
-            credentials, "credentials", LeverHiringSource.OAuthCredentials
-        )
-        self.start_date = check.str_param(start_date, "start_date")
-        self.environment = check.opt_str_param(environment, "environment")
-        super().__init__("Lever Hiring", name)
 
 
 class LeverHiringSource(GeneratedAirbyteSource):
