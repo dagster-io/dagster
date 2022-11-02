@@ -113,7 +113,7 @@ class PackageSpec:
     pytest_tox_factors: Optional[List[str]] = None
     env_vars: Optional[List[str]] = None
     tox_file: Optional[str] = None
-    retries: Optional[str] = None
+    retries: Optional[int] = None
     upload_coverage: Optional[bool] = None
     timeout_in_minutes: Optional[int] = None
     queue: Optional[BuildkiteQueue] = None
@@ -235,7 +235,7 @@ class PackageSpec:
                 )
             )
 
-        emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]
+        emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]  # type: ignore[index]
         return [
             GroupStep(
                 group=f"{emoji} {base_name}",
