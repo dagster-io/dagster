@@ -316,7 +316,7 @@ class PackageSpec(
             )
             if in_scope_changes:
 
-                logging.info(f"Building {self.name} because of changes to f{in_scope_changes}")
+                logging.info(f"Building {self.name} because of changes to {in_scope_changes}")
                 return None
 
         return "Package unaffected by these changes"
