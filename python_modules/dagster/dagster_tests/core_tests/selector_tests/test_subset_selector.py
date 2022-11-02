@@ -1,7 +1,6 @@
 import pytest
 
-from dagster import In, asset, in_process_executor, job, op
-from dagster._core.definitions import build_assets_job
+from dagster import In, asset, define_asset_job, in_process_executor, job, op, repository
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     MAX_NUM,
@@ -266,7 +265,14 @@ def asset_2(my_asset):
     return my_asset
 
 
+@repository
+def asset_house():
+    return [
+        my_asset,
+        asset_2,
+        define_asset_job("asset_selection_job", selection="*", executor_def=in_process_executor),
+    ]
+
+
 def get_asset_selection_job():
-    return build_assets_job(
-        "asset_selection_job", assets=[my_asset, asset_2], executor_def=in_process_executor
-    )
+    return asset_house.get_job("asset_selection_job")
