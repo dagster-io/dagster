@@ -250,15 +250,19 @@ class ManagedElementReconciler(ABC):
     """
 
     @abstractmethod
-    def check(self) -> ManagedElementCheckResult:
+    def check(self, **kwargs) -> ManagedElementCheckResult:
         """
         Returns whether the user provided config for the managed element is in sync with the external resource.
+
+        kwargs contains any optional user-specified arguments to the check command.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def apply(self) -> ManagedElementCheckResult:
+    def apply(self, **kwargs) -> ManagedElementCheckResult:
         """
         Reconciles the managed element with the external resource, returning the applied diff.
+
+        kwargs contains any optional user-specified arguments to the apply command.
         """
         raise NotImplementedError()

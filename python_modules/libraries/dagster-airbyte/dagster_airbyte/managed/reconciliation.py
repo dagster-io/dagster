@@ -615,7 +615,6 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
         airbyte: ResourceDefinition,
         connections: Iterable[AirbyteConnection],
         delete_unmentioned_resources: bool = False,
-        mark_secrets_as_changed: bool = False,
     ):
         """
         Reconciles Python-specified Airbyte resources with an Airbyte instance.
@@ -626,9 +625,6 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
             delete_unmentioned_resources (bool): Whether to delete resources that are not mentioned in
                 the set of connections provided. When True, all Airbyte instance contents are effectively
                 managed by the reconciler. Defaults to False.
-            mark_secrets_as_changed (bool): Whether to update the Airbyte instance with the secrets
-                provided in the connections. Secrets cannot be diffed because their value is hidden
-                once applied. Defaults to False.
         """
         airbyte = check.inst_param(airbyte, "airbyte", ResourceDefinition)
 
@@ -639,28 +635,25 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
         self._delete_unmentioned_resources = check.bool_param(
             delete_unmentioned_resources, "delete_unmentioned_resources"
         )
-        self._mark_secrets_as_changed = check.bool_param(
-            mark_secrets_as_changed, "mark_secrets_as_changed"
-        )
 
         super().__init__()
 
-    def check(self) -> ManagedElementCheckResult:
+    def check(self, **kwargs) -> ManagedElementCheckResult:
         return reconcile_config(
             self._airbyte_instance,
             self._connections,
             dry_run=True,
             should_delete=self._delete_unmentioned_resources,
-            ignore_secrets=not self._mark_secrets_as_changed,
+            ignore_secrets=(not kwargs.get("force_update_secrets", False)),
         )
 
-    def apply(self) -> ManagedElementCheckResult:
+    def apply(self, **kwargs) -> ManagedElementCheckResult:
         return reconcile_config(
             self._airbyte_instance,
             self._connections,
             dry_run=False,
             should_delete=self._delete_unmentioned_resources,
-            ignore_secrets=not self._mark_secrets_as_changed,
+            ignore_secrets=(not kwargs.get("force_update_secrets", False)),
         )
 
 
