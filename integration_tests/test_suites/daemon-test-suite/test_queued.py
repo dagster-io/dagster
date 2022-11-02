@@ -8,7 +8,7 @@ from dagster._utils import file_relative_path, merge_dicts
 def create_run(instance, external_pipeline, **kwargs):  # pylint: disable=redefined-outer-name
     pipeline_args = merge_dicts(
         {
-            "pipeline_name": "foo_pipeline",
+            "pipeline_name": "foo_job",
             "external_pipeline_origin": external_pipeline.get_external_origin(),
             "pipeline_code_origin": external_pipeline.get_python_origin(),
         },
@@ -27,7 +27,7 @@ def assert_events_in_order(logs, expected_events):
 def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_example_repo):
     external_schedule = foo_example_repo.get_external_schedule("always_run_schedule")
     external_sensor = foo_example_repo.get_external_sensor("always_on_sensor")
-    external_pipeline = foo_example_repo.get_full_external_job("foo_pipeline")
+    external_pipeline = foo_example_repo.get_full_external_job("foo_job")
 
     instance.start_schedule(external_schedule)
     instance.start_sensor(external_sensor)
@@ -62,7 +62,7 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
 
 def test_queued_runs(instance, foo_example_workspace, foo_example_repo):
     with start_daemon(workspace_file=file_relative_path(__file__, "repo.py")):
-        external_pipeline = foo_example_repo.get_full_external_job("foo_pipeline")
+        external_pipeline = foo_example_repo.get_full_external_job("foo_job")
 
         run = create_run(instance, external_pipeline)
 
