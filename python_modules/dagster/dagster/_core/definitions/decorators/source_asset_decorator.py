@@ -12,6 +12,7 @@ from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
 from dagster._core.storage.io_manager import IOManagerDefinition
 
+
 @overload
 def observable_source_asset(observe_fn: SourceAssetObserveFunction) -> SourceAsset:
     ...
