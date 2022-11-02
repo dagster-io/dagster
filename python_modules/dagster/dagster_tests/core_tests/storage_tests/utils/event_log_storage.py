@@ -2345,6 +2345,14 @@ class TestEventLogStorage:
                     "dagster/partition/date": "2022-10-13",
                 },
             )
+            yield AssetMaterialization(
+                asset_key=AssetKey("other_key"),
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
             yield Output(5)
 
         run_id = make_new_run_id()
@@ -2357,12 +2365,11 @@ class TestEventLogStorage:
             materializations = storage.get_event_records(
                 EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
             )
-            assert len(materializations) == 1
+            assert len(materializations) == 2
 
-            asset_event_tags = storage.get_all_event_tags_for_asset(key)
+            asset_event_tags = storage.get_event_tags_for_asset(key)
             assert asset_event_tags == [
-                ("dagster/partition/country", {"US"}),
-                ("dagster/partition/date", {"2022-10-13"}),
+                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-13'}
             ]
 
     def test_materialization_tag_on_wipe(self, storage, instance):
@@ -2372,6 +2379,38 @@ class TestEventLogStorage:
         def us_op():
             yield AssetMaterialization(
                 asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "Portugal",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-14",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=AssetKey("nonexistent_key"),
                 partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
                 tags={
                     "dagster/partition/country": "US",
@@ -2400,16 +2439,26 @@ class TestEventLogStorage:
             for event in events:
                 storage.store_event(event)
 
-            asset_event_tags = storage.get_all_event_tags_for_asset(
-                asset_key=key, key="dagster/partition/country"
+            asset_event_tags = storage.get_event_tags_for_asset(
+                asset_key=key, tag_key="dagster/partition/country", tag_value="US"
             )
             assert asset_event_tags == [
-                ("dagster/partition/country", {"US"}),
+                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-13'},
+                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-14'},
+                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-13'},
+            ]
+            asset_event_tags = storage.get_event_tags_for_asset(
+                asset_key=key, tag_key="dagster/partition/date", tag_value="2022-10-13"
+            )
+            assert asset_event_tags == [
+                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-13'},
+                {'dagster/partition/country': 'Portugal', 'dagster/partition/date': '2022-10-13'},
+                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-13'},
             ]
             if self.can_wipe():
                 storage.wipe_asset(key)
-                asset_event_tags = storage.get_all_event_tags_for_asset(
-                    asset_key=key, key="dagster/partition/country"
+                asset_event_tags = storage.get_event_tags_for_asset(
+                    asset_key=key,
                 )
                 assert asset_event_tags == []
 
@@ -2417,11 +2466,11 @@ class TestEventLogStorage:
                 for event in events:
                     storage.store_event(event)
 
-                asset_event_tags = storage.get_all_event_tags_for_asset(
-                    asset_key=key, key="dagster/partition/country"
+                asset_event_tags = storage.get_event_tags_for_asset(
+                    asset_key=key, tag_key="dagster/partition/date", tag_value="2022-10-13"
                 )
                 assert asset_event_tags == [
-                    ("dagster/partition/country", {"Brazil"}),
+                    {'dagster/partition/country': 'Brazil', 'dagster/partition/date': '2022-10-13'}
                 ]
 
     def test_event_record_filter_tags(self, storage, instance):
