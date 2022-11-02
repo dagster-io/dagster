@@ -14,9 +14,7 @@ from ..utils import (
 
 
 def build_helm_steps() -> List[BuildkiteStep]:
-    steps: List[BuildkiteLeafStep] = []
-    steps += _build_lint_steps()
-    schema_group = PackageSpec(
+    package_spec = PackageSpec(
         os.path.join("helm", "dagster", "schema"),
         unsupported_python_versions=[
             # run helm schema tests only once, on the latest python version
@@ -26,8 +24,11 @@ def build_helm_steps() -> List[BuildkiteStep]:
         name="dagster-helm",
         upload_coverage=False,
         retries=2,
-    ).build_steps()[0]
-    steps += schema_group["steps"]
+    )
+
+    steps: List[BuildkiteLeafStep] = []
+    steps += _build_lint_steps(package_spec)
+    steps += package_spec.build_steps()[0]["steps"]
 
     return [
         GroupStep(
@@ -38,14 +39,14 @@ def build_helm_steps() -> List[BuildkiteStep]:
     ]
 
 
-def _build_lint_steps() -> List[CommandStep]:
+def _build_lint_steps(package_spec) -> List[CommandStep]:
     return [
         CommandStepBuilder(":yaml: :lint-roller:")
         .run(
             "pip install yamllint",
             "make yamllint",
         )
-        .with_skip(skip_if_no_helm_changes())
+        .with_skip(skip_if_no_helm_changes() or package_spec.skip_reason)
         .on_test_image(AvailablePythonVersion.get_default())
         .build(),
         CommandStepBuilder("dagster-json-schema")
@@ -54,14 +55,14 @@ def _build_lint_steps() -> List[CommandStep]:
             "dagster-helm schema apply",
             "git diff --exit-code",
         )
-        .with_skip(skip_if_no_helm_changes())
+        .with_skip(skip_if_no_helm_changes() or package_spec.skip_reason)
         .on_test_image(AvailablePythonVersion.get_default())
         .build(),
         CommandStepBuilder(":lint-roller: dagster")
         .run(
             "helm lint helm/dagster --with-subcharts --strict",
         )
-        .with_skip(skip_if_no_helm_changes())
+        .with_skip(skip_if_no_helm_changes() or package_spec.skip_reason)
         .on_test_image(AvailablePythonVersion.get_default())
         .with_retry(2)
         .build(),
@@ -71,7 +72,7 @@ def _build_lint_steps() -> List[CommandStep]:
             "helm repo add bitnami-pre-2022 https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami",
             "helm dependency build helm/dagster",
         )
-        .with_skip(skip_if_no_helm_changes())
+        .with_skip(skip_if_no_helm_changes() or package_spec.skip_reason)
         .on_test_image(AvailablePythonVersion.get_default())
         .build(),
     ]
