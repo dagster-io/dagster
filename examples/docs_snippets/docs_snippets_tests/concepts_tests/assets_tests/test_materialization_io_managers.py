@@ -1,7 +1,6 @@
 import pandas as pd
 
-from dagster import io_manager
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster import io_manager, job, op
 from docs_snippets.concepts.assets.materialization_io_managers import (
     PandasCsvIOManager,
     PandasCsvIOManagerWithAsset,
@@ -18,17 +17,15 @@ def _generate_pipeline_for_io_manager(manager, config_schema=None):
     def custom_io_manager(_):
         return manager
 
-    @solid
-    def dummy_solid():
+    @op
+    def dummy_op():
         return DummyClass.from_dict({"some_column": [2]})
 
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"io_manager": custom_io_manager})]
-    )
-    def dummy_pipeline():
-        dummy_solid()
+    @job(resource_defs={"io_manager": custom_io_manager})
+    def dummy_job():
+        dummy_op()
 
-    return dummy_pipeline
+    return dummy_job
 
 
 def test_pipelines_compile_and_execute():
@@ -37,6 +34,6 @@ def test_pipelines_compile_and_execute():
         PandasCsvIOManagerWithAsset(),
     ]
     for manager in managers:
-        result = execute_pipeline(_generate_pipeline_for_io_manager(manager))
+        result = _generate_pipeline_for_io_manager(manager).execute_in_process()
         assert result
         assert result.success

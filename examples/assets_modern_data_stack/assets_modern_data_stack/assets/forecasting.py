@@ -4,7 +4,7 @@ from dagster_airbyte import build_airbyte_assets
 from dagster_dbt import load_assets_from_dbt_project
 from scipy import optimize
 
-from dagster import asset
+from dagster import AssetIn, asset
 
 from ..utils.constants import AIRBYTE_CONNECTION_ID, DBT_PROJECT_DIR
 
@@ -24,7 +24,7 @@ def model_func(x, a, b):
     return a * np.exp(b * (x / 10**18 - 1.6095))
 
 
-@asset(compute_kind="python")
+@asset(compute_kind="python", ins={"daily_order_summary": AssetIn(key_prefix="public")})
 def order_forecast_model(daily_order_summary: pd.DataFrame) -> np.ndarray:
     """Model parameters that best fit the observed data"""
     train_set = daily_order_summary.to_numpy()
