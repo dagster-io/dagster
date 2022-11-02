@@ -23,23 +23,20 @@ def scope_define_reconciler():
     # end_define_reconciler
 
     # start_define_sources
-    from dagster_airbyte import AirbyteSource, AirbyteDestination
+    from dagster_airbyte.managed.generated.sources import FileSource
+    from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
 
-    cereals_csv_source = AirbyteSource(
+    cereals_csv_source = FileSource(
         name="cereals-csv",
-        source_type="File",
-        source_configuration={
-            "url": "https://docs.dagster.io/assets/cereal.csv",
-            "format": "csv",
-            "provider": {"storage": "HTTPS", "user_agent": False},
-            "dataset_name": "cereals",
-        },
+        url="https://docs.dagster.io/assets/cereal.csv",
+        format="csv",
+        provider=FileSource.HTTPSPublicWeb(),
+        dataset_name="cereals",
     )
 
-    local_json_destination = AirbyteDestination(
+    local_json_destination = LocalJsonDestination(
         name="local-json",
-        destination_type="Local JSON",
-        destination_configuration={"destination_path": "/local/cereals_out.json"},
+        destination_path="/local/cereals_out.json",
     )
     # end_define_sources
 
@@ -60,3 +57,11 @@ def scope_define_reconciler():
         connections=[cereals_connection],
     )
     # end_new_reconciler
+
+    # start_new_reconciler_delete
+    airbyte_reconciler = AirbyteManagedElementReconciler(
+        airbyte=airbyte_instance,
+        connections=[...],
+        delete_unmentioned_resources=True
+    )
+    # end_new_reconciler_delete
