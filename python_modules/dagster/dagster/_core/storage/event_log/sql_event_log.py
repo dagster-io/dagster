@@ -1231,11 +1231,21 @@ class SqlEventLogStorage(EventLogStorage):
 
         return query
 
-    def get_all_event_tags_for_asset(
-        self, asset_key: AssetKey, key: Optional[str] = None
-    ) -> Sequence[Tuple[str, AbstractSet[str]]]:
+    def get_event_tags_for_asset(
+        self, asset_key: AssetKey, tag_key: Optional[str] = None, tag_value: Optional[str] = None
+    ) -> Sequence[Mapping[str, str]]:
+        """
+        Fetches asset event tags for the given asset key.
+
+        If tag_key and tag_value are provided, searches for all events with the given key and value.
+        Then, returns all tags for those events.
+
+        Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
+        single event.
+        """
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
-        key = check.opt_str_param(key, "key")
+        tag_key = check.opt_str_param(tag_key, "tag_key")
+        tag_value = check.opt_str_param(tag_value, "tag_value")
 
         if not self.has_table(AssetEventTagsTable.name):
             raise DagsterInvalidInvocationError(
@@ -1243,30 +1253,65 @@ class SqlEventLogStorage(EventLogStorage):
                 "`dagster instance migrate` to create the AssetEventTags table."
             )
 
-        tags = defaultdict(set)
-        query = (
-            db.select([AssetEventTagsTable.c.key, AssetEventTagsTable.c.value])
-            .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.value)
+        if tag_key or tag_value:
+            if not (tag_key and tag_value):
+                raise DagsterInvalidInvocationError(
+                    "If providing tag key, must also provide tag value."
+                )
+
+        perform_tag_join = tag_key and tag_value
+
+        tags_query = (
+            db.select(
+                [
+                    AssetEventTagsTable.c.key,
+                    AssetEventTagsTable.c.value,
+                    AssetEventTagsTable.c.event_id,
+                ]
+            )
+            .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.event_id)
             .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
         )
-
-        if key:
-            query = query.where(AssetEventTagsTable.c.key == key)
-
         asset_details = self._get_assets_details([asset_key])[0]
         if asset_details and asset_details.last_wipe_timestamp:
-            query = query.where(
+            tags_query = tags_query.where(
                 AssetEventTagsTable.c.event_timestamp
                 > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
             )
 
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
+        if not perform_tag_join:
+            with self.index_connection() as conn:
+                results = conn.execute(tags_query).fetchall()
+        else:
+            tags_query = tags_query.where(
+                db.and_(
+                    AssetEventTagsTable.c.key == tag_key, AssetEventTagsTable.c.value == tag_value
+                )
+            ).alias("selected_tags")
+            with self.index_connection() as conn:
+                results = conn.execute(tags_query).fetchall()
 
-        for key, value in results:
-            tags[key].add(value)
+            tags_with_same_id = db.select(
+                [
+                    AssetEventTagsTable.c.key,
+                    AssetEventTagsTable.c.value,
+                    AssetEventTagsTable.c.event_id,
+                ]
+            ).select_from(
+                tags_query.join(
+                    AssetEventTagsTable,
+                    AssetEventTagsTable.c.event_id == tags_query.c.event_id,
+                )
+            )
+            with self.index_connection() as conn:
+                results = conn.execute(tags_with_same_id).fetchall()
 
-        return sorted(list([(k, v) for k, v in tags.items()]), key=lambda x: x[0])
+        tags_by_event_id = defaultdict(dict)
+        for row in results:
+            key, value, event_id = row
+            tags_by_event_id[event_id][key] = value
+
+        return list(tags_by_event_id.values())
 
     def get_asset_run_ids(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)

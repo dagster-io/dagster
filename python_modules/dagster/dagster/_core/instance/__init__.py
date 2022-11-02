@@ -1453,10 +1453,10 @@ class DagsterInstance:
         return self._event_storage.get_asset_records(asset_keys)
 
     @traced
-    def get_all_event_tags_for_asset(
-        self, asset_key: AssetKey, key: Optional[str] = None
-    ) -> Sequence[Tuple[str, AbstractSet[str]]]:
-        return self._event_storage.get_all_event_tags_for_asset(asset_key, key)
+    def get_event_tags_for_asset(
+        self, asset_key: AssetKey, tag_key: Optional[str] = None, tag_value: Optional[str] = None
+    ) -> Sequence[Mapping[str, str]]:
+        return self._event_storage.get_event_tags_for_asset(asset_key, tag_key, tag_value)
 
     @traced
     def run_ids_for_asset_key(self, asset_key):

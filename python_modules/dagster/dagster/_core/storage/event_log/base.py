@@ -305,14 +305,17 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def get_all_event_tags_for_asset(
-        self, asset_key: AssetKey, key: Optional[str] = None
-    ) -> Sequence[Tuple[str, AbstractSet[str]]]:
-        """Get a list of tag keys and the values that have been associated with them for a specific
-        asset key.
+    def get_event_tags_for_asset(
+        self, asset_key: AssetKey, tag_key: Optional[str] = None, tag_value: Optional[str] = None
+    ) -> Sequence[Mapping[str, str]]:
+        """
+        Fetches asset event tags for the given asset key.
 
-        Returns:
-            Sequence[Tuple[str, AbstractSet[str]]]
+        If tag_key and tag_value are provided, searches for all events with the given key and value.
+        Then, returns all tags for those events.
+
+        Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
+        single event.
         """
 
     @abstractmethod
