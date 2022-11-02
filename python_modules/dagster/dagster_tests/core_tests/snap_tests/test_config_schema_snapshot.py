@@ -1,11 +1,23 @@
-from dagster import Array, Enum, EnumValue, Field, Noneable, ScalarUnion, Selector, Shape, resource
+from dagster import (
+    Array,
+    Enum,
+    EnumValue,
+    Field,
+    Noneable,
+    ScalarUnion,
+    Selector,
+    Shape,
+    job,
+    op,
+    resource,
+)
 from dagster._config import ConfigTypeKind, Map, resolve_to_config_type
 from dagster._core.snap import (
     ConfigEnumValueSnap,
     build_config_schema_snapshot,
     snap_from_config_type,
 )
-from dagster._legacy import ModeDefinition, pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,
@@ -213,15 +225,15 @@ def test_kitchen_sink():
 
 
 def test_simple_pipeline_smoke_test():
-    @solid
-    def solid_without_config(_):
+    @op
+    def op_without_config(_):
         pass
 
-    @pipeline
-    def single_solid_pipeline():
-        solid_without_config()
+    @job
+    def single_solid_job():
+        op_without_config()
 
-    config_schema_snapshot = build_config_schema_snapshot(single_solid_pipeline)
+    config_schema_snapshot = build_config_schema_snapshot(single_solid_job)
     assert config_schema_snapshot.all_config_snaps_by_key
 
     serialized = serialize_dagster_namedtuple(config_schema_snapshot)
@@ -230,17 +242,17 @@ def test_simple_pipeline_smoke_test():
 
 
 def test_check_solid_config_correct():
-    @solid(config_schema={"foo": str})
-    def solid_with_config(_):
+    @op(config_schema={"foo": str})
+    def op_with_config(_):
         pass
 
-    @pipeline
-    def single_solid_pipeline():
-        solid_with_config()
+    @job
+    def single_solid_job():
+        op_with_config()
 
-    solid_config_key = solid_with_config.config_schema.config_type.key
+    solid_config_key = op_with_config.config_schema.config_type.key
 
-    config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_solid_job).all_config_snaps_by_key
 
     assert solid_config_key in config_snaps
 
@@ -256,17 +268,17 @@ def test_check_solid_config_correct():
 
 
 def test_check_solid_list_list_config_correct():
-    @solid(config_schema={"list_list_int": [[{"bar": int}]]})
-    def solid_with_config(_):
+    @op(config_schema={"list_list_int": [[{"bar": int}]]})
+    def op_with_config(_):
         pass
 
-    @pipeline
-    def single_solid_pipeline():
-        solid_with_config()
+    @job
+    def single_solid_job():
+        op_with_config()
 
-    solid_config_key = solid_with_config.config_schema.config_type.key
+    solid_config_key = op_with_config.config_schema.config_type.key
 
-    config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_solid_job).all_config_snaps_by_key
     assert solid_config_key in config_snaps
     solid_config_snap = config_snaps[solid_config_key]
 
@@ -288,7 +300,7 @@ def test_check_solid_list_list_config_correct():
 
 
 def test_kitchen_sink_break_out():
-    @solid(
+    @op(
         config_schema=[
             {
                 "opt_list_of_int": Field([int], is_required=False),
@@ -304,16 +316,16 @@ def test_kitchen_sink_break_out():
             }
         ]
     )
-    def solid_with_kitchen_sink_config(_):
+    def op_with_kitchen_sink_config(_):
         pass
 
-    @pipeline
-    def single_solid_pipeline():
-        solid_with_kitchen_sink_config()
+    @job
+    def single_solid_job():
+        op_with_kitchen_sink_config()
 
-    config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_solid_job).all_config_snaps_by_key
 
-    solid_config_key = solid_with_kitchen_sink_config.config_schema.config_type.key
+    solid_config_key = op_with_kitchen_sink_config.config_schema.config_type.key
     assert solid_config_key in config_snaps
     solid_config_snap = config_snaps[solid_config_key]
 
@@ -345,8 +357,8 @@ def test_kitchen_sink_break_out():
 
 
 def test_multiple_modes():
-    @solid
-    def noop_solid(_):
+    @op
+    def noop_op(_):
         pass
 
     @resource(config_schema={"a": int})
@@ -364,7 +376,7 @@ def test_multiple_modes():
         ]
     )
     def modez():
-        noop_solid()
+        noop_op()
 
     config_snaps = build_config_schema_snapshot(modez).all_config_snaps_by_key
 
@@ -381,19 +393,19 @@ def get_config_snap(pipeline_def, key):
 
 def test_scalar_union():
     # Requiring resolve calls is bad: https://github.com/dagster-io/dagster/issues/2266
-    @solid(
+    @op(
         config_schema=ScalarUnion(resolve_to_config_type(str), resolve_to_config_type({"bar": str}))
     )
-    def solid_with_config(_):
+    def op_with_config(_):
         pass
 
-    @pipeline
-    def single_solid_pipeline():
-        solid_with_config()
+    @job
+    def single_solid_job():
+        op_with_config()
 
-    config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_solid_job).all_config_snaps_by_key
 
-    scalar_union_key = solid_with_config.config_schema.config_type.key
+    scalar_union_key = op_with_config.config_schema.config_type.key
 
     assert scalar_union_key in config_snaps
 
