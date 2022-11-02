@@ -304,6 +304,54 @@ def load_assets_from_fivetran_instance(
     connector_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
     connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]] = None,
 ) -> CacheableAssetsDefinition:
+    """
+    Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
+    about defined connectors at initialization time, and will error on workspace load if the Fivetran
+    instance is not reachable.
+
+    Args:
+        fivetran (ResourceDefinition): A FivetranResource configured with the appropriate connection
+            details.
+        key_prefix (Optional[CoercibleToAssetKeyPrefix]): A prefix for the asset keys created.
+        connector_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
+            group name for a given Fivetran connector name. If None, no groups will be created. Defaults
+            to a basic sanitization function.
+        connector_filter (Optional[Callable[[FivetranConnectorMetadata], bool]]): Optional function which takes
+            in connector metadata and returns False if the connector should be excluded from the output assets.
+
+    **Examples:**
+
+    Loading all Fivetran connectors as assets:
+
+    .. code-block:: python
+
+        from dagster_fivetran import fivetran_resource, load_assets_from_fivetran_instance
+
+        fivetran_instance = fivetran_resource.configured(
+            {
+                "api_key": "some_key",
+                "api_secret": "some_secret",
+            }
+        )
+        fivetran_assets = load_assets_from_fivetran_instance(fivetran_instance)
+
+    Filtering the set of loaded connectors:
+
+    .. code-block:: python
+
+        from dagster_fivetran import fivetran_resource, load_assets_from_fivetran_instance
+
+        fivetran_instance = fivetran_resource.configured(
+            {
+                "api_key": "some_key",
+                "api_secret": "some_secret",
+            }
+        )
+        fivetran_assets = load_assets_from_fivetran_instance(
+            fivetran_instance,
+            connection_filter=lambda meta: "snowflake" in meta.name,
+        )
+    """
 
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
