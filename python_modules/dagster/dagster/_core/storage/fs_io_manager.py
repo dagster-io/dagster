@@ -133,7 +133,7 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
     Args:
         base_dir (Optional[str]): base directory where all the step outputs which use this object
             manager will be stored in.
-        kwargs (Optional[Dict[str, Any]]): additional keyword arguments for `universal_pathlib.UPath`.
+        **kwargs: additional keyword arguments for `universal_pathlib.UPath`.
     """
 
     extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.
