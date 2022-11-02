@@ -584,7 +584,7 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
 
   useEffect(() => {
     const anchorWithoutHash = anchor.substring(1);
-    if (Object.hasOwn(anchorsInChildren, anchorWithoutHash)) {
+    if (anchorWithoutHash in anchorsInChildren) {
       const tabIdx = anchorsInChildren[anchorWithoutHash];
 
       // Scroll page to the hash after re-render
