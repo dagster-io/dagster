@@ -475,8 +475,8 @@
                 ]
               },
               {
-                "title": "Environment variables",
-                "path": "/dagster-cloud/developing-testing/environment-variables",
+                "title": "Environment variables and secrets",
+                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
                 "children": [
                   {
                     "title": "Serverless",
