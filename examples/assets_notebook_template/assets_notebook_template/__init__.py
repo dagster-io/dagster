@@ -1,0 +1,1 @@
+from .repository import assets_notebook_template
