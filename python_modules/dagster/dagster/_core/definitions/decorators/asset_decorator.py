@@ -70,6 +70,7 @@ def asset(
     output_required: bool = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
+    op_version: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -96,6 +97,7 @@ def asset(
     output_required: bool = True,
     freshness_policy: Optional[FreshnessPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    op_version: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -153,6 +155,8 @@ def asset(
         freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
             with respect to its root data.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
+        op_version (Optional[str]): (Experimental) Version string passed to the op underlying the
+            asset.
 
     Examples:
 
@@ -195,6 +199,7 @@ def asset(
             output_required=output_required,
             freshness_policy=freshness_policy,
             retry_policy=retry_policy,
+            op_version=op_version,
         )(fn)
 
     return inner
@@ -221,6 +226,7 @@ class _Asset:
         output_required: bool = True,
         freshness_policy: Optional[FreshnessPolicy] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        op_version: Optional[str] = None,
     ):
         self.name = name
 
@@ -245,6 +251,7 @@ class _Asset:
         self.output_required = output_required
         self.freshness_policy = freshness_policy
         self.retry_policy = retry_policy
+        self.op_version = op_version
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -290,6 +297,7 @@ class _Asset:
                 },
                 config_schema=self.config_schema,
                 retry_policy=self.retry_policy,
+                version=self.op_version,
             )(fn)
 
         keys_by_input_name = {
