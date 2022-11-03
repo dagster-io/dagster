@@ -119,7 +119,7 @@ def main():
 )
 @click.option(
     "--include-all-secrets",
-    type=bool,
+    is_flag=True,
     help=(
         "Whether to include all secrets in the diff, acting as if all secrets will be pushed to the remote state."
         " Secrets cannot be retrieved and diffed against the remote state, so this option simulates the diff if this flag is included to the apply command."
@@ -148,7 +148,7 @@ def check_cmd(module, working_directory, include_all_secrets):
 )
 @click.option(
     "--include-all-secrets",
-    type=bool,
+    is_flag=True,
     help=(
         "Whether to push all secret values to the remote state, or only those that aren't already present."
         " Secrets cannot be retrieved and diffed against the remote state, so this option is required when a secret is changed."
