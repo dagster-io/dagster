@@ -36,7 +36,7 @@ export const Tooltip: React.FC<Props> = (props) => {
 
   const [isOpen, setIsOpen] = React.useState<undefined | boolean>(undefined);
 
-  const divRef = React.useRef<any>(null);
+  const divRef = React.useRef<HTMLDivElement>(null);
 
   React.useLayoutEffect(() => {
     let listener: null | ((e: MouseEvent) => void) = null;
