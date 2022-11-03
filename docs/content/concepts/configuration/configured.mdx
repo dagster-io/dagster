@@ -122,7 +122,7 @@ def another_configured_example(config):
 
 A common pattern in the development cycle is to use different configuration for each environment. For example, you might connect to a local database during local development, and connect to a production database in your cloud environment. You can use the `configured` API to select between different configurations at repository definition time:
 
-```python file=/concepts/configuration/per_env_config.py startafter=start_database_example endafter=end_database_example
+```python file=/concepts/configuration/per_env_config.py startafter=start_database_example endbefore=end_database_example
 @op(required_resource_keys={"database"})
 def get_one(context):
     context.resources.database.execute_query("SELECT 1")
@@ -160,9 +160,6 @@ def my_repo():
         },
     }
     return [get_one_from_db.to_job(resource_defs=resources_by_env[get_env()])]
-
-
-# end_database_example
 ```
 
 ## Patterns
