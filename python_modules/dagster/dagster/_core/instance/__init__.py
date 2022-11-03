@@ -646,8 +646,6 @@ class DagsterInstance:
 
         if "enabled" in telemetry_settings:
             return telemetry_settings["enabled"]
-        elif "experimental_dagit" in telemetry_settings:
-            return telemetry_settings["experimental_dagit"]
         else:
             return dagster_telemetry_enabled_default
 
@@ -2113,14 +2111,3 @@ class DagsterInstance:
         )
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         return get_tick_retention_settings(tick_settings, default_tick_settings)
-
-
-def is_dagit_telemetry_enabled(instance):
-    telemetry_settings = instance.get_settings("telemetry")
-    if not telemetry_settings:
-        return False
-
-    if "experimental_dagit" in telemetry_settings:
-        return telemetry_settings["experimental_dagit"]
-    else:
-        return False
