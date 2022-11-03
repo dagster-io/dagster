@@ -1,0 +1,4 @@
+load_from:
+  - python_file:
+      relative_path: multi_job.py
+      location_name: multi_job

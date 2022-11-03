@@ -41,15 +41,15 @@ def get_all_loading_combos():
     def _iterate_combos():
         possible_location_args = [[], ["-l", "hello_world_location"]]
         possible_repo_args = [[], ["-r", "hello_world_repository"]]
-        possible_pipeline_args = [[], ["-j", "hello_world_pipeline"]]
+        possible_job_args = [[], ["-j", "hello_world_job"]]
 
         for location_args in possible_location_args:
             for repo_args in possible_repo_args:
-                for pipeline_args in possible_pipeline_args:
+                for job_args in possible_job_args:
                     yield [
                         "-w",
                         PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE,
-                    ] + location_args + repo_args + pipeline_args
+                    ] + location_args + repo_args + job_args
 
     return tuple(_iterate_combos())
 
@@ -58,7 +58,7 @@ def get_all_loading_combos():
 def test_valid_loading_combos_single_pipeline_code_location(cli_args):
     external_pipeline = successfully_load_pipeline_via_cli(cli_args)
     assert isinstance(external_pipeline, ExternalPipeline)
-    assert external_pipeline.name == "hello_world_pipeline"
+    assert external_pipeline.name == "hello_world_job"
 
 
 def test_repository_target_argument_one_repo_and_specified_wrong():
@@ -69,34 +69,30 @@ def test_repository_target_argument_one_repo_and_specified_wrong():
     assert result.exit_code == 2
     assert (
         """Job "not_present" not found in repository """
-        """"hello_world_repository". Found ['hello_world_pipeline'] instead."""
+        """"hello_world_repository". Found ['hello_world_job'] instead."""
     ) in result.stdout
 
 
-MULTI_PIPELINE_WORKSPACE = file_relative_path(__file__, "multi_pipeline/multi_pipeline.yaml")
+MULTI_JOB_WORKSPACE = file_relative_path(__file__, "multi_job/multi_job.yaml")
 
 
 def test_successfully_find_pipeline():
     assert (
-        successfully_load_pipeline_via_cli(
-            ["-w", MULTI_PIPELINE_WORKSPACE, "-j", "pipeline_one"]
-        ).name
-        == "pipeline_one"
+        successfully_load_pipeline_via_cli(["-w", MULTI_JOB_WORKSPACE, "-j", "job_one"]).name
+        == "job_one"
     )
 
     assert (
-        successfully_load_pipeline_via_cli(
-            ["-w", MULTI_PIPELINE_WORKSPACE, "-j", "pipeline_two"]
-        ).name
-        == "pipeline_two"
+        successfully_load_pipeline_via_cli(["-w", MULTI_JOB_WORKSPACE, "-j", "job_two"]).name
+        == "job_two"
     )
 
 
 def test_must_provide_name_to_multi_pipeline():
-    result, _ = load_pipeline_via_cli_runner(["-w", MULTI_PIPELINE_WORKSPACE])
+    result, _ = load_pipeline_via_cli_runner(["-w", MULTI_JOB_WORKSPACE])
 
     assert result.exit_code == 2
     assert (
         """Must provide --job as there is more than one job in """
-        """multi_pipeline. Options are: ['pipeline_one', 'pipeline_two']."""
+        """multi_job. Options are: ['job_one', 'job_two']."""
     ) in result.stdout

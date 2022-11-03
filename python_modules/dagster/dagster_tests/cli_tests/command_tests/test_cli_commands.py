@@ -29,7 +29,10 @@ from dagster._cli.run import (
 )
 from dagster._cli.workspace.cli_target import ClickArgMapping
 from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.partition import (
+    PartitionedConfig,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
@@ -37,12 +40,6 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
-from dagster._legacy import (
-    ModeDefinition,
-    PresetDefinition,
-    execute_pipeline,
-    pipeline,
-)
 from dagster._utils import file_relative_path
 from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
@@ -59,18 +56,16 @@ def do_input(x):
     return x
 
 
-@pipeline(
+@job(
     name="foo",
-    preset_defs=[
-        PresetDefinition(name="test", tags={"foo": "bar"}),
-    ],
+    tags={"foo": "bar"},
 )
-def foo_pipeline():
+def foo_job():
     do_input(do_something())
 
 
 def define_foo_pipeline():
-    return foo_pipeline
+    return foo_job
 
 
 @op
@@ -142,11 +137,11 @@ def baz_error_config_job():
     do_input()
 
 
-def not_a_repo_or_pipeline_fn():
+def not_a_repo_or_job_fn():
     return "kdjfkjdf"
 
 
-not_a_repo_or_pipeline = 123
+not_a_repo_or_job = 123
 
 partitioned_job_partitions = StaticPartitionsDefinition(list(string.digits))
 
@@ -185,25 +180,15 @@ def define_bar_sensors():
 
 
 @op(version="foo")
-def my_solid():
-    return 5
-
-
-@pipeline(
-    name="memoizable",
-    mode_defs=[ModeDefinition(resource_defs={"io_manager": versioned_filesystem_io_manager})],
-    tags={MEMOIZED_RUN_TAG: "true"},
-)
-def memoizable_pipeline():
-    my_solid()
-
-
-@op(version="foo")
 def my_op():
     return 5
 
 
-@job(tags={MEMOIZED_RUN_TAG: "true"}, resource_defs={"io_manager": versioned_filesystem_io_manager})
+@job(
+    name="memoizable",
+    resource_defs={"io_manager": versioned_filesystem_io_manager},
+    tags={MEMOIZED_RUN_TAG: "true"},
+)
 def memoizable_job():
     my_op()
 
@@ -212,8 +197,8 @@ def memoizable_job():
 def bar():
     return {
         "pipelines": {
-            "foo": foo_pipeline,
-            "memoizable": memoizable_pipeline,
+            "foo": foo_job,
+            "memoizable": memoizable_job,
         },
         "jobs": {
             "qux": qux_job,
@@ -238,13 +223,13 @@ def fail(context):
     raise Exception("I AM SUPPOSED TO FAIL")
 
 
-@pipeline
-def stdout_pipeline():
+@job
+def stdout_job():
     spew()
 
 
-@pipeline
-def stderr_pipeline():
+@job
+def stderr_job():
     fail()
 
 
@@ -653,13 +638,13 @@ def valid_pipeline_python_origin_target_cli_args():
             "-m",
             "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "-a",
-            "foo_pipeline",
+            "foo_job",
         ],
         [
             "-f",
             file_relative_path(__file__, "test_cli_commands.py"),
             "-a",
-            "define_foo_pipeline",
+            "define_foo_job",
         ],
         [
             "-f",
@@ -667,7 +652,7 @@ def valid_pipeline_python_origin_target_cli_args():
             "-d",
             os.path.dirname(__file__),
             "-a",
-            "define_foo_pipeline",
+            "define_foo_job",
         ],
     ]
 
@@ -768,7 +753,7 @@ def valid_external_pipeline_target_cli_args_with_preset():
             "-d",
             os.path.dirname(__file__),
             "-a",
-            "define_foo_pipeline",
+            "define_foo_job",
             "--preset",
             "test",
         ],
@@ -778,7 +763,7 @@ def valid_external_pipeline_target_cli_args_with_preset():
             "-d",
             os.path.dirname(__file__),
             "-a",
-            "define_foo_pipeline",
+            "define_foo_job",
         ],
     ]
 
@@ -825,9 +810,9 @@ def test_run_delete_bad_id():
 
 def test_run_delete_correct_delete_message():
     with instance_for_test() as instance:
-        pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
+        result = foo_job.execute_in_process(instance=instance)
         runner = CliRunner()
-        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="DELETE\n")
+        result = runner.invoke(run_delete_command, args=[result.run_id], input="DELETE\n")
         assert "Deleted run" in result.output
         assert result.exit_code == 0
 
@@ -835,7 +820,7 @@ def test_run_delete_correct_delete_message():
 @pytest.mark.parametrize("force_flag", ["--force", "-f"])
 def test_run_delete_force(force_flag):
     with instance_for_test() as instance:
-        run_id = execute_pipeline(foo_pipeline, instance=instance).run_id
+        run_id = foo_job.execute_in_process(instance=instance).run_id
         runner = CliRunner()
         result = runner.invoke(run_delete_command, args=[force_flag, run_id])
         assert "Deleted run" in result.output
@@ -844,7 +829,7 @@ def test_run_delete_force(force_flag):
 
 def test_run_delete_incorrect_delete_message():
     with instance_for_test() as instance:
-        pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
+        pipeline_result = foo_job.execute_in_process(instance=instance)
         runner = CliRunner()
         result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="Wrong\n")
         assert "Exiting without deleting" in result.output

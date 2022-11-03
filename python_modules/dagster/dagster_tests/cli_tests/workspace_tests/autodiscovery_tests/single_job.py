@@ -2,5 +2,5 @@ from dagster import job
 
 
 @job
-def define_job():
+def a_job():
     pass
