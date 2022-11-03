@@ -6,6 +6,10 @@ import time
 import pytest
 
 from dagster import (
+    job,
+    In,
+    Out,
+    op,
     Failure,
     Field,
     MetadataEntry,
@@ -21,13 +25,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
     PresetDefinition,
-    execute_pipeline,
-    lambda_solid,
     pipeline,
-    solid,
 )
 from dagster._utils import safe_tempfile_path, segfault
 
@@ -39,7 +38,7 @@ from .retry_jobs import (
 
 
 def test_diamond_simple_execution():
-    result = execute_pipeline(define_diamond_pipeline())
+    result = define_diamond_pipeline().execute_in_process()
     assert result.success
     assert result.result_for_solid("adder").output_value() == 11
 
@@ -51,8 +50,7 @@ def compute_event(result, solid_name):
 def test_diamond_multi_execution():
     with instance_for_test() as instance:
         pipe = reconstructable(define_diamond_pipeline)
-        result = execute_pipeline(
-            pipe,
+        result = pipe.execute_in_process(
             run_config={
                 "execution": {"multiprocess": {}},
             },
@@ -66,10 +64,11 @@ def test_diamond_multi_execution():
 def test_explicit_spawn():
     with instance_for_test() as instance:
         pipe = reconstructable(define_diamond_pipeline)
-        result = execute_pipeline(
-            pipe,
+        result = pipe.execute_in_process(
             run_config={
-                "execution": {"multiprocess": {"config": {"start_method": {"spawn": {}}}}},
+                "execution": {
+                    "multiprocess": {"config": {"start_method": {"spawn": {}}}}
+                },
             },
             instance=instance,
         )
@@ -82,10 +81,11 @@ def test_explicit_spawn():
 def test_forkserver_execution():
     with instance_for_test() as instance:
         pipe = reconstructable(define_diamond_pipeline)
-        result = execute_pipeline(
-            pipe,
+        result = pipe.execute_in_process(
             run_config={
-                "execution": {"multiprocess": {"config": {"start_method": {"forkserver": {}}}}},
+                "execution": {
+                    "multiprocess": {"config": {"start_method": {"forkserver": {}}}}
+                },
             },
             instance=instance,
         )
@@ -98,12 +98,13 @@ def test_forkserver_execution():
 def test_forkserver_preload():
     with instance_for_test() as instance:
         pipe = reconstructable(define_diamond_pipeline)
-        result = execute_pipeline(
-            pipe,
+        result = pipe.execute_in_process(
             run_config={
                 "execution": {
                     "multiprocess": {
-                        "config": {"start_method": {"forkserver": {"preload_modules": []}}}
+                        "config": {
+                            "start_method": {"forkserver": {"preload_modules": []}}
+                        }
                     }
                 },
             },
@@ -115,19 +116,19 @@ def test_forkserver_preload():
 
 
 def define_diamond_pipeline():
-    @lambda_solid
+    @op
     def return_two():
         return 2
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_three(num):
         return num + 3
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def mult_three(num):
         return num * 3
 
-    @lambda_solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
+    @op(ins={"left": In(), "right": In()})
     def adder(left, right):
         return left + right
 
@@ -137,62 +138,65 @@ def define_diamond_pipeline():
                 "just_adder",
                 {
                     "execution": {"multiprocess": {}},
-                    "solids": {"adder": {"inputs": {"left": {"value": 1}, "right": {"value": 1}}}},
+                    "solids": {
+                        "adder": {
+                            "inputs": {"left": {"value": 1}, "right": {"value": 1}}
+                        }
+                    },
                 },
                 solid_selection=["adder"],
             )
         ],
         mode_defs=[default_mode_def_for_test],
     )
-    def diamond_pipeline():
+    def diamond_job():
         two = return_two()
         adder(left=add_three(two), right=mult_three(two))
 
-    return diamond_pipeline
+    return diamond_job
 
 
 def define_in_mem_pipeline():
-    @lambda_solid
+    @op
     def return_two():
         return 2
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_three(num):
         return num + 3
 
-    @pipeline
-    def in_mem_pipeline():
+    @job
+    def in_mem_job():
         add_three(return_two())
 
-    return in_mem_pipeline
+    return in_mem_job
 
 
 def define_error_pipeline():
-    @lambda_solid
+    @op
     def should_never_execute(_x):
         assert False  # this should never execute
 
-    @lambda_solid
+    @op
     def throw_error():
         raise Exception("bad programmer")
 
     @pipeline(mode_defs=[default_mode_def_for_test])
-    def error_pipeline():
+    def error_job():
         should_never_execute(throw_error())
 
-    return error_pipeline
+    return error_job
 
 
 def test_error_pipeline():
     pipe = define_error_pipeline()
-    result = execute_pipeline(pipe, raise_on_error=False)
+    result = pipe.execute_in_process(raise_on_error=False)
     assert not result.success
 
 
 def test_error_pipeline_multiprocess():
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(define_error_pipeline),
+        result = reconstructable(define_error_pipeline).execute_in_process(
             run_config={
                 "execution": {"multiprocess": {}},
             },
@@ -207,8 +211,7 @@ def test_mem_storage_error_pipeline_multiprocess():
             DagsterUnmetExecutorRequirementsError,
             match="your pipeline includes solid outputs that will not be stored somewhere where other processes can retrieve them.",
         ):
-            execute_pipeline(
-                reconstructable(define_in_mem_pipeline),
+            reconstructable(define_in_mem_pipeline).execute_in_process(
                 run_config={"execution": {"multiprocess": {}}},
                 instance=instance,
                 raise_on_error=False,
@@ -216,8 +219,7 @@ def test_mem_storage_error_pipeline_multiprocess():
 
 
 def test_invalid_instance():
-    result = execute_pipeline(
-        reconstructable(define_diamond_pipeline),
+    result = reconstructable(define_diamond_pipeline).execute_in_process(
         run_config={"execution": {"multiprocess": {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
@@ -229,12 +231,14 @@ def test_invalid_instance():
         result.event_list[0].pipeline_failure_data.error.cls_name
         == "DagsterUnmetExecutorRequirementsError"
     )
-    assert "non-ephemeral instance" in result.event_list[0].pipeline_failure_data.error.message
+    assert (
+        "non-ephemeral instance"
+        in result.event_list[0].pipeline_failure_data.error.message
+    )
 
 
 def test_no_handle():
-    result = execute_pipeline(
-        define_diamond_pipeline(),
+    result = define_diamond_pipeline().execute_in_process(
         run_config={"execution": {"multiprocess": {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
@@ -246,14 +250,17 @@ def test_no_handle():
         result.event_list[0].pipeline_failure_data.error.cls_name
         == "DagsterUnmetExecutorRequirementsError"
     )
-    assert "is not reconstructable" in result.event_list[0].pipeline_failure_data.error.message
+    assert (
+        "is not reconstructable"
+        in result.event_list[0].pipeline_failure_data.error.message
+    )
 
 
 def test_solid_selection():
     with instance_for_test() as instance:
         pipe = reconstructable(define_diamond_pipeline)
 
-        result = execute_pipeline(pipe, preset="just_adder", instance=instance)
+        result = pipe.execute_in_process(preset="just_adder", instance=instance)
 
         assert result.success
 
@@ -261,26 +268,26 @@ def test_solid_selection():
 
 
 def define_subdag_pipeline():
-    @solid(config_schema=Field(String))
+    @op(config_schema=Field(String))
     def waiter(context):
         done = False
         while not done:
             time.sleep(0.15)
-            if os.path.isfile(context.solid_config):
+            if os.path.isfile(context.op_config):
                 return
 
-    @solid(
-        input_defs=[InputDefinition("after", Nothing)],
+    @op(
+        ins={"after": In(Nothing)},
         config_schema=Field(String),
     )
     def writer(context):
-        with open(context.solid_config, "w", encoding="utf8") as fd:
+        with open(context.op_config, "w", encoding="utf8") as fd:
             fd.write("1")
         return
 
-    @lambda_solid(
-        input_defs=[InputDefinition("after", Nothing)],
-        output_def=OutputDefinition(Nothing),
+    @op(
+        ins={"after": In(Nothing)},
+        out=Out(Nothing),
     )
     def noop():
         pass
@@ -301,8 +308,7 @@ def test_separate_sub_dags():
         pipe = reconstructable(define_subdag_pipeline)
 
         with safe_tempfile_path() as filename:
-            result = execute_pipeline(
-                pipe,
+            result = pipe.execute_in_process(
                 run_config={
                     "execution": {"multiprocess": {"config": {"max_concurrent": 2}}},
                     "solids": {
@@ -317,7 +323,9 @@ def test_separate_sub_dags():
 
         # this test is to ensure that the chain of noop -> noop -> noop -> writer is not blocked by waiter
         order = [
-            str(event.solid_handle) for event in result.step_event_list if event.is_step_success
+            str(event.solid_handle)
+            for event in result.step_event_list
+            if event.is_step_success
         ]
 
         # the writer and waiter my finish in different orders so just ensure the proceeding chain
@@ -336,8 +344,7 @@ def test_ephemeral_event_log():
         pipe = reconstructable(define_diamond_pipeline)
         # override event log to in memory
 
-        result = execute_pipeline(
-            pipe,
+        result = pipe.execute_in_process(
             run_config={
                 "execution": {"multiprocess": {}},
             },
@@ -348,17 +355,12 @@ def test_ephemeral_event_log():
         assert result.result_for_solid("adder").output_value() == 11
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(name="option_1", is_required=False),
-        OutputDefinition(name="option_2", is_required=False),
-    ]
-)
+@op(out={"option_1": Out(is_required=False), "option_2": Out(is_required=False)})
 def either_or(_context):
     yield Output(1, "option_1")
 
 
-@lambda_solid
+@op
 def echo(x):
     return x
 
@@ -372,24 +374,45 @@ def optional_stuff():
 
 def test_optional_outputs():
     with instance_for_test() as instance:
-        single_result = execute_pipeline(optional_stuff)
+        single_result = optional_stuff.execute_in_process()
         assert single_result.success
-        assert not [event for event in single_result.step_event_list if event.is_step_failure]
-        assert len([event for event in single_result.step_event_list if event.is_step_skipped]) == 2
+        assert not [
+            event for event in single_result.step_event_list if event.is_step_failure
+        ]
+        assert (
+            len(
+                [
+                    event
+                    for event in single_result.step_event_list
+                    if event.is_step_skipped
+                ]
+            )
+            == 2
+        )
 
-        multi_result = execute_pipeline(
-            reconstructable(optional_stuff),
+        multi_result = reconstructable(optional_stuff).execute_in_process(
             run_config={
                 "execution": {"multiprocess": {}},
             },
             instance=instance,
         )
         assert multi_result.success
-        assert not [event for event in multi_result.step_event_list if event.is_step_failure]
-        assert len([event for event in multi_result.step_event_list if event.is_step_skipped]) == 2
+        assert not [
+            event for event in multi_result.step_event_list if event.is_step_failure
+        ]
+        assert (
+            len(
+                [
+                    event
+                    for event in multi_result.step_event_list
+                    if event.is_step_skipped
+                ]
+            )
+            == 2
+        )
 
 
-@lambda_solid
+@op
 def throw():
     raise Failure(
         description="it Failure",
@@ -404,8 +427,7 @@ def failure():
 
 def test_failure_multiprocessing():
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(failure),
+        result = reconstructable(failure).execute_in_process(
             run_config={
                 "execution": {"multiprocess": {}},
             },
@@ -422,10 +444,12 @@ def test_failure_multiprocessing():
         # from Failure
         assert failure_data.user_failure_data.description == "it Failure"
         assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-        assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
+        assert (
+            failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
+        )
 
 
-@solid
+@op
 def sys_exit(context):
     context.log.info("Informational message")
     print("Crashy output to stdout")  # pylint: disable=print-call
@@ -434,15 +458,16 @@ def sys_exit(context):
 
 
 @pipeline(mode_defs=[default_mode_def_for_test])
-def sys_exit_pipeline():
+def sys_exit_job():
     sys_exit()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Different crash output on Windows: See issue #2791")
+@pytest.mark.skipif(
+    os.name == "nt", reason="Different crash output on Windows: See issue #2791"
+)
 def test_crash_multiprocessing():
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(sys_exit_pipeline),
+        result = reconstructable(sys_exit_job).execute_in_process(
             run_config={
                 "execution": {"multiprocess": {}},
             },
@@ -480,23 +505,24 @@ def test_crash_multiprocessing():
 
 
 # segfault test
-@solid
-def segfault_solid(context):
+@op
+def segfault_op(context):
     context.log.info("Informational message")
     print("Crashy output to stdout")  # pylint: disable=print-call
     segfault()
 
 
 @pipeline(mode_defs=[default_mode_def_for_test])
-def segfault_pipeline():
-    segfault_solid()
+def segfault_job():
+    segfault_op()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Different exception on Windows: See issue #2791")
+@pytest.mark.skipif(
+    os.name == "nt", reason="Different exception on Windows: See issue #2791"
+)
 def test_crash_hard_multiprocessing():
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(segfault_pipeline),
+        result = reconstructable(segfault_job).execute_in_process(
             run_config={
                 "execution": {"multiprocess": {}},
             },
@@ -504,7 +530,7 @@ def test_crash_hard_multiprocessing():
             raise_on_error=False,
         )
         assert not result.success
-        failure_data = result.result_for_solid("segfault_solid").failure_data
+        failure_data = result.result_for_solid("segfault_op").failure_data
         assert failure_data
         assert failure_data.error.cls_name == "ChildProcessCrashException"
 

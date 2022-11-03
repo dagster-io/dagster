@@ -18,11 +18,18 @@ from dagster import (
 )
 from dagster._config import Permissive
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
-from dagster._core.definitions.repository_definition import AssetsDefinitionCacheableData
+from dagster._core.definitions.executor_definition import (
+    multiple_process_executor_requirements,
+)
+from dagster._core.definitions.reconstruct import (
+    ReconstructablePipeline,
+    ReconstructableRepository,
+)
+from dagster._core.definitions.repository_definition import (
+    AssetsDefinitionCacheableData,
+)
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_pipeline, reexecute_pipeline
+from dagster._core.execution.api import reexecute_pipeline
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
@@ -120,8 +127,7 @@ def foo_job():
 def test_execute():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(foo_job),
+        result = reconstructable(foo_job).execute_in_process(
             instance=instance,
             run_config={"execution": {"config": {}}},
         )
@@ -144,8 +150,7 @@ def test_skip_execute():
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(define_dynamic_skipping_job),
+        result = reconstructable(define_dynamic_skipping_job).execute_in_process(
             instance=instance,
         )
         TestStepHandler.wait_for_processes()
@@ -158,8 +163,7 @@ def test_dynamic_execute():
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(define_dynamic_job),
+        result = reconstructable(define_dynamic_job).execute_in_process(
             instance=instance,
         )
         TestStepHandler.wait_for_processes()
@@ -182,8 +186,7 @@ def test_skipping():
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(define_skpping_job),
+        result = reconstructable(define_skpping_job).execute_in_process(
             instance=instance,
         )
         TestStepHandler.wait_for_processes()
@@ -194,10 +197,11 @@ def test_skipping():
 def test_execute_intervals():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(foo_job),
+        result = reconstructable(foo_job).execute_in_process(
             instance=instance,
-            run_config={"execution": {"config": {"check_step_health_interval_seconds": 60}}},
+            run_config={
+                "execution": {"config": {"check_step_health_interval_seconds": 60}}
+            },
         )
         TestStepHandler.wait_for_processes()
 
@@ -209,10 +213,11 @@ def test_execute_intervals():
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(foo_job),
+        result = reconstructable(foo_job).execute_in_process(
             instance=instance,
-            run_config={"execution": {"config": {"check_step_health_interval_seconds": 0}}},
+            run_config={
+                "execution": {"config": {"check_step_health_interval_seconds": 0}}
+            },
         )
         TestStepHandler.wait_for_processes()
 
@@ -237,8 +242,7 @@ def three_op_job():
 def test_max_concurrent():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(three_op_job),
+        result = reconstructable(three_op_job).execute_in_process(
             instance=instance,
             run_config={"execution": {"config": {"max_concurrent": 1}}},
         )
@@ -249,7 +253,9 @@ def test_max_concurrent():
     active_step = None
     for event in result.event_list:
         if event.event_type_value == DagsterEventType.STEP_START.value:
-            assert active_step is None, "A second step started before the first finished!"
+            assert (
+                active_step is None
+            ), "A second step started before the first finished!"
             active_step = event.step_key
         elif event.event_type_value == DagsterEventType.STEP_SUCCESS.value:
             assert (
@@ -284,8 +290,7 @@ def foo_job_verify_step():
 def test_execute_verify_step():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(foo_job_verify_step),
+        result = reconstructable(foo_job_verify_step).execute_in_process(
             instance=instance,
             run_config={"execution": {"config": {}}},
         )
@@ -312,8 +317,7 @@ def test_execute_using_repository_data():
             repository=recon_repo, pipeline_name="all_asset_job"
         )
 
-        result = execute_pipeline(
-            recon_pipeline,
+        result = recon_pipeline.execute_in_process(
             instance=instance,
             run_config={"execution": {"config": {}}},
         )
@@ -326,7 +330,8 @@ def test_execute_using_repository_data():
 
         assert any(
             [
-                "Starting execution with step handler TestStepHandler" in (event.message or "")
+                "Starting execution with step handler TestStepHandler"
+                in (event.message or "")
                 for event in result.event_list
             ]
         )
@@ -337,7 +342,8 @@ def test_execute_using_repository_data():
 
         assert any(
             [
-                "Starting execution with step handler TestStepHandler" in (event.message or "")
+                "Starting execution with step handler TestStepHandler"
+                in (event.message or "")
                 for event in result.event_list
             ]
         )
@@ -353,7 +359,9 @@ def test_execute_using_repository_data():
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _cacheable_data = AssetsDefinitionCacheableData(keys_by_output_name={"result": AssetKey("foo")})
+    _cacheable_data = AssetsDefinitionCacheableData(
+        keys_by_output_name={"result": AssetKey("foo")}
+    )
 
     def compute_cacheable_data(self):
         # used for tracking how many times this function gets called over an execution
@@ -377,7 +385,8 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
             return 1
 
         return [
-            AssetsDefinition.from_op(_op, keys_by_output_name=cd.keys_by_output_name) for cd in data
+            AssetsDefinition.from_op(_op, keys_by_output_name=cd.keys_by_output_name)
+            for cd in data
         ]
 
 
