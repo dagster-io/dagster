@@ -122,7 +122,7 @@ class PythonPackages:
             [
                 PythonPackage(Path(setup))
                 for setup in git_info.directory.rglob("setup.py")
-                if "_tests" not in str(setup) and not git_ignore_spec.match_file(str(setup))
+                if not git_ignore_spec.match_file(str(setup))
             ]
         )
 

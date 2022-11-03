@@ -20,7 +20,7 @@ from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
-from .setup import csv_hello_world_solids_config
+from .repo import csv_hello_world_solids_config
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,
     step_did_not_run,
