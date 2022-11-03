@@ -1,11 +1,11 @@
-from dagster import reconstructable
+from dagster import op, reconstructable
 from dagster._core.events import MARKER_EVENTS
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import execute_pipeline, lambda_solid, pipeline
+from dagster._legacy import pipeline
 
 
 def define_pipeline():
-    @lambda_solid
+    @op
     def ping():
         return "ping"
 
@@ -18,8 +18,7 @@ def define_pipeline():
 
 def test_multiproc_markers():
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(define_pipeline),
+        result = reconstructable(define_pipeline).execute_in_process(
             instance=instance,
             run_config={
                 "execution": {"multiprocess": {}},

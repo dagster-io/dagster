@@ -17,7 +17,7 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline, reexecute_pipeline
+from dagster._legacy import reexecute_pipeline
 
 from .memoized_dev_loop_pipeline import asset_pipeline
 
@@ -45,8 +45,7 @@ def test_dev_loop_changing_versions():
                 "resources": {"io_manager": {"config": {"base_dir": temp_dir}}},
             }
 
-            result = execute_pipeline(
-                asset_pipeline,
+            result = asset_pipeline.execute_in_process(
                 run_config=run_config,
                 mode="only_mode",
                 tags={MEMOIZED_RUN_TAG: "true"},
@@ -55,15 +54,19 @@ def test_dev_loop_changing_versions():
             assert result.success
             # Ensure that after one memoized execution, with no change to run config, that upon the next
             # computation, there are no step keys to execute.
-            assert not get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance)
+            assert not get_step_keys_to_execute(
+                asset_pipeline, run_config, "only_mode", instance
+            )
 
-            run_config["solids"]["take_string_1_asset"]["config"]["input_str"] = "banana"
+            run_config["solids"]["take_string_1_asset"]["config"][
+                "input_str"
+            ] = "banana"
 
             # Ensure that after changing run config that affects only the `take_string_1_asset` step, we
             # only need to execute that step.
-            assert get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance) == [
-                "take_string_1_asset"
-            ]
+            assert get_step_keys_to_execute(
+                asset_pipeline, run_config, "only_mode", instance
+            ) == ["take_string_1_asset"]
             result = reexecute_pipeline(
                 asset_pipeline,
                 parent_run_id=result.run_id,
@@ -75,11 +78,12 @@ def test_dev_loop_changing_versions():
             assert result.success
 
             # After executing with the updated run config, ensure that there are no unmemoized steps.
-            assert not get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance)
+            assert not get_step_keys_to_execute(
+                asset_pipeline, run_config, "only_mode", instance
+            )
 
             # Ensure that the pipeline runs, but with no steps.
-            result = execute_pipeline(
-                asset_pipeline,
+            result = asset_pipeline.execute_in_process(
                 run_config=run_config,
                 mode="only_mode",
                 tags={MEMOIZED_RUN_TAG: "true"},
@@ -122,14 +126,18 @@ def test_memoization_with_default_strategy():
                     "my_resource": my_resource,
                 },
             )
-            unmemoized_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
+            unmemoized_plan = create_execution_plan(
+                my_job, instance_ref=instance.get_ref()
+            )
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
             result = my_job.execute_in_process(instance=instance)
             assert result.success
             assert len(recorder) == 1
 
-            execution_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
+            execution_plan = create_execution_plan(
+                my_job, instance_ref=instance.get_ref()
+            )
             assert len(execution_plan.step_keys_to_execute) == 0
 
             result = my_job.execute_in_process(instance=instance)
@@ -221,7 +229,9 @@ def test_memoization_with_default_strategy_overriden():
                 },
             )
 
-            unmemoized_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
+            unmemoized_plan = create_execution_plan(
+                my_job, instance_ref=instance.get_ref()
+            )
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
             result = my_job.execute_in_process(instance=instance)
@@ -232,7 +242,9 @@ def test_memoization_with_default_strategy_overriden():
             version.remove("foo")
             version.append("bar")
 
-            memoized_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
+            memoized_plan = create_execution_plan(
+                my_job, instance_ref=instance.get_ref()
+            )
             assert len(memoized_plan.step_keys_to_execute) == 0
 
             result = my_job.execute_in_process(instance=instance)
@@ -259,7 +271,7 @@ def test_version_strategy_depends_from_context():
     class ContextDependantVersionStrategy(VersionStrategy):
         def get_op_version(self, context):
             version_strategy_called.append("versioned")
-            solid_arg = context.solid_config["arg"]
+            solid_arg = context.op_config["arg"]
             return version[solid_arg]
 
         def get_resource_version(self, context):
@@ -356,7 +368,9 @@ def test_version_strategy_root_input_manager():
             )
             result = my_job.execute_in_process(instance=instance)
             assert result.success
-            post_memoization_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
+            post_memoization_plan = create_execution_plan(
+                my_job, instance_ref=instance.get_ref()
+            )
             assert len(post_memoization_plan.step_keys_to_execute) == 0
 
 

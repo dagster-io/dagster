@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 
 from dagster import (
+    job,
+    op,
     AssetMaterialization,
     AssetObservation,
     BoolMetadataValue,
@@ -28,7 +30,6 @@ from dagster._core.definitions.metadata.table import (
     TableRecord,
     TableSchema,
 )
-from dagster._legacy import execute_pipeline, pipeline, solid
 from dagster._utils import frozendict
 
 
@@ -50,8 +51,8 @@ def test_metadata_entry_construction():
 
 
 def test_metadata_asset_materialization():
-    @solid(output_defs=[])
-    def the_solid(_context):
+    @op(out={})
+    def the_op(_context):
         yield AssetMaterialization(
             asset_key="foo",
             metadata={
@@ -64,23 +65,24 @@ def test_metadata_asset_materialization():
             },
         )
 
-    @pipeline
-    def the_pipeline():
-        the_solid()
+    @job
+    def the_job():
+        the_op()
 
-    result = execute_pipeline(the_pipeline)
+    result = the_job.execute_in_process()
 
     assert result
     assert result.success
 
     materialization_events = solid_events_for_type(
-        result, "the_solid", DagsterEventType.ASSET_MATERIALIZATION
+        result, "the_op", DagsterEventType.ASSET_MATERIALIZATION
     )
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
     assert len(materialization.metadata_entries) == 6
     entry_map = {
-        entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
+        entry.label: entry.entry_data.__class__
+        for entry in materialization.metadata_entries
     }
     assert entry_map["text"] == TextMetadataValue
     assert entry_map["int"] == IntMetadataValue
@@ -91,8 +93,8 @@ def test_metadata_asset_materialization():
 
 
 def test_metadata_asset_observation():
-    @solid(output_defs=[])
-    def the_solid(_context):
+    @op(out={})
+    def the_op(_context):
         yield AssetObservation(
             asset_key="foo",
             metadata={
@@ -104,22 +106,25 @@ def test_metadata_asset_observation():
             },
         )
 
-    @pipeline
-    def the_pipeline():
-        the_solid()
+    @job
+    def the_job():
+        the_op()
 
-    result = execute_pipeline(the_pipeline)
+    result = the_job.execute_in_process()
 
     assert result
     assert result.success
 
     observation_events = solid_events_for_type(
-        result, "the_solid", DagsterEventType.ASSET_OBSERVATION
+        result, "the_op", DagsterEventType.ASSET_OBSERVATION
     )
     assert len(observation_events) == 1
     observation = observation_events[0].event_specific_data.asset_observation
     assert len(observation.metadata_entries) == 5
-    entry_map = {entry.label: entry.entry_data.__class__ for entry in observation.metadata_entries}
+    entry_map = {
+        entry.label: entry.entry_data.__class__
+        for entry in observation.metadata_entries
+    }
     assert entry_map["text"] == TextMetadataValue
     assert entry_map["int"] == IntMetadataValue
     assert entry_map["url"] == UrlMetadataValue
@@ -128,19 +133,19 @@ def test_metadata_asset_observation():
 
 
 def test_unknown_metadata_value():
-    @solid(output_defs=[])
-    def the_solid(context):
+    @op(out={})
+    def the_op(context):
         yield AssetMaterialization(
             asset_key="foo",
             metadata={"bad": context.instance},
         )
 
-    @pipeline
-    def the_pipeline():
-        the_solid()
+    @job
+    def the_job():
+        the_op()
 
     with pytest.raises(DagsterInvalidMetadata) as exc_info:
-        execute_pipeline(the_pipeline)
+        the_job.execute_in_process()
 
     assert str(exc_info.value) == (
         'Could not resolve the metadata value for "bad" to a known type. '
@@ -173,19 +178,19 @@ def test_parse_path_metadata():
 
 
 def test_bad_json_metadata_value():
-    @solid(output_defs=[])
-    def the_solid(context):
+    @op(out={})
+    def the_op(context):
         yield AssetMaterialization(
             asset_key="foo",
             metadata={"bad": {"nested": context.instance}},
         )
 
-    @pipeline
-    def the_pipeline():
-        the_solid()
+    @job
+    def the_job():
+        the_op()
 
     with pytest.raises(DagsterInvalidMetadata) as exc_info:
-        execute_pipeline(the_pipeline)
+        the_job.execute_in_process()
 
     assert str(exc_info.value) == (
         'Could not resolve the metadata value for "bad" to a known type. '
@@ -269,7 +274,9 @@ def test_table_column_constraints_keys():
 
 
 # minimum and maximum aren't checked because they depend on the type of the column
-@pytest.mark.parametrize("key,value", list(bad_values["table_column_constraints"].items()))
+@pytest.mark.parametrize(
+    "key,value", list(bad_values["table_column_constraints"].items())
+)
 def test_table_column_constraints_values(key, value):
     kwargs = {
         "nullable": True,
@@ -333,7 +340,9 @@ def test_complex_table_schema():
 
 
 def test_table_schema_from_name_type_dict():
-    assert TableSchema.from_name_type_dict({"foo": "customtype", "bar": "string"}) == TableSchema(
+    assert TableSchema.from_name_type_dict(
+        {"foo": "customtype", "bar": "string"}
+    ) == TableSchema(
         columns=[
             TableColumn(name="foo", type="customtype"),
             TableColumn(name="bar", type="string"),
@@ -342,29 +351,30 @@ def test_table_schema_from_name_type_dict():
 
 
 def test_bool_metadata_value():
-    @solid(output_defs=[])
-    def the_solid():
+    @op(out={})
+    def the_op():
         yield AssetMaterialization(
             asset_key="foo",
             metadata={"first_bool": True, "second_bool": BoolMetadataValue(False)},
         )
 
-    @pipeline
-    def the_pipeline():
-        the_solid()
+    @job
+    def the_job():
+        the_op()
 
-    result = execute_pipeline(the_pipeline)
+    result = the_job.execute_in_process()
 
     assert result
     assert result.success
 
     materialization_events = solid_events_for_type(
-        result, "the_solid", DagsterEventType.ASSET_MATERIALIZATION
+        result, "the_op", DagsterEventType.ASSET_MATERIALIZATION
     )
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
     entry_map = {
-        entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
+        entry.label: entry.entry_data.__class__
+        for entry in materialization.metadata_entries
     }
     assert entry_map["first_bool"] == BoolMetadataValue
     assert entry_map["second_bool"] == BoolMetadataValue

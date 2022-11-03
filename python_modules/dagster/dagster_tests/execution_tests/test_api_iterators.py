@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import _check as check
+from dagster import GraphDefinition, op, _check as check
 from dagster import resource
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvariantViolationError
@@ -14,7 +14,6 @@ from dagster._core.execution.api import (
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, PipelineDefinition, solid
 
 
 @resource
@@ -33,8 +32,8 @@ def resource_b(context):
     yield  # add the second yield here to test teardown generator exit handling
 
 
-@solid(required_resource_keys={"a", "b"})
-def resource_solid(_):
+@op(required_resource_keys={"a", "b"})
+def resource_op(_):
     return "A"
 
 
@@ -46,15 +45,12 @@ def test_execute_pipeline_iterator():
             assert isinstance(record, EventLogEntry)
             records.append(record)
 
-        pipeline = PipelineDefinition(
+        pipeline = GraphDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={"a": resource_a, "b": resource_b},
-                    logger_defs={"callback": construct_event_logger(event_callback)},
-                )
-            ],
+            node_defs=[resource_op],
+        ).to_job(
+            resource_defs={"a": resource_a, "b": resource_b},
+            logger_defs={"callback": construct_event_logger(event_callback)},
         )
         iterator = execute_pipeline_iterator(
             pipeline, run_config={"loggers": {"callback": {}}}, instance=instance
@@ -67,10 +63,17 @@ def test_execute_pipeline_iterator():
 
         iterator.close()
         events = [record.dagster_event for record in records if record.is_dagster_event]
-        messages = [record.user_message for record in records if not record.is_dagster_event]
-        pipeline_failure_events = [event for event in events if event.is_pipeline_failure]
+        messages = [
+            record.user_message for record in records if not record.is_dagster_event
+        ]
+        pipeline_failure_events = [
+            event for event in events if event.is_pipeline_failure
+        ]
         assert len(pipeline_failure_events) == 1
-        assert "GeneratorExit" in pipeline_failure_events[0].pipeline_failure_data.error.message
+        assert (
+            "GeneratorExit"
+            in pipeline_failure_events[0].pipeline_failure_data.error.message
+        )
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
@@ -83,15 +86,12 @@ def test_execute_run_iterator():
         records.append(record)
 
     with instance_for_test() as instance:
-        pipeline_def = PipelineDefinition(
+        pipeline_def = GraphDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={"a": resource_a, "b": resource_b},
-                    logger_defs={"callback": construct_event_logger(event_callback)},
-                )
-            ],
+            node_defs=[resource_op],
+        ).to_job(
+            resource_defs={"a": resource_a, "b": resource_b},
+            logger_defs={"callback": construct_event_logger(event_callback)},
         )
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
@@ -110,10 +110,17 @@ def test_execute_run_iterator():
 
         iterator.close()
         events = [record.dagster_event for record in records if record.is_dagster_event]
-        messages = [record.user_message for record in records if not record.is_dagster_event]
-        pipeline_failure_events = [event for event in events if event.is_pipeline_failure]
+        messages = [
+            record.user_message for record in records if not record.is_dagster_event
+        ]
+        pipeline_failure_events = [
+            event for event in events if event.is_pipeline_failure
+        ]
         assert len(pipeline_failure_events) == 1
-        assert "GeneratorExit" in pipeline_failure_events[0].pipeline_failure_data.error.message
+        assert (
+            "GeneratorExit"
+            in pipeline_failure_events[0].pipeline_failure_data.error.message
+        )
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
@@ -124,12 +131,15 @@ def test_execute_run_iterator():
         ).with_status(DagsterRunStatus.SUCCESS)
 
         events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(
+                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
+            )
         )
 
         assert any(
             [
-                "Ignoring a run worker that started after the run had already finished." in event
+                "Ignoring a run worker that started after the run had already finished."
+                in event
                 for event in events
             ]
         )
@@ -174,7 +184,9 @@ def test_execute_run_iterator():
         ).with_status(DagsterRunStatus.CANCELED)
 
         events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(
+                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
+            )
         )
 
         assert len(events) == 1
@@ -189,15 +201,12 @@ def test_restart_running_run_worker():
         pass
 
     with instance_for_test() as instance:
-        pipeline_def = PipelineDefinition(
+        pipeline_def = GraphDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={"a": resource_a, "b": resource_b},
-                    logger_defs={"callback": construct_event_logger(event_callback)},
-                )
-            ],
+            node_defs=[resource_op],
+        ).to_job(
+            resource_defs={"a": resource_a, "b": resource_b},
+            logger_defs={"callback": construct_event_logger(event_callback)},
         )
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
@@ -206,7 +215,9 @@ def test_restart_running_run_worker():
         ).with_status(DagsterRunStatus.STARTED)
 
         events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(
+                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
+            )
         )
 
         assert any(
@@ -225,15 +236,12 @@ def test_start_run_worker_after_run_failure():
         pass
 
     with instance_for_test() as instance:
-        pipeline_def = PipelineDefinition(
+        pipeline_def = GraphDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={"a": resource_a, "b": resource_b},
-                    logger_defs={"callback": construct_event_logger(event_callback)},
-                )
-            ],
+            node_defs=[resource_op],
+        ).to_job(
+            resource_defs={"a": resource_a, "b": resource_b},
+            logger_defs={"callback": construct_event_logger(event_callback)},
         )
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
@@ -242,7 +250,9 @@ def test_start_run_worker_after_run_failure():
         ).with_status(DagsterRunStatus.FAILURE)
 
         event = next(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(
+                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
+            )
         )
         assert (
             "Ignoring a run worker that started after the run had already finished."
@@ -255,15 +265,12 @@ def test_execute_canceled_state():
         pass
 
     with instance_for_test() as instance:
-        pipeline_def = PipelineDefinition(
+        pipeline_def = GraphDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={"a": resource_a, "b": resource_b},
-                    logger_defs={"callback": construct_event_logger(event_callback)},
-                )
-            ],
+            node_defs=[resource_op],
+        ).to_job(
+            resource_defs={"a": resource_a, "b": resource_b},
+            logger_defs={"callback": construct_event_logger(event_callback)},
         )
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
@@ -293,7 +300,9 @@ def test_execute_canceled_state():
         ).with_status(DagsterRunStatus.CANCELED)
 
         iter_events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), iter_run, instance=instance)
+            execute_run_iterator(
+                InMemoryPipeline(pipeline_def), iter_run, instance=instance
+            )
         )
 
         assert len(iter_events) == 1
@@ -311,15 +320,12 @@ def test_execute_run_bad_state():
         records.append(record)
 
     with instance_for_test() as instance:
-        pipeline_def = PipelineDefinition(
+        pipeline_def = GraphDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={"a": resource_a, "b": resource_b},
-                    logger_defs={"callback": construct_event_logger(event_callback)},
-                )
-            ],
+            node_defs=[resource_op],
+        ).to_job(
+            resource_defs={"a": resource_a, "b": resource_b},
+            logger_defs={"callback": construct_event_logger(event_callback)},
         )
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
@@ -345,15 +351,12 @@ def test_execute_plan_iterator():
         records.append(record)
 
     with instance_for_test() as instance:
-        pipeline = PipelineDefinition(
+        pipeline = GraphDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={"a": resource_a, "b": resource_b},
-                    logger_defs={"callback": construct_event_logger(event_callback)},
-                )
-            ],
+            node_defs=[resource_op],
+        ).to_job(
+            resource_defs={"a": resource_a, "b": resource_b},
+            logger_defs={"callback": construct_event_logger(event_callback)},
         )
         run_config = {"loggers": {"callback": {}}}
 
@@ -378,6 +381,8 @@ def test_execute_plan_iterator():
             event_type = event.event_type_value
 
         iterator.close()
-        messages = [record.user_message for record in records if not record.is_dagster_event]
+        messages = [
+            record.user_message for record in records if not record.is_dagster_event
+        ]
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0

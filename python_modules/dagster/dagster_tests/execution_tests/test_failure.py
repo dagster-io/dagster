@@ -1,20 +1,19 @@
-from dagster import Failure, MetadataEntry
-from dagster._legacy import execute_pipeline, lambda_solid, pipeline
+from dagster import job, op, Failure, MetadataEntry
 
 
 def test_failure():
-    @lambda_solid
+    @op
     def throw():
         raise Failure(
             description="it Failure",
             metadata_entries=[MetadataEntry("label", value="text")],
         )
 
-    @pipeline
+    @job
     def failure():
         throw()
 
-    result = execute_pipeline(failure, raise_on_error=False)
+    result = failure.execute_in_process(raise_on_error=False)
     assert not result.success
     failure_data = result.result_for_solid("throw").failure_data
     assert failure_data
