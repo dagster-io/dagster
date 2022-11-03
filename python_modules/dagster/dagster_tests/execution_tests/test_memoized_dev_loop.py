@@ -15,12 +15,11 @@ from dagster import (
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.definitions.version_strategy import VersionStrategy
-from dagster._core.execution.api import create_execution_plan, execute_job
+from dagster._core.execution.api import ReexecutionOptions, create_execution_plan, execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import reexecute_pipeline
 
 from .memoized_dev_loop_job import op_job
 
@@ -66,27 +65,29 @@ def test_dev_loop_changing_versions():
             assert get_step_keys_to_execute(op_job, run_config, instance) == [
                 "take_string_1_asset_op"
             ]
-            result = reexecute_pipeline(
+            with execute_job(
                 reconstructable(op_job),
-                parent_run_id=result.run_id,
+                reexecution_options=ReexecutionOptions(
+                    parent_run_id=result.run_id,
+                ),
                 run_config=run_config,
                 tags={MEMOIZED_RUN_TAG: "true"},
                 instance=instance,
-            )
-            assert result.success
+            ) as result:
+                assert result.success
 
             # After executing with the updated run config, ensure that there are no unmemoized steps.
             assert not get_step_keys_to_execute(op_job, run_config, instance)
 
             # Ensure that the pipeline runs, but with no steps.
-            result = execute_job(
+            with execute_job(
                 reconstructable(op_job),
                 run_config=run_config,
                 tags={MEMOIZED_RUN_TAG: "true"},
                 instance=instance,
-            )
-            assert result.success
-            assert len(result.all_node_events) == 0
+            ) as result:
+                assert result.success
+                assert len(result.all_node_events) == 0
 
 
 def test_memoization_with_default_strategy():

@@ -1,6 +1,4 @@
-from dagster import Field, String, job, op, repository
-from dagster._core.definitions.input import In
-from dagster._core.definitions.output import Out
+from dagster import Field, In, Out, String, job, op, repository
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 
 

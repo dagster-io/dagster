@@ -598,7 +598,7 @@ def test_configured_input_should_skip_step():
     my_job.execute_in_process(run_config=run_config)
     assert called.get("yup")
 
-    # ensure should_skip_step behave the same as execute_pipeline
+    # ensure should_skip_step behave the same as execute_job
     instance = DagsterInstance.ephemeral()
     run = DagsterRun(pipeline_name="my_job", run_id=make_new_run_id())
     execute_plan(

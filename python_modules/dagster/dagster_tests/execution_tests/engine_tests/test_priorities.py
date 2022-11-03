@@ -1,7 +1,8 @@
 from dagster import reconstructable
 from dagster._core.definitions import op
-from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import execute_pipeline, pipeline
+from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.execution.api import execute_job
+from dagster._core.test_utils import instance_for_test
 
 
 @op(tags={"dagster/priority": "-1"})
@@ -19,7 +20,7 @@ def high(_):
     pass
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@job
 def priority_test():
     none()
     low()
@@ -30,26 +31,34 @@ def priority_test():
 
 
 def test_priorities():
-    result = execute_pipeline(
-        priority_test,
-    )
+    result = priority_test.execute_in_process()
     assert result.success
-    assert [
-        str(event.node_handle) for event in result.step_event_list if event.is_step_success
-    ] == ["high", "high_2", "none", "none_2", "low", "low_2"]
+    assert [str(event.node_handle) for event in result.get_step_success_events()] == [
+        "high",
+        "high_2",
+        "none",
+        "none_2",
+        "low",
+        "low_2",
+    ]
 
 
 def test_priorities_mp():
     with instance_for_test() as instance:
-        pipe = reconstructable(priority_test)
-        result = execute_pipeline(
-            pipe,
-            {
-                "execution": {"multiprocess": {"config": {"max_concurrent": 1}}},
+        recon_job = reconstructable(priority_test)
+        with execute_job(
+            recon_job,
+            run_config={
+                "execution": {"config": {"multiprocess": {"max_concurrent": 1}}},
             },
             instance=instance,
-        )
-        assert result.success
-        assert [
-            str(event.node_handle) for event in result.step_event_list if event.is_step_success
-        ] == ["high", "high_2", "none", "none_2", "low", "low_2"]
+        ) as result:
+            assert result.success
+            assert [str(event.node_handle) for event in result.get_step_success_events()] == [
+                "high",
+                "high_2",
+                "none",
+                "none_2",
+                "low",
+                "low_2",
+            ]
