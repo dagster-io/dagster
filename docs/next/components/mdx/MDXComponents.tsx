@@ -21,11 +21,11 @@ import Link from '../Link';
 
 import 'react-medium-image-zoom/dist/styles.css';
 import {RenderedDAG} from './RenderedDAG';
+import EnvironmentVariablesIntro from './includes/EnvironmentVariablesIntro.mdx';
 import AddGitubRepositorySecret from './includes/dagster-cloud/AddGitubRepositorySecret.mdx';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
 import DbtModelAssetExplanation from './includes/dagster/integrations/DbtModelAssetExplanation.mdx';
-import EnvironmentVariablesIntro from './includes/EnvironmentVariablesIntro.mdx';
 
 export const SearchIndexContext = React.createContext(null);
 
