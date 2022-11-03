@@ -1,11 +1,13 @@
 import datetime
 import logging
 import sys
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
+from unittest.mock import patch
 
 import dateutil
 import lazy_object_proxy
 import pendulum
+from airflow import __version__ as airflow_version
 from airflow.models import TaskInstance
 from airflow.models.baseoperator import BaseOperator
 from airflow.models.dag import DAG
@@ -224,7 +226,7 @@ def make_dagster_repo_from_airflow_dags_path(
 
 
 def make_dagster_pipeline_from_airflow_dag(
-    dag, tags=None, use_airflow_template_context=False, unique_id=None
+    dag, tags=None, use_airflow_template_context=False, unique_id=None, mock_xcom=False
 ):
     """Construct a Dagster pipeline corresponding to a given Airflow DAG.
 
@@ -274,6 +276,8 @@ def make_dagster_pipeline_from_airflow_dag(
             (default: False)
         unique_id (int): If not None, this id will be postpended to generated solid names. Used by
             framework authors to enforce unique solid names within a repo.
+        mock_xcom (bool): If not None, dagster will mock out all calls made to xcom, features that
+            depend on xcom may not work as expected.
 
     Returns:
         pipeline_def (PipelineDefinition): The generated Dagster pipeline
@@ -283,6 +287,7 @@ def make_dagster_pipeline_from_airflow_dag(
     tags = check.opt_dict_param(tags, "tags")
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
+    mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
 
     if IS_AIRFLOW_INGEST_PIPELINE_STR not in tags:
         tags[IS_AIRFLOW_INGEST_PIPELINE_STR] = "true"
@@ -290,7 +295,7 @@ def make_dagster_pipeline_from_airflow_dag(
     tags = validate_tags(tags)
 
     pipeline_dependencies, solid_defs = _get_pipeline_definition_args(
-        dag, use_airflow_template_context, unique_id
+        dag, use_airflow_template_context, unique_id, mock_xcom
     )
     pipeline_def = PipelineDefinition(
         name=normalized_name(dag.dag_id, None),
@@ -312,7 +317,9 @@ def normalized_name(name, unique_id):
         return base_name + "_" + str(unique_id)
 
 
-def _get_pipeline_definition_args(dag, use_airflow_template_context, unique_id=None):
+def _get_pipeline_definition_args(
+    dag, use_airflow_template_context, unique_id=None, mock_xcom=False
+):
     check.inst_param(dag, "dag", DAG)
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
@@ -331,6 +338,7 @@ def _get_pipeline_definition_args(dag, use_airflow_template_context, unique_id=N
             solid_defs,
             use_airflow_template_context,
             unique_id,
+            mock_xcom,
         )
     return (pipeline_dependencies, solid_defs)
 
@@ -342,16 +350,18 @@ def _traverse_airflow_dag(
     solid_defs,
     use_airflow_template_context,
     unique_id,
+    mock_xcom,
 ):
     check.inst_param(task, "task", BaseOperator)
     check.list_param(seen_tasks, "seen_tasks", BaseOperator)
     check.list_param(solid_defs, "solid_defs", SolidDefinition)
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
+    mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
 
     seen_tasks.append(task)
     current_solid = make_dagster_solid_from_airflow_task(
-        task, use_airflow_template_context, unique_id
+        task, use_airflow_template_context, unique_id, mock_xcom
     )
     solid_defs.append(current_solid)
 
@@ -382,6 +392,7 @@ def _traverse_airflow_dag(
                 solid_defs,
                 use_airflow_template_context,
                 unique_id,
+                mock_xcom,
             )
 
 
@@ -400,9 +411,18 @@ def replace_airflow_logger_handlers():
         logging.getLogger("airflow.task").handlers = prev_airflow_handlers
 
 
+@contextmanager
+def _mock_xcom():
+    with patch("airflow.models.TaskInstance.xcom_push"):
+        with patch("airflow.models.TaskInstance.xcom_pull"):
+            yield
+
+
 # If unique_id is not None, this id will be postpended to generated solid names, generally used
 # to enforce unique solid names within a repo.
-def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, unique_id=None):
+def make_dagster_solid_from_airflow_task(
+    task, use_airflow_template_context, unique_id=None, mock_xcom=False
+):
     check.inst_param(task, "task", BaseOperator)
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
@@ -443,19 +463,24 @@ def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, uni
 
         check.inst_param(execution_date, "execution_date", datetime.datetime)
 
-        with replace_airflow_logger_handlers():
-            task_instance = TaskInstance(task=task, execution_date=execution_date)
+        with _mock_xcom() if mock_xcom else nullcontext():
+            with replace_airflow_logger_handlers():
+                if airflow_version >= "2.0.0":
+                    task_instance = TaskInstance(
+                        task=task, execution_date=execution_date, run_id="dagster_airflow_run"
+                    )
+                else:
+                    task_instance = TaskInstance(task=task, execution_date=execution_date)
+                ti_context = (
+                    dagster_get_template_context(task_instance, task, execution_date)
+                    if not use_airflow_template_context
+                    else task_instance.get_template_context()
+                )
+                task.render_template_fields(ti_context)
 
-            ti_context = (
-                dagster_get_template_context(task_instance, task, execution_date)
-                if not use_airflow_template_context
-                else task_instance.get_template_context()
-            )
-            task.render_template_fields(ti_context)
+                task.execute(ti_context)
 
-            task.execute(ti_context)
-
-            return None
+                return None
 
     return _solid
 
