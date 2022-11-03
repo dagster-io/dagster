@@ -17,11 +17,11 @@ EXAMPLES_TO_IGNORE = ["docs_snippets"]
 AVAILABLE_EXAMPLES = [
     "assets_dbt_python",
     "assets_modern_data_stack",
-    "assets_notebook_template",
     "assets_pandas_pyspark",
     "assets_pandas_type_metadata",
     "assets_smoke_test",
     "tutorial_dbt_dagster",
+    "tutorial_notebook_assets",
     "deploy_docker",
     "deploy_ecs",
     "deploy_k8s",
