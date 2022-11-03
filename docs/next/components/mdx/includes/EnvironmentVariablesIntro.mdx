@@ -1,0 +1,27 @@
+Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.
+
+Using environment variables, you can define various configuration options for your Dagster application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development:
+
+```python
+/* Without environment variables: */
+{
+  "account": "abc1234.us-east-1",
+  "user": "me@company.com",
+  "password": "my_super_secret_password",
+  "database": "LOCAL",
+  "schema": "DEV"
+}
+```
+
+You can use environment variables to supply user details, allowing you to parameterize your pipeline without modifying code or insecurely storing sensitive data:
+
+```python
+/* With environment variables: */
+{
+  "account": "abc1234.us-east-1",
+  "user": { "env": "DEV_SNOWFLAKE_USER" },
+  "password": { "env": "DEV_SNOWFLAKE_PASSWORD" },
+  "database": "LOCAL",
+  "schema": { "env": "DEV_SNOWFLAKE_SCHEMA" }
+}
+```
