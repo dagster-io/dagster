@@ -1,11 +1,19 @@
 import string
 import time
 
-from dagster import Int, ScheduleDefinition, SkipReason, repository, sensor, usable_as_dagster_type
-from dagster._core.definitions import op
-from dagster._core.definitions.input import In
-from dagster._core.definitions.output import Out
-from dagster._legacy import PartitionSetDefinition, pipeline
+from dagster import (
+    In,
+    Int,
+    Out,
+    ScheduleDefinition,
+    SkipReason,
+    job,
+    op,
+    repository,
+    sensor,
+    usable_as_dagster_type,
+)
+from dagster._legacy import PartitionSetDefinition
 
 
 @op
@@ -18,22 +26,22 @@ def do_input(x):
     return x
 
 
-@pipeline(name="foo")
-def foo_pipeline():
+@job(name="foo")
+def foo_job():
     do_input(do_something())
 
 
-@pipeline(name="baz", description="Not much tbh")
-def baz_pipeline():
+@job(name="baz", description="Not much tbh")
+def baz_job():
     do_input()
 
 
-def define_foo_pipeline():
-    return foo_pipeline
+def define_foo_job():
+    return foo_job
 
 
-@pipeline(name="bar")
-def bar_pipeline():
+@job(name="bar")
+def bar_job():
     @usable_as_dagster_type(name="InputTypeWithoutHydration")
     class InputTypeWithoutHydration(int):
         pass
@@ -88,7 +96,7 @@ def define_baz_partitions():
             pipeline_name="baz",
             partition_fn=lambda: string.ascii_lowercase,
             run_config_fn_for_partition=lambda partition: {
-                "solids": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
+                "ops": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
             },
             tags_fn_for_partition=lambda _partition: {"foo": "bar"},
         ),
@@ -117,10 +125,10 @@ def define_baz_partitions():
 @repository
 def bar_repo():
     return {
-        "pipelines": {
-            "foo": define_foo_pipeline,
-            "bar": lambda: bar_pipeline,
-            "baz": lambda: baz_pipeline,
+        "jobs": {
+            "foo": define_foo_job,
+            "bar": lambda: bar_job,
+            "baz": lambda: baz_job,
         },
         "schedules": define_bar_schedules(),
         "sensors": {

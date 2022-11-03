@@ -23,34 +23,34 @@ from dagster._legacy import ModeDefinition
 from dagster._utils.test import execute_solid
 
 
-def test_single_solid_in_isolation():
+def test_single_op_in_isolation():
     @op
-    def solid_one():
+    def op_one():
         return 1
 
-    result = execute_solid(solid_one)
+    result = execute_solid(op_one)
     assert result.success
     assert result.output_value() == 1
 
 
-def test_single_solid_with_single():
+def test_single_op_with_single():
     @op(ins={"num": In()})
-    def add_one_solid(num):
+    def add_one_op(num):
         return num + 1
 
-    result = execute_solid(add_one_solid, input_values={"num": 2})
+    result = execute_solid(add_one_op, input_values={"num": 2})
 
     assert result.success
     assert result.output_value() == 3
 
 
-def test_single_solid_with_multiple_inputs():
+def test_single_op_with_multiple_inputs():
     @op(ins={"num_one": In(), "num_two": In()})
-    def add_solid(num_one, num_two):
+    def add_op(num_one, num_two):
         return num_one + num_two
 
     result = execute_solid(
-        add_solid,
+        add_op,
         input_values={"num_one": 2, "num_two": 3},
         run_config={"loggers": {"console": {"config": {"log_level": "DEBUG"}}}},
     )
@@ -59,7 +59,7 @@ def test_single_solid_with_multiple_inputs():
     assert result.output_value() == 5
 
 
-def test_single_solid_with_config():
+def test_single_op_with_config():
     ran = {}
 
     @op(config_schema=Int)
@@ -69,14 +69,14 @@ def test_single_solid_with_config():
 
     result = execute_solid(
         check_config_for_two,
-        run_config={"solids": {"check_config_for_two": {"config": 2}}},
+        run_config={"ops": {"check_config_for_two": {"config": 2}}},
     )
 
     assert result.success
     assert ran["check_config_for_two"]
 
 
-def test_single_solid_with_context_config():
+def test_single_op_with_context_config():
     @resource(config_schema=Field(Int, is_required=False, default_value=2))
     def num_resource(init_context):
         return init_context.resource_config
@@ -106,7 +106,7 @@ def test_single_solid_with_context_config():
     assert ran["count"] == 2
 
 
-def test_single_solid_error():
+def test_single_op_error():
     class SomeError(Exception):
         pass
 
@@ -120,7 +120,7 @@ def test_single_solid_error():
     assert isinstance(e_info.value, SomeError)
 
 
-def test_single_solid_type_checking_output_error():
+def test_single_op_type_checking_output_error():
     @op(out=Out(Int))
     def return_string():
         return "ksjdfkjd"
@@ -129,7 +129,7 @@ def test_single_solid_type_checking_output_error():
         execute_solid(return_string)
 
 
-def test_failing_solid_in_isolation():
+def test_failing_op_in_isolation():
     class ThisException(Exception):
         pass
 
@@ -202,7 +202,7 @@ def test_graph_with_no_output_mappings():
         match=re.escape(
             "Output 'result' not defined in graph 'diamond_graph': no output "
             "mappings were defined. If you were expecting this output to be present, you may be "
-            "missing an output_mapping from an inner solid to its enclosing graph."
+            "missing an output_mapping from an inner op to its enclosing graph."
         ),
     ):
         _ = res.output_value()
@@ -211,10 +211,10 @@ def test_graph_with_no_output_mappings():
 
 
 def test_execute_nested_graphs():
-    nested_graph_pipeline = nesting_graph_pipeline(2, 2)
-    nested_composite_solid = nested_graph_pipeline.solids[0].definition
+    nested_graph_job = nesting_graph_pipeline(2, 2)
+    nested_composite_op = nested_graph_job.solids[0].definition
 
-    res = execute_solid(nested_composite_solid)
+    res = execute_solid(nested_composite_op)
 
     assert res.success
     assert res.node.name == "layer_0"
@@ -226,7 +226,7 @@ def test_execute_nested_graphs():
         match=re.escape(
             "Output 'result' not defined in graph 'layer_0': no output mappings were "
             "defined. If you were expecting this output to be present, you may be missing an "
-            "output_mapping from an inner solid to its enclosing graph."
+            "output_mapping from an inner op to its enclosing graph."
         ),
     ):
         _ = res.output_value()
@@ -234,13 +234,13 @@ def test_execute_nested_graphs():
     assert len(res.node_result_list) == 2
 
 
-def test_single_solid_with_bad_inputs():
+def test_single_op_with_bad_inputs():
     @op(ins={"num_one": In(int), "num_two": In(int)})
-    def add_solid(num_one, num_two):
+    def add_op(num_one, num_two):
         return num_one + num_two
 
     result = execute_solid(
-        add_solid,
+        add_op,
         input_values={"num_one": 2, "num_two": "three"},
         run_config={"loggers": {"console": {"config": {"log_level": "DEBUG"}}}},
         raise_on_error=False,

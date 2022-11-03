@@ -1,5 +1,5 @@
 """
-Repository of test pipelines.
+Repository of test jobs.
 """
 
 import pytest

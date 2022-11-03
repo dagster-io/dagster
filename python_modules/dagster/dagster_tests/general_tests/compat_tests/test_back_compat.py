@@ -33,7 +33,6 @@ from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
-from dagster._legacy import execute_pipeline, pipeline
 from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster._serdes.serdes import (
     WhitelistMap,
@@ -162,17 +161,17 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
         @op
-        def noop_solid(_):
+        def noop_op(_):
             pass
 
-        @pipeline
-        def noop_pipeline():
-            noop_solid()
+        @job
+        def noop_job():
+            noop_op()
 
         with pytest.raises(
             (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
-            execute_pipeline(noop_pipeline, instance=instance)
+            noop_job.execute_in_process(instance=instance)
 
         assert len(instance.get_runs()) == 1
 
@@ -191,7 +190,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         assert run.run_id == run_id
         assert run.pipeline_snapshot_id is None
 
-        result = execute_pipeline(noop_pipeline, instance=instance)
+        result = noop_job.execute_in_process(instance=instance)
 
         assert result.success
 
@@ -307,7 +306,7 @@ def test_mode_column_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_11_16_pre_add_mode_column/sqlite")
     with copy_directory(src_dir) as test_dir:
 
-        @pipeline
+        @job
         def _test():
             pass
 
@@ -464,14 +463,14 @@ def test_0_12_0_extract_asset_index_cols():
     src_dir = file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite")
 
     @op
-    def asset_solid(_):
+    def asset_op(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield AssetMaterialization(asset_key=AssetKey(["b"]))
         yield Output(1)
 
-    @pipeline
-    def asset_pipeline():
-        asset_solid()
+    @job
+    def asset_job():
+        asset_op()
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs", "index.db")
@@ -485,7 +484,7 @@ def test_0_12_0_extract_asset_index_cols():
             storage = instance._event_storage
 
             # make sure that executing the pipeline works
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
@@ -494,7 +493,7 @@ def test_0_12_0_extract_asset_index_cols():
             assert not storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
             # wipe and leave asset wiped
@@ -518,14 +517,14 @@ def test_0_12_0_extract_asset_index_cols():
             assert set(old_keys) == set(new_keys)
 
             # make sure that storing assets still works
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
 
             # make sure that wiping still works
             storage.wipe_asset(AssetKey(["a"]))
             assert not storage.has_asset_key(AssetKey(["a"]))
 
 
-def test_solid_handle_node_handle():
+def test_op_handle_node_handle():
     # serialize in current code
     test_handle = NodeHandle("test", None)
     test_str = serialize_dagster_namedtuple(test_handle)
@@ -534,11 +533,11 @@ def test_solid_handle_node_handle():
     legacy_env = WhitelistMap.create()
 
     @_whitelist_for_serdes(legacy_env)
-    class SolidHandle(namedtuple("_SolidHandle", "name parent")):
+    class OpHandle(namedtuple("_OpHandle", "name parent")):
         pass
 
     result = _deserialize_json(test_str, legacy_env)
-    assert isinstance(result, SolidHandle)
+    assert isinstance(result, OpHandle)
     assert result.name == test_handle.name
 
 
@@ -555,7 +554,7 @@ def test_pipeline_run_dagster_run():
         namedtuple(
             "_PipelineRun",
             (
-                "pipeline_name run_id run_config mode solid_selection solids_to_execute "
+                "pipeline_name run_id run_config mode op_selection ops_to_execute "
                 "step_keys_to_execute status tags root_run_id parent_run_id "
                 "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
                 "pipeline_code_origin"
