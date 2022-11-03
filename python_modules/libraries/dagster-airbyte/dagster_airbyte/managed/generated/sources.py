@@ -2710,6 +2710,32 @@ class PostgresSource(GeneratedAirbyteSource):
                 initial_waiting_seconds, "initial_waiting_seconds"
             )
 
+    class NoTunnel:
+        def __init__(
+            self,
+        ):
+            self.tunnel_method = "NO_TUNNEL"
+
+    class SSHKeyAuthentication:
+        def __init__(self, tunnel_host: str, tunnel_port: int, tunnel_user: str, ssh_key: str):
+            self.tunnel_method = "SSH_KEY_AUTH"
+            self.tunnel_host = check.str_param(tunnel_host, "tunnel_host")
+            self.tunnel_port = check.int_param(tunnel_port, "tunnel_port")
+            self.tunnel_user = check.str_param(tunnel_user, "tunnel_user")
+            self.ssh_key = check.str_param(ssh_key, "ssh_key")
+
+    class PasswordAuthentication:
+        def __init__(
+            self, tunnel_host: str, tunnel_port: int, tunnel_user: str, tunnel_user_password: str
+        ):
+            self.tunnel_method = "SSH_PASSWORD_AUTH"
+            self.tunnel_host = check.str_param(tunnel_host, "tunnel_host")
+            self.tunnel_port = check.int_param(tunnel_port, "tunnel_port")
+            self.tunnel_user = check.str_param(tunnel_user, "tunnel_user")
+            self.tunnel_user_password = check.str_param(
+                tunnel_user_password, "tunnel_user_password"
+            )
+
     def __init__(
         self,
         name: str,
@@ -2719,6 +2745,7 @@ class PostgresSource(GeneratedAirbyteSource):
         username: str,
         ssl_mode: Union[Disable, Allow, Prefer, Require, VerifyCa, VerifyFull],
         replication_method: Union[Standard, LogicalReplicationCDC],
+        tunnel_method: Union[NoTunnel, SSHKeyAuthentication, PasswordAuthentication],
         schemas: Optional[List[str]] = None,
         password: Optional[str] = None,
         jdbc_url_params: Optional[str] = None,
@@ -2753,6 +2780,15 @@ class PostgresSource(GeneratedAirbyteSource):
             replication_method,
             "replication_method",
             (PostgresSource.Standard, PostgresSource.LogicalReplicationCDC),
+        )
+        self.tunnel_method = check.inst_param(
+            tunnel_method,
+            "tunnel_method",
+            (
+                PostgresSource.NoTunnel,
+                PostgresSource.SSHKeyAuthentication,
+                PostgresSource.PasswordAuthentication,
+            ),
         )
         super().__init__("Postgres", name)
 

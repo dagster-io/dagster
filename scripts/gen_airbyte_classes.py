@@ -14,6 +14,7 @@ import yaml
 import itertools
 import dagster._check as check
 from dagster._utils import file_relative_path, mkdir_p
+from dagster._utils.merger import deep_merge_dicts
 
 
 def _remove_invalid_chars(name: str) -> str:
@@ -393,7 +394,11 @@ class GithubSource:
 
 
 def load_from_spec_file(
-    connector_name_human_readable: str, connector_name: str, filepath: str, is_source: bool
+    connector_name_human_readable: str,
+    connector_name: str,
+    filepath: str,
+    is_source: bool,
+    injected_props: Dict[str, Any],
 ):
     """
     Loads a connector spec file and generates a python class definition for it
@@ -404,6 +409,10 @@ def load_from_spec_file(
             schema = json.loads(f.read())
         else:
             schema = yaml.safe_load(f.read())
+
+    schema["connectionSpecification"]["properties"] = deep_merge_dicts(
+        schema["connectionSpecification"]["properties"], injected_props
+    )
 
     cls_defs = get_class_definitions(connector_name, schema["connectionSpecification"])
     defs = []
@@ -424,6 +433,7 @@ def load_from_spec_file(
 SOURCE_OUT_FILE = "/Users/ben/Documents/repos/dagster/python_modules/libraries/dagster-airbyte/dagster_airbyte/managed/generated/sources.py"
 DEST_OUT_FILE = "/Users/ben/Documents/repos/dagster/python_modules/libraries/dagster-airbyte/dagster_airbyte/managed/generated/destinations.py"
 
+SSH_TUNNEL_SPEC = "airbyte-integrations/bases/base-java/src/main/resources/ssh-tunnel-spec.json"
 
 AIRBYTE_REPO_URL = "https://github.com/airbytehq/airbyte.git"
 
@@ -496,6 +506,14 @@ import dagster._check as check
                 connector_name = "".join(connector_name_parts[1:] + connector_name_parts[:1])
 
                 if connector_package.startswith(prefix):
+                    injected_props = {}
+
+                    # The Postgres source has this additional property injected into its spec file
+                    # https://github.com/airbytehq/airbyte/pull/5742/files#diff-b92c2b888c32ef84ae905c683e3a6a893e81b5fb840427245da34443b18f3c64
+                    if connector_name == "PostgresSource" and is_source:
+                        with open(os.path.join(airbyte_dir, SSH_TUNNEL_SPEC), encoding="utf8") as f:
+                            injected_props["tunnel_method"] = json.loads(f.read())
+
                     files: List[Tuple[str, str]] = list(
                         itertools.chain.from_iterable(
                             [
@@ -518,6 +536,7 @@ import dagster._check as check
                                     connector_name,
                                     os.path.join(root, file),
                                     is_source,
+                                    injected_props=injected_props,
                                 )
                             except Exception as e:
                                 failures.append((connector_name_human_readable, e))
