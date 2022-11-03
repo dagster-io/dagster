@@ -25,6 +25,7 @@ from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
+from ..inputs import GrapheneDimensionPartitionKey
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
     GrapheneDagsterRunEvent,
@@ -137,6 +138,7 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
+        dimensionPartition=graphene.Argument(GrapheneDimensionPartitionKey),
     )
     assetObservations = graphene.Field(
         non_null_list(GrapheneObservationEvent),
@@ -175,12 +177,18 @@ class GrapheneAsset(graphene.ObjectType):
         partitionInLast = kwargs.get("partitionInLast")
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
+
+        dimensionPartition = kwargs.get("dimensionPartition")
+
         events = get_asset_materializations(
             graphene_info,
             self.key,
             partitions=partitions,
             before_timestamp=before_timestamp,
             after_timestamp=after_timestamp,
+            dimension_partition=(dimensionPartition["name"], dimensionPartition["partitionKey"])
+            if dimensionPartition
+            else None,
             limit=limit,
         )
         run_ids = [event.run_id for event in events]

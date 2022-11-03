@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Mapping
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Tuple
 
 from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 
@@ -7,6 +7,7 @@ import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter
 from dagster import _check as check
 from dagster._core.events import ASSET_EVENTS
+from dagster._core.storage.tags import get_multidimensional_partition_tag
 
 from .utils import capture_error
 
@@ -164,10 +165,18 @@ def get_asset_materializations(
     limit=None,
     before_timestamp=None,
     after_timestamp=None,
+    dimension_partition: Optional[Tuple[str, str]] = None,
 ):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
+    check.opt_tuple_param(dimension_partition, "dimension_partition", of_type=(str, str))
+
+    tags = None
+    if dimension_partition:
+        dimension_name, partition_key = dimension_partition
+        tags = {get_multidimensional_partition_tag(dimension_name): partition_key}
+
     instance = graphene_info.context.instance
     event_records = instance.get_event_records(
         EventRecordsFilter(
@@ -176,6 +185,7 @@ def get_asset_materializations(
             asset_partitions=partitions,
             before_timestamp=before_timestamp,
             after_timestamp=after_timestamp,
+            tags=tags,
         ),
         limit=limit,
     )

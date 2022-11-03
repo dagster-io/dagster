@@ -6,21 +6,21 @@ import pytest
 from dagster import (
     AssetKey,
     AssetsDefinition,
+    DailyPartitionsDefinition,
     GraphOut,
     In,
     Out,
+    StaticPartitionsDefinition,
     define_asset_job,
     graph,
     job,
     op,
-    DailyPartitionsDefinition,
-    StaticPartitionsDefinition,
 )
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import ScheduleType
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.host_representation.external_data import (
@@ -31,8 +31,8 @@ from dagster._core.host_representation.external_data import (
     ExternalTargetData,
     ExternalTimeWindowPartitionsDefinitionData,
     external_asset_graph_from_defs,
-    external_time_window_partitions_definition_from_def,
     external_multi_partitions_definition_from_def,
+    external_time_window_partitions_definition_from_def,
 )
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE

@@ -1,9 +1,3 @@
-from dagster._core.host_representation.external_data import (
-    ExternalPartitionsDefinitionData,
-    ExternalStaticPartitionsDefinitionData,
-    ExternalTimeWindowPartitionsDefinitionData,
-    ExternalMultiPartitionsDefinitionData,
-)
 import graphene
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
@@ -17,6 +11,12 @@ from dagster_graphql.implementation.fetch_runs import get_runs
 
 import dagster._check as check
 from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
+from dagster._core.host_representation.external_data import (
+    ExternalMultiPartitionsDefinitionData,
+    ExternalPartitionsDefinitionData,
+    ExternalStaticPartitionsDefinitionData,
+    ExternalTimeWindowPartitionsDefinitionData,
+)
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._utils import merge_dicts

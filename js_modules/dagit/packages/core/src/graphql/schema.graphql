@@ -827,6 +827,7 @@ type Asset {
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
+    dimensionPartition: DimensionPartitionKey
   ): [MaterializationEvent!]!
   assetObservations(
     partitions: [String]
@@ -836,6 +837,11 @@ type Asset {
     limit: Int
   ): [ObservationEvent!]!
   definition: AssetNode
+}
+
+input DimensionPartitionKey {
+  name: String!
+  partitionKey: String!
 }
 
 type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {

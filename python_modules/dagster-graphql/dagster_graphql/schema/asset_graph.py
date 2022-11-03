@@ -1,9 +1,11 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union, Tuple, Dict
 from collections import defaultdict
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, Union
+
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.partition_sets import GraphenePartitionDefinition
 from dagster_graphql.schema.solids import (
     GrapheneCompositeSolidDefinition,
     GrapheneResourceRequirement,
@@ -20,11 +22,9 @@ from dagster._core.host_representation.external_data import (
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster_graphql.schema.partition_sets import (
-    GraphenePartitionDefinition,
-)
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
+from ..implementation.fetch_partition_sets import get_materialization_ct_by_dimension_partition_keys
 from ..implementation.fetch_runs import AssetComputeStatus
 from ..implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
 from . import external
@@ -32,14 +32,12 @@ from .asset_key import GrapheneAssetKey
 from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .errors import GrapheneAssetNotFoundError
 from .logs.events import GrapheneMaterializationEvent
-from .pipelines.pipeline import (
+from .pipelines.pipeline import (  # GraphenePartitionMaterializationS,
     GrapheneMaterializationCount,
     GraphenePipeline,
-    GrapheneRun,
     GraphenePrimaryPartitionDimensionMaterializationCount,
-    # GraphenePartitionMaterializationS,
+    GrapheneRun,
 )
-from ..implementation.fetch_partition_sets import get_materialization_ct_by_dimension_partition_keys
 from .util import non_null_list
 
 if TYPE_CHECKING:

@@ -1,9 +1,10 @@
-from graphene import ResolveInfo
-from typing import Dict
 from collections import defaultdict
+from typing import Dict
 
-from dagster import AssetKey
+from graphene import ResolveInfo
+
 import dagster._check as check
+from dagster import AssetKey
 from dagster._core.host_representation import (
     ExternalPartitionSet,
     RepositoryHandle,
@@ -15,12 +16,11 @@ from dagster._core.storage.tags import (
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     TagType,
+    get_dimension_from_partition_tag,
     get_tag_type,
 )
 from dagster._utils.yaml_utils import dump_run_config_yaml
-from dagster._core.storage.tags import (
-    get_dimension_from_partition_tag,
-)
+
 from .utils import capture_error
 
 

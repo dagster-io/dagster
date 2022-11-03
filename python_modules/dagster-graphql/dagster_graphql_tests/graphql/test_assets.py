@@ -205,6 +205,23 @@ GET_MATERIALIZATION_COUNT_BY_PARTITION = """
     }
 """
 
+GET_MATERIALIZATION_COUNT_BY_DIMENSION_PARTITION = """
+    query MaterializationCountByDimension($primaryDimension: String) {
+        assetNodes {
+            assetKey {
+                path
+            }
+            materializationCountByDimensionPartition(primaryDimension: $primaryDimension) {
+                primaryDimensionPartitionKey
+                materializationCountForSecondaryDimension {
+                    partition
+                    materializationCount
+                }
+            }
+        }
+    }
+"""
+
 GET_ASSET_MATERIALIZATION_AFTER_TIMESTAMP = """
     query AssetQuery($assetKey: AssetKeyInput!, $afterTimestamp: String) {
         assetOrError(assetKey: $assetKey) {

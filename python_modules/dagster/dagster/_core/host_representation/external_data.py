@@ -28,6 +28,7 @@ from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
@@ -37,7 +38,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import PipelineSnapshot
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
 
 @whitelist_for_serdes
