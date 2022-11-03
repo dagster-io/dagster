@@ -145,6 +145,7 @@ def docker_grpc_client(
         yield DagsterGrpcClient(port=grpc_port, host=grpc_host)
 
 
+# https://github.com/dagster-io/dagster/pull/10343
 @pytest.fixture(autouse=True)
 def mock_tqdm(monkeypatch):
     def noop_tqdm(iterable):
