@@ -13,7 +13,7 @@ from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 
 from dagster._check import CheckError
-from dagster._core.definitions.metadata import PathMetadataValue
+from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline, pipeline
@@ -28,7 +28,7 @@ def get_path(materialization_event):
     for (
         metadata_entry
     ) in materialization_event.event_specific_data.materialization.metadata_entries:
-        if isinstance(metadata_entry.entry_data, PathMetadataValue):
+        if isinstance(metadata_entry.entry_data, (PathMetadataValue, NotebookMetadataValue)):
             return metadata_entry.entry_data.path
 
 
