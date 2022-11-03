@@ -317,7 +317,9 @@ def normalized_name(name, unique_id):
         return base_name + "_" + str(unique_id)
 
 
-def _get_pipeline_definition_args(dag, use_airflow_template_context, unique_id=None, mock_xcom=False):
+def _get_pipeline_definition_args(
+    dag, use_airflow_template_context, unique_id=None, mock_xcom=False
+):
     check.inst_param(dag, "dag", DAG)
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
@@ -336,7 +338,7 @@ def _get_pipeline_definition_args(dag, use_airflow_template_context, unique_id=N
             solid_defs,
             use_airflow_template_context,
             unique_id,
-            mock_xcom
+            mock_xcom,
         )
     return (pipeline_dependencies, solid_defs)
 
@@ -408,6 +410,7 @@ def replace_airflow_logger_handlers():
         # Restore previous log handlers
         logging.getLogger("airflow.task").handlers = prev_airflow_handlers
 
+
 @contextmanager
 def _mock_xcom():
     with patch("airflow.models.TaskInstance.xcom_push"):
@@ -417,7 +420,9 @@ def _mock_xcom():
 
 # If unique_id is not None, this id will be postpended to generated solid names, generally used
 # to enforce unique solid names within a repo.
-def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, unique_id=None, mock_xcom=False):
+def make_dagster_solid_from_airflow_task(
+    task, use_airflow_template_context, unique_id=None, mock_xcom=False
+):
     check.inst_param(task, "task", BaseOperator)
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
@@ -461,7 +466,9 @@ def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, uni
         with _mock_xcom() if mock_xcom else nullcontext():
             with replace_airflow_logger_handlers():
                 if airflow_version >= "2.0.0":
-                    task_instance = TaskInstance(task=task, execution_date=execution_date, run_id="dagster_airflow_run")
+                    task_instance = TaskInstance(
+                        task=task, execution_date=execution_date, run_id="dagster_airflow_run"
+                    )
                 else:
                     task_instance = TaskInstance(task=task, execution_date=execution_date)
                 ti_context = (

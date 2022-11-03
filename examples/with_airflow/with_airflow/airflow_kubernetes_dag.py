@@ -19,8 +19,8 @@ with models.DAG(
     k = KubernetesPodOperator(
         name="hello-dry-run",
         # will need to modified to match your k8s context
-        cluster_context='hooli-user-cluster',
-        namespace='default',
+        cluster_context="hooli-user-cluster",
+        namespace="default",
         image="debian",
         cmds=["bash", "-cx"],
         arguments=["echo", "10"],
