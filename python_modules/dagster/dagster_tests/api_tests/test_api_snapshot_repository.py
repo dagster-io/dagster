@@ -2,9 +2,10 @@ import sys
 from contextlib import contextmanager
 
 import pytest
-from dagster import repository
-from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
-from dagster._core.definitions import op
+from dagster import job, op, repository
+from dagster._api.snapshot_repository import (
+    sync_get_streaming_external_repositories_data_grpc,
+)
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation import (
     ExternalRepositoryData,
@@ -16,7 +17,6 @@ from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._legacy import pipeline
 from dagster._serdes.serdes import deserialize_value
 
 from .utils import get_bar_repo_code_location
@@ -53,9 +53,9 @@ def do_something():
     return 1
 
 
-@pipeline
-def giant_pipeline():
-    # Pipeline big enough to be larger than the max size limit for a gRPC message in its
+@job
+def giant_job():
+    # Job big enough to be larger than the max size limit for a gRPC message in its
     # external repository
     for _i in range(20000):
         do_something()
@@ -64,8 +64,8 @@ def giant_pipeline():
 @repository
 def giant_repo():
     return {
-        "pipelines": {
-            "giant": giant_pipeline,
+        "jobs": {
+            "giant": giant_job,
         },
     }
 

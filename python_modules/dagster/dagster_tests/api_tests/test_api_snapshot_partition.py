@@ -23,7 +23,7 @@ def test_external_partition_names_grpc(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
         repository_handle = code_location.get_repository("bar_repo").handle
         data = sync_get_external_partition_names_grpc(
-            code_location.client, repository_handle, "baz_partition_set"  # type: ignore
+            code_location.client, repository_handle, "baz_partition_set"
         )
         assert isinstance(data, ExternalPartitionNamesData)
         assert data.partition_names == list(string.ascii_lowercase)
@@ -34,7 +34,7 @@ def test_external_partitions_config_grpc(instance: DagsterInstance):
         repository_handle = code_location.get_repository("bar_repo").handle
 
         data = sync_get_external_partition_config_grpc(
-            code_location.client, repository_handle, "baz_partition_set", "c", instance  # type: ignore
+            code_location.client, repository_handle, "baz_partition_set", "c", instance
         )
         assert isinstance(data, ExternalPartitionConfigData)
         assert data.run_config
@@ -47,7 +47,7 @@ def test_external_partitions_config_error_grpc(instance: DagsterInstance):
 
         with pytest.raises(DagsterUserCodeProcessError):
             sync_get_external_partition_config_grpc(
-                code_location.client,  # type: ignore
+                code_location.client,
                 repository_handle,
                 "error_partition_config",
                 "c",
@@ -60,7 +60,7 @@ def test_external_partitions_tags_grpc(instance: DagsterInstance):
         repository_handle = code_location.get_repository("bar_repo").handle
 
         data = sync_get_external_partition_tags_grpc(
-            code_location.client, repository_handle, "baz_partition_set", "c", instance=instance  # type: ignore
+            code_location.client, repository_handle, "baz_partition_set", "c", instance=instance
         )
         assert isinstance(data, ExternalPartitionTagsData)
         assert data.tags
@@ -73,7 +73,7 @@ def test_external_partitions_tags_error_grpc(instance: DagsterInstance):
 
         with pytest.raises(DagsterUserCodeProcessError):
             sync_get_external_partition_tags_grpc(
-                code_location.client, repository_handle, "error_partition_tags", "c", instance  # type: ignore
+                code_location.client, repository_handle, "error_partition_tags", "c", instance
             )
 
 
@@ -82,7 +82,7 @@ def test_external_partition_set_execution_params_grpc(instance: DagsterInstance)
         repository_handle = code_location.get_repository("bar_repo").handle
 
         data = sync_get_external_partition_set_execution_param_data_grpc(
-            code_location.client,  # type: ignore
+            code_location.client,
             repository_handle,
             "baz_partition_set",
             ["a", "b", "c"],

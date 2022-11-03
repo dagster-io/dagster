@@ -1,6 +1,6 @@
 import base64
 import zlib
-from typing import Any, FrozenSet, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -31,7 +31,7 @@ class ExecutionPlanSnapshotArgs(
             ("pipeline_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
-            ("asset_selection", Optional[FrozenSet[AssetKey]]),
+            ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     )
 ):
@@ -45,7 +45,7 @@ class ExecutionPlanSnapshotArgs(
         pipeline_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,

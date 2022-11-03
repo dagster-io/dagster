@@ -47,9 +47,9 @@ def test_pipeline_with_invalid_subset_snapshot_api_grpc(instance):
 
         with pytest.raises(
             DagsterUserCodeProcessError,
-            match="No qualified solids to execute found for solid_selection",
+            match="No qualified ops to execute found for op_selection",
         ):
-            _test_job_subset_grpc(job_handle, api_client, ["invalid_solid"])
+            _test_job_subset_grpc(job_handle, api_client, ["invalid_op"])
 
 
 def test_pipeline_with_invalid_definition_snapshot_api_grpc(instance):
