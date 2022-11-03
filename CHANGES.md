@@ -8,15 +8,16 @@
   - The top navigation has been updated to improve space allocation, with main nav links moved to the left.
   - “Overview” is the new Dagit home page and “factory floor” view, were you can find the run timeline, which now offers time-based pagination. The Overview section also contains pages with all of your jobs, schedules, sensors, and backfills. You can filter objects by name, and collapse or expand repository sections.
   - “Workspace” has been redesigned to offer a better summary of your repositories, and to use the same performant table views, querying, and filtering as in the Overview pages.
-- `@asset` and `@multi_asset` now accept a `retry_policy` argument. (Thanks Adam Bloom!)
-- When loading an input that depends on multiple partitions of an upstream asset, the `fs_io_manager` will now return a dictionary that maps partition keys to the stored values for those partitions. (Thanks andrewgryan!).
+- `@asset` and `@multi_asset` now accept a `retry_policy` argument. (Thanks @adam-bloom!)
+- When loading an input that depends on multiple partitions of an upstream asset, the `fs_io_manager` will now return a dictionary that maps partition keys to the stored values for those partitions. (Thanks @andrewgryan!).
 - `JobDefinition.execute_in_process` now accepts a `run_config` argument even when the job is partitioned. If supplied, the run config will be used instead of any config provided by the job’s `PartitionedConfig`.
 - The `run_request_for_partition` method on jobs now accepts a `run_config` argument. If supplied, the run config will be used instead of any config provided by the job’s `PartitionedConfig`.
 - The new `NotebookMetadataValue` can be used to report the location of executed jupyter notebooks, and Dagit will be able to render the notebook.
-- Resolving asset dependencies within a group now works with multi-assets, as long as all the assets within the multi-asset are in the same group. (Thanks `@peay`!)
-- UPathIOManager, a filesystem-agnostic IOManager base class has been added - (Thanks `@****[danielgafni](https://github.com/danielgafni)`!)\*\*
+- Resolving asset dependencies within a group now works with multi-assets, as long as all the assets within the multi-asset are in the same group. (Thanks @peay!)
+- UPathIOManager, a filesystem-agnostic IOManager base class has been added - (Thanks @danielgafni!)
 - A threadpool option has been added for the scheduler daemon. This can be enabled via your `dagster.yaml` file; check out the [docs](https://docs.dagster.io/deployment/dagster-instance#schedule-evaluation).
 - The default LocalComputeLogManager will capture compute logs by process instead of by step. This means that for the `in_process` executor, where all steps are executed in the same process, the captured compute logs for all steps in a run will be captured in the same file.
+- [dagstermill] Added `define_dagstermill_asset` which loads a notebook as an asset.
 - [dagster-airflow] `make_dagster_job_from_airflow_dag` now supports airflow 2, there is also a new mock_xcom parameter that will mock all calls to made by operators to xcom.
 - [helm] volume and volumeMount sections have been added for the dagit and daemon sections of the helm chart.
 
@@ -26,8 +27,8 @@
 - Previously, asset inputs would be resolved to upstream assets in the same group that had the same name, even if the asset input already had a key prefix. Now, asset inputs are only resolved to upstream assets in the same group if the input path only has a single component.
 - Previously, asset inputs could get resolved to outputs of the same `AssetsDefinition`, through group-based asset dependency resolution, which would later error because of a circular dependency. This has been fixed.
 - Previously, the “Partition Status” and “Backfill Status” fields on the Backfill page in dagit were always incomplete and showed missing partitions. This has been fixed to accurately show the status of the backfill runs.
-- [dagit] When viewing the config dialog for a run with a very long config, scrolling was broken and the “copy” button was not visible. This has been fixed.
 - Executors now compress step worker arguments to avoid CLI length limits with large DAGs.
+- [dagit] When viewing the config dialog for a run with a very long config, scrolling was broken and the “copy” button was not visible. This has been fixed.
 - [dagster-msteams] Longer messages can now be used in Teams HeroCard - thanks `@jayhale`
 
 ### Documentation
