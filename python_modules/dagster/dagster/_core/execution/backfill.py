@@ -290,7 +290,7 @@ def create_backfill_run(
     external_execution_plan = repo_location.get_external_execution_plan(
         external_pipeline,
         partition_data.run_config,
-        external_partition_set.mode,
+        check.not_none(external_partition_set.mode),
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
         instance=instance,

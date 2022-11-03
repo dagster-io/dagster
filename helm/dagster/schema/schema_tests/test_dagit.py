@@ -1,4 +1,6 @@
 import pytest
+from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
+from kubernetes import client as k8s_client
 from kubernetes.client import models
 from schema.charts.dagster.subschema.dagit import Dagit, Workspace
 from schema.charts.dagster.values import DagsterHelmValues
@@ -233,6 +235,44 @@ def test_dagit_labels(deployment_template: HelmTemplate):
 
     assert set(deployment_labels.items()).issubset(dagit_deployment.metadata.labels.items())
     assert set(pod_labels.items()).issubset(dagit_deployment.spec.template.metadata.labels.items())
+
+
+def test_dagit_volumes(deployment_template: HelmTemplate):
+    volumes = [
+        {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
+        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+    ]
+
+    volume_mounts = [
+        {
+            "name": "test-volume",
+            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+            "subPath": "volume_mounted_file.yaml",
+        }
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(volumes=volumes, volumeMounts=volume_mounts)
+    )
+
+    [dagit_deployment] = deployment_template.render(helm_values)
+
+    deployed_volume_mounts = dagit_deployment.spec.template.spec.containers[0].volume_mounts
+    assert deployed_volume_mounts[2:] == [
+        k8s_model_from_dict(
+            k8s_client.models.V1VolumeMount,
+            k8s_snake_case_dict(k8s_client.models.V1VolumeMount, volume_mount),
+        )
+        for volume_mount in volume_mounts
+    ]
+
+    deployed_volumes = dagit_deployment.spec.template.spec.volumes
+    assert deployed_volumes[2:] == [
+        k8s_model_from_dict(
+            k8s_client.models.V1Volume, k8s_snake_case_dict(k8s_client.models.V1Volume, volume)
+        )
+        for volume in volumes
+    ]
 
 
 def test_dagit_workspace_external_configmap(deployment_template: HelmTemplate):

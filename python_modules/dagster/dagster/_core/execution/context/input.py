@@ -36,9 +36,17 @@ class InputContext:
         config (Optional[Any]): The config attached to the input that we're loading.
         metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
             InputDefinition that we're loading for.
+            This property only contains metadata passed in explicitly with :py:class:`AssetIn`
+            or :py:class:`In`. To access metadata of an upstream asset or operation definition,
+            use the metadata in :py:attr:`.InputContext.upstream_output`.
         upstream_output (Optional[OutputContext]): Info about the output that produced the object
             we're loading.
         dagster_type (Optional[DagsterType]): The type of this input.
+            Dagster types do not propagate from an upstream output to downstream inputs,
+            and this property only captures type information for the input that is either
+            passed in explicitly with :py:class:`AssetIn` or :py:class:`In`, or can be
+            infered from type hints. For an asset input, the Dagster type from the upstream
+            asset definition is ignored.
         log (Optional[DagsterLogManager]): The log manager to use for this input.
         resource_config (Optional[Dict[str, Any]]): The config associated with the resource that
             initializes the RootInputManager.

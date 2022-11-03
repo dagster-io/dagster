@@ -14,7 +14,8 @@ your data warehouse.
 .. autoconfigurable:: snowflake_resource
   :annotation: ResourceDefinition
 
-.. autofunction:: build_snowflake_io_manager
+.. autoconfigurable:: build_snowflake_io_manager
+  :annotation: IOManagerDefinition
 
 .. autofunction:: snowflake_op_for_query
 

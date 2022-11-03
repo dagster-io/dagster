@@ -3,6 +3,7 @@ from typing import Optional
 import sqlalchemy as db
 
 import dagster._check as check
+from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
@@ -41,8 +42,17 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
-    To use Postgres for event log storage, you can add a block such as the following to your
-    ``dagster.yaml``:
+    To use Postgres for all of the components of your instance storage, you can add the following
+    block to your ``dagster.yaml``:
+
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+       :caption: dagster.yaml
+       :lines: 1-8
+       :language: YAML
+
+    If you are configuring the different storage components separately and are specifically
+    configuring your event log storage to use Postgres, you can add a block such as the following
+    to your ``dagster.yaml``:
 
     .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg-legacy.yaml
        :caption: dagster.yaml
@@ -154,11 +164,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if (
             event.is_dagster_event
-            and (
-                event.dagster_event.is_step_materialization
-                or event.dagster_event.is_asset_observation
-                or event.dagster_event.is_asset_materialization_planned
-            )
+            and event.dagster_event_type in ASSET_EVENTS
             and event.dagster_event.asset_key
         ):
             self.store_asset_event(event)

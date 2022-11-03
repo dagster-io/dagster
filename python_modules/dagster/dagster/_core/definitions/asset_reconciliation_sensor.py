@@ -15,8 +15,9 @@ from dagster._utils import utc_datetime_from_timestamp
 
 from .asset_selection import AssetSelection
 from .events import AssetKey
+from .multi_asset_sensor_definition import MultiAssetSensorDefinition
 from .run_request import RunRequest
-from .sensor_definition import DefaultSensorStatus, MultiAssetSensorDefinition
+from .sensor_definition import DefaultSensorStatus
 from .utils import check_valid_name
 
 if TYPE_CHECKING:

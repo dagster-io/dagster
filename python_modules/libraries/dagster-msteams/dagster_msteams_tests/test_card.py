@@ -7,5 +7,5 @@ def test_add_attachment_to_card():
     card.add_attachment("Pipeline success !!!")
     assert len(card.attachments) == 2
     assert card.attachments[0]["contentType"] == "application/vnd.microsoft.card.hero"
-    assert card.attachments[0]["content"]["subtitle"] == "Pipeline failure !!!"
+    assert card.attachments[0]["content"]["text"] == "Pipeline failure !!!"
     assert card.type == "message"

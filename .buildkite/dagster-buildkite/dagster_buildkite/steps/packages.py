@@ -59,7 +59,7 @@ def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[Bu
     steps: List[BuildkiteStep] = []
     all_packages = sorted(
         package_specs,
-        key=lambda p: f"{_PACKAGE_TYPE_ORDER.index(p.package_type)} {p.name}",
+        key=lambda p: f"{_PACKAGE_TYPE_ORDER.index(p.package_type)} {p.name}",  # type: ignore[arg-type]
     )
 
     for pkg in all_packages:

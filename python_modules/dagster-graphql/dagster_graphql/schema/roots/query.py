@@ -1,6 +1,7 @@
 from typing import Dict, List
 
 import graphene
+from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
 
 import dagster._check as check
@@ -86,6 +87,7 @@ from ..instigation import (
     GrapheneInstigationStatesOrError,
     GrapheneInstigationType,
 )
+from ..logs.compute_logs import GrapheneCapturedLogsMetadata
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
@@ -353,6 +355,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
         afterCursor=graphene.String(),
         limit=graphene.Int(),
         description="Retrieve event logs after applying a run id filter, cursor, and limit.",
+    )
+
+    capturedLogsMetadata = graphene.Field(
+        graphene.NonNull(GrapheneCapturedLogsMetadata),
+        logKey=graphene.Argument(non_null_list(graphene.String)),
+        description="Retrieve the captured log metadata for a given log key.",
     )
 
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
@@ -642,3 +650,6 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_logsForRun(self, graphene_info, runId, afterCursor=None, limit=None):
         return get_logs_for_run(graphene_info, runId, afterCursor, limit)
+
+    def resolve_capturedLogsMetadata(self, graphene_info, logKey):
+        return get_captured_log_metadata(graphene_info, logKey)
