@@ -85,6 +85,7 @@ import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
 import panel_show_left from '../icon-svgs/panel_show_left.svg';
 import panel_show_right from '../icon-svgs/panel_show_right.svg';
 import panel_show_top from '../icon-svgs/panel_show_top.svg';
+import partition from '../icon-svgs/partition.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
@@ -144,6 +145,7 @@ export const Icons = {
   op_selector,
   op_dynamic: bolt,
   partition_set: schedule,
+  partition,
   repo: source,
   resource: layers,
   run: history,
@@ -328,15 +330,16 @@ export const IconWrapper = styled.div<WrapperProps>`
         // We could just use !important but specificity is a little more flexible
         `
         background: url(${p.$img});
+        background-size: cover;
         &[role='img'][role='img'] {
           background-color: transparent;
         }
       `
       : `
         background: ${p.$color};
+        mask-size: cover;
         mask-image: url(${p.$img});
       `}
-  mask-size: cover;
   object-fit: cover;
   transition: transform 150ms linear;
 
