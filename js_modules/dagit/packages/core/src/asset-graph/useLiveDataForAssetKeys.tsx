@@ -74,7 +74,7 @@ export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
 
   const assetKeyTokens = React.useMemo(() => new Set(assetKeys.map(tokenForAssetKey)), [assetKeys]);
   const assetStepKeys = React.useMemo(
-    () => new Set(...(liveResult.data?.assetNodes.flatMap((n) => n.opNames) || [])),
+    () => new Set(liveResult.data?.assetNodes.flatMap((n) => n.opNames) || []),
     [liveResult],
   );
 
