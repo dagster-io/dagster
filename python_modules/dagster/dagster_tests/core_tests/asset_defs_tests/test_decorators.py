@@ -22,6 +22,7 @@ from dagster._core.definitions import (
     build_assets_job,
     multi_asset,
 )
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.types.dagster_type import resolve_dagster_type
@@ -263,6 +264,15 @@ def test_asset_with_dagster_type():
         return arg1
 
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
+
+
+def test_asset_with_op_version():
+    @asset(op_version="foo")
+    def my_asset(arg1):
+        return arg1
+
+    assert my_asset.is_versioned
+    assert my_asset.op.version == "foo"
 
 
 def test_asset_with_key_prefix():
@@ -583,3 +593,29 @@ def test_asset_io_manager_def():
     # If IO manager def is provided as a resource def, it appears in required
     # resource keys on the underlying op.
     assert set(other_asset.node_def.required_resource_keys) == {"blah"}
+
+
+def test_asset_retry_policy():
+    retry_policy = RetryPolicy()
+
+    @asset(retry_policy=retry_policy)
+    def my_asset():
+        ...
+
+    assert my_asset.op.retry_policy == retry_policy
+
+
+def test_multi_asset_retry_policy():
+    retry_policy = RetryPolicy()
+
+    @multi_asset(
+        outs={
+            "key1": Out(asset_key=AssetKey("key1")),
+            "key2": Out(asset_key=AssetKey("key2")),
+        },
+        retry_policy=retry_policy,
+    )
+    def my_asset():
+        ...
+
+    assert my_asset.op.retry_policy == retry_policy

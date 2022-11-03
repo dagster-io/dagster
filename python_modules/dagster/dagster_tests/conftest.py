@@ -143,3 +143,14 @@ def docker_grpc_client(
     ) if not IS_BUILDKITE else nullcontext():
         wait_for_connection(grpc_host, grpc_port)
         yield DagsterGrpcClient(port=grpc_port, host=grpc_host)
+
+
+# https://github.com/dagster-io/dagster/pull/10343
+@pytest.fixture(autouse=True)
+def mock_tqdm(monkeypatch):
+    def noop_tqdm(iterable):
+        return iterable
+
+    monkeypatch.setattr("tqdm.tqdm", noop_tqdm)
+
+    yield

@@ -202,15 +202,15 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
         }}
         title="Run configuration"
       >
-        <Box flex={{direction: 'column'}} style={{flex: 1}}>
-          <Box flex={{direction: 'column', gap: 20}} style={{flex: 1}}>
+        <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'hidden'}}>
+          <Box flex={{direction: 'column', gap: 20}} style={{flex: 1, overflow: 'hidden'}}>
             <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
               <Subheading>Tags</Subheading>
               <div>
                 <RunTags tags={run.tags} mode={isJob ? null : run.mode} />
               </div>
             </Box>
-            <Box flex={{direction: 'column'}} style={{flex: 1}}>
+            <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'hidden'}}>
               <Box
                 border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
                 padding={{left: 24, bottom: 16}}
@@ -275,6 +275,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
 
 const CodeMirrorContainer = styled.div`
   flex: 1;
+  overflow: hidden;
 
   .react-codemirror2,
   .CodeMirror {
