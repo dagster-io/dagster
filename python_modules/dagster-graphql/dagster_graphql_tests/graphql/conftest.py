@@ -4,7 +4,7 @@ import pytest
 
 from dagster._core.test_utils import instance_for_test
 
-from .setup import define_test_out_of_process_context
+from .repo import define_test_out_of_process_context
 
 
 @pytest.yield_fixture(scope="function")
