@@ -604,6 +604,10 @@
         "path": "/guides/best-practices",
         "children": [
           {
+            "title": "Using environment variables and secrets",
+            "path": "/guides/dagster/using-environment-variables-and-secrets"
+          },
+          {
             "title": "Exploring a Dagster project",
             "path": "/guides/dagster/example_project"
           },
