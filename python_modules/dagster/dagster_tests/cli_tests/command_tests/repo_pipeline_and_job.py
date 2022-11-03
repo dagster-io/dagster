@@ -1,5 +1,4 @@
 from dagster import job, op, repository
-from dagster._legacy import pipeline, solid
 
 
 @op
@@ -12,16 +11,16 @@ def my_job():
     my_op()
 
 
-@solid
-def my_solid():
+@op
+def my_op():
     pass
 
 
-@pipeline
-def my_pipeline():
-    my_solid()
+@job
+def my_job():
+    my_op()
 
 
 @repository
 def my_repo():
-    return [my_job, my_pipeline]
+    return [my_job, my_job]

@@ -1,14 +1,14 @@
-from dagster import job, repository
-from dagster._legacy import lambda_solid, pipeline
+from dagster import op, job, repository
+from dagster._legacy import pipeline
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
 @pipeline(name="extra")
-def extra_pipeline():
+def extra_job():
     do_something()
 
 
@@ -19,4 +19,4 @@ def extra_job():
 
 @repository
 def extra():
-    return {"pipelines": {"extra": extra_pipeline}, "jobs": {"extra_job": extra_job}}
+    return {"pipelines": {"extra": extra_job}, "jobs": {"extra_job": extra_job}}
