@@ -47,6 +47,10 @@ class DagsterInvalidDefinitionError(DagsterError):
     """Indicates that the rules for a definition have been violated by the user."""
 
 
+class DagsterInvalidObservationError(DagsterError):
+    """Indicates that an invalid value was returned from a source asset observation function."""
+
+
 class DagsterInvalidSubsetError(DagsterError):
     """Indicates that a subset of a pipeline is invalid because either:
     - One or more ops in the specified subset do not exist on the job.'
