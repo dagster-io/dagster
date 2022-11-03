@@ -2,20 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from datetime import datetime
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union, cast
 
 import pendulum
 import sqlalchemy as db
@@ -56,6 +43,7 @@ from .schema import (
     AssetEventTagsTable,
     AssetKeyTable,
     SecondaryIndexMigrationTable,
+    SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
 
@@ -226,12 +214,6 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
 
-        if not self.has_table(AssetEventTagsTable.name):
-            raise DagsterInvalidInvocationError(
-                "In order to store multi-dimensional partition information, you must run "
-                "`dagster instance migrate` to create the AssetEventTags table."
-            )
-
         if (
             event.dagster_event
             and event.dagster_event.asset_key
@@ -241,6 +223,13 @@ class SqlEventLogStorage(EventLogStorage):
             )
             and event.dagster_event.step_materialization_data.materialization.tags
         ):
+
+            if not self.has_table(AssetEventTagsTable.name):
+                raise DagsterInvalidInvocationError(
+                    "In order to store multi-dimensional partition information, you must run "
+                    "`dagster instance migrate` to create the AssetEventTags table."
+                )
+
             check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
             asset_key_str = event.dagster_event.asset_key.to_string()
 
@@ -662,8 +651,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def has_table(self, table_name: str) -> bool:
         """This method checks if a table exists in the database."""
-        with self.index_connection() as conn:
-            return db.inspect(conn).has_table(table_name)
+        return SqlEventLogStorageMetadata.tables and table_name in SqlEventLogStorageMetadata.tables
 
     def _apply_filter_to_query(
         self,
@@ -1232,20 +1220,23 @@ class SqlEventLogStorage(EventLogStorage):
         return query
 
     def get_event_tags_for_asset(
-        self, asset_key: AssetKey, tag_key: Optional[str] = None, tag_value: Optional[str] = None
+        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
     ) -> Sequence[Mapping[str, str]]:
         """
         Fetches asset event tags for the given asset key.
 
-        If tag_key and tag_value are provided, searches for all events with the given key and value.
-        Then, returns all tags for those events.
+        If filter_tags is provided, searches for events containing all of the filter tags. Then,
+        returns all tags for those events. This enables searching for multipartitioned asset
+        partition tags with a fixed dimension value, e.g. all of the tags for events where
+        "country" == "US".
 
         Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
         single event.
         """
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
-        tag_key = check.opt_str_param(tag_key, "tag_key")
-        tag_value = check.opt_str_param(tag_value, "tag_value")
+        filter_tags = check.opt_mapping_param(
+            filter_tags, "filter_tags", key_type=str, value_type=str
+        )
 
         if not self.has_table(AssetEventTagsTable.name):
             raise DagsterInvalidInvocationError(
@@ -1253,60 +1244,64 @@ class SqlEventLogStorage(EventLogStorage):
                 "`dagster instance migrate` to create the AssetEventTags table."
             )
 
-        if tag_key or tag_value:
-            if not (tag_key and tag_value):
-                raise DagsterInvalidInvocationError(
-                    "If providing tag key, must also provide tag value."
-                )
-
-        perform_tag_join = tag_key and tag_value
-
-        tags_query = (
-            db.select(
-                [
-                    AssetEventTagsTable.c.key,
-                    AssetEventTagsTable.c.value,
-                    AssetEventTagsTable.c.event_id,
-                ]
-            )
-            .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.event_id)
-            .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
-        )
         asset_details = self._get_assets_details([asset_key])[0]
-        if asset_details and asset_details.last_wipe_timestamp:
-            tags_query = tags_query.where(
-                AssetEventTagsTable.c.event_timestamp
-                > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
-            )
-
-        if not perform_tag_join:
-            with self.index_connection() as conn:
-                results = conn.execute(tags_query).fetchall()
-        else:
-            tags_query = tags_query.where(
-                db.and_(
-                    AssetEventTagsTable.c.key == tag_key, AssetEventTagsTable.c.value == tag_value
+        if not filter_tags:
+            tags_query = (
+                db.select(
+                    [
+                        AssetEventTagsTable.c.key,
+                        AssetEventTagsTable.c.value,
+                        AssetEventTagsTable.c.event_id,
+                    ]
+                    if not filter_tags
+                    else [AssetEventTagsTable.c.event_id]
                 )
-            ).alias("selected_tags")
-            with self.index_connection() as conn:
-                results = conn.execute(tags_query).fetchall()
+                .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.event_id)
+                .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
+            )
+            if asset_details and asset_details.last_wipe_timestamp:
+                tags_query = tags_query.where(
+                    AssetEventTagsTable.c.event_timestamp
+                    > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                )
+        else:
 
-            tags_with_same_id = db.select(
+            def get_tag_filter_query(tag_key, tag_value):
+                filter_query = db.select([AssetEventTagsTable.c.event_id]).where(
+                    db.and_(
+                        AssetEventTagsTable.c.asset_key == asset_key.to_string(),
+                        AssetEventTagsTable.c.key == tag_key,
+                        AssetEventTagsTable.c.value == tag_value,
+                    )
+                )
+                if asset_details and asset_details.last_wipe_timestamp:
+                    filter_query = filter_query.where(
+                        AssetEventTagsTable.c.event_timestamp
+                        > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                    )
+                return filter_query
+
+            intersections = [
+                get_tag_filter_query(tag_key, tag_value)
+                for tag_key, tag_value in filter_tags.items()
+            ]
+
+            tags_query = db.select(
                 [
                     AssetEventTagsTable.c.key,
                     AssetEventTagsTable.c.value,
                     AssetEventTagsTable.c.event_id,
                 ]
-            ).select_from(
-                tags_query.join(
-                    AssetEventTagsTable,
-                    AssetEventTagsTable.c.event_id == tags_query.c.event_id,
+            ).where(
+                db.and_(
+                    AssetEventTagsTable.c.event_id.in_(db.intersect(*intersections)),
                 )
             )
-            with self.index_connection() as conn:
-                results = conn.execute(tags_with_same_id).fetchall()
 
-        tags_by_event_id = defaultdict(dict)
+        with self.index_connection() as conn:
+            results = conn.execute(tags_query).fetchall()
+
+        tags_by_event_id: Dict[int, Dict[str, str]] = defaultdict(dict)
         for row in results:
             key, value, event_id = row
             tags_by_event_id[event_id][key] = value

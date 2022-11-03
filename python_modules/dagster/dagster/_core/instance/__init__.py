@@ -1454,9 +1454,20 @@ class DagsterInstance:
 
     @traced
     def get_event_tags_for_asset(
-        self, asset_key: AssetKey, tag_key: Optional[str] = None, tag_value: Optional[str] = None
+        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
     ) -> Sequence[Mapping[str, str]]:
-        return self._event_storage.get_event_tags_for_asset(asset_key, tag_key, tag_value)
+        """
+        Fetches asset event tags for the given asset key.
+
+        If filter_tags is provided, searches for events containing all of the filter tags. Then,
+        returns all tags for those events. This enables searching for multipartitioned asset
+        partition tags with a fixed dimension value, e.g. all of the tags for events where
+        "country" == "US".
+
+        Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
+        single event.
+        """
+        return self._event_storage.get_event_tags_for_asset(asset_key, filter_tags)
 
     @traced
     def run_ids_for_asset_key(self, asset_key):
