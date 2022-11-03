@@ -45,7 +45,7 @@ def test_asset_sensors():
         instance=instance,
         repository_def=my_repo,
     )
-    assert isinstance(list(asset_a_and_b_sensor(ctx))[0], RunRequest)
+    assert isinstance(asset_a_and_b_sensor(ctx), RunRequest)
 
     for _ in range(5):
         materialize([asset_c], instance=instance)
@@ -55,7 +55,7 @@ def test_asset_sensors():
         instance=instance,
         repository_def=my_repo,
     )
-    assert list(asset_a_and_b_sensor_with_skip_reason(ctx))[0].run_config == {}
+    assert asset_a_and_b_sensor_with_skip_reason(ctx).run_config == {}
 
 
 @repository
