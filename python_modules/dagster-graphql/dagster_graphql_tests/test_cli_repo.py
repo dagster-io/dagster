@@ -1,33 +1,32 @@
-from dagster import Int, ScheduleDefinition, repository
-from dagster._legacy import InputDefinition, OutputDefinition, lambda_solid, pipeline, solid
+from dagster import job, In, Out, op, Int, ScheduleDefinition, repository
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@op(ins={"num": In(Int)}, out=Out(Int))
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@op(ins={"num": In(Int)}, out=Out(Int))
 def mult_two(num):
     return num * 2
 
 
-@pipeline
+@job
 def math():
     mult_two(add_one())
 
 
-@solid(config_schema={"gimme": str})
+@op(config_schema={"gimme": str})
 def needs_config(context):
-    return context.solid_config["gimme"]
+    return context.op_config["gimme"]
 
 
-@lambda_solid
+@op
 def no_config():
     return "ok"
 
 
-@pipeline
+@job
 def subset_test():
     no_config()
     needs_config()

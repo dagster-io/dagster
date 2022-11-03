@@ -1,11 +1,14 @@
 import time
 
-from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    execute_dagster_graphql,
+)
 
-from dagster import repository
+from dagster import job, op, repository
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import PresetDefinition, pipeline, solid
+from dagster._legacy import PresetDefinition, pipeline
 
 RUNS_QUERY = """
 query RunsQuery {
@@ -181,26 +184,26 @@ mutation ExecutePipeline(
 
 
 def get_repo():
-    @solid
-    def my_solid():
+    @op
+    def my_op():
         pass
 
-    @solid
+    @op
     def loop():
         while True:
             time.sleep(0.1)
 
-    @pipeline
-    def infinite_loop_pipeline():
+    @job
+    def infinite_loop_job():
         loop()
 
     @pipeline(preset_defs=[PresetDefinition(name="my_preset", run_config={})])
-    def foo_pipeline():
-        my_solid()
+    def foo_job():
+        my_op()
 
     @repository
     def my_repo():
-        return [infinite_loop_pipeline, foo_pipeline]
+        return [infinite_loop_job, foo_job]
 
     return my_repo
 
@@ -217,7 +220,9 @@ def test_runs_query():
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             result = execute_dagster_graphql(context, RUNS_QUERY)
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [
+                run["runId"] for run in result.data["pipelineRunsOrError"]["results"]
+            ]
             assert len(run_ids) == 2
             assert run_ids[0] == run_id_2
             assert run_ids[1] == run_id_1
@@ -242,7 +247,9 @@ def test_paginated_runs_query():
                 variables={"cursor": run_id_3, "limit": 1},
             )
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [
+                run["runId"] for run in result.data["pipelineRunsOrError"]["results"]
+            ]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_2
 
@@ -262,7 +269,9 @@ def test_filtered_runs_query():
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             result = execute_dagster_graphql(context, FILTERED_RUNS_QUERY)
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [
+                run["runId"] for run in result.data["pipelineRunsOrError"]["results"]
+            ]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_2
 
@@ -304,7 +313,7 @@ def test_launch_mutation():
                 variables={
                     "repositoryLocationName": "test_location",
                     "repositoryName": "my_repo",
-                    "pipelineName": "foo_pipeline",
+                    "pipelineName": "foo_job",
                     "runConfigData": {},
                     "mode": "default",
                 },
@@ -325,7 +334,7 @@ def test_launch_mutation_error():
                 variables={
                     "repositoryLocationName": "test_location",
                     "repositoryName": "my_repo",
-                    "pipelineName": "foo_pipeline",
+                    "pipelineName": "foo_job",
                     "runConfigData": {"invalid": "config"},
                     "mode": "default",
                 },
@@ -347,7 +356,7 @@ def test_launch_preset_mutation():
                 variables={
                     "repositoryLocationName": "test_location",
                     "repositoryName": "my_repo",
-                    "pipelineName": "foo_pipeline",
+                    "pipelineName": "foo_job",
                     "presetName": "my_preset",
                 },
             )
