@@ -3,8 +3,10 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import repository
-from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
+from dagster import job, op, repository
+from dagster._api.snapshot_repository import (
+    sync_get_streaming_external_repositories_data_grpc,
+)
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation import (
     ExternalRepositoryData,
@@ -16,7 +18,6 @@ from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._legacy import lambda_solid, pipeline
 from dagster._serdes.serdes import deserialize_as
 
 from .utils import get_bar_repo_repository_location
@@ -50,13 +51,13 @@ def test_streaming_external_repositories_error(instance):
             )
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
-@pipeline
-def giant_pipeline():
+@job
+def giant_job():
     # Pipeline big enough to be larger than the max size limit for a gRPC message in its
     # external repository
     for _i in range(20000):
@@ -67,7 +68,7 @@ def giant_pipeline():
 def giant_repo():
     return {
         "pipelines": {
-            "giant": giant_pipeline,
+            "giant": giant_job,
         },
     }
 
@@ -131,7 +132,9 @@ def test_defer_snapshots(instance):
 
         repo = ExternalRepository(
             external_repository_data,
-            RepositoryHandle(repository_name="bar_repo", repository_location=repository_location),
+            RepositoryHandle(
+                repository_name="bar_repo", repository_location=repository_location
+            ),
             ref_to_data_fn=_ref_to_data,
         )
         jobs = repo.get_all_external_jobs()

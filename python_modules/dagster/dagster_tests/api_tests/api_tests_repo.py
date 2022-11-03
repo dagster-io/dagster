@@ -1,45 +1,50 @@
 import string
 import time
 
-from dagster import Int, ScheduleDefinition, op, repository, usable_as_dagster_type
+from dagster import (
+    job,
+    In,
+    Out,
+    Int,
+    ScheduleDefinition,
+    op,
+    repository,
+    usable_as_dagster_type,
+)
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.errors import DagsterError
 from dagster._core.test_utils import default_mode_def_for_test
 from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
     PartitionSetDefinition,
-    lambda_solid,
     pipeline,
-    solid,
 )
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
-@lambda_solid
+@op
 def do_input(x):
     return x
 
 
 @pipeline(name="foo", mode_defs=[default_mode_def_for_test])
-def foo_pipeline():
+def foo_job():
     do_input(do_something())
 
 
-@lambda_solid
-def forever_solid():
+@op
+def forever_op():
     while True:
         time.sleep(10)
 
 
 @pipeline(name="forever", mode_defs=[default_mode_def_for_test])
-def forever_pipeline():
-    forever_solid()
+def forever_job():
+    forever_op()
 
 
 @op
@@ -47,42 +52,42 @@ def do_fail():
     raise Exception("I have failed")
 
 
-@pipeline
-def fail_pipeline():
+@job
+def fail_job():
     do_fail()
 
 
 @pipeline(name="baz", description="Not much tbh")
-def baz_pipeline():
+def baz_job():
     do_input()
 
 
 def define_foo_pipeline():
-    return foo_pipeline
+    return foo_job
 
 
 @pipeline(name="other_foo")
-def other_foo_pipeline():
+def other_foo_job():
     do_input(do_something())
 
 
 def define_other_foo_pipeline():
-    return other_foo_pipeline
+    return other_foo_job
 
 
 @pipeline(name="bar")
-def bar_pipeline():
+def bar_job():
     @usable_as_dagster_type(name="InputTypeWithoutHydration")
     class InputTypeWithoutHydration(int):
         pass
 
-    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    @op(out=Out(InputTypeWithoutHydration))
     def one(_):
         return 1
 
-    @solid(
-        input_defs=[InputDefinition("some_input", InputTypeWithoutHydration)],
-        output_defs=[OutputDefinition(Int)],
+    @op(
+        ins={"some_input": In(InputTypeWithoutHydration)},
+        out=Out(Int),
     )
     def fail_subset(_, some_input):
         return some_input
@@ -184,10 +189,10 @@ def bar_repo():
     return {
         "pipelines": {
             "foo": define_foo_pipeline,
-            "bar": lambda: bar_pipeline,
-            "baz": lambda: baz_pipeline,
-            "fail": fail_pipeline,
-            "forever": forever_pipeline,
+            "bar": lambda: bar_job,
+            "baz": lambda: baz_job,
+            "fail": fail_job,
+            "forever": forever_job,
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_baz_partitions(),
