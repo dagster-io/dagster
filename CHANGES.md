@@ -1,5 +1,40 @@
 # Changelog
 
+# 1.0.16 (core) / 0.16.16 (libraries)
+
+### New
+
+- [dagit] The new Overview and Workspace pages have been enabled for all users, after being gated with a feature flag for the last several releases. These changes include design updates, virtualized tables, and more performant querying.
+  - The top navigation has been updated to improve space allocation, with main nav links moved to the left.
+  - “Overview” is the new Dagit home page and “factory floor” view, were you can find the run timeline, which now offers time-based pagination. The Overview section also contains pages with all of your jobs, schedules, sensors, and backfills. You can filter objects by name, and collapse or expand repository sections.
+  - “Workspace” has been redesigned to offer a better summary of your repositories, and to use the same performant table views, querying, and filtering as in the Overview pages.
+- `@asset` and `@multi_asset` now accept a `retry_policy` argument. (Thanks Adam Bloom!)
+- When loading an input that depends on multiple partitions of an upstream asset, the `fs_io_manager` will now return a dictionary that maps partition keys to the stored values for those partitions. (Thanks andrewgryan!).
+- `JobDefinition.execute_in_process` now accepts a `run_config` argument even when the job is partitioned. If supplied, the run config will be used instead of any config provided by the job’s `PartitionedConfig`.
+- The `run_request_for_partition` method on jobs now accepts a `run_config` argument. If supplied, the run config will be used instead of any config provided by the job’s `PartitionedConfig`.
+- The new `NotebookMetadataValue` can be used to report the location of executed jupyter notebooks, and Dagit will be able to render the notebook.
+- Resolving asset dependencies within a group now works with multi-assets, as long as all the assets within the multi-asset are in the same group. (Thanks `@peay`!)
+- UPathIOManager, a filesystem-agnostic IOManager base class has been added - (Thanks `@****[danielgafni](https://github.com/danielgafni)`!)\*\*
+- A threadpool option has been added for the scheduler daemon. This can be enabled via your `dagster.yaml` file; check out the [docs](https://docs.dagster.io/deployment/dagster-instance#schedule-evaluation).
+- The default LocalComputeLogManager will capture compute logs by process instead of by step. This means that for the `in_process` executor, where all steps are executed in the same process, the captured compute logs for all steps in a run will be captured in the same file.
+- [dagster-airflow] `make_dagster_job_from_airflow_dag` now supports airflow 2, there is also a new mock_xcom parameter that will mock all calls to made by operators to xcom.
+- [helm] volume and volumeMount sections have been added for the dagit and daemon sections of the helm chart.
+
+### Bugfixes
+
+- For partitioned asset jobs whose config is a hardcoded dictionary (rather than a `PartitionedConfig`), previously `run_request_for_partition` would produce a run with no config. Now, the run has the hardcoded dictionary as its config.
+- Previously, asset inputs would be resolved to upstream assets in the same group that had the same name, even if the asset input already had a key prefix. Now, asset inputs are only resolved to upstream assets in the same group if the input path only has a single component.
+- Previously, asset inputs could get resolved to outputs of the same `AssetsDefinition`, through group-based asset dependency resolution, which would later error because of a circular dependency. This has been fixed.
+- Previously, the “Partition Status” and “Backfill Status” fields on the Backfill page in dagit were always incomplete and showed missing partitions. This has been fixed to accurately show the status of the backfill runs.
+- [dagit] When viewing the config dialog for a run with a very long config, scrolling was broken and the “copy” button was not visible. This has been fixed.
+- Executors now compress step worker arguments to avoid CLI length limits with large DAGs.
+- [dagster-msteams] Longer messages can now be used in Teams HeroCard - thanks `@jayhale`
+
+### Documentation
+
+- API docs for InputContext have been improved - (Thanks @peay!)
+- [dagster-snowflake] Improved documentation for the Snowflake IO manager
+
 # 1.0.15 (core) / 0.16.15 (libraries)
 
 ### New
@@ -13,7 +48,7 @@
 
 - Fixed a bug that broke asset partition mappings when using the `key_prefix` with methods like `load_assets_from_modules`.
 - [dagster-dbt] When running dbt Cloud jobs with the dbt_cloud_run_op, the op would emit a failure if the targeted job did not create a run_results.json artifact, even if this was the expected behavior. This has been fixed.
-- Improved performance by adding database indexes which should speed up the run view as well as a range of asset-based queries.  These migrations can be applied by running `dagster instance migrate`.
+- Improved performance by adding database indexes which should speed up the run view as well as a range of asset-based queries. These migrations can be applied by running `dagster instance migrate`.
 - An issue that would cause schedule/sensor latency in the daemon during workspace refreshes has been resolved.
 - [dagit] Shift-clicking Materialize for partitioned assets now shows the asset launchpad, allowing you to launch execution of a partition with config.
 
@@ -28,7 +63,6 @@
 
 - [dagster-dbt] Added a `display_raw_sql` flag to the dbt asset loading functions. If set to False, this will remove the raw sql blobs from the asset descriptions. For large dbt projects, this can significantly reduce the size of the generated workspace snapshots.
 - [dagit] A “New asset detail pages” feature flag available in Dagit’s settings allows you to preview some upcoming changes to the way historical materializations and partitions are viewed.
-
 
 # 1.0.14 (core) / 0.16.14 (libraries)
 
@@ -2794,9 +2828,9 @@ def my_root_manager(_):
 
 - New **first-class Asset sensors** help you define sensors that launch pipeline runs or notify appropriate stakeholders when specific asset keys are materialized. This pattern also enables Dagster to infer _cross-pipeline dependency_ links. Check out the docs [here](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#asset_sensors)!
 - **Solid-level retries**: A new `retry_policy` argument to the `@solid` decorator allows you to easily and flexibly control how specific solids in your pipelines will be retried if they fail by setting a [RetryPolicy](https://docs.dagster.io/_apidocs/solids#dagster.RetryPolicy).
-- Writing tests in Dagster is now even easier, using the new suite of **direct invocation apis**. [Solids](*https://docs.dagster.io/concepts/testing#experimental-testing-solids-with-invocation* 'https://docs.dagster.io/concepts/testing#experimental-testing-solids-with-invocation'), [resources](*https://docs.dagster.io/concepts/modes-resources#experimental-testing-resource-initialization* 'https://docs.dagster.io/concepts/modes-resources#experimental-testing-resource-initialization'), [hooks](https://docs.dagster.io/concepts/solids-pipelines/solid-hooks#experimental-testing-hooks), [loggers](https://docs.dagster.io/concepts/logging/loggers#testing-custom-loggers), [sensors](*https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#testing-sensors* 'https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#testing-sensors'), and [schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#testing-partition-schedules) can all be invoked directly to test their behavior. For example, if you have some solid `my_solid` that you'd like to test on an input, you can now write `assert my_solid(1, "foo") == "bar"` (rather than explicitly calling `execute_solid()`).
+- Writing tests in Dagster is now even easier, using the new suite of **direct invocation apis**. [Solids](*https://docs.dagster.io/concepts/testing#experimental-testing-solids-with-invocation* "https://docs.dagster.io/concepts/testing#experimental-testing-solids-with-invocation"), [resources](*https://docs.dagster.io/concepts/modes-resources#experimental-testing-resource-initialization* "https://docs.dagster.io/concepts/modes-resources#experimental-testing-resource-initialization"), [hooks](https://docs.dagster.io/concepts/solids-pipelines/solid-hooks#experimental-testing-hooks), [loggers](https://docs.dagster.io/concepts/logging/loggers#testing-custom-loggers), [sensors](*https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#testing-sensors* "https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#testing-sensors"), and [schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#testing-partition-schedules) can all be invoked directly to test their behavior. For example, if you have some solid `my_solid` that you'd like to test on an input, you can now write `assert my_solid(1, "foo") == "bar"` (rather than explicitly calling `execute_solid()`).
 - [Experimental] A new set of experimental core APIs. Among many benefits, these changes unify concepts such as Presets and Partition sets, make it easier to reuse common resources within an environment, make it possible to construct test-specific resources outside of your pipeline definition, and more. These changes are significant and impactful, so we encourage you to try them out and let us know how they feel! You can learn more about the specifics [here](https://docs.dagster.io/master/_apidocs/experimental)
-- [Experimental] There’s a new [reference deployment for running Dagster on AWS ECS](https://docs.dagster.io/0.12.0/deployment/guides/aws#example 'https://docs.dagster.io/0.11.15/deployment/guides/aws#example') and a new [EcsRunLauncher](https://github.com/dagster-io/dagster/blob/0.12.0/python_modules/libraries/dagster-aws/dagster_aws/ecs/launcher.py 'https://github.com/dagster-io/dagster/blob/0.11.15/python_modules/libraries/dagster-aws/dagster_aws/ecs/launcher.py') that launches each pipeline run in its own ECS Task.
+- [Experimental] There’s a new [reference deployment for running Dagster on AWS ECS](https://docs.dagster.io/0.12.0/deployment/guides/aws#example "https://docs.dagster.io/0.11.15/deployment/guides/aws#example") and a new [EcsRunLauncher](https://github.com/dagster-io/dagster/blob/0.12.0/python_modules/libraries/dagster-aws/dagster_aws/ecs/launcher.py "https://github.com/dagster-io/dagster/blob/0.11.15/python_modules/libraries/dagster-aws/dagster_aws/ecs/launcher.py") that launches each pipeline run in its own ECS Task.
 - [Experimental] There’s a new `k8s_job_executor` (https://docs.dagster.io/_apidocs/libraries/dagster-k8s#dagster_k8s.k8s_job_executor)which executes each solid of your pipeline in a separate Kubernetes job. This addition means that you can now choose at runtime (https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm#executor) between single pod and multi-pod isolation for solids in your run. Previously this was only configurable for the entire deployment- you could either use the `K8sRunLauncher` with the default executors (in process and multiprocess) for low isolation, or you could use the `CeleryK8sRunLauncher` with the `celery_k8s_job_executor` for pod-level isolation. Now, your instance can be configured with the `K8sRunLauncher` and you can choose between the default executors or the k8s_job_executor.
 
 ### New since 0.11.16
@@ -3650,7 +3684,7 @@ The corresponding value flag `dagsterDaemon.backfill.enabled` has also been remo
     - grpc_server:
         host: localhost
         port: 4266
-        location_name: 'my_grpc_server'
+        location_name: "my_grpc_server"
         ssl: true
   ```
 
@@ -3695,33 +3729,33 @@ The corresponding value flag `dagsterDaemon.backfill.enabled` has also been remo
     class: MySQLRunStorage
     config:
       mysql_db:
-        username: {username}
-        password: {password}
-        hostname: {hostname}
-        db_name: {database}
-        port: {port}
+        username: { username }
+        password: { password }
+        hostname: { hostname }
+        db_name: { database }
+        port: { port }
 
   event_log_storage:
     module: dagster_mysql.event_log
     class: MySQLEventLogStorage
     config:
       mysql_db:
-        username: {username}
-        password: {password}
-        hostname: {hostname}
-        db_name: {db_name}
-        port: {port}
+        username: { username }
+        password: { password }
+        hostname: { hostname }
+        db_name: { db_name }
+        port: { port }
 
   schedule_storage:
     module: dagster_mysql.schedule_storage
     class: MySQLScheduleStorage
     config:
       mysql_db:
-        username: {username}
-        password: {password}
-        hostname: {hostname}
-        db_name: {db_name}
-        port: {port}
+        username: { username }
+        password: { password }
+        hostname: { hostname }
+        db_name: { db_name }
+        port: { port }
   ```
 
 ## 0.10.7
