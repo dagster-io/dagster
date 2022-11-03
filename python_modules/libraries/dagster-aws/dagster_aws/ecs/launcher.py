@@ -1,4 +1,5 @@
 import json
+import os
 import warnings
 from collections import namedtuple
 from typing import Any, Dict, Optional
@@ -65,10 +66,24 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.secrets_manager = boto3.client("secretsmanager")
         self.logs = boto3.client("logs")
 
-        self.task_definition = task_definition if isinstance(task_definition, str) else None
-        self.task_definition_dict = (
-            task_definition if not isinstance(task_definition, str) else None
-        )
+        self.task_definition = None
+        self.task_definition_dict = None
+        if isinstance(task_definition, str):
+            self.task_definition = task_definition
+        elif task_definition and "env" in task_definition:
+            check.invariant(
+                len(task_definition) == 1,
+                "If `task_definition` is set to a dictionary with `env`, `env` must be the only key.",
+            )
+            env_var = task_definition["env"]
+            self.task_definition = os.getenv(env_var)
+            if not self.task_definition:
+                raise Exception(
+                    f"You have attempted to fetch the environment variable {env_var} which is not set."
+                )
+        else:
+            self.task_definition_dict = task_definition
+
         self.container_name = container_name
 
         self.secrets = check.opt_list_param(secrets, "secrets")
@@ -93,7 +108,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.include_sidecars = include_sidecars
 
         if self.task_definition:
-            task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)
+            task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
             container_names = [
                 container.get("name")
                 for container in task_definition["taskDefinition"]["containerDefinitions"]
@@ -148,6 +163,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                         "execution_role_arn": Field(StringSource, is_required=False),
                         "task_role_arn": Field(StringSource, is_required=False),
                         "requires_compatibilities": Field(Array(str), is_required=False),
+                        "env": Field(
+                            str,
+                            is_required=False,
+                            description="Backwards-compatibility for when task_definition was a StringSource."
+                            "Can be used to source the task_definition scalar from an environment variable.",
+                        ),
                     },
                 ),
                 is_required=False,
