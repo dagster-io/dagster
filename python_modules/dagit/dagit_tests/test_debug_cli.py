@@ -6,15 +6,15 @@ from dagit.debug import dagit_debug_command
 
 from dagster._cli.debug import export_command
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline, lambda_solid, pipeline
+from dagster import job, op
 
 
-@lambda_solid
+@op
 def emit_one():
     return 1
 
 
-@pipeline
+@job
 def pipe_test():
     emit_one()
     emit_one()
@@ -23,7 +23,7 @@ def pipe_test():
 def test_roundtrip(monkeypatch):
     runner = CliRunner()
     with instance_for_test() as instance:
-        run_result = execute_pipeline(pipe_test, instance=instance)
+        run_result = pipe_test.execute_in_process(instance=instance)
         assert run_result.success
         file_path = path.join(instance.root_directory, ".temp.dump")
         export_result = runner.invoke(export_command, [run_result.run_id, file_path])

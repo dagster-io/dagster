@@ -1,30 +1,30 @@
 import string
 
-from dagster import ScheduleDefinition, repository
-from dagster._legacy import PartitionSetDefinition, lambda_solid, pipeline
+from dagster import op, ScheduleDefinition, repository, job
+from dagster._legacy import PartitionSetDefinition, pipeline
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
-@lambda_solid
+@op
 def do_input(x):
     return x
 
 
-@pipeline(name="foo")
-def foo_pipeline():
+@job(name="foo")
+def foo_job():
     do_input(do_something())
 
 
-def define_foo_pipeline():
-    return foo_pipeline
+def define_foo_job():
+    return foo_job
 
 
-@pipeline(name="baz", description="Not much tbh")
-def baz_pipeline():
+@job(name="baz", description="Not much tbh")
+def baz_job():
     do_input()
 
 
@@ -55,7 +55,7 @@ def define_baz_partitions():
 @repository
 def bar():
     return {
-        "pipelines": {"foo": foo_pipeline, "baz": baz_pipeline},
+        "pipelines": {"foo": foo_job, "baz": baz_job},
         "schedules": define_bar_schedules(),
         "partition_sets": define_baz_partitions(),
     }
