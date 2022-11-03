@@ -43,6 +43,7 @@ from .schema import (
     AssetEventTagsTable,
     AssetKeyTable,
     SecondaryIndexMigrationTable,
+    SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
 
@@ -650,8 +651,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def has_table(self, table_name: str) -> bool:
         """This method checks if a table exists in the database."""
-        with self.index_connection() as conn:
-            return db.inspect(conn).has_table(table_name)
+        return SqlEventLogStorageMetadata.tables and table_name in SqlEventLogStorageMetadata.tables
 
     def _apply_filter_to_query(
         self,
@@ -1267,7 +1267,7 @@ class SqlEventLogStorage(EventLogStorage):
         else:
 
             def get_tag_filter_query(tag_key, tag_value):
-                filter_query = db.select(AssetEventTagsTable.c.event_id).where(
+                filter_query = db.select([AssetEventTagsTable.c.event_id]).where(
                     db.and_(
                         AssetEventTagsTable.c.asset_key == asset_key.to_string(),
                         AssetEventTagsTable.c.key == tag_key,
