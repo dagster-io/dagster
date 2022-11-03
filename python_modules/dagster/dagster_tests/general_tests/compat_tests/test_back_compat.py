@@ -166,17 +166,17 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
         @op
-        def noop_solid(_):
+        def noop_op(_):
             pass
 
         @job
-        def noop_pipeline():
-            noop_solid()
+        def noop_job():
+            noop_op()
 
         with pytest.raises(
             (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
-            noop_pipeline.execute_in_process(instance=instance)
+            noop_job.execute_in_process(instance=instance)
 
         assert len(instance.get_runs()) == 1
 
@@ -195,7 +195,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         assert run.run_id == run_id
         assert run.pipeline_snapshot_id is None
 
-        result = noop_pipeline.execute_in_process(instance=instance)
+        result = noop_job.execute_in_process(instance=instance)
 
         assert result.success
 
@@ -465,14 +465,14 @@ def test_0_12_0_extract_asset_index_cols():
     src_dir = file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite")
 
     @op
-    def asset_solid(_):
+    def asset_op(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield AssetMaterialization(asset_key=AssetKey(["b"]))
         yield Output(1)
 
     @job
-    def asset_pipeline():
-        asset_solid()
+    def asset_job():
+        asset_op()
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs", "index.db")
@@ -485,8 +485,8 @@ def test_0_12_0_extract_asset_index_cols():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             storage = instance._event_storage
 
-            # make sure that executing the pipeline works
-            asset_pipeline.execute_in_process(instance=instance)
+            # make sure that executing the job works
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
@@ -495,7 +495,7 @@ def test_0_12_0_extract_asset_index_cols():
             assert not storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
-            asset_pipeline.execute_in_process(instance=instance)
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
             # wipe and leave asset wiped
@@ -519,14 +519,14 @@ def test_0_12_0_extract_asset_index_cols():
             assert set(old_keys) == set(new_keys)
 
             # make sure that storing assets still works
-            asset_pipeline.execute_in_process(instance=instance)
+            asset_job.execute_in_process(instance=instance)
 
             # make sure that wiping still works
             storage.wipe_asset(AssetKey(["a"]))
             assert not storage.has_asset_key(AssetKey(["a"]))
 
 
-def test_solid_handle_node_handle():
+def test_op_handle_node_handle():
     # serialize in current code
     test_handle = NodeHandle("test", None)
     test_str = serialize_value(test_handle)
