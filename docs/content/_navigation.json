@@ -344,6 +344,10 @@
               {
                 "title": "Hybrid Deployment",
                 "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment"
+              },
+              {
+                "title": "Environment variables and secrets",
+                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
               }
             ]
           },
@@ -440,6 +444,10 @@
             "path": "/dagster-cloud/developing-testing",
             "children": [
               {
+                "title": "Environment variables and secrets",
+                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
+              },
+              {
                 "title": "dagster-cloud CLI",
                 "path": "/dagster-cloud/developing-testing/dagster-cloud-cli"
               },
@@ -471,24 +479,6 @@
                   {
                     "title": "Using with dagster-cloud CLI",
                     "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
-                  }
-                ]
-              },
-              {
-                "title": "Environment variables and secrets",
-                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
-                "children": [
-                  {
-                    "title": "Serverless",
-                    "path": "/dagster-cloud/developing-testing/environment-variables/setup-for-serverless-deployments"
-                  },
-                  {
-                    "title": "Hybrid",
-                    "path": "/dagster-cloud/developing-testing/environment-variables/setup-for-hybrid-deployments"
-                  },
-                  {
-                    "title": "Reference",
-                    "path": "/dagster-cloud/developing-testing/environment-variables/reference"
                   }
                 ]
               }
