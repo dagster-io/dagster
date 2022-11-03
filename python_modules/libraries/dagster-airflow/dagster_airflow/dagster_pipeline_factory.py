@@ -461,7 +461,7 @@ def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, uni
         with _mock_xcom() if mock_xcom else nullcontext():
             with replace_airflow_logger_handlers():
                 if airflow_version >= "2.0.0":
-                    task_instance = TaskInstance(task=task, execution_date=execution_date, run_id="fake_id")
+                    task_instance = TaskInstance(task=task, execution_date=execution_date, run_id="dagster_airflow_run")
                 else:
                     task_instance = TaskInstance(task=task, execution_date=execution_date)
                 ti_context = (
