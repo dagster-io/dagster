@@ -22,7 +22,7 @@
 
 ### Bugfixes
 
-- For partitioned asset jobs whose config is a hardcoded dictionary (rather than a `PartitionedConfig`, previously `run_request_for_partition` would produce a run with no config. Now, the run has the hardcoded dictionary as its config.
+- For partitioned asset jobs whose config is a hardcoded dictionary (rather than a `PartitionedConfig`), previously `run_request_for_partition` would produce a run with no config. Now, the run has the hardcoded dictionary as its config.
 - Previously, asset inputs would be resolved to upstream assets in the same group that had the same name, even if the asset input already had a key prefix. Now, asset inputs are only resolved to upstream assets in the same group if the input path only has a single component.
 - Previously, asset inputs could get resolved to outputs of the same `AssetsDefinition`, through group-based asset dependency resolution, which would later error because of a circular dependency. This has been fixed.
 - Previously, the “Partition Status” and “Backfill Status” fields on the Backfill page in dagit were always incomplete and showed missing partitions. This has been fixed to accurately show the status of the backfill runs.
