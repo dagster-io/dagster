@@ -1,5 +1,6 @@
-from graphene import ResolveInfo
 from typing import cast
+
+from graphene import ResolveInfo
 
 import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError

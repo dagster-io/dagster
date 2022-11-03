@@ -190,7 +190,9 @@ def _build_graph_dependencies(
 def _get_dependency_node_output_handles(
     non_asset_inputs_by_node_handle: Mapping[NodeHandle, Sequence[NodeOutputHandle]],
     outputs_by_graph_handle: Mapping[NodeHandle, Mapping[str, NodeOutputHandle]],
-    dep_node_output_handles_by_node_output_handle: Dict[NodeOutputHandle, Sequence[NodeOutputHandle]],
+    dep_node_output_handles_by_node_output_handle: Dict[
+        NodeOutputHandle, Sequence[NodeOutputHandle]
+    ],
     node_output_handle: NodeOutputHandle,
 ) -> Sequence[NodeOutputHandle]:
     """

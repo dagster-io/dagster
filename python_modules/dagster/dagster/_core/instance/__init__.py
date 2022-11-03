@@ -839,7 +839,7 @@ class DagsterInstance:
         asset_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
-        repository_load_data=None
+        repository_load_data=None,
     ) -> PipelineRun:
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
@@ -1950,10 +1950,11 @@ class DagsterInstance:
         )
 
         stored_state = self.get_instigator_state(instigator_origin_id, selector_id)
+        computed_state: InstigatorState
         if external_sensor:
             computed_state = external_sensor.get_current_instigator_state(stored_state)
         else:
-            computed_state = stored_state
+            computed_state = check.not_none(stored_state)
 
         if not computed_state.is_running:
             return computed_state
@@ -1975,6 +1976,8 @@ class DagsterInstance:
     def all_instigator_state(
         self, repository_origin_id=None, repository_selector_id=None, instigator_type=None
     ):
+        if not self._schedule_storage:
+            check.failed("Schedule storage not available")
         return self._schedule_storage.all_instigator_state(
             repository_origin_id, repository_selector_id, instigator_type
         )

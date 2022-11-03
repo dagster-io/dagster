@@ -447,7 +447,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         return self._workspace_load_target
 
     @property
-    def _origins(self) -> List[RepositoryLocationOrigin]:
+    def _origins(self) -> Sequence[RepositoryLocationOrigin]:
         return self._workspace_load_target.create_origins() if self._workspace_load_target else []
 
     def add_state_subscriber(self, subscriber):
@@ -486,7 +486,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
     @property
     def permissions(self) -> Mapping[str, PermissionResult]:
-        return get_user_permissions(self)
+        return get_user_permissions(True)
 
     @property
     def version(self) -> str:

@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from multiprocessing.synchronize import Event as MPEvent
 from threading import Event as ThreadingEventType
 from time import sleep
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -87,7 +87,7 @@ class LoadedRepositories:
     def __init__(
         self,
         loadable_target_origin: Optional[LoadableTargetOrigin],
-        entry_point: List[str],
+        entry_point: Sequence[str],
         container_image: Optional[str] = None,
     ):
         self._loadable_target_origin = loadable_target_origin

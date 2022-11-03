@@ -1006,7 +1006,7 @@ def _get_execution_plan_from_run(
     if pipeline_run.has_repository_load_data:
         # if you haven't fetched it already, get the snapshot now
         execution_plan_snapshot = execution_plan_snapshot or instance.get_execution_plan_snapshot(
-            pipeline_run.execution_plan_snapshot_id
+            check.not_none(pipeline_run.execution_plan_snapshot_id)
         )
     # need to rebuild execution plan so it matches the subsetted graph
     return create_execution_plan(

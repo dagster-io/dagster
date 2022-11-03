@@ -244,7 +244,7 @@ class ExecuteStepArgs(
         # Compress, then base64 encode so we can pass it around as a str
         return base64.b64encode(zlib.compress(serialize_dagster_namedtuple(self).encode())).decode()
 
-    def get_command_args(self, skip_serialized_namedtuple: bool=False) -> Sequence[str]:
+    def get_command_args(self, skip_serialized_namedtuple: bool = False) -> Sequence[str]:
         """
         Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
         be used to pass the args to Click using an env var.

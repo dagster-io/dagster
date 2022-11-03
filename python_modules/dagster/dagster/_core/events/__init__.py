@@ -84,7 +84,7 @@ EventSpecificData = Union[
 ]
 
 
-class DagsterEventType(Enum):
+class DagsterEventType(str, Enum):
     """The types of events that may be yielded by solid and pipeline execution."""
 
     STEP_OUTPUT = "STEP_OUTPUT"
@@ -246,8 +246,9 @@ def _assert_type(
     expected_type: Union[DagsterEventType, Sequence[DagsterEventType]],
     actual_type: DagsterEventType,
 ) -> None:
-    _expected_type = expected_type if isinstance(expected_type, Sequence) else [expected_type]
-
+    _expected_type = (
+        [expected_type] if isinstance(expected_type, DagsterEventType) else expected_type
+    )
     check.invariant(
         actual_type in _expected_type,
         f"{method} only callable when event_type is {','.join([t.value for t in _expected_type])}, called on {actual_type}",

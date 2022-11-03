@@ -1,6 +1,6 @@
 import inspect
 from types import ModuleType
-from typing import Callable, List, NamedTuple, Optional, Sequence, Tuple, Type, Union
+from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Type, Union
 
 from dagster import (
     DagsterInvariantViolationError,

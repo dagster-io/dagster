@@ -413,7 +413,7 @@ def _execute_step_command_body(
 
         if pipeline_run.has_repository_load_data:
             repository_load_data = instance.get_execution_plan_snapshot(
-                pipeline_run.execution_plan_snapshot_id
+                check.not_none(pipeline_run.execution_plan_snapshot_id)
             ).repository_load_data
         else:
             repository_load_data = None

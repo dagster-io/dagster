@@ -6,9 +6,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
-    Dict,
     FrozenSet,
-    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -62,7 +60,8 @@ class ReconstructableRepository(
             ("pointer", CodePointer),
             ("container_image", Optional[str]),
             ("executable_path", Optional[str]),
-            ("entry_point", Sequence[str            ("container_context", Optional[Mapping[str, Any]])   ("container_context", Optional[Dict[str, Any]]),
+            ("entry_point", Sequence[str]),
+            ("container_context", Optional[Mapping[str, Any]]),
             ("repository_load_data", Optional["RepositoryLoadData"]),
         ],
     )
@@ -219,7 +218,7 @@ class ReconstructablePipeline(
     def _subset_for_execution(
         self,
         solids_to_execute: Optional[AbstractSet[str]],
-        solid_selection: Optional[Sequence[str]],nal[List[str]],
+        solid_selection: Optional[Sequence[str]],
         asset_selection: Optional[AbstractSet[AssetKey]],
     ) -> "ReconstructablePipeline":
         # no selection

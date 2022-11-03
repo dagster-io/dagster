@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
 
 from dagster._utils.error import SerializableErrorInfo
 
@@ -18,7 +18,7 @@ class WorkspaceLocationEntry(NamedTuple):
     repository_location: Optional["RepositoryLocation"]
     load_error: Optional[SerializableErrorInfo]
     load_status: WorkspaceLocationLoadStatus
-    display_metadata: Dict[str, str]
+    display_metadata: Mapping[str, str]
     update_timestamp: float
 
 

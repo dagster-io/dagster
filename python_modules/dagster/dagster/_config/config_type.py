@@ -2,7 +2,6 @@ import typing
 from enum import Enum as PythonEnum
 from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, cast
 
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum

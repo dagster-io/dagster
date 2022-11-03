@@ -104,7 +104,7 @@ def core_execute_run(
         # add in cached metadata to load repository more efficiently
         if pipeline_run.has_repository_load_data:
             execution_plan_snapshot = instance.get_execution_plan_snapshot(
-                pipeline_run.execution_plan_snapshot_id
+                check.not_none(pipeline_run.execution_plan_snapshot_id)
             )
             recon_pipeline = recon_pipeline.with_repository_load_data(
                 execution_plan_snapshot.repository_load_data,

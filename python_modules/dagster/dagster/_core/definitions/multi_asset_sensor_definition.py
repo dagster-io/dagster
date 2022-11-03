@@ -397,10 +397,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 limit=1,
             )
 
-            if event_records:
-                asset_event_records[a] = event_records[0]
-            else:
-                asset_event_records[a] = None
+            asset_event_records[a] = next(iter(event_records), None)
 
         return asset_event_records
 

@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import textwrap
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, cast
 
 import click
 import pendulum
@@ -918,4 +918,3 @@ def validate_partition_slice(partition_names, name, value):
         raise click.UsageError("invalid value {} for {}".format(value, name))
     index = partition_names.index(value)
     return index if is_start else index + 1
-

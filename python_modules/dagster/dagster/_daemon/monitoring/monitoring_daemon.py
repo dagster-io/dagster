@@ -101,7 +101,7 @@ def execute_monitoring_iteration(
     )
 
     # TODO: consider limiting number of runs to fetch
-    runs = instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
+    runs = list(instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES)))
 
     if not runs:
         return
