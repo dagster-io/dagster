@@ -3,7 +3,6 @@ from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from datetime import datetime
 from typing import (
-    AbstractSet,
     Any,
     Dict,
     Iterable,
@@ -12,7 +11,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
     cast,
 )
@@ -226,12 +224,6 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
 
-        if not self.has_table(AssetEventTagsTable.name):
-            raise DagsterInvalidInvocationError(
-                "In order to store multi-dimensional partition information, you must run "
-                "`dagster instance migrate` to create the AssetEventTags table."
-            )
-
         if (
             event.dagster_event
             and event.dagster_event.asset_key
@@ -241,6 +233,13 @@ class SqlEventLogStorage(EventLogStorage):
             )
             and event.dagster_event.step_materialization_data.materialization.tags
         ):
+
+            if not self.has_table(AssetEventTagsTable.name):
+                raise DagsterInvalidInvocationError(
+                    "In order to store multi-dimensional partition information, you must run "
+                    "`dagster instance migrate` to create the AssetEventTags table."
+                )
+
             check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
             asset_key_str = event.dagster_event.asset_key.to_string()
 
@@ -1306,7 +1305,7 @@ class SqlEventLogStorage(EventLogStorage):
             with self.index_connection() as conn:
                 results = conn.execute(tags_with_same_id).fetchall()
 
-        tags_by_event_id = defaultdict(dict)
+        tags_by_event_id: Dict[int, Dict[str, str]] = defaultdict(dict)
         for row in results:
             key, value, event_id = row
             tags_by_event_id[event_id][key] = value

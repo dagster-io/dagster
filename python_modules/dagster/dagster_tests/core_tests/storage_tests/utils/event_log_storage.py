@@ -2369,7 +2369,7 @@ class TestEventLogStorage:
 
             asset_event_tags = storage.get_event_tags_for_asset(key)
             assert asset_event_tags == [
-                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-13'}
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"}
             ]
 
     def test_materialization_tag_on_wipe(self, storage, instance):
@@ -2443,17 +2443,17 @@ class TestEventLogStorage:
                 asset_key=key, tag_key="dagster/partition/country", tag_value="US"
             )
             assert asset_event_tags == [
-                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-13'},
-                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-14'},
-                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-13'},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-14"},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
             ]
             asset_event_tags = storage.get_event_tags_for_asset(
                 asset_key=key, tag_key="dagster/partition/date", tag_value="2022-10-13"
             )
             assert asset_event_tags == [
-                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-13'},
-                {'dagster/partition/country': 'Portugal', 'dagster/partition/date': '2022-10-13'},
-                {'dagster/partition/country': 'US', 'dagster/partition/date': '2022-10-13'},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+                {"dagster/partition/country": "Portugal", "dagster/partition/date": "2022-10-13"},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
             ]
             if self.can_wipe():
                 storage.wipe_asset(key)
@@ -2470,7 +2470,7 @@ class TestEventLogStorage:
                     asset_key=key, tag_key="dagster/partition/date", tag_value="2022-10-13"
                 )
                 assert asset_event_tags == [
-                    {'dagster/partition/country': 'Brazil', 'dagster/partition/date': '2022-10-13'}
+                    {"dagster/partition/country": "Brazil", "dagster/partition/date": "2022-10-13"}
                 ]
 
     def test_event_record_filter_tags(self, storage, instance):
