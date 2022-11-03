@@ -1,4 +1,0 @@
-solids:
-  get_environment_solid:
-    config:
-      looking_for: FIND_ME
