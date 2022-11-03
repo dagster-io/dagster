@@ -2,18 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from datetime import datetime
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-)
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union, cast
 
 import pendulum
 import sqlalchemy as db
@@ -1231,34 +1220,29 @@ class SqlEventLogStorage(EventLogStorage):
         return query
 
     def get_event_tags_for_asset(
-        self, asset_key: AssetKey, tag_key: Optional[str] = None, tag_value: Optional[str] = None
+        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
     ) -> Sequence[Mapping[str, str]]:
         """
         Fetches asset event tags for the given asset key.
 
-        If tag_key and tag_value are provided, searches for all events with the given key and value.
-        Then, returns all tags for those events.
+        If filter_tags is provided, searches for events containing all of the filter tags. Then,
+        returns all tags for those events. This enables searching for multipartitioned asset
+        partition tags with a fixed dimension value, e.g. all of the tags for events where
+        "country" == "US".
 
         Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
         single event.
         """
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
-        tag_key = check.opt_str_param(tag_key, "tag_key")
-        tag_value = check.opt_str_param(tag_value, "tag_value")
+        filter_tags = check.opt_mapping_param(
+            filter_tags, "filter_tags", key_type=str, value_type=str
+        )
 
         if not self.has_table(AssetEventTagsTable.name):
             raise DagsterInvalidInvocationError(
                 "In order to search for asset event tags, you must run "
                 "`dagster instance migrate` to create the AssetEventTags table."
             )
-
-        if tag_key or tag_value:
-            if not (tag_key and tag_value):
-                raise DagsterInvalidInvocationError(
-                    "If providing tag key, must also provide tag value."
-                )
-
-        perform_tag_join = tag_key and tag_value
 
         tags_query = (
             db.select(
@@ -1267,6 +1251,8 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetEventTagsTable.c.value,
                     AssetEventTagsTable.c.event_id,
                 ]
+                if not filter_tags
+                else [AssetEventTagsTable.c.event_id]
             )
             .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.event_id)
             .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
@@ -1278,17 +1264,19 @@ class SqlEventLogStorage(EventLogStorage):
                 > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
             )
 
-        if not perform_tag_join:
+        if not filter_tags:
             with self.index_connection() as conn:
                 results = conn.execute(tags_query).fetchall()
         else:
-            tags_query = tags_query.where(
-                db.and_(
-                    AssetEventTagsTable.c.key == tag_key, AssetEventTagsTable.c.value == tag_value
+            intersections = [
+                tags_query.where(
+                    db.and_(
+                        AssetEventTagsTable.c.key == tag_key,
+                        AssetEventTagsTable.c.value == tag_value,
+                    )
                 )
-            ).alias("selected_tags")
-            with self.index_connection() as conn:
-                results = conn.execute(tags_query).fetchall()
+                for tag_key, tag_value in filter_tags.items()
+            ]
 
             tags_with_same_id = db.select(
                 [
@@ -1296,12 +1284,7 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetEventTagsTable.c.value,
                     AssetEventTagsTable.c.event_id,
                 ]
-            ).select_from(
-                tags_query.join(
-                    AssetEventTagsTable,
-                    AssetEventTagsTable.c.event_id == tags_query.c.event_id,
-                )
-            )
+            ).where(AssetEventTagsTable.c.event_id.in_(db.intersect(*intersections)))
             with self.index_connection() as conn:
                 results = conn.execute(tags_with_same_id).fetchall()
 

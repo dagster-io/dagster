@@ -2387,7 +2387,7 @@ class TestEventLogStorage:
             )
             yield AssetMaterialization(
                 asset_key=key,
-                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                partition=MultiPartitionKey({"country": "Portugal", "date": "2022-10-13"}),
                 tags={
                     "dagster/partition/country": "Portugal",
                     "dagster/partition/date": "2022-10-13",
@@ -2431,6 +2431,12 @@ class TestEventLogStorage:
             )
             yield Output(5)
 
+        def _sort_by_country_then_date(tags):
+            return sorted(
+                tags,
+                key=lambda tag: (tag["dagster/partition/country"]) + tag["dagster/partition/date"],
+            )
+
         run_id = make_new_run_id()
         run_id_2 = make_new_run_id()
         with create_and_delete_test_runs(instance, [run_id, run_id_2]):
@@ -2439,20 +2445,37 @@ class TestEventLogStorage:
             for event in events:
                 storage.store_event(event)
 
-            asset_event_tags = storage.get_event_tags_for_asset(
-                asset_key=key, tag_key="dagster/partition/country", tag_value="US"
+            asset_event_tags = _sort_by_country_then_date(
+                storage.get_event_tags_for_asset(
+                    asset_key=key, filter_tags={"dagster/partition/country": "US"}
+                )
             )
             assert asset_event_tags == [
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-14"},
+            ]
+            asset_event_tags = _sort_by_country_then_date(
+                storage.get_event_tags_for_asset(
+                    asset_key=key, filter_tags={"dagster/partition/date": "2022-10-13"}
+                )
+            )
+            assert asset_event_tags == [
+                {"dagster/partition/country": "Portugal", "dagster/partition/date": "2022-10-13"},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
             ]
-            asset_event_tags = storage.get_event_tags_for_asset(
-                asset_key=key, tag_key="dagster/partition/date", tag_value="2022-10-13"
+            asset_event_tags = _sort_by_country_then_date(
+                storage.get_event_tags_for_asset(
+                    asset_key=key,
+                    filter_tags={
+                        "dagster/partition/date": "2022-10-13",
+                        "dagster/partition/country": "US",
+                    },
+                )
             )
             assert asset_event_tags == [
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
-                {"dagster/partition/country": "Portugal", "dagster/partition/date": "2022-10-13"},
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
             ]
             if self.can_wipe():
@@ -2467,7 +2490,11 @@ class TestEventLogStorage:
                     storage.store_event(event)
 
                 asset_event_tags = storage.get_event_tags_for_asset(
-                    asset_key=key, tag_key="dagster/partition/date", tag_value="2022-10-13"
+                    asset_key=key,
+                    filter_tags={
+                        "dagster/partition/date": "2022-10-13",
+                        "dagster/partition/country": "Brazil",
+                    },
                 )
                 assert asset_event_tags == [
                     {"dagster/partition/country": "Brazil", "dagster/partition/date": "2022-10-13"}
