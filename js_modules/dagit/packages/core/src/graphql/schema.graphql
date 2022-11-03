@@ -3385,6 +3385,12 @@ type PathMetadataEntry implements MetadataEntry {
   path: String!
 }
 
+type NotebookMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  path: String!
+}
+
 type PythonArtifactMetadataEntry implements MetadataEntry {
   label: String!
   description: String
