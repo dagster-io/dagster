@@ -346,7 +346,7 @@ def test_step_subset_with_custom_paths():
         for evt in step_subset_events:
             assert not evt.is_failure
         # only the selected step subset was executed
-        assert set([evt.step_key for evt in step_subset_events]) == {"solid_b"}
+        assert set([evt.step_key for evt in step_subset_events if evt.step_key]) == {"solid_b"}
 
         # Asset Materialization events
         step_materialization_events = list(

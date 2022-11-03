@@ -240,35 +240,19 @@ def multi_asset_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        def _wrapped_fn(context):
-            result = fn(context)
-
-            if inspect.isgenerator(result) or isinstance(result, list):
-                for item in result:
-                    yield item
-            elif isinstance(result, (RunRequest, SkipReason)):
-                yield result
-
-            elif result is not None:
-                raise DagsterInvariantViolationError(
-                    (
-                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                        "{result} of type {type_}.  Should only return SkipReason or "
-                        "RunRequest objects."
-                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
-                )
-
-        return MultiAssetSensorDefinition(
+        sensor_def = MultiAssetSensorDefinition(
             name=sensor_name,
             asset_keys=asset_keys,
             asset_selection=asset_selection,
             job_name=job_name,
-            asset_materialization_fn=_wrapped_fn,
+            asset_materialization_fn=fn,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
             jobs=jobs,
             default_status=default_status,
         )
+        update_wrapper(sensor_def, wrapped=fn)
+        return sensor_def
 
     return inner

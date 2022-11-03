@@ -13,6 +13,7 @@ from dagster import (
     JsonMetadataValue,
     MarkdownMetadataValue,
     MetadataEntry,
+    NotebookMetadataValue,
     PathMetadataValue,
     PythonArtifactMetadataValue,
     TableMetadataValue,
@@ -37,6 +38,7 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
         GrapheneIntMetadataEntry,
         GrapheneJsonMetadataEntry,
         GrapheneMarkdownMetadataEntry,
+        GrapheneNotebookMetadataEntry,
         GraphenePathMetadataEntry,
         GraphenePipelineRunMetadataEntry,
         GraphenePythonArtifactMetadataEntry,
@@ -50,6 +52,12 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
     for metadata_entry in metadata_entries:
         if isinstance(metadata_entry.entry_data, PathMetadataValue):
             yield GraphenePathMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                path=metadata_entry.entry_data.path,
+            )
+        elif isinstance(metadata_entry.entry_data, NotebookMetadataValue):
+            yield GrapheneNotebookMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 path=metadata_entry.entry_data.path,
@@ -365,8 +373,10 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         )
     elif dagster_event.event_type == DagsterEventType.LOGS_CAPTURED:
         return GrapheneLogsCapturedEvent(
-            logKey=dagster_event.logs_captured_data.log_key,
+            fileKey=dagster_event.logs_captured_data.file_key,
+            logKey=dagster_event.logs_captured_data.file_key,
             stepKeys=dagster_event.logs_captured_data.step_keys,
+            externalUrl=dagster_event.logs_captured_data.external_url,
             pid=dagster_event.pid,
             **basic_params,
         )

@@ -5,7 +5,7 @@ import sys
 import time
 from collections import Counter
 from contextlib import ExitStack, contextmanager
-from typing import List, Optional, cast
+from typing import List, Optional, Sequence, cast
 
 import mock
 import pendulum
@@ -19,6 +19,7 @@ from dagster import (
     EventLogRecord,
     EventRecordsFilter,
     Field,
+    JobDefinition,
     Output,
     RetryRequested,
     RunShardedEventsCursor,
@@ -48,6 +49,7 @@ from dagster._core.host_representation.origin import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
+from dagster._core.storage.event_log.base import EventLogStorage
 from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
     migrate_asset_key_data,
@@ -314,8 +316,16 @@ def cursor_datetime_args():
     yield datetime.datetime.now()
 
 
-def _execute_job_and_store_events(instance, storage, job, run_id):
-    result = job.execute_in_process(instance=instance, raise_on_error=False, run_id=run_id)
+def _execute_job_and_store_events(
+    instance: DagsterInstance,
+    storage: EventLogStorage,
+    job: JobDefinition,
+    run_id: Optional[str] = None,
+    asset_selection: Optional[Sequence[AssetKey]] = None,
+):
+    result = job.execute_in_process(
+        instance=instance, raise_on_error=False, run_id=run_id, asset_selection=asset_selection
+    )
     events = instance.all_logs(run_id=result.run_id)
     for event in events:
         storage.store_event(event)
@@ -2128,6 +2138,56 @@ class TestEventLogStorage:
                         storage.store_event(event)
                     asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
                     assert asset_entry.last_run_id is None
+
+    def test_fetch_asset_materialization_planned(self, storage, instance):
+        @asset
+        def materializes_asset():
+            return 1
+
+        @asset
+        def never_materializes_asset():
+            raise Exception("foo")
+
+        asset_job = build_assets_job("asset_job", [never_materializes_asset, materializes_asset])
+
+        run_id_1 = make_new_run_id()
+        run_id_2 = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
+
+            with instance_for_test() as created_instance:
+                if not storage._instance:  # pylint: disable=protected-access
+                    storage.register_instance(created_instance)
+
+                result = _execute_job_and_store_events(
+                    created_instance,
+                    storage,
+                    asset_job,
+                    run_id=run_id_1,
+                    asset_selection=[AssetKey("materializes_asset")],
+                )
+                assert result.success
+
+                materializations = created_instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+                assert len(materializations) == 1
+                storage_id = materializations[0].storage_id
+
+                result = _execute_job_and_store_events(
+                    created_instance,
+                    storage,
+                    asset_job,
+                    run_id=run_id_2,
+                    asset_selection=[AssetKey("never_materializes_asset")],
+                )
+
+                materialization_planned_events = created_instance.get_event_records(
+                    EventRecordsFilter(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED, after_cursor=storage_id
+                    )
+                )
+
+                assert len(materialization_planned_events) == 1
 
     def test_last_run_id_updates_on_materialization_planned(self, storage, instance):
         @asset

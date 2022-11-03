@@ -662,3 +662,16 @@ def test_job_run_request():
         assert run_request_with_tags.tags
         assert run_request_with_tags.tags.get(PARTITION_NAME_TAG) == partition_key
         assert run_request_with_tags.tags.get("foo") == "bar"
+
+    my_job_hardcoded_config = define_asset_job(
+        "my_job_hardcoded_config",
+        "*",
+        config={"ops": {"my_asset": {"config": {"partition": "blabla"}}}},
+        partitions_def=partitions_def,
+    )
+
+    run_request = my_job_hardcoded_config.run_request_for_partition(partition_key="a", run_key=None)
+    assert run_request.run_config == {"ops": {"my_asset": {"config": {"partition": "blabla"}}}}
+    assert my_job_hardcoded_config.run_request_for_partition(
+        partition_key="a", run_config={"a": 5}
+    ).run_config == {"a": 5}

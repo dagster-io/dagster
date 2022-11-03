@@ -158,77 +158,68 @@ def test_template_task_dag():
             instance=instance,
         )
 
-        compute_steps = [
-            event.step_key
-            for event in result.step_event_list
-            if event.event_type == DagsterEventType.STEP_START
+        capture_events = [
+            event
+            for event in result.event_list
+            if event.event_type == DagsterEventType.LOGS_CAPTURED
         ]
-
-        assert compute_steps == [
+        assert len(capture_events) == 1
+        event = capture_events[0]
+        assert event.logs_captured_data.step_keys == [
             "airflow_print_hello",
             "airflow_sleep",
             "airflow_templated",
         ]
+        file_key = event.logs_captured_data.file_key
 
-        for step_key in compute_steps:
-            compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
-            assert os.path.exists(compute_io_path)
-            stdout_file = open(compute_io_path, "r", encoding="utf8")
-            file_contents = normalize_file_content(stdout_file.read())
-            stdout_file.close()
+        compute_io_path = manager.get_local_path(result.run_id, file_key, ComputeIOType.STDOUT)
+        assert os.path.exists(compute_io_path)
+        stdout_file = open(compute_io_path, "r", encoding="utf8")
+        file_contents = normalize_file_content(stdout_file.read())
+        stdout_file.close()
 
-            if step_key == "airflow_print_hello":
-                assert file_contents.count("INFO - Running command: echo hello dagsir\n") == 1
-                assert file_contents.count("INFO - Command exited with return code 0") == 1
-
-            elif step_key == "airflow_sleep":
-                assert file_contents.count("INFO - Running command: sleep 2\n") == 1
-                assert file_contents.count("INFO - Output:\n") == 1
-                assert file_contents.count("INFO - Command exited with return code 0") == 1
-
-            elif step_key == "airflow_templated":
-                assert (
-                    file_contents.count(
-                        "INFO - Running command: \n    \n        "
-                        "echo '{execution_date_iso}'\n        "
-                        "echo '{execution_date_add_one_week_iso}'\n        "
-                        "echo 'Parameter I passed in'\n    \n        "
-                        "echo '{execution_date_iso}'\n        "
-                        "echo '{execution_date_add_one_week_iso}'\n        "
-                        "echo 'Parameter I passed in'\n    \n        "
-                        "echo '{execution_date_iso}'\n        "
-                        "echo '{execution_date_add_one_week_iso}'\n        "
-                        "echo 'Parameter I passed in'\n    \n        "
-                        "echo '{execution_date_iso}'\n        "
-                        "echo '{execution_date_add_one_week_iso}'\n        "
-                        "echo 'Parameter I passed in'\n    \n        "
-                        "echo '{execution_date_iso}'\n        "
-                        "echo '{execution_date_add_one_week_iso}'\n        "
-                        "echo 'Parameter I passed in'\n    \n    \n".format(
-                            execution_date_iso=execution_date_iso,
-                            execution_date_add_one_week_iso=execution_date_add_one_week_iso,
-                        )
-                    )
-                    == 1
+        assert file_contents.count("INFO - Running command: echo hello dagsir\n") == 1
+        assert file_contents.count("INFO - Running command: sleep 2\n") == 1
+        assert (
+            file_contents.count(
+                "INFO - Running command: \n    \n        "
+                "echo '{execution_date_iso}'\n        "
+                "echo '{execution_date_add_one_week_iso}'\n        "
+                "echo 'Parameter I passed in'\n    \n        "
+                "echo '{execution_date_iso}'\n        "
+                "echo '{execution_date_add_one_week_iso}'\n        "
+                "echo 'Parameter I passed in'\n    \n        "
+                "echo '{execution_date_iso}'\n        "
+                "echo '{execution_date_add_one_week_iso}'\n        "
+                "echo 'Parameter I passed in'\n    \n        "
+                "echo '{execution_date_iso}'\n        "
+                "echo '{execution_date_add_one_week_iso}'\n        "
+                "echo 'Parameter I passed in'\n    \n        "
+                "echo '{execution_date_iso}'\n        "
+                "echo '{execution_date_add_one_week_iso}'\n        "
+                "echo 'Parameter I passed in'\n    \n    \n".format(
+                    execution_date_iso=execution_date_iso,
+                    execution_date_add_one_week_iso=execution_date_add_one_week_iso,
                 )
-                assert (
-                    file_contents.count(
-                        "INFO - {execution_date_iso}\n".format(
-                            execution_date_iso=execution_date_iso
-                        )
-                    )
-                    == 5
+            )
+            == 1
+        )
+        assert (
+            file_contents.count(
+                "INFO - {execution_date_iso}\n".format(execution_date_iso=execution_date_iso)
+            )
+            == 5
+        )
+        assert (
+            file_contents.count(
+                "INFO - {execution_date_add_one_week_iso}\n".format(
+                    execution_date_add_one_week_iso=execution_date_add_one_week_iso
                 )
-                assert (
-                    file_contents.count(
-                        "INFO - {execution_date_add_one_week_iso}\n".format(
-                            execution_date_add_one_week_iso=execution_date_add_one_week_iso
-                        )
-                    )
-                    == 5
-                )
-                assert file_contents.count("INFO - Parameter I passed in\n") == 5
-                assert file_contents.count("INFO - Command exited with return code 0") == 1
+            )
+            == 5
+        )
+        assert file_contents.count("INFO - Parameter I passed in\n") == 5
+        assert file_contents.count("INFO - Command exited with return code 0") == 3
 
 
 def intercept_spark_submit(*args, **kwargs):

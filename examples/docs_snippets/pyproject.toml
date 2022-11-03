@@ -1,8 +1,8 @@
 # NOTE: This is special isort/black config file just for docs_snippets. It's needed because we use a
 # different line length in docs_snippets to ensure readability of code blocks in the browser. Unless
-# otherwise noted, it should simply copy (except `line-length`) all of the isort/black options from the root pyproject.toml
-# (consult that file for explanations of options). This is necessary because unfortunately there is
-# no inheritance functionality for isort/black config.
+# otherwise noted, it should simply copy (except `line-length`) all of the isort/black options from
+# the root pyproject.toml (consult that file for explanations of options). This is necessary because
+# unfortunately there is no inheritance functionality for isort/black config.
 
 [tool.black]
 line-length = 88

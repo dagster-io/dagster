@@ -18,7 +18,7 @@ class Card:
     def _create_attachment(self, text_message: str) -> Dict:
         content = {
             "title": "Dagster Pipeline Alert",
-            "subtitle": text_message,
+            "text": text_message,
         }
         content_type = "application/vnd.microsoft.card.hero"
         return {"contentType": content_type, "content": content}

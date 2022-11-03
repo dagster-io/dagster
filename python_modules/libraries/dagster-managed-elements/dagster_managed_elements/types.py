@@ -13,14 +13,23 @@ class ManagedElementError(enum.Enum):
 
 SANITIZE_KEY_KEYWORDS = ["password", "token", "secret"]
 
+SECRET_MASK_VALUE = "**********"
+
+
+def is_key_secret(key: str):
+    """
+    Rudamentary check to see if a config key is a secret value.
+    """
+    return any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS)
+
 
 def _sanitize(key: str, value: str):
     """
     Rudamentary sanitization of values so we can avoid printing passwords
     to the console.
     """
-    if any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS):
-        return "**********"
+    if is_key_secret(key):
+        return SECRET_MASK_VALUE
     return value
 
 
@@ -241,15 +250,19 @@ class ManagedElementReconciler(ABC):
     """
 
     @abstractmethod
-    def check(self) -> ManagedElementCheckResult:
+    def check(self, **kwargs) -> ManagedElementCheckResult:
         """
         Returns whether the user provided config for the managed element is in sync with the external resource.
+
+        kwargs contains any optional user-specified arguments to the check command.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def apply(self) -> ManagedElementCheckResult:
+    def apply(self, **kwargs) -> ManagedElementCheckResult:
         """
         Reconciles the managed element with the external resource, returning the applied diff.
+
+        kwargs contains any optional user-specified arguments to the apply command.
         """
         raise NotImplementedError()

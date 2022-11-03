@@ -237,6 +237,22 @@ def test_materialize_to_memory_partition_key():
     assert result.success
 
 
+def test_materialize_to_memory_partition_key_and_run_config():
+    @asset(config_schema={"value": str})
+    def configurable(context):
+        assert context.op_config["value"] == "a"
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-09-11"))
+    def partitioned(context):
+        assert context.partition_key == "2022-09-11"
+
+    assert materialize_to_memory(
+        [partitioned, configurable],
+        partition_key="2022-09-11",
+        run_config={"ops": {"configurable": {"config": {"value": "a"}}}},
+    ).success
+
+
 def test_materialize_to_memory_provided_io_manager_instance():
     @io_manager
     def the_manager():

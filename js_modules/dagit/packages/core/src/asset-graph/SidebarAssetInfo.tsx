@@ -99,7 +99,7 @@ export const SidebarAssetInfo: React.FC<{
 
       {assetMetadata.length > 0 && (
         <SidebarSection title="Metadata">
-          <AssetMetadataTable assetMetadata={assetMetadata} />
+          <AssetMetadataTable assetMetadata={assetMetadata} repoLocation={repoAddress?.location} />
         </SidebarSection>
       )}
 

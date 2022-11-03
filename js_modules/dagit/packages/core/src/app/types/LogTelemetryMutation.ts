@@ -35,4 +35,5 @@ export interface LogTelemetryMutationVariables {
   action: string;
   metadata: string;
   clientTime: string;
+  clientId: string;
 }
