@@ -4,7 +4,7 @@ import pickle
 import pytest
 
 import dagster._check as check
-from dagster import DependencyDefinition, Int
+from dagster import In, Out, op, DependencyDefinition, Int
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
@@ -19,25 +19,22 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test
 from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
-    lambda_solid,
     reexecute_pipeline,
 )
 
 
 def define_addy_pipeline(using_file_system=False):
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_one(num):
         return num + 1
 
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_two(num):
         return num + 2
 
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_three(num):
         return num + 3
 
@@ -94,7 +91,9 @@ def test_execution_plan_reexecution():
         known_state=known_state,
     )
 
-    subset_plan = execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config)
+    subset_plan = execution_plan.build_subset_plan(
+        ["add_two"], pipeline_def, resolved_run_config
+    )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         execution_plan=subset_plan,
@@ -111,10 +110,14 @@ def test_execution_plan_reexecution():
         instance=instance,
     )
     assert not os.path.exists(
-        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_one", "result")
+        os.path.join(
+            instance.storage_directory(), pipeline_run.run_id, "add_one", "result"
+        )
     )
     with open(
-        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_two", "result"),
+        os.path.join(
+            instance.storage_directory(), pipeline_run.run_id, "add_two", "result"
+        ),
         "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 6
@@ -175,7 +178,9 @@ def test_execution_plan_reexecution_with_in_memory():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_plan(
-            execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config),
+            execution_plan.build_subset_plan(
+                ["add_two"], pipeline_def, resolved_run_config
+            ),
             InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,

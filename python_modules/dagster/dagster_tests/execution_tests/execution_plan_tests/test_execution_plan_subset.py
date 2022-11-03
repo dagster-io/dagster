@@ -1,30 +1,23 @@
-from dagster import DependencyDefinition, Int, Output
+from dagster import GraphDefinition, In, Out, op, DependencyDefinition, Int, Output
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    lambda_solid,
-    solid,
-)
 
 
 def define_two_int_pipeline():
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_one(num):
         return num + 1
 
-    return PipelineDefinition(
+    return GraphDefinition(
         name="pipeline_ints",
-        solid_defs=[return_one, add_one],
+        node_defs=[return_one, add_one],
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
-    )
+    ).to_job()
 
 
 def find_events(events, event_type=None):
@@ -66,12 +59,23 @@ def test_execution_plan_simple_two_steps():
 
 
 def test_execution_plan_two_outputs():
-    @solid(output_defs=[OutputDefinition(Int, "num_one"), OutputDefinition(Int, "num_two")])
+    @op(
+        out={
+            "num_one": Out(
+                Int,
+            ),
+            "num_two": Out(
+                Int,
+            ),
+        }
+    )
     def return_one_two(_context):
         yield Output(1, "num_one")
         yield Output(2, "num_two")
 
-    pipeline_def = PipelineDefinition(name="return_one_two_pipeline", solid_defs=[return_one_two])
+    pipeline_def = GraphDefinition(
+        name="return_one_two_pipeline", node_defs=[return_one_two]
+    ).to_job()
 
     execution_plan = create_execution_plan(pipeline_def)
 
@@ -96,13 +100,15 @@ def test_execution_plan_two_outputs():
 def test_reentrant_execute_plan():
     called = {}
 
-    @solid
+    @op
     def has_tag(context):
         assert context.has_tag("foo")
         assert context.get_tag("foo") == "bar"
         called["yup"] = True
 
-    pipeline_def = PipelineDefinition(name="has_tag_pipeline", solid_defs=[has_tag])
+    pipeline_def = GraphDefinition(
+        name="has_tag_pipeline", node_defs=[has_tag]
+    ).to_job()
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline_def)
     pipeline_run = instance.create_run_for_pipeline(
@@ -118,6 +124,8 @@ def test_reentrant_execute_plan():
     assert called["yup"]
 
     assert (
-        find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags["pipeline_tags"]
+        find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags[
+            "pipeline_tags"
+        ]
         == "{'foo': 'bar'}"
     )
