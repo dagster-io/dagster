@@ -579,6 +579,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
     class Arguments:
         action = graphene.Argument(graphene.NonNull(graphene.String))
         clientTime = graphene.Argument(graphene.NonNull(graphene.String))
+        clientId = graphene.Argument(graphene.NonNull(graphene.String))
         metadata = graphene.Argument(graphene.NonNull(graphene.String))
 
     class Meta:
@@ -590,6 +591,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
             graphene_info,
             action=kwargs["action"],
             client_time=kwargs["clientTime"],
+            client_id=kwargs["clientId"],
             metadata=kwargs["metadata"],
         )
         return action
