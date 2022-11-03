@@ -4,9 +4,11 @@ import time
 
 import pytest
 
-from dagster import file_relative_path, repository
+from dagster import job, file_relative_path, repository
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster._core.host_representation.grpc_server_registry import (
+    ProcessGrpcServerRegistry,
+)
 from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RegisteredRepositoryLocationOrigin,
@@ -14,22 +16,21 @@ from dagster._core.host_representation.origin import (
 from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._legacy import pipeline
 
 
-@pipeline
-def noop_pipeline():
+@job
+def noop_job():
     pass
 
 
 @repository
 def repo():
-    return [noop_pipeline]
+    return [noop_job]
 
 
 @repository
 def other_repo():
-    return [noop_pipeline]
+    return [noop_job]
 
 
 def _can_connect(origin, endpoint):

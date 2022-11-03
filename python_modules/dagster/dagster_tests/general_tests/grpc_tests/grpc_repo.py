@@ -1,54 +1,61 @@
 import string
 import time
 
-from dagster import Int, ScheduleDefinition, SkipReason, repository, sensor, usable_as_dagster_type
+from dagster import (
+    In,
+    Out,
+    op,
+    job,
+    Int,
+    ScheduleDefinition,
+    SkipReason,
+    repository,
+    sensor,
+    usable_as_dagster_type,
+)
 from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
     PartitionSetDefinition,
-    lambda_solid,
     pipeline,
-    solid,
 )
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
-@lambda_solid
+@op
 def do_input(x):
     return x
 
 
-@pipeline(name="foo")
-def foo_pipeline():
+@job(name="foo")
+def foo_job():
     do_input(do_something())
 
 
-@pipeline(name="baz", description="Not much tbh")
-def baz_pipeline():
+@job(name="baz", description="Not much tbh")
+def baz_job():
     do_input()
 
 
 def define_foo_pipeline():
-    return foo_pipeline
+    return foo_job
 
 
-@pipeline(name="bar")
-def bar_pipeline():
+@job(name="bar")
+def bar_job():
     @usable_as_dagster_type(name="InputTypeWithoutHydration")
     class InputTypeWithoutHydration(int):
         pass
 
-    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    @op(out=Out(InputTypeWithoutHydration))
     def one(_):
         return 1
 
-    @solid(
-        input_defs=[InputDefinition("some_input", InputTypeWithoutHydration)],
-        output_defs=[OutputDefinition(Int)],
+    @op(
+        ins={"some_input": In(InputTypeWithoutHydration)},
+        out=Out(Int),
     )
     def fail_subset(_, some_input):
         return some_input
@@ -123,8 +130,8 @@ def bar_repo():
     return {
         "pipelines": {
             "foo": define_foo_pipeline,
-            "bar": lambda: bar_pipeline,
-            "baz": lambda: baz_pipeline,
+            "bar": lambda: bar_job,
+            "baz": lambda: baz_job,
         },
         "schedules": define_bar_schedules(),
         "sensors": {

@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import pytest
 
 from dagster import (
+    graph,
+    job,
     DagsterInvalidDefinitionError,
     DagsterType,
     In,
@@ -15,45 +17,40 @@ from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.inference import infer_input_props, infer_output_props
 from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._legacy import (
-    InputDefinition,
-    execute_pipeline,
     execute_solid,
-    lambda_solid,
-    pipeline,
-    solid,
 )
 
 
 def test_infer_solid_description_from_docstring():
-    @solid
-    def my_solid(_):
+    @op
+    def my_op(_):
         """Here is some docstring"""
 
-    assert my_solid.description == "Here is some docstring"
+    assert my_op.description == "Here is some docstring"
 
 
 def test_infer_solid_description_no_docstring():
-    @solid
-    def my_solid(_):
+    @op
+    def my_op(_):
         pass
 
-    assert my_solid.description is None
+    assert my_op.description is None
 
 
 def test_docstring_does_not_override():
-    @solid(description="abc")
-    def my_solid(_):
+    @op(description="abc")
+    def my_op(_):
         """Here is some docstring"""
 
-    assert my_solid.description == "abc"
+    assert my_op.description == "abc"
 
 
 def test_single_typed_input():
-    @solid
+    @op
     def add_one_infer(_context, num: int):
         return num + 1
 
-    @solid(input_defs=[InputDefinition("num", Int)])
+    @op(ins={"num": In(Int)})
     def add_one_ex(_context, num):
         return num + 1
 
@@ -67,7 +64,7 @@ def test_single_typed_input():
 
 
 def test_precedence():
-    @solid(input_defs=[InputDefinition("num", Int)])
+    @op(ins={"num": In(Int)})
     def add_one(_context, num: Any):
         return num + 1
 
@@ -75,7 +72,7 @@ def test_precedence():
 
 
 def test_double_typed_input():
-    @solid
+    @op
     def subtract(_context, num_one: int, num_two: int):
         return num_one + num_two
 
@@ -89,7 +86,7 @@ def test_double_typed_input():
 
 
 def test_one_arg_typed_lambda_solid():
-    @lambda_solid
+    @op
     def one_arg(num: int):
         return num
 
@@ -101,7 +98,7 @@ def test_one_arg_typed_lambda_solid():
 
 
 def test_single_typed_input_and_output():
-    @solid
+    @op
     def add_one(_context, num: int) -> int:
         return num + 1
 
@@ -115,7 +112,7 @@ def test_single_typed_input_and_output():
 
 
 def test_single_typed_input_and_output_lambda():
-    @lambda_solid
+    @op
     def add_one(num: int) -> int:
         return num + 1
 
@@ -129,7 +126,7 @@ def test_single_typed_input_and_output_lambda():
 
 
 def test_wrapped_input_and_output_lambda():
-    @lambda_solid
+    @op
     def add_one(nums: List[int]) -> Optional[List[int]]:
         return [num + 1 for num in nums]
 
@@ -149,7 +146,7 @@ def test_kitchen_sink():
     class Custom:
         pass
 
-    @lambda_solid
+    @op
     def sink(
         n: int,
         f: float,
@@ -188,11 +185,11 @@ def test_kitchen_sink():
 
 
 def test_composites():
-    @lambda_solid
+    @op
     def emit_one() -> int:
         return 1
 
-    @lambda_solid
+    @op
     def subtract(n1: int, n2: int) -> int:
         return n1 - n2
 
@@ -204,7 +201,7 @@ def test_composites():
 
 
 def test_emit_dict():
-    @lambda_solid
+    @op
     def emit_dict() -> dict:
         return {"foo": "bar"}
 
@@ -214,7 +211,7 @@ def test_emit_dict():
 
 
 def test_dict_input():
-    @lambda_solid
+    @op
     def intake_dict(inp: dict) -> str:
         return inp["foo"]
 
@@ -223,7 +220,7 @@ def test_dict_input():
 
 
 def test_emit_dagster_dict():
-    @lambda_solid
+    @op
     def emit_dagster_dict() -> Dict:
         return {"foo": "bar"}
 
@@ -233,16 +230,18 @@ def test_emit_dagster_dict():
 
 
 def test_dict_dagster_input():
-    @lambda_solid
+    @op
     def intake_dagster_dict(inp: Dict) -> str:
         return inp["foo"]
 
-    solid_result = execute_solid(intake_dagster_dict, input_values={"inp": {"foo": "bar"}})
+    solid_result = execute_solid(
+        intake_dagster_dict, input_values={"inp": {"foo": "bar"}}
+    )
     assert solid_result.output_value() == "bar"
 
 
 def test_python_tuple_input():
-    @lambda_solid
+    @op
     def intake_tuple(inp: tuple) -> int:
         return inp[1]
 
@@ -250,7 +249,7 @@ def test_python_tuple_input():
 
 
 def test_python_tuple_output():
-    @lambda_solid
+    @op
     def emit_tuple() -> tuple:
         return (4, 5)
 
@@ -258,8 +257,10 @@ def test_python_tuple_output():
 
 
 def test_nested_kitchen_sink():
-    @lambda_solid
-    def no_execute() -> Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]:
+    @op
+    def no_execute() -> Optional[
+        List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]
+    ]:
         pass
 
     assert (
@@ -276,18 +277,18 @@ def test_nested_kitchen_sink():
 def test_infer_input_description_from_docstring_failure():
     # docstring is invalid because has a dash instead of a colon to delimit the argument type and
     # description
-    @solid
-    def my_solid(_arg1):
+    @op
+    def my_op(_arg1):
         """
         Args:
             _arg1 - description of arg
         """
 
-    assert my_solid
+    assert my_op
 
 
 def test_infer_input_description_from_docstring_rest():
-    @solid
+    @op
     def rest(_context, hello: str, optional: int = 5):
         """
         :param str hello: hello world param
@@ -309,7 +310,7 @@ def test_infer_input_description_from_docstring_rest():
 
 
 def test_infer_descriptions_from_docstring_numpy():
-    @solid
+    @op
     def good_numpy(_context, hello: str, optional: int = 5):
         """
         Test
@@ -323,7 +324,9 @@ def test_infer_descriptions_from_docstring_numpy():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(good_numpy.compute_fn.decorated_fn, context_arg_provided=True)
+    defs = infer_input_props(
+        good_numpy.compute_fn.decorated_fn, context_arg_provided=True
+    )
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -339,7 +342,7 @@ def test_infer_descriptions_from_docstring_numpy():
 
 
 def test_infer_descriptions_from_docstring_google():
-    @solid
+    @op
     def good_google(_context, hello: str, optional: int = 5):
         """
         Test
@@ -350,7 +353,9 @@ def test_infer_descriptions_from_docstring_google():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(good_google.compute_fn.decorated_fn, context_arg_provided=True)
+    defs = infer_input_props(
+        good_google.compute_fn.decorated_fn, context_arg_provided=True
+    )
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -368,7 +373,7 @@ def test_infer_descriptions_from_docstring_google():
 def test_infer_output_description_from_docstring_failure():
     # docstring is invalid because has a dash instead of a colon to delimit the return type and
     # description
-    @solid
+    @op
     def google() -> int:
         """
         Returns:
@@ -380,7 +385,7 @@ def test_infer_output_description_from_docstring_failure():
 
 
 def test_infer_output_description_from_docstring_numpy():
-    @solid
+    @op
     def numpy(_context) -> int:
         """
 
@@ -397,7 +402,7 @@ def test_infer_output_description_from_docstring_numpy():
 
 
 def test_infer_output_description_from_docstring_rest():
-    @solid
+    @op
     def rest(_context) -> int:
         """
         :return int: a number
@@ -410,7 +415,7 @@ def test_infer_output_description_from_docstring_rest():
 
 
 def test_infer_output_description_from_docstring_google():
-    @solid
+    @op
     def google(_context) -> int:
         """
         Returns:
@@ -425,7 +430,7 @@ def test_infer_output_description_from_docstring_google():
 
 
 def test_pipeline_api_stability():
-    @pipeline
+    @job
     def empty() -> None:
         pass
 
@@ -437,38 +442,38 @@ def test_unregistered_type_annotation_output():
     class MyClass:
         pass
 
-    @solid
-    def my_solid(_) -> MyClass:
+    @op
+    def my_op(_) -> MyClass:
         return MyClass()
 
-    assert my_solid.output_defs[0].dagster_type.display_name == "MyClass"
-    assert my_solid.output_defs[0].dagster_type.typing_type == MyClass
+    assert my_op.output_defs[0].dagster_type.display_name == "MyClass"
+    assert my_op.output_defs[0].dagster_type.typing_type == MyClass
 
-    @pipeline
-    def my_pipeline():
-        my_solid()
+    @job
+    def my_job():
+        my_op()
 
-    execute_pipeline(my_pipeline)
+    my_job.execute_in_process()
 
 
 def test_unregistered_type_annotation_input():
     class MyClass:
         pass
 
-    @solid
-    def solid1(_):
+    @op
+    def op1(_):
         return MyClass()
 
-    @solid
-    def solid2(_, _input1: MyClass):
+    @op
+    def op2(_, _input1: MyClass):
         pass
 
-    @pipeline
-    def my_pipeline():
-        solid2(solid1())
+    @job
+    def my_job():
+        op2(op1())
 
-    assert solid2.input_defs[0].dagster_type.display_name == "MyClass"
-    execute_pipeline(my_pipeline)
+    assert op2.input_defs[0].dagster_type.display_name == "MyClass"
+    my_job.execute_in_process()
 
 
 def test_unregistered_type_annotation_input_op():
@@ -497,28 +502,28 @@ def test_use_auto_type_twice():
     class MyClass:
         pass
 
-    @solid
-    def my_solid(_) -> MyClass:
+    @op
+    def my_op(_) -> MyClass:
         return MyClass()
 
-    @solid
-    def my_solid_2(_) -> MyClass:
+    @op
+    def my_op_2(_) -> MyClass:
         return MyClass()
 
-    @pipeline
-    def my_pipeline():
-        my_solid()
-        my_solid_2()
+    @job
+    def my_job():
+        my_op()
+        my_op_2()
 
-    execute_pipeline(my_pipeline)
+    my_job.execute_in_process()
 
 
 def test_register_after_solid_definition():
     class MyClass:
         pass
 
-    @solid
-    def _my_solid(_) -> MyClass:
+    @op
+    def _my_op(_) -> MyClass:
         return MyClass()
 
     my_dagster_type = DagsterType(name="aaaa", type_check_fn=lambda _, _a: True)
@@ -531,55 +536,57 @@ def test_same_name_different_modules():
     class MyClass:
         pass
 
-    from dagster_tests.general_tests.py3_tests.other_module import MyClass as OtherModuleMyClass
+    from dagster_tests.general_tests.py3_tests.other_module import (
+        MyClass as OtherModuleMyClass,
+    )
 
-    @solid
-    def my_solid(_) -> MyClass:
+    @op
+    def my_op(_) -> MyClass:
         return MyClass()
 
-    @solid
-    def my_solid_2(_) -> OtherModuleMyClass:
+    @op
+    def my_op_2(_) -> OtherModuleMyClass:
         return OtherModuleMyClass()
 
-    @pipeline
-    def my_pipeline():
-        my_solid()
-        my_solid_2()
+    @job
+    def my_job():
+        my_op()
+        my_op_2()
 
-    execute_pipeline(my_pipeline)
+    my_job.execute_in_process()
 
 
 def test_fan_in():
     class MyClass:
         pass
 
-    @solid
-    def upstream_solid(_):
+    @op
+    def upstream_op(_):
         return MyClass()
 
-    @solid
-    def downstream_solid(_, _input: List[MyClass]):
+    @op
+    def downstream_op(_, _input: List[MyClass]):
         pass
 
-    @pipeline
-    def my_pipeline():
-        downstream_solid([upstream_solid.alias("a")(), upstream_solid.alias("b")()])
+    @job
+    def my_job():
+        downstream_op([upstream_op.alias("a")(), upstream_op.alias("b")()])
 
-    assert downstream_solid.input_defs[0].dagster_type.display_name == "[MyClass]"
-    assert downstream_solid.input_defs[0].dagster_type.typing_type == List[MyClass]
+    assert downstream_op.input_defs[0].dagster_type.display_name == "[MyClass]"
+    assert downstream_op.input_defs[0].dagster_type.typing_type == List[MyClass]
 
-    execute_pipeline(my_pipeline)
+    my_job.execute_in_process()
 
 
 def test_composites_user_defined_type():
     class MyClass:
         pass
 
-    @lambda_solid
+    @op
     def emit_one() -> MyClass:
         return MyClass()
 
-    @lambda_solid
+    @op
     def subtract(_n1: MyClass, _n2: MyClass) -> MyClass:
         return MyClass()
 
