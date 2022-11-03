@@ -7,6 +7,7 @@ from dagstermill.io_managers import local_output_notebook_io_manager
 
 from dagster import (
     AssetIn,
+    AssetSelection,
     Field,
     FileHandle,
     In,
@@ -16,13 +17,12 @@ from dagster import (
     ResourceDefinition,
     String,
     asset,
+    define_asset_job,
     fs_io_manager,
     job,
     repository,
     resource,
     with_resources,
-    define_asset_job,
-    AssetSelection
 )
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.storage.file_manager import local_file_manager
@@ -613,17 +613,22 @@ assets = with_resources(
     },
 )
 
+
 def make_resolved_job(asset):
-    return define_asset_job(name=f"{asset.key.to_user_string()}_job", selection=AssetSelection.assets(asset).upstream()).resolve(assets, [])
+    return define_asset_job(
+        name=f"{asset.key.to_user_string()}_job", selection=AssetSelection.assets(asset).upstream()
+    ).resolve(assets, [])
+
 
 hello_world_asset_job = make_resolved_job(hello_world_asset)
-hello_world_with_custom_tags_and_description_asset_job = make_resolved_job(hello_world_with_custom_tags_and_description_asset)
+hello_world_with_custom_tags_and_description_asset_job = make_resolved_job(
+    hello_world_with_custom_tags_and_description_asset
+)
 hello_world_config_asset_job = make_resolved_job(hello_world_config_asset)
 goodbye_config_asset_job = make_resolved_job(goodbye_config_asset)
 hello_logging_asset_job = make_resolved_job(hello_logging_asset)
 add_two_number_asset_job = make_resolved_job(add_two_number_asset)
 hello_world_resource_asset_job = make_resolved_job(hello_world_resource_asset)
-
 
 
 # hello_world_asset_job = define_asset_job(name="hello_world_asset_job", selection=AssetSelection.keys("hello_world_asset")).resolve(assets, [])
@@ -658,7 +663,6 @@ def notebook_repo():
     ]
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipelines += [tutorial_pipeline]
-
 
     return pipelines
 

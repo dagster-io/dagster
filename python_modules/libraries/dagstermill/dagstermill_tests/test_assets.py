@@ -1,30 +1,12 @@
-import importlib.util
 import os
-import pickle
-import tempfile
 from contextlib import contextmanager
 
-import nbformat
 import pytest
-from dagstermill import DagstermillError
-from dagstermill.compat import ExecutionError
-from dagstermill.factory import define_dagstermill_solid
-# from dagstermill.examples.repository import notebook_assets_repo
-from jupyter_client.kernelspec import NoSuchKernel
-from nbconvert.preprocessors import ExecutePreprocessor
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
 
-from dagster._check import CheckError
-from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline, pipeline
-from dagster._utils import file_relative_path, safe_tempfile_path
-from dagster import AssetKey, reconstructable, define_asset_job, AssetSelection
-
-DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
-SKLEARN_PRESENT = importlib.util.find_spec("sklearn") is not None
-MATPLOTLIB_PRESENT = importlib.util.find_spec("matplotlib") is not None
+from dagster._legacy import execute_pipeline
 
 
 def get_path(materialization_event):
@@ -72,20 +54,24 @@ def test_hello_world():
     with exec_for_test("hello_world_asset_job") as result:
         assert result.success
 
+
 @pytest.mark.notebook_test
 def test_hello_world_with_custom_tags_and_description_asset():
     with exec_for_test("hello_world_with_custom_tags_and_description_asset_job") as result:
         assert result.success
+
 
 @pytest.mark.notebook_test
 def test_hello_world_config_asset():
     with exec_for_test("hello_world_config_asset_job") as result:
         assert result.success
 
+
 @pytest.mark.notebook_test
 def test_goodbye_config_asset():
     with exec_for_test("goodbye_config_asset_job") as result:
         assert result.success
+
 
 @pytest.mark.notebook_test
 def test_hello_logging_asset():
@@ -98,9 +84,8 @@ def test_add_two_number_asset():
     with exec_for_test("add_two_number_asset_job") as result:
         assert result.success
 
+
 @pytest.mark.notebook_test
 def test_hello_world_resource_asset():
     with exec_for_test("hello_world_resource_asset_job") as result:
         assert result.success
-
-

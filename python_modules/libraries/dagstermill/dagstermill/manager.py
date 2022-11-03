@@ -5,12 +5,12 @@ from typing import Any, Mapping, Optional
 
 from dagster import (
     AssetMaterialization,
+    AssetObservation,
     ExpectationResult,
     Failure,
     LoggerDefinition,
     ResourceDefinition,
     TypeCheck,
-    AssetObservation,
 )
 from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
