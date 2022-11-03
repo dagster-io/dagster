@@ -36,6 +36,23 @@ export const Tooltip: React.FC<Props> = (props) => {
 
   const [isOpen, setIsOpen] = React.useState<undefined | boolean>(undefined);
 
+  const divRef = React.useRef<any>(null);
+
+  React.useLayoutEffect(() => {
+    let listener: null | ((e: MouseEvent) => void) = null;
+    if (isOpen && useDisabledButtonTooltipFix) {
+      listener = (e: MouseEvent) => {
+        if (!divRef.current?.contains(e.target as HTMLDivElement)) {
+          setIsOpen(false);
+        }
+      };
+      document.body.addEventListener('mousemove', listener);
+    }
+    return () => {
+      listener && document.body.removeEventListener('mousemove', listener);
+    };
+  }, [isOpen, useDisabledButtonTooltipFix]);
+
   if (!canShow) {
     return <>{children}</>;
   }
@@ -59,7 +76,12 @@ export const Tooltip: React.FC<Props> = (props) => {
 
   if (useDisabledButtonTooltipFix) {
     return (
-      <div onMouseLeave={() => setIsOpen(false)} onMouseEnter={() => setIsOpen(true)}>
+      <div
+        ref={divRef}
+        onMouseEnter={() => {
+          setIsOpen(true);
+        }}
+      >
         {styledTooltip}
       </div>
     );
