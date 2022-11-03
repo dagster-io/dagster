@@ -1,12 +1,8 @@
-from pathlib import Path
-from typing import cast
-
-import duckdb
 import pandas as pd
-from dagster_duckdb import DbTypeHandler
+from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb
 
-from dagster import InputContext, OutputContext
-from dagster import _check as check
+from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -20,61 +16,53 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             from dagster_duckdb import build_duckdb_io_manager
             from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 
+            @asset
+            def my_table():
+                ...
+
             duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
-            @job(resource_defs={'io_manager': duckdb_io_manager})
-            def my_job():
-                ...
+            @repository
+            def my_repo():
+                return with_resources(
+                    [my_table],
+                    {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
+                )
 
     """
 
-    def handle_output(
-        self,
-        context: OutputContext,
-        obj: pd.DataFrame,
-        conn: duckdb.DuckDBPyConnection,
-        base_path: str,
-    ):
-        """Stores the pandas DataFrame as a csv and loads it as a view in duckdb."""
-        check.invariant(
-            not context.has_asset_partitions,
-            "DuckDBPandasTypeHadnler Can't store partitioned outputs",
-        )
+    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame):
+        """Stores the pandas DataFrame in duckdb."""
 
-        filepath = self._get_path(context, base_path)
-        # ensure path exists
-        filepath.parent.mkdir(parents=True, exist_ok=True)
-        obj.to_csv(filepath)
+        conn = _connect_duckdb(context).cursor()
 
-        conn.execute(f"create schema if not exists {self._schema(context, context)};")
+        conn.execute(f"create schema if not exists {table_slice.schema};")
         conn.execute(
-            f"create or replace view {self._table_path(context, context)} as "
-            f"select * from '{filepath}';"
+            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from obj;"
+        )
+        if not conn.fetchall():
+            # table was not created, therefore already exists. Insert the data
+            conn.execute(f"insert into {table_slice.schema}.{table_slice.table} select * from obj")
+
+        context.add_output_metadata(
+            {
+                "row_count": obj.shape[0],
+                "dataframe_columns": MetadataValue.table_schema(
+                    TableSchema(
+                        columns=[
+                            TableColumn(name=name, type=str(dtype))
+                            for name, dtype in obj.dtypes.iteritems()
+                        ]
+                    )
+                ),
+            }
         )
 
-        context.add_output_metadata({"row_count": obj.shape[0], "path": str(filepath)})
-
-    def load_input(self, context: InputContext, conn: duckdb.DuckDBPyConnection) -> pd.DataFrame:
+    def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
-        return conn.execute(
-            f"SELECT * FROM {self._table_path(context, cast(OutputContext, context.upstream_output))}"
-        ).fetchdf()
+        conn = _connect_duckdb(context).cursor()
+        return conn.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
 
     @property
-    def supported_output_types(self):
+    def supported_types(self):
         return [pd.DataFrame]
-
-    @property
-    def supported_input_types(self):
-        return [pd.DataFrame]
-
-    def _get_path(self, context: OutputContext, base_path: str) -> Path:
-        if context.has_asset_key:
-            return Path(f"{base_path}/{'_'.join(context.asset_key.path)}.csv")
-        else:
-            keys = context.get_identifier()
-            run_id = keys[0]
-            output_identifiers = keys[1:]  # variable length because of mapping key
-
-            path = ["storage", run_id, "files", *output_identifiers]
-        return Path(f"{base_path}/{'_'.join(path)}.csv")
