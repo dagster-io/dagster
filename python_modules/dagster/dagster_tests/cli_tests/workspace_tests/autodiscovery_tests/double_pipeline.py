@@ -1,11 +1,11 @@
-from dagster._legacy import pipeline
+from dagster import job
 
 
-@pipeline
+@job
 def pipe_one():
     pass
 
 
-@pipeline
+@job
 def pipe_two():
     pass

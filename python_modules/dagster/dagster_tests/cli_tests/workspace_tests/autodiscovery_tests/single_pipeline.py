@@ -1,6 +1,6 @@
-from dagster._legacy import pipeline
+from dagster import job
 
 
-@pipeline
-def a_pipeline():
+@job
+def a_job():
     pass

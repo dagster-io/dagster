@@ -1,11 +1,11 @@
-from dagster._legacy import pipeline, solid
+from dagster import job, op
 
 
-@solid
+@op
 def hello_world(_):
     pass
 
 
-@pipeline
-def hello_world_pipeline():
+@job
+def hello_world_job():
     hello_world()
