@@ -87,14 +87,6 @@ def parse_time_range_args(args):
     return before_timestamp, after_timestamp
 
 
-# class GraphenePartitionMaterializationStatus(graphene.ObjectType):
-#     partition = graphene.NonNull(graphene.String)
-#     materialized = graphene.NonNull(graphene.Boolean)
-
-#     class Meta:
-#         name = "PartitionMaterializationStatus"
-
-
 class GrapheneMaterializationCount(graphene.ObjectType):
     partition = graphene.NonNull(graphene.String)
     materializationCount = graphene.NonNull(graphene.Int)

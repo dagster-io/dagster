@@ -1,6 +1,6 @@
 import os
 import time
-
+from typing import Dict, List, Mapping
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -16,6 +16,7 @@ from dagster import AssetKey, DagsterEventType
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._legacy import PipelineRunStatus
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .graphql_context_test_suite import (
@@ -206,8 +207,8 @@ GET_MATERIALIZATION_COUNT_BY_PARTITION = """
 """
 
 GET_MATERIALIZATION_COUNT_BY_DIMENSION_PARTITION = """
-    query MaterializationCountByDimension($primaryDimension: String) {
-        assetNodes {
+    query MaterializationCountByDimension($assetKeys: [AssetKeyInput!], $primaryDimension: String) {
+        assetNodes(assetKeys: $assetKeys) {
             assetKey {
                 path
             }
@@ -216,6 +217,19 @@ GET_MATERIALIZATION_COUNT_BY_DIMENSION_PARTITION = """
                 materializationCountForSecondaryDimension {
                     partition
                     materializationCount
+                }
+            }
+        }
+    }
+"""
+
+GET_MATERIALIZATION_FOR_DIMENSION_PARTITION = """
+    query AssetGraphQuery($assetKey: AssetKeyInput!, $partitions: [String!], $dimensionPartition: DimensionPartitionKey) {
+        assetOrError(assetKey: $assetKey) {
+            ...on Asset{
+                assetMaterializations(partitions: $partitions, dimensionPartition: $dimensionPartition) {
+                    partition
+                    runId
                 }
             }
         }
@@ -354,7 +368,7 @@ BATCH_LOAD_ASSETS = """
 
 
 def _create_run(
-    graphql_context, pipeline_name, mode="default", step_keys=None, asset_selection=None
+    graphql_context, pipeline_name, mode="default", step_keys=None, asset_selection=None, tags=None
 ):
     if asset_selection:
         selector = infer_job_or_pipeline_selector(
@@ -373,6 +387,9 @@ def _create_run(
                 "selector": selector,
                 "mode": mode,
                 "stepKeys": step_keys,
+                "executionMetadata": {
+                    "tags": tags,
+                },
             }
         },
     )
@@ -380,6 +397,33 @@ def _create_run(
     run_id = result.data["launchPipelineExecution"]["run"]["runId"]
     poll_for_finished_run(graphql_context.instance, run_id)
     return run_id
+
+
+def _create_partitioned_run(
+    graphql_context, job_name: str, asset_selection: List[AssetKey], partition_key: str
+) -> str:
+    if isinstance(partition_key, MultiPartitionKey):
+        partition_tags = [
+            {'key': f'dagster/partition/{dimension_name}', 'value': key}
+            for dimension_name, key in partition_key.keys_by_dimension.items()
+        ]
+    else:
+        partition_tags = [
+            {'key': 'dagster/partition', 'value': partition_key},
+        ]
+    return _create_run(
+        graphql_context,
+        job_name,
+        asset_selection=[{"path": asset_key.path} for asset_key in asset_selection],
+        tags=[
+            *partition_tags,
+            {'key': 'dagster/partition_set', 'value': 'multipartitions_job_partition_set'},
+            {
+                'key': 'dagster/step_selection',
+                'value': ','.join([asset.path[-1] for asset in asset_selection]),
+            },
+        ],
+    )
 
 
 def _get_sorted_materialization_events(graphql_context, run_id):
@@ -1089,6 +1133,161 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         counts = traced_counter.get().counts()
         assert len(counts) == 1
         assert counts.get("DagsterInstance.get_asset_records") == 1
+
+    def test_multipartitions_asset_materializations(self, graphql_context):
+        def unpack_result_into_dict(result):
+            # Dict mapping asset key -> primary dimension -> secondary dimension -> count
+            materialization_count_by_asset: Dict[str, Dict[str, Dict[str, int]]] = {}
+
+            for asset_data in result.data['assetNodes']:
+                count_for_asset = {}
+                for primary_dimension_data in asset_data[
+                    'materializationCountByDimensionPartition'
+                ]:
+                    count_for_primary_dimension = {}
+                    for secondary_dimension_data in primary_dimension_data[
+                        'materializationCountForSecondaryDimension'
+                    ]:
+                        count_for_primary_dimension[
+                            secondary_dimension_data['partition']
+                        ] = secondary_dimension_data['materializationCount']
+                    count_for_asset[
+                        primary_dimension_data['primaryDimensionPartitionKey']
+                    ] = count_for_primary_dimension
+                materialization_count_by_asset[asset_data['assetKey']['path'][0]] = count_for_asset
+
+            return materialization_count_by_asset
+
+        _create_partitioned_run(
+            graphql_context,
+            "multipartitions_job",
+            [AssetKey("multipartitions_1")],
+            MultiPartitionKey({"ab": "a", "12": "1"}),
+        )
+        _create_partitioned_run(
+            graphql_context,
+            "multipartitions_job",
+            [AssetKey("multipartitions_1")],
+            MultiPartitionKey({"ab": "a", "12": "1"}),
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_COUNT_BY_DIMENSION_PARTITION,
+            variables={
+                "assetKeys": [{"path": ["multipartitions_1"]}, {"path": ["multipartitions_2"]}]
+            },
+        )
+
+        assert result.data['assetNodes']
+        materialization_cts = unpack_result_into_dict(result)
+        assert materialization_cts["multipartitions_1"]["1"]["a"] == 2
+        assert materialization_cts["multipartitions_1"]["1"]["b"] == 0
+        assert materialization_cts["multipartitions_1"]["2"]["a"] == 0
+        assert materialization_cts["multipartitions_1"]["2"]["b"] == 0
+
+        assert materialization_cts["multipartitions_2"]["1"]["a"] == 0
+        assert materialization_cts["multipartitions_2"]["1"]["b"] == 0
+        assert materialization_cts["multipartitions_2"]["2"]["a"] == 0
+        assert materialization_cts["multipartitions_2"]["2"]["b"] == 0
+
+        _create_partitioned_run(
+            graphql_context,
+            "multipartitions_job",
+            [AssetKey("multipartitions_1"), AssetKey("multipartitions_2")],
+            MultiPartitionKey({"ab": "b", "12": "2"}),
+        )
+        _create_partitioned_run(
+            graphql_context,
+            "multipartitions_job",
+            [AssetKey("multipartitions_2")],
+            MultiPartitionKey({"ab": "b", "12": "2"}),
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_COUNT_BY_DIMENSION_PARTITION,
+            variables={
+                "assetKeys": [{"path": ["multipartitions_1"]}, {"path": ["multipartitions_2"]}]
+            },
+        )
+        assert result.data['assetNodes']
+        materialization_cts = unpack_result_into_dict(result)
+        assert materialization_cts["multipartitions_1"]["1"]["a"] == 2
+        assert materialization_cts["multipartitions_1"]["1"]["b"] == 0
+        assert materialization_cts["multipartitions_1"]["2"]["a"] == 0
+        assert materialization_cts["multipartitions_1"]["2"]["b"] == 1
+
+        assert materialization_cts["multipartitions_2"]["1"]["a"] == 0
+        assert materialization_cts["multipartitions_2"]["1"]["b"] == 0
+        assert materialization_cts["multipartitions_2"]["2"]["a"] == 0
+        assert materialization_cts["multipartitions_2"]["2"]["b"] == 2
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_COUNT_BY_DIMENSION_PARTITION,
+            variables={
+                "assetKeys": [{"path": ["multipartitions_1"]}],
+                "primaryDimension": "ab",
+            },
+        )
+        assert result.data['assetNodes']
+        materialization_cts = unpack_result_into_dict(result)
+        assert materialization_cts["multipartitions_1"]["a"]["1"] == 2
+        assert materialization_cts["multipartitions_1"]["b"]["1"] == 0
+        assert materialization_cts["multipartitions_1"]["a"]["2"] == 0
+        assert materialization_cts["multipartitions_1"]["b"]["2"] == 1
+
+    def test_get_materialization_for_multipartition(self, graphql_context):
+        first_run_id = _create_partitioned_run(
+            graphql_context,
+            "multipartitions_job",
+            [AssetKey("multipartitions_1")],
+            MultiPartitionKey({"ab": "a", "12": "1"}),
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_FOR_DIMENSION_PARTITION,
+            variables={
+                "assetKey": {"path": ["multipartitions_1"]},
+                "dimensionPartition": {"name": "ab", "partitionKey": "a"},
+            },
+        )
+        assert result.data
+        materializations = result.data['assetOrError']['assetMaterializations']
+        assert len(materializations) == 1
+        assert materializations[0]['partition'] == '1|a'
+        assert materializations[0]['runId'] == first_run_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_FOR_DIMENSION_PARTITION,
+            variables={
+                "assetKey": {"path": ["multipartitions_2"]},
+                "dimensionPartition": {"name": "ab", "partitionKey": "a"},
+            },
+        )
+        materializations = result.data['assetOrError']['assetMaterializations']
+        assert len(materializations) == 0
+
+        second_run_id = _create_partitioned_run(
+            graphql_context,
+            "multipartitions_job",
+            [AssetKey("multipartitions_1")],
+            MultiPartitionKey({"ab": "b", "12": "2"}),
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_FOR_DIMENSION_PARTITION,
+            variables={
+                "assetKey": {"path": ["multipartitions_1"]},
+                "dimensionPartition": {"name": "ab", "partitionKey": "b"},
+            },
+        )
+        assert result.data
+        materializations = result.data['assetOrError']['assetMaterializations']
+        # Should only fetch materializations where dimension "ab" partition is "b"
+        assert len(materializations) == 1
+        assert materializations[0]['partition'] == '2|b'
+        assert materializations[0]['runId'] == second_run_id
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

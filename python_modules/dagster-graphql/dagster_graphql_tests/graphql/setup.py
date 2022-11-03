@@ -37,6 +37,7 @@ from dagster import (
     HourlyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
+    DailyPartitionsDefinition,
     Int,
     Map,
     MetadataEntry,
@@ -74,6 +75,7 @@ from dagster import (
     static_partitioned_config,
     usable_as_dagster_type,
 )
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.metadata import MetadataValue
@@ -1731,6 +1733,24 @@ def untyped_asset(typed_asset):
     return typed_asset
 
 
+multipartitions_def = MultiPartitionsDefinition(
+    {
+        "12": StaticPartitionsDefinition(["1", "2"]),
+        "ab": StaticPartitionsDefinition(["a", "b"]),
+    }
+)
+
+
+@asset(partitions_def=multipartitions_def)
+def multipartitions_1():
+    return 1
+
+
+@asset(partitions_def=multipartitions_def)
+def multipartitions_2(multipartitions_1):
+    return multipartitions_1
+
+
 # For now the only way to add assets to repositories is via AssetGroup
 # When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
 named_groups_job = AssetGroup(
@@ -1821,6 +1841,13 @@ def define_asset_jobs():
         define_asset_job(
             "typed_assets",
             AssetSelection.assets(typed_multi_asset, typed_asset, untyped_asset),
+        ),
+        multipartitions_1,
+        multipartitions_2,
+        define_asset_job(
+            "multipartitions_job",
+            AssetSelection.assets(multipartitions_1, multipartitions_2),
+            partitions_def=multipartitions_def,
         ),
     ]
 
