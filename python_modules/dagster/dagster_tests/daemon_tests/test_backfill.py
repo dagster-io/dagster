@@ -19,12 +19,12 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
+    job,
     op,
     repository,
 )
 from dagster._core.definitions import Partition, PartitionSetDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.execution.api import execute_pipeline
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
@@ -36,12 +36,9 @@ from dagster._core.test_utils import step_did_not_run, step_failed, step_succeed
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._legacy import ModeDefinition, pipeline
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
-
-default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
 
 def _failure_flag_file():
@@ -67,7 +64,7 @@ always_succeed_job = comp_always_succeed.to_job(config=my_config)
 
 
 @op
-def fail_solid(_):
+def fail_op(_):
     raise Exception("blah")
 
 
@@ -84,65 +81,65 @@ def after_failure(_, _input):
     return 1
 
 
-@pipeline(mode_defs=[default_mode_def])
-def the_pipeline():
+@job(resource_defs={"io_manager": fs_io_manager})
+def the_job():
     always_succeed()
 
 
-@pipeline(mode_defs=[default_mode_def])
-def conditional_failure_pipeline():
+@job(resource_defs={"io_manager": fs_io_manager})
+def conditional_failure_job():
     after_failure(conditionally_fail(always_succeed()))
 
 
-@pipeline(mode_defs=[default_mode_def])
-def partial_pipeline():
+@job(resource_defs={"io_manager": fs_io_manager})
+def partial_job():
     always_succeed.alias("step_one")()
     always_succeed.alias("step_two")()
     always_succeed.alias("step_three")()
 
 
-@pipeline(mode_defs=[default_mode_def])
-def parallel_failure_pipeline():
-    fail_solid.alias("fail_one")()
-    fail_solid.alias("fail_two")()
-    fail_solid.alias("fail_three")()
+@job(resource_defs={"io_manager": fs_io_manager})
+def parallel_failure_job():
+    fail_op.alias("fail_one")()
+    fail_op.alias("fail_two")()
+    fail_op.alias("fail_three")()
     always_succeed.alias("success_four")()
 
 
 @op(config_schema=Field(Any))
-def config_solid(_):
+def config_op(_):
     return 1
 
 
-@pipeline(mode_defs=[default_mode_def])
-def config_pipeline():
-    config_solid()
+@job(resource_defs={"io_manager": fs_io_manager})
+def config_job():
+    config_op()
 
 
 # Type-ignores due to mypy bug with inference and lambdas
 
 simple_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="simple_partition_set",
-    pipeline_name="the_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    job_name="the_job",
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
 conditionally_fail_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="conditionally_fail_partition_set",
-    pipeline_name="conditional_failure_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    job_name="conditional_failure_job",
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
 partial_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="partial_partition_set",
-    pipeline_name="partial_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    job_name="partial_job",
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
 parallel_failure_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="parallel_failure_partition_set",
-    pipeline_name="parallel_failure_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    job_name="parallel_failure_job",
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
 
@@ -154,7 +151,7 @@ def _large_partition_config(_):
 
     return {
         "solids": {
-            "config_solid": {
+            "config_op": {
                 "config": {
                     "foo": {
                         _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
@@ -167,8 +164,8 @@ def _large_partition_config(_):
 
 large_partition_set = PartitionSetDefinition(
     name="large_partition_set",
-    pipeline_name="config_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    job_name="config_job",
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
     run_config_fn_for_partition=_large_partition_config,
 )
 
@@ -240,17 +237,17 @@ ab2 = AssetsDefinition(
 @repository
 def the_repo():
     return [
-        the_pipeline,
-        conditional_failure_pipeline,
-        partial_pipeline,
-        config_pipeline,
+        the_job,
+        conditional_failure_job,
+        partial_job,
+        config_job,
         simple_partition_set,
         conditionally_fail_partition_set,
         partial_partition_set,
         large_partition_set,
         always_succeed_job,
         parallel_failure_partition_set,
-        parallel_failure_pipeline,
+        parallel_failure_job,
         # the lineage graph defined with these assets is such that: foo -> a1 -> bar -> b1
         # this requires ab1 to be split into two separate asset definitions using the automatic
         # subsetting capabilities. ab2 is defines similarly, so in total 4 copies of the "reusable"
@@ -726,12 +723,11 @@ def test_backfill_from_failure_for_subselection(instance, workspace_context, ext
         "parallel_failure_partition_set"
     )
 
-    execute_pipeline(
-        parallel_failure_pipeline,
+    parallel_failure_job.execute_in_process(
         run_config=run_config,
         tags=tags,
         instance=instance,
-        solid_selection=["fail_three", "success_four"],
+        op_selection=["fail_three", "success_four"],
         raise_on_error=False,
     )
 
