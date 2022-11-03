@@ -1244,49 +1244,62 @@ class SqlEventLogStorage(EventLogStorage):
                 "`dagster instance migrate` to create the AssetEventTags table."
             )
 
-        tags_query = (
-            db.select(
-                [
-                    AssetEventTagsTable.c.key,
-                    AssetEventTagsTable.c.value,
-                    AssetEventTagsTable.c.event_id,
-                ]
-                if not filter_tags
-                else [AssetEventTagsTable.c.event_id]
-            )
-            .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.event_id)
-            .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
-        )
         asset_details = self._get_assets_details([asset_key])[0]
-        if asset_details and asset_details.last_wipe_timestamp:
-            tags_query = tags_query.where(
-                AssetEventTagsTable.c.event_timestamp
-                > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
-            )
-
         if not filter_tags:
-            with self.index_connection() as conn:
-                results = conn.execute(tags_query).fetchall()
+            tags_query = (
+                db.select(
+                    [
+                        AssetEventTagsTable.c.key,
+                        AssetEventTagsTable.c.value,
+                        AssetEventTagsTable.c.event_id,
+                    ]
+                    if not filter_tags
+                    else [AssetEventTagsTable.c.event_id]
+                )
+                .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.event_id)
+                .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
+            )
+            if asset_details and asset_details.last_wipe_timestamp:
+                tags_query = tags_query.where(
+                    AssetEventTagsTable.c.event_timestamp
+                    > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                )
         else:
-            intersections = [
-                tags_query.where(
+
+            def get_tag_filter_query(tag_key, tag_value):
+                filter_query = db.select(AssetEventTagsTable.c.event_id).where(
                     db.and_(
+                        AssetEventTagsTable.c.asset_key == asset_key.to_string(),
                         AssetEventTagsTable.c.key == tag_key,
                         AssetEventTagsTable.c.value == tag_value,
                     )
                 )
+                if asset_details and asset_details.last_wipe_timestamp:
+                    filter_query = filter_query.where(
+                        AssetEventTagsTable.c.event_timestamp
+                        > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                    )
+                return filter_query
+
+            intersections = [
+                get_tag_filter_query(tag_key, tag_value)
                 for tag_key, tag_value in filter_tags.items()
             ]
 
-            tags_with_same_id = db.select(
+            tags_query = db.select(
                 [
                     AssetEventTagsTable.c.key,
                     AssetEventTagsTable.c.value,
                     AssetEventTagsTable.c.event_id,
                 ]
-            ).where(AssetEventTagsTable.c.event_id.in_(db.intersect(*intersections)))
-            with self.index_connection() as conn:
-                results = conn.execute(tags_with_same_id).fetchall()
+            ).where(
+                db.and_(
+                    AssetEventTagsTable.c.event_id.in_(db.intersect(*intersections)),
+                )
+            )
+
+        with self.index_connection() as conn:
+            results = conn.execute(tags_query).fetchall()
 
         tags_by_event_id: Dict[int, Dict[str, str]] = defaultdict(dict)
         for row in results:
