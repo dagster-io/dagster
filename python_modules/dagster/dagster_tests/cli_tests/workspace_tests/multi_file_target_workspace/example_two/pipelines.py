@@ -1,9 +1,9 @@
 # mypy: disable-error-code=attr-defined
 from solids import example_two_solid  # pylint: disable=no-name-in-module
 
-from dagster._legacy import pipeline
+from dagster import job
 
 
-@pipeline
-def example_two_pipeline():
+@job
+def example_two_job():
     example_two_solid()
