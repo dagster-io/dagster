@@ -5,6 +5,7 @@ from typing import Any, Mapping, Optional
 
 from dagster import (
     AssetMaterialization,
+    AssetObservation,
     ExpectationResult,
     Failure,
     LoggerDefinition,
@@ -358,6 +359,7 @@ class Manager:
         valid_types = (
             Materialization,
             AssetMaterialization,
+            AssetObservation,
             ExpectationResult,
             TypeCheck,
             Failure,

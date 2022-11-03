@@ -51,7 +51,7 @@ def _find_first_tagged_cell_index(nb, tag):
 # Typically, papermill injects the injected-parameters cell *below* the parameters cell
 # but we want to *replace* the parameters cell, which is what this function does.
 def replace_parameters(context, nb, parameters):
-    """Assigned parameters into the appropiate place in the input notebook
+    """Assigned parameters into the appropriate place in the input notebook
 
     Args:
         nb (NotebookNode): Executable notebook object
@@ -116,6 +116,11 @@ def get_papermill_parameters(step_context, inputs, output_log_path, compute_desc
         if compute_descriptor == "solid":
             raise DagstermillError(
                 "Can't execute a dagstermill solid from a pipeline that is not reconstructable. "
+                "Use the reconstructable() function if executing from python"
+            )
+        elif compute_descriptor == "asset":
+            raise DagstermillError(
+                "Can't execute a dagstermill asset that is not reconstructable. "
                 "Use the reconstructable() function if executing from python"
             )
         else:
