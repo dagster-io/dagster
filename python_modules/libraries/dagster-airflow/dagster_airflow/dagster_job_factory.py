@@ -2,7 +2,7 @@ from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_
 
 
 def make_dagster_job_from_airflow_dag(
-    dag, tags=None, use_airflow_template_context=False, unique_id=None
+    dag, tags=None, use_airflow_template_context=False, unique_id=None, mock_xcom=False
 ):
     """Construct a Dagster job corresponding to a given Airflow DAG.
 
@@ -45,13 +45,15 @@ def make_dagster_job_from_airflow_dag(
             (default: False)
         unique_id (int): If not None, this id will be postpended to generated op names. Used by
             framework authors to enforce unique op names within a repo.
+        mock_xcom (bool): If not None, dagster will mock out all calls made to xcom, features that
+            depend on xcom may not work as expected.
 
     Returns:
         JobDefinition: The generated Dagster job
 
     """
     pipeline_def = make_dagster_pipeline_from_airflow_dag(
-        dag, tags, use_airflow_template_context, unique_id
+        dag, tags, use_airflow_template_context, unique_id, mock_xcom
     )
     # pass in tags manually because pipeline_def.graph doesn't have it threaded
     return pipeline_def.graph.to_job(tags={**pipeline_def.tags})
