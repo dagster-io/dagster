@@ -10,6 +10,7 @@ setup(
         "pandas",
         "matplotlib",
         "seaborn",
+        "sklearn",
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )
