@@ -178,10 +178,11 @@ class PackageSpec:
                     if self.upload_coverage:
                         coverage_id = f"{base_name}-{other_factor}" if other_factor else base_name
                         coverage = f".coverage.{coverage_id}.{py_version}.$BUILDKITE_BUILD_ID"
-                        extra_commands_post = [
-                            f"mv .coverage {coverage}",
-                            f"buildkite-agent artifact upload {coverage}",
-                        ]
+                        # extra_commands_post = [
+                        #     f"mv .coverage {coverage}",
+                        #     f"buildkite-agent artifact upload {coverage}",
+                        # ]
+                        extra_commands_post = []
                     else:
                         extra_commands_post = []
 
