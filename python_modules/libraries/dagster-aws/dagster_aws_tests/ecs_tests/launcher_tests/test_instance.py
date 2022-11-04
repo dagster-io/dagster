@@ -1,5 +1,7 @@
 import pytest
 
+from dagster._core.test_utils import environ
+
 
 def test_default_instance(instance_cm):
     with instance_cm() as instance:
@@ -39,3 +41,25 @@ def test_invalid_kwargs_field(instance_cm):
             match="Task overrides are set by the run launcher and cannot be set in run_task_kwargs.",
         ):
             pass
+
+
+def test_task_definition_config(instance_cm, task_definition):
+    with instance_cm(
+        config={"task_definition": "dagster", "container_name": "dagster"}
+    ) as instance:
+        assert instance.run_launcher.task_definition == task_definition["taskDefinitionArn"]
+
+    with pytest.raises(
+        Exception,
+        match="You have attempted to fetch the environment variable FOO which is not set.",
+    ):
+        with instance_cm(
+            config={"task_definition": {"env": "FOO"}, "container_name": "dagster"}
+        ) as instance:
+            pass
+
+    with environ({"FOO": "dagster"}):
+        with instance_cm(
+            config={"task_definition": {"env": "FOO"}, "container_name": "dagster"}
+        ) as instance:
+            assert instance.run_launcher.task_definition == task_definition["taskDefinitionArn"]

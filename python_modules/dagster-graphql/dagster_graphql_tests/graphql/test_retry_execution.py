@@ -21,7 +21,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._seven.temp_dir import get_system_temp_directory
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from .setup import csv_hello_world_solids_config, get_retry_multi_execution_params, retry_config
+from .repo import csv_hello_world_solids_config, get_retry_multi_execution_params, retry_config
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,
     step_did_fail,

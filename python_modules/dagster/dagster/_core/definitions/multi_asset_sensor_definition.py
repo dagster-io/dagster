@@ -38,7 +38,6 @@ from .events import AssetKey
 from .run_request import RunRequest, SkipReason
 from .sensor_definition import (
     DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
     SensorDefinition,
     SensorEvaluationContext,
     is_context_provided,
@@ -266,6 +265,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             cursor=cursor,
             repository_name=repository_name,
             instance=instance,
+            repository_def=repository_def,
         )
 
     def _cache_initial_unconsumed_events(self) -> None:
@@ -343,7 +343,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         """Updates the cursor after the sensor evaluation function has been called. This method
         should be called at most once per evaluation.
         """
-
         new_cursor = self._cursor_advance_state_mutation.get_cursor_with_advances(
             self, self._unpacked_cursor
         )
@@ -652,9 +651,10 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         )
 
     def _get_asset(self, asset_key: AssetKey, fn_name: str) -> AssetsDefinition:
-        repository_assets = (
-            self._repository_def._assets_defs_by_key  # pylint:disable=protected-access
-        )
+        from dagster._core.definitions.repository_definition import RepositoryDefinition
+
+        repo_def = cast(RepositoryDefinition, self._repository_def)
+        repository_assets = repo_def._assets_defs_by_key  # pylint:disable=protected-access
         if asset_key in self._assets_by_key:
             asset_def = self._assets_by_key[asset_key]
             if asset_def is None:
@@ -1097,10 +1097,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
         asset_keys: Optional[Sequence[AssetKey]],
         asset_selection: Optional[AssetSelection],
         job_name: Optional[str],
-        asset_materialization_fn: Callable[
-            ["MultiAssetSensorEvaluationContext"],
-            RawSensorEvaluationFunctionReturn,
-        ],
+        asset_materialization_fn: MultiAssetMaterializationFunction,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job: Optional[ExecutableDefinition] = None,
@@ -1121,7 +1118,19 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
-                result = materialization_fn(context)
+                multi_asset_sensor_context = MultiAssetSensorEvaluationContext(
+                    instance_ref=context.instance_ref,
+                    last_completion_time=context.last_completion_time,
+                    last_run_key=context.last_run_key,
+                    cursor=context.cursor,
+                    repository_name=context.repository_def.name,
+                    repository_def=context.repository_def,
+                    asset_selection=self._asset_selection,
+                    asset_keys=self._asset_keys,
+                    instance=context.instance,
+                )
+
+                result = materialization_fn(multi_asset_sensor_context)
                 if result is None:
                     return
 
@@ -1143,7 +1152,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
                 if (
                     runs_yielded
-                    and not context._cursor_has_been_updated  # pylint: disable=protected-access
+                    and not multi_asset_sensor_context._cursor_has_been_updated  # pylint: disable=protected-access
                 ):
                     raise DagsterInvalidDefinitionError(
                         "Asset materializations have been handled in this sensor, "
@@ -1152,9 +1161,12 @@ class MultiAssetSensorDefinition(SensorDefinition):
                         "context.advance_all_cursors to update the cursor."
                     )
 
-                context.update_cursor_after_evaluation()
+                multi_asset_sensor_context.update_cursor_after_evaluation()
+                context.update_cursor(multi_asset_sensor_context.cursor)
 
             return _fn
+
+        self._raw_asset_materialization_fn = asset_materialization_fn
 
         super(MultiAssetSensorDefinition, self).__init__(
             name=check_valid_name(name),
@@ -1171,7 +1183,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
     def __call__(self, *args, **kwargs):
 
-        if is_context_provided(self._raw_fn):
+        if is_context_provided(self._raw_asset_materialization_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Sensor evaluation function expected context argument, but no context argument "
@@ -1183,7 +1195,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     "positional context parameter should be provided when invoking."
                 )
 
-            context_param_name = get_function_params(self._raw_fn)[0].name
+            context_param_name = get_function_params(self._raw_asset_materialization_fn)[0].name
 
             if args:
                 context = check.inst_param(
@@ -1200,7 +1212,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     MultiAssetSensorEvaluationContext,
                 )
 
-            return self._raw_fn(context)
+            result = self._raw_asset_materialization_fn(context)
 
         else:
             if len(args) + len(kwargs) > 0:
@@ -1209,7 +1221,10 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     "invocation."
                 )
 
-            return self._raw_fn()  # type: ignore [TypeGuard limitation]
+            result = self._raw_asset_materialization_fn()  # type: ignore [TypeGuard limitation]
+
+        context.update_cursor_after_evaluation()
+        return result
 
     @public  # type: ignore
     @property

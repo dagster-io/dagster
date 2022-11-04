@@ -1,12 +1,13 @@
 import {Page, PageHeader, Heading, Box, TextInput, Button, ButtonGroup} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {QueryfulRunTimeline} from '../runs/QueryfulRunTimeline';
+import {RunTimeline} from '../runs/RunTimeline';
 import {useHourWindow, HourWindow} from '../runs/useHourWindow';
-import {makeJobKey} from '../runs/useRunsForTimeline';
+import {makeJobKey, useRunsForTimeline} from '../runs/useRunsForTimeline';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -71,6 +72,9 @@ export const OverviewTimelineRoot = () => {
     [hourWindow, now, offsetMsec],
   );
 
+  const {jobs, initialLoading, queryData} = useRunsForTimeline(range);
+  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
+
   const visibleJobKeys = React.useMemo(() => {
     const searchLower = searchValue.toLocaleLowerCase().trim();
     const flat = visibleRepos.flatMap((repo) => {
@@ -82,9 +86,17 @@ export const OverviewTimelineRoot = () => {
     return new Set(flat);
   }, [visibleRepos, searchValue]);
 
+  const visibleJobs = React.useMemo(() => jobs.filter(({key}) => visibleJobKeys.has(key)), [
+    jobs,
+    visibleJobKeys,
+  ]);
+
   return (
     <Page>
-      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="timeline" />} />
+      <PageHeader
+        title={<Heading>Overview</Heading>}
+        tabs={<OverviewTabs tab="timeline" refreshState={refreshState} />}
+      />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
@@ -117,7 +129,7 @@ export const OverviewTimelineRoot = () => {
           </Box>
         </Box>
       </Box>
-      <QueryfulRunTimeline range={range} visibleJobKeys={visibleJobKeys} />
+      <RunTimeline loading={initialLoading} range={range} jobs={visibleJobs} />
     </Page>
   );
 };

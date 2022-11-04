@@ -191,7 +191,7 @@ def skip_if_no_python_changes():
     if not is_feature_branch():
         return None
 
-    if not any(path.suffix == ".py" for path in ChangedFiles.all):
+    if any(path.suffix == ".py" for path in ChangedFiles.all):
         return None
 
     return "No python changes"

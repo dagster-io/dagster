@@ -12,7 +12,7 @@ def test_dagster_out_of_process_location():
             location_name="test_location",
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
-                python_file=file_relative_path(__file__, "setup.py"),
+                python_file=file_relative_path(__file__, "repo.py"),
                 attribute="test_repo",
             ),
         ).create_single_location(instance) as env:

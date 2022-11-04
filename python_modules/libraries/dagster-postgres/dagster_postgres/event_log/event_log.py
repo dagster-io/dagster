@@ -4,6 +4,7 @@ import sqlalchemy as db
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
@@ -164,11 +165,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if (
             event.is_dagster_event
-            and (
-                event.dagster_event.is_step_materialization
-                or event.dagster_event.is_asset_observation
-                or event.dagster_event.is_asset_materialization_planned
-            )
+            and event.dagster_event_type in ASSET_EVENTS
             and event.dagster_event.asset_key
         ):
             self.store_asset_event(event)

@@ -157,42 +157,50 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           </>
         }
         tabs={
-          <Tabs size="large" selectedTabId={params.view || defaultTab}>
-            {flagNewAssetDetails ? (
+          <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+            <Tabs size="large" selectedTabId={params.view || defaultTab}>
+              {flagNewAssetDetails ? (
+                <Tab
+                  id="overview"
+                  title="Overview"
+                  onClick={() => setParams({...params, view: 'overview'})}
+                />
+              ) : (
+                <Tab
+                  id="activity"
+                  title="Activity"
+                  onClick={() => setParams({...params, view: 'activity'})}
+                />
+              )}
               <Tab
-                id="overview"
-                title="Overview"
-                onClick={() => setParams({...params, view: 'overview'})}
+                id="definition"
+                title="Definition"
+                onClick={() => setParams({...params, view: 'definition'})}
+                disabled={!definition}
               />
-            ) : (
               <Tab
-                id="activity"
-                title="Activity"
-                onClick={() => setParams({...params, view: 'activity'})}
+                id="lineage"
+                title="Lineage"
+                onClick={() => setParams({...params, view: 'lineage'})}
+                disabled={!definition}
               />
+              {flagNewAssetDetails && (
+                <Tab
+                  id="plots"
+                  title="Plots"
+                  onClick={() => setParams({...params, view: 'plots'})}
+                />
+              )}
+            </Tabs>
+            {refreshState && (
+              <Box padding={{bottom: 8}}>
+                <QueryRefreshCountdown refreshState={refreshState} />
+              </Box>
             )}
-            <Tab
-              id="definition"
-              title="Definition"
-              onClick={() => setParams({...params, view: 'definition'})}
-              disabled={!definition}
-            />
-            <Tab
-              id="lineage"
-              title="Lineage"
-              onClick={() => setParams({...params, view: 'lineage'})}
-              disabled={!definition}
-            />
-            {flagNewAssetDetails && (
-              <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
-            )}
-          </Tabs>
+          </Box>
         }
         right={
-          <Box style={{margin: '-4px 0'}} flex={{gap: 12, alignItems: 'baseline'}}>
-            <Box margin={{top: 4}}>
-              <QueryRefreshCountdown refreshState={refreshState} />
-            </Box>
+          <Box style={{margin: '-4px 0'}}>
             {definition && definition.jobNames.length > 0 && repoAddress && upstream && (
               <LaunchAssetExecutionButton assetKeys={[definition.assetKey]} />
             )}

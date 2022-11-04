@@ -32,3 +32,31 @@ def test_multi_asset_group_name():
 
     resolution = next(iter(resolved.values()))
     assert resolution == {AssetKey(["upstream"]): AssetKey(["some", "path", "upstream"])}
+
+
+def test_input_has_asset_key():
+    @asset(key_prefix="a")
+    def asset1():
+        ...
+
+    @asset(non_argument_deps={AssetKey(["b", "asset1"])})
+    def asset2():
+        ...
+
+    assert len(resolve_assets_def_deps([asset1, asset2], [])) == 0
+
+
+def test_upstream_same_name_as_asset():
+    @asset(non_argument_deps={AssetKey("asset1")}, key_prefix="b")
+    def asset1():
+        ...
+
+    assert len(resolve_assets_def_deps([asset1], [])) == 0
+
+    @multi_asset(
+        outs={"asset1": AssetOut(key_prefix="b")}, non_argument_deps={AssetKey(["a", "asset1"])}
+    )
+    def multi_asset1():
+        ...
+
+    assert len(resolve_assets_def_deps([multi_asset1], [])) == 0

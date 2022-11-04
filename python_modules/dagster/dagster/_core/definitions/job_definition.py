@@ -176,21 +176,7 @@ class JobDefinition(PipelineDefinition):
         partitioned_config = None
 
         if partitions_def:
-            check.invariant(
-                not isinstance(config, ConfigMapping),
-                "Can't supply a ConfigMapping for 'config' when 'partitions_def' is supplied.",
-            )
-
-            if isinstance(config, PartitionedConfig):
-                check.invariant(
-                    config.partitions_def == partitions_def,
-                    "Can't supply a PartitionedConfig for 'config' with a different "
-                    "PartitionsDefinition than supplied for 'partitions_def'.",
-                )
-                partitioned_config = config
-            else:
-                hardcoded_config = config if config else {}
-                partitioned_config = PartitionedConfig(partitions_def, lambda _: hardcoded_config)
+            partitioned_config = PartitionedConfig.from_flexible_config(config, partitions_def)
         else:
             if isinstance(config, ConfigMapping):
                 config_mapping = config
@@ -383,10 +369,6 @@ class JobDefinition(PipelineDefinition):
                 check.failed(
                     f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
                 )
-            check.invariant(
-                not run_config,
-                "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
-            )
             partition_set = self.get_partition_set_def()
             if not partition_set:
                 check.failed(
@@ -394,7 +376,9 @@ class JobDefinition(PipelineDefinition):
                 )
 
             partition = partition_set.get_partition(partition_key)
-            run_config = partition_set.run_config_for_partition(partition)
+            run_config = (
+                run_config if run_config else partition_set.run_config_for_partition(partition)
+            )
             tags = partition_set.tags_for_partition(partition)
 
         return core_execute_in_process(
@@ -577,6 +561,7 @@ class JobDefinition(PipelineDefinition):
         run_key: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -589,6 +574,9 @@ class JobDefinition(PipelineDefinition):
                 value means that a run will always be launched per evaluation.
             tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
                 to the launched run.
+            run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
+                a :py:class:`PartitionedConfig`, this value will override replace the config
+                provided by it.
 
         Returns:
             RunRequest: an object that requests a run to process the given partition.
@@ -598,7 +586,6 @@ class JobDefinition(PipelineDefinition):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
         partition = partition_set.get_partition(partition_key)
-        run_config = partition_set.run_config_for_partition(partition)
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags
@@ -607,7 +594,9 @@ class JobDefinition(PipelineDefinition):
 
         return RunRequest(
             run_key=run_key,
-            run_config=run_config,
+            run_config=run_config
+            if run_config is not None
+            else partition_set.run_config_for_partition(partition),
             tags=run_request_tags,
             job_name=self.name,
             asset_selection=asset_selection,

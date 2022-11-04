@@ -8,7 +8,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 
 from ..graphql.graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from ..graphql.setup import csv_hello_world_solids_config
+from ..graphql.repo import csv_hello_world_solids_config
 from .conftest import MockClient, python_client_test_suite
 
 
