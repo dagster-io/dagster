@@ -335,17 +335,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/dagster",
         env_vars=["AWS_ACCOUNT_ID"],
         pytest_tox_factors=[
-            "api_tests",
-            "cli_tests",
-            "core_tests",
-            "core_tests_old_sqlalchemy",
-            "daemon_sensor_tests",
-            "daemon_tests",
-            "definitions_tests_old_pendulum",
-            "general_tests",
-            "scheduler_tests",
-            "scheduler_tests_old_pendulum",
-            "execution_tests",
+            "repro_segfault",
         ],
     ),
     PackageSpec(
