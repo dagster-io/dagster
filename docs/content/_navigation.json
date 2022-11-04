@@ -415,15 +415,57 @@
             "children": [
               {
                 "title": "Amazon ECS",
-                "path": "/dagster-cloud/deployment/agents/amazon-ecs"
+                "path": "/dagster-cloud/deployment/agents/amazon-ecs",
+                "children": [
+                  {
+                    "title": "Setup in new VPC",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc"
+                  },
+                  {
+                    "title": "Setup in existing VPC",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc"
+                  },
+                  {
+                    "title": "Manual provision",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/manually-provisioning-ecs-agent"
+                  },
+                  {
+                    "title": "Configuration",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference"
+                  },
+                  {
+                    "title": "Upgrade CloudFormation",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template"
+                  }
+                ]
               },
               {
                 "title": "Docker",
-                "path": "/dagster-cloud/deployment/agents/docker"
+                "path": "/dagster-cloud/deployment/agents/docker",
+                "children": [
+                  {
+                    "title": "Setup",
+                    "path": "/dagster-cloud/deployment/agents/docker/configuring-running-docker-agent"
+                  },
+                  {
+                    "title": "Configuration",
+                    "path": "/dagster-cloud/deployment/agents/docker/configuration-reference"
+                  }
+                ]
               },
               {
                 "title": "Kubernetes",
-                "path": "/dagster-cloud/deployment/agents/kubernetes"
+                "path": "/dagster-cloud/deployment/agents/kubernetes",
+                "children": [
+                  {
+                    "title": "Setup",
+                    "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+                  },
+                  {
+                    "title": "Configuration",
+                    "path": "/dagster-cloud/deployment/agents/kubernetes/configuration-reference"
+                  }
+                ]
               },
               {
                 "title": "Local",
@@ -579,10 +621,6 @@
           {
             "title": "Software-defined assets with Pandas & PySpark",
             "path": "/guides/dagster/software-defined-assets"
-          },
-          {
-            "title": "Using environment variables and secrets",
-            "path": "/guides/dagster/using-environment-variables-and-secrets-in-dagster-os"
           },
           {
             "title": "Re-executing jobs",
