@@ -196,8 +196,8 @@ def test_user_forgot_dict_type_annotation_for_multiple_partitions(
 
     with pytest.raises(
         CheckError,
-        match=r"Failure condition: Received .*"
-        "but the input has multiple partitions. .* should be used in this case.",
+        match=r".* If you are loading multiple partitions, the upstream asset type annotation "
+        "should be a typing.Dict.",
     ):
         materialize(
             [*upstream_asset.to_source_assets(), downstream_asset],

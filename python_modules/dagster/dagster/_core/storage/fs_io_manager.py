@@ -144,14 +144,6 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
         super().__init__(base_path=UPath(base_dir, **kwargs))
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
-        if context.dagster_type.typing_type == type(None):
-            check.invariant(
-                obj is None,
-                "Output had Nothing type or 'None' annotation, but handle_output received value "
-                f"that was not None and was of type {type(obj)}.",
-            )
-            return None
-
         try:
             with path.open("wb") as file:
                 pickle.dump(obj, file, PICKLE_PROTOCOL)

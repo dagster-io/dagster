@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from abc import abstractmethod
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Dict, Union
 
 from upath import UPath
 
@@ -17,8 +17,8 @@ class UPathIOManager(MemoizableIOManager):
 
     Features:
      - working with any filesystem supported by `fsspec`
-     - handling loading multiple upstream asset partitions via PartitionMapping
-     (returns a dictionary with mappings from partition_keys to loaded objects)
+     - handling loading multiple upstream asset partitions via PartitionDict
+     (returns a dictionary with Dicts from partition_keys to loaded objects)
      - the `get_metadata` method can be customized to add additional metadata to the outputs
      - the `allow_missing_partitions: bool` metadata value can control
      either raising an error or skipping on missing partitions
@@ -111,9 +111,9 @@ class UPathIOManager(MemoizableIOManager):
 
     def _get_paths_for_partitions(
         self, context: Union[InputContext, OutputContext]
-    ) -> Mapping[str, UPath]:
+    ) -> Dict[str, UPath]:
         """
-        Returns a mapping of partition_keys into I/O paths for a given context.
+        Returns a Dict of partition_keys into I/O paths for a given context.
         Args:
             context:
 
@@ -135,85 +135,120 @@ class UPathIOManager(MemoizableIOManager):
 
         return paths
 
+    def _load_single_input(self, path: UPath, context: InputContext) -> Any:
+        context.log.debug(f"Loading from {path} using {self.__class__.__name__}")
+        obj = self.load_from_path(context=context, path=path)
+
+        metadata = {"path": MetadataValue.path(path)}
+        custom_metadata = self.get_metadata(obj, context)
+        metadata.update(custom_metadata)  # type: ignore
+        context.add_input_metadata(metadata)
+
+        return obj
+
+    def _load_multiple_inputs(self, context: InputContext) -> Dict[str, Any]:
+        # load multiple partitions
+        allow_missing_partitions = (
+            context.metadata.get("allow_missing_partitions", False)
+            if context.metadata is not None
+            else False
+        )
+
+        objs: Dict[str, Any] = {}
+        paths = self._get_paths_for_partitions(context)
+
+        context.log.debug(f"Loading {len(paths)} partitions...")
+
+        for partition_key, path in paths.items():
+            context.log.debug(f"Loading partition from {path} using {self.__class__.__name__}")
+            try:
+                obj = self.load_from_path(context=context, path=path)
+                objs[partition_key] = obj
+            except FileNotFoundError as e:
+                if not allow_missing_partitions:
+                    raise e
+                context.log.debug(
+                    f"Couldn't load partition {path} and skipped it "
+                    f"because the input metadata includes allow_missing_partitions=True"
+                )
+
+        # TODO: context.add_output_metadata fails in the partitioned context. this should be fixed?
+        return objs
+
     def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
-        if not context.has_asset_partitions or not self._has_multiple_partitions(context):
-            # we are not dealing with multiple partitions
-            if context.has_asset_partitions:
-                # we are dealing with a single partition
-                paths = self._get_paths_for_partitions(context)
-                assert len(paths) == 1
-                path = list(paths.values())[0]
-            else:
-                # we are dealing with a non-partitioned asset / OP output
-                path = self._get_path(context)
-
-            context.log.debug(f"Loading from {path} using {self.__class__.__name__}")
-            obj = self.load_from_path(context=context, path=path)
-
-            metadata = {"path": MetadataValue.path(path)}
-            custom_metadata = self.get_metadata(obj, context)
-            metadata.update(custom_metadata)  # type: ignore
-            context.add_input_metadata(metadata)
-
-            return obj
+        if not context.has_asset_key:
+            # we are dealing with an op output which is always non-partitioned
+            path = self._get_path(context)
+            return self._load_single_input(path, context)
         else:
-            # we are dealing with multiple partitions
-            # force the user to specify the correct type annotation
-            expected_type = inspect.signature(self.dump_to_path).parameters["obj"].annotation
+            if not context.has_asset_partitions:
+                # we are dealing with a non-partitioned asset
+                path = self._get_path(context)
+                return self._load_single_input(path, context)
+            else:
+                expected_type = inspect.signature(self.dump_to_path).parameters["obj"].annotation
 
-            if context.dagster_type.typing_type == expected_type and self._has_multiple_partitions(
-                context
-            ):
-                return check.failed(
-                    f"Received `{context.dagster_type.typing_type.__name__}` type "
-                    f"in input DagsterType {context.dagster_type}, "
-                    f"but the input has multiple partitions. "
-                    f"`Mapping[str, {context.dagster_type.typing_type.__name__}]` should be used in this case."
-                )
-            elif (
-                hasattr(context.dagster_type.typing_type, "__origin__")
-                and context.dagster_type.typing_type.__origin__ in (Dict, dict)
-                and context.dagster_type.typing_type.__args__[1] == expected_type
-                and self._has_multiple_partitions(context)
-            ):
-                # load multiple partitions
-                allow_missing_partitions = (
-                    context.metadata.get("allow_missing_partitions", False)
-                    if context.metadata is not None
-                    else False
-                )
-
-                objs: Dict[str, Any] = {}
-                paths = self._get_paths_for_partitions(context)
-
-                context.log.debug(f"Loading {len(paths)} partitions...")
-
-                for partition_key, path in paths.items():
-                    context.log.debug(
-                        f"Loading partition from {path} using {self.__class__.__name__}"
-                    )
-                    try:
-                        obj = self.load_from_path(context=context, path=path)
-                        objs[partition_key] = obj
-                    except FileNotFoundError as e:
-                        if not allow_missing_partitions:
-                            raise e
-                        context.log.debug(
-                            f"Couldn't load partition {path} and skipped it "
-                            f"because the input metadata includes allow_missing_partitions=True"
+                if not self._has_multiple_partitions(context):
+                    if (
+                        hasattr(context.dagster_type.typing_type, "__origin__")
+                        and context.dagster_type.typing_type.__origin__ in (Dict, dict)
+                        and context.dagster_type.typing_type.__args__[1] == expected_type
+                    ):
+                        # the asset type annotation is accidentally a Dict[str, expected_type]
+                        # even tho no partition mappings are used
+                        return check.failed(
+                            f"Received `{context.dagster_type.typing_type}` type "
+                            f"in input of DagsterType {context.dagster_type}, "
+                            f"but `{self.dump_to_path}` has {expected_type} type annotation for obj. "
+                            f"They should match. "
+                            f"If you are loading a single partition, the upstream asset type annotation "
+                            f"should not be a typing.Dict, but a single partition type."
                         )
 
-                # TODO: context.add_output_metadata fails in the partitioned context. this should be fixed?
-                return objs
-            else:
-                return check.failed(
-                    f"Received `{context.dagster_type.typing_type.__name__}` type "
-                    f"in input DagsterType {context.dagster_type}, "
-                    f"but `{self.dump_to_path}` has {expected_type} type annotation. "
-                    f"They should match."
-                )
+                    # we are dealing with a single partition of a non-partitioned asset
+                    paths = self._get_paths_for_partitions(context)
+                    assert len(paths) == 1  # should only have 1 partition
+                    path = list(paths.values())[0]
+                    return self._load_single_input(path, context)
+                elif (
+                    hasattr(context.dagster_type.typing_type, "__origin__")
+                    and context.dagster_type.typing_type.__origin__ in (Dict, dict)
+                    and context.dagster_type.typing_type.__args__[1] == expected_type
+                    and self._has_multiple_partitions(context)
+                ):
+
+                    if (
+                        context.dagster_type.typing_type == expected_type
+                        and self._has_multiple_partitions(context)
+                    ):
+                        return check.failed(
+                            f"Received `{context.dagster_type.typing_type}` type "
+                            f"in input DagsterType {context.dagster_type}, "
+                            f"but the input has multiple partitions. "
+                            f"`Dict[str, {context.dagster_type.typing_type}]` should be used in this case."
+                        )
+
+                    # we are dealing with multiple partitions of an asset
+                    return self._load_multiple_inputs(context)
+                else:
+                    return check.failed(
+                        f"Received `{context.dagster_type.typing_type}` type "
+                        f"in input of DagsterType {context.dagster_type}, "
+                        f"but `{self.dump_to_path}` has {expected_type} type annotation for obj. "
+                        f"They should be both specified with type annotations and match. "
+                        f"If you are loading multiple partitions, the upstream asset type annotation "
+                        f"should be a typing.Dict."
+                    )
 
     def handle_output(self, context: OutputContext, obj: Any):
+        if context.dagster_type.typing_type == type(None):
+            check.invariant(
+                obj is None,
+                "Output had Nothing type or 'None' annotation, but handle_output received value "
+                f"that was not None and was of type {type(obj)}.",
+            )
+            return None
+
         if context.has_asset_partitions:
             paths = self._get_paths_for_partitions(context)
             assert len(paths) == 1
