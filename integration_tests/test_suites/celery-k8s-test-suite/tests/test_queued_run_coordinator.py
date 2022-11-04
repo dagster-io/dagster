@@ -1,5 +1,6 @@
 import os
 
+import pytest
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_run_over_graphql
 from dagster_test.test_project import get_test_project_environments_path
@@ -32,6 +33,7 @@ def assert_events_in_order(logs, expected_events):
 
 
 @mark_daemon
+@pytest.mark.flaky(reruns=2)
 def test_execute_queued_run_on_celery_k8s(  # pylint: disable=redefined-outer-name
     dagster_docker_image,
     dagster_instance_for_daemon,
