@@ -54,7 +54,7 @@ def assets_dbt_python():
         resource_defs={
             # this io_manager allows us to load dbt models as pandas dataframes
             "io_manager": duckdb_io_manager.configured(
-                {"duckdb_path": os.path.join(DBT_PROJECT_DIR, "example.duckdb")}
+                {"database": os.path.join(DBT_PROJECT_DIR, "example.duckdb")}
             ),
             # this io_manager is responsible for storing/loading our pickled machine learning model
             "model_io_manager": fs_io_manager,
