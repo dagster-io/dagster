@@ -337,6 +337,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=[
             "repro_segfault",
         ],
+        upload_coverage=False,
     ),
     PackageSpec(
         "python_modules/dagster-graphql",
