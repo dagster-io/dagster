@@ -177,7 +177,6 @@ type DagitQuery {
     group: AssetGroupSelector
     pipeline: PipelineSelector
     assetKeys: [AssetKeyInput!]
-    loadMaterializations: Boolean = false
   ): [AssetNode!]!
 
   """

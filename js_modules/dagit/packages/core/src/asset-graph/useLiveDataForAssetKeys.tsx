@@ -173,7 +173,7 @@ export const ASSET_LATEST_INFO_FRAGMENT = gql`
 
 const ASSETS_GRAPH_LIVE_QUERY = gql`
   query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
-    assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+    assetNodes(assetKeys: $assetKeys) {
       id
       ...AssetNodeLiveFragment
     }

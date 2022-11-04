@@ -9,7 +9,7 @@ import {assembleIntoSpans} from '../partitions/PartitionRangeInput';
 import {AssetKey} from './types';
 import {PartitionHealthQuery, PartitionHealthQueryVariables} from './types/PartitionHealthQuery';
 
-interface PartitionHealthData {
+export interface PartitionHealthData {
   assetKey: AssetKey;
   keys: string[];
   spans: {startIdx: number; endIdx: number; status: boolean}[];
@@ -17,59 +17,64 @@ interface PartitionHealthData {
   indexToPct: (idx: number) => string;
 }
 
+const MAX_FETCH_AT_ONCE = 50;
+
+// Sometimes we get a typename, sometimes we don't -- use only the path
+const keyToJSON = (key: AssetKey) => JSON.stringify({path: key.path});
+
 export function usePartitionHealthData(assetKeys: AssetKey[]) {
   const [result, setResult] = React.useState<PartitionHealthData[]>([]);
   const client = useApolloClient();
 
-  const assetKeyJSONs = assetKeys.map((k) => JSON.stringify(k));
-  const missingKeyJSON = assetKeyJSONs.find(
-    (k) => !result.some((r) => JSON.stringify(r.assetKey) === k),
+  const assetKeyJSONs = assetKeys.map(keyToJSON);
+  const missingKeyJSONs = JSON.stringify(
+    assetKeyJSONs
+      .filter((k) => !result.some((r) => keyToJSON(r.assetKey) === k))
+      .slice(0, MAX_FETCH_AT_ONCE),
   );
 
   React.useMemo(() => {
-    if (!missingKeyJSON) {
+    const loadKeys: AssetKey[] = JSON.parse(missingKeyJSONs).map((keyJSON: string) =>
+      JSON.parse(keyJSON),
+    );
+    if (!loadKeys.length) {
       return;
     }
-    const loadKey: AssetKey = JSON.parse(missingKeyJSON);
     const load = async () => {
       const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
         query: PARTITION_HEALTH_QUERY,
         fetchPolicy: 'network-only',
-        variables: {
-          assetKey: {path: loadKey.path},
-        },
+        variables: {assetKeys: loadKeys},
       });
-      const latest =
-        (data &&
-          data.assetNodeOrError.__typename === 'AssetNode' &&
-          data.assetNodeOrError.materializationCountByPartition) ||
-        [];
 
-      const keys =
-        data && data.assetNodeOrError.__typename === 'AssetNode'
-          ? data.assetNodeOrError.materializationCountByPartition.map(({partition}) => partition)
-          : [];
+      const added: PartitionHealthData[] = [];
+      for (const node of data.assetNodes) {
+        const latest =
+          (node.__typename === 'AssetNode' && node.materializationCountByPartition) || [];
 
-      const statusByPartition = fromPairs(
-        latest.map((l) => [l.partition, !!l.materializationCount]),
-      );
-      const spans = assembleIntoSpans(keys, (key) => statusByPartition[key]);
+        const keys =
+          node.__typename === 'AssetNode'
+            ? node.materializationCountByPartition.map(({partition}) => partition)
+            : [];
 
-      setResult((result) => [
-        ...result,
-        {
+        const statusByPartition = fromPairs(
+          latest.map((l) => [l.partition, !!l.materializationCount]),
+        );
+        added.push({
           keys,
-          spans,
-          assetKey: loadKey,
           statusByPartition,
+          assetKey: node.assetKey,
+          spans: assembleIntoSpans(keys, (key) => statusByPartition[key]),
           indexToPct: (idx: number) => `${((idx * 100) / keys.length).toFixed(3)}%`,
-        },
-      ]);
+        });
+      }
+
+      setResult((result) => [...result, ...added]);
     };
     load();
-  }, [client, missingKeyJSON]);
+  }, [client, missingKeyJSONs]);
 
-  return result.filter((r) => assetKeyJSONs.includes(JSON.stringify(r.assetKey)));
+  return result.filter((r) => assetKeyJSONs.includes(keyToJSON(r.assetKey)));
 }
 
 export const PartitionHealthSummary: React.FC<{
@@ -188,14 +193,15 @@ export const PartitionHealthSummary: React.FC<{
 };
 
 const PARTITION_HEALTH_QUERY = gql`
-  query PartitionHealthQuery($assetKey: AssetKeyInput!) {
-    assetNodeOrError(assetKey: $assetKey) {
-      ... on AssetNode {
-        id
-        materializationCountByPartition {
-          partition
-          materializationCount
-        }
+  query PartitionHealthQuery($assetKeys: [AssetKeyInput!]!) {
+    assetNodes(assetKeys: $assetKeys) {
+      id
+      assetKey {
+        path
+      }
+      materializationCountByPartition {
+        partition
+        materializationCount
       }
     }
   }

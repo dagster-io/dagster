@@ -22,7 +22,11 @@ from dagster._core.host_representation.external_data import (
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
 from ..implementation.fetch_runs import AssetComputeStatus
-from ..implementation.loader import BatchMaterializationLoader, CountByPartitionLoader, CrossRepoAssetDependedByLoader
+from ..implementation.loader import (
+    BatchMaterializationLoader,
+    CountByPartitionLoader,
+    CrossRepoAssetDependedByLoader,
+)
 from . import external
 from .asset_key import GrapheneAssetKey
 from .dagster_types import GrapheneDagsterType, to_dagster_type
@@ -468,7 +472,11 @@ class GrapheneAssetNode(graphene.ObjectType):
         if self._count_by_partition_loader:
             count_by_partition = self._count_by_partition_loader.get_results(asset_key)
         else:
-            count_by_partition = graphene_info.context.instance.get_materialization_count_by_partition([asset_key])[asset_key]
+            count_by_partition = (
+                graphene_info.context.instance.get_materialization_count_by_partition([asset_key])[
+                    asset_key
+                ]
+            )
 
         return [
             GrapheneMaterializationCount(partition_key, count_by_partition.get(partition_key, 0))

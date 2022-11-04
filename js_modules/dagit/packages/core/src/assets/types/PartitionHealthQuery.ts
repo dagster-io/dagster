@@ -9,28 +9,28 @@ import { AssetKeyInput } from "./../../types/globalTypes";
 // GraphQL query operation: PartitionHealthQuery
 // ====================================================
 
-export interface PartitionHealthQuery_assetNodeOrError_AssetNotFoundError {
-  __typename: "AssetNotFoundError";
+export interface PartitionHealthQuery_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
 }
 
-export interface PartitionHealthQuery_assetNodeOrError_AssetNode_materializationCountByPartition {
+export interface PartitionHealthQuery_assetNodes_materializationCountByPartition {
   __typename: "MaterializationCountByPartition";
   partition: string;
   materializationCount: number;
 }
 
-export interface PartitionHealthQuery_assetNodeOrError_AssetNode {
+export interface PartitionHealthQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
-  materializationCountByPartition: PartitionHealthQuery_assetNodeOrError_AssetNode_materializationCountByPartition[];
+  assetKey: PartitionHealthQuery_assetNodes_assetKey;
+  materializationCountByPartition: PartitionHealthQuery_assetNodes_materializationCountByPartition[];
 }
 
-export type PartitionHealthQuery_assetNodeOrError = PartitionHealthQuery_assetNodeOrError_AssetNotFoundError | PartitionHealthQuery_assetNodeOrError_AssetNode;
-
 export interface PartitionHealthQuery {
-  assetNodeOrError: PartitionHealthQuery_assetNodeOrError;
+  assetNodes: PartitionHealthQuery_assetNodes[];
 }
 
 export interface PartitionHealthQueryVariables {
-  assetKey: AssetKeyInput;
+  assetKeys: AssetKeyInput[];
 }

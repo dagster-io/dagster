@@ -50,7 +50,11 @@ from ...implementation.fetch_schedules import (
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
-from ...implementation.loader import BatchMaterializationLoader, CountByPartitionLoader, CrossRepoAssetDependedByLoader
+from ...implementation.loader import (
+    BatchMaterializationLoader,
+    CountByPartitionLoader,
+    CrossRepoAssetDependedByLoader,
+)
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
 from ..asset_graph import (
@@ -581,7 +585,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         materialization_loader = BatchMaterializationLoader(
             instance=graphene_info.context.instance, asset_keys=[node.assetKey for node in results]
         )
-        
+
         count_by_partition_loader = CountByPartitionLoader(
             instance=graphene_info.context.instance, asset_keys=[node.assetKey for node in results]
         )
@@ -594,7 +598,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 node.external_asset_node,
                 materialization_loader=materialization_loader,
                 depended_by_loader=depended_by_loader,
-                count_by_partition_loader=count_by_partition_loader
+                count_by_partition_loader=count_by_partition_loader,
             )
             for node in results
         ]

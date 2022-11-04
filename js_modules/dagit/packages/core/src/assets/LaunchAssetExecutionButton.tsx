@@ -534,7 +534,7 @@ const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
 
 const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
   query LaunchAssetCheckUpstreamQuery($assetKeys: [AssetKeyInput!]!) {
-    assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+    assetNodes(assetKeys: $assetKeys) {
       id
       assetKey {
         path
