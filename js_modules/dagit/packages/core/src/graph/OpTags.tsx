@@ -38,13 +38,13 @@ function hueForTag(text = '') {
 
 function getTag(tag: IOpTag) {
   if (tag.label === 'noteable') {
-    return <img src={noteable_logo} />;
+    return <img src={noteable_logo} alt="Noteable logo" role="img" />;
   } else if (tag.label === 'ipynb') {
-    return <img src={jupyter_logo} />;
+    return <img src={jupyter_logo} alt="Jupyter logo" role="img" />;
   } else if (tag.label === 'airbyte') {
-    return <img src={airbyte_logo} />;
+    return <img src={airbyte_logo} alt="Airbyte logo" role="img" />;
   } else if (tag.label === 'dbt') {
-    return <img src={dbt_logo} />;
+    return <img src={dbt_logo} alt="dbt logo" role="img" />;
   } else {
     return (
       <div
