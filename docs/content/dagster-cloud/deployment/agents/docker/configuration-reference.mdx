@@ -26,6 +26,6 @@ container_context:
       - DATABASE_USERNAME=hooli_testing
 ```
 
-The `container_context.docker.env_vars` property is a list, where each item can be either `KEY` or `KEY=VALUE`. If only `KEY`, the value will be pulled from the local environment.
+The `container_context.docker.env_vars` property is a list, where each item can be either `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the local environment.
 
 **Note**: Environment variables and secrets can also be set using the [Dagster Cloud UI](/dagster-cloud/developing-testing/environment-variables#declaring-environment-variables).

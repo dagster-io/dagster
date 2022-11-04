@@ -91,16 +91,16 @@ Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secret
 container_context:
   k8s:
     env_vars:
-      - DATABASE_NAME
-      - DATABASE_USERNAME=hooli_testing
+      - database_name
+      - database_username=hooli_testing
     env_secrets:
-      - DATABASE_PASSWORD
+      - database_password
 ```
 
 <ReferenceTable>
   <ReferenceTableItem propertyName="env_vars">
     A list of environment variable names to inject into the job, formatted as{" "}
-    <code>KEY</code> or <code>KEY=VALUE</code>. If only <code>KEY</code>, the
+    <code>KEY</code> or <code>KEY=VALUE</code>. If only <code>KEY</code> is specified, the
     value will be pulled from the current process.
   </ReferenceTableItem>
   <ReferenceTableItem propertyName="env_secrets">
