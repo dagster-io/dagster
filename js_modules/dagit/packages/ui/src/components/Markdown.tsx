@@ -1,7 +1,10 @@
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
 import gfm from 'remark-gfm';
 import styled from 'styled-components/macro';
+
+import 'highlight.js/styles/github.css';
 
 import {Colors} from './Colors';
 import {FontFamily} from './styles';
@@ -13,7 +16,7 @@ interface Props {
 export const Markdown: React.FC<Props> = (props) => {
   return (
     <Container>
-      <ReactMarkdown remarkPlugins={[gfm]} {...props} />
+      <ReactMarkdown remarkPlugins={[gfm]} rehypePlugins={[rehypeHighlight]} {...props} />
     </Container>
   );
 };
