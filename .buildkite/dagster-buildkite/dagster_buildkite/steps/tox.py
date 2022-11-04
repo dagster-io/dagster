@@ -56,7 +56,6 @@ def build_tox_step(
         "pip install -U virtualenv",
         f"echo -e {shlex.quote(buildkite_section_header)}",
         tox_command,
-        "ps aux",
         *(extra_commands_post or []),
     ]
 
