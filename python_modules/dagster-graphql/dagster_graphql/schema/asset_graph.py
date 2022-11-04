@@ -1,5 +1,4 @@
-from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries

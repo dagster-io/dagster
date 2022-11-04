@@ -244,7 +244,14 @@ async function stateForLaunchingAssets(
   }
 
   const partitionDefinition = assets.find((a) => !!a.partitionDefinition)?.partitionDefinition;
-  if (assets.some((a) => a.partitionDefinition && a.partitionDefinition !== partitionDefinition)) {
+  if (
+    assets.some(
+      (a) =>
+        a.partitionDefinition &&
+        partitionDefinition &&
+        a.partitionDefinition.description !== partitionDefinition.description,
+    )
+  ) {
     return {
       type: 'error',
       error: 'Assets must share a partition definition to be materialized together.',

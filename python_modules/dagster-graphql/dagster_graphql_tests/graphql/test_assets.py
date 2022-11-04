@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Dict, List, Mapping
+from typing import Dict, List
 
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -389,7 +389,7 @@ def _create_run(
                 "mode": mode,
                 "stepKeys": step_keys,
                 "executionMetadata": {
-                    "tags": tags,
+                    "tags": tags if tags else [],
                 },
             }
         },

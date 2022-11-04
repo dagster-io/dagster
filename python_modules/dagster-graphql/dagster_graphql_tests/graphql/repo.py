@@ -27,7 +27,6 @@ from dagster import (
     AssetsDefinition,
     Bool,
     DagsterInstance,
-    DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOutput,

@@ -152,6 +152,20 @@ class TimeWindowPartitionsDefinition(
             partition_def_str += f" End offsetted by {self.end_offset} partition{'' if self.end_offset == 1 else 's'}."
         return partition_def_str
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, TimeWindowPartitionsDefinition)
+            and pendulum.instance(self.start, tz=self.timezone).timestamp()
+            == pendulum.instance(other.start, tz=other.timezone).timestamp()
+            and self.timezone == other.timezone
+            and self.fmt == other.fmt
+            and self.end_offset == other.end_offset
+            and self.cron_schedule == other.cron_schedule
+        )
+
+    def __hash__(self):
+        return hash(tuple(self.__repr__()))
+
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         partition_key_dt = pendulum.instance(
             datetime.strptime(partition_key, self.fmt), tz=self.timezone

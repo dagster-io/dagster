@@ -87,6 +87,13 @@ class PartitionDimensionDefinition(
             partitions_def=check.inst_param(partitions_def, "partitions_def", PartitionsDefinition),
         )
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, PartitionDimensionDefinition)
+            and self.name == other.name
+            and self.partitions_def == other.partitions_def
+        )
+
 
 @experimental
 class MultiPartitionsDefinition(PartitionsDefinition):
@@ -184,7 +191,14 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         )
 
     def __hash__(self):
-        return hash(tuple(self.partitions_defs))
+        return hash(
+            tuple(
+                [
+                    (partitions_def.name, partitions_def.__repr__())
+                    for partitions_def in self.partitions_defs
+                ]
+            )
+        )
 
     def __str__(self) -> str:
         dimension_1 = self._partitions_defs[0]
