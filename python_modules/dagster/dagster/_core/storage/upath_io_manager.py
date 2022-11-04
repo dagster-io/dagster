@@ -18,7 +18,7 @@ class UPathIOManager(MemoizableIOManager):
     Features:
      - working with any filesystem supported by `fsspec`
      - handling loading multiple upstream asset partitions via PartitionDict
-     (returns a dictionary with Dicts from partition_keys to loaded objects)
+     (returns a dictionary with mapping from partition_keys to loaded objects)
      - the `get_metadata` method can be customized to add additional metadata to the outputs
      - the `allow_missing_partitions: bool` metadata value can control
      either raising an error or skipping on missing partitions
@@ -113,7 +113,7 @@ class UPathIOManager(MemoizableIOManager):
         self, context: Union[InputContext, OutputContext]
     ) -> Dict[str, UPath]:
         """
-        Returns a Dict of partition_keys into I/O paths for a given context.
+        Returns a dict of partition_keys into I/O paths for a given context.
         Args:
             context:
 
