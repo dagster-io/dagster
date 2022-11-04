@@ -148,9 +148,29 @@ def docker_grpc_client(
 # https://github.com/dagster-io/dagster/pull/10343
 @pytest.fixture(autouse=True)
 def mock_tqdm(monkeypatch):
-    def noop_tqdm(iterable):
-        return iterable
+    class MockTqdm:
+        def __init__(self, iterable=None, **_kwargs):
+            self._iterable = iterable
 
-    monkeypatch.setattr("tqdm.tqdm", noop_tqdm)
+        def __iter__(self):
+            for obj in self._iterable:
+                yield obj
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return
+
+        def update(self, n=1):
+            pass
+
+    # tqdm (may) sporadically crash during tests, so mock it out
+    monkeypatch.setattr("dagster._core.storage.event_log.sqlite.sqlite_event_log.tqdm", MockTqdm)
+    monkeypatch.setattr("dagster._core.storage.event_log.migration.tqdm", MockTqdm)
+    monkeypatch.setattr("dagster._core.storage.runs.migration.tqdm", MockTqdm)
+    monkeypatch.setattr("dagster._core.storage.schedules.migration.tqdm", MockTqdm)
+    monkeypatch.setattr("dagster._cli.debug.tqdm", MockTqdm)
+    monkeypatch.setattr("dagster._cli.run.tqdm", MockTqdm)
 
     yield
