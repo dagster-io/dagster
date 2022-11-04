@@ -67,6 +67,7 @@ def test_load_grpc_server(capfd):
 
     finally:
         process.terminate()
+        process.wait()
 
     out, _err = capfd.readouterr()
 
@@ -89,6 +90,7 @@ def test_python_environment_args():
     finally:
         if process:
             process.terminate()
+            process.wait()
 
 
 def test_empty_executable_args():
@@ -110,6 +112,7 @@ def test_empty_executable_args():
     finally:
         if process:
             process.terminate()
+            process.wait()
 
 
 def test_load_grpc_server_python_env():
@@ -141,6 +144,7 @@ def test_load_grpc_server_python_env():
 
     finally:
         process.terminate()
+        process.wait()
 
 
 def test_load_via_auto_env_var_prefix():
@@ -185,6 +189,7 @@ def test_load_via_auto_env_var_prefix():
 
         finally:
             process.terminate()
+            process.wait()
 
 
 def test_load_via_env_var():
@@ -223,6 +228,7 @@ def test_load_via_env_var():
             assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
         finally:
             process.terminate()
+            process.wait()
 
 
 def test_load_with_invalid_param(capfd):
@@ -256,6 +262,7 @@ def test_load_with_invalid_param(capfd):
             )
     finally:
         process.terminate()
+        process.wait()
 
     _, err = capfd.readouterr()
 
@@ -293,6 +300,7 @@ def test_load_with_error(capfd):
     finally:
         if process.poll() is None:
             process.terminate()
+            process.wait()
 
 
 def test_load_with_non_existant_file(capfd):
@@ -341,6 +349,7 @@ def test_load_with_empty_working_directory(capfd):
             assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
         finally:
             process.terminate()
+            process.wait()
 
         # indicating the working directory is empty fails
 
@@ -373,6 +382,7 @@ def test_load_with_empty_working_directory(capfd):
         finally:
             if process.poll() is None:
                 process.terminate()
+                process.wait()
 
 
 @pytest.mark.skipif(_seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
@@ -408,6 +418,7 @@ def test_crash_during_load():
     finally:
         if process.poll() is None:
             process.terminate()
+            process.wait()
 
 
 def test_load_timeout():
@@ -442,6 +453,7 @@ def test_load_timeout():
 
     finally:
         process.terminate()
+        process.wait()
 
     assert "Timed out waiting for gRPC server to start" in str(timeout_exception)
     assert "Most recent connection error: " in str(timeout_exception)
@@ -477,6 +489,7 @@ def test_lazy_load_with_error():
         assert "Dagster recognizes standard cron expressions" in list_repositories_response.message
     finally:
         process.terminate()
+        process.wait()
 
 
 @pytest.mark.skip(reason="Sporadically failing with segfault")
@@ -513,6 +526,7 @@ def test_lazy_load_via_env_var():
             )
         finally:
             process.terminate()
+            process.wait()
 
 
 def test_streaming():
@@ -546,6 +560,7 @@ def test_streaming():
             assert result["echo"] == "foo"
     finally:
         process.terminate()
+        process.wait()
 
 
 def test_sensor_timeout():
@@ -608,6 +623,7 @@ def test_sensor_timeout():
             )
     finally:
         process.terminate()
+        process.wait()
 
 
 def test_load_with_container_context(capfd):
@@ -649,6 +665,7 @@ def test_load_with_container_context(capfd):
 
     finally:
         process.terminate()
+        process.wait()
 
     out, _err = capfd.readouterr()
 

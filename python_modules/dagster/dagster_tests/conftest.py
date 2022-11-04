@@ -2,8 +2,6 @@ import os
 import subprocess
 import sys
 
-import pytest
-
 import dagster._seven as seven
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -13,14 +11,3 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 # Fixed in later versions of Python but never back-ported, see the bug for details.
 if seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6:
     subprocess._cleanup = lambda: None  # type: ignore # pylint: disable=protected-access
-
-
-# https://github.com/dagster-io/dagster/pull/10343
-@pytest.fixture(autouse=True)
-def mock_tqdm(monkeypatch):
-    def noop_tqdm(iterable):
-        return iterable
-
-    monkeypatch.setattr("tqdm.tqdm", noop_tqdm)
-
-    yield
