@@ -376,6 +376,7 @@ def test_load_with_empty_working_directory(capfd):
 
 
 @pytest.mark.skipif(_seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
+@pytest.mark.skip
 def test_crash_during_load():
     port = find_free_port()
     python_file = file_relative_path(__file__, "crashy_grpc_repo.py")
