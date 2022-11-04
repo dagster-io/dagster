@@ -113,6 +113,7 @@ setup(
             "yamllint",
             "astroid",  # let pylint determine the version
             "pylint==2.13.7",
+            "psutil",
         ],
         "black": [
             "black[jupyter]==22.3.0",

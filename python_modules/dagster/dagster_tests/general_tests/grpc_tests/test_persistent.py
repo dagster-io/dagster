@@ -1,10 +1,12 @@
 import json
+import logging
 import os
 import re
 import subprocess
 import sys
 import uuid
 
+import psutil
 import pytest
 
 from dagster import _seven
@@ -45,7 +47,9 @@ def test_load_grpc_server(capfd):
         python_file,
     ]
 
+    logging.warning([p.pid for p in psutil.process_iter()])
     process = subprocess.Popen(subprocess_args)
+    logging.warning(process.pid)
 
     try:
 
@@ -82,9 +86,11 @@ def test_python_environment_args():
 
     process = None
     try:
+        logging.warning([p.pid for p in psutil.process_iter()])
         process = open_server_process(
             port, socket=None, loadable_target_origin=loadable_target_origin
         )
+        logging.warning(process.pid)
         assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
     finally:
         if process:
@@ -98,9 +104,11 @@ def test_empty_executable_args():
     # with an empty executable_path, the args change
     process = None
     try:
+        logging.warning([p.pid for p in psutil.process_iter()])
         process = open_server_process(
             port, socket=None, loadable_target_origin=loadable_target_origin
         )
+        logging.warning(process.pid)
         assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
 
         client = DagsterGrpcClient(port=port, host="localhost")
@@ -127,7 +135,9 @@ def test_load_grpc_server_python_env():
         "--use-python-environment-entry-point",
     ]
 
+    logging.warning([p.pid for p in psutil.process_iter()])
     process = subprocess.Popen(subprocess_args)
+    logging.warning(process.pid)
 
     try:
 
@@ -167,10 +177,12 @@ def test_load_via_auto_env_var_prefix():
             "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT": json.dumps(container_context),
         }
     ):
+        logging.warning([p.pid for p in psutil.process_iter()])
         process = subprocess.Popen(
             subprocess_args,
             stdout=subprocess.PIPE,
         )
+        logging.warning(process.pid)
 
         try:
             wait_for_grpc_server(
@@ -211,10 +223,12 @@ def test_load_via_env_var():
             "DAGSTER_CONTAINER_CONTEXT": json.dumps(container_context),
         }
     ):
+        logging.warning([p.pid for p in psutil.process_iter()])
         process = subprocess.Popen(
             subprocess_args,
             stdout=subprocess.PIPE,
         )
+        logging.warning(process.pid)
 
         try:
             wait_for_grpc_server(
@@ -241,10 +255,12 @@ def test_load_with_invalid_param(capfd):
         "bar_value",
     ]
 
+    logging.warning([p.pid for p in psutil.process_iter()])
     process = subprocess.Popen(
         subprocess_args,
         stdout=subprocess.PIPE,
     )
+    logging.warning(process.pid)
 
     try:
         with pytest.raises(
@@ -276,10 +292,12 @@ def test_load_with_error(capfd):
         python_file,
     ]
 
+    logging.warning([p.pid for p in psutil.process_iter()])
     process = subprocess.Popen(
         subprocess_args,
         stdout=subprocess.PIPE,
     )
+    logging.warning(process.pid)
 
     try:
         with pytest.raises(Exception):
@@ -301,6 +319,7 @@ def test_load_with_non_existant_file(capfd):
     python_file = file_relative_path(__file__, "made_up_file_does_not_exist.py")
 
     with pytest.raises(subprocess.CalledProcessError):
+        logging.warning([p.pid for p in psutil.process_iter()])
         subprocess.check_output(
             ["dagster", "api", "grpc", "--port", str(port), "--python-file", python_file],
         )
@@ -329,10 +348,12 @@ def test_load_with_empty_working_directory(capfd):
     ]
 
     with new_cwd(os.path.dirname(__file__)):
+        logging.warning([p.pid for p in psutil.process_iter()])
         process = subprocess.Popen(
             subprocess_args,
             stdout=subprocess.PIPE,
         )
+        logging.warning(process.pid)
 
         try:
             wait_for_grpc_server(
@@ -356,10 +377,12 @@ def test_load_with_empty_working_directory(capfd):
             "--empty-working-directory",
         ]
 
+        logging.warning([p.pid for p in psutil.process_iter()])
         process = subprocess.Popen(
             subprocess_args,
             stdout=subprocess.PIPE,
         )
+        logging.warning(process.pid)
         try:
             with pytest.raises(Exception):
                 wait_for_grpc_server(
@@ -376,7 +399,6 @@ def test_load_with_empty_working_directory(capfd):
 
 
 @pytest.mark.skipif(_seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
-@pytest.mark.skip
 def test_crash_during_load():
     port = find_free_port()
     python_file = file_relative_path(__file__, "crashy_grpc_repo.py")
@@ -391,10 +413,12 @@ def test_crash_during_load():
         python_file,
     ]
 
+    logging.warning([p.pid for p in psutil.process_iter()])
     process = subprocess.Popen(
         subprocess_args,
         stdout=subprocess.PIPE,
     )
+    logging.warning(process.pid)
     try:
 
         with pytest.raises(
@@ -425,7 +449,9 @@ def test_load_timeout():
         python_file,
     ]
 
+    logging.warning([p.pid for p in psutil.process_iter()])
     process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+    logging.warning(process.pid)
 
     timeout_exception = None
 
@@ -465,7 +491,9 @@ def test_lazy_load_with_error():
         "--lazy-load-user-code",
     ]
 
+    logging.warning([p.pid for p in psutil.process_iter()])
     process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+    logging.warning(process.pid)
 
     try:
         wait_for_grpc_server(
@@ -496,10 +524,12 @@ def test_lazy_load_via_env_var():
             python_file,
         ]
 
+        logging.warning([p.pid for p in psutil.process_iter()])
         process = subprocess.Popen(
             subprocess_args,
             stdout=subprocess.PIPE,
         )
+        logging.warning(process.pid)
 
         try:
             wait_for_grpc_server(
@@ -530,10 +560,12 @@ def test_streaming():
         python_file,
     ]
 
+    logging.warning([p.pid for p in psutil.process_iter()])
     process = subprocess.Popen(
         subprocess_args,
         stdout=subprocess.PIPE,
     )
+    logging.warning(process.pid)
 
     try:
         wait_for_grpc_server(
@@ -563,10 +595,12 @@ def test_sensor_timeout():
         python_file,
     ]
 
+    logging.warning([p.pid for p in psutil.process_iter()])
     process = subprocess.Popen(
         subprocess_args,
         stdout=subprocess.PIPE,
     )
+    logging.warning(process.pid)
 
     try:
         wait_for_grpc_server(
@@ -634,7 +668,9 @@ def test_load_with_container_context(capfd):
         json.dumps(container_context),
     ]
 
+    logging.warning([p.pid for p in psutil.process_iter()])
     process = subprocess.Popen(subprocess_args)
+    logging.warning(process.pid)
 
     try:
 
