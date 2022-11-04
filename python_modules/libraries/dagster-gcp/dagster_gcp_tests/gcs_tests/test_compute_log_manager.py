@@ -53,18 +53,29 @@ def test_compute_log_manager(gcs_bucket):
                 ref=InstanceRef.from_dir(temp_dir),
             )
             result = simple.execute_in_process(instance=instance)
-            compute_steps = [
-                event.step_key
-                for event in result.all_node_events
-                if event.event_type == DagsterEventType.STEP_START
+            capture_events = [
+                event
+                for event in result.all_events
+                if event.event_type == DagsterEventType.LOGS_CAPTURED
             ]
-            assert len(compute_steps) == 1
-            step_key = compute_steps[0]
+            assert len(capture_events) == 1
+            event = capture_events[0]
+            file_key = event.logs_captured_data.file_key
+            log_key = manager.build_log_key_for_run(result.run_id, file_key)
 
-            stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+            # Capture API
+            log_data = manager.get_log_data(log_key)
+            stdout = log_data.stdout.decode("utf-8")
+            assert stdout == HELLO_WORLD + SEPARATOR
+            stderr = log_data.stderr.decode("utf-8")
+            for expected in EXPECTED_LOGS:
+                assert expected in stderr
+
+            # Legacy API
+            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
             assert stdout.data == HELLO_WORLD + SEPARATOR
 
-            stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
             for expected in EXPECTED_LOGS:
                 assert expected in stderr.data
 
@@ -72,7 +83,7 @@ def test_compute_log_manager(gcs_bucket):
             stderr_gcs = (
                 storage.Client()
                 .bucket(gcs_bucket)
-                .blob(f"my_prefix/storage/{result.run_id}/compute_logs/easy.err")
+                .blob(f"my_prefix/storage/{result.run_id}/compute_logs/{file_key}.err")
                 .download_as_bytes()
                 .decode("utf-8")
             )
@@ -85,10 +96,19 @@ def test_compute_log_manager(gcs_bucket):
             for filename in os.listdir(compute_logs_dir):
                 os.unlink(os.path.join(compute_logs_dir, filename))
 
-            stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+            # Capture API
+            log_data = manager.get_log_data(log_key)
+            stdout = log_data.stdout.decode("utf-8")
+            assert stdout == HELLO_WORLD + SEPARATOR
+            stderr = log_data.stderr.decode("utf-8")
+            for expected in EXPECTED_LOGS:
+                assert expected in stderr
+
+            # Legacy API
+            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
             assert stdout.data == HELLO_WORLD + SEPARATOR
 
-            stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
             for expected in EXPECTED_LOGS:
                 assert expected in stderr.data
 
@@ -126,18 +146,26 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                     ref=InstanceRef.from_dir(temp_dir),
                 )
                 result = simple.execute_in_process(instance=instance)
-                compute_steps = [
-                    event.step_key
-                    for event in result.all_node_events
-                    if event.event_type == DagsterEventType.STEP_START
+                capture_events = [
+                    event
+                    for event in result.all_events
+                    if event.event_type == DagsterEventType.LOGS_CAPTURED
                 ]
-                assert len(compute_steps) == 1
-                step_key = compute_steps[0]
+                assert len(capture_events) == 1
+                event = capture_events[0]
+                file_key = event.logs_captured_data.file_key
+                log_key = manager.build_log_key_for_run(result.run_id, file_key)
 
-                stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+                # capture API
+                log_data = manager.get_log_data(log_key)
+                stdout = log_data.stdout.decode("utf-8")
+                assert stdout == HELLO_WORLD + SEPARATOR
+
+                # legacy API
+                stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
                 assert stdout.data == HELLO_WORLD + SEPARATOR
 
-                stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+                stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
                 for expected in EXPECTED_LOGS:
                     assert expected in stderr.data
 
@@ -145,7 +173,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 stderr_gcs = (
                     storage.Client()
                     .bucket(gcs_bucket)
-                    .blob(f"my_prefix/storage/{result.run_id}/compute_logs/easy.err")
+                    .blob(f"my_prefix/storage/{result.run_id}/compute_logs/{file_key}.err")
                     .download_as_bytes()
                     .decode("utf-8")
                 )
@@ -158,10 +186,16 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 for filename in os.listdir(compute_logs_dir):
                     os.unlink(os.path.join(compute_logs_dir, filename))
 
-                stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+                # capture API
+                log_data = manager.get_log_data(log_key)
+                stdout = log_data.stdout.decode("utf-8")
+                assert stdout == HELLO_WORLD + SEPARATOR
+
+                # legacy API
+                stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
                 assert stdout.data == HELLO_WORLD + SEPARATOR
 
-                stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+                stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
                 for expected in EXPECTED_LOGS:
                     assert expected in stderr.data
 

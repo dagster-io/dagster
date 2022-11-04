@@ -365,18 +365,20 @@ def ensure_gen(
     return thing_or_gen
 
 
-def ensure_dir(file_path):
+def ensure_dir(file_path: str) -> str:
     try:
         os.makedirs(file_path)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+    return file_path
 
 
-def ensure_file(path):
+def ensure_file(path: str) -> str:
     ensure_dir(os.path.dirname(path))
     if not os.path.exists(path):
         touch_file(path)
+    return path
 
 
 def touch_file(path):

@@ -1,6 +1,9 @@
+# pylint: disable=protected-access
+
 import os
 import sys
 import tempfile
+import time
 
 import pytest
 from botocore.exceptions import ClientError
@@ -12,9 +15,11 @@ from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
+from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
+from dagster._utils import ensure_dir
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -54,40 +59,45 @@ def test_compute_log_manager(mock_s3_bucket):
                 ref=InstanceRef.from_dir(temp_dir),
             )
             result = simple.execute_in_process(instance=instance)
-            compute_steps = [
-                event.step_key
-                for event in result.all_node_events
-                if event.event_type == DagsterEventType.STEP_START
+            capture_events = [
+                event
+                for event in result.all_events
+                if event.event_type == DagsterEventType.LOGS_CAPTURED
             ]
-            assert len(compute_steps) == 1
-            step_key = compute_steps[0]
+            assert len(capture_events) == 1
+            event = capture_events[0]
+            file_key = event.logs_captured_data.file_key
+            log_key = manager.build_log_key_for_run(result.run_id, file_key)
+            log_data = manager.get_log_data(log_key)
+            stdout = log_data.stdout.decode("utf-8")
+            assert stdout == HELLO_WORLD + SEPARATOR
 
-            stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+            stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
+                assert expected in stderr
 
             # Check S3 directly
-            s3_object = mock_s3_bucket.Object(
-                key=f"my_prefix/storage/{result.run_id}/compute_logs/easy.err"
-            )
+            s3_object = mock_s3_bucket.Object(key=manager._s3_key(log_key, ComputeIOType.STDERR))
             stderr_s3 = s3_object.get()["Body"].read().decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr_s3
 
             # Check download behavior by deleting locally cached logs
-            compute_logs_dir = os.path.join(temp_dir, result.run_id, "compute_logs")
-            for filename in os.listdir(compute_logs_dir):
-                os.unlink(os.path.join(compute_logs_dir, filename))
+            local_dir = os.path.dirname(
+                manager._local_manager.get_captured_local_path(
+                    log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
+                )
+            )
+            for filename in os.listdir(local_dir):
+                os.unlink(os.path.join(local_dir, filename))
 
-            stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
+            log_data = manager.get_log_data(log_key)
+            stdout = log_data.stdout.decode("utf-8")
+            assert stdout == HELLO_WORLD + SEPARATOR
 
-            stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+            stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
+                assert expected in stderr
 
 
 def test_compute_log_manager_from_config(mock_s3_bucket):
@@ -145,17 +155,23 @@ def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
                 ref=InstanceRef.from_dir(temp_dir),
             )
             result = simple.execute_in_process(instance=instance)
-
+            capture_events = [
+                event
+                for event in result.all_events
+                if event.event_type == DagsterEventType.LOGS_CAPTURED
+            ]
+            assert len(capture_events) == 1
+            event = capture_events[0]
+            file_key = event.logs_captured_data.file_key
+            log_key = manager.build_log_key_for_run(result.run_id, file_key)
             stderr_object = mock_s3_bucket.Object(
-                key=f"{PREFIX}/storage/{result.run_id}/compute_logs/easy.err"
-            ).get()
+                key=manager._s3_key(log_key, ComputeIOType.STDERR)
+            )
             assert stderr_object
 
             with pytest.raises(ClientError):
                 # stdout is not uploaded because we do not print anything to stdout
-                mock_s3_bucket.Object(
-                    key=f"{PREFIX}/storage/{result.run_id}/compute_logs/easy.out"
-                ).get()
+                mock_s3_bucket.Object(key=manager._s3_key(log_key, ComputeIOType.STDOUT)).get()
 
 
 def test_blank_compute_logs(mock_s3_bucket):
@@ -170,3 +186,37 @@ def test_blank_compute_logs(mock_s3_bucket):
 
         assert not stdout.data
         assert not stderr.data
+
+
+def test_streaming(mock_s3_bucket):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        write_manager = S3ComputeLogManager(
+            bucket=mock_s3_bucket.name,
+            local_dir=ensure_dir(os.path.join(temp_dir, "a")),
+            upload_interval=1,
+        )
+        read_manager = S3ComputeLogManager(
+            bucket=mock_s3_bucket.name, local_dir=ensure_dir(os.path.join(temp_dir, "b"))
+        )
+        log_key = ["arbitrary", "log", "key"]
+        with write_manager.capture_logs(log_key) as _context:
+            print("hello stdout")  # pylint: disable=print-call
+            print("hello stderr", file=sys.stderr)  # pylint: disable=print-call
+
+            # read before the write manager has a chance to upload partial results
+            log_data = read_manager.get_log_data(log_key)
+            assert not log_data.stdout
+            assert not log_data.stderr
+
+            # wait past the upload interval and then read again
+            time.sleep(2)
+            log_data = read_manager.get_log_data(log_key)
+            assert log_data.stdout == b"hello stdout\n"
+            assert log_data.stderr == b"hello stderr\n"
+
+            # check the s3 bucket directly that only partial keys have been uploaded
+            keys = {object.key for object in mock_s3_bucket.objects.all()}
+            assert write_manager._s3_key(log_key, ComputeIOType.STDOUT) not in keys
+            assert write_manager._s3_key(log_key, ComputeIOType.STDERR) not in keys
+            assert write_manager._s3_key(log_key, ComputeIOType.STDOUT, partial=True) in keys
+            assert write_manager._s3_key(log_key, ComputeIOType.STDERR, partial=True) in keys
