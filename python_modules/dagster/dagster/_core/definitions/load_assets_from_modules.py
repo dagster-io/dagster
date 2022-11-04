@@ -9,31 +9,34 @@ import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .assets import AssetsDefinition
+from .cacheable_assets import CacheableAssetsDefinition
 from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .source_asset import SourceAsset
 
 
 def _find_assets_in_module(
     module: ModuleType,
-) -> Generator[Union[AssetsDefinition, SourceAsset], None, None]:
+) -> Generator[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition], None, None]:
     """
     Finds assets in the given module and adds them to the given sets of assets and source assets.
     """
     for attr in dir(module):
         value = getattr(module, attr)
-        if isinstance(value, (AssetsDefinition, SourceAsset)):
+        if isinstance(value, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)):
             yield value
         elif isinstance(value, list) and all(
-            isinstance(el, (AssetsDefinition, SourceAsset)) for el in value
+            isinstance(el, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition))
+            for el in value
         ):
             yield from value
 
 
-def assets_and_source_assets_from_modules(
+def assets_from_modules(
     modules: Iterable[ModuleType], extra_source_assets: Optional[Sequence[SourceAsset]] = None
-) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
+) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
     """
-    Constructs two lists, a list of assets and a list of source assets, from the given modules.
+    Constructs three lists, a list of assets, a list of source assets, and a list of cacheable
+    assets from the given modules.
 
     Args:
         modules (Iterable[ModuleType]): The Python modules to look for assets inside.
@@ -41,47 +44,54 @@ def assets_and_source_assets_from_modules(
             group in addition to the source assets found in the modules.
 
     Returns:
-        Tuple[List[AssetsDefinition], List[SourceAsset]]:
-            A tuple containing a list of assets and a list of source assets defined in the given modules.
+        Tuple[List[AssetsDefinition], List[SourceAsset], List[CacheableAssetsDefinition]]]:
+            A tuple containing a list of assets, a list of source assets, and a list of
+            cacheable assets defined in the given modules.
     """
     asset_ids: Set[int] = set()
     asset_keys: Dict[AssetKey, ModuleType] = dict()
     source_assets: List[SourceAsset] = list(
         check.opt_sequence_param(extra_source_assets, "extra_source_assets", of_type=SourceAsset)
     )
+    cacheable_assets: List[CacheableAssetsDefinition] = []
     assets: Dict[AssetKey, AssetsDefinition] = {}
     for module in modules:
         for asset in _find_assets_in_module(module):
             if id(asset) not in asset_ids:
                 asset_ids.add(id(asset))
-                keys = asset.keys if isinstance(asset, AssetsDefinition) else [asset.key]
-                for key in keys:
-                    if key in asset_keys:
-                        modules_str = ", ".join(set([asset_keys[key].__name__, module.__name__]))
-                        error_str = f"Asset key {key} is defined multiple times. Definitions found in modules: {modules_str}. "
+                if isinstance(asset, CacheableAssetsDefinition):
+                    cacheable_assets.append(asset)
+                else:
+                    keys = asset.keys if isinstance(asset, AssetsDefinition) else [asset.key]
+                    for key in keys:
+                        if key in asset_keys:
+                            modules_str = ", ".join(
+                                set([asset_keys[key].__name__, module.__name__])
+                            )
+                            error_str = f"Asset key {key} is defined multiple times. Definitions found in modules: {modules_str}. "
 
-                        if key in assets and isinstance(asset, AssetsDefinition):
-                            if assets[key].node_def == asset.node_def:
-                                error_str += (
-                                    "One possible cause of this bug is a call to with_resources outside of "
-                                    "a repository definition, causing a duplicate asset definition."
-                                )
+                            if key in assets and isinstance(asset, AssetsDefinition):
+                                if assets[key].node_def == asset.node_def:
+                                    error_str += (
+                                        "One possible cause of this bug is a call to with_resources outside of "
+                                        "a repository definition, causing a duplicate asset definition."
+                                    )
 
-                        raise DagsterInvalidDefinitionError(error_str)
-                    else:
-                        asset_keys[key] = module
-                        if isinstance(asset, AssetsDefinition):
-                            assets[key] = asset
-                if isinstance(asset, SourceAsset):
-                    source_assets.append(asset)
-    return list(set(assets.values())), source_assets
+                            raise DagsterInvalidDefinitionError(error_str)
+                        else:
+                            asset_keys[key] = module
+                            if isinstance(asset, AssetsDefinition):
+                                assets[key] = asset
+                    if isinstance(asset, SourceAsset):
+                        source_assets.append(asset)
+    return list(set(assets.values())), source_assets, cacheable_assets
 
 
 def load_assets_from_modules(
     modules: Iterable[ModuleType],
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset]]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """
     Constructs a list of assets and source assets from the given modules.
 
@@ -101,9 +111,16 @@ def load_assets_from_modules(
     group_name = check.opt_str_param(group_name, "group_name")
     key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
 
-    assets, source_assets = assets_and_source_assets_from_modules(modules)
+    (
+        assets,
+        source_assets,
+        cacheable_assets,
+    ) = assets_from_modules(modules)
     if key_prefix:
         assets = prefix_assets(assets, key_prefix)
+        cacheable_assets = [
+            cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
+        ]
     if group_name:
         assets = [
             asset.with_prefix_or_group(
@@ -112,16 +129,20 @@ def load_assets_from_modules(
             for asset in assets
         ]
         source_assets = [source_asset.with_group_name(group_name) for source_asset in source_assets]
+        cacheable_assets = [
+            cached_asset.with_group_for_all(group_name) for cached_asset in cacheable_assets
+        ]
 
-    return [*assets, *source_assets]
+    return [*assets, *source_assets, *cacheable_assets]
 
 
 def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset]]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """
-    Constructs a list of assets and source assets from the module where this function is called.
+    Constructs a list of assets, source assets, and cacheable assets from the module where
+    this function is called.
 
     Args:
         group_name (Optional[str]):
@@ -132,8 +153,8 @@ def load_assets_from_current_module(
             of the loaded objects, with the prefix prepended.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset]]:
-            A list containing assets and source assets defined in the module.
+        List[Union[AssetsDefinition, SourceAsset, CachableAssetsDefinition]]:
+            A list containing assets, source assets, and cacheable assets defined in the module.
     """
     caller = inspect.stack()[1]
     module = inspect.getmodule(caller[0])
@@ -147,12 +168,13 @@ def load_assets_from_current_module(
     )
 
 
-def assets_and_source_assets_from_package_module(
+def assets_from_package_module(
     package_module: ModuleType,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
-) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
+) -> Union[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
     """
-    Constructs two lists, a list of assets and a list of source assets, from the given package module.
+    Constructs three lists, a list of assets, a list of source assets, and a list of cacheable assets
+    from the given package module.
 
     Args:
         package_module (ModuleType): The package module to looks for assets inside.
@@ -160,10 +182,11 @@ def assets_and_source_assets_from_package_module(
             group in addition to the source assets found in the modules.
 
     Returns:
-        Tuple[List[AssetsDefinition], List[SourceAsset]]:
-            A tuple containing a list of assets and a list of source assets defined in the given modules.
+        Tuple[List[AssetsDefinition], List[SourceAsset], List[CacheableAssetsDefinition]]:
+            A tuple containing a list of assets, a list of source assets, and a list of cacheable assets
+            defined in the given modules.
     """
-    return assets_and_source_assets_from_modules(
+    return assets_from_modules(
         _find_modules_in_package(package_module), extra_source_assets=extra_source_assets
     )
 
@@ -172,10 +195,10 @@ def load_assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset]]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """
     Constructs a list of assets and source assets that includes all asset
-    definitions and source assets in all sub-modules of the given package module.
+    definitions, source assets, and cacheable assets in all sub-modules of the given package module.
 
     A package module is the result of importing a package.
 
@@ -189,29 +212,39 @@ def load_assets_from_package_module(
             of the loaded objects, with the prefix prepended.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset]]:
-            A list containing assets and source assets defined in the module.
+        List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+            A list containing assets, source assets, and cacheable assets defined in the module.
     """
     group_name = check.opt_str_param(group_name, "group_name")
     key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
 
-    assets, source_assets = assets_and_source_assets_from_package_module(package_module)
+    (
+        assets,
+        source_assets,
+        cacheable_assets,
+    ) = assets_from_package_module(package_module)
     if key_prefix:
         assets = prefix_assets(assets, key_prefix)
+        cacheable_assets = [
+            cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
+        ]
     if group_name:
         assets = list(with_group(assets, group_name))
         source_assets = [asset.with_group_name(group_name) for asset in source_assets]
+        cacheable_assets = [
+            cached_asset.with_group_for_all(group_name) for cached_asset in cacheable_assets
+        ]
 
-    return [*assets, *source_assets]
+    return [*assets, *source_assets, *cacheable_assets]
 
 
 def load_assets_from_package_name(
     package_name: str,
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset]]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """
-    Constructs a list of assets and source assets that include all asset
+    Constructs a list of assets, source assets, and cacheable assets that includes all asset
     definitions and source assets in all sub-modules of the given package.
 
     Args:
@@ -224,8 +257,8 @@ def load_assets_from_package_name(
             of the loaded objects, with the prefix prepended.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset]]:
-            A list containing assets and source assets defined in the module.
+        List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+            A list containing assets, source assets, and cacheable assets defined in the module.
     """
     package_module = import_module(package_name)
     return load_assets_from_package_module(
