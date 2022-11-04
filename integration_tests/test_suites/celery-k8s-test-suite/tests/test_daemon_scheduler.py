@@ -1,3 +1,4 @@
+import logging
 import time
 
 from dagster_test.test_project import (
@@ -57,6 +58,7 @@ def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name
 
         last_run = schedule_runs[0]
 
+        logging.warning(last_run.run_id)
         finished_pipeline_run = poll_for_finished_run(
             dagster_instance_for_daemon, last_run.run_id, timeout=180
         )
