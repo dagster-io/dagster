@@ -1,6 +1,11 @@
-import {Colors, FontFamily, Icon} from '@dagster-io/ui';
+import {Colors, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import airbyte_logo from './optag-images/airbyte_logo.svg';
+import dbt_logo from './optag-images/dbt_logo.svg';
+import jupyter_logo from './optag-images/jupyter_logo.svg';
+import noteable_logo from './optag-images/noteable_logo.svg';
 
 export interface IOpTag {
   label: string;
@@ -14,12 +19,6 @@ interface IOpTagsProps {
 }
 
 function hueForTag(text = '') {
-  if (text === 'ipynb') {
-    return 25;
-  }
-  if (text === 'dbt') {
-    return 250;
-  }
   if (text === 'snowflake') {
     return 197;
   }
@@ -39,13 +38,13 @@ function hueForTag(text = '') {
 
 function getTag(tag: IOpTag) {
   if (tag.label === 'noteable') {
-    return <Icon name="noteable_logo" />;
+    return <img src={noteable_logo} />;
   } else if (tag.label === 'ipynb') {
-    return <Icon name="jupyter_logo" />;
+    return <img src={jupyter_logo} />;
   } else if (tag.label === 'airbyte') {
-    return <Icon name="airbyte_logo" />;
+    return <img src={airbyte_logo} />;
   } else if (tag.label === 'dbt') {
-    return <Icon name="dbt_logo" />;
+    return <img src={dbt_logo} />;
   } else {
     return (
       <div

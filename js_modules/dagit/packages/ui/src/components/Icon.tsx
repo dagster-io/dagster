@@ -5,7 +5,6 @@ import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
 import add from '../icon-svgs/add.svg';
 import add_circle from '../icon-svgs/add_circle.svg';
-import airbyte_logo from '../icon-svgs/airbyte_logo.svg';
 import alternate_email from '../icon-svgs/alternate_email.svg';
 import arrow_back from '../icon-svgs/arrow_back.svg';
 import arrow_downward from '../icon-svgs/arrow_downward.svg';
@@ -34,7 +33,6 @@ import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
-import dbt_logo from '../icon-svgs/dbt_logo.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
 import download_for_offline from '../icon-svgs/download_for_offline.svg';
@@ -64,7 +62,6 @@ import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
 import info from '../icon-svgs/info.svg';
 import job from '../icon-svgs/job.svg';
-import jupyter_logo from '../icon-svgs/jupyter_logo.svg';
 import layers from '../icon-svgs/layers.svg';
 import line_style from '../icon-svgs/line_style.svg';
 import linear_scale from '../icon-svgs/linear_scale.svg';
@@ -78,7 +75,6 @@ import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
-import noteable_logo from '../icon-svgs/noteable_logo.svg';
 import observation from '../icon-svgs/observation.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
@@ -270,15 +266,9 @@ export const Icons = {
   wysiwyg,
   zoom_in,
   zoom_out,
-
-  // Integration icons
-  airbyte_logo,
-  dbt_logo,
-  noteable_logo,
-  jupyter_logo,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([slack, noteable_logo, jupyter_logo, dbt_logo, airbyte_logo]);
+const SVGS_WITH_COLORS = new Set([slack]);
 
 export type IconName = keyof typeof Icons;
 
