@@ -9,7 +9,7 @@ import {assembleIntoSpans} from '../partitions/PartitionRangeInput';
 import {AssetKey} from './types';
 import {PartitionHealthQuery, PartitionHealthQueryVariables} from './types/PartitionHealthQuery';
 
-interface PartitionHealthData {
+export interface PartitionHealthData {
   assetKey: AssetKey;
   keys: string[];
   spans: {startIdx: number; endIdx: number; status: boolean}[];

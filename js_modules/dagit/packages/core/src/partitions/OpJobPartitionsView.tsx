@@ -268,6 +268,7 @@ const OpJobPartitionsViewContent: React.FC<{
       <Box
         padding={{horizontal: 24, vertical: 16}}
         border={{side: 'horizontal', color: Colors.KeylineGray, width: 1}}
+        style={{marginBottom: -1}}
       >
         <Subheading>Backfill history</Subheading>
       </Box>
