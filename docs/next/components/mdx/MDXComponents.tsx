@@ -234,11 +234,11 @@ const ADMONITION_STYLES = {
       borderIcon: 'primary-500',
       text: 'gray-900',
     },
-    icon: Icons.InfoCircle,
+    icon: Icons.About,
   },
   warning: {
     colors: {bg: 'yellow-50', borderIcon: 'yellow-400', text: 'yellow-700'},
-    icon: Icons.Warning,
+    icon: Icons.About,
   },
 };
 
@@ -255,7 +255,7 @@ const Admonition = ({style, children}) => {
             fill="currentColor"
             aria-hidden="true"
           >
-            {icon}
+            {icon && icon}
           </svg>
         </div>
         <div className="ml-3">
