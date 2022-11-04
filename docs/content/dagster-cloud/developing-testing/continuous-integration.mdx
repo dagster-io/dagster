@@ -24,20 +24,27 @@ Next, you must set up a `dagster_cloud.yaml` file which describes each of the Da
 
 This `dagster_cloud.yaml` file maps your Github repositories source directories to the Dagster Cloud repo locations you wish to deploy. In this example, the `dagster_cloud.yaml` file indicates that two locations, `foo` and `bar`, should be built.
 
+The optional `build` property of the location is used to map a source directory to build into an image, which defaults to the current directory.
+
+The `code_source` property points to the location of the Dagster definitions to be loaded into your workspace. It should contain either a `package_name` or `python_file` property.
+
 ```yaml
 # Example dagster_cloud.yaml, for a Serverless deployment
 locations:
   # Location name
   foo:
-    # Path to build directory, which must a setup.py or requirements.txt file
-    build: ./foo_src
-    # Python file containing the job repo
-    # Can alternatively supply package_name, as below
-    python_file: repo.py
+    build:
+      # Path to build directory, which must contain a setup.py or requirements.txt file.  Defaults to the current directory
+      directory: ./foo_src
+    code_source:
+      # Python file containing the job repo
+      # Can alternatively supply package_name, as below
+      python_file: repo.py
   bar:
-    build: ./bar_src
-    registry: dagster-io/bar
-    package_name: bar
+    build:
+      directory: ./bar_src
+    code_source:
+      package_name: bar
 ```
 
 For Hybrid deployments, your `dagster_cloud.yaml` file should include registry information for where the images should be uploaded to and your build directories must include a `Dockerfile`. In this example, there are two specified locations that have Dockerfiles located at `/foo_src/Dockerfile` and `/bar_src/Dockerfile`, and are pushed to the `dagster-io/foo` and `dagster-io/bar` registries, respectively.
@@ -47,17 +54,21 @@ For Hybrid deployments, your `dagster_cloud.yaml` file should include registry i
 locations:
   # Location name
   foo:
-    # Path to build directory, which must contain a Dockerfile
-    build: ./foo_src
-    # Docker registry to push the built Docker image to
-    registry: dagster-io/foo
-    # Python file containing the job repo
-    # Can alternatively supply package_name, as below
-    python_file: repo.py
+    build:
+      # Path to build directory, which must contain a Dockerfile
+      directory: ./foo_src
+      # Docker registry to push the built Docker image to
+      registry: dagster-io/foo
+    code_source:
+      # Python file containing the job repo
+      # Can alternatively supply package_name, as below
+      python_file: repo.py
   bar:
-    build: ./bar_src
-    registry: dagster-io/bar
-    package_name: bar
+    build:
+      directory: ./bar_src
+      registry: dagster-io/bar
+    code_source:
+      package_name: bar
 ```
 
 Note: Your GitHub action script must be configured to enable access to the specified registries (e.g. authenticating to AWS for an ECR registry).
@@ -66,9 +77,11 @@ Note: Your GitHub action script must be configured to enable access to the speci
 
 Each location specified in the `dagster_cloud.yaml` can have the following properties:
 
-| Name           | Description                                                                                                                                                          |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `build`        | **(Required)** Path to the build directory relative to the `dagster_cloud.yaml`'s folder. Build directory must contain a `Dockerfile` for Hybrid deployments.        |
-| `registry`     | **(Required for Hybrid)** Docker registry to push the built Docker image to.                                                                                         |
-| `package_name` | Python module containing the [Dagster Repository](https://docs.dagster.io/concepts/repositories-workspaces/repositories). Can alternatively use `python_file` below. |
-| `python_file`  | Python file containing the [Dagster Repository](https://docs.dagster.io/concepts/repositories-workspaces/repositories). Can alternatively use `package_name` above.  |
+| Name                       | Description                                                                                                                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build`                    | **(Required for Hybrid)** Configuration which maps source directories to images that are uploaded to the specified registries.                                                   |
+| `build.directory`          | Path to the build directory relative to the `dagster_cloud.yaml`'s folder. Build directory must contain a `Dockerfile` for Hybrid deployments. Defaults to the current directory |
+| `build.registry`           | **(Required for Hybrid)** Docker registry to push the built Docker image to.                                                                                                     |
+| `code_source`              | Configuration which specifies how to load the [Dagster Repository](https://docs.dagster.io/concepts/repositories-workspaces/repositories) in the code location.                  |
+| `code_source.package_name` | Python module containing the [Dagster Repository](https://docs.dagster.io/concepts/repositories-workspaces/repositories). Can alternatively use `python_file` below.             |
+| `code_source.python_file`  | Python file containing the [Dagster Repository](https://docs.dagster.io/concepts/repositories-workspaces/repositories). Can alternatively use `package_name` above.              |
