@@ -57,7 +57,7 @@ spec:
           image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
           command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
           securityContext:
-            {{- toYaml .Values.dagit.securityContext | nindent 12 }}
+            {{- toYaml $.Values.dagit.securityContext | nindent 12 }}
         {{- end }}
         {{- end }}
       containers:
