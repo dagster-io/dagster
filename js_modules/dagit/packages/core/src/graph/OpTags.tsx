@@ -4,8 +4,11 @@ import styled from 'styled-components/macro';
 
 import airbyte_logo from './optag-images/airbyte_logo.svg';
 import dbt_logo from './optag-images/dbt_logo.svg';
+import fivetran_logo from './optag-images/fivetran_logo.svg';
 import jupyter_logo from './optag-images/jupyter_logo.svg';
 import noteable_logo from './optag-images/noteable_logo.svg';
+import python_logo from './optag-images/python_logo.svg';
+import snowflake_logo from './optag-images/snowflake_logo.svg';
 
 export interface IOpTag {
   label: string;
@@ -19,9 +22,6 @@ interface IOpTagsProps {
 }
 
 function hueForTag(text = '') {
-  if (text === 'snowflake') {
-    return 197;
-  }
   if (text === 'pyspark' || text === 'spark') {
     return 30;
   }
@@ -45,6 +45,12 @@ function getTag(tag: IOpTag) {
     return <img src={airbyte_logo} alt="Airbyte logo" role="img" />;
   } else if (tag.label === 'dbt') {
     return <img src={dbt_logo} alt="dbt logo" role="img" />;
+  } else if (tag.label === 'fivetran') {
+    return <img src={fivetran_logo} alt="Fivetran logo" role="img" />;
+  } else if (tag.label === 'snowflake') {
+    return <img src={snowflake_logo} alt="Snowflake logo" role="img" />;
+  } else if (tag.label === 'python') {
+    return <img src={python_logo} alt="Python logo" role="img" />;
   } else {
     return (
       <div
