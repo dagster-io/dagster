@@ -76,7 +76,6 @@ import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
-import noteable_logo from '../icon-svgs/noteable_logo.svg';
 import observation from '../icon-svgs/observation.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
@@ -269,12 +268,9 @@ export const Icons = {
   wysiwyg,
   zoom_in,
   zoom_out,
-
-  // Integration icons
-  noteable_logo,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([slack, noteable_logo]);
+const SVGS_WITH_COLORS = new Set([slack]);
 
 export type IconName = keyof typeof Icons;
 
@@ -330,15 +326,16 @@ export const IconWrapper = styled.div<WrapperProps>`
         // We could just use !important but specificity is a little more flexible
         `
         background: url(${p.$img});
+        background-size: cover;
         &[role='img'][role='img'] {
           background-color: transparent;
         }
       `
       : `
         background: ${p.$color};
+        mask-size: cover;
         mask-image: url(${p.$img});
       `}
-  mask-size: cover;
   object-fit: cover;
   transition: transform 150ms linear;
 
