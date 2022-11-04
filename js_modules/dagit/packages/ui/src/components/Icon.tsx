@@ -5,6 +5,7 @@ import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
 import add from '../icon-svgs/add.svg';
 import add_circle from '../icon-svgs/add_circle.svg';
+import airbyte_logo from '../icon-svgs/airbyte_logo.svg';
 import alternate_email from '../icon-svgs/alternate_email.svg';
 import arrow_back from '../icon-svgs/arrow_back.svg';
 import arrow_downward from '../icon-svgs/arrow_downward.svg';
@@ -33,6 +34,7 @@ import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
+import dbt_logo from '../icon-svgs/dbt_logo.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
 import download_for_offline from '../icon-svgs/download_for_offline.svg';
@@ -270,11 +272,13 @@ export const Icons = {
   zoom_out,
 
   // Integration icons
+  airbyte_logo,
+  dbt_logo,
   noteable_logo,
   jupyter_logo,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([slack, noteable_logo, jupyter_logo]);
+const SVGS_WITH_COLORS = new Set([slack, noteable_logo, jupyter_logo, dbt_logo, airbyte_logo]);
 
 export type IconName = keyof typeof Icons;
 

@@ -42,6 +42,10 @@ function getTag(tag: IOpTag) {
     return <Icon name="noteable_logo" />;
   } else if (tag.label === 'ipynb') {
     return <Icon name="jupyter_logo" />;
+  } else if (tag.label === 'airbyte') {
+    return <Icon name="airbyte_logo" />;
+  } else if (tag.label === 'dbt') {
+    return <Icon name="dbt_logo" />;
   } else {
     return (
       <div
