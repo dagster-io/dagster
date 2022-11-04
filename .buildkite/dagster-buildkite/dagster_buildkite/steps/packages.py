@@ -5,10 +5,7 @@ from typing import List, Optional
 from dagster_buildkite.defines import GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.steps.test_project import (
-    test_project_core_depends_fn,
-    test_project_depends_fn,
-)
+from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
@@ -216,21 +213,6 @@ def docker_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-def dagster_extra_cmds(version: str, _) -> List[str]:
-    return [
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "aws ecr get-login --no-include-email --region us-west-2 | sh",
-        "export IMAGE_NAME=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project-core:$${BUILDKITE_BUILD_ID}-"
-        + version,
-        "pushd python_modules/dagster/dagster_tests",
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
-        *network_buildkite_container("dagster"),
-        *connect_sibling_docker_container("dagster", "dagster-grpc-server", "GRPC_SERVER_HOST"),
-        "popd",
-    ]
-
-
 dagit_extra_cmds = ["make rebuild_dagit"]
 
 
@@ -351,9 +333,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec("python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
-        pytest_extra_cmds=dagster_extra_cmds,
         env_vars=["AWS_ACCOUNT_ID"],
-        pytest_step_dependencies=test_project_core_depends_fn,
         pytest_tox_factors=[
             "api_tests",
             "cli_tests",
