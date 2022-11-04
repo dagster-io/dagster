@@ -1044,6 +1044,7 @@ def open_server_process(
     except:
         if server_process.poll() is None:
             server_process.terminate()
+            server_process.wait()
         raise
 
     return server_process
