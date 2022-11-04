@@ -4,7 +4,10 @@ import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-from dagster_graphql.schema.partition_sets import GraphenePartitionDefinition
+from dagster_graphql.schema.partition_sets import (
+    GrapheneDimensionPartitionKeys,
+    GraphenePartitionDefinition,
+)
 from dagster_graphql.schema.solids import (
     GrapheneCompositeSolidDefinition,
     GrapheneResourceRequirement,
@@ -150,8 +153,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
     opNames = non_null_list(graphene.String)
-    partitionKeys = non_null_list(graphene.String)
     partitionDefinition = graphene.Field(GraphenePartitionDefinition)
+    partitionKeys = non_null_list(graphene.String)
+    partitionKeysByDimension = non_null_list(GrapheneDimensionPartitionKeys)
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
     type = graphene.Field(GrapheneDagsterType)
@@ -602,14 +606,22 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_graphName(self, _graphene_info) -> Optional[str]:
         return self._external_asset_node.graph_name
 
+    def resolve_partitionKeysByDimension(
+        self, _graphene_info
+    ) -> Sequence[GrapheneDimensionPartitionKeys]:
+        return [
+            GrapheneDimensionPartitionKeys(name=dimension_name, partition_keys=partition_keys)
+            for dimension_name, partition_keys in self.get_partition_keys_by_dimension().items()
+        ]
+
+    def resolve_partitionKeys(self, _graphene_info) -> Sequence[str]:
+        return self.get_partition_keys()
+
     def resolve_partitionDefinition(self, _graphene_info) -> Optional[GraphenePartitionDefinition]:
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
             return GraphenePartitionDefinition(partitions_def_data)
         return None
-
-    def resolve_partitionKeys(self, _graphene_info) -> Sequence[str]:
-        return self.get_partition_keys()
 
     def resolve_repository(self, graphene_info) -> "GrapheneRepository":
         return external.GrapheneRepository(

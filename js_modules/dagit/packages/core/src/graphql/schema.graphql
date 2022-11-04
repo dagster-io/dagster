@@ -420,8 +420,9 @@ type AssetNode {
   op: SolidDefinition
   opName: String
   opNames: [String!]!
-  partitionKeys: [String!]!
   partitionDefinition: PartitionDefinition
+  partitionKeys: [String!]!
+  partitionKeysByDimension: [DimensionPartitionKeys!]!
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   type: DagsterType
@@ -1471,6 +1472,11 @@ enum PartitionDefinitionType {
   TIME_WINDOW
   STATIC
   MULTIPARTITIONED
+}
+
+type DimensionPartitionKeys {
+  name: String!
+  partitionKeys: [String!]!
 }
 
 type ResourceRequirement {

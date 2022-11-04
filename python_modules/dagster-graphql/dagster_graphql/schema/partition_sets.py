@@ -322,6 +322,14 @@ class GraphenePartitionDefinition(graphene.ObjectType):
         )
 
 
+class GrapheneDimensionPartitionKeys(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    partition_keys = non_null_list(graphene.String)
+
+    class Meta:
+        name = "DimensionPartitionKeys"
+
+
 types = [
     GraphenePartition,
     GraphenePartitionRunConfig,
