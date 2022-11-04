@@ -333,6 +333,35 @@ class BatchMaterializationLoader:
         }
 
 
+class CountByPartitionLoader:
+    """
+    A batch loader that fetches materialization count by partition for asset keys. 
+    This loader is expected to be instantiated with a set of asset keys.
+    """
+
+    def __init__(self, instance: DagsterInstance, asset_keys: Iterable[AssetKey]):
+        self._instance = instance
+        self._asset_keys: List[AssetKey] = list(asset_keys)
+        self._counts_by_partition: Mapping["AssetKey", Mapping[str, int]] = {}
+        self._fetched = False
+
+    def get_results(
+        self, asset_key: AssetKey
+    ) -> Mapping[str, int]:
+        if asset_key not in self._asset_keys:
+            check.failed(
+                f"Asset key {asset_key} not recognized for this loader.  Expected one of: {self._asset_keys}"
+            )
+
+        if not self._fetched:
+            self._fetch()
+        return self._counts_by_partition.get(asset_key)
+
+    def _fetch(self) -> None:
+        self._fetched = True
+        self._counts_by_partition = self._.instance.get_materialization_count_by_partition(self._asset_keys)
+
+
 class CrossRepoAssetDependedByLoader:
     """
     A batch loader that computes cross-repository asset dependencies. Locates source assets

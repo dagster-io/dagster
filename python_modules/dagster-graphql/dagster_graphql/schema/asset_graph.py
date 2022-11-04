@@ -22,7 +22,7 @@ from dagster._core.host_representation.external_data import (
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
 from ..implementation.fetch_runs import AssetComputeStatus
-from ..implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
+from ..implementation.loader import BatchMaterializationLoader, CountByPartitionLoader, CrossRepoAssetDependedByLoader
 from . import external
 from .asset_key import GrapheneAssetKey
 from .dagster_types import GrapheneDagsterType, to_dagster_type
@@ -154,6 +154,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         external_asset_node: ExternalAssetNode,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
+        count_by_partition_loader: Optional[CountByPartitionLoader] = None,
     ):
         from ..implementation.fetch_assets import get_unique_asset_id
 
@@ -173,6 +174,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         self._depended_by_loader = check.opt_inst_param(
             depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
+        )
+        self._count_by_partition_loader = check.opt_inst_param(
+            count_by_partition_loader, "count_by_partition_loader", CountByPartitionLoader
         )
         self._external_pipeline = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
@@ -461,9 +465,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         asset_key = self._external_asset_node.asset_key
         partition_keys = self.get_partition_keys()
 
-        count_by_partition = graphene_info.context.instance.get_materialization_count_by_partition(
-            [self._external_asset_node.asset_key]
-        )[asset_key]
+        if self._count_by_partition_loader:
+            count_by_partition = self._count_by_partition_loader.get_results(asset_key)
+        else:
+            count_by_partition = graphene_info.context.instance.get_materialization_count_by_partition([asset_key])[asset_key]
 
         return [
             GrapheneMaterializationCount(partition_key, count_by_partition.get(partition_key, 0))

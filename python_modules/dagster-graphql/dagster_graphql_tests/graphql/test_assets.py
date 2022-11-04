@@ -326,7 +326,7 @@ GET_ASSET_TYPE = """
 
 BATCH_LOAD_ASSETS = """
     query BatchLoadQuery($assetKeys: [AssetKeyInput!]) {
-        assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+        assetNodes(assetKeys: $assetKeys) {
             assetMaterializations(limit: 1) {
                 timestamp
                 runId
