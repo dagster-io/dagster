@@ -37,7 +37,7 @@ from dagster._utils.test.postgres_instance import TestPostgresInstance
 def get_main_loadable_target_origin():
     return LoadableTargetOrigin(
         executable_path=sys.executable,
-        python_file=file_relative_path(__file__, "setup.py"),
+        python_file=file_relative_path(__file__, "repo.py"),
         attribute="test_repo",
     )
 
@@ -408,7 +408,7 @@ class EnvironmentManagers:
             with WorkspaceProcessContext(
                 instance,
                 PythonFileTarget(
-                    python_file=file_relative_path(__file__, "setup.py"),
+                    python_file=file_relative_path(__file__, "repo.py"),
                     attribute="test_dict_repo",
                     working_directory=None,
                     location_name="test",

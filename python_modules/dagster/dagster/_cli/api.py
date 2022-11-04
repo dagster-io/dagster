@@ -1,7 +1,9 @@
+import base64
 import json
 import logging
 import os
 import sys
+import zlib
 from typing import Any, Callable, Optional, cast
 
 import click
@@ -315,9 +317,23 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
         "interactively."
     ),
 )
-@click.argument("input_json", type=click.STRING, envvar="DAGSTER_EXECUTE_STEP_ARGS")
-def execute_step_command(input_json):
+@click.argument("input_json", type=click.STRING, envvar="DAGSTER_EXECUTE_STEP_ARGS", required=False)
+@click.option(
+    "compressed_input_json",
+    "--compressed-input-json",
+    type=click.STRING,
+    envvar="DAGSTER_COMPRESSED_EXECUTE_STEP_ARGS",
+)
+def execute_step_command(input_json, compressed_input_json):
     with capture_interrupts():
+
+        check.invariant(
+            bool(input_json) != bool(compressed_input_json),
+            "Must provide one of input_json or compressed_input_json",
+        )
+
+        if compressed_input_json:
+            input_json = zlib.decompress(base64.b64decode(compressed_input_json.encode())).decode()
 
         args = deserialize_as(input_json, ExecuteStepArgs)
 

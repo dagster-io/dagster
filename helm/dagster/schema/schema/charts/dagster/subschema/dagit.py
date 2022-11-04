@@ -43,6 +43,8 @@ class Dagit(BaseModel):
     dbStatementTimeout: Optional[int]
     logLevel: Optional[str]
     schedulerName: Optional[str]
+    volumeMounts: Optional[List[kubernetes.VolumeMount]]
+    volumes: Optional[List[kubernetes.Volume]]
 
     class Config:
         extra = Extra.forbid

@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.dependency import Node, NodeHandle
@@ -609,3 +611,6 @@ class OpExecutionContext(SolidExecutionContext):
             context.log.info("Hello, world!")
 
     """
+
+
+SourceAssetObserveContext: TypeAlias = OpExecutionContext

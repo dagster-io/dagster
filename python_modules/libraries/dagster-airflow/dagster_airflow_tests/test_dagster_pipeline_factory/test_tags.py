@@ -29,41 +29,37 @@ def normalize_file_content(s):
     return "\n".join([line for line in s.replace(os.linesep, "\n").split("\n") if line])
 
 
-def check_compute_logs(manager, result, execution_date_fmt):
+def check_captured_logs(manager, result, execution_date_fmt):
     assert result.success
 
-    compute_steps = [
-        event.step_key
-        for event in result.step_event_list
-        if event.event_type == DagsterEventType.STEP_START
+    capture_events = [
+        event for event in result.event_list if event.event_type == DagsterEventType.LOGS_CAPTURED
     ]
+    assert len(capture_events) == 1
+    event = capture_events[0]
+    assert event.logs_captured_data.step_keys == ["airflow_templated"]
+    file_key = event.logs_captured_data.file_key
+    compute_io_path = manager.get_local_path(result.run_id, file_key, ComputeIOType.STDOUT)
+    assert os.path.exists(compute_io_path)
+    stdout_file = open(compute_io_path, "r", encoding="utf8")
+    file_contents = normalize_file_content(stdout_file.read())
+    stdout_file.close()
 
-    assert compute_steps == [
-        "airflow_templated",
-    ]
-
-    for step_key in compute_steps:
-        compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
-        assert os.path.exists(compute_io_path)
-        stdout_file = open(compute_io_path, "r", encoding="utf8")
-        file_contents = normalize_file_content(stdout_file.read())
-        stdout_file.close()
-
-        assert (
-            file_contents.count(
-                "INFO - Running command: \n    echo '{execution_date_fmt}'\n".format(
-                    execution_date_fmt=execution_date_fmt
-                )
+    assert (
+        file_contents.count(
+            "INFO - Running command: \n    echo '{execution_date_fmt}'\n".format(
+                execution_date_fmt=execution_date_fmt
             )
-            == 1
         )
-        assert (
-            file_contents.count(
-                "INFO - {execution_date_fmt}\n".format(execution_date_fmt=execution_date_fmt)
-            )
-            == 1
+        == 1
+    )
+    assert (
+        file_contents.count(
+            "INFO - {execution_date_fmt}\n".format(execution_date_fmt=execution_date_fmt)
         )
-        assert file_contents.count("INFO - Command exited with return code 0") == 1
+        == 1
+    )
+    assert file_contents.count("INFO - Command exited with return code 0") == 1
 
 
 def get_dag():
@@ -102,7 +98,7 @@ def test_pipeline_tags():
             ),
             instance=instance,
         )
-        check_compute_logs(manager, result, EXECUTION_DATE_MINUS_WEEK_FMT)
+        check_captured_logs(manager, result, EXECUTION_DATE_MINUS_WEEK_FMT)
 
 
 def test_pipeline_auto_tag():
@@ -119,11 +115,17 @@ def test_pipeline_auto_tag():
             instance=instance,
         )
 
+        capture_events = [
+            event
+            for event in result.event_list
+            if event.event_type == DagsterEventType.LOGS_CAPTURED
+        ]
+        event = capture_events[0]
+        assert event.logs_captured_data.step_keys == ["airflow_templated"]
+        file_key = event.logs_captured_data.file_key
         post_execute_time = get_current_datetime_in_utc()
 
-        compute_io_path = manager.get_local_path(
-            result.run_id, "airflow_templated", ComputeIOType.STDOUT
-        )
+        compute_io_path = manager.get_local_path(result.run_id, file_key, ComputeIOType.STDOUT)
         assert os.path.exists(compute_io_path)
         stdout_file = open(compute_io_path, "r", encoding="utf8")
         file_contents = normalize_file_content(stdout_file.read())
@@ -135,7 +137,7 @@ def test_pipeline_auto_tag():
         date_end = date_start + 10  # number of characters in YYYY-MM-DD
         date = file_contents[date_start:date_end]
 
-        check_compute_logs(manager, result, date)
+        check_captured_logs(manager, result, date)
 
         pre_execute_time_fmt = pre_execute_time.strftime("%Y-%m-%d")
         post_execute_time_fmt = post_execute_time.strftime("%Y-%m-%d")

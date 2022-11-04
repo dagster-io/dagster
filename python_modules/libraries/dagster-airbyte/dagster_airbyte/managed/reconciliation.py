@@ -21,7 +21,11 @@ from dagster_managed_elements import (
     ManagedElementDiff,
     ManagedElementError,
 )
-from dagster_managed_elements.types import ManagedElementReconciler
+from dagster_managed_elements.types import (
+    SECRET_MASK_VALUE,
+    ManagedElementReconciler,
+    is_key_secret,
+)
 from dagster_managed_elements.utils import diff_dicts
 
 import dagster._check as check
@@ -47,15 +51,34 @@ def gen_configured_stream_json(
     )
 
 
+def _ignore_secrets_compare_fn(k: str, _cv: Any, dv: Any) -> Optional[bool]:
+    if is_key_secret(k):
+        return dv == SECRET_MASK_VALUE
+    return None
+
+
+def _diff_configs(
+    config_dict: Dict[str, Any], dst_dict: Dict[str, Any], ignore_secrets: bool = True
+) -> ManagedElementDiff:
+    return diff_dicts(
+        config_dict=config_dict,
+        dst_dict=dst_dict,
+        custom_compare_fn=_ignore_secrets_compare_fn if ignore_secrets else None,
+    )
+
+
 def diff_sources(
-    config_src: Optional[AirbyteSource], curr_src: Optional[AirbyteSource]
+    config_src: Optional[AirbyteSource],
+    curr_src: Optional[AirbyteSource],
+    ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
     """
     Utility to diff two AirbyteSource objects.
     """
-    diff = diff_dicts(
+    diff = _diff_configs(
         config_src.source_configuration if config_src else {},
         curr_src.source_configuration if curr_src else {},
+        ignore_secrets,
     )
     if not diff.is_empty():
         name = config_src.name if config_src else curr_src.name if curr_src else "Unknown"
@@ -65,14 +88,17 @@ def diff_sources(
 
 
 def diff_destinations(
-    config_dst: Optional[AirbyteDestination], curr_dst: Optional[AirbyteDestination]
+    config_dst: Optional[AirbyteDestination],
+    curr_dst: Optional[AirbyteDestination],
+    ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
     """
     Utility to diff two AirbyteDestination objects.
     """
-    diff = diff_dicts(
+    diff = _diff_configs(
         config_dst.destination_configuration if config_dst else {},
         curr_dst.destination_configuration if curr_dst else {},
+        ignore_secrets,
     )
     if not diff.is_empty():
         name = config_dst.name if config_dst else curr_dst.name if curr_dst else "Unknown"
@@ -113,6 +139,7 @@ def reconcile_sources(
     workspace_id: str,
     dry_run: bool,
     should_delete: bool,
+    ignore_secrets: bool,
 ) -> Tuple[Mapping[str, InitializedAirbyteSource], ManagedElementCheckResult]:
     """
     Generates a diff of the configured and existing sources and reconciles them to match the
@@ -132,7 +159,11 @@ def reconcile_sources(
             continue
 
         diff = diff.join(
-            diff_sources(configured_source, existing_source.source if existing_source else None)
+            diff_sources(
+                configured_source,
+                existing_source.source if existing_source else None,
+                ignore_secrets,
+            )
         )
 
         if existing_source and (
@@ -187,7 +218,6 @@ def reconcile_sources(
                 source_id=source_id,
                 source_definition_id=defn_id,
             )
-
     return initialized_sources, diff
 
 
@@ -198,6 +228,7 @@ def reconcile_destinations(
     workspace_id: str,
     dry_run: bool,
     should_delete: bool,
+    ignore_secrets: bool,
 ) -> Tuple[Mapping[str, InitializedAirbyteDestination], ManagedElementCheckResult]:
     """
     Generates a diff of the configured and existing destinations and reconciles them to match the
@@ -220,6 +251,7 @@ def reconcile_destinations(
             diff_destinations(
                 configured_destination,
                 existing_destination.destination if existing_destination else None,
+                ignore_secrets,
             )
         )
 
@@ -286,6 +318,7 @@ def reconcile_config(
     objects: List[AirbyteConnection],
     dry_run: bool = False,
     should_delete: bool = False,
+    ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
     """
     Main entry point for the reconciliation process. Takes a list of AirbyteConnection objects
@@ -335,10 +368,16 @@ def reconcile_config(
         )
 
         all_sources, sources_diff = reconcile_sources(
-            res, config_sources, existing_sources, workspace_id, dry_run, should_delete
+            res,
+            config_sources,
+            existing_sources,
+            workspace_id,
+            dry_run,
+            should_delete,
+            ignore_secrets,
         )
         all_dests, dests_diff = reconcile_destinations(
-            res, config_dests, existing_dests, workspace_id, dry_run, should_delete
+            res, config_dests, existing_dests, workspace_id, dry_run, should_delete, ignore_secrets
         )
 
         # Now that we have updated the set of sources and destinations, we can
@@ -599,20 +638,22 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
 
         super().__init__()
 
-    def check(self) -> ManagedElementCheckResult:
+    def check(self, **kwargs) -> ManagedElementCheckResult:
         return reconcile_config(
             self._airbyte_instance,
             self._connections,
             dry_run=True,
             should_delete=self._delete_unmentioned_resources,
+            ignore_secrets=(not kwargs.get("include_all_secrets", False)),
         )
 
-    def apply(self) -> ManagedElementCheckResult:
+    def apply(self, **kwargs) -> ManagedElementCheckResult:
         return reconcile_config(
             self._airbyte_instance,
             self._connections,
             dry_run=False,
             should_delete=self._delete_unmentioned_resources,
+            ignore_secrets=(not kwargs.get("include_all_secrets", False)),
         )
 
 

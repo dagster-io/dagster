@@ -8,7 +8,7 @@ from dagster import job
 
 # start_operator_to_op_1
 http_task = SimpleHttpOperator(task_id="http_task", method="GET", endpoint="images")
-connections = [Connection(conn_id="http_default", host="https://google.com")]
+connections = [Connection(conn_id="http_default", conn_type="uri", host="https://google.com")]
 dagster_op = airflow_operator_to_op(http_task, connections=connections)
 
 

@@ -98,6 +98,7 @@ from dagster._config.source import (
     IntSource as IntSource,
     StringSource as StringSource,
 )
+
 from dagster._core.definitions.asset_in import (
     AssetIn as AssetIn,
 )
@@ -152,6 +153,9 @@ from dagster._core.definitions.decorators.sensor_decorator import (
     asset_sensor as asset_sensor,
     sensor as sensor,
     multi_asset_sensor as multi_asset_sensor,
+)
+from dagster._core.definitions.decorators.source_asset_decorator import (
+    observable_source_asset as observable_source_asset,
 )
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
@@ -217,6 +221,7 @@ from dagster._core.definitions.metadata import (
     MarkdownMetadataValue as MarkdownMetadataValue,
     MetadataEntry as MetadataEntry,
     MetadataValue as MetadataValue,
+    NotebookMetadataValue as NotebookMetadataValue,
     PathMetadataValue as PathMetadataValue,
     PythonArtifactMetadataValue as PythonArtifactMetadataValue,
     TableMetadataValue as TableMetadataValue,

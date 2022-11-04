@@ -12,7 +12,7 @@ from dagster_graphql.test.utils import (
 from dagster._legacy import execute_pipeline
 from dagster._seven import json
 
-from .setup import noop_pipeline
+from .repo import noop_pipeline
 
 SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID = """
 query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {

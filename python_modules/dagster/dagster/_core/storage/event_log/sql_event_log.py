@@ -17,7 +17,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.event_api import RunShardedEventsCursor
-from dagster._core.events import MARKER_EVENTS, DagsterEventType
+from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import build_run_step_stats_from_events
 from dagster._serdes import (
@@ -269,11 +269,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         if (
             event.is_dagster_event
-            and (
-                event.dagster_event.is_step_materialization
-                or event.dagster_event.is_asset_observation
-                or event.dagster_event.is_asset_materialization_planned
-            )
+            and event.dagster_event_type in ASSET_EVENTS
             and event.dagster_event.asset_key
         ):
             self.store_asset_event(event)

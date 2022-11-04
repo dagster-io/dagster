@@ -15,9 +15,8 @@ from dagster._utils import utc_datetime_from_timestamp
 
 from .asset_selection import AssetSelection
 from .events import AssetKey
-from .multi_asset_sensor_definition import MultiAssetSensorDefinition
 from .run_request import RunRequest
-from .sensor_definition import DefaultSensorStatus
+from .sensor_definition import DefaultSensorStatus, SensorDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -213,7 +212,7 @@ def _make_sensor(
     description: Optional[str],
     default_status: DefaultSensorStatus,
     run_tags: Optional[Mapping[str, str]],
-) -> MultiAssetSensorDefinition:
+) -> SensorDefinition:
     """Creates the sensor that will monitor the parents of all provided assets and determine
     which assets should be materialized (ie their parents have been updated).
 
@@ -297,10 +296,8 @@ def _make_sensor(
                 run_key=f"{context.cursor}", asset_selection=list(should_materialize), tags=run_tags
             )
 
-    return MultiAssetSensorDefinition(
-        asset_selection=selection,
-        asset_keys=None,
-        asset_materialization_fn=sensor_fn,
+    return SensorDefinition(
+        evaluation_fn=sensor_fn,
         name=name,
         job_name="__ASSET_JOB",
         minimum_interval_seconds=minimum_interval_seconds,
@@ -319,7 +316,7 @@ def build_asset_reconciliation_sensor(
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     run_tags: Optional[Mapping[str, str]] = None,
-) -> MultiAssetSensorDefinition:
+) -> SensorDefinition:
     """Constructs a sensor that will monitor the parents of the provided assets and materialize an asset
     based on the materialization of its parents. This will keep the monitored assets up to date with the
     latest data available to them. The sensor defaults to materializing an asset when all of
@@ -344,7 +341,7 @@ def build_asset_reconciliation_sensor(
         run_tags (Optional[Mapping[str, str]): Dictionary of tags to pass to the RunRequests launched by this sensor
 
     Returns:
-        A MultiAssetSensorDefinition that will monitor the parents of the provided assets to determine when
+        A SensorDefinition that will monitor the parents of the provided assets to determine when
         the provided assets should be materialized
 
     Example:

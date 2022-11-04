@@ -7,20 +7,21 @@ describe('humanCronString', () => {
     expect(humanCronString('@monthly')).toBe('At 12:00 AM, on day 1 of the month');
   });
 
+  // Arizona does not use daylight savings.
   describe('Timezone', () => {
     it('shows timezone if provided, if cron specifies a time', () => {
-      const timezone = 'America/Chicago';
-      expect(humanCronString('@daily', timezone)).toBe('At 12:00 AM CDT');
-      expect(humanCronString('@weekly', timezone)).toBe('At 12:00 AM CDT, only on Sunday');
-      expect(humanCronString('@monthly', timezone)).toBe('At 12:00 AM CDT, on day 1 of the month');
+      const timezone = 'America/Phoenix';
+      expect(humanCronString('@daily', timezone)).toBe('At 12:00 AM MST');
+      expect(humanCronString('@weekly', timezone)).toBe('At 12:00 AM MST, only on Sunday');
+      expect(humanCronString('@monthly', timezone)).toBe('At 12:00 AM MST, on day 1 of the month');
       expect(humanCronString('0 23 ? * MON-FRI', timezone)).toBe(
-        'At 11:00 PM CDT, Monday through Friday',
+        'At 11:00 PM MST, Monday through Friday',
       );
-      expect(humanCronString('0 23 * * *', timezone)).toBe('At 11:00 PM CDT');
+      expect(humanCronString('0 23 * * *', timezone)).toBe('At 11:00 PM MST');
     });
 
     it('does not show timezone even if provided, if cron does not specify a time', () => {
-      const timezone = 'America/Chicago';
+      const timezone = 'America/Phoenix';
       expect(humanCronString('* * * * *', timezone)).toBe('Every minute');
       expect(humanCronString('* * * 6-8 *', timezone)).toBe('Every minute, June through August');
       expect(humanCronString('* * * * MON-FRI', timezone)).toBe(
@@ -29,7 +30,7 @@ describe('humanCronString', () => {
     });
 
     it('shows timezones on actual times, if cron is showing "X minutes..." or "X seconds..."', () => {
-      const timezone = 'America/Chicago';
+      const timezone = 'America/Phoenix';
       expect(humanCronString('0 5 0/1 * * ?', timezone)).toBe('At 5 minutes past the hour');
       expect(humanCronString('30 * * 6-8 *', timezone)).toBe(
         'At 30 minutes past the hour, June through August',
@@ -38,17 +39,17 @@ describe('humanCronString', () => {
         'At 30 seconds past the minute, every 5 minutes',
       );
       expect(humanCronString('2,4-5 1 * * *', timezone)).toBe(
-        'At 2 and 4 through 5 minutes past the hour, at 01:00 AM CDT',
+        'At 2 and 4 through 5 minutes past the hour, at 01:00 AM MST',
       );
     });
 
     it('shows timezone in complex time cases', () => {
-      const timezone = 'America/Chicago';
+      const timezone = 'America/Phoenix';
       expect(humanCronString('2-59/3 1,9,22 11-26 1-6 ?', timezone)).toBe(
-        'Every 3 minutes, minutes 2 through 59 past the hour, at 01:00 AM CDT, 09:00 AM CDT, and 10:00 PM CDT, between day 11 and 26 of the month, January through June',
+        'Every 3 minutes, minutes 2 through 59 past the hour, at 01:00 AM MST, 09:00 AM MST, and 10:00 PM MST, between day 11 and 26 of the month, January through June',
       );
       expect(humanCronString('12-50 0-10 6 * * * 2022', timezone)).toBe(
-        'Seconds 12 through 50 past the minute, minutes 0 through 10 past the hour, at 06:00 AM CDT, only in 2022',
+        'Seconds 12 through 50 past the minute, minutes 0 through 10 past the hour, at 06:00 AM MST, only in 2022',
       );
     });
 
@@ -83,13 +84,14 @@ describe('humanCronString', () => {
   });
 
   describe('24-hour format', () => {
-    const timezone = 'Europe/Berlin';
+    // Thailand uses 24h format and does not use daylight savings.
+    const timezone = 'Asia/Bangkok';
     let dateSpy;
     let languageGetter;
 
     beforeAll(() => {
       languageGetter = jest.spyOn(window.navigator, 'language', 'get');
-      languageGetter.mockReturnValue('de-DE');
+      languageGetter.mockReturnValue('th-TH');
       dateSpy = jest.spyOn(Date.prototype, 'toLocaleTimeString');
       dateSpy.mockReturnValue('00:00:00');
     });
@@ -99,13 +101,13 @@ describe('humanCronString', () => {
     });
 
     it('shows 24h format if locale uses it, and shows timezone if provided, if cron specifies a time', () => {
-      expect(humanCronString('@daily', timezone)).toBe('At 00:00 CEST');
-      expect(humanCronString('@weekly', timezone)).toBe('At 00:00 CEST, only on Sunday');
-      expect(humanCronString('@monthly', timezone)).toBe('At 00:00 CEST, on day 1 of the month');
+      expect(humanCronString('@daily', timezone)).toBe('At 00:00 +07');
+      expect(humanCronString('@weekly', timezone)).toBe('At 00:00 +07, only on Sunday');
+      expect(humanCronString('@monthly', timezone)).toBe('At 00:00 +07, on day 1 of the month');
       expect(humanCronString('0 23 ? * MON-FRI', timezone)).toBe(
-        'At 23:00 CEST, Monday through Friday',
+        'At 23:00 +07, Monday through Friday',
       );
-      expect(humanCronString('0 23 * * *', timezone)).toBe('At 23:00 CEST');
+      expect(humanCronString('0 23 * * *', timezone)).toBe('At 23:00 +07');
     });
 
     it('shows 24h format if locale uses it, does not show timezone if not provided', () => {
@@ -118,10 +120,10 @@ describe('humanCronString', () => {
 
     it('shows timezone in complex time cases', () => {
       expect(humanCronString('2-59/3 1,9,22 11-26 1-6 ?', timezone)).toBe(
-        'Every 3 minutes, minutes 2 through 59 past the hour, at 01:00 CEST, 09:00 CEST, and 22:00 CEST, between day 11 and 26 of the month, January through June',
+        'Every 3 minutes, minutes 2 through 59 past the hour, at 01:00 +07, 09:00 +07, and 22:00 +07, between day 11 and 26 of the month, January through June',
       );
       expect(humanCronString('12-50 0-10 22 * * * 2022', timezone)).toBe(
-        'Seconds 12 through 50 past the minute, minutes 0 through 10 past the hour, at 22:00 CEST, only in 2022',
+        'Seconds 12 through 50 past the minute, minutes 0 through 10 past the hour, at 22:00 +07, only in 2022',
       );
     });
   });
