@@ -34,7 +34,16 @@ setup(
     description="The data orchestration platform built for productivity.",
     long_description=get_description(),
     long_description_content_type="text/markdown",
-    url="https://github.com/dagster-io/dagster",
+    project_urls={
+        "Homepage": "https://dagster.io",
+        "GitHub": "https://github.com/dagster-io/dagster",
+        "Changelog": "https://github.com/dagster-io/dagster/releases",
+        "Issue Tracker": "https://github.com/dagster-io/dagster/issues",
+        "Twitter": "https://twitter.com/dagster",
+        "YouTube": "https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q"
+        "Slack": "https://dagster.io/slack",
+        "Blog": "https://dagster.io/blog",
+    },
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
