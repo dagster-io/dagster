@@ -39,7 +39,7 @@ iris_kmeans_jupyter_notebook = define_dagstermill_asset(
 
 # Asset backed by a Noteable notebook
 
-notebook_id = "7070dfc2-e788-4882-bf05-977bf010949e"
+notebook_id = "<your-noteable-notebook-id>"
 iris_kmeans_noteable_notebook = define_noteable_dagster_asset(
     name="iris_kmeans_noteable",
     notebook_id=notebook_id,
