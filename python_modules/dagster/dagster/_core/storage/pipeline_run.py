@@ -524,7 +524,18 @@ class PipelineRun(
 
     @staticmethod
     def tags_for_partition_set(partition_set, partition):
-        return {PARTITION_NAME_TAG: partition.name, PARTITION_SET_TAG: partition_set.name}
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiPartitionKey,
+            get_tags_from_multi_partition_key,
+        )
+
+        tags = {PARTITION_SET_TAG: partition_set.name}
+        if isinstance(partition.name, MultiPartitionKey):
+            tags.update(get_tags_from_multi_partition_key(partition.name))
+        else:
+            tags[PARTITION_NAME_TAG] = partition.name
+
+        return tags
 
 
 @whitelist_for_serdes(serializer=DagsterRunSerializer)

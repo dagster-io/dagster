@@ -614,6 +614,7 @@ class AssetLayer:
                     check.not_none(inner_node_handle), inner_output_def.name
                 )
                 partition_fn = lambda context: {context.partition_key}
+
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
                     asset_key,
                     partitions_fn=partition_fn if assets_def.partitions_def else None,

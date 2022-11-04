@@ -295,11 +295,12 @@ class InputContext:
 
         Raises an error if the current run is not a partitioned run.
         """
-        check.invariant(
-            self._partition_key is not None,
-            "Tried to access partition_key on a non-partitioned run.",
-        )
-        return cast(str, self._partition_key)
+        if self._partition_key is None:
+            check.failed(
+                "Tried to access partition_key on a non-partitioned run.",
+            )
+
+        return self._partition_key
 
     @public  # type: ignore
     @property
