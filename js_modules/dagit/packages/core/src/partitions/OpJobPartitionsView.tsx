@@ -13,7 +13,7 @@ import {BackfillPartitionSelector} from './BackfillSelector';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {PartitionGraph} from './PartitionGraph';
 import {PartitionState, PartitionStatus, runStatusToPartitionState} from './PartitionStatus';
-import {PartitionStepStatus} from './PartitionStepStatus';
+import {PartitionPerOpStatus} from './PartitionStepStatus';
 import {
   PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results,
   PartitionsStatusQuery_partitionSetOrError_PartitionSet,
@@ -222,7 +222,7 @@ const OpJobPartitionsViewContent: React.FC<{
         </div>
         {showSteps ? (
           <Box margin={{top: 16}}>
-            <PartitionStepStatus
+            <PartitionPerOpStatus
               partitionNames={partitionNames}
               partitions={partitions}
               pipelineName={partitionSet.pipelineName}

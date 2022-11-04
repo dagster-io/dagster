@@ -11,6 +11,7 @@ import {RepoAddress} from '../workspace/types';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {CountBox} from './OpJobPartitionsView';
 import {PartitionState, PartitionStatus} from './PartitionStatus';
+import {PartitionPerAssetStatus} from './PartitionStepStatus';
 
 export const AssetJobPartitionsView: React.FC<{
   pipelineName: string;
@@ -118,7 +119,19 @@ export const AssetJobPartitionsView: React.FC<{
             tooltipMessage="Click to view per-step status"
           />
         </div>
-        {showSteps && <Box margin={{top: 16}} />}
+        {showSteps && (
+          <Box margin={{top: 16}}>
+            <PartitionPerAssetStatus
+              partitionNames={partitionNames}
+              assetHealth={assetHealth}
+              assetQueryItems={assetGraph.graphQueryItems}
+              pipelineName={pipelineName}
+              setPageSize={setPageSize}
+              offset={offset}
+              setOffset={setOffset}
+            />
+          </Box>
+        )}
       </Box>
       <Box
         padding={{horizontal: 24, vertical: 16}}
