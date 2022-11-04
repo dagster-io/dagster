@@ -44,8 +44,6 @@ locations:
 
 Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` properties, you can configure environment variables and secrets for a specific code location.
 
-**Note**: Environment variables and secrets can also be set using the [Dagster Cloud UI](/dagster-cloud/developing-testing/environment-variables#declaring-environment-variables).
-
 <ReferenceTable>
   <ReferenceTableItem propertyName="container_context.ecs.env_vars">
     A list of keys or key-value pairs to include in the task. If a value is not
@@ -70,6 +68,11 @@ Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` p
     secret.
   </ReferenceTableItem>
 </ReferenceTable>
+
+Refer to the following guides for more info about environment variables:
+
+- [Dagster Cloud environment variables and secrets](/dagster-cloud/developing-testing/environment-variables-and-secrets)
+- [Using environment variables and secrets in Dagster code](/guides/dagster-using-environment-variables-and-secrets)
 
 ---
 
