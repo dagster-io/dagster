@@ -115,6 +115,10 @@ def define_dagstermill_asset(
 ):
     """Creates a Dagster asset for a Jupyter notebook.
 
+    The resulting asset requires a special IO manager specified with the key "output_notebook_io_manager".
+    This IO manager will handle the special logic required to store the notebook. See the example for
+    how to specify the resource. The compatible IO managers are: local_output_notebook_io_manager.
+
     Arguments:
         name (str): The name for the asset
         notebook_path (str): Path to the backing notebook
@@ -149,8 +153,8 @@ def define_dagstermill_asset(
 
     .. code-block:: python
 
-        from dagstermill import define_dagstermill_asset
-        from dagster import asset, AssetIn, AssetKey
+        from dagstermill import define_dagstermill_asset, local_output_notebook_io_manager
+        from dagster import asset, AssetIn, AssetKey, repository, with_resources
         from sklearn import datasets
         import pandas as pd
         import numpy as np
@@ -170,6 +174,19 @@ def define_dagstermill_asset(
                 "iris": AssetIn(key=AssetKey("iris_dataset"))
             }
         )
+
+        @repository
+        def my_repo():
+            return [
+                with_resources(
+                    [iris_dataset, iris_kmeans_notebook],
+                    resource_defs={
+                        "output_notebook_io_manager": local_output_notebook_io_manager,
+                    },
+                )
+            ]
+
+
 
     """
 
