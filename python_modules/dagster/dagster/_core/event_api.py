@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import List, NamedTuple, Optional, Union
+from typing import List, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
@@ -59,6 +60,7 @@ class EventRecordsFilter(
             ("after_timestamp", Optional[float]),
             ("before_timestamp", Optional[float]),
             ("storage_ids", Optional[List[int]]),
+            ("tags", Optional[Mapping[str, Union[str, List[str]]]]),
         ],
     )
 ):
@@ -95,9 +97,16 @@ class EventRecordsFilter(
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
         storage_ids: Optional[List[int]] = None,
+        tags: Optional[Mapping[str, Union[str, List[str]]]] = None,
     ):
         check.opt_list_param(asset_partitions, "asset_partitions", of_type=str)
         check.inst_param(event_type, "event_type", DagsterEventType)
+
+        tags = check.opt_mapping_param(tags, "tags", key_type=str)
+        if tags and event_type is not DagsterEventType.ASSET_MATERIALIZATION:
+            raise DagsterInvalidInvocationError(
+                "Can only filter by tags for asset materialization events"
+            )
 
         # type-ignores work around mypy type inference bug
         return super(EventRecordsFilter, cls).__new__(
@@ -114,4 +123,5 @@ class EventRecordsFilter(
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
             storage_ids=check.opt_list_param(storage_ids, "storage_ids", of_type=int),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str),
         )

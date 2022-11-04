@@ -11,6 +11,7 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -1450,6 +1451,23 @@ class DagsterInstance:
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Iterable["AssetRecord"]:
         return self._event_storage.get_asset_records(asset_keys)
+
+    @traced
+    def get_event_tags_for_asset(
+        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
+    ) -> Sequence[Mapping[str, str]]:
+        """
+        Fetches asset event tags for the given asset key.
+
+        If filter_tags is provided, searches for events containing all of the filter tags. Then,
+        returns all tags for those events. This enables searching for multipartitioned asset
+        partition tags with a fixed dimension value, e.g. all of the tags for events where
+        "country" == "US".
+
+        Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
+        single event.
+        """
+        return self._event_storage.get_event_tags_for_asset(asset_key, filter_tags)
 
     @traced
     def run_ids_for_asset_key(self, asset_key):

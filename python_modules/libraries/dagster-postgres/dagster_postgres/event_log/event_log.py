@@ -3,6 +3,7 @@ from typing import Optional
 import sqlalchemy as db
 
 import dagster._check as check
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
@@ -169,9 +170,16 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         ):
             self.store_asset_event(event)
 
-    def store_asset_event(self, event):
+            if res[1] is None:
+                raise DagsterInvariantViolationError(
+                    "Cannot store asset event tags for null event id."
+                )
+
+            self.store_asset_event_tags(event, res[1])
+
+    def store_asset_event(self, event: EventLogEntry):
         check.inst_param(event, "event", EventLogEntry)
-        if not event.is_dagster_event or not event.dagster_event.asset_key:
+        if not (event.dagster_event and event.dagster_event.asset_key):
             return
 
         # We switched to storing the entire event record of the last materialization instead of just
