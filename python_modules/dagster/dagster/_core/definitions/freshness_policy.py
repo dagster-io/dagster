@@ -28,6 +28,15 @@ class FreshnessPolicy(ABC):
     ) -> Optional[float]:
         raise NotImplementedError()
 
+    @abstractmethod
+    def constraints_for_time_window(
+        self,
+        window_start: datetime,
+        window_end: datetime,
+        upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+    ) -> Sequence[Tuple[AssetKey, datetime, datetime]]:
+        raise NotImplementedError()
+
     @staticmethod
     def minimum_freshness(minimum_freshness_minutes: float) -> "MinimumFreshnessPolicy":
         """Static constructor for a freshness policy which specifies that the upstream data that
@@ -63,6 +72,33 @@ class MinimumFreshnessPolicy(FreshnessPolicy):
     @property
     def minimum_freshness_minutes(self) -> float:
         return self._minimum_freshness_minutes
+
+    def constraints_for_time_window(
+        self,
+        window_start: datetime,
+        window_end: datetime,
+        upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+    ) -> Sequence[Tuple[AssetKey, datetime, datetime]]:
+
+        constraints = []
+        period = pendulum.period(window_start, window_end)
+
+        # a MinimumFreshnessPolicy corresponds to an infinite series of constraints, as at
+        # each point in time, the upstream materialization time of a given parent asset must
+        # be no more than N minutes before that point in time.
+        #
+        # we interpolate this infinite series with to approximate it.
+        for time in period.range("minutes", self.minimum_freshness_minutes / 5):
+            # add a constraint for each upstream key
+            required_materialization_time = time - pendulum.duration(self.minimum_freshness_minutes)
+            constraints.extend(
+                [
+                    (key, required_materialization_time, time)
+                    for key in upstream_materialization_times.keys()
+                ]
+            )
+
+        return constraints
 
     def minutes_late(
         self,
@@ -102,6 +138,26 @@ class CronMinimumFreshnessPolicy(FreshnessPolicy):
     @property
     def cron_schedule(self) -> str:
         return self._cron_schedule
+
+    def constraints_for_time_window(
+        self,
+        window_start: datetime,
+        window_end: datetime,
+        upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+    ) -> Sequence[Tuple[AssetKey, datetime, datetime]]:
+
+        constraints = []
+        schedule_ticks = croniter(self.cron_schedule, window_start, ret_type=datetime)
+        # iterate over each schedule tick in the provided time window
+        current_tick = next(schedule_ticks)
+        while current_tick < window_end:
+            # add a constraint for each upstream key
+            required_materialization_time = current_tick - pendulum.duration(
+                self.minimum_freshness_minutes
+            )
+            constraints.extend([(key, required_materialization_time, current_tick)])
+            current_tick = next(schedule_ticks)
+        return constraints
 
     def minutes_late(
         self,
