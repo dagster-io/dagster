@@ -1,4 +1,5 @@
 import sqlalchemy as db
+from sqlalchemy.dialects import sqlite
 
 from ..sql import MySQLCompatabilityTypes, get_current_timestamp
 
@@ -52,26 +53,69 @@ AssetKeyTable = db.Table(
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
-db.Index("idx_run_id", SqlEventLogStorageTable.c.run_id)
+AssetEventTagsTable = db.Table(
+    "asset_event_tags",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("event_id", db.Integer, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
+    db.Column("asset_key", db.Text, nullable=False),
+    db.Column("key", db.Text, nullable=False),
+    db.Column("value", db.Text),
+    db.Column("event_timestamp", db.types.TIMESTAMP),
+)
+
 db.Index(
     "idx_step_key",
     SqlEventLogStorageTable.c.step_key,
     mysql_length=32,
 )
 db.Index(
-    "idx_asset_key",
-    SqlEventLogStorageTable.c.asset_key,
-    mysql_length=32,
-)
-db.Index(
-    "idx_asset_partition",
-    SqlEventLogStorageTable.c.asset_key,
-    SqlEventLogStorageTable.c.partition,
-    mysql_length=64,
-)
-db.Index(
     "idx_event_type",
     SqlEventLogStorageTable.c.dagster_event_type,
     SqlEventLogStorageTable.c.id,
     mysql_length={"dagster_event_type": 64},
+)
+db.Index(
+    "idx_asset_event_tags",
+    AssetEventTagsTable.c.asset_key,
+    AssetEventTagsTable.c.key,
+    AssetEventTagsTable.c.value,
+    mysql_length={"asset_key": 64, "key": 64, "value": 64},
+)
+db.Index(
+    "idx_asset_event_tags_event_id",
+    AssetEventTagsTable.c.event_id,
+)
+db.Index(
+    "idx_events_by_run_id",
+    SqlEventLogStorageTable.c.run_id,
+    SqlEventLogStorageTable.c.id,
+    mysql_length={"run_id": 64},
+)
+db.Index(
+    "idx_events_by_asset",
+    SqlEventLogStorageTable.c.asset_key,
+    SqlEventLogStorageTable.c.dagster_event_type,
+    SqlEventLogStorageTable.c.id,
+    postgresql_where=(SqlEventLogStorageTable.c.asset_key != None),
+    mysql_length={"asset_key": 64, "dagster_event_type": 64},
+)
+db.Index(
+    "idx_events_by_asset_partition",
+    SqlEventLogStorageTable.c.asset_key,
+    SqlEventLogStorageTable.c.dagster_event_type,
+    SqlEventLogStorageTable.c.partition,
+    SqlEventLogStorageTable.c.id,
+    postgresql_where=(
+        db.and_(
+            SqlEventLogStorageTable.c.asset_key != None,
+            SqlEventLogStorageTable.c.partition != None,
+        )
+    ),
+    mysql_length={"asset_key": 64, "dagster_event_type": 64, "partition": 64},
 )

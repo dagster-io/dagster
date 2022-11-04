@@ -14,6 +14,13 @@ export interface MetadataEntryFragment_PathMetadataEntry {
   path: string;
 }
 
+export interface MetadataEntryFragment_NotebookMetadataEntry {
+  __typename: "NotebookMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
 export interface MetadataEntryFragment_JsonMetadataEntry {
   __typename: "JsonMetadataEntry";
   label: string;
@@ -163,4 +170,4 @@ export interface MetadataEntryFragment_TableSchemaMetadataEntry {
   schema: MetadataEntryFragment_TableSchemaMetadataEntry_schema;
 }
 
-export type MetadataEntryFragment = MetadataEntryFragment_PathMetadataEntry | MetadataEntryFragment_JsonMetadataEntry | MetadataEntryFragment_UrlMetadataEntry | MetadataEntryFragment_TextMetadataEntry | MetadataEntryFragment_MarkdownMetadataEntry | MetadataEntryFragment_PythonArtifactMetadataEntry | MetadataEntryFragment_FloatMetadataEntry | MetadataEntryFragment_IntMetadataEntry | MetadataEntryFragment_BoolMetadataEntry | MetadataEntryFragment_PipelineRunMetadataEntry | MetadataEntryFragment_AssetMetadataEntry | MetadataEntryFragment_TableMetadataEntry | MetadataEntryFragment_TableSchemaMetadataEntry;
+export type MetadataEntryFragment = MetadataEntryFragment_PathMetadataEntry | MetadataEntryFragment_NotebookMetadataEntry | MetadataEntryFragment_JsonMetadataEntry | MetadataEntryFragment_UrlMetadataEntry | MetadataEntryFragment_TextMetadataEntry | MetadataEntryFragment_MarkdownMetadataEntry | MetadataEntryFragment_PythonArtifactMetadataEntry | MetadataEntryFragment_FloatMetadataEntry | MetadataEntryFragment_IntMetadataEntry | MetadataEntryFragment_BoolMetadataEntry | MetadataEntryFragment_PipelineRunMetadataEntry | MetadataEntryFragment_AssetMetadataEntry | MetadataEntryFragment_TableMetadataEntry | MetadataEntryFragment_TableSchemaMetadataEntry;

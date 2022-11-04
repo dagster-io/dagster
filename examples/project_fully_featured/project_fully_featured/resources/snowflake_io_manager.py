@@ -196,7 +196,7 @@ class SnowflakeIOManager(IOManager):
         col_str = ", ".join(columns) if columns else "*"
         if time_window:
             return (
-                f"""SELECT * FROM {self._config["database"]}.{schema}.{table}\n"""
+                f"""SELECT {col_str} FROM {self._config["database"]}.{schema}.{table}\n"""
                 + self._time_window_where_clause(time_window)
             )
         else:

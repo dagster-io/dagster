@@ -182,8 +182,9 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       upstreamStepKey
     }
     ... on LogsCapturedEvent {
-      logKey
+      fileKey
       stepKeys
+      externalUrl
     }
   }
   ${METADATA_ENTRY_FRAGMENT}

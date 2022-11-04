@@ -137,27 +137,55 @@ def adls2_pickle_io_manager(init_context):
     `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
     with path "/my/base/path/one/two/".
 
-    Attach this resource definition to your job in order to make it available all your ops:
+    Example usage:
+
+    1. Attach this IO manager to a set of assets.
 
     .. code-block:: python
 
-        @job(resource_defs={
-            'io_manager': adls2_pickle_io_manager,
-            'adls2': adls2_resource,
-            ...,
-        })
+        from dagster import asset, repository, with_resources
+        from dagster_azure.adls2 import adls2_pickle_io_manager, adls2_resource
+
+        @asset
+        def asset1():
+            # create df ...
+            return df
+
+        @asset
+        def asset2(asset1):
+            return df[:5]
+
+        @repository
+        def repo():
+            return with_resources(
+                [asset1, asset2],
+                resource_defs={
+                    "io_manager": adls2_pickle_io_manager.configured(
+                        {"adls2_file_system": "my-cool-fs", "adls2_prefix": "my-cool-prefix"}
+                    ),
+                    "adls2": adls2_resource,
+                },
+            )
+        )
+
+
+    2. Attach this IO manager to your job to make it available to your ops.
+
+    .. code-block:: python
+
+        from dagster import job
+        from dagster_azure.adls2 import adls2_pickle_io_manager, adls2_resource
+
+        @job(
+            resource_defs={
+                "io_manager": adls2_pickle_io_manager.configured(
+                    {"adls2_file_system": "my-cool-fs", "adls2_prefix": "my-cool-prefix"}
+                ),
+                "adls2": adls2_resource,
+            },
+        )
         def my_job():
             ...
-
-    You may configure this storage as follows:
-
-    .. code-block:: YAML
-
-        resources:
-            io_manager:
-                config:
-                    adls2_file_system: my-cool-file-system
-                    adls2_prefix: good/prefix-for-files-
     """
     adls_resource = init_context.resources.adls2
     adls2_client = adls_resource.adls2_client

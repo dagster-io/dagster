@@ -270,7 +270,7 @@ dt > a.reference.internal {
 
 .DocSearch-Hit-source {
   line-height: 1.5rem;
-  font-weight: bold;
+  font-weight: 400;
   color: theme("colors.gable-green");
   margin-top: 1.5rem;
   margin-bottom: 1rem;
@@ -321,7 +321,7 @@ dt > a.reference.internal {
 .DocSearch-Hit-title {
   color: black;
   line-height: 1.5rem;
-  font-weight: 600;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

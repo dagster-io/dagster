@@ -28,6 +28,7 @@ from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import make_readonly_value, merge_dicts
 
+from .assets_job import get_base_asset_jobs, is_base_asset_job_name
 from .cacheable_assets import AssetsDefinitionCacheableData
 from .events import AssetKey, CoercibleToAssetKey
 from .executor_definition import ExecutorDefinition
@@ -725,7 +726,7 @@ class CachingRepositoryData(RepositoryData):
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate {definition.target_type} definition found for {definition.describe_target()}"
                     )
-                if AssetGroup.is_base_job_name(definition.name):
+                if is_base_asset_job_name(definition.name):
                     raise DagsterInvalidDefinitionError(
                         f"Attempted to provide job called {definition.name} to repository, which "
                         "is a reserved name. Please rename the job."
@@ -804,7 +805,12 @@ class CachingRepositoryData(RepositoryData):
             )
 
         if combined_asset_group:
-            for job_def in combined_asset_group.get_base_jobs():
+            for job_def in get_base_asset_jobs(
+                assets=combined_asset_group.assets,
+                source_assets=combined_asset_group.source_assets,
+                executor_def=combined_asset_group.executor_def,
+                resource_defs=combined_asset_group.resource_defs,
+            ):
                 pipelines_or_jobs[job_def.name] = job_def
 
             source_assets_by_key = {

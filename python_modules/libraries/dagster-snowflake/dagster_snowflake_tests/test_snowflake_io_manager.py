@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from dagster_snowflake.db_io_manager import TablePartition, TableSlice
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, _get_cleanup_statement
+
+from dagster._core.storage.db_io_manager import TablePartition, TableSlice
 
 
 def test_get_select_statement():

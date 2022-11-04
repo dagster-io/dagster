@@ -1,3 +1,4 @@
+import inspect
 import json
 import textwrap
 from typing import Any, List, Tuple, Type, Union, cast
@@ -133,12 +134,18 @@ class ConfigurableDocumenter(DataDocumenter):
         self.add_line("|", source_name)
         self.add_line("", source_name)
 
-        obj = cast(Union[ConfigurableDefinition, Type[ConfigurableClass]], self.object)
+        if inspect.isfunction(self.object):
+            # self.object is a function that returns a configurable class eg build_snowflake_io_manager
+            obj = self.object([])
+        else:
+            obj = self.object
+
+        obj = cast(Union[ConfigurableDefinition, Type[ConfigurableClass]], obj)
         config_field = None
         if isinstance(obj, ConfigurableDefinition):
-            config_field = check.not_none(self.object.config_schema).as_field()
+            config_field = check.not_none(obj.config_schema).as_field()
         elif isinstance(obj, type) and issubclass(obj, ConfigurableClass):
-            config_field = Field(self.object.config_type())
+            config_field = Field(obj.config_type())
 
         for line in config_field_to_lines(config_field):
             self.add_line(line, source_name)

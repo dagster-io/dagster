@@ -4,7 +4,7 @@ from datetime import datetime
 from dagster._core.telemetry import log_action
 
 
-def log_dagit_telemetry_event(graphene_info, action, client_time, metadata):
+def log_dagit_telemetry_event(graphene_info, action, client_time, client_id, metadata):
     from ..schema.roots.mutation import GrapheneLogTelemetrySuccess
 
     instance = graphene_info.context.instance
@@ -15,6 +15,6 @@ def log_dagit_telemetry_event(graphene_info, action, client_time, metadata):
         action=action,
         client_time=client_time,
         elapsed_time=None,
-        metadata=metadata,
+        metadata={"client_id": client_id, **metadata},
     )
     return GrapheneLogTelemetrySuccess(action=action)

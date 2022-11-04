@@ -36,9 +36,17 @@ class InputContext:
         config (Optional[Any]): The config attached to the input that we're loading.
         metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
             InputDefinition that we're loading for.
+            This property only contains metadata passed in explicitly with :py:class:`AssetIn`
+            or :py:class:`In`. To access metadata of an upstream asset or operation definition,
+            use the metadata in :py:attr:`.InputContext.upstream_output`.
         upstream_output (Optional[OutputContext]): Info about the output that produced the object
             we're loading.
         dagster_type (Optional[DagsterType]): The type of this input.
+            Dagster types do not propagate from an upstream output to downstream inputs,
+            and this property only captures type information for the input that is either
+            passed in explicitly with :py:class:`AssetIn` or :py:class:`In`, or can be
+            infered from type hints. For an asset input, the Dagster type from the upstream
+            asset definition is ignored.
         log (Optional[DagsterLogManager]): The log manager to use for this input.
         resource_config (Optional[Dict[str, Any]]): The config associated with the resource that
             initializes the RootInputManager.
@@ -287,11 +295,12 @@ class InputContext:
 
         Raises an error if the current run is not a partitioned run.
         """
-        check.invariant(
-            self._partition_key is not None,
-            "Tried to access partition_key on a non-partitioned run.",
-        )
-        return cast(str, self._partition_key)
+        if self._partition_key is None:
+            check.failed(
+                "Tried to access partition_key on a non-partitioned run.",
+            )
+
+        return self._partition_key
 
     @public  # type: ignore
     @property

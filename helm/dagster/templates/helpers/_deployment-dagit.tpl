@@ -56,6 +56,8 @@ spec:
         - name: "init-user-deployment-{{- $deployment.name -}}"
           image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
           command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
+          securityContext:
+            {{- toYaml $.Values.dagit.securityContext | nindent 12 }}
         {{- end }}
         {{- end }}
       containers:
@@ -97,6 +99,11 @@ spec:
             - name: dagster-workspace-yaml
               mountPath: "/dagster-workspace/"
             {{- end }}
+            {{- if .Values.dagit.volumeMounts }}
+            {{- range $volumeMount := .Values.dagit.volumeMounts }}
+            - {{- $volumeMount | toYaml | nindent 14 }}
+            {{- end }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.dagit.service.port }}
@@ -129,6 +136,11 @@ spec:
         - name: dagster-workspace-yaml
           configMap:
             name: {{ include "dagit.workspace.configmapName" . }}
+        {{- end }}
+        {{- if .Values.dagit.volumes }}
+        {{- range $volume := .Values.dagit.volumes }}
+        - {{- $volume | toYaml | nindent 10 }}
+        {{- end }}
         {{- end }}
     {{- with .Values.dagit.affinity }}
       affinity:

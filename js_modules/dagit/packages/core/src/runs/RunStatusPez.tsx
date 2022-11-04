@@ -3,10 +3,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {SectionHeader} from '../pipelines/SidebarComponents';
+import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 import {RunStatus} from '../types/globalTypes';
 
 import {RunStatusIndicator} from './RunStatusDots';
+import {failedStatuses, inProgressStatuses} from './RunStatuses';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunTimeFragment';
 
@@ -86,16 +87,22 @@ export const RunStatusOverlay = ({name, run}: OverlayProps) => {
     <OverlayContainer>
       <OverlayTitle>{name}</OverlayTitle>
       <RunRow>
-        <RunStatusIndicator status={run.status} />
-        <Link to={`/instance/runs/${run.runId}`}>
-          <Mono>{titleForRun(run)}</Mono>
-        </Link>
-        <HorizontalSpace />
-        <Box flex={{direction: 'column'}}>
+        <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
+          <RunStatusIndicator status={run.status} />
+          <Link to={`/instance/runs/${run.runId}`}>
+            <Mono style={{fontSize: '14px'}}>{titleForRun(run)}</Mono>
+          </Link>
+        </Box>
+        <Box flex={{direction: 'column', gap: 4}} padding={{top: 2}}>
           <RunTime run={run} />
           <RunStateSummary run={run} />
         </Box>
       </RunRow>
+      {failedStatuses.has(run.status) || inProgressStatuses.has(run.status) ? (
+        <SummaryContainer>
+          <StepSummaryForRun runId={run.id} />
+        </SummaryContainer>
+      ) : null}
     </OverlayContainer>
   );
 };
@@ -103,16 +110,16 @@ export const RunStatusOverlay = ({name, run}: OverlayProps) => {
 const OverlayContainer = styled.div`
   padding: 4px;
   font-size: 12px;
-  width: 280px;
+  width: 220px;
 `;
 
-const HorizontalSpace = styled.div`
-  flex: 1;
-`;
-
-const OverlayTitle = styled(SectionHeader)`
+const OverlayTitle = styled.div`
   padding: 8px;
   box-shadow: inset 0 -1px ${Colors.KeylineGray};
+  font-family: ${FontFamily.default};
+  font-size: 14px;
+  font-weight: 500;
+  color: ${Colors.Dark};
   max-width: 100%;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -120,13 +127,22 @@ const OverlayTitle = styled(SectionHeader)`
 `;
 
 const RunRow = styled.div`
-  align-items: baseline;
   padding: 8px;
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 12px;
   display: flex;
-  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+`;
+
+const SummaryContainer = styled.div`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 4px 8px 8px;
+
+  :empty {
+    display: none;
+  }
 `;
 
 const Pez = styled.div<{$color: string; $opacity: number}>`

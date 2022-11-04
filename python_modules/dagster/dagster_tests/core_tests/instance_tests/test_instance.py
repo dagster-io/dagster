@@ -5,6 +5,7 @@ import yaml
 from dagster_tests.api_tests.utils import get_bar_workspace
 
 from dagster import _check as check
+from dagster import execute_job, job, op, reconstructable
 from dagster._check import CheckError
 from dagster._config import Field
 from dagster._core.errors import (
@@ -23,7 +24,7 @@ from dagster._core.snap import (
     snapshot_from_execution_plan,
 )
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster._legacy import PipelineDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import PipelineDefinition
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 
@@ -89,44 +90,39 @@ def test_in_memory_persist_one_run():
         do_test_single_write_read(instance)
 
 
-def test_create_pipeline_snapshot():
-    @solid
-    def noop_solid(_):
-        pass
+@op
+def noop_op(_):
+    pass
 
-    @pipeline
-    def noop_pipeline():
-        noop_solid()
+
+@job
+def noop_job():
+    noop_op()
+
+
+def test_create_pipeline_snapshot():
 
     with instance_for_test() as instance:
-        result = execute_pipeline(noop_pipeline, instance=instance)
+        result = execute_job(reconstructable(noop_job), instance=instance)
         assert result.success
 
         run = instance.get_run_by_id(result.run_id)
 
         assert run.pipeline_snapshot_id == create_pipeline_snapshot_id(
-            noop_pipeline.get_pipeline_snapshot()
+            noop_job.get_pipeline_snapshot()
         )
 
 
 def test_create_execution_plan_snapshot():
-    @solid
-    def noop_solid(_):
-        pass
-
-    @pipeline
-    def noop_pipeline():
-        noop_solid()
-
     with instance_for_test() as instance:
-        execution_plan = create_execution_plan(noop_pipeline)
+        execution_plan = create_execution_plan(noop_job)
 
         ep_snapshot = snapshot_from_execution_plan(
-            execution_plan, noop_pipeline.get_pipeline_snapshot_id()
+            execution_plan, noop_job.get_pipeline_snapshot_id()
         )
         ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
 
-        result = execute_pipeline(noop_pipeline, instance=instance)
+        result = execute_job(reconstructable(noop_job), instance=instance)
         assert result.success
 
         run = instance.get_run_by_id(result.run_id)

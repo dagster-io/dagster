@@ -46,6 +46,7 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
+from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._serdes import (
     DefaultNamedTupleSerializer,
@@ -53,6 +54,7 @@ from dagster._serdes import (
     register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
+from dagster._serdes.serdes import replace_storage_keys
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
@@ -585,6 +587,10 @@ class DagsterEvent(
     def is_pipeline_failure(self) -> bool:
         return self.event_type == DagsterEventType.RUN_FAILURE
 
+    @property
+    def is_run_failure(self) -> bool:
+        return self.event_type == DagsterEventType.RUN_FAILURE
+
     @public  # type: ignore
     @property
     def is_failure(self) -> bool:
@@ -705,6 +711,13 @@ class DagsterEvent(
             self.event_type,
         )
         return cast(StepExpectationResultData, self.event_specific_data)
+
+    @property
+    def materialization(self) -> Union[Materialization, AssetMaterialization]:
+        _assert_type(
+            "step_materialization_data", DagsterEventType.ASSET_MATERIALIZATION, self.event_type
+        )
+        return cast(StepMaterializationData, self.event_specific_data).materialization
 
     @property
     def pipeline_failure_data(self) -> "PipelineFailureData":
@@ -1354,31 +1367,32 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    def capture_logs(pipeline_context: IPlanContext, log_key: str, steps: List["ExecutionStep"]):
-        step_keys = [step.key for step in steps]
-        if len(step_keys) == 1:
-            message = f"Started capturing logs for step: {step_keys[0]}."
-        else:
-            message = f"Started capturing logs in process (pid: {os.getpid()})."
+    def legacy_compute_log_step_event(step_context: StepExecutionContext):
+        step_key = step_context.step.key
+        return DagsterEvent.from_step(
+            DagsterEventType.LOGS_CAPTURED,
+            step_context,
+            message=f"Started capturing logs for step: {step_key}.",
+            event_specific_data=ComputeLogsCaptureData(
+                step_keys=[step_key],
+                file_key=step_key,
+            ),
+        )
 
-        if isinstance(pipeline_context, StepExecutionContext):
-            return DagsterEvent.from_step(
-                DagsterEventType.LOGS_CAPTURED,
-                pipeline_context,
-                message=message,
-                event_specific_data=ComputeLogsCaptureData(
-                    step_keys=step_keys,
-                    log_key=log_key,
-                ),
-            )
-
+    @staticmethod
+    def capture_logs(
+        pipeline_context: IPlanContext,
+        step_keys: List[str],
+        log_key: List[str],
+        log_context: CapturedLogContext,
+    ):
+        file_key = log_key[-1]
         return DagsterEvent.from_pipeline(
             DagsterEventType.LOGS_CAPTURED,
             pipeline_context,
-            message=message,
+            message=f"Started capturing logs in process (pid: {os.getpid()}).",
             event_specific_data=ComputeLogsCaptureData(
-                step_keys=step_keys,
-                log_key=log_key,
+                step_keys=step_keys, file_key=file_key, external_url=log_context.external_url
             ),
         )
 
@@ -1675,21 +1689,60 @@ class LoadedInputData(
         )
 
 
-@whitelist_for_serdes
+class ComputeLogsDataSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict,
+        klass,
+        args_for_class,
+        whitelist_map,
+        descent_path,
+    ):
+        storage_dict = replace_storage_keys(storage_dict, {"log_key": "file_key"})
+        return super().value_from_storage_dict(
+            storage_dict, klass, args_for_class, whitelist_map, descent_path
+        )
+
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # For backcompat, we store:
+        # file_key as log_key
+        return replace_storage_keys(
+            storage,
+            {
+                "file_key": "log_key",
+            },
+        )
+
+
+@whitelist_for_serdes(serializer=ComputeLogsDataSerializer)
 class ComputeLogsCaptureData(
     NamedTuple(
         "_ComputeLogsCaptureData",
         [
-            ("log_key", str),
+            ("file_key", List[str]),  # renamed log_key => file_key to avoid confusion
             ("step_keys", List[str]),
+            ("external_url", Optional[str]),
         ],
     )
 ):
-    def __new__(cls, log_key, step_keys):
+    def __new__(cls, file_key, step_keys, external_url=None):
         return super(ComputeLogsCaptureData, cls).__new__(
             cls,
-            log_key=check.str_param(log_key, "log_key"),
+            file_key=check.str_param(file_key, "file_key"),
             step_keys=check.opt_list_param(step_keys, "step_keys", of_type=str),
+            external_url=check.opt_str_param(external_url, "external_url"),
         )
 
 

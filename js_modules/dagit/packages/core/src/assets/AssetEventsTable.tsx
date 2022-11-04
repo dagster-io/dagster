@@ -215,7 +215,7 @@ const EventGroupRow: React.FC<{
                 hasPartitions={hasPartitions}
                 hasLineage={hasLineage}
                 events={all}
-              />
+              >{`View ${all.length} events`}</AllIndividualEventsLink>
             ) : latest.__typename === 'MaterializationEvent' ? (
               <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.Gray600}}>
                 <Icon name="materialization" size={16} color={Colors.Gray600} />
@@ -284,6 +284,7 @@ export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({
   hasLineage,
   hasPartitions,
   events,
+  children,
 }) => {
   const [open, setOpen] = React.useState(false);
   const [focused, setFocused] = React.useState<AssetEventGroup | undefined>();
@@ -297,7 +298,6 @@ export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({
       })),
     [events],
   );
-  const count = events.length;
   const title = () => {
     if (hasPartitions) {
       const partition = events[0].partition;
@@ -310,7 +310,7 @@ export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({
 
   return (
     <>
-      <ButtonLink onClick={() => setOpen(true)}>{`View ${count} events`}</ButtonLink>
+      <ButtonLink onClick={() => setOpen(true)}>{children}</ButtonLink>
       <Dialog
         isOpen={open}
         canEscapeKeyClose

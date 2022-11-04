@@ -31,7 +31,6 @@ Serverless is currently in early access and is subject to the following limitati
 - Maximum of 4500 step-minutes per day
 - Runs receive 4 vCPU cores, 16 GB of RAM and 128 GB of ephemeral disk
 - Sensors receive 0.25 vCPU cores and 512 MB of RAM
-- The Serverless base image is `debian:bullseye-slim`. Custom Dockerfiles are not currently supported.
 - All Serverless jobs run in the United States
 
 Enterprise customers may request a quota increase by [contacting Sales](mailto:sales@elementl.com).
@@ -88,6 +87,49 @@ dagster-cloud serverless deploy \
 ### Adding secrets
 
 Often you'll need to securely access secrets from your jobs. Dagster Cloud supports several methods for adding secrets - refer to the [Dagster Cloud environment variables and secrets documentation](/dagster-cloud/developing-testing/environment-variables-and-secrets) for more info.
+
+### Adding dependencies
+
+Any dependencies specified in either `requirements.txt` or `setup.py` will be installed for you automatically by the Dagster Cloud Serverless infrastructure.
+
+---
+
+## Customizing the container
+
+Many apps will work fine with the default Dagster Cloud Serverless setup. However, some apps may need to make changes to the base image, either to use a different OS, different Python version, or install some native dependencies. You can customize your image through our Serverless lifecycle hooks, and/or changing the base image.
+
+### Lifecycle hooks
+
+This method is the easiest to set up, and does not require setting up any additional infrastructure.
+
+In the root of your repo, you can provide two optional shell scripts: `dagster_cloud_pre_install.sh` and `dagster_cloud_post_install.sh`. These will run before and after Python dependencies are installed. They are useful for installing any non-Python dependencies or otherwise configuring your environment.
+
+### Changing the base image
+
+This method is the most flexible, but requires setting up a pipeline outside of Dagster to build a custom base image.
+
+The default base image is `debian:bullseye-slim`, but it can be changed.
+
+- **With GitHub**: you can provide a `base_image` input parameter to the "build and deploy" step in your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
+
+```yaml
+- name: Build and deploy to Dagster Cloud serverless
+  uses: dagster-io/dagster-cloud-action/actions/serverless_prod_deploy@v0.1
+  with:
+    dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+    location: ${{ toJson(matrix.location) }}
+    # Use a custom base image
+    base_image: "my_base_image:latest"
+    organization_id: ${{ secrets.ORGANIZATION_ID }}
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+- **With the CLI**: add the `--base-image` CLI argument to the deploy command to specify the registry path to the desired base image.
+
+```shell
+    dagster-cloud serverless deploy --location-name=my_location --base-image=my_base_image:latest
+```
 
 ---
 

@@ -2629,3 +2629,9 @@ def test_repository_namespacing(executor):
                 external_sensor.get_external_origin_id(), external_sensor.selector_id
             )
             assert len(ticks) == 2
+
+
+def test_settings():
+    settings = {"use_threads": True, "num_workers": 4}
+    with instance_for_test(overrides={"sensors": settings}) as thread_inst:
+        assert thread_inst.get_settings("sensors") == settings

@@ -382,11 +382,12 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        check.invariant(
-            self._partition_key is not None,
-            "Tried to access partition_key on a non-partitioned run.",
-        )
-        return cast(str, self._partition_key)
+        if self._partition_key is None:
+            check.failed(
+                "Tried to access partition_key on a non-partitioned run.",
+            )
+
+        return self._partition_key
 
     @public  # type: ignore
     @property

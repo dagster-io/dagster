@@ -1,15 +1,12 @@
 import {Box, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
 
-import {InstanceWarningIcon} from './InstanceWarningIcon';
 import {WarningTooltip} from './WarningTooltip';
 
 export const DeploymentStatusIcon = React.memo(() => {
-  const {flagNewWorkspace} = useFeatureFlags();
-  return flagNewWorkspace ? <CombinedStatusIcon /> : <InstanceWarningIcon />;
+  return <CombinedStatusIcon />;
 });
 
 const CombinedStatusIcon = React.memo(() => {

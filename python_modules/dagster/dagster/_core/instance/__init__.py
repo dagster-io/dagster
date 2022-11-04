@@ -11,6 +11,7 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -86,6 +87,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
+    from dagster._core.execution.backfill import PartitionBackfill
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
@@ -920,7 +922,7 @@ class DagsterInstance:
         solid_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
-    ):
+    ) -> DagsterRun:
 
         # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
@@ -1079,7 +1081,7 @@ class DagsterInstance:
         solid_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
-    ):
+    ) -> PipelineRun:
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
@@ -1115,10 +1117,10 @@ class DagsterInstance:
         external_pipeline: "ExternalPipeline",
         strategy: "ReexecutionStrategy",
         extra_tags: Optional[Dict[str, Any]] = None,
-        run_config: Optional[Dict[str, Any]] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
         mode: Optional[str] = None,
         use_parent_run_tags: bool = False,
-    ) -> DagsterRun:
+    ) -> PipelineRun:
         from dagster._core.execution.plan.resume_retry import (
             ReexecutionStrategy,
             get_retry_steps_from_parent_run,
@@ -1268,7 +1270,7 @@ class DagsterInstance:
             return get_run()
 
     @traced
-    def add_run(self, pipeline_run: PipelineRun):
+    def add_run(self, pipeline_run: PipelineRun) -> PipelineRun:
         return self._run_storage.add_run(pipeline_run)
 
     @traced
@@ -1449,6 +1451,23 @@ class DagsterInstance:
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Iterable["AssetRecord"]:
         return self._event_storage.get_asset_records(asset_keys)
+
+    @traced
+    def get_event_tags_for_asset(
+        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
+    ) -> Sequence[Mapping[str, str]]:
+        """
+        Fetches asset event tags for the given asset key.
+
+        If filter_tags is provided, searches for events containing all of the filter tags. Then,
+        returns all tags for those events. This enables searching for multipartitioned asset
+        partition tags with a fixed dimension value, e.g. all of the tags for events where
+        "country" == "US".
+
+        Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
+        single event.
+        """
+        return self._event_storage.get_event_tags_for_asset(asset_key, filter_tags)
 
     @traced
     def run_ids_for_asset_key(self, asset_key):
@@ -2080,17 +2099,17 @@ class DagsterInstance:
         return False
 
     # backfill
-    def get_backfills(self, status=None, cursor=None, limit=None):
+    def get_backfills(self, status=None, cursor=None, limit=None) -> Sequence["PartitionBackfill"]:
         return self._run_storage.get_backfills(status=status, cursor=cursor, limit=limit)
 
-    def get_backfill(self, backfill_id):
+    def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._run_storage.get_backfill(backfill_id)
 
-    def add_backfill(self, partition_backfill):
+    def add_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         self._run_storage.add_backfill(partition_backfill)
 
-    def update_backfill(self, partition_backfill):
-        return self._run_storage.update_backfill(partition_backfill)
+    def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
+        self._run_storage.update_backfill(partition_backfill)
 
     @property
     def should_start_background_run_thread(self) -> bool:
