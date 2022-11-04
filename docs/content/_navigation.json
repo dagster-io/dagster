@@ -423,7 +423,7 @@
               },
               {
                 "title": "Kubernetes",
-                "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+                "path": "/dagster-cloud/deployment/agents/kubernetes"
               },
               {
                 "title": "Local",
