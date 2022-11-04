@@ -36,6 +36,7 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.storage.event_log.base import EventLogRecord
 
 
@@ -85,6 +86,7 @@ class SensorEvaluationContext:
         last_run_key: Optional[str],
         cursor: Optional[str],
         repository_name: Optional[str],
+        repository_def: Optional["RepositoryDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
     ):
         self._exit_stack = ExitStack()
@@ -95,6 +97,7 @@ class SensorEvaluationContext:
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
         self._cursor = check.opt_str_param(cursor, "cursor")
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
+        self._repository_def = repository_def
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
 
     def __enter__(self):
@@ -117,6 +120,10 @@ class SensorEvaluationContext:
                 DagsterInstance.from_ref(self._instance_ref)
             )
         return cast(DagsterInstance, self._instance)
+
+    @property
+    def instance_ref(self) -> Optional[InstanceRef]:
+        return self._instance_ref
 
     @public  # type: ignore
     @property
@@ -151,6 +158,11 @@ class SensorEvaluationContext:
     @property
     def repository_name(self) -> Optional[str]:
         return self._repository_name
+
+    @public  # type: ignore
+    @property
+    def repository_def(self) -> Optional["RepositoryDefinition"]:
+        return self._repository_def
 
 
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
@@ -522,6 +534,7 @@ def build_sensor_context(
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
+    repository_def: Optional["RepositoryDefinition"] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -533,6 +546,7 @@ def build_sensor_context(
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
         cursor (Optional[str]): A cursor value to provide to the evaluation of the sensor.
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
+        repository_def (Optional[RepositoryDefinition]): The repository that the sensor belongs to.
 
     Examples:
 
@@ -553,4 +567,5 @@ def build_sensor_context(
         cursor=cursor,
         repository_name=repository_name,
         instance=instance,
+        repository_def=repository_def,
     )

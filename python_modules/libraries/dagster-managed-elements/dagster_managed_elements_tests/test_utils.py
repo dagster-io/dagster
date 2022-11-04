@@ -56,3 +56,26 @@ def test_diff_dicts():
             ManagedElementDiff().add("qwerty", "uiop").add("new", "field"),
         )
     )
+
+
+def test_diff_dicts_custom_comparison_fn():
+
+    config_dict = {"foo": "bar", "nested": {"qwerty": "uiop", "new": "field"}, "same": "as"}
+    dst_dict = {"baz": "qux", "nested": {"qwerty": "hjkl", "old": "field"}, "same": "as"}
+
+    # Custom comparison which ignores the "querty" key
+    assert (
+        diff_dicts(
+            config_dict, dst_dict, custom_compare_fn=lambda k, sv, dv: k == "qwerty" or sv == dv
+        )
+    ) == (
+        (
+            ManagedElementDiff()
+            .add("foo", "bar")
+            .delete("baz", "qux")
+            .with_nested(
+                "nested",
+                ManagedElementDiff().add("new", "field").delete("old", "field"),
+            )
+        )
+    )

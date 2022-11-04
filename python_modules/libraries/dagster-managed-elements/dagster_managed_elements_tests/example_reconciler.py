@@ -12,8 +12,8 @@ class MyManagedElementReconciler(ManagedElementReconciler):
         self._diff = diff
         self._apply_diff = apply_diff or diff
 
-    def check(self) -> ManagedElementCheckResult:
+    def check(self, **kwargs) -> ManagedElementCheckResult:
         return self._diff
 
-    def apply(self) -> ManagedElementCheckResult:
+    def apply(self, **kwargs) -> ManagedElementCheckResult:
         return self._apply_diff
