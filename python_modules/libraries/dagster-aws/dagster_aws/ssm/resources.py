@@ -1,17 +1,19 @@
+
+
 from contextlib import contextmanager
 
-from dagster import Array, Field, Noneable
+from dagster import Array, Field, Shape, Enum, EnumValue
 from dagster import _check as check
 from dagster import resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from dagster_aws.utils import BOTO3_SESSION_CONFIG
 
-from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
+from .parameters import construct_ssm_client, get_tagged_parameters, get_parameters_by_name, get_parameters_by_paths
 
 
 @resource(BOTO3_SESSION_CONFIG)
-def secretsmanager_resource(context):
+def ssm_resource(context):
     """Resource that gives access to AWS SecretsManager.
 
     The underlying SecretsManager session is created by calling
@@ -66,43 +68,58 @@ def secretsmanager_resource(context):
               # profile as specified in ~/.aws/credentials file
 
     """
-    return construct_secretsmanager_client(
+    return construct_ssm_client(
         max_attempts=context.resource_config["max_attempts"],
         region_name=context.resource_config.get("region_name"),
         profile_name=context.resource_config.get("profile_name"),
     )
 
 
+tag_shape = Shape({"tag": Field(str, is_required=True, description="Name or prefix of tag to retrieve parameters for"),
+       "option": Field(Enum("SearchOption", enum_values=[EnumValue("Equals"), EnumValue("BeginsWith")]))})
+
 @resource(
     merge_dicts(
         BOTO3_SESSION_CONFIG,
         {
-            "secrets": Field(
+            "parameters": Field(
                 Array(str),
                 is_required=False,
                 default_value=[],
-                description=("An array of AWS Secrets Manager secrets arns to fetch."),
+                description=("An array of AWS SSM Parameter Store parameter names to fetch."),
             ),
-            "secrets_tag": Field(
-                Noneable(str),
+            "parameter_tags": Field(
+                Array(tag_shape),
                 is_required=False,
-                default_value=None,
+                default_value=[],
                 description=(
-                    "AWS Secrets Manager secrets with this tag will be fetched and made available."
+                    "AWS SSM Parameter store parameters with this tag will be fetched and made available."
                 ),
+            ),
+            "parameter_paths": Field(
+                str,
+                is_required=False,
+                default_value=[],
+                description="List of path prefixes to pull parameters from."
+            ),
+            "with_decryption": Field(
+                bool,
+                is_required=False,
+                default_value=False,
+                description="Whether to decrypt parameters upon retrieval. Is ignored by AWS if parameter type is String or StringList"
             ),
             "add_to_environment": Field(
                 bool,
                 is_required=False,
                 default_value=False,
-                description=("Whether to mount the secrets as environment variables."),
+                description=("Whether to mount the parameters as environment variables."),
             ),
         },
     )
 )
 @contextmanager
-def secretsmanager_secrets_resource(context):
-    """Resource that provides a dict which maps selected SecretsManager secrets to
+def parameter_store_resource(context):
+    """Resource that provides a dict which maps selected SSM Parameter Store parameters to
     their string values. Also optionally sets chosen secrets as environment variables.
 
     Example:
@@ -111,20 +128,20 @@ def secretsmanager_secrets_resource(context):
 
             import os
             from dagster import build_op_context, job, op
-            from dagster_aws.secretsmanager import secretsmanager_secrets_resource
+            from dagster_aws.ssm import parameter_store_resource
 
-            @op(required_resource_keys={'secrets'})
-            def example_secretsmanager_secrets_op(context):
-                return context.resources.secrets.get("my-secret-name")
+            @op(required_resource_keys={'parameter_store'})
+            def example_parameter_store_op(context):
+                return context.resources.parameter_store.get("my-parameter-name")
 
-            @op(required_resource_keys={'secrets'})
-            def example_secretsmanager_secrets_op_2(context):
-                return os.getenv("my-other-secret-name")
+            @op(required_resource_keys={'parameter_store'})
+            def example_parameter_store_op_2(context):
+                return os.getenv("my-other-parameter-name")
 
-            @job(resource_defs={'secrets': secretsmanager_secrets_resource})
+            @job(resource_defs={'parameter_store': parameter_store_resource})
             def example_job():
-                example_secretsmanager_secrets_op()
-                example_secretsmanager_secrets_op_2()
+                example_parameter_store_op()
+                example_parameter_store_op_2()
 
             example_job.execute_in_process(
                 run_config={
@@ -132,8 +149,9 @@ def secretsmanager_secrets_resource(context):
                         'secrets': {
                             'config': {
                                 'region_name': 'us-west-1',
-                                'secrets_tag': 'dagster',
+                                'parameter_tags': 'dagster',
                                 'add_to_environment': True,
+                                'with_decryption': True,
                             }
                         }
                     }
@@ -149,7 +167,7 @@ def secretsmanager_secrets_resource(context):
     .. code-block:: YAML
 
         resources:
-          secretsmanager:
+          parameter_store:
             config:
               region_name: "us-west-1"
               # Optional[str]: Specifies a custom region for the SecretsManager session. Default is chosen
@@ -157,11 +175,12 @@ def secretsmanager_secrets_resource(context):
               profile_name: "dev"
               # Optional[str]: Specifies a custom profile for SecretsManager session. Default is default
               # profile as specified in ~/.aws/credentials file
-              secrets: ["arn:aws:secretsmanager:region:aws_account_id:secret:appauthexample-AbCdEf"]
-              # Optional[List[str]]: Specifies a list of secret ARNs to pull from SecretsManager.
+              parameters: ["parameter1", "/path/based/parameter2"]
+              # Optional[List[str]]: Specifies a list of parameter names to pull from parameter store.
               secrets_tag: "dagster"
-              # Optional[str]: Specifies a tag, all secrets which have the tag set will be pulled
-              # from SecretsManager.
+              # Optional[List[dict]]: Specifies a list of tag specifications, all parameters which have the tag set
+              will be pulled  from Parameter Store. Each tag specification is in the format {"tag": "tag name or prefix", "option": "BeginsWith|Equals"};
+              when option == "BeginsWith", all parameters with tags that start with the tag value will be pulled.
               add_to_environment: true
               # Optional[bool]: Whether to set the selected secrets as environment variables. Defaults
               # to false.
@@ -170,23 +189,22 @@ def secretsmanager_secrets_resource(context):
     add_to_environment = check.bool_param(
         context.resource_config["add_to_environment"], "add_to_environment"
     )
-    secrets_tag = check.opt_str_param(context.resource_config["secrets_tag"], "secrets_tag")
-    secrets = check.list_param(context.resource_config["secrets"], "secrets", of_type=str)
+    parameter_tags = check.opt_str_param(context.resource_config["secrets_tag"], "parameter_tags")
+    parameters = check.list_param(context.resource_config["parameter_paths"], "parameters", of_type=str)
+    parameter_paths = check.list_param(context.resource_config["parameter_paths"], "parameter_paths", of_type=str)
+    with_decryption = check.bool_param(context.resource_config["with_decryption"], "with_decryption")
 
-    secrets_manager = construct_secretsmanager_client(
+    ssm_manager = construct_ssm_client(
         max_attempts=context.resource_config["max_attempts"],
         region_name=context.resource_config.get("region_name"),
         profile_name=context.resource_config.get("profile_name"),
     )
 
-    secret_arns = merge_dicts(
-        (get_tagged_secrets(secrets_manager, [secrets_tag]) if secrets_tag else {}),
-        get_secrets_from_arns(secrets_manager, secrets),
+    parameter_values = merge_dicts(
+        (get_tagged_parameters(ssm_manager, parameter_tags, with_decryption) if parameter_tags else {}),
+        get_parameters_by_name(ssm_manager, parameters, with_decryption),
+        get_parameters_by_paths(ssm_manager, parameter_paths, with_decryption, recursive=True)
     )
 
-    secrets_map = {
-        name: secrets_manager.get_secret_value(SecretId=arn).get("SecretString")
-        for name, arn in secret_arns.items()
-    }
-    with environ(secrets_map if add_to_environment else {}):
-        yield secrets_map
+    with environ(parameter_values if add_to_environment else {}):
+        yield parameter_values
