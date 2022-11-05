@@ -96,6 +96,9 @@ def _select_unique_ids_from_manifest_json(
         metrics={
             unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
         },
+        exposures={
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+        },
     )
 
     # create a parsed selection from the select string
