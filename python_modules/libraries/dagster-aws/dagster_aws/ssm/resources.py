@@ -1,46 +1,50 @@
-
-
 from contextlib import contextmanager
 
-from dagster import Array, Field, Shape, Enum, EnumValue
+from dagster_aws.utils import BOTO3_SESSION_CONFIG
+
+from dagster import Array, Enum, EnumValue, Field, Shape
 from dagster import _check as check
 from dagster import resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
-from dagster_aws.utils import BOTO3_SESSION_CONFIG
 
-from .parameters import construct_ssm_client, get_tagged_parameters, get_parameters_by_name, get_parameters_by_paths
+from .parameters import (
+    construct_ssm_client,
+    get_parameters_by_name,
+    get_parameters_by_paths,
+    get_tagged_parameters,
+)
 
 
 @resource(BOTO3_SESSION_CONFIG)
 def ssm_resource(context):
-    """Resource that gives access to AWS SecretsManager.
+    """Resource that gives access to AWS Systems Manager Parameter Store.
 
-    The underlying SecretsManager session is created by calling
+    The underlying Parameter Store session is created by calling
     :py:func:`boto3.session.Session(profile_name) <boto3:boto3.session>`.
-    The returned resource object is a SecretsManager client, an instance of `botocore.client.SecretsManager`.
+    The returned resource object is a Systems Manager client, an instance of `botocore.client.ssm`.
 
     Example:
 
         .. code-block:: python
 
             from dagster import build_op_context, job, op
-            from dagster_aws.secretsmanager import secretsmanager_resource
+            from dagster_aws.ssm import parameter_store_resource
 
-            @op(required_resource_keys={'secretsmanager'})
-            def example_secretsmanager_op(context):
-                return context.resources.secretsmanager.get_secret_value(
-                    SecretId='arn:aws:secretsmanager:region:aws_account_id:secret:appauthexample-AbCdEf'
+            @op(required_resource_keys={'parameter_store'})
+            def example_parameter_store_op(context):
+                return context.resources.parameter_store.get_secret_value(
+                    SecretId='arn:aws:parameter_store:region:aws_account_id:secret:appauthexample-AbCdEf'
                 )
 
-            @job(resource_defs={'secretsmanager': secretsmanager_resource})
+            @job(resource_defs={'parameter_store': parameter_store_resource})
             def example_job():
-                example_secretsmanager_op()
+                example_parameter_store_op()
 
             example_job.execute_in_process(
                 run_config={
                     'resources': {
-                        'secretsmanager': {
+                        'parameter_store': {
                             'config': {
                                 'region_name': 'us-west-1',
                             }
@@ -58,13 +62,13 @@ def ssm_resource(context):
     .. code-block:: YAML
 
         resources:
-          secretsmanager:
+          parameter_store:
             config:
               region_name: "us-west-1"
-              # Optional[str]: Specifies a custom region for the SecretsManager session. Default is chosen
+              # Optional[str]: Specifies a custom region for the Parameter Store session. Default is chosen
               # through the ordinary boto credential chain.
               profile_name: "dev"
-              # Optional[str]: Specifies a custom profile for SecretsManager session. Default is default
+              # Optional[str]: Specifies a custom profile for Parameter Store session. Default is default
               # profile as specified in ~/.aws/credentials file
 
     """
@@ -75,8 +79,17 @@ def ssm_resource(context):
     )
 
 
-tag_shape = Shape({"tag": Field(str, is_required=True, description="Name or prefix of tag to retrieve parameters for"),
-       "option": Field(Enum("SearchOption", enum_values=[EnumValue("Equals"), EnumValue("BeginsWith")]))})
+tag_shape = Shape(
+    {
+        "tag": Field(
+            str, is_required=True, description="Name or prefix of tag to retrieve parameters for"
+        ),
+        "option": Field(
+            Enum("SearchOption", enum_values=[EnumValue("Equals"), EnumValue("BeginsWith")])
+        ),
+    }
+)
+
 
 @resource(
     merge_dicts(
@@ -100,13 +113,13 @@ tag_shape = Shape({"tag": Field(str, is_required=True, description="Name or pref
                 str,
                 is_required=False,
                 default_value=[],
-                description="List of path prefixes to pull parameters from."
+                description="List of path prefixes to pull parameters from.",
             ),
             "with_decryption": Field(
                 bool,
                 is_required=False,
                 default_value=False,
-                description="Whether to decrypt parameters upon retrieval. Is ignored by AWS if parameter type is String or StringList"
+                description="Whether to decrypt parameters upon retrieval. Is ignored by AWS if parameter type is String or StringList",
             ),
             "add_to_environment": Field(
                 bool,
@@ -170,10 +183,10 @@ def parameter_store_resource(context):
           parameter_store:
             config:
               region_name: "us-west-1"
-              # Optional[str]: Specifies a custom region for the SecretsManager session. Default is chosen
+              # Optional[str]: Specifies a custom region for the Parameter Store session. Default is chosen
               # through the ordinary boto credential chain.
               profile_name: "dev"
-              # Optional[str]: Specifies a custom profile for SecretsManager session. Default is default
+              # Optional[str]: Specifies a custom profile for Parameter Store session. Default is default
               # profile as specified in ~/.aws/credentials file
               parameters: ["parameter1", "/path/based/parameter2"]
               # Optional[List[str]]: Specifies a list of parameter names to pull from parameter store.
@@ -190,9 +203,15 @@ def parameter_store_resource(context):
         context.resource_config["add_to_environment"], "add_to_environment"
     )
     parameter_tags = check.opt_str_param(context.resource_config["secrets_tag"], "parameter_tags")
-    parameters = check.list_param(context.resource_config["parameter_paths"], "parameters", of_type=str)
-    parameter_paths = check.list_param(context.resource_config["parameter_paths"], "parameter_paths", of_type=str)
-    with_decryption = check.bool_param(context.resource_config["with_decryption"], "with_decryption")
+    parameters = check.list_param(
+        context.resource_config["parameter_paths"], "parameters", of_type=str
+    )
+    parameter_paths = check.list_param(
+        context.resource_config["parameter_paths"], "parameter_paths", of_type=str
+    )
+    with_decryption = check.bool_param(
+        context.resource_config["with_decryption"], "with_decryption"
+    )
 
     ssm_manager = construct_ssm_client(
         max_attempts=context.resource_config["max_attempts"],
@@ -201,9 +220,13 @@ def parameter_store_resource(context):
     )
 
     parameter_values = merge_dicts(
-        (get_tagged_parameters(ssm_manager, parameter_tags, with_decryption) if parameter_tags else {}),
+        (
+            get_tagged_parameters(ssm_manager, parameter_tags, with_decryption)
+            if parameter_tags
+            else {}
+        ),
         get_parameters_by_name(ssm_manager, parameters, with_decryption),
-        get_parameters_by_paths(ssm_manager, parameter_paths, with_decryption, recursive=True)
+        get_parameters_by_paths(ssm_manager, parameter_paths, with_decryption, recursive=True),
     )
 
     with environ(parameter_values if add_to_environment else {}):
