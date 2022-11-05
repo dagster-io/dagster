@@ -139,6 +139,25 @@ def instance(instance_cm):
 
 
 @pytest.fixture
+def instance_dont_use_current_task(instance_cm, subnet):
+    with instance_cm(
+        config={
+            "use_current_ecs_task_config": False,
+            "run_task_kwargs": {
+                "cluster": "my_cluster",
+                "networkConfiguration": {
+                    "awsvpcConfiguration": {
+                        "subnets": [subnet.id],
+                        "assignPublicIp": "ENABLED",
+                    },
+                },
+            },
+        }
+    ) as dagster_instance:
+        yield dagster_instance
+
+
+@pytest.fixture
 def workspace(instance, image):
     with in_process_test_workspace(
         instance,
@@ -172,7 +191,7 @@ def pipeline():
 @pytest.fixture
 def external_pipeline(workspace):
     location = workspace.get_repository_location(workspace.repository_location_names[0])
-    return location.get_repository(repo.repository.__name__).get_full_external_pipeline(
+    return location.get_repository(repo.repository.__name__).get_full_external_job(
         repo.pipeline.__name__
     )
 
@@ -180,7 +199,7 @@ def external_pipeline(workspace):
 @pytest.fixture
 def other_external_pipeline(other_workspace):
     location = other_workspace.get_repository_location(other_workspace.repository_location_names[0])
-    return location.get_repository(repo.repository.__name__).get_full_external_pipeline(
+    return location.get_repository(repo.repository.__name__).get_full_external_job(
         repo.pipeline.__name__
     )
 

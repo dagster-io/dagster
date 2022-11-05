@@ -1,4 +1,3 @@
-import json
 import os
 
 import docker.client
@@ -230,10 +229,6 @@ def create_docker_task(celery_app, **task_kwargs):
         )
         step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)
 
-        input_json = serialize_dagster_namedtuple(execute_step_args)
-
-        command = "dagster api execute_step {}".format(json.dumps(input_json))
-
         docker_image = (
             docker_config["image"]
             if docker_config.get("image")
@@ -296,7 +291,7 @@ def create_docker_task(celery_app, **task_kwargs):
         try:
             docker_response = client.containers.run(
                 docker_image,
-                command=command,
+                command=execute_step_args.get_command_args(),
                 # pass through this worker's environment for things like AWS creds etc.
                 environment=docker_env,
                 network=docker_config.get("network", None),

@@ -208,10 +208,11 @@ def partition_statuses_from_run_partition_data(
 
     results = []
     for name in partition_names:
+        partition_id = f"{partition_set_name}:{name}{suffix}"
         if not partition_data_by_name.get(name):
             results.append(
                 GraphenePartitionStatus(
-                    id=f"{partition_set_name}:{name}",
+                    id=partition_id,
                     partitionName=name,
                 )
             )
@@ -219,7 +220,7 @@ def partition_statuses_from_run_partition_data(
         partition_data = partition_data_by_name[name]
         results.append(
             GraphenePartitionStatus(
-                id=f"{partition_set_name}:{name}{suffix}",
+                id=partition_id,
                 partitionName=name,
                 runId=partition_data.run_id,
                 runStatus=partition_data.status,

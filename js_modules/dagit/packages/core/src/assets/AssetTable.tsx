@@ -28,11 +28,11 @@ import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {AnchorButton} from '../ui/AnchorButton';
-import {MenuLink} from '../ui/MenuLink';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {AssetActionMenu} from './AssetActionMenu';
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
@@ -64,7 +64,6 @@ export const AssetTable = ({
   requery?: RefetchQueriesFunction;
 }) => {
   const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
-  const {canWipeAssets} = usePermissions();
 
   const groupedByFirstComponent: {[pathComponent: string]: Asset[]} = {};
 
@@ -93,7 +92,12 @@ export const AssetTable = ({
 
   return (
     <Box flex={{direction: 'column'}}>
-      <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
+      <Box
+        background={Colors.White}
+        flex={{alignItems: 'center', gap: 12}}
+        padding={{vertical: 8, left: 24, right: 12}}
+        style={{position: 'sticky', top: 0, zIndex: 1}}
+      >
         {actionBarComponents}
         <div style={{flex: 1}} />
         <QueryRefreshCountdown refreshState={refreshState} />
@@ -151,7 +155,6 @@ export const AssetTable = ({
                   isSelected={checkedPaths.has(pathStr)}
                   onToggleChecked={onToggleFactory(pathStr)}
                   onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
-                  canWipe={canWipeAssets.enabled}
                 />
               );
             })
@@ -191,9 +194,8 @@ const AssetEntryRow: React.FC<{
   assets: Asset[];
   liveDataByNode: LiveData;
   onWipe: (assets: Asset[]) => void;
-  canWipe?: boolean;
 }> = React.memo(
-  ({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, canWipe, liveDataByNode}) => {
+  ({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, liveDataByNode}) => {
     const fullPath = [...prefixPath, ...path];
     const linkUrl = assetDetailsPathForKey({path: fullPath});
 
@@ -290,62 +292,7 @@ const AssetEntryRow: React.FC<{
           {asset ? (
             <Box flex={{gap: 8, alignItems: 'center'}}>
               <AnchorButton to={assetDetailsPathForKey({path})}>View details</AnchorButton>
-              <Popover
-                position="bottom-right"
-                content={
-                  <Menu>
-                    <MenuLink
-                      text="Show in group"
-                      to={
-                        repoAddress && asset.definition?.groupName
-                          ? workspacePathFromAddress(
-                              repoAddress,
-                              `/asset-groups/${asset.definition.groupName}`,
-                            )
-                          : ''
-                      }
-                      disabled={!asset?.definition}
-                      icon="asset_group"
-                    />
-                    <MenuLink
-                      text="View neighbors"
-                      to={assetDetailsPathForKey(
-                        {path},
-                        {view: 'lineage', lineageScope: 'neighbors'},
-                      )}
-                      disabled={!asset?.definition}
-                      icon="graph_neighbors"
-                    />
-                    <MenuLink
-                      text="View upstream assets"
-                      to={assetDetailsPathForKey(
-                        {path},
-                        {view: 'lineage', lineageScope: 'upstream'},
-                      )}
-                      disabled={!asset?.definition}
-                      icon="graph_upstream"
-                    />
-                    <MenuLink
-                      text="View downstream assets"
-                      to={assetDetailsPathForKey(
-                        {path},
-                        {view: 'lineage', lineageScope: 'downstream'},
-                      )}
-                      disabled={!asset?.definition}
-                      icon="graph_downstream"
-                    />
-                    <MenuItem
-                      text="Wipe materializations"
-                      icon="delete"
-                      disabled={!canWipe}
-                      intent="danger"
-                      onClick={() => canWipe && onWipe(assets)}
-                    />
-                  </Menu>
-                }
-              >
-                <Button icon={<Icon name="expand_more" />} />
-              </Popover>
+              <AssetActionMenu repoAddress={repoAddress} asset={asset} onWipe={onWipe} />
             </Box>
           ) : (
             <span />

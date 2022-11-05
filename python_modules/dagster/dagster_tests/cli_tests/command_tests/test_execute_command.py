@@ -12,9 +12,9 @@ from dagster._core.test_utils import instance_for_test, new_cwd
 from dagster._utils import file_relative_path, merge_dicts
 
 from .test_cli_commands import (
+    job_python_origin_contexts,
     non_existant_python_origin_target_args,
-    pipeline_or_job_python_origin_contexts,
-    runner_pipeline_or_job_execute,
+    runner_job_execute,
     valid_job_python_origin_target_cli_args,
 )
 
@@ -23,7 +23,7 @@ def test_execute_with_config_command():
     runner = CliRunner()
 
     with instance_for_test():
-        add_result = runner_pipeline_or_job_execute(
+        add_result = runner_job_execute(
             runner,
             [
                 "-f",
@@ -39,7 +39,7 @@ def test_execute_with_config_command():
 
         assert add_result
 
-        mult_result = runner_pipeline_or_job_execute(
+        mult_result = runner_job_execute(
             runner,
             [
                 "-f",
@@ -55,7 +55,7 @@ def test_execute_with_config_command():
 
         assert mult_result
 
-        double_adder_result = runner_pipeline_or_job_execute(
+        double_adder_result = runner_job_execute(
             runner,
             [
                 "-f",
@@ -81,19 +81,19 @@ def test_empty_execute_command():
         assert "Must specify a python file or module name" in result.output
 
 
-@pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts())
+@pytest.mark.parametrize("gen_execute_args", job_python_origin_contexts())
 def test_execute_command_no_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
         execute_execute_command(kwargs=cli_args, instance=instance)
 
 
-@pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts(True))
+@pytest.mark.parametrize("gen_execute_args", job_python_origin_contexts())
 def test_job_execute_command_no_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
-        execute_execute_command(kwargs=cli_args, instance=instance, using_job_op_graph_apis=True)
+        execute_execute_command(kwargs=cli_args, instance=instance)
 
 
-@pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts())
+@pytest.mark.parametrize("gen_execute_args", job_python_origin_contexts())
 def test_execute_command_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
         kwargs = merge_dicts(
@@ -106,49 +106,29 @@ def test_execute_command_env(gen_execute_args):
         )
 
 
-@pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts(True))
+@pytest.mark.parametrize("gen_execute_args", job_python_origin_contexts())
 def test_job_execute_command_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
         kwargs = merge_dicts(
             {"config": (file_relative_path(__file__, "default_log_error_env.yaml"),)},
             cli_args,
         )
-        execute_execute_command(kwargs=kwargs, instance=instance, using_job_op_graph_apis=True)
+        execute_execute_command(
+            kwargs=kwargs,
+            instance=instance,
+        )
 
 
 @pytest.mark.parametrize("cli_args", valid_job_python_origin_target_cli_args())
 def test_job_execute_command_runner(cli_args):
     runner = CliRunner()
     with instance_for_test():
-        runner_pipeline_or_job_execute(runner, cli_args)
+        runner_job_execute(runner, cli_args)
 
-        runner_pipeline_or_job_execute(
+        runner_job_execute(
             runner,
             ["--config", file_relative_path(__file__, "default_log_error_env.yaml")] + cli_args,
         )
-
-
-def test_job_command_only_selects_job():
-    with instance_for_test() as instance:
-        job_kwargs = {
-            "workspace": None,
-            "pipeline_or_job": "my_job",
-            "python_file": file_relative_path(__file__, "repo_pipeline_and_job.py"),
-            "module_name": None,
-            "attribute": "my_repo",
-        }
-        pipeline_kwargs = job_kwargs.copy()
-        pipeline_kwargs["pipeline_or_job"] = "my_pipeline"
-
-        result = execute_execute_command(
-            kwargs=job_kwargs, instance=instance, using_job_op_graph_apis=True
-        )
-        assert result.success
-
-        with pytest.raises(Exception, match="not found in repository"):
-            execute_execute_command(
-                kwargs=pipeline_kwargs, instance=instance, using_job_op_graph_apis=True
-            )
 
 
 def test_output_execute_log_stdout(capfd):
@@ -216,18 +196,16 @@ def test_output_execute_log_stderr(capfd):
         assert "FAILURE OP" in captured.err
 
 
-def test_more_than_one_pipeline_or_job():
+def test_more_than_one_job():
     with instance_for_test() as instance:
         with pytest.raises(
             UsageError,
-            match=re.escape(
-                "Must provide --pipeline as there is more than one pipeline/job in bar. "
-            ),
+            match=re.escape("Must provide --job as there is more than one job in bar"),
         ):
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
-                    "pipeline_or_job": None,
+                    "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": None,
@@ -237,31 +215,30 @@ def test_more_than_one_pipeline_or_job():
 
         with pytest.raises(
             UsageError,
-            match=re.escape("Must provide --job as there is more than one pipeline/job in bar. "),
+            match=re.escape("Must provide --job as there is more than one job in bar. "),
         ):
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
-                    "pipeline_or_job": None,
+                    "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": None,
                 },
                 instance=instance,
-                using_job_op_graph_apis=True,
             )
 
 
 def invalid_pipeline_python_origin_target_args():
     return [
         {
-            "pipeline_or_job": "foo",
+            "job_name": "foo",
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": "bar",
         },
         {
-            "pipeline_or_job": "foo",
+            "job_name": "foo",
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": None,
@@ -299,7 +276,7 @@ def test_attribute_not_found():
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
-                    "pipeline_or_job": None,
+                    "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": "nope",
@@ -320,7 +297,7 @@ def test_attribute_is_wrong_thing():
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
-                    "pipeline_or_job": None,
+                    "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": "not_a_repo_or_pipeline",
@@ -341,7 +318,7 @@ def test_attribute_fn_returns_wrong_thing():
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
-                    "pipeline_or_job": None,
+                    "job_name": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": "not_a_repo_or_pipeline_fn",
@@ -355,7 +332,7 @@ def test_default_memory_run_storage():
         cli_args = {
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "attribute": "bar",
-            "pipeline_or_job": "foo",
+            "job_name": "foo",
             "module_name": None,
         }
         result = execute_execute_command(kwargs=cli_args, instance=instance)
@@ -364,19 +341,17 @@ def test_default_memory_run_storage():
         cli_args = {
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "attribute": "bar",
-            "pipeline_or_job": "qux",
+            "job_name": "qux",
             "module_name": None,
         }
-        result = execute_execute_command(
-            kwargs=cli_args, instance=instance, using_job_op_graph_apis=True
-        )
+        result = execute_execute_command(kwargs=cli_args, instance=instance)
         assert result.success
 
 
 def test_multiproc():
     with instance_for_test():
         runner = CliRunner()
-        add_result = runner_pipeline_or_job_execute(
+        add_result = runner_job_execute(
             runner,
             [
                 "-f",
@@ -393,7 +368,7 @@ def test_multiproc():
 
         assert "RUN_SUCCESS" in add_result.output
 
-        add_result = runner_pipeline_or_job_execute(
+        add_result = runner_job_execute(
             runner,
             [
                 "-f",
@@ -407,7 +382,7 @@ def test_multiproc():
         assert "RUN_SUCCESS" in add_result.output
 
 
-def test_tags_pipeline_or_job():
+def test_tags_job():
     runner = CliRunner()
     with instance_for_test() as instance:
         result = runner.invoke(

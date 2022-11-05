@@ -36,8 +36,8 @@ def test_dagster_type_loader_default_version():
     def _foo(_, hello):
         return hello
 
-    assert _foo.loader_version == None
-    assert _foo.compute_loaded_input_version({}) == None
+    assert _foo.loader_version is None
+    assert _foo.compute_loaded_input_version({}) is None
 
 
 def test_dagster_type_loader_provided_version():

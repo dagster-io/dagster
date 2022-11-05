@@ -21,7 +21,12 @@ from .partition_key_range import PartitionKeyRange
 
 
 class TimeWindow(NamedTuple):
-    """An interval that is closed at the start and open at the end"""
+    """An interval that is closed at the start and open at the end.
+
+    Attributes:
+        start (datetime): A pendulum datetime that marks the start of the window.
+        end (datetime): A pendulum datetime that marks the end of the window.
+    """
 
     start: PublicAttr[datetime]
     end: PublicAttr[datetime]
@@ -148,11 +153,18 @@ class TimeWindowPartitionsDefinition(
         return partition_def_str
 
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
-        start = self.start_time_for_partition_key(partition_key)
-        return next(iter(self._iterate_time_windows(start)))
+        partition_key_dt = pendulum.instance(
+            datetime.strptime(partition_key, self.fmt), tz=self.timezone
+        )
+        return next(iter(self._iterate_time_windows(partition_key_dt)))
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
-        return pendulum.instance(datetime.strptime(partition_key, self.fmt), tz=self.timezone)
+        partition_key_dt = pendulum.instance(
+            datetime.strptime(partition_key, self.fmt), tz=self.timezone
+        )
+        # the datetime format might not include granular components, so we need to recover them
+        # we make the assumption that the parsed partition key is <= the start datetime
+        return next(iter(self._iterate_time_windows(partition_key_dt))).start
 
     def end_time_for_partition_key(self, partition_key: str) -> datetime:
         return self.time_window_for_partition_key(partition_key).end
@@ -175,7 +187,8 @@ class TimeWindowPartitionsDefinition(
             else:
                 break
 
-        return result
+        current_partitions = [partition.name for partition in self.get_partitions()]
+        return [partition for partition in result if partition in current_partitions]
 
     @public  # type: ignore
     @property

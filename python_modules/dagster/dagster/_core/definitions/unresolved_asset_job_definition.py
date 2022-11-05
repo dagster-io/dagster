@@ -1,8 +1,9 @@
 import operator
 from functools import reduce
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
+from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.selector.subset_selector import parse_clause
 
@@ -71,7 +72,9 @@ class UnresolvedAssetJobDefinition(
         if self.partitions_def is None:
             return None
 
-        partitioned_config = self.config if isinstance(self.config, PartitionedConfig) else None
+        partitioned_config = PartitionedConfig.from_flexible_config(
+            self.config, self.partitions_def
+        )
 
         tags_fn = (
             partitioned_config
@@ -94,22 +97,48 @@ class UnresolvedAssetJobDefinition(
     def run_request_for_partition(
         self,
         partition_key: str,
-        run_key: Optional[str],
+        run_key: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
     ) -> RunRequest:
+        """
+        Creates a RunRequest object for a run that processes the given partition.
+
+        Args:
+            partition_key: The key of the partition to request a run for.
+            run_key (Optional[str]): A string key to identify this launched run. For sensors, ensures that
+                only one run is created per run key across all sensor evaluations.  For schedules,
+                ensures that one run is created per tick, across failure recoveries. Passing in a `None`
+                value means that a run will always be launched per evaluation.
+            tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
+                to the launched run.
+            run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
+                a :py:class:`PartitionedConfig`, this value will override replace the config
+                provided by it.
+
+        Returns:
+            RunRequest: an object that requests a run to process the given partition.
+        """
         partition_set = self.get_partition_set_def()
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
         partition = partition_set.get_partition(partition_key)
-        run_config = partition_set.run_config_for_partition(partition)
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags
             else partition_set.tags_for_partition(partition)
         )
 
-        return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
+        return RunRequest(
+            run_key=run_key,
+            run_config=run_config
+            if run_config is not None
+            else partition_set.run_config_for_partition(partition),
+            tags=run_request_tags,
+            asset_selection=asset_selection,
+        )
 
     def resolve(
         self,

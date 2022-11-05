@@ -295,7 +295,7 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
             break
 
 
-def test_simple_backfill(instance, workspace, external_repo):
+def test_simple_backfill(instance, workspace_context, external_repo):
     external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
     instance.add_backfill(
         PartitionBackfill(
@@ -311,9 +311,7 @@ def test_simple_backfill(instance, workspace, external_repo):
     )
     assert instance.get_runs_count() == 0
 
-    list(
-        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
-    )
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
 
     assert instance.get_runs_count() == 3
     runs = instance.get_runs()
@@ -326,7 +324,7 @@ def test_simple_backfill(instance, workspace, external_repo):
     assert three.tags[PARTITION_NAME_TAG] == "three"
 
 
-def test_canceled_backfill(instance, workspace, external_repo):
+def test_canceled_backfill(instance, workspace_context, external_repo):
     external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
     instance.add_backfill(
         PartitionBackfill(
@@ -343,7 +341,7 @@ def test_canceled_backfill(instance, workspace, external_repo):
     assert instance.get_runs_count() == 0
 
     iterator = execute_backfill_iteration(
-        instance, workspace, get_default_daemon_logger("BackfillDaemon")
+        workspace_context, get_default_daemon_logger("BackfillDaemon")
     )
     next(iterator)
     assert instance.get_runs_count() == 1
@@ -356,7 +354,7 @@ def test_canceled_backfill(instance, workspace, external_repo):
     assert instance.get_runs_count() == 1
 
 
-def test_failure_backfill(instance, workspace, external_repo):
+def test_failure_backfill(instance, workspace_context, external_repo):
     output_file = _failure_flag_file()
     external_partition_set = external_repo.get_external_partition_set(
         "conditionally_fail_partition_set"
@@ -379,7 +377,7 @@ def test_failure_backfill(instance, workspace, external_repo):
         touch_file(output_file)
         list(
             execute_backfill_iteration(
-                instance, workspace, get_default_daemon_logger("BackfillDaemon")
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
             )
         )
         wait_for_all_runs_to_start(instance)
@@ -424,9 +422,7 @@ def test_failure_backfill(instance, workspace, external_repo):
     )
 
     assert not os.path.isfile(_failure_flag_file())
-    list(
-        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
-    )
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     wait_for_all_runs_to_start(instance)
 
     assert instance.get_runs_count() == 6
@@ -459,7 +455,7 @@ def test_failure_backfill(instance, workspace, external_repo):
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
-def test_partial_backfill(instance, workspace, external_repo):
+def test_partial_backfill(instance, workspace_context, external_repo):
     external_partition_set = external_repo.get_external_partition_set("partial_partition_set")
 
     # create full runs, where every step is executed
@@ -476,9 +472,7 @@ def test_partial_backfill(instance, workspace, external_repo):
         )
     )
     assert instance.get_runs_count() == 0
-    list(
-        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
-    )
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     wait_for_all_runs_to_start(instance)
 
     assert instance.get_runs_count() == 3
@@ -524,9 +518,7 @@ def test_partial_backfill(instance, workspace, external_repo):
             backfill_timestamp=pendulum.now().timestamp(),
         )
     )
-    list(
-        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
-    )
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     wait_for_all_runs_to_start(instance)
 
     assert instance.get_runs_count() == 5
@@ -551,7 +543,7 @@ def test_partial_backfill(instance, workspace, external_repo):
     assert step_did_not_run(instance, three, "step_three")
 
 
-def test_large_backfill(instance, workspace, external_repo):
+def test_large_backfill(instance, workspace_context, external_repo):
     external_partition_set = external_repo.get_external_partition_set("large_partition_set")
     instance.add_backfill(
         PartitionBackfill(
@@ -567,14 +559,12 @@ def test_large_backfill(instance, workspace, external_repo):
     )
     assert instance.get_runs_count() == 0
 
-    list(
-        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
-    )
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
 
     assert instance.get_runs_count() == 3
 
 
-def test_unloadable_backfill(instance, workspace):
+def test_unloadable_backfill(instance, workspace_context):
     unloadable_origin = _unloadable_partition_set_origin()
     instance.add_backfill(
         PartitionBackfill(
@@ -590,9 +580,7 @@ def test_unloadable_backfill(instance, workspace):
     )
     assert instance.get_runs_count() == 0
 
-    list(
-        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
-    )
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
 
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill("simple")
@@ -600,7 +588,7 @@ def test_unloadable_backfill(instance, workspace):
     assert isinstance(backfill.error, SerializableErrorInfo)
 
 
-def test_backfill_from_partitioned_job(instance, workspace, external_repo):
+def test_backfill_from_partitioned_job(instance, workspace_context, external_repo):
     partition_name_list = [
         partition.name for partition in my_config.partitions_def.get_partitions()
     ]
@@ -621,9 +609,7 @@ def test_backfill_from_partitioned_job(instance, workspace, external_repo):
     )
     assert instance.get_runs_count() == 0
 
-    list(
-        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
-    )
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
 
     assert instance.get_runs_count() == 3
     runs = reversed(instance.get_runs())
@@ -633,7 +619,7 @@ def test_backfill_from_partitioned_job(instance, workspace, external_repo):
         assert run.tags[PARTITION_SET_TAG] == "comp_always_succeed_partition_set"
 
 
-def test_backfill_with_asset_selection(instance, workspace, external_repo):
+def test_backfill_with_asset_selection(instance, workspace_context, external_repo):
     partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
     external_partition_set = external_repo.get_external_partition_set(
         "twisted_asset_mess_partition_set"
@@ -654,9 +640,7 @@ def test_backfill_with_asset_selection(instance, workspace, external_repo):
     )
     assert instance.get_runs_count() == 0
 
-    list(
-        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
-    )
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     wait_for_all_runs_to_start(instance, timeout=30)
     assert instance.get_runs_count() == 3
     wait_for_all_runs_to_finish(instance, timeout=30)
@@ -678,7 +662,7 @@ def test_backfill_with_asset_selection(instance, workspace, external_repo):
         assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
 
-def test_backfill_from_failure_for_subselection(instance, workspace, external_repo):
+def test_backfill_from_failure_for_subselection(instance, workspace_context, external_repo):
     partition = parallel_failure_partition_set.get_partition("one")
     run_config = parallel_failure_partition_set.run_config_for_partition(partition)
     tags = parallel_failure_partition_set.tags_for_partition(partition)
@@ -713,9 +697,7 @@ def test_backfill_from_failure_for_subselection(instance, workspace, external_re
         )
     )
 
-    list(
-        execute_backfill_iteration(instance, workspace, get_default_daemon_logger("BackfillDaemon"))
-    )
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 2
     run = instance.get_runs(limit=1)[0]
     assert run.solids_to_execute

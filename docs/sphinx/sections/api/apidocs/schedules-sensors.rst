@@ -68,6 +68,8 @@ Sensors
 
 .. autodecorator:: multi_asset_sensor
 
+.. autofunction:: build_asset_reconciliation_sensor
+
 
 .. autoclass:: RunStatusSensorDefinition
 

@@ -7,12 +7,38 @@ description: The dagster-airflow package allows you to export Dagster jobs as Ai
 
 <CodeReferenceLink filePath="examples/with_airflow" />
 
-The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) package allows you to export Dagster jobs as Airflow DAGs, as well as to import Airflow DAGs into Dagster jobs.
+The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) package allows you to orchestrate Dagster from Airflow, export Dagster jobs as Airflow DAGs, and import Airflow DAGs into Dagster jobs.
 
 Dagster is a fully-featured orchestrator and does not require a system like Airflow to deploy, execute, or schedule jobs. The main scenarios for using Dagster with Airflow are:
 
 - You have an existing Airflow setup that's too difficult to migrate away from, but you want to use Dagster for local development.
 - You want to migrate from Airflow to Dagster in an incremental fashion.
+
+## Orchestrating Dagster jobs from Airflow
+
+You can orchestrate Dagster job runs from airflow by using the `DagsterCloudOperator` or `DagsterOperator` operators in your existing airflow dags. For example, here's an airflow Dag:
+
+```python file=/integrations/airflow/operator.py
+from datetime import datetime
+
+from airflow import DAG
+from dagster_airflow import DagsterCloudOperator
+
+with DAG(
+    dag_id="dagster_cloud",
+    start_date=datetime(2022, 5, 28),
+    schedule_interval="*/5 * * * *",
+    catchup=False,
+) as dag:
+    DagsterCloudOperator(
+        task_id="new_dagster_assets",
+        repostitory_location_name="example_location",
+        repository_name="my_dagster_project",
+        job_name="all_assets_job",
+    )
+```
+
+In airflow 2.0+ you can create a dagster connection type to store configuration related to your dagster cloud organization, you can also pass this directly to the operator if you're using airflow 1.0.
 
 ## Exporting Dagster jobs to Airflow
 
@@ -129,7 +155,7 @@ Dagster can convert Airflow operators to Dagster ops for any Airflow operators t
 
 ```python file=../../with_airflow/with_airflow/airflow_operator_to_op.py startafter=start_operator_to_op_1 endbefore=end_operator_to_op_1
 http_task = SimpleHttpOperator(task_id="http_task", method="GET", endpoint="images")
-connections = [Connection(conn_id="http_default", host="https://google.com")]
+connections = [Connection(conn_id="http_default", conn_type="uri", host="https://google.com")]
 dagster_op = airflow_operator_to_op(http_task, connections=connections)
 
 
@@ -164,17 +190,19 @@ There are two jobs in the repo:
 ```python file=../../with_airflow/with_airflow/repository.py startafter=start_repo_marker_0 endbefore=end_repo_marker_0
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 from with_airflow.airflow_complex_dag import complex_dag
+from with_airflow.airflow_kubernetes_dag import kubernetes_dag
 from with_airflow.airflow_simple_dag import simple_dag
 
 from dagster import repository
 
 airflow_simple_dag = make_dagster_job_from_airflow_dag(simple_dag)
 airflow_complex_dag = make_dagster_job_from_airflow_dag(complex_dag)
+airflow_kubernetes_dag = make_dagster_job_from_airflow_dag(kubernetes_dag, mock_xcom=True)
 
 
 @repository
 def with_airflow():
-    return [airflow_complex_dag, airflow_simple_dag]
+    return [airflow_complex_dag, airflow_simple_dag, airflow_kubernetes_dag]
 ```
 
 Note that the "execution_date" for the Airflow DAG is specified through the job tags. To specify tags, call to:

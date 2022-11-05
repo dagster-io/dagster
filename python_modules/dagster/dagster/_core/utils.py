@@ -103,6 +103,6 @@ def parse_env_var(env_var_str: str) -> Tuple[str, str]:
         return (split[0], split[1])
     else:
         env_var_value = os.getenv(env_var_str)
-        if env_var_value == None:
+        if env_var_value is None:
             raise Exception(f"Tried to load environment variable {env_var_str}, but it was not set")
         return (env_var_str, cast(str, env_var_value))

@@ -6,6 +6,8 @@ import {
   AssetGraphLiveQuery_assetsLatestInfo_latestRun,
   AssetGraphLiveQuery_assetNodes_assetMaterializations,
   AssetGraphLiveQuery,
+  AssetGraphLiveQuery_assetsLatestInfo,
+  AssetGraphLiveQuery_assetNodes,
 } from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery_assetNodes,
@@ -13,6 +15,8 @@ import {
 } from './types/AssetGraphQuery';
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
+type AssetLiveNode = AssetGraphLiveQuery_assetNodes;
+type AssetLatestInfo = AssetGraphLiveQuery_assetsLatestInfo;
 
 export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
 
@@ -137,31 +141,37 @@ export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuer
 
   for (const liveNode of assetNodes) {
     const graphId = toGraphId(liveNode.assetKey);
-    const lastMaterialization = liveNode.assetMaterializations[0] || null;
-
     const assetLatestInfo = assetsLatestInfo.find(
       (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
     );
 
-    const latestRunForAsset = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
-
-    const runWhichFailedToMaterialize =
-      (latestRunForAsset?.status === 'FAILURE' &&
-        (!lastMaterialization || lastMaterialization.runId !== latestRunForAsset?.id) &&
-        latestRunForAsset) ||
-      null;
-
-    data[graphId] = {
-      lastMaterialization,
-      stepKey: liveNode.opNames[0],
-      inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
-      unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
-      computeStatus: assetLatestInfo?.computeStatus || AssetComputeStatus.NONE,
-      runWhichFailedToMaterialize,
-    };
+    data[graphId] = buildLiveDataForNode(liveNode, assetLatestInfo);
   }
 
   return data;
+};
+
+export const buildLiveDataForNode = (
+  assetNode: AssetLiveNode,
+  assetLatestInfo?: AssetLatestInfo,
+): LiveDataForNode => {
+  const lastMaterialization = assetNode.assetMaterializations[0] || null;
+  const latestRunForAsset = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
+
+  const runWhichFailedToMaterialize =
+    (latestRunForAsset?.status === 'FAILURE' &&
+      (!lastMaterialization || lastMaterialization.runId !== latestRunForAsset?.id) &&
+      latestRunForAsset) ||
+    null;
+
+  return {
+    lastMaterialization,
+    stepKey: assetNode.opNames[0],
+    inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
+    unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
+    computeStatus: assetLatestInfo?.computeStatus || AssetComputeStatus.NONE,
+    runWhichFailedToMaterialize,
+  };
 };
 
 export function tokenForAssetKey(key: {path: string[]}) {

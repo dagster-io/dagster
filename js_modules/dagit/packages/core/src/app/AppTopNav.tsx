@@ -1,11 +1,10 @@
 import {Box, Colors, Icon, IconWrapper, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {Link, NavLink, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
+import {DeploymentStatusIcon} from '../nav/DeploymentStatusIcon';
 import {VersionNumber} from '../nav/VersionNumber';
-import {WorkspaceStatus} from '../nav/WorkspaceStatus';
 import {SearchDialog} from '../search/SearchDialog';
 
 import {LayoutContext} from './LayoutProvider';
@@ -18,66 +17,87 @@ interface Props {
   showStatusWarningIcon?: boolean;
 }
 
-export const AppTopNav: React.FC<Props> = ({
-  children,
-  rightOfSearchBar,
-  searchPlaceholder,
-  showStatusWarningIcon = true,
-}) => {
+export const AppTopNav: React.FC<Props> = ({children, rightOfSearchBar, searchPlaceholder}) => {
   const history = useHistory();
+
+  const navLinks = () => {
+    return (
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+        <ShortcutHandler
+          key="overview"
+          onShortcut={() => history.push('/overview')}
+          shortcutLabel="⌥1"
+          shortcutFilter={(e) => e.altKey && e.code === 'Digit1'}
+        >
+          <TopNavLink to="/overview" data-cy="AppTopNav_StatusLink">
+            Overview
+          </TopNavLink>
+        </ShortcutHandler>
+        <ShortcutHandler
+          onShortcut={() => history.push('/instance/runs')}
+          shortcutLabel="⌥2"
+          shortcutFilter={(e) => e.altKey && e.code === 'Digit2'}
+        >
+          <TopNavLink to="/instance/runs" data-cy="AppTopNav_RunsLink">
+            Runs
+          </TopNavLink>
+        </ShortcutHandler>
+        <ShortcutHandler
+          onShortcut={() => history.push('/instance/assets')}
+          shortcutLabel="⌥3"
+          shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
+        >
+          <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
+            Assets
+          </TopNavLink>
+        </ShortcutHandler>
+        <ShortcutHandler
+          key="workspace"
+          onShortcut={() => history.push('/workspace')}
+          shortcutLabel="⌥4"
+          shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
+        >
+          <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
+            Workspace
+          </TopNavLink>
+        </ShortcutHandler>
+        <ShortcutHandler
+          key="deployment"
+          onShortcut={() => history.push('/instance')}
+          shortcutLabel="⌥5"
+          shortcutFilter={(e) => e.altKey && e.code === 'Digit5'}
+        >
+          <TopNavLink
+            to="/instance"
+            data-cy="AppTopNav_StatusLink"
+            isActive={(_, location) => {
+              const {pathname} = location;
+              return (
+                pathname.startsWith('/instance') &&
+                !pathname.startsWith('/instance/runs') &&
+                !pathname.startsWith('/instance/assets')
+              );
+            }}
+          >
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+              Deployment
+              <DeploymentStatusIcon />
+            </Box>
+          </TopNavLink>
+        </ShortcutHandler>
+      </Box>
+    );
+  };
 
   return (
     <AppTopNavContainer>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
         <AppTopNavLogo />
-        <SearchDialog searchPlaceholder={searchPlaceholder} />
+        <Box margin={{left: 8}}>{navLinks()}</Box>
         {rightOfSearchBar}
       </Box>
       <Box flex={{direction: 'row', alignItems: 'center'}}>
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-          <ShortcutHandler
-            onShortcut={() => history.push('/instance/runs')}
-            shortcutLabel="⌥1"
-            shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
-          >
-            <TopNavLink to="/instance/runs" data-cy="AppTopNav_RunsLink">
-              Runs
-            </TopNavLink>
-          </ShortcutHandler>
-          <ShortcutHandler
-            onShortcut={() => history.push('/instance/assets')}
-            shortcutLabel="⌥2"
-            shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
-          >
-            <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink">
-              Assets
-            </TopNavLink>
-          </ShortcutHandler>
-          <ShortcutHandler
-            onShortcut={() => history.push('/instance')}
-            shortcutLabel="⌥3"
-            shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
-          >
-            <TopNavLink to="/instance" data-cy="AppTopNav_StatusLink">
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                Status
-                {showStatusWarningIcon ? <InstanceWarningIcon /> : null}
-              </Box>
-            </TopNavLink>
-          </ShortcutHandler>
-          <ShortcutHandler
-            onShortcut={() => history.push('/workspace')}
-            shortcutLabel="⌥4"
-            shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
-          >
-            <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-                Workspace
-                <WorkspaceStatus />
-              </Box>
-            </TopNavLink>
-          </ShortcutHandler>
-        </Box>
+        <SearchDialog searchPlaceholder={searchPlaceholder} />
         {children}
       </Box>
     </AppTopNavContainer>
@@ -180,14 +200,20 @@ const DaggyTooltip = styled(Tooltip)`
   }
 `;
 
-export const TopNavLink = styled(Link)`
-  color: ${Colors.Gray200};
+export const TopNavLink = styled(NavLink)`
+  color: ${Colors.Gray400};
   font-weight: 600;
   transition: color 50ms linear;
   padding: 24px 0;
+  text-decoration: none;
 
-  :hover,
-  :active {
+  :hover {
+    color: ${Colors.Gray300};
+    text-decoration: none;
+  }
+
+  :active,
+  &.active {
     color: ${Colors.White};
     text-decoration: none;
   }

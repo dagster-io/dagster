@@ -17,7 +17,7 @@ const Layout: React.FC = ({children}) => {
       <div
         style={{
           minHeight: '100vh',
-          backgroundImage: 'url("_next/image?url=/assets/head-texture.jpg&w=3840&q=100")',
+          backgroundImage: 'url("/_next/image?url=/assets/head-texture.jpg&w=3840&q=100")',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'top middle',
           backgroundSize: 'fit',
@@ -25,8 +25,8 @@ const Layout: React.FC = ({children}) => {
         }}
       >
         <Header openMobileDocsMenu={openMobileDocsMenu} />
-        <div className="w-screen mx-auto px-4 sm:px-6 lg:px-8" style={{paddingTop: '64px'}}>
-          <div className="mt-10 flex justify-center">
+        <div className="w-screen mx-auto px-4 sm:px-6 lg:px-8" style={{paddingTop: '48px'}}>
+          <div className="mt-8 flex justify-center">
             <Sidebar
               isMobileDocsMenuOpen={isMobileDocsMenuOpen}
               closeMobileDocsMenu={closeMobileDocsMenu}

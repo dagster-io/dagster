@@ -5,6 +5,7 @@ from dagster import (
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
     TimeWindowPartitionsDefinition,
+    WeeklyPartitionsDefinition,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
@@ -137,3 +138,16 @@ def test_get_upstream_partitions_for_partition_range_daily_non_aligned():
         upstream_partitions_def,
     )
     assert result == PartitionKeyRange("2021-05-01", "2021-05-04")
+
+
+def test_get_upstream_partitions_for_partition_range_weekly_with_offset():
+    partitions_def = WeeklyPartitionsDefinition(
+        start_date="2022-09-04", day_offset=0, hour_offset=10
+    )
+
+    result = TimeWindowPartitionMapping().get_upstream_partitions_for_partition_range(
+        PartitionKeyRange("2022-09-11", "2022-09-11"),
+        partitions_def,
+        partitions_def,
+    )
+    assert result == PartitionKeyRange("2022-09-11", "2022-09-11")

@@ -3,9 +3,8 @@ import threading
 import time
 import warnings
 from abc import ABC, abstractmethod
-from collections import OrderedDict
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._core.errors import (
@@ -176,7 +175,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
-    def has_external_pipeline(self, selector: PipelineSelector) -> bool:
+    def has_external_job(self, selector: PipelineSelector) -> bool:
         check.inst_param(selector, "selector", PipelineSelector)
         if not self.has_repository_location(selector.location_name):
             return False
@@ -184,21 +183,21 @@ class BaseWorkspaceRequestContext(IWorkspace):
         loc = self.get_repository_location(selector.location_name)
         return loc.has_repository(selector.repository_name) and loc.get_repository(
             selector.repository_name
-        ).has_external_pipeline(selector.pipeline_name)
+        ).has_external_job(selector.pipeline_name)
 
-    def get_full_external_pipeline(self, selector: PipelineSelector) -> ExternalPipeline:
+    def get_full_external_job(self, selector: PipelineSelector) -> ExternalPipeline:
         return (
             self.get_repository_location(selector.location_name)
             .get_repository(selector.repository_name)
-            .get_full_external_pipeline(selector.pipeline_name)
+            .get_full_external_job(selector.pipeline_name)
         )
 
     def get_external_execution_plan(
         self,
         external_pipeline: ExternalPipeline,
-        run_config: dict,
+        run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: List[str],
+        step_keys_to_execute: Sequence[str],
         known_state: KnownExecutionState,
     ) -> ExternalExecutionPlan:
         return self.get_repository_location(
@@ -267,15 +266,17 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         self,
         instance: DagsterInstance,
         workspace_snapshot: Dict[str, WorkspaceLocationEntry],
-        process_context: "WorkspaceProcessContext",
+        process_context: "IWorkspaceProcessContext",
         version: Optional[str],
         source: Optional[object],
+        read_only: bool,
     ):
         self._instance = instance
         self._workspace_snapshot = workspace_snapshot
         self._process_context = process_context
         self._version = version
         self._source = source
+        self._read_only = read_only
 
     @property
     def instance(self) -> DagsterInstance:
@@ -297,14 +298,14 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
 
     @property
     def read_only(self) -> bool:
-        return self._process_context.read_only
+        return self._read_only
 
     @property
     def permissions(self) -> Dict[str, PermissionResult]:
-        return self._process_context.permissions
+        return get_user_permissions(self._read_only)
 
     def has_permission(self, permission: str) -> bool:
-        permissions = self._process_context.permissions
+        permissions = self.permissions
         check.invariant(
             permission in permissions, f"Permission {permission} not listed in permissions map"
         )
@@ -361,7 +362,7 @@ class IWorkspaceProcessContext(ABC):
 
     @property
     @abstractmethod
-    def instance(self):
+    def instance(self) -> DagsterInstance:
         pass
 
     def __enter__(self):
@@ -436,43 +437,21 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 )
             )
 
-        self._location_entry_dict: Dict[str, WorkspaceLocationEntry] = OrderedDict()
-
-        with self._lock:
-            self._load_workspace()
+        self._location_entry_dict: Dict[str, WorkspaceLocationEntry] = {}
+        self._update_workspace(
+            {origin.location_name: self._load_location(origin) for origin in self._origins}
+        )
 
     @property
     def workspace_load_target(self):
         return self._workspace_load_target
 
+    @property
+    def _origins(self) -> List[RepositoryLocationOrigin]:
+        return self._workspace_load_target.create_origins() if self._workspace_load_target else []
+
     def add_state_subscriber(self, subscriber):
         self._state_subscribers.append(subscriber)
-
-    def _load_workspace(self):
-        assert self._lock.locked()
-        repository_location_origins = (
-            self._workspace_load_target.create_origins() if self._workspace_load_target else []
-        )
-
-        check.list_param(
-            repository_location_origins,
-            "repository_location_origins",
-            of_type=RepositoryLocationOrigin,
-        )
-
-        self._location_entry_dict = OrderedDict()
-
-        for origin in repository_location_origins:
-            check.invariant(
-                self._location_entry_dict.get(origin.location_name) is None,
-                'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
-                    name=origin.location_name,
-                ),
-            )
-
-            if origin.supports_server_watch:
-                self._start_watch_thread(origin)
-            self._location_entry_dict[origin.location_name] = self._load_location(origin)
 
     def _create_location_from_origin(
         self, origin: RepositoryLocationOrigin
@@ -507,7 +486,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
     @property
     def permissions(self) -> Dict[str, PermissionResult]:
-        return get_user_permissions(self)
+        return get_user_permissions(self._read_only)
 
     @property
     def version(self) -> str:
@@ -548,8 +527,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_threads[location_name] = watch_thread
         watch_thread.start()
 
-    def _load_location(self, origin):
-        assert self._lock.locked()
+    def _load_location(self, origin: RepositoryLocationOrigin) -> WorkspaceLocationEntry:
         location_name = origin.location_name
         location = None
         error = None
@@ -607,38 +585,49 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
     def reload_repository_location(self, name: str) -> None:
         # Can be called from a background thread
+        new = self._load_location(self._location_entry_dict[name].origin)
         with self._lock:
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
-            self._location_entry_dict[name] = self._load_location(
-                self._location_entry_dict[name].origin
-            )
+            self._location_entry_dict[name] = new
 
     def shutdown_repository_location(self, name: str):
         with self._lock:
             self._location_entry_dict[name].origin.shutdown_server()
 
     def reload_workspace(self):
-        # Can be called from a background thread
-        with self._lock:
-            self._cleanup_locations()
-            self._load_workspace()
+        updated_locations = {
+            origin.location_name: self._load_location(origin) for origin in self._origins
+        }
+        self._update_workspace(updated_locations)
 
-    def _cleanup_locations(self):
-        assert self._lock.locked()
-        for _, event in self._watch_thread_shutdown_events.items():
+    def _update_workspace(self, new_locations: Dict[str, WorkspaceLocationEntry]):
+        # minimize lock time by only holding while swapping data old to new
+        with self._lock:
+            previous_events = self._watch_thread_shutdown_events
+            self._watch_thread_shutdown_events = {}
+
+            previous_threads = self._watch_threads
+            self._watch_threads = {}
+
+            previous_locations = self._location_entry_dict
+            self._location_entry_dict = new_locations
+
+            # start monitoring for new locations
+            for entry in self._location_entry_dict.values():
+                if isinstance(entry.origin, GrpcServerRepositoryLocationOrigin):
+                    self._start_watch_thread(entry.origin)
+
+        # clean up previous locations
+        for event in previous_events.values():
             event.set()
-        for _, watch_thread in self._watch_threads.items():
+
+        for watch_thread in previous_threads.values():
             watch_thread.join()
 
-        self._watch_thread_shutdown_events = {}
-        self._watch_threads = {}
-
-        for entry in self._location_entry_dict.values():
+        for entry in previous_locations.values():
             if entry.repository_location:
                 entry.repository_location.cleanup()
-
-        self._location_entry_dict = OrderedDict()
 
     def create_request_context(self, source=None) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
@@ -647,6 +636,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             process_context=self,
             version=self.version,
             source=source,
+            read_only=self._read_only,
         )
 
     @property
@@ -672,6 +662,15 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        with self._lock:
-            self._cleanup_locations()
+        self._update_workspace({})  # update to empty to close all current locations
         self._stack.close()
+
+    def copy_for_test_instance(self, instance: DagsterInstance) -> "WorkspaceProcessContext":
+        """make a copy with a different instance, created for tests"""
+        return WorkspaceProcessContext(
+            instance=instance,
+            workspace_load_target=self.workspace_load_target,
+            version=self.version,
+            read_only=self.read_only,
+            grpc_server_registry=self._grpc_server_registry,
+        )

@@ -1,12 +1,26 @@
-import {Box, Colors, Popover, Mono, FontFamily, Tooltip, Tag, NonIdealState} from '@dagster-io/ui';
+import {
+  Box,
+  Colors,
+  Popover,
+  Mono,
+  FontFamily,
+  Tooltip,
+  Tag,
+  Icon,
+  Spinner,
+  MiddleTruncate,
+} from '@dagster-io/ui';
+import moment from 'moment-timezone';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
+import {OVERVIEW_COLLAPSED_KEY, OVERVIEW_EXPANSION_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {AnchorButton} from '../ui/AnchorButton';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -15,14 +29,18 @@ import {RepoAddress} from '../workspace/types';
 
 import {RepoSectionHeader, SECTION_HEADER_HEIGHT} from './RepoSectionHeader';
 import {RunStatusDot} from './RunStatusDots';
-import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';
+import {failedStatuses, inProgressStatuses, successStatuses} from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
 import {batchRunsForTimeline, RunBatch} from './batchRunsForTimeline';
+import {mergeStatusToBackground} from './mergeStatusToBackground';
 
 const ROW_HEIGHT = 32;
-const TIME_HEADER_HEIGHT = 42;
-const EMPTY_STATE_HEIGHT = 140;
-const LABEL_WIDTH = 320;
+const TIME_HEADER_HEIGHT = 32;
+const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
+const EMPTY_STATE_HEIGHT = 110;
+const LEFT_SIDE_SPACE_ALLOTTED = 320;
+const LABEL_WIDTH = 268;
+const MIN_DATE_WIDTH_PCT = 10;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
 
@@ -37,22 +55,38 @@ export type TimelineJob = {
   key: string;
   repoAddress: RepoAddress;
   jobName: string;
+  jobType: 'job' | 'asset';
   path: string;
   runs: TimelineRun[];
 };
 
 interface Props {
-  bucketByRepo?: boolean;
+  loading?: boolean;
   jobs: TimelineJob[];
   range: [number, number];
 }
 
-const EXPANSION_STATE_STORAGE_KEY = 'timeline-expansion-state';
-
 export const RunTimeline = (props: Props) => {
-  const {bucketByRepo = false, jobs, range} = props;
+  const {loading = false, jobs, range} = props;
   const [width, setWidth] = React.useState<number | null>(null);
-  const {expandedKeys, onToggle} = useRepoExpansionState(EXPANSION_STATE_STORAGE_KEY);
+
+  const now = Date.now();
+  const [_, end] = range;
+  const includesTicks = now <= end;
+
+  const buckets = jobs.reduce((accum, job) => {
+    const {repoAddress} = job;
+    const repoKey = repoAddressAsString(repoAddress);
+    const jobsForRepo = accum[repoKey] || [];
+    return {...accum, [repoKey]: [...jobsForRepo, job]};
+  }, {});
+
+  const allKeys = Object.keys(buckets);
+  const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
+    OVERVIEW_EXPANSION_KEY,
+    OVERVIEW_COLLAPSED_KEY,
+    allKeys,
+  );
 
   const observer = React.useRef<ResizeObserver | null>(null);
 
@@ -68,46 +102,17 @@ export const RunTimeline = (props: Props) => {
     }
   }, []);
 
-  if (!width || !jobs.length) {
+  if (!width) {
     return (
-      <Timeline $height={TIME_HEADER_HEIGHT + EMPTY_STATE_HEIGHT} ref={containerRef}>
-        {width ? <NoRunsTimeline /> : null}
+      <Timeline $height={DATE_TIME_HEIGHT + EMPTY_STATE_HEIGHT} ref={containerRef}>
+        <div />
       </Timeline>
     );
   }
 
-  if (!bucketByRepo) {
-    const height = ROW_HEIGHT * (jobs.length || 1);
-    return (
-      <Timeline $height={TIME_HEADER_HEIGHT + height} ref={containerRef}>
-        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
-        <div>
-          {jobs.map((job, ii) => (
-            <RunTimelineRow
-              key={job.key}
-              job={job}
-              top={ii * ROW_HEIGHT + TIME_HEADER_HEIGHT}
-              range={range}
-              width={width}
-            />
-          ))}
-        </div>
-      </Timeline>
-    );
-  }
+  const repoOrder = Object.keys(buckets).sort((a, b) => a.localeCompare(b));
 
-  const buckets = jobs.reduce((accum, job) => {
-    const {repoAddress} = job;
-    const repoKey = repoAddressAsString(repoAddress);
-    const jobsForRepo = accum[repoKey] || [];
-    return {...accum, [repoKey]: [...jobsForRepo, job]};
-  }, {});
-
-  const repoOrder = Object.keys(buckets).sort((a, b) =>
-    a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()),
-  );
-
-  let nextTop = TIME_HEADER_HEIGHT;
+  let nextTop = DATE_TIME_HEIGHT;
   const expandedRepos = repoOrder.filter((repoKey) => expandedKeys.includes(repoKey));
   const expandedJobCount = expandedRepos.reduce(
     (accum, repoKey) => accum + buckets[repoKey].length,
@@ -117,30 +122,45 @@ export const RunTimeline = (props: Props) => {
   const duplicateRepoNames = findDuplicateRepoNames(
     repoOrder.map((repoKey) => repoAddressFromPath(repoKey)?.name || ''),
   );
+  const anyJobs = repoOrder.length > 0;
+  const timelineHeight = DATE_TIME_HEIGHT + (anyJobs ? height : EMPTY_STATE_HEIGHT);
 
   return (
-    <Timeline $height={TIME_HEADER_HEIGHT + height} ref={containerRef}>
-      <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
-      {repoOrder.map((repoKey) => {
-        const name = repoAddressFromPath(repoKey)?.name;
-        const jobs = buckets[repoKey];
-        const top = nextTop;
-        const expanded = expandedKeys.includes(repoKey);
-        nextTop = top + SECTION_HEADER_HEIGHT + (expanded ? jobs.length * ROW_HEIGHT : 0);
-        return (
-          <TimelineSection
-            expanded={expanded}
-            range={range}
-            top={top}
-            key={repoKey}
-            repoKey={repoKey}
-            isDuplicateRepoName={!!(name && duplicateRepoNames.has(name))}
-            jobs={buckets[repoKey]}
-            onToggle={onToggle}
-            width={width}
-          />
-        );
-      })}
+    <Timeline $height={timelineHeight} ref={containerRef}>
+      <Box
+        padding={{left: 24}}
+        flex={{direction: 'column', justifyContent: 'center'}}
+        style={{fontSize: '16px', height: DATE_TIME_HEIGHT}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+      >
+        Jobs
+      </Box>
+      <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
+      {repoOrder.length ? (
+        repoOrder.map((repoKey) => {
+          const name = repoAddressFromPath(repoKey)?.name;
+          const jobs = buckets[repoKey];
+          const top = nextTop;
+          const expanded = expandedKeys.includes(repoKey);
+          nextTop = top + SECTION_HEADER_HEIGHT + (expanded ? jobs.length * ROW_HEIGHT : 0);
+          return (
+            <TimelineSection
+              expanded={expanded}
+              range={range}
+              top={top}
+              key={repoKey}
+              repoKey={repoKey}
+              isDuplicateRepoName={!!(name && duplicateRepoNames.has(name))}
+              jobs={buckets[repoKey]}
+              onToggle={onToggle}
+              onToggleAll={onToggleAll}
+              width={width}
+            />
+          );
+        })
+      ) : (
+        <RunsEmptyOrLoading loading={loading} includesTicks={includesTicks} />
+      )}
     </Timeline>
   );
 };
@@ -154,16 +174,35 @@ interface TimelineSectionProps {
   range: [number, number];
   width: number;
   onToggle: (repoAddress: RepoAddress) => void;
+  onToggleAll: (expanded: boolean) => void;
 }
 
 const TimelineSection = (props: TimelineSectionProps) => {
-  const {expanded, onToggle, repoKey, isDuplicateRepoName, jobs, range, top, width} = props;
+  const {
+    expanded,
+    onToggle,
+    onToggleAll,
+    repoKey,
+    isDuplicateRepoName,
+    jobs,
+    range,
+    top,
+    width,
+  } = props;
   const repoAddress = repoAddressFromPath(repoKey);
   const repoName = repoAddress?.name || 'Unknown repo';
   const repoLocation = repoAddress?.location || 'Unknown location';
-  const onClick = React.useCallback(() => {
-    repoAddress && onToggle(repoAddress);
-  }, [onToggle, repoAddress]);
+
+  const onClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      if (e.getModifierState('Shift')) {
+        onToggleAll(!expanded);
+      } else {
+        repoAddress && onToggle(repoAddress);
+      }
+    },
+    [expanded, onToggle, onToggleAll, repoAddress],
+  );
 
   return (
     <div>
@@ -255,6 +294,13 @@ const SectionHeaderContainer = styled.div<{$top: number}>`
   ${({$top}) => `transform: translateY(${$top}px);`}
 `;
 
+type DateMarker = {
+  key: string;
+  label: React.ReactNode;
+  left: number;
+  width: number;
+};
+
 type TimeMarker = {
   key: string;
   label: React.ReactNode;
@@ -271,7 +317,56 @@ const TimeDividers = (props: TimeDividersProps) => {
   const {interval, range, height} = props;
   const [start, end] = range;
   const locale = navigator.language;
-  const [timezone] = React.useContext(TimezoneContext);
+  const [tz] = React.useContext(TimezoneContext);
+  const timeZone = tz === 'Automatic' ? browserTimezone() : tz;
+
+  const dateFormat = React.useMemo(() => {
+    return new Intl.DateTimeFormat(locale, {
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone,
+    });
+  }, [locale, timeZone]);
+
+  const timeFormat = React.useMemo(() => {
+    return new Intl.DateTimeFormat(locale, {
+      hour: 'numeric',
+      timeZone,
+    });
+  }, [locale, timeZone]);
+
+  const dateMarkers: DateMarker[] = React.useMemo(() => {
+    const totalTime = end - start;
+    const startAtTimezone = moment.tz(start, timeZone);
+
+    const dayBoundaries = [];
+    const cursor = startAtTimezone.startOf('day');
+
+    while (cursor.valueOf() < end) {
+      const dayStart = cursor.valueOf();
+      cursor.add(1, 'day');
+      const dayEnd = cursor.valueOf();
+      dayBoundaries.push({dayStart, dayEnd});
+    }
+
+    return dayBoundaries.map(({dayStart, dayEnd}) => {
+      const date = new Date(dayStart);
+      const startLeftMsec = dayStart - start;
+      const dayLength = dayEnd - dayStart; // This can vary with DST
+      const endRight = startLeftMsec + dayLength;
+
+      const left = Math.max(0, (startLeftMsec / totalTime) * 100);
+      const right = Math.min(100, (endRight / totalTime) * 100);
+
+      return {
+        label: dateFormat.format(date),
+        key: date.toString(),
+        left,
+        width: right - left,
+      };
+    });
+  }, [dateFormat, end, start, timeZone]);
 
   const timeMarkers: TimeMarker[] = React.useMemo(() => {
     const totalTime = end - start;
@@ -282,10 +377,7 @@ const TimeDividers = (props: TimeDividersProps) => {
       .map((_, ii) => {
         const time = firstMarker + ii * interval;
         const date = new Date(time);
-        const label = date.toLocaleString(locale, {
-          hour: '2-digit',
-          timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
-        });
+        const label = timeFormat.format(date).replace(' ', '');
         return {
           label,
           key: date.toString(),
@@ -293,7 +385,7 @@ const TimeDividers = (props: TimeDividersProps) => {
         };
       })
       .filter((marker) => marker.left > 0);
-  }, [end, start, interval, locale, timezone]);
+  }, [end, start, interval, timeFormat]);
 
   const now = Date.now();
   const nowLeft = `${(((now - start) / (end - start)) * 100).toPrecision(3)}%`;
@@ -301,10 +393,25 @@ const TimeDividers = (props: TimeDividersProps) => {
   return (
     <DividerContainer style={{height: `${height}px`}}>
       <DividerLabels>
+        {dateMarkers.map((marker) => (
+          <DateLabel
+            key={marker.key}
+            style={{
+              left: `${marker.left.toPrecision(3)}%`,
+              width: `${marker.width.toPrecision(3)}%`,
+            }}
+          >
+            {marker.width > MIN_DATE_WIDTH_PCT ? (
+              <Box flex={{justifyContent: 'center'}}>{marker.label}</Box>
+            ) : null}
+          </DateLabel>
+        ))}
+      </DividerLabels>
+      <DividerLabels>
         {timeMarkers.map((marker) => (
-          <DividerLabel key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}}>
+          <TimeLabel key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}}>
             {marker.label}
-          </DividerLabel>
+          </TimeLabel>
         ))}
       </DividerLabels>
       <DividerLines>
@@ -326,24 +433,36 @@ const TimeDividers = (props: TimeDividersProps) => {
 const DividerContainer = styled.div`
   position: absolute;
   top: 0;
-  left: ${LABEL_WIDTH}px;
+  left: ${LEFT_SIDE_SPACE_ALLOTTED}px;
   right: 0;
   font-family: ${FontFamily.monospace};
-  color: ${Colors.Gray400};
+  color: ${Colors.Gray800};
 `;
 
 const DividerLabels = styled.div`
   display: flex;
   align-items: center;
+  box-shadow: inset 1px 0 0 ${Colors.KeylineGray}, inset 0 1px 0 ${Colors.KeylineGray},
+    inset -1px 0 0 ${Colors.KeylineGray};
   height: ${TIME_HEADER_HEIGHT}px;
   position: relative;
   user-select: none;
+  font-size: 12px;
   width: 100%;
+  overflow: hidden;
 `;
 
-const DividerLabel = styled.div`
+const DateLabel = styled.div`
   position: absolute;
-  transform: translateX(-50%);
+  padding: 8px 0;
+  box-shadow: inset 1px 0 0 ${Colors.KeylineGray};
+  white-space: nowrap;
+`;
+
+const TimeLabel = styled.div`
+  position: absolute;
+  padding: 8px;
+  box-shadow: inset 1px 0 0 ${Colors.KeylineGray};
   white-space: nowrap;
 `;
 
@@ -376,48 +495,8 @@ const NowMarker = styled.div`
   user-select: none;
 `;
 
-const mergeStatusToColor = (runs: TimelineRun[]) => {
-  let anyInProgress = false;
-  let anyQueued = false;
-  let anyFailed = false;
-  let anySucceeded = false;
-  let anyScheduled = false;
-
-  runs.forEach(({status}) => {
-    if (status === 'SCHEDULED') {
-      anyScheduled = true;
-    } else if (queuedStatuses.has(status)) {
-      anyQueued = true;
-    } else if (inProgressStatuses.has(status)) {
-      anyInProgress = true;
-    } else if (failedStatuses.has(status)) {
-      anyFailed = true;
-    } else if (successStatuses.has(status)) {
-      anySucceeded = true;
-    }
-  });
-
-  if (anyQueued) {
-    return Colors.Blue200;
-  }
-  if (anyInProgress) {
-    return Colors.Blue500;
-  }
-  if (anyFailed) {
-    return Colors.Red500;
-  }
-  if (anySucceeded) {
-    return Colors.Green500;
-  }
-  if (anyScheduled) {
-    return Colors.Blue200;
-  }
-
-  return Colors.Gray500;
-};
-
 const MIN_CHUNK_WIDTH = 2;
-const MIN_WIDTH_FOR_MULTIPLE = 16;
+const MIN_WIDTH_FOR_MULTIPLE = 12;
 
 const RunTimelineRow = ({
   job,
@@ -430,9 +509,8 @@ const RunTimelineRow = ({
   range: [number, number];
   width: number;
 }) => {
-  // const {jobKey, jobLabel, jobPath, runs, top, range, width: containerWidth} = props;
   const [start, end] = range;
-  const width = containerWidth - LABEL_WIDTH;
+  const width = containerWidth - LEFT_SIDE_SPACE_ALLOTTED;
   const {runs} = job;
 
   // Batch overlapping runs in this row.
@@ -456,7 +534,18 @@ const RunTimelineRow = ({
   return (
     <Row $top={top}>
       <JobName>
-        <Link to={job.path}>{job.jobName}</Link>
+        <Icon name={job.jobType === 'asset' ? 'asset' : 'job'} />
+        <div style={{width: LABEL_WIDTH}}>
+          {job.jobType === 'asset' ? (
+            <span style={{color: Colors.Gray900}}>
+              <MiddleTruncate text={job.jobName} />
+            </span>
+          ) : (
+            <Link to={job.path}>
+              <MiddleTruncate text={job.jobName} />
+            </Link>
+          )}
+        </div>
       </JobName>
       <RunChunks>
         {batched.map((batch) => {
@@ -465,7 +554,7 @@ const RunTimelineRow = ({
           return (
             <RunChunk
               key={batch.runs[0].id}
-              $color={mergeStatusToColor(batch.runs)}
+              $background={mergeStatusToBackground(batch.runs)}
               $multiple={runCount > 1}
               style={{
                 left: `${left}px`,
@@ -493,15 +582,50 @@ const RunTimelineRow = ({
   );
 };
 
-const NoRunsTimeline = () => (
-  <Box padding={48}>
-    <NonIdealState
-      icon="schedule"
-      title="No runs found"
-      description="No runs or upcoming runs found for this time window"
-    />
-  </Box>
-);
+const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
+  const {loading, includesTicks} = props;
+
+  const content = () => {
+    if (loading) {
+      return (
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <Spinner purpose="body-text" />
+          {includesTicks ? 'Loading runs and scheduled ticks' : 'Loading runs'}
+        </Box>
+      );
+    }
+
+    return (
+      <Box flex={{direction: 'column', gap: 12, alignItems: 'center'}}>
+        <div>
+          {includesTicks
+            ? 'No runs or scheduled ticks in this time period.'
+            : 'No runs in this time period.'}
+        </div>
+        <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+          <AnchorButton icon={<Icon name="add_circle" />} to="/overview/jobs">
+            Launch a run
+          </AnchorButton>
+          <span>or</span>
+          <AnchorButton icon={<Icon name="materialization" />} to="/instance/asset-groups">
+            Materialize an asset
+          </AnchorButton>
+        </Box>
+      </Box>
+    );
+  };
+
+  return (
+    <Box
+      background={Colors.White}
+      padding={{vertical: 24}}
+      flex={{direction: 'row', justifyContent: 'center'}}
+      border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+    >
+      {content()}
+    </Box>
+  );
+};
 
 const Timeline = styled.div<{$height: number}>`
   ${({$height}) => `height: ${$height}px;`}
@@ -535,13 +659,14 @@ const JobName = styled.div`
   align-items: center;
   display: flex;
   font-size: 13px;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 8px;
   line-height: 16px;
   overflow: hidden;
   padding: 0 12px 0 24px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  width: ${LABEL_WIDTH}px;
+  width: ${LEFT_SIDE_SPACE_ALLOTTED}px;
 `;
 
 const RunChunks = styled.div`
@@ -551,13 +676,13 @@ const RunChunks = styled.div`
 `;
 
 interface ChunkProps {
-  $color: string;
+  $background: string;
   $multiple: boolean;
 }
 
 const RunChunk = styled.div<ChunkProps>`
   align-items: center;
-  background-color: ${({$color}) => $color};
+  background: ${({$background}) => $background};
   border-radius: 2px;
   height: ${ROW_HEIGHT - 4}px;
   position: absolute;
@@ -577,7 +702,8 @@ const BatchCount = styled.div`
   color: ${Colors.White};
   cursor: default;
   font-family: ${FontFamily.monospace};
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 600;
   user-select: none;
 `;
 

@@ -75,7 +75,7 @@ def repo_location_fixture(workspace):
 
 @pytest.fixture(name="external_pipeline", scope="module")
 def external_pipeline_fixture(repo_location):
-    return repo_location.get_repository("repo").get_full_external_pipeline("conditional_fail_job")
+    return repo_location.get_repository("repo").get_full_external_job("conditional_fail_job")
 
 
 @pytest.fixture(name="failed_run", scope="module")

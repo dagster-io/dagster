@@ -27,7 +27,6 @@ from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, R
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.controller import create_daemon_grpc_server_registry
-from dagster._daemon.workspace import DaemonWorkspace
 from dagster._legacy import ModeDefinition, composite_solid, pipeline, solid
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
@@ -466,12 +465,19 @@ def in_process_test_workspace(instance, loadable_target_origin, container_image=
 
 
 @contextmanager
-def create_test_daemon_workspace(workspace_load_target, instance):
+def create_test_daemon_workspace_context(
+    workspace_load_target: WorkspaceLoadTarget,
+    instance: DagsterInstance,
+):
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
     configure_loggers()
     with create_daemon_grpc_server_registry(instance) as grpc_server_registry:
-        with DaemonWorkspace(grpc_server_registry, workspace_load_target) as workspace:
-            yield workspace
+        with WorkspaceProcessContext(
+            instance,
+            workspace_load_target,
+            grpc_server_registry=grpc_server_registry,
+        ) as workspace_process_context:
+            yield workspace_process_context
 
 
 def remove_none_recursively(obj):

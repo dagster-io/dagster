@@ -1,9 +1,13 @@
+import functools
+import logging
 import os
 import subprocess
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import packaging.version
 import yaml
+from dagster_buildkite.git import ChangedFiles, get_commit_message
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
@@ -32,6 +36,7 @@ class CommandStep(TypedDict, total=False):
     plugins: List[Dict[str, object]]
     retry: Dict[str, object]
     timeout_in_minutes: int
+    skip: str
 
 
 class GroupStep(TypedDict):
@@ -140,7 +145,7 @@ def connect_sibling_docker_container(
     ]
 
 
-def is_feature_branch(branch_name: str) -> bool:
+def is_feature_branch(branch_name: str = safe_getenv("BUILDKITE_BRANCH")) -> bool:
     return not (branch_name == "master" or branch_name.startswith("release"))
 
 
@@ -176,3 +181,61 @@ def parse_package_version(version_str: str) -> packaging.version.Version:
         parsed_version, packaging.version.Version
     ), f"Found LegacyVersion: {version_str}"
     return parsed_version
+
+
+def get_commit(rev):
+    return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
+
+
+def skip_if_no_python_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix == ".py" for path in ChangedFiles.all):
+        return None
+
+    return "No python changes"
+
+
+@functools.lru_cache(maxsize=None)
+def skip_if_no_helm_changes():
+    if not is_feature_branch():
+        return None
+
+    if any(Path("helm") in path.parents for path in ChangedFiles.all):
+        logging.info("Run helm steps because files in the helm directory changed")
+        return None
+
+    return "No helm changes"
+
+
+@functools.lru_cache(maxsize=None)
+def skip_coverage_if_feature_branch():
+    if not is_feature_branch():
+        return None
+
+    return "Skip coverage uploads until we're finished with our Buildkite refactor"
+
+
+def message_contains(substring: str) -> bool:
+    return any(
+        substring in message
+        for message in [os.getenv("BUILDKITE_MESSAGE", ""), get_commit_message("HEAD")]
+    )
+
+
+def skip_if_no_docs_changes():
+    if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
+        return None
+
+    # If anything changes in the docs directory
+    if any(Path("docs") in path.parents for path in ChangedFiles.all):
+        logging.info("Run docs steps because files in the docs directory changed")
+        return None
+
+    # If anything changes in the examples directory. This is where our docs snippets live.
+    if any(Path("examples") in path.parents for path in ChangedFiles.all):
+        logging.info("Run docs steps because files in the examples directory changed")
+        return None
+
+    return "No docs changes"

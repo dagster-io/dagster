@@ -55,6 +55,9 @@ class RunRequest(
     Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
+    To build a run request for a particular partitition, use
+    :py:func:`~JobDefinition.run_request_for_partition`.
+
     Attributes:
         run_key (Optional[str]): A string key to identify this launched run. For sensors, ensures that
             only one run is created per run key across all sensor evaluations.  For schedules,
@@ -72,7 +75,7 @@ class RunRequest(
 
     def __new__(
         cls,
-        run_key: Optional[str],
+        run_key: Optional[str] = None,
         run_config: Optional[Mapping[str, Any]] = None,
         tags: Optional[Mapping[str, str]] = None,
         job_name: Optional[str] = None,

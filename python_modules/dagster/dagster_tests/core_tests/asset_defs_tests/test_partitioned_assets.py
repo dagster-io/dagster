@@ -16,8 +16,10 @@ from dagster import (
     StaticPartitionsDefinition,
     daily_partitioned_config,
     define_asset_job,
+    hourly_partitioned_config,
     materialize,
 )
+from dagster._check import CheckError
 from dagster._core.definitions import asset, build_assets_job, multi_asset
 from dagster._core.definitions.asset_partitions import (
     get_downstream_partitions_for_partition_range,
@@ -425,6 +427,11 @@ def test_job_config_with_asset_partitions():
     ).resolve([asset1], [])
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
+    assert (
+        the_job.get_job_def_for_subset_selection(asset_selection={AssetKey("asset1")})
+        .execute_in_process(partition_key="2020-01-01")
+        .success
+    )
 
 
 def test_job_partitioned_config_with_asset_partitions():
@@ -442,3 +449,22 @@ def test_job_partitioned_config_with_asset_partitions():
     the_job = define_asset_job("job", config=myconfig).resolve([asset1], [])
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
+
+
+def test_mismatched_job_partitioned_config_with_asset_partitions():
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @asset(config_schema={"day_of_month": int}, partitions_def=daily_partitions_def)
+    def asset1(context):
+        assert context.op_config["day_of_month"] == 1
+        assert context.partition_key == "2020-01-01"
+
+    @hourly_partitioned_config(start_date="2020-01-01-00:00")
+    def myconfig(start, _end):
+        return {"ops": {"asset1": {"config": {"day_of_month": start.day}}}}
+
+    with pytest.raises(
+        CheckError,
+        match="Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition than supplied for 'partitions_def'.",
+    ):
+        define_asset_job("job", config=myconfig).resolve([asset1], [])

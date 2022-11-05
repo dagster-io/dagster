@@ -36,44 +36,47 @@ Additionally, the [`imagePullSecrets`](https://artifacthub.io/packages/helm/dags
 
 ## Per-location configuration
 
-If your agent is at version 0.14.9 or higher, when [adding a code location](/dagster-cloud/developing-testing/code-locations) to Dagster Cloud with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. The following example illustrates the available fields:
+When [adding a code location](/dagster-cloud/developing-testing/code-locations) to Dagster Cloud with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster Cloud Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file, using the same format.
+
+The following example `dagster_cloud.yaml` file illustrates the available fields:
 
 ```yaml
-location_name: cloud-examples
-image: dagster/dagster-cloud-examples:latest
-code_source:
-  package_name: dagster_cloud_examples
-container_context:
-  k8s:
-    env_config_maps:
-      - my_config_map
-    env_secrets:
-      - my_secret
-    env_vars:
-      - FOO_ENV_VAR=foo_value
-      - BAR_ENV_VAR
-    image_pull_policy: Always
-    image_pull_secrets:
-      - name: my_image_pull_secret
-    labels:
-      my_label_key: my_label_value
-    namespace: my_k8s_namespace
-    service_account_name: my_service_account_name
-    volume_mounts:
-      - mount_path: /opt/dagster/test_mount_path/volume_mounted_file.yaml
-        name: test-volume
-        sub_path: volume_mounted_file.yaml
-    volumes:
-      - name: test-volume
-        config_map:
-          name: test-volume-configmap
-    resources:
-      limits:
-        cpu: 100m
-        memory: 128Mi
-      requests:
-        cpu: 100m
-        memory: 128Mi
+locations:
+  - location_name: cloud-examples
+    image: dagster/dagster-cloud-examples:latest
+    code_source:
+      package_name: dagster_cloud_examples
+    container_context:
+      k8s:
+        env_config_maps:
+          - my_config_map
+        env_secrets:
+          - my_secret
+        env_vars:
+          - FOO_ENV_VAR=foo_value
+          - BAR_ENV_VAR
+        image_pull_policy: Always
+        image_pull_secrets:
+          - name: my_image_pull_secret
+        labels:
+          my_label_key: my_label_value
+        namespace: my_k8s_namespace
+        service_account_name: my_service_account_name
+        volume_mounts:
+          - mount_path: /opt/dagster/test_mount_path/volume_mounted_file.yaml
+            name: test-volume
+            sub_path: volume_mounted_file.yaml
+        volumes:
+          - name: test-volume
+            config_map:
+              name: test-volume-configmap
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
 ```
 
 ---
@@ -120,7 +123,7 @@ We plan to make this user the default in a future release.
 You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/). For example, you might do this to [configure an S3 IO Manager](/deployment/guides/aws#using-s3-for-io-management).
 
 1. [Create an IAM OIDC provider for your EKS cluster](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
-2. [Create an IAM role and and attach IAM policies](https://docs.aws.amazon.com/eks/latest/userguide/create-service-account-iam-policy-and-role.html)
+2. [Create an IAM role and and attach IAM policies](https://docs.aws.amazon.com/eks/latest/userguide/associate-service-account-role.html)
 3. Update the [ Helm chart](#viewing-the-helm-chart) to associate the IAM role with a service account:
 
    ```bash

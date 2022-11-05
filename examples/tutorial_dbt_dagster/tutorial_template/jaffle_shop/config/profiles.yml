@@ -1,0 +1,10 @@
+## Refer to Using dbt with Dagster, part one for info about this file:
+## https://docs.dagster.io/integrations/dbt/using-dbt-with-dagster/part-one
+
+version: 2
+
+sources:
+  - name: jaffle_shop
+    tables:
+      - name: orders_raw
+      - name: customers_raw

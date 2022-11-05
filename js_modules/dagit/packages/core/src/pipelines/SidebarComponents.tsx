@@ -24,7 +24,7 @@ export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
   return (
     <>
       <CollapsingHeaderBar onClick={onToggle}>
-        {title}
+        <SidebarTitleTextWrap>{title}</SidebarTitleTextWrap>
         <Icon
           size={24}
           name="arrow_drop_down"
@@ -37,6 +37,13 @@ export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
     </>
   );
 };
+
+export const SidebarTitleTextWrap = styled.div`
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
 
 export const SidebarTitle = styled.h3`
   font-family: ${FontFamily.monospace};

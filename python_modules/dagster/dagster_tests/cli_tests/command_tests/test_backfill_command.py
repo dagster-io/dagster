@@ -33,14 +33,14 @@ def run_test_backfill_inner(execution_args, instance, expected_count, error_mess
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
 def test_backfill_no_pipeline_or_job(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"pipeline_or_job": "nonexistent"})
+        args = merge_dicts(cli_args, {"job_name": "nonexistent"})
         run_test_backfill(args, instance, error_message="No pipeline or job found")
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
 def test_backfill_no_partition_sets(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"pipeline_or_job": "foo"})
+        args = merge_dicts(cli_args, {"job_name": "foo"})
         run_test_backfill(
             args,
             instance,
@@ -51,7 +51,7 @@ def test_backfill_no_partition_sets(backfill_args_context):
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
 def test_backfill_multiple_partition_set_matches(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"pipeline_or_job": "baz"})
+        args = merge_dicts(cli_args, {"job_name": "baz"})
         run_test_backfill(
             args,
             instance,
@@ -62,14 +62,14 @@ def test_backfill_multiple_partition_set_matches(backfill_args_context):
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
 def test_backfill_single_partition_set_unspecified(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"pipeline_or_job": "partitioned_scheduled_pipeline"})
+        args = merge_dicts(cli_args, {"job_name": "partitioned_scheduled_pipeline"})
         run_test_backfill(args, instance, expected_count=len(string.digits))
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
 def test_backfill_no_named_partition_set(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"pipeline_or_job": "baz", "partition_set": "nonexistent"})
+        args = merge_dicts(cli_args, {"job_name": "baz", "partition_set": "nonexistent"})
         run_test_backfill(
             args,
             instance,
@@ -80,9 +80,7 @@ def test_backfill_no_named_partition_set(backfill_args_context):
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
 def test_backfill_error_partition_names(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(
-            cli_args, {"pipeline_or_job": "baz", "partition_set": "error_name_partitions"}
-        )
+        args = merge_dicts(cli_args, {"job_name": "baz", "partition_set": "error_name_partitions"})
         run_test_backfill(
             args,
             instance,
@@ -94,7 +92,7 @@ def test_backfill_error_partition_names(backfill_args_context):
 def test_backfill_error_partition_config(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(
-            cli_args, {"pipeline_or_job": "baz", "partition_set": "error_config_partitions"}
+            cli_args, {"job_name": "baz", "partition_set": "error_config_partitions"}
         )
         run_test_backfill(
             args,
@@ -106,7 +104,7 @@ def test_backfill_error_partition_config(backfill_args_context):
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
 def test_backfill_launch(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"pipeline_or_job": "baz", "partition_set": "baz_partitions"})
+        args = merge_dicts(cli_args, {"job_name": "baz", "partition_set": "baz_partitions"})
         run_test_backfill(args, instance, expected_count=len(string.digits))
 
 
@@ -114,18 +112,18 @@ def test_backfill_launch(backfill_args_context):
 def test_backfill_partition_range(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(
-            cli_args, {"pipeline_or_job": "baz", "partition_set": "baz_partitions", "from": "7"}
+            cli_args, {"job_name": "baz", "partition_set": "baz_partitions", "from": "7"}
         )
         run_test_backfill(args, instance, expected_count=3)
 
         args = merge_dicts(
-            cli_args, {"pipeline_or_job": "baz", "partition_set": "baz_partitions", "to": "2"}
+            cli_args, {"job_name": "baz", "partition_set": "baz_partitions", "to": "2"}
         )
         run_test_backfill(args, instance, expected_count=6)  # 3 more runs
 
         args = merge_dicts(
             cli_args,
-            {"pipeline_or_job": "baz", "partition_set": "baz_partitions", "from": "2", "to": "5"},
+            {"job_name": "baz", "partition_set": "baz_partitions", "from": "2", "to": "5"},
         )
         run_test_backfill(args, instance, expected_count=10)  # 4 more runs
 
@@ -135,7 +133,7 @@ def test_backfill_partition_enum(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(
             cli_args,
-            {"pipeline_or_job": "baz", "partition_set": "baz_partitions", "partitions": "2,9,0"},
+            {"job_name": "baz", "partition_set": "baz_partitions", "partitions": "2,9,0"},
         )
         run_test_backfill(args, instance, expected_count=3)
 
@@ -149,7 +147,7 @@ def test_backfill_tags_pipeline(backfill_args_context):
                 "partition_set": "baz_partitions",
                 "partitions": "2",
                 "tags": '{ "foo": "bar" }',
-                "pipeline_or_job": "baz",
+                "job_name": "baz",
             },
         )
 
@@ -186,4 +184,4 @@ def test_job_backfill_command_cli(job_cli_args):
         runner = CliRunner()
 
         result = runner.invoke(job_backfill_command, job_cli_args)
-        assert result.exit_code == 0, result.stdout
+        assert result.exit_code == 0, result

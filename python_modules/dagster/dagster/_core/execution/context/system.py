@@ -49,7 +49,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.pipeline_run import PipelineRun
-from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, PARTITION_NAME_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import DagsterType
 
@@ -330,11 +330,26 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def partition_key(self) -> str:
+        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+
         tags = self._plan_data.pipeline_run.tags
+
         check.invariant(
-            PARTITION_NAME_TAG in tags, "Tried to access partition_key for a non-partitioned run"
+            PARTITION_NAME_TAG in tags
+            or any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]),
+            "Tried to access partition_key for a non-partitioned run",
         )
-        return tags[PARTITION_NAME_TAG]
+
+        if PARTITION_NAME_TAG in tags:
+            return tags[PARTITION_NAME_TAG]
+
+        partitions_by_dimension: Dict[str, str] = {}
+        for tag in tags:
+            if tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX):
+                dimension = tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
+                partitions_by_dimension[dimension] = tags[tag]
+
+        return MultiPartitionKey(partitions_by_dimension)
 
     @property
     def partition_time_window(self) -> str:
@@ -358,7 +373,12 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def has_partition_key(self) -> bool:
-        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags
+        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags or any(
+            [
+                tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+                for tag in self._plan_data.pipeline_run.tags.keys()
+            ]
+        )
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(
@@ -564,6 +584,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             step_context=self,
             resource_config=resource_config,
             resources=resources,
+            asset_key=self.pipeline_def.asset_layer.asset_key_for_input(
+                node_handle=self.solid_handle, input_name=name
+            ),
         )
 
     def for_hook(self, hook_def: HookDefinition) -> "HookContext":

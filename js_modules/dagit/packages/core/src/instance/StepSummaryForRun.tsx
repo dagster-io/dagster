@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, CaptionMono} from '@dagster-io/ui';
+import {Colors, Caption} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -56,15 +56,15 @@ export const StepSummaryForRun = (props: Props) => {
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
       return (
-        <CaptionMono color={Colors.Gray500}>
+        <Caption color={Colors.Gray500}>
           Failed at <Link to={`/instance/runs/${runId}${query}`}>{step.stepKey}</Link>
-        </CaptionMono>
+        </Caption>
       );
     }
     return (
-      <CaptionMono color={Colors.Gray500}>
+      <Caption color={Colors.Gray500}>
         Failed at <Link to={`/instance/runs/${runId}`}>{stepCount} steps</Link>
-      </CaptionMono>
+      </Caption>
     );
   }
 
@@ -75,15 +75,15 @@ export const StepSummaryForRun = (props: Props) => {
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
       return (
-        <CaptionMono color={Colors.Gray500}>
+        <Caption color={Colors.Gray500}>
           In progress at <Link to={`/instance/runs/${runId}${query}`}>{step.stepKey}</Link>
-        </CaptionMono>
+        </Caption>
       );
     }
     return (
-      <CaptionMono color={Colors.Gray500}>
+      <Caption color={Colors.Gray500}>
         In progress at <Link to={`/instance/runs/${runId}`}>{stepCount} steps</Link>
-      </CaptionMono>
+      </Caption>
     );
   }
 

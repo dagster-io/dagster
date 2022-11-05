@@ -511,9 +511,9 @@ def test_opt_float_elem():
 
     assert check.opt_float_elem(ddict, "a_float") == 1.0
 
-    assert check.opt_float_elem(ddict, "a_none") == None
+    assert check.opt_float_elem(ddict, "a_none") is None
 
-    assert check.opt_float_elem(ddict, "nonexistentkey") == None
+    assert check.opt_float_elem(ddict, "nonexistentkey") is None
 
     with pytest.raises(ElementCheckError):
         check.opt_float_elem(ddict, "a_bool")
@@ -641,7 +641,7 @@ def test_int_elem():
 
     assert check.int_elem(ddict, "a_int") == 1
 
-    assert check.int_elem(ddict, "a_bool") == True
+    assert check.int_elem(ddict, "a_bool") is True
 
     with pytest.raises(ElementCheckError):
         check.int_elem(ddict, "a_float")
@@ -658,11 +658,11 @@ def test_opt_int_elem():
 
     assert check.opt_int_elem(ddict, "a_int") == 1
 
-    assert check.opt_int_elem(ddict, "a_none") == None
+    assert check.opt_int_elem(ddict, "a_none") is None
 
-    assert check.opt_int_elem(ddict, "nonexistentkey") == None
+    assert check.opt_int_elem(ddict, "nonexistentkey") is None
 
-    assert check.opt_int_elem(ddict, "a_bool") == True
+    assert check.opt_int_elem(ddict, "a_bool") is True
 
     with pytest.raises(ElementCheckError):
         check.opt_int_elem(ddict, "a_float")
@@ -1133,7 +1133,7 @@ def test_opt_nullable_sequence_param():
     assert check.opt_nullable_sequence_param("foo", "sequence_param") == "foo"
     assert check.opt_nullable_sequence_param("foo", "sequence_param", of_type=str) == "foo"
 
-    assert check.opt_nullable_sequence_param(None, "sequence_param") == None
+    assert check.opt_nullable_sequence_param(None, "sequence_param") is None
 
     with pytest.raises(CheckError):
         check.opt_nullable_sequence_param(1, "sequence_param", of_type=int)  # type: ignore
@@ -1208,9 +1208,9 @@ def test_opt_string_elem():
 
     assert check.opt_str_elem(ddict, "a_str") == "a"
 
-    assert check.opt_str_elem(ddict, "a_none") == None
+    assert check.opt_str_elem(ddict, "a_none") is None
 
-    assert check.opt_str_elem(ddict, "nonexistentkey") == None
+    assert check.opt_str_elem(ddict, "nonexistentkey") is None
 
     with pytest.raises(ElementCheckError):
         check.opt_str_elem(ddict, "a_num")

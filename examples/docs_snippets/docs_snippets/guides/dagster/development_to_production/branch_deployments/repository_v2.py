@@ -67,7 +67,7 @@ def repo():
         ),
         *(
             branch_deployment_jobs
-            if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT")
+            if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
             else []
         ),
     ]

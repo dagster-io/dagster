@@ -8,7 +8,7 @@ from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.utils import make_new_run_id
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from .setup import csv_hello_world_solids_config
+from .repo import csv_hello_world_solids_config
 
 RUN_QUERY = """
 query RunQuery($runId: ID!) {

@@ -220,11 +220,13 @@ def get_assets_for_run_id(graphene_info, run_id):
     check.str_param(run_id, "run_id")
 
     records = graphene_info.context.instance.all_logs(run_id, of_type=ASSET_EVENTS)
-    asset_keys = [
-        record.dagster_event.asset_key
-        for record in records
-        if record.is_dagster_event and record.dagster_event.asset_key
-    ]
+    asset_keys = set(
+        [
+            record.dagster_event.asset_key
+            for record in records
+            if record.is_dagster_event and record.dagster_event.asset_key
+        ]
+    )
     return [GrapheneAsset(key=asset_key) for asset_key in asset_keys]
 
 

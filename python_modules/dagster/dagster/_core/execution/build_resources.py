@@ -21,7 +21,7 @@ from .api import ephemeral_instance_if_missing
 from .context_creation_pipeline import initialize_console_manager
 
 
-def _get_mapped_resource_config(
+def get_mapped_resource_config(
     resource_defs: Mapping[str, ResourceDefinition], resource_config: Mapping[str, Any]
 ) -> Mapping[str, ResourceConfig]:
     resource_config_schema = define_resource_dictionary_cls(
@@ -89,7 +89,7 @@ def build_resources(
     resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
     log_manager = check.opt_inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_defs = wrap_resources_for_execution(resources)
-    mapped_resource_config = _get_mapped_resource_config(resource_defs, resource_config)
+    mapped_resource_config = get_mapped_resource_config(resource_defs, resource_config)
 
     with ephemeral_instance_if_missing(instance) as dagster_instance:
         resources_manager = resource_initialization_manager(

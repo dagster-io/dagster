@@ -98,7 +98,7 @@ export const JobMenu = (props: Props) => {
           )}
         </Menu>
       }
-      position="bottom-right"
+      position="bottom-left"
     >
       <Button icon={<Icon name="expand_more" />} />
     </Popover>

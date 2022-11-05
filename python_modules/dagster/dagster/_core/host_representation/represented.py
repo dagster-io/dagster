@@ -21,16 +21,10 @@ class RepresentedPipeline(ABC):
     another process *or* could be referring to a historical view of the pipeline.
     """
 
-    _pipeline_index: PipelineIndex
-
-    def __init__(self, pipeline_index):
-        self._pipeline_index = check.inst_param(pipeline_index, "pipeline_index", PipelineIndex)
-
-    # Temporary method to allow for incrementally
-    # replacing pipeline index with the representation hierarchy
-    # Chosen for grepability
-    def get_pipeline_index_for_compat(self) -> PipelineIndex:
-        return self._pipeline_index
+    @property
+    @abstractmethod
+    def _pipeline_index(self) -> PipelineIndex:
+        ...
 
     @property
     def name(self) -> str:

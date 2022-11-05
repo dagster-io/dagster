@@ -21,10 +21,12 @@ from typing import (
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
     MetadataEntry,
+    MetadataMapping,
     MetadataValue,
     PartitionMetadataEntry,
     RawMetadataValue,
@@ -102,7 +104,12 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
     def __eq__(self, other):
         if not isinstance(other, AssetKey):
             return False
-        return self.to_string() == other.to_string()
+        if len(self.path) != len(other.path):
+            return False
+        for i in range(0, len(self.path)):
+            if self.path[i] != other.path[i]:
+                return False
+        return True
 
     def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
         """
@@ -119,6 +126,17 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
         E.g. "first_component/second_component"
         """
         return ASSET_KEY_DELIMITER.join(self.path)
+
+    def to_python_identifier(self, suffix: Optional[str] = None) -> str:
+        """Build a valid Python identifier based on the asset key that can be used for
+        operation names or I/O manager keys.
+        """
+        path = list(self.path)
+
+        if suffix is not None:
+            path.append(suffix)
+
+        return "__".join(path).replace("-", "_")
 
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
@@ -354,7 +372,7 @@ class AssetObservation(
         description: Optional[str] = None,
         metadata_entries: Optional[List[MetadataEntry]] = None,
         partition: Optional[str] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -367,7 +385,7 @@ class AssetObservation(
             check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
@@ -396,6 +414,7 @@ class AssetMaterialization(
             ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("partition", PublicAttr[Optional[str]]),
+            ("tags", Optional[Mapping[str, str]]),
         ],
     )
 ):
@@ -411,12 +430,15 @@ class AssetMaterialization(
     computations, enabling tooling like the Assets dashboard in Dagit.
 
     Args:
-        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across job
-            runs
+        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across
+            job runs
         description (Optional[str]): A longer human-readable description of the materialized value.
-        metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary metadata about the
-            materialized value.
-        partition (Optional[str]): The name of the partition that was materialized.
+        metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary
+            metadata about the materialized value.
+        partition (Optional[str]): The name of the partition
+            that was materialized.
+        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
+            materialization. Users should not pass values into this argument.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -429,8 +451,11 @@ class AssetMaterialization(
         description: Optional[str] = None,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
+        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
@@ -442,17 +467,38 @@ class AssetMaterialization(
             check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
+        check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
+        if any([not tag.startswith(SYSTEM_TAG_PREFIX) for tag in tags or {}]):
+            check.failed(
+                "Users should not pass values into the tags argument for AssetMaterializations. "
+                "The tags argument is reserved for system-populated tags."
+            )
+
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
         )
+
+        partition = check.opt_str_param(partition, "partition")
+
+        if not isinstance(partition, MultiPartitionKey):
+            # When event log records are unpacked from storage, cast the partition key as a
+            # MultiPartitionKey if multi-dimensional partition tags exist
+            multi_dimensional_partitions = {
+                dimension[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]: partition_key
+                for dimension, partition_key in (tags or {}).items()
+                if dimension.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+            }
+            if multi_dimensional_partitions:
+                partition = MultiPartitionKey(multi_dimensional_partitions)
 
         return super(AssetMaterialization, cls).__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
             metadata_entries=normalize_metadata(metadata, metadata_entries),
-            partition=check.opt_str_param(partition, "partition"),
+            tags=tags,
+            partition=partition,
         )
 
     @property
@@ -480,6 +526,12 @@ class AssetMaterialization(
             description=description,
             metadata={"path": MetadataValue.path(path)},
         )
+
+    @public  # type: ignore
+    @property
+    def metadata(self) -> MetadataMapping:
+        # PartitionMetadataEntry (unstable API) case is unhandled
+        return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
 
 
 class MaterializationSerializer(DefaultNamedTupleSerializer):
@@ -716,7 +768,7 @@ class Failure(Exception):
         self,
         description: Optional[str] = None,
         metadata_entries: Optional[List[MetadataEntry]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         allow_retries: Optional[bool] = None,
     ):
         metadata_entries = check.opt_list_param(

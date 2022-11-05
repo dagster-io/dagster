@@ -63,7 +63,7 @@ def initialize_console_manager(
 ) -> DagsterLogManager:
     # initialize default colored console logger
     loggers = []
-    for logger_def, logger_config in default_system_loggers():
+    for logger_def, logger_config in default_system_loggers(instance):
         loggers.append(
             logger_def.logger_fn(
                 InitLoggerContext(
@@ -124,6 +124,7 @@ def create_context_creation_data(
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
 ) -> "ContextCreationData":
+
     pipeline_def = pipeline.get_definition()
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=pipeline_run.mode)
 
@@ -502,7 +503,7 @@ def create_log_manager(
             )
 
     if not loggers:
-        for (logger_def, logger_config) in default_system_loggers():
+        for (logger_def, logger_config) in default_system_loggers(context_creation_data.instance):
             loggers.append(
                 logger_def.logger_fn(
                     InitLoggerContext(
@@ -533,7 +534,7 @@ def create_context_free_log_manager(
 
     loggers = []
     # Use the default logger
-    for (logger_def, logger_config) in default_system_loggers():
+    for (logger_def, logger_config) in default_system_loggers(instance):
         loggers += [
             logger_def.logger_fn(
                 InitLoggerContext(

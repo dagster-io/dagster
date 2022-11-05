@@ -1,11 +1,28 @@
+# pylint: disable=unused-argument
 import subprocess
 import time
 
-from dagster import executor, job, op, reconstructable
+import pytest
+
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    DagsterInstance,
+    asset,
+    define_asset_job,
+    executor,
+    job,
+    op,
+    reconstructable,
+    repository,
+)
 from dagster._config import Permissive
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
+from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.repository_definition import AssetsDefinitionCacheableData
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_pipeline
+from dagster._core.execution.api import execute_pipeline, reexecute_pipeline
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
@@ -14,6 +31,12 @@ from dagster._core.executor.step_delegating import (
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import merge_dicts
+
+from .retry_jobs import (
+    assert_expected_failure_behavior,
+    get_dynamic_job_op_failure,
+    get_dynamic_job_resource_init_failure,
+)
 
 
 class TestStepHandler(StepHandler):
@@ -276,3 +299,122 @@ def test_execute_verify_step():
     )
     assert result.success
     assert TestStepHandler.verify_step_count == 3
+
+
+def test_execute_using_repository_data():
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        recon_repo = ReconstructableRepository.for_module(
+            "dagster_tests.execution_tests.engine_tests.test_step_delegating_executor",
+            fn_name="pending_repo",
+        )
+        recon_pipeline = ReconstructablePipeline(
+            repository=recon_repo, pipeline_name="all_asset_job"
+        )
+
+        result = execute_pipeline(
+            recon_pipeline,
+            instance=instance,
+            run_config={"execution": {"config": {}}},
+        )
+        call_counts = instance.run_storage.kvs_get(
+            {"compute_cacheable_data_called", "get_definitions_called"}
+        )
+        assert call_counts.get("compute_cacheable_data_called") == "1"
+        assert call_counts.get("get_definitions_called") == "4"
+        TestStepHandler.wait_for_processes()
+
+        assert any(
+            [
+                "Starting execution with step handler TestStepHandler" in (event.message or "")
+                for event in result.event_list
+            ]
+        )
+        assert result.success
+
+        result = reexecute_pipeline(recon_pipeline, result.run_id, instance=instance)
+        TestStepHandler.wait_for_processes()
+
+        assert any(
+            [
+                "Starting execution with step handler TestStepHandler" in (event.message or "")
+                for event in result.event_list
+            ]
+        )
+        assert result.success
+        # we do not attempt to fetch the previous repository load data off of the execution plan
+        # from the previous run, so the reexecution will require us to fetch the metadata again
+        call_counts = instance.run_storage.kvs_get(
+            {"compute_cacheable_data_called", "get_definitions_called"}
+        )
+        assert call_counts.get("compute_cacheable_data_called") == "2"
+
+        assert call_counts.get("get_definitions_called") == "7"
+
+
+class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
+    _cacheable_data = AssetsDefinitionCacheableData(keys_by_output_name={"result": AssetKey("foo")})
+
+    def compute_cacheable_data(self):
+        # used for tracking how many times this function gets called over an execution
+        instance = DagsterInstance.get()
+        kvs_key = "compute_cacheable_data_called"
+        num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
+        instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
+        return [self._cacheable_data]
+
+    def build_definitions(self, data):
+        assert len(data) == 1
+        assert data == [self._cacheable_data]
+        # used for tracking how many times this function gets called over an execution
+        instance = DagsterInstance.get()
+        kvs_key = "get_definitions_called"
+        num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
+        instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
+
+        @op
+        def _op():
+            return 1
+
+        return [
+            AssetsDefinition.from_op(_op, keys_by_output_name=cd.keys_by_output_name) for cd in data
+        ]
+
+
+@asset
+def bar(foo):
+    return foo + 1
+
+
+@repository(default_executor_def=test_step_delegating_executor)
+def pending_repo():
+    return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
+
+
+def get_dynamic_resource_init_failure_job():
+    return get_dynamic_job_resource_init_failure(test_step_delegating_executor)[0]
+
+
+def get_dynamic_op_failure_job():
+    return get_dynamic_job_op_failure(test_step_delegating_executor)[0]
+
+
+# Tests identical retry behavior when a job fails because of resource
+# initialization of a dynamic step, and failure during op runtime of a
+# dynamic step.
+@pytest.mark.parametrize(
+    "job_fn,config_fn",
+    [
+        (
+            get_dynamic_resource_init_failure_job,
+            get_dynamic_job_resource_init_failure(test_step_delegating_executor)[1],
+        ),
+        (
+            get_dynamic_op_failure_job,
+            get_dynamic_job_op_failure(test_step_delegating_executor)[1],
+        ),
+    ],
+)
+def test_dynamic_failure_retry(job_fn, config_fn):
+    TestStepHandler.reset()
+    assert_expected_failure_behavior(job_fn, config_fn)

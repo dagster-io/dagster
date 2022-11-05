@@ -25,14 +25,9 @@ from dagster._utils.yaml_utils import merge_yamls
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
-def test_launch_docker_no_network():
+def test_launch_docker_no_network(aws_env):
     docker_image = get_test_project_docker_image()
-    launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
-    }
+    launcher_config = {"env_vars": aws_env}
 
     if IS_BUILDKITE:
         launcher_config["registry"] = get_buildkite_registry_config()
@@ -107,17 +102,13 @@ def test_launch_docker_no_network():
                     container.remove(force=True)
 
 
-def test_launch_docker_image_on_pipeline_config():
+def test_launch_docker_image_on_pipeline_config(aws_env):
     # Docker image name to use for launch specified as part of the pipeline origin
     # rather than in the run launcher instance config
 
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "DOCKER_LAUNCHER_NETWORK",
-        ],
+        "env_vars": aws_env + ["DOCKER_LAUNCHER_NETWORK"],
         "network": {"env": "DOCKER_LAUNCHER_NETWORK"},
         "container_kwargs": {
             "auto_remove": True,
@@ -184,13 +175,10 @@ def _check_event_log_contains(event_log, expected_type_and_message):
         )
 
 
-def test_terminate_launched_docker_run():
+def test_terminate_launched_docker_run(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "network": "container:test-postgres-db-docker",
     }
 
@@ -255,13 +243,10 @@ def test_terminate_launched_docker_run():
             )
 
 
-def test_launch_docker_invalid_image():
+def test_launch_docker_invalid_image(aws_env):
     docker_image = "_invalid_format_image"
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "network": "container:test-postgres-db-docker",
         "image": docker_image,
     }
@@ -308,13 +293,10 @@ def test_launch_docker_invalid_image():
                 instance.launch_run(run.run_id, workspace)
 
 
-def test_launch_docker_image_on_instance_config():
+def test_launch_docker_image_on_instance_config(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "network": "container:test-postgres-db-docker",
         "image": docker_image,
     }
@@ -322,13 +304,10 @@ def test_launch_docker_image_on_instance_config():
     _test_launch(docker_image, launcher_config)
 
 
-def test_launch_docker_image_multiple_networks():
+def test_launch_docker_image_multiple_networks(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "networks": [
             "container:test-postgres-db-docker",
             "postgres",
@@ -338,7 +317,7 @@ def test_launch_docker_image_multiple_networks():
     _test_launch(docker_image, launcher_config)
 
 
-def test_launch_docker_config_on_container_context():
+def test_launch_docker_config_on_container_context(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {}
     _test_launch(
@@ -347,10 +326,7 @@ def test_launch_docker_config_on_container_context():
         container_image=docker_image,
         container_context={
             "docker": {
-                "env_vars": [
-                    "AWS_ACCESS_KEY_ID",
-                    "AWS_SECRET_ACCESS_KEY",
-                ],
+                "env_vars": aws_env,
                 "networks": [
                     "container:test-postgres-db-docker",
                     "postgres",
@@ -360,13 +336,10 @@ def test_launch_docker_config_on_container_context():
     )
 
 
-def test_cant_combine_network_and_networks():
+def test_cant_combine_network_and_networks(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "network": "container:test-postgres-db-docker",
         "networks": [
             "postgres",
@@ -386,13 +359,10 @@ def test_cant_combine_network_and_networks():
             pass
 
 
-def test_terminate():
+def test_terminate(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "network": "container:test-postgres-db-docker",
         "image": docker_image,
     }

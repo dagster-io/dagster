@@ -37,6 +37,7 @@ def schedule_for_partitioned_config(
         hour_of_day=hour_of_day,
         day_of_week=day_of_week,
         day_of_month=day_of_month,
+        tags={"test_tag_key": "test_tag_value"},
     )
 
 
@@ -63,14 +64,16 @@ def test_daily_schedule():
     )
     assert my_schedule.cron_schedule == "30 9 * * *"
 
-    assert my_schedule.evaluate_tick(
+    run_request = my_schedule.evaluate_tick(
         build_schedule_context(
             scheduled_execution_time=datetime.strptime("2021-05-08", DATE_FORMAT)
         )
-    ).run_requests[0].run_config == {
+    ).run_requests[0]
+    assert run_request.run_config == {
         "start": "2021-05-07T00:00:00+00:00",
         "end": "2021-05-08T00:00:00+00:00",
     }
+    assert run_request.tags["test_tag_key"] == "test_tag_value"
 
     @repository
     def _repo():

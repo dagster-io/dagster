@@ -19,8 +19,8 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
+import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
-import {RunAssetKeyTags} from './RunAssetKeyTags';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {RunTags} from './RunTags';
 import {
@@ -243,7 +243,7 @@ const RunRow: React.FC<{
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
           {isHiddenAssetGroupJob(run.pipelineName) ? (
-            <RunAssetKeyTags assetKeys={assetKeysForRun(run)} />
+            <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} />
           ) : (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference

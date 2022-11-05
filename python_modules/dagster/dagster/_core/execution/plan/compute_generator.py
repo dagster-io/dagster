@@ -1,4 +1,5 @@
 import inspect
+import warnings
 from functools import wraps
 from typing import Any, Generator, Iterator, Sequence, Tuple, Union, cast
 
@@ -184,12 +185,16 @@ def validate_and_coerce_solid_result_to_iterator(
                         )
                     dynamic_output = cast(DynamicOutput, item)
                     _check_output_object_name(dynamic_output, output_def, position)
-                    yield DynamicOutput(
-                        output_name=output_def.name,
-                        value=dynamic_output.value,
-                        mapping_key=dynamic_output.mapping_key,
-                        metadata_entries=list(dynamic_output.metadata_entries),
-                    )
+
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", category=DeprecationWarning)
+
+                        yield DynamicOutput(
+                            output_name=output_def.name,
+                            value=dynamic_output.value,
+                            mapping_key=dynamic_output.mapping_key,
+                            metadata_entries=list(dynamic_output.metadata_entries),
+                        )
             elif isinstance(element, Output):
                 if annotation != inspect.Parameter.empty and not is_generic_output_annotation(
                     annotation
@@ -199,11 +204,15 @@ def validate_and_coerce_solid_result_to_iterator(
                     )
                 output = cast(Output, element)
                 _check_output_object_name(output, output_def, position)
-                yield Output(
-                    output_name=output_def.name,
-                    value=output.value,
-                    metadata_entries=output.metadata_entries,
-                )
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=DeprecationWarning)
+
+                    yield Output(
+                        output_name=output_def.name,
+                        value=output.value,
+                        metadata_entries=output.metadata_entries,
+                    )
             else:
                 # If annotation indicates a generic output annotation, and an
                 # output object was not received, throw an error.

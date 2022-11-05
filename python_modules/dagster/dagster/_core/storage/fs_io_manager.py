@@ -22,12 +22,14 @@ from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 def fs_io_manager(init_context):
     """Built-in filesystem IO manager that stores and retrieves values using pickling.
 
-    Allows users to specify a base directory where all the step outputs will be stored. By
-    default, step outputs will be stored in the directory specified by local_artifact_storage in
-    your dagster.yaml file (which will be a temporary directory if not explicitly set).
+    The base directory that the pickle files live inside is determined by:
 
-    Serializes and deserializes output values using pickling and automatically constructs
-    the filepaths for ops and assets.
+    * The IO manager's "base_dir" configuration value, if specified. Otherwise...
+    * A "storage/" directory underneath the value for "local_artifact_storage" in your dagster.yaml
+      file, if specified. Otherwise...
+    * A "storage/" directory underneath the directory that the DAGSTER_HOME environment variable
+      points to, if that environment variable is specified. Otherwise...
+    * A temporary directory.
 
     Assigns each op output to a unique filepath containing run ID, step key, and output name.
     Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
@@ -41,7 +43,34 @@ def fs_io_manager(init_context):
 
     Example usage:
 
-    1. Specify a job-level IO manager using the reserved resource key ``"io_manager"``,
+
+    1. Attach an IO manager to a set of assets using the reserved resource key ``"io_manager"``.
+
+    .. code-block:: python
+
+        from dagster import asset, fs_io_manager, repository, with_resources
+
+        @asset
+        def asset1():
+            # create df ...
+            return df
+
+        @asset
+        def asset2(asset1):
+            return df[:5]
+
+        @repository
+        def repo():
+            return with_resources(
+                [asset1, asset2],
+                resource_defs={
+                    "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})
+                },
+            )
+        )
+
+
+    2. Specify a job-level IO manager using the reserved resource key ``"io_manager"``,
     which will set the given IO manager on all ops in a job.
 
     .. code-block:: python
@@ -66,7 +95,7 @@ def fs_io_manager(init_context):
             op_b(op_a())
 
 
-    2. Specify IO manager on :py:class:`Out`, which allows the user to set different IO managers on
+    3. Specify IO manager on :py:class:`Out`, which allows you to set different IO managers on
     different step outputs.
 
     .. code-block:: python
@@ -115,6 +144,10 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
             path = context.get_identifier()
 
         return os.path.join(self.base_dir, *path)
+
+    def _get_path_for_partition(self, asset_key: AssetKey, partition_key: str) -> str:
+        """Construct filepath for a particular partition_key"""
+        return os.path.join(self.base_dir, *asset_key.path, partition_key)
 
     def has_output(self, context):
         filepath = self._get_path(context)
@@ -175,9 +208,30 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         if context.dagster_type.typing_type == type(None):
             return None
 
-        filepath = self._get_path(context)
-        context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
+        def has_multiple_partitions(context):
+            key_range = context.asset_partition_key_range
+            return key_range.start != key_range.end
 
+        if (
+            context.has_input_name
+            and context.has_asset_partitions
+            and has_multiple_partitions(context)
+        ):
+            # Multiple partition load
+            partition_keys = context.asset_partition_keys
+            paths = [
+                self._get_path_for_partition(context.asset_key, partition_key)
+                for partition_key in partition_keys
+            ]
+            return {key: self._load_pickle(path) for (key, path) in zip(partition_keys, paths)}
+        else:
+            # Non-partitioned or single partition load
+            filepath = self._get_path(context)
+            context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
+            return self._load_pickle(filepath)
+
+    def _load_pickle(self, filepath: str):
+        """Unpickle the file and Load it to a data object."""
         with open(filepath, self.read_mode) as read_obj:
             return pickle.load(read_obj)
 

@@ -15,6 +15,7 @@ from dagster import (
     Output,
     PartitionsDefinition,
     StaticPartitionsDefinition,
+    WeeklyPartitionsDefinition,
     graph,
     op,
 )
@@ -454,3 +455,52 @@ def test_non_partitioned_depends_on_all_partitions():
     assert result.asset_materializations_for_node("downstream") == [
         AssetMaterialization(AssetKey(["downstream"]))
     ]
+
+
+def test_partition_keys_in_range():
+
+    daily_partition_keys_for_week_2022_09_11 = [
+        "2022-09-11",
+        "2022-09-12",
+        "2022-09-13",
+        "2022-09-14",
+        "2022-09-15",
+        "2022-09-16",
+        "2022-09-17",
+    ]
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-09-11"))
+    def upstream(context):
+        assert context.asset_partition_keys_for_output("result") == ["2022-09-11"]
+
+    @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2022-09-11"))
+    def downstream(context, upstream):  # pylint: disable=unused-argument
+        assert (
+            context.asset_partition_keys_for_input("upstream")
+            == daily_partition_keys_for_week_2022_09_11
+        )
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):  # pylint: disable=unused-argument
+            if context.asset_key == AssetKey("upstream"):
+                assert context.has_asset_partitions
+                assert context.asset_partition_keys == ["2022-09-11"]
+
+        def load_input(self, context):
+            assert context.has_asset_partitions
+            assert context.asset_partition_keys == daily_partition_keys_for_week_2022_09_11
+
+    upstream_job = build_assets_job(
+        "upstream_job",
+        assets=[upstream],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    upstream_job.execute_in_process(partition_key="2022-09-11")
+
+    downstream_job = build_assets_job(
+        "downstream_job",
+        assets=[downstream],
+        source_assets=[upstream],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    downstream_job.execute_in_process(partition_key="2022-09-11")

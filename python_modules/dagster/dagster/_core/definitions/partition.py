@@ -23,6 +23,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
@@ -39,6 +40,7 @@ from ..errors import (
     user_code_error_boundary,
 )
 from ..storage.pipeline_run import PipelineRun
+from .config import ConfigMapping
 from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
 from .schedule_definition import (
@@ -220,6 +222,27 @@ class PartitionsDefinition(ABC, Generic[T]):
         from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 
         return IdentityPartitionMapping()
+
+    def get_partition_keys_in_range(self, partition_key_range: PartitionKeyRange) -> Sequence[str]:
+        partition_keys = self.get_partition_keys()
+
+        keys_exist = {
+            partition_key_range.start: partition_key_range.start in partition_keys,
+            partition_key_range.end: partition_key_range.end in partition_keys,
+        }
+        if not all(keys_exist.values()):
+            raise DagsterInvalidInvocationError(
+                f"""Partition range {partition_key_range.start} to {partition_key_range.end} is
+                not a valid range. Nonexistent partition keys:
+                {list(key for key in keys_exist if keys_exist[key] is False)}"""
+            )
+
+        return partition_keys[
+            partition_keys.index(partition_key_range.start) : partition_keys.index(
+                partition_key_range.end
+            )
+            + 1
+        ]
 
 
 class StaticPartitionsDefinition(
@@ -846,6 +869,28 @@ class PartitionedConfig(Generic[T]):
         if len(partition) == 0:
             raise DagsterInvalidInvocationError(f"No partition for partition key {partition_key}.")
         return self.run_config_for_partition_fn(partition[0])
+
+    @classmethod
+    def from_flexible_config(
+        cls,
+        config: Optional[Union[ConfigMapping, Mapping[str, object], "PartitionedConfig"]],
+        partitions_def: PartitionsDefinition,
+    ) -> "PartitionedConfig":
+        check.invariant(
+            not isinstance(config, ConfigMapping),
+            "Can't supply a ConfigMapping for 'config' when 'partitions_def' is supplied.",
+        )
+
+        if isinstance(config, PartitionedConfig):
+            check.invariant(
+                config.partitions_def == partitions_def,
+                "Can't supply a PartitionedConfig for 'config' with a different "
+                "PartitionsDefinition than supplied for 'partitions_def'.",
+            )
+            return config
+        else:
+            hardcoded_config = config if config else {}
+            return cls(partitions_def, lambda _: cast(Mapping, hardcoded_config))
 
     def __call__(self, *args, **kwargs):
         if self._decorated_fn is None:

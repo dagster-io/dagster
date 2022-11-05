@@ -2,25 +2,25 @@ import sys
 
 import pytest
 
-from dagster import file_relative_path, repository
+from dagster import file_relative_path, op, repository
 from dagster._core.definitions.repository_definition import RepositoryData
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import GrpcServerTarget
 from dagster._grpc.server import GrpcServerProcess
-from dagster._legacy import lambda_solid, pipeline
+from dagster._legacy import pipeline
 
 
 def define_do_something(num_calls):
-    @lambda_solid(name="do_something_" + str(num_calls))
+    @op(name="do_something_" + str(num_calls))
     def do_something():
         return num_calls
 
     return do_something
 
 
-@lambda_solid
+@op
 def do_input(x):
     return x
 
@@ -29,10 +29,10 @@ def define_foo_pipeline(num_calls):
     do_something = define_do_something(num_calls)
 
     @pipeline(name="foo_" + str(num_calls))
-    def foo_pipeline():
+    def foo_job():
         do_input(do_something())
 
-    return foo_pipeline
+    return foo_job
 
 
 class TestDynamicRepositoryData(RepositoryData):
@@ -85,11 +85,11 @@ def test_repository_data_can_reload_without_restarting(workspace_process_context
     repo = repo_location.get_repository("bar_repo")
     # get_all_pipelines called on server init twice, then on repository load, so starts at 3
     # this is a janky test
-    assert repo.has_pipeline("foo_3")
-    assert not repo.has_pipeline("foo_1")
-    assert not repo.has_pipeline("foo_2")
+    assert repo.has_external_job("foo_3")
+    assert not repo.has_external_job("foo_1")
+    assert not repo.has_external_job("foo_2")
 
-    external_pipeline = repo.get_full_external_pipeline("foo_3")
+    external_pipeline = repo.get_full_external_job("foo_3")
     assert external_pipeline.has_solid_invocation("do_something_3")
 
     # Reloading the location changes the pipeline without needing
@@ -98,10 +98,10 @@ def test_repository_data_can_reload_without_restarting(workspace_process_context
     request_context = workspace_process_context.create_request_context()
     repo_location = request_context.get_repository_location("test")
     repo = repo_location.get_repository("bar_repo")
-    assert repo.has_pipeline("foo_4")
-    assert not repo.has_pipeline("foo_3")
+    assert repo.has_external_job("foo_4")
+    assert not repo.has_external_job("foo_3")
 
-    external_pipeline = repo.get_full_external_pipeline("foo_4")
+    external_pipeline = repo.get_full_external_job("foo_4")
     assert external_pipeline.has_solid_invocation("do_something_4")
 
 

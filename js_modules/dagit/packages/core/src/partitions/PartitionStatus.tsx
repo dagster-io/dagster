@@ -13,9 +13,34 @@ type SelectionRange = {
 
 const MIN_SPAN_WIDTH = 8;
 
+export enum PartitionState {
+  MISSING = 'missing',
+  SUCCESS = 'success',
+  FAILURE = 'failure',
+  QUEUED = 'queued',
+  STARTED = 'started',
+}
+
+export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
+  switch (runStatus) {
+    case RunStatus.CANCELED:
+    case RunStatus.CANCELING:
+    case RunStatus.FAILURE:
+      return PartitionState.FAILURE;
+    case RunStatus.STARTED:
+      return PartitionState.STARTED;
+    case RunStatus.SUCCESS:
+      return PartitionState.SUCCESS;
+    case RunStatus.QUEUED:
+      return PartitionState.QUEUED;
+    default:
+      return PartitionState.MISSING;
+  }
+};
+
 export const PartitionStatus: React.FC<{
   partitionNames: string[];
-  partitionData: {[name: string]: RunStatus | null};
+  partitionData: {[name: string]: PartitionState};
   selected?: string[];
   small?: boolean;
   onClick?: (partitionName: string) => void;
@@ -153,6 +178,7 @@ export const PartitionStatus: React.FC<{
           borderRadius: 4,
           overflow: 'hidden',
           cursor: 'pointer',
+          background: Colors.Gray200,
         }}
         ref={ref}
         onClick={_onClick}
@@ -164,9 +190,14 @@ export const PartitionStatus: React.FC<{
             style={{
               left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
               width: indexToPct(s.endIdx - s.startIdx + 1),
-              minWidth: s.status ? 2 : undefined,
+              minWidth: s.status && s.status !== PartitionState.MISSING ? 2 : undefined,
               position: 'absolute',
-              zIndex: s.startIdx === 0 || s.endIdx === highestIndex ? 3 : s.status ? 2 : 1, //End-caps, then statuses, then missing
+              zIndex:
+                s.startIdx === 0 || s.endIdx === highestIndex
+                  ? 3
+                  : s.status && s.status !== PartitionState.MISSING
+                  ? 2
+                  : 1, //End-caps, then statuses, then missing
               top: 0,
             }}
           >
@@ -183,6 +214,7 @@ export const PartitionStatus: React.FC<{
             ) : (
               <Tooltip
                 display="block"
+                position="top"
                 content={
                   tooltipMessage
                     ? tooltipMessage
@@ -328,11 +360,12 @@ export const PartitionStatus: React.FC<{
   );
 };
 
-function _partitionsToSpans(keys: string[], keyStatus: {[key: string]: RunStatus | null}) {
-  const spans: {startIdx: number; endIdx: number; status: RunStatus | null}[] = [];
+function _partitionsToSpans(keys: string[], keyStatus: {[key: string]: PartitionState}) {
+  const spans: {startIdx: number; endIdx: number; status: PartitionState}[] = [];
 
   for (let ii = 0; ii < keys.length; ii++) {
-    const status: RunStatus | null = keys[ii] in keyStatus ? keyStatus[keys[ii]] : null;
+    const status: PartitionState =
+      keys[ii] in keyStatus ? keyStatus[keys[ii]] : PartitionState.MISSING;
     if (!spans.length || spans[spans.length - 1].status !== status) {
       spans.push({startIdx: ii, endIdx: ii, status});
     } else {
@@ -343,34 +376,30 @@ function _partitionsToSpans(keys: string[], keyStatus: {[key: string]: RunStatus
   return spans;
 }
 
-const _statusToColor = (status: RunStatus | null) => {
+const _statusToColor = (status: PartitionState) => {
   switch (status) {
-    case RunStatus.SUCCESS:
+    case PartitionState.SUCCESS:
       return Colors.Green500;
-    case RunStatus.CANCELED:
-    case RunStatus.CANCELING:
-    case RunStatus.FAILURE:
+    case PartitionState.FAILURE:
       return Colors.Red500;
-    case RunStatus.STARTED:
+    case PartitionState.STARTED:
       return Colors.Blue500;
-    case RunStatus.QUEUED:
+    case PartitionState.QUEUED:
       return Colors.Blue200;
     default:
       return Colors.Gray200;
   }
 };
 
-const _statusToText = (status: RunStatus | null) => {
+const _statusToText = (status: PartitionState) => {
   switch (status) {
-    case RunStatus.SUCCESS:
+    case PartitionState.SUCCESS:
       return 'complete';
-    case RunStatus.CANCELED:
-    case RunStatus.CANCELING:
-    case RunStatus.FAILURE:
+    case PartitionState.FAILURE:
       return 'failed';
-    case RunStatus.STARTED:
+    case PartitionState.STARTED:
       return 'in progress';
-    case RunStatus.QUEUED:
+    case PartitionState.QUEUED:
       return 'queued';
     default:
       return 'missing';

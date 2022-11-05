@@ -13,10 +13,18 @@ export interface RunTimelineQuery_unterminated_InvalidPipelineRunsFilterError {
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
+export interface RunTimelineQuery_unterminated_Runs_results_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface RunTimelineQuery_unterminated_Runs_results {
   __typename: "Run";
   id: string;
   pipelineName: string;
+  repositoryOrigin: RunTimelineQuery_unterminated_Runs_results_repositoryOrigin | null;
   runId: string;
   status: RunStatus;
   startTime: number | null;
@@ -35,10 +43,18 @@ export interface RunTimelineQuery_terminated_InvalidPipelineRunsFilterError {
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
+export interface RunTimelineQuery_terminated_Runs_results_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface RunTimelineQuery_terminated_Runs_results {
   __typename: "Run";
   id: string;
   pipelineName: string;
+  repositoryOrigin: RunTimelineQuery_terminated_Runs_results_repositoryOrigin | null;
   runId: string;
   status: RunStatus;
   startTime: number | null;
@@ -142,4 +158,6 @@ export interface RunTimelineQuery {
 export interface RunTimelineQueryVariables {
   inProgressFilter: RunsFilter;
   terminatedFilter: RunsFilter;
+  tickCursor?: number | null;
+  ticksUntil?: number | null;
 }

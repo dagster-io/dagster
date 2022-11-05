@@ -5,27 +5,33 @@ interface ConfirmationOptions {
   catchOnCancel?: boolean;
   title?: string;
   description?: React.ReactNode;
+  icon?: ConfirmationDialogProps['icon'];
+  intent?: ConfirmationDialogProps['intent'];
 }
 
 interface ConfirmationDialogProps extends ConfirmationOptions {
   open: boolean;
+  icon?: React.ComponentProps<typeof Dialog>['icon'];
+  intent?: React.ComponentProps<typeof Button>['intent'];
   onSubmit: () => void;
   onClose: () => void;
 }
 
 const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   open,
+  icon,
   title,
+  intent = 'danger',
   description,
   onSubmit,
   onClose,
 }) => {
   return (
-    <Dialog icon={title ? 'info' : undefined} onClose={onClose} title={title} isOpen={open}>
+    <Dialog icon={title ? icon ?? 'info' : icon} onClose={onClose} title={title} isOpen={open}>
       <DialogBody>{description}</DialogBody>
       <DialogFooter>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={onSubmit} intent="danger">
+        <Button onClick={onSubmit} intent={intent}>
           Confirm
         </Button>
       </DialogFooter>

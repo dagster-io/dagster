@@ -50,6 +50,7 @@ def get_retry_steps_from_parent_run(
             DagsterEventType.STEP_FAILURE,
             DagsterEventType.STEP_SUCCESS,
             DagsterEventType.STEP_SKIPPED,
+            DagsterEventType.RESOURCE_INIT_FAILURE,
         },
     )
 
@@ -79,6 +80,9 @@ def get_retry_steps_from_parent_run(
             _update_tracking_dict(all_steps_in_parent_run_logs, step_handle)
 
             if record.dagster_event_type == DagsterEventType.STEP_FAILURE:
+                _update_tracking_dict(failed_steps_in_parent_run_logs, step_handle)
+
+            if record.dagster_event_type == DagsterEventType.RESOURCE_INIT_FAILURE:
                 _update_tracking_dict(failed_steps_in_parent_run_logs, step_handle)
 
             if record.dagster_event_type == DagsterEventType.STEP_SUCCESS:

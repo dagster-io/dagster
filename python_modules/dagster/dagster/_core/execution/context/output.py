@@ -325,7 +325,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def asset_partitions_def(self) -> "PartitionsDefinition":
-        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        """The PartitionsDefinition on the asset corresponding to this output."""
         asset_key = self.asset_key
         result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
         if result is None:
@@ -382,11 +382,12 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        check.invariant(
-            self._partition_key is not None,
-            "Tried to access partition_key on a non-partitioned run.",
-        )
-        return cast(str, self._partition_key)
+        if self._partition_key is None:
+            check.failed(
+                "Tried to access partition_key on a non-partitioned run.",
+            )
+
+        return self._partition_key
 
     @public  # type: ignore
     @property
@@ -438,6 +439,25 @@ class OutputContext:
             )
 
         return self.step_context.asset_partition_key_range_for_output(self.name)
+
+    @public  # type: ignore
+    @property
+    def asset_partition_keys(self) -> Sequence[str]:
+        """The partition keys for the output asset.
+
+        Raises an error if the output asset has no partitioning.
+        """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.asset_partition_keys"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
+        return self.asset_partitions_def.get_partition_keys_in_range(
+            self.step_context.asset_partition_key_range_for_output(self.name)
+        )
 
     @public  # type: ignore
     @property

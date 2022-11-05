@@ -52,7 +52,7 @@ def test_launcher_from_config(kubeconfig_file):
     ) as instance:
         run_launcher = instance.run_launcher
         assert isinstance(run_launcher, K8sRunLauncher)
-        assert run_launcher.fail_pod_on_run_failure == None
+        assert run_launcher.fail_pod_on_run_failure is None
         assert run_launcher.resources == resources
         assert run_launcher.scheduler_name == None
 

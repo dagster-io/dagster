@@ -40,6 +40,9 @@ Partitions Definitions
 .. autoclass:: TimeWindowPartitionsDefinition
     :members:
 
+.. autoclass:: TimeWindow
+    :members:
+
 .. autoclass:: StaticPartitionsDefinition
     :members:
 
@@ -57,6 +60,9 @@ Partition Mapping (Experimental)
     :members:
 
 .. autoclass:: TimeWindowPartitionMapping
+    :members:
+
+.. autoclass:: IdentityPartitionMapping
     :members:
 
 .. autoclass:: AllPartitionMapping

@@ -4,16 +4,19 @@ from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
+from ..asset_sensor_definition import AssetSensorDefinition
 from ..events import AssetKey
-from ..sensor_definition import (
+from ..multi_asset_sensor_definition import (
     AssetMaterializationFunction,
-    AssetSensorDefinition,
-    DefaultSensorStatus,
     MultiAssetMaterializationFunction,
     MultiAssetSensorDefinition,
+)
+from ..sensor_definition import (
+    DefaultSensorStatus,
     RawSensorEvaluationFunction,
     RunRequest,
     SensorDefinition,
@@ -186,7 +189,8 @@ def asset_sensor(
 
 @experimental
 def multi_asset_sensor(
-    asset_keys: Sequence[AssetKey],
+    asset_keys: Optional[Sequence[AssetKey]] = None,
+    asset_selection: Optional[AssetSelection] = None,
     *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
@@ -211,7 +215,12 @@ def multi_asset_sensor(
     Takes a :py:class:`~dagster.MultiAssetSensorEvaluationContext`.
 
     Args:
-        asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
+        asset_keys (Optional[Sequence[AssetKey]]): The asset keys this sensor monitors. If not
+            provided, asset_selection argument must be provided. To monitor assets that aren't defined
+            in the repository that this sensor is part of, you must use asset_keys.
+        asset_selection (Optional[AssetSelection]): The asset selection this sensor monitors. If not
+            provided, asset_keys argument must be provided. If you use asset_selection, all assets that
+            are part of the selection must be in the repository that this sensor is part of.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
@@ -231,34 +240,19 @@ def multi_asset_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        def _wrapped_fn(context):
-            result = fn(context)
-
-            if inspect.isgenerator(result) or isinstance(result, list):
-                for item in result:
-                    yield item
-            elif isinstance(result, (RunRequest, SkipReason)):
-                yield result
-
-            elif result is not None:
-                raise DagsterInvariantViolationError(
-                    (
-                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                        "{result} of type {type_}.  Should only return SkipReason or "
-                        "RunRequest objects."
-                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
-                )
-
-        return MultiAssetSensorDefinition(
+        sensor_def = MultiAssetSensorDefinition(
             name=sensor_name,
             asset_keys=asset_keys,
+            asset_selection=asset_selection,
             job_name=job_name,
-            asset_materialization_fn=_wrapped_fn,
+            asset_materialization_fn=fn,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
             jobs=jobs,
             default_status=default_status,
         )
+        update_wrapper(sensor_def, wrapped=fn)
+        return sensor_def
 
     return inner

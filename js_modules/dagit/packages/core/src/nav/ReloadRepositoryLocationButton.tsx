@@ -43,7 +43,7 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
           // is presented to the user, and so that if the user was previously viewing
           // an object in a failed repo location, they aren't staring at a blank page.
           setShown(false);
-          window.location.href = `${basePath}/workspace`;
+          window.location.href = `${basePath}/instance/code-locations`;
         }}
       />
     </>

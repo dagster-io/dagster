@@ -3,10 +3,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {SectionHeader} from '../pipelines/SidebarComponents';
+import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 import {RunStatus} from '../types/globalTypes';
 
 import {RunStatusIndicator} from './RunStatusDots';
+import {failedStatuses, inProgressStatuses} from './RunStatuses';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunTimeFragment';
 
@@ -41,12 +42,12 @@ export const RunStatusPez = (props: Props) => {
 
 interface ListProps {
   fade: boolean;
-  repoAddress: string;
+  jobName: string;
   runs: RunTimeFragment[];
 }
 
 export const RunStatusPezList = (props: ListProps) => {
-  const {fade, runs} = props;
+  const {fade, jobName, runs} = props;
   const count = runs.length;
   const countForStep = Math.max(MIN_OPACITY_STEPS, count);
   const step = (MAX_OPACITY - MIN_OPACITY) / countForStep;
@@ -55,11 +56,11 @@ export const RunStatusPezList = (props: ListProps) => {
       {runs.map((run, ii) => (
         <Popover
           key={run.runId}
-          position="bottom"
+          position="top"
           interactionKind="hover"
           content={
             <div>
-              <RunStatusOverlay run={run} repoAddr={props.repoAddress} />
+              <RunStatusOverlay run={run} name={jobName} />
             </div>
           }
           hoverOpenDelay={100}
@@ -78,24 +79,30 @@ export const RunStatusPezList = (props: ListProps) => {
 
 interface OverlayProps {
   run: RunTimeFragment;
-  repoAddr: string;
+  name: string;
 }
 
-const RunStatusOverlay = (props: OverlayProps) => {
+export const RunStatusOverlay = ({name, run}: OverlayProps) => {
   return (
     <OverlayContainer>
-      <OverlayTitle>{props.repoAddr}</OverlayTitle>
+      <OverlayTitle>{name}</OverlayTitle>
       <RunRow>
-        <RunStatusIndicator status={props.run.status} />
-        <Link to={`/instance/runs/${props.run.runId}`}>
-          <Mono>{titleForRun(props.run)}</Mono>
-        </Link>
-        <HorizontalSpace />
-        <Box flex={{direction: 'column'}}>
-          <RunTime run={props.run} />
-          <RunStateSummary run={props.run} />
+        <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
+          <RunStatusIndicator status={run.status} />
+          <Link to={`/instance/runs/${run.runId}`}>
+            <Mono style={{fontSize: '14px'}}>{titleForRun(run)}</Mono>
+          </Link>
+        </Box>
+        <Box flex={{direction: 'column', gap: 4}} padding={{top: 2}}>
+          <RunTime run={run} />
+          <RunStateSummary run={run} />
         </Box>
       </RunRow>
+      {failedStatuses.has(run.status) || inProgressStatuses.has(run.status) ? (
+        <SummaryContainer>
+          <StepSummaryForRun runId={run.id} />
+        </SummaryContainer>
+      ) : null}
     </OverlayContainer>
   );
 };
@@ -103,16 +110,16 @@ const RunStatusOverlay = (props: OverlayProps) => {
 const OverlayContainer = styled.div`
   padding: 4px;
   font-size: 12px;
-  width: 280px;
+  width: 220px;
 `;
 
-const HorizontalSpace = styled.div`
-  flex: 1;
-`;
-
-const OverlayTitle = styled(SectionHeader)`
+const OverlayTitle = styled.div`
   padding: 8px;
   box-shadow: inset 0 -1px ${Colors.KeylineGray};
+  font-family: ${FontFamily.default};
+  font-size: 14px;
+  font-weight: 500;
+  color: ${Colors.Dark};
   max-width: 100%;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -120,13 +127,22 @@ const OverlayTitle = styled(SectionHeader)`
 `;
 
 const RunRow = styled.div`
-  align-items: baseline;
   padding: 8px;
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 12px;
   display: flex;
-  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+`;
+
+const SummaryContainer = styled.div`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 4px 8px 8px;
+
+  :empty {
+    display: none;
+  }
 `;
 
 const Pez = styled.div<{$color: string; $opacity: number}>`

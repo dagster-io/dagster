@@ -1,17 +1,13 @@
-import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
+import {Box, Checkbox, Colors, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import React from 'react';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {
-  FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
-  QueryRefreshState,
-  useQueryRefreshAtInterval,
-} from '../app/QueryRefresh';
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
@@ -31,11 +27,10 @@ import {
   LoadingNotice,
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {useDidLaunchEvent} from '../runs/RunUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 
-import {AssetConnectedEdges} from './AssetEdges';
+import {AssetEdges} from './AssetEdges';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
@@ -70,6 +65,7 @@ interface Props {
 }
 
 export const MINIMAL_SCALE = 0.5;
+export const EXPERIMENTAL_SCALE = 0.1;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
@@ -81,10 +77,9 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     applyingEmptyDefault,
   } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
 
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
-  const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
-
-  useDidLaunchEvent(liveResult.refetch);
+  const {liveDataByNode, liveDataRefreshState, runWatchers} = useLiveDataForAssetKeys(
+    graphAssetKeys,
+  );
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>
@@ -105,16 +100,19 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
           );
         }
         return (
-          <AssetGraphExplorerWithData
-            key={props.explorerPath.pipelineName}
-            assetGraphData={assetGraphData}
-            allAssetKeys={allAssetKeys}
-            graphQueryItems={graphQueryItems}
-            applyingEmptyDefault={applyingEmptyDefault}
-            liveDataRefreshState={liveDataRefreshState}
-            liveDataByNode={liveDataByNode}
-            {...props}
-          />
+          <>
+            <AssetGraphExplorerWithData
+              key={props.explorerPath.pipelineName}
+              assetGraphData={assetGraphData}
+              allAssetKeys={allAssetKeys}
+              graphQueryItems={graphQueryItems}
+              applyingEmptyDefault={applyingEmptyDefault}
+              liveDataRefreshState={liveDataRefreshState}
+              liveDataByNode={liveDataByNode}
+              {...props}
+            />
+            {runWatchers}
+          </>
         );
       }}
     </Loading>
@@ -146,6 +144,7 @@ export const AssetGraphExplorerWithData: React.FC<
   } = props;
 
   const findAssetLocation = useFindAssetLocation();
+  const flags = useFeatureFlags();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -268,6 +267,9 @@ export const AssetGraphExplorerWithData: React.FC<
     }
   };
 
+  const allowExperimentalZoom =
+    flags.flagAssetGraphExperimentalZoom && layout && Object.keys(layout.groups).length;
+
   return (
     <SplitPanelContainer
       identifier="explorer"
@@ -297,24 +299,50 @@ export const AssetGraphExplorerWithData: React.FC<
                 e.stopPropagation();
               }}
               maxZoom={1.2}
+              minZoom={allowExperimentalZoom ? 0.01 : undefined}
               maxAutocenterZoom={1.0}
             >
-              {({scale: _scale}) => (
+              {({scale}) => (
                 <SVGContainer width={layout.width} height={layout.height}>
-                  <AssetConnectedEdges highlighted={highlighted} edges={layout.edges} />
+                  <AssetEdges
+                    highlighted={highlighted}
+                    edges={layout.edges}
+                    strokeWidth={allowExperimentalZoom ? Math.max(4, 3 / scale) : 4}
+                    baseColor={
+                      allowExperimentalZoom && scale < EXPERIMENTAL_SCALE
+                        ? Colors.Gray400
+                        : Colors.KeylineGray
+                    }
+                  />
 
                   {Object.values(layout.groups)
                     .sort((a, b) => a.id.length - b.id.length)
                     .map((group) => (
-                      <foreignObject key={group.id} {...group.bounds}>
-                        <AssetGroupNode group={group} scale={_scale} />
+                      <foreignObject
+                        key={group.id}
+                        {...group.bounds}
+                        onDoubleClick={(e) => {
+                          if (!viewportEl.current) {
+                            return;
+                          }
+                          const targetScale = viewportEl.current.scaleForSVGBounds(
+                            group.bounds.width,
+                            group.bounds.height,
+                          );
+                          viewportEl.current.zoomToSVGBox(group.bounds, true, targetScale * 0.9);
+                          e.stopPropagation();
+                        }}
+                      >
+                        <AssetGroupNode group={group} scale={scale} />
                       </foreignObject>
                     ))}
 
                   {Object.values(layout.nodes).map(({id, bounds}) => {
                     const graphNode = assetGraphData.nodes[id];
                     const path = JSON.parse(id);
-
+                    if (allowExperimentalZoom && scale < EXPERIMENTAL_SCALE) {
+                      return;
+                    }
                     return (
                       <foreignObject
                         {...bounds}
@@ -330,7 +358,7 @@ export const AssetGraphExplorerWithData: React.FC<
                       >
                         {!graphNode || !graphNode.definition.opNames.length ? (
                           <ForeignNode assetKey={{path}} />
-                        ) : _scale < MINIMAL_SCALE ? (
+                        ) : scale < MINIMAL_SCALE ? (
                           <AssetNodeMinimal
                             definition={graphNode.definition}
                             selected={selectedGraphNodes.includes(graphNode)}

@@ -6,7 +6,7 @@ import pytest
 from dagster._core.host_representation import InProcessRepositoryLocationOrigin
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
-    create_test_daemon_workspace,
+    create_test_daemon_workspace_context,
     instance_for_test,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -41,18 +41,18 @@ def workspace_load_target(attribute=None):
     )
 
 
-@pytest.fixture(name="workspace", scope="module")
-def workspace_fixture(instance_module_scoped):  # pylint: disable=unused-argument
-    with create_test_daemon_workspace(
+@pytest.fixture(name="workspace_context", scope="module")
+def workspace_fixture(instance_module_scoped):
+    with create_test_daemon_workspace_context(
         workspace_load_target=workspace_load_target(), instance=instance_module_scoped
-    ) as workspace:
-        yield workspace
+    ) as workspace_context:
+        yield workspace_context
 
 
 @pytest.fixture(name="external_repo", scope="module")
-def external_repo_fixture(workspace):  # pylint: disable=unused-argument
+def external_repo_fixture(workspace_context):
     return next(
-        iter(workspace.get_workspace_snapshot().values())
+        iter(workspace_context.create_request_context().get_workspace_snapshot().values())
     ).repository_location.get_repository("the_repo")
 
 

@@ -113,7 +113,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             load_incluster_config=run_launcher.load_incluster_config,
             kubeconfig_file=run_launcher.kubeconfig_file,
         ),
-        retries=RetryMode.from_config(init_context.executor_config["retries"]),  # type: ignore
+        retries=RetryMode.from_config(exc_cfg["retries"]),  # type: ignore
         max_concurrent=check.opt_int_elem(exc_cfg, "max_concurrent"),
         should_verify_step=True,
     )
@@ -187,12 +187,14 @@ class K8sStepHandler(StepHandler):
         job_name = self._get_k8s_step_job_name(step_handler_context)
         pod_name = job_name
 
-        args = step_handler_context.execute_step_args.get_command_args()
-
         container_context = self._get_container_context(step_handler_context)
 
         job_config = container_context.get_k8s_job_config(
             self._executor_image, step_handler_context.instance.run_launcher
+        )
+
+        args = step_handler_context.execute_step_args.get_command_args(
+            skip_serialized_namedtuple=True
         )
 
         if not job_config.job_image:
@@ -219,6 +221,7 @@ class K8sStepHandler(StepHandler):
                 "dagster/op": step_key,
                 "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
             },
+            env_vars=step_handler_context.execute_step_args.get_command_env(),
         )
 
         yield DagsterEvent.step_worker_starting(

@@ -4,9 +4,9 @@ from typing import Dict, List, Optional
 
 from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from .python_version import AvailablePythonVersion
-from .utils import CommandStep
+from .utils import CommandStep, message_contains, safe_getenv
 
-DEFAULT_TIMEOUT_IN_MIN = 20
+DEFAULT_TIMEOUT_IN_MIN = 25
 
 DOCKER_PLUGIN = "docker#v3.7.0"
 ECR_PLUGIN = "ecr#v2.2.0"
@@ -17,9 +17,9 @@ AWS_ECR_REGION = "us-west-2"
 
 
 class BuildkiteQueue(Enum):
-    DOCKER = "docker-p"
-    MEDIUM = "buildkite-medium-v5-0-1"
-    WINDOWS = "windows-medium"
+    DOCKER = safe_getenv("BUILDKITE_DOCKER_QUEUE")
+    MEDIUM = safe_getenv("BUILDKITE_MEDIUM_QUEUE")
+    WINDOWS = safe_getenv("BUILDKITE_WINDOWS_QUEUE")
 
     @classmethod
     def contains(cls, value: object) -> bool:
@@ -72,11 +72,21 @@ class CommandStepBuilder:
         # for a volume with a matching name on the host machine
         settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock", "/tmp:/tmp"]
         settings["network"] = "kind"
+
+        # Pass through all BUILDKITE* envvars so our test analytics are properly tagged
+        buildkite_envvars = [env for env in list(os.environ.keys()) if env.startswith("BUILDKITE")]
+
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary
         # path they return will be nested under /tmp.
         # https://github.com/pytest-dev/pytest/blob/501637547ecefa584db3793f71f1863da5ffc25f/src/_pytest/tmpdir.py#L116-L117
-        settings["environment"] = ["BUILDKITE", "PYTEST_DEBUG_TEMPROOT=/tmp"] + (env or [])
+        settings["environment"] = (
+            [
+                "PYTEST_DEBUG_TEMPROOT=/tmp",
+            ]
+            + buildkite_envvars
+            + (env or [])
+        )
         ecr_settings = {
             "login": True,
             "no-include-email": True,
@@ -121,6 +131,13 @@ class CommandStepBuilder:
     def with_dependencies(self, step_keys: Optional[List[str]]) -> "CommandStepBuilder":
         if step_keys is not None:
             self._step["depends_on"] = step_keys
+        return self
+
+    def with_skip(self, skip_reason: Optional[str]) -> "CommandStepBuilder":
+        if message_contains("NO_SKIP"):
+            return self
+        if skip_reason:
+            self._step["skip"] = skip_reason
         return self
 
     def build(self) -> CommandStep:

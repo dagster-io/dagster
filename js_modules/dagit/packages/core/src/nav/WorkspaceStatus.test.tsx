@@ -2,6 +2,7 @@ import {waitFor} from '@testing-library/dom';
 import {render, screen} from '@testing-library/react';
 import * as React from 'react';
 
+import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {TestProvider} from '../testing/TestProvider';
 
 import {WorkspaceStatus} from './WorkspaceStatus';
@@ -10,7 +11,9 @@ describe('WorkspaceStatus', () => {
   const Test: React.FC<{mocks?: any}> = ({mocks}) => {
     return (
       <TestProvider apolloProps={{mocks}}>
-        <WorkspaceStatus />
+        <DeploymentStatusProvider include={new Set<DeploymentStatusType>(['code-locations'])}>
+          <WorkspaceStatus placeholder />
+        </DeploymentStatusProvider>
       </TestProvider>
     );
   };

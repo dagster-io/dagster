@@ -18,7 +18,6 @@ REDSHIFT_ENV = {
                 "user": "dagster",
                 "password": "baz",
                 "database": "dev",
-                "schema": "foobar",
             }
         }
     }
@@ -65,7 +64,6 @@ def test_single_select(redshift_connect):
         user="dagster",
         password="baz",
         database="dev",
-        schema="foobar",
         connect_timeout=5,
         sslmode="require",
     )

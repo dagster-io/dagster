@@ -56,7 +56,7 @@ def test_failed_multi():
 
 def test_success_multi():
     mul_val = basic_multi_constraint.validate(DataFrame())
-    assert mul_val.success == True
+    assert mul_val.success is True
     assert mul_val.metadata_entries == []
 
 

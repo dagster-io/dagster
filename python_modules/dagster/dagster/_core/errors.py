@@ -47,6 +47,10 @@ class DagsterInvalidDefinitionError(DagsterError):
     """Indicates that the rules for a definition have been violated by the user."""
 
 
+class DagsterInvalidObservationError(DagsterError):
+    """Indicates that an invalid value was returned from a source asset observation function."""
+
+
 class DagsterInvalidSubsetError(DagsterError):
     """Indicates that a subset of a pipeline is invalid because either:
     - One or more ops in the specified subset do not exist on the job.'
@@ -387,6 +391,29 @@ class DagsterUserCodeProcessError(DagsterError):
             SerializableErrorInfo,
         )
         super(DagsterUserCodeProcessError, self).__init__(*args, **kwargs)
+
+
+class DagsterMaxRetriesExceededError(DagsterError):
+    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised."""
+
+    def __init__(self, *args, **kwargs):
+        from dagster._utils.error import SerializableErrorInfo
+
+        self.user_code_process_error_infos = check.list_param(
+            kwargs.pop("user_code_process_error_infos"),
+            "user_code_process_error_infos",
+            SerializableErrorInfo,
+        )
+        super(DagsterMaxRetriesExceededError, self).__init__(*args, **kwargs)
+
+    @staticmethod
+    def from_error_info(error_info):
+        from dagster._utils.error import SerializableErrorInfo
+
+        check.inst_param(error_info, "error_info", SerializableErrorInfo)
+        return DagsterMaxRetriesExceededError(
+            error_info.to_string(), user_code_process_error_infos=[error_info]
+        )
 
 
 class DagsterRepositoryLocationNotFoundError(DagsterError):

@@ -125,16 +125,16 @@ def container_context_camel_case_volumes_fixture(container_context_config_camel_
 
 
 def test_empty_container_context(empty_container_context):
-    assert empty_container_context.image_pull_policy == None
+    assert empty_container_context.image_pull_policy is None
     assert empty_container_context.image_pull_secrets == []
-    assert empty_container_context.service_account_name == None
+    assert empty_container_context.service_account_name is None
     assert empty_container_context.env_config_maps == []
     assert empty_container_context.env_secrets == []
     assert empty_container_context.env_vars == []
     assert empty_container_context.volume_mounts == []
     assert empty_container_context.volumes == []
     assert empty_container_context.labels == {}
-    assert empty_container_context.namespace == None
+    assert empty_container_context.namespace is None
     assert empty_container_context.resources == {}
     assert empty_container_context.scheduler_name == None
 

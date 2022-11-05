@@ -118,10 +118,10 @@ def fivetran_sync_op(context):
             'value from the "Setup" tab of a given connector in the Fivetran UI.',
         ),
         "resync_parameters": Field(
-            Permissive(),
-            is_required=True,
-            description="The resync parameters to send in the payload to the Fivetran API. You "
-            "can find an example resync payload here: https://fivetran.com/docs/rest-api/connectors#request_6",
+            Noneable(Permissive()),
+            default_value=None,
+            description="Optional resync parameters to send in the payload to the Fivetran API. You "
+            "can find an example resync payload here: https://fivetran.com/docs/rest-api/connectors#request_7",
         ),
         "poll_interval": Field(
             float,
@@ -205,15 +205,19 @@ def fivetran_resync_op(context):
         poll_timeout=context.op_config["poll_timeout"],
     )
     if context.op_config["yield_materializations"]:
-        asset_key_filter = [
-            AssetKey(context.op_config["asset_key_prefix"] + [schema, table])
-            for schema, tables in context.op_config["resync_parameters"].items()
-            for table in tables
-        ]
+        asset_key_filter = (
+            [
+                AssetKey(context.op_config["asset_key_prefix"] + [schema, table])
+                for schema, tables in context.op_config["resync_parameters"].items()
+                for table in tables
+            ]
+            if context.op_config["resync_parameters"] is not None
+            else None
+        )
         for mat in generate_materializations(
             fivetran_output, asset_key_prefix=context.op_config["asset_key_prefix"]
         ):
-            if mat.asset_key in asset_key_filter:
+            if asset_key_filter is None or mat.asset_key in asset_key_filter:
                 yield mat
 
     yield Output(fivetran_output)

@@ -1,47 +1,49 @@
-from dagster._legacy import pipeline, solid
+from dagster import job, op
 
 
 def test_solid_tags():
-    @solid(tags={"foo": "bar"})
-    def tags_solid(_):
+    @op(tags={"foo": "bar"})
+    def tags_op(_):
         pass
 
-    assert tags_solid.tags == {"foo": "bar"}
+    assert tags_op.tags == {"foo": "bar"}
 
-    @solid()
-    def no_tags_solid(_):
+    @op()
+    def no_tags_op(_):
         pass
 
-    assert no_tags_solid.tags == {}
+    assert no_tags_op.tags == {}
 
 
-def test_pipeline_tags():
-    @pipeline(tags={"foo": "bar"})
-    def tags_pipeline():
+def test_job_tags():
+    @job(tags={"foo": "bar"})
+    def tags_job():
         pass
 
-    assert tags_pipeline.tags == {"foo": "bar"}
+    assert tags_job.tags == {"foo": "bar"}
 
-    @pipeline()
-    def no_tags_pipeline():
+    @job
+    def no_tags_job():
         pass
 
-    assert no_tags_pipeline.tags == {}
+    assert no_tags_job.tags == {}
 
 
 def test_solid_subset_tags():
-    @solid
-    def noop_solid(_):
+    @op
+    def noop_op(_):
         pass
 
-    @pipeline(tags={"foo": "bar"})
-    def tags_pipeline():
-        noop_solid()
+    @job(tags={"foo": "bar"})
+    def tags_job():
+        noop_op()
 
-    assert tags_pipeline.get_pipeline_subset_def({"noop_solid"}).tags == {"foo": "bar"}
+    assert tags_job.get_job_def_for_subset_selection(op_selection=["noop_op"]).tags == {
+        "foo": "bar"
+    }
 
-    @pipeline()
-    def no_tags_pipeline():
-        noop_solid()
+    @job
+    def no_tags_job():
+        noop_op()
 
-    assert no_tags_pipeline.get_pipeline_subset_def({"noop_solid"}).tags == {}
+    assert no_tags_job.get_pipeline_subset_def({"noop_op"}).tags == {}

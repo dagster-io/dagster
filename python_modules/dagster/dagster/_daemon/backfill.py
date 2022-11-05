@@ -1,19 +1,21 @@
+import logging
 import os
 import sys
 import time
+from typing import Iterable, Optional, Sequence, Tuple, cast
 
-import dagster._check as check
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.backfill import (
     BulkActionStatus,
     PartitionBackfill,
     submit_backfill_runs,
 )
+from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.workspace.context import IWorkspace
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once
@@ -34,22 +36,26 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=None):
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(workspace, "workspace", IWorkspace)
-
+def execute_backfill_iteration(
+    workspace_process_context: IWorkspaceProcessContext,
+    logger: logging.Logger,
+    debug_crash_flags=None,
+) -> Iterable[Optional[SerializableErrorInfo]]:
+    instance = workspace_process_context.instance
     backfill_jobs = instance.get_backfills(status=BulkActionStatus.REQUESTED)
 
     if not backfill_jobs:
         logger.debug("No backfill jobs requested.")
-        yield
+        yield None
         return
+
+    workspace = workspace_process_context.create_request_context()
 
     for backfill_job in backfill_jobs:
         backfill_id = backfill_job.backfill_id
 
         # refetch, in case the backfill was updated in the meantime
-        backfill_job = instance.get_backfill(backfill_id)
+        backfill_job = cast(PartitionBackfill, instance.get_backfill(backfill_id))
 
         if not backfill_job.last_submitted_partition_name:
             logger.info(f"Starting backfill for {backfill_id}")
@@ -64,18 +70,8 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
 
         try:
             repo_location = workspace.get_repository_location(origin.location_name)
-            repo_name = backfill_job.partition_set_origin.external_repository_origin.repository_name
-            partition_set_name = backfill_job.partition_set_origin.partition_set_name
-            if not repo_location.has_repository(repo_name):
-                raise DagsterBackfillFailedError(
-                    f"Could not find repository {repo_name} in location {repo_location.name} to "
-                    f"run backfill {backfill_id}."
-                )
-            external_repo = repo_location.get_repository(repo_name)
-            if not external_repo.has_external_partition_set(partition_set_name):
-                raise DagsterBackfillFailedError(
-                    f"Could not find partition set {partition_set_name} in repository {repo_name}. "
-                )
+
+            _check_repo_has_partition_set(repo_location, backfill_job)
 
             has_more = True
             while has_more:
@@ -91,9 +87,11 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
                     for _run_id in submit_backfill_runs(
                         instance, workspace, repo_location, backfill_job, chunk
                     ):
-                        yield
+                        yield None
                         # before submitting, refetch the backfill job to check for status changes
-                        backfill_job = instance.get_backfill(backfill_job.backfill_id)
+                        backfill_job = cast(
+                            PartitionBackfill, instance.get_backfill(backfill_job.backfill_id)
+                        )
                         if backfill_job.status != BulkActionStatus.REQUESTED:
                             return
 
@@ -101,16 +99,18 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
 
                 if has_more:
                     # refetch, in case the backfill was updated in the meantime
-                    backfill_job = instance.get_backfill(backfill_job.backfill_id)
+                    backfill_job = cast(
+                        PartitionBackfill, instance.get_backfill(backfill_job.backfill_id)
+                    )
                     instance.update_backfill(backfill_job.with_partition_checkpoint(checkpoint))
-                    yield
+                    yield None
                     time.sleep(CHECKPOINT_INTERVAL)
                 else:
                     logger.info(
                         f"Backfill completed for {backfill_id} for {len(backfill_job.partition_names)} partitions"
                     )
                     instance.update_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
-                    yield
+                    yield None
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             instance.update_backfill(
@@ -120,8 +120,30 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
             yield error_info
 
 
-def _get_partitions_chunk(instance, logger, backfill_job, chunk_size):
-    check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
+def _check_repo_has_partition_set(
+    repo_location: RepositoryLocation, backfill_job: PartitionBackfill
+) -> None:
+    repo_name = backfill_job.partition_set_origin.external_repository_origin.repository_name
+    if not repo_location.has_repository(repo_name):
+        raise DagsterBackfillFailedError(
+            f"Could not find repository {repo_name} in location {repo_location.name} to "
+            f"run backfill {backfill_job.backfill_id}."
+        )
+
+    partition_set_name = backfill_job.partition_set_origin.partition_set_name
+    external_repo = repo_location.get_repository(repo_name)
+    if not external_repo.has_external_partition_set(partition_set_name):
+        raise DagsterBackfillFailedError(
+            f"Could not find partition set {partition_set_name} in repository {repo_name}. "
+        )
+
+
+def _get_partitions_chunk(
+    instance: DagsterInstance,
+    logger: logging.Logger,
+    backfill_job: PartitionBackfill,
+    chunk_size: int,
+) -> Tuple[Sequence[str], str, bool]:
     partition_names = backfill_job.partition_names
     checkpoint = backfill_job.last_submitted_partition_name
 

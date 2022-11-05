@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, cast
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -390,9 +392,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
-        """Returns the asset partition key for the given output. Defaults to "result", which is the
-        name of the default output.
-        """
+        """Returns the partition key of the upstream asset corresponding to the given input."""
         return self._step_execution_context.asset_partition_key_for_input(input_name)
 
     @public
@@ -422,6 +422,21 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             )
 
         return result
+
+    @public
+    def asset_partition_keys_for_output(self, output_name: str) -> Sequence[str]:
+        """Returns a list of the partition keys for the given output."""
+        return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
+            self._step_execution_context.asset_partition_key_range_for_output(output_name)
+        )
+
+    @public
+    def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
+        """Returns a list of the partition keys of the upstream asset corresponding to the
+        given input."""
+        return self.asset_partitions_def_for_input(input_name).get_partition_keys_in_range(
+            self._step_execution_context.asset_partition_key_range_for_input(input_name)
+        )
 
     @public
     def has_tag(self, key: str) -> bool:
@@ -596,3 +611,6 @@ class OpExecutionContext(SolidExecutionContext):
             context.log.info("Hello, world!")
 
     """
+
+
+SourceAssetObserveContext: TypeAlias = OpExecutionContext

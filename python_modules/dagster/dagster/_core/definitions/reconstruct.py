@@ -2,7 +2,18 @@ import inspect
 import os
 import sys
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    List,
+    NamedTuple,
+    Optional,
+    Union,
+    overload,
+)
 
 import dagster._check as check
 import dagster._seven as seven
@@ -28,6 +39,8 @@ from .events import AssetKey
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.repository_definition import RepositoryLoadData
+
     from .asset_group import AssetGroup
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
@@ -49,6 +62,7 @@ class ReconstructableRepository(
             ("executable_path", Optional[str]),
             ("entry_point", List[str]),
             ("container_context", Optional[Dict[str, Any]]),
+            ("repository_load_data", Optional["RepositoryLoadData"]),
         ],
     )
 ):
@@ -59,7 +73,10 @@ class ReconstructableRepository(
         executable_path=None,
         entry_point=None,
         container_context=None,
+        repository_load_data=None,
     ):
+        from dagster._core.definitions.repository_definition import RepositoryLoadData
+
         return super(ReconstructableRepository, cls).__new__(
             cls,
             pointer=check.inst_param(pointer, "pointer", CodePointer),
@@ -75,11 +92,18 @@ class ReconstructableRepository(
                 if container_context != None
                 else None
             ),
+            repository_load_data=check.opt_inst_param(
+                repository_load_data, "repository_load_data", RepositoryLoadData
+            ),
         )
 
-    @lru_cache(maxsize=1)
+    def with_repository_load_data(
+        self, metadata: Optional["RepositoryLoadData"]
+    ) -> "ReconstructableRepository":
+        return self._replace(repository_load_data=metadata)
+
     def get_definition(self):
-        return repository_def_from_pointer(self.pointer)
+        return repository_def_from_pointer(self.pointer, self.repository_load_data)
 
     def get_reconstructable_pipeline(self, name):
         return ReconstructablePipeline(self, name)
@@ -168,30 +192,24 @@ class ReconstructablePipeline(
             asset_selection=asset_selection,
         )
 
+    def with_repository_load_data(
+        self, metadata: Optional["RepositoryLoadData"]
+    ) -> "ReconstructablePipeline":
+        return self._replace(repository=self.repository.with_repository_load_data(metadata))
+
     @property
     def solid_selection(self) -> Optional[List[str]]:
         return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
 
+    # Keep the most recent 1 definition (globally since this is a NamedTuple method)
+    # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
     def get_definition(self):
-        from dagster._core.definitions.job_definition import JobDefinition
-
-        defn = self.repository.get_definition().get_pipeline(self.pipeline_name)
-
-        if isinstance(defn, JobDefinition):
-            return (
-                self.repository.get_definition()
-                .get_pipeline(self.pipeline_name)
-                .get_job_def_for_subset_selection(self.solid_selection, self.asset_selection)
-            )
-
-        check.invariant(
-            self.asset_selection == None, "Asset selection cannot be provided with a pipeline"
-        )
-        return (
-            self.repository.get_definition().get_pipeline(self.pipeline_name)
-            # pipelines use post-resolved selection
-            .get_pipeline_subset_def(self.solids_to_execute)
+        return self.repository.get_definition().get_maybe_subset_job_def(
+            self.pipeline_name,
+            self.solid_selection,
+            self.asset_selection,
+            self.solids_to_execute,
         )
 
     def get_reconstructable_repository(self):
@@ -199,9 +217,9 @@ class ReconstructablePipeline(
 
     def _subset_for_execution(
         self,
-        solids_to_execute: Optional[Optional[FrozenSet[str]]],
+        solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[List[str]],
-        asset_selection: Optional[FrozenSet[AssetKey]],
+        asset_selection: Optional[AbstractSet[AssetKey]],
     ) -> "ReconstructablePipeline":
         # no selection
         if solid_selection is None and solids_to_execute is None and asset_selection is None:
@@ -266,8 +284,8 @@ class ReconstructablePipeline(
 
     def subset_for_execution_from_existing_pipeline(
         self,
-        solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "ReconstructablePipeline":
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
@@ -575,10 +593,17 @@ def _check_is_loadable(definition):
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
-    from .repository_definition import RepositoryDefinition
+    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
     if not isinstance(
-        definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
+        definition,
+        (
+            PipelineDefinition,
+            RepositoryDefinition,
+            PendingRepositoryDefinition,
+            GraphDefinition,
+            AssetGroup,
+        ),
     ):
         raise DagsterInvariantViolationError(
             (
@@ -612,10 +637,17 @@ def def_from_pointer(
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
-    from .repository_definition import RepositoryDefinition
+    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
     if isinstance(
-        target, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
+        target,
+        (
+            PipelineDefinition,
+            RepositoryDefinition,
+            PendingRepositoryDefinition,
+            GraphDefinition,
+            AssetGroup,
+        ),
     ) or not callable(target):
         return _check_is_loadable(target)
 
@@ -650,22 +682,31 @@ def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
 @overload
 # NOTE: mypy can't handle these overloads but pyright can
 def repository_def_from_target_def(  # type: ignore
-    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"]
+    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"],
+    repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
     ...
 
 
 @overload
-def repository_def_from_target_def(target: object) -> None:
+def repository_def_from_target_def(
+    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
+) -> None:
     ...
 
 
-def repository_def_from_target_def(target: object) -> Optional["RepositoryDefinition"]:
+def repository_def_from_target_def(
+    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
+) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions import AssetGroup
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
-    from .repository_definition import CachingRepositoryData, RepositoryDefinition
+    from .repository_definition import (
+        CachingRepositoryData,
+        PendingRepositoryDefinition,
+        RepositoryDefinition,
+    )
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, (PipelineDefinition, GraphDefinition)):
@@ -680,13 +721,21 @@ def repository_def_from_target_def(target: object) -> Optional["RepositoryDefini
         )
     elif isinstance(target, RepositoryDefinition):
         return target
+    elif isinstance(target, PendingRepositoryDefinition):
+        # must load repository from scratch
+        if repository_load_data is None:
+            return target.compute_repository_definition()
+        # can use the cached data to more efficiently load data
+        return target.reconstruct_repository_definition(repository_load_data)
     else:
         return None
 
 
-def repository_def_from_pointer(pointer: CodePointer) -> "RepositoryDefinition":
+def repository_def_from_pointer(
+    pointer: CodePointer, repository_load_data: Optional["RepositoryLoadData"] = None
+) -> "RepositoryDefinition":
     target = def_from_pointer(pointer)
-    repo_def = repository_def_from_target_def(target)
+    repo_def = repository_def_from_target_def(target, repository_load_data)
     if not repo_def:
         raise DagsterInvariantViolationError(
             "CodePointer ({str}) must resolve to a "

@@ -16,16 +16,22 @@ import {
   StyledReadOnlyCodeMirror,
 } from '@dagster-io/ui';
 import * as React from 'react';
+import {useHistory} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
+import {usePermissions} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
-import {workspacePathFromRunDetails} from '../workspace/workspacePath';
+import {workspacePathFromRunDetails, workspacePipelinePath} from '../workspace/workspacePath';
 
+import {DeletionDialog} from './DeletionDialog';
 import {RunTags} from './RunTags';
+import {RunsQueryRefetchContext} from './RunUtils';
+import {TerminationDialog} from './TerminationDialog';
 import {TimeElapsed} from './TimeElapsed';
 import {RunDetailsFragment} from './types/RunDetailsFragment';
 import {RunFragment} from './types/RunFragment';
@@ -119,11 +125,18 @@ export const RunDetails: React.FC<{
   );
 };
 
+type VisibleDialog = 'config' | 'delete' | 'terminate' | null;
+
 export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
-  const [showDialog, setShowDialog] = React.useState(false);
-  const {rootServerURI} = React.useContext(AppContext);
   const {runConfigYaml} = run;
+  const [visibleDialog, setVisibleDialog] = React.useState<VisibleDialog>(null);
+
+  const {rootServerURI} = React.useContext(AppContext);
+  const {refetch} = React.useContext(RunsQueryRefetchContext);
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+
   const copy = useCopyToClipboard();
+  const history = useHistory();
 
   const copyConfig = () => {
     copy(runConfigYaml);
@@ -134,39 +147,42 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
     });
   };
 
+  const jobPath = workspacePathFromRunDetails({
+    id: run.id,
+    repositoryName: run.repositoryOrigin?.repositoryName,
+    repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
+    pipelineName: run.pipelineName,
+    isJob,
+  });
+
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <AnchorButton
-          icon={<Icon name="edit" />}
-          to={workspacePathFromRunDetails({
-            id: run.id,
-            repositoryName: run.repositoryOrigin?.repositoryName,
-            repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
-            pipelineName: run.pipelineName,
-            isJob,
-          })}
-        >
+        <AnchorButton icon={<Icon name="edit" />} to={jobPath}>
           Open in Launchpad
         </AnchorButton>
-        <Button icon={<Icon name="tag" />} onClick={() => setShowDialog(true)}>
+        <Button icon={<Icon name="tag" />} onClick={() => setVisibleDialog('config')}>
           View tags and config
         </Button>
         <Popover
           position="bottom-right"
           content={
             <Menu>
-              <Tooltip
-                content="Loadable in dagit-debug"
-                position="bottom-right"
-                targetTagName="div"
-              >
+              <Tooltip content="Loadable in dagit-debug" position="left" targetTagName="div">
                 <MenuItem
                   text="Download debug file"
                   icon={<Icon name="download_for_offline" />}
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
                 />
               </Tooltip>
+              {canDeletePipelineRun.enabled ? (
+                <MenuItem
+                  icon="delete"
+                  text="Delete"
+                  intent="danger"
+                  onClick={() => setVisibleDialog('delete')}
+                />
+              ) : null}
             </Menu>
           }
         >
@@ -174,43 +190,98 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
         </Popover>
       </Group>
       <Dialog
-        isOpen={showDialog}
-        onClose={() => setShowDialog(false)}
-        style={{width: '800px'}}
+        isOpen={visibleDialog === 'config'}
+        onClose={() => setVisibleDialog(null)}
+        style={{
+          width: '90vw',
+          maxWidth: '1000px',
+          minWidth: '600px',
+          height: '90vh',
+          maxHeight: '1000px',
+          minHeight: '600px',
+        }}
         title="Run configuration"
       >
-        <Box flex={{direction: 'column', gap: 20}}>
-          <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
-            <Subheading>Tags</Subheading>
-            <div>
-              <RunTags tags={run.tags} mode={isJob ? null : run.mode} />
-            </div>
-          </Box>
-          <div>
-            <Box
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-              padding={{left: 24, bottom: 16}}
-            >
-              <Subheading>Config</Subheading>
+        <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'hidden'}}>
+          <Box flex={{direction: 'column', gap: 20}} style={{flex: 1, overflow: 'hidden'}}>
+            <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
+              <Subheading>Tags</Subheading>
+              <div>
+                <RunTags tags={run.tags} mode={isJob ? null : run.mode} />
+              </div>
             </Box>
-            <StyledReadOnlyCodeMirror
-              value={runConfigYaml}
-              options={{lineNumbers: true, mode: 'yaml'}}
-            />
-          </div>
+            <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'hidden'}}>
+              <Box
+                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                padding={{left: 24, bottom: 16}}
+              >
+                <Subheading>Config</Subheading>
+              </Box>
+              <CodeMirrorContainer>
+                <StyledReadOnlyCodeMirror
+                  value={runConfigYaml}
+                  options={{lineNumbers: true, mode: 'yaml'}}
+                  theme={['config-editor']}
+                />
+              </CodeMirrorContainer>
+            </Box>
+          </Box>
+          <DialogFooter topBorder>
+            <Button onClick={() => copyConfig()} intent="none">
+              Copy config
+            </Button>
+            <Button onClick={() => setVisibleDialog(null)} intent="primary">
+              OK
+            </Button>
+          </DialogFooter>
         </Box>
-        <DialogFooter topBorder>
-          <Button onClick={() => copyConfig()} intent="none">
-            Copy config
-          </Button>
-          <Button onClick={() => setShowDialog(false)} intent="primary">
-            OK
-          </Button>
-        </DialogFooter>
       </Dialog>
+      {canDeletePipelineRun.enabled ? (
+        <DeletionDialog
+          isOpen={visibleDialog === 'delete'}
+          onClose={() => setVisibleDialog(null)}
+          onComplete={() => {
+            if (run.repositoryOrigin) {
+              history.push(
+                workspacePipelinePath({
+                  repoName: run.repositoryOrigin.repositoryName,
+                  repoLocation: run.repositoryOrigin.repositoryLocationName,
+                  pipelineName: run.pipelineName,
+                  isJob,
+                  path: '/runs',
+                }),
+              );
+            } else {
+              setVisibleDialog(null);
+            }
+          }}
+          onTerminateInstead={() => setVisibleDialog('terminate')}
+          selectedRuns={{[run.id]: run.canTerminate}}
+        />
+      ) : null}
+      {canTerminatePipelineExecution.enabled ? (
+        <TerminationDialog
+          isOpen={visibleDialog === 'terminate'}
+          onClose={() => setVisibleDialog(null)}
+          onComplete={() => {
+            refetch();
+          }}
+          selectedRuns={{[run.id]: run.canTerminate}}
+        />
+      ) : null}
     </div>
   );
 };
+
+const CodeMirrorContainer = styled.div`
+  flex: 1;
+  overflow: hidden;
+
+  .react-codemirror2,
+  .CodeMirror {
+    height: 100%;
+  }
+`;
 
 export const RUN_DETAILS_FRAGMENT = gql`
   fragment RunDetailsFragment on Run {

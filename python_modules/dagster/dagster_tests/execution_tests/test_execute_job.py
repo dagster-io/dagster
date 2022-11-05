@@ -2,17 +2,21 @@ import pytest
 
 import dagster._check as check
 from dagster import (
+    AssetKey,
     DagsterExecutionStepNotFoundError,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     Field,
     ReexecutionOptions,
+    asset,
+    define_asset_job,
     execute_job,
     graph,
     in_process_executor,
     job,
     op,
     reconstructable,
+    repository,
 )
 from dagster._core.test_utils import instance_for_test
 
@@ -329,3 +333,33 @@ def test_reexecution_selection_syntax(instance):
     )
     assert result.success
     assert len(result.get_step_success_events()) == 4
+
+
+def get_asset_job():
+    @asset
+    def downstream_asset(upstream_asset):
+        return upstream_asset
+
+    @asset
+    def upstream_asset():
+        return 5
+
+    the_job = define_asset_job(name="the_job", selection=["downstream_asset", "upstream_asset"])
+
+    @repository
+    def the_repo():
+        return [the_job, downstream_asset, upstream_asset]
+
+    job_def = the_repo.get_job("the_job")
+    return job_def
+
+
+def test_asset_selection():
+
+    with instance_for_test() as instance:
+        result = execute_job(
+            reconstructable(get_asset_job), instance, asset_selection=[AssetKey("upstream_asset")]
+        )
+        assert result.success
+        assert len(result.get_step_success_events()) == 1
+        assert result.get_step_success_events()[0].step_key == "upstream_asset"

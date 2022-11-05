@@ -293,6 +293,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
+    def get_event_tags_for_asset(
+        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
+    ) -> Sequence[Mapping[str, str]]:
+        pass
+
+    @abstractmethod
     def get_asset_run_ids(self, asset_key: AssetKey) -> Iterable[str]:
         pass
 
@@ -308,3 +314,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     def alembic_version(self):
         return None
+
+    @property
+    def is_run_sharded(self):
+        """Indicates that the EventLogStoarge is sharded"""
+        return False

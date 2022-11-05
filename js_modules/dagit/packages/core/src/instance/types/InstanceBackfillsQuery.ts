@@ -51,6 +51,11 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   results: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses_results[];
 }
 
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results {
   __typename: "PartitionBackfill";
   backfillId: string;
@@ -64,6 +69,7 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   error: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error | null;
   partitionNames: string[];
   partitionStatuses: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses;
+  assetSelection: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_assetSelection[] | null;
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills {

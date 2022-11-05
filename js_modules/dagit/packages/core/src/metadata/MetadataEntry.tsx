@@ -10,6 +10,7 @@ import {
   Markdown,
   Tooltip,
   FontFamily,
+  tryPrettyPrintJSON,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -19,6 +20,7 @@ import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {NotebookButton} from '../ui/NotebookButton';
 
 import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
@@ -71,7 +73,8 @@ export const MetadataEntries: React.FC<{
 export const MetadataEntry: React.FC<{
   entry: MetadataEntryFragment;
   expandSmallValues?: boolean;
-}> = ({entry, expandSmallValues}) => {
+  repoLocation?: string;
+}> = ({entry, expandSmallValues, repoLocation}) => {
   switch (entry.__typename) {
     case 'PathMetadataEntry':
       return (
@@ -87,9 +90,7 @@ export const MetadataEntry: React.FC<{
 
     case 'JsonMetadataEntry':
       return expandSmallValues && entry.jsonString.length < 1000 ? (
-        <div style={{whiteSpace: 'pre-wrap'}}>
-          {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
-        </div>
+        <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(entry.jsonString)}</div>
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
@@ -102,7 +103,7 @@ export const MetadataEntry: React.FC<{
               border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
               style={{whiteSpace: 'pre-wrap', fontFamily: FontFamily.monospace, overflow: 'auto'}}
             >
-              {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
+              {tryPrettyPrintJSON(entry.jsonString)}
             </Box>
           )}
         >
@@ -172,6 +173,20 @@ export const MetadataEntry: React.FC<{
       return null;
     case 'TableSchemaMetadataEntry':
       return <TableSchema schema={entry.schema} />;
+    case 'NotebookMetadataEntry':
+      if (repoLocation) {
+        return <NotebookButton path={entry.path} repoLocation={repoLocation} />;
+      }
+      return (
+        <Group direction="row" spacing={8} alignItems="center">
+          <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
+            {entry.path}
+          </MetadataEntryAction>
+          <IconButton onClick={(e) => copyValue(e, entry.path)}>
+            <Icon name="assignment" color={Colors.Gray500} />
+          </IconButton>
+        </Group>
+      );
     default:
       return assertUnreachable(entry);
   }
@@ -183,6 +198,9 @@ export const METADATA_ENTRY_FRAGMENT = gql`
     label
     description
     ... on PathMetadataEntry {
+      path
+    }
+    ... on NotebookMetadataEntry {
       path
     }
     ... on JsonMetadataEntry {

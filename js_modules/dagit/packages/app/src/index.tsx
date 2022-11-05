@@ -8,6 +8,7 @@ import {AppProvider} from '@dagster-io/dagit-core/app/AppProvider';
 import {AppTopNav} from '@dagster-io/dagit-core/app/AppTopNav';
 import {ContentRoot} from '@dagster-io/dagit-core/app/ContentRoot';
 import {logLink, timeStartLink} from '@dagster-io/dagit-core/app/apolloLinks';
+import {DeploymentStatusType} from '@dagster-io/dagit-core/instance/DeploymentStatusProvider';
 import {Colors, Icon, IconWrapper} from '@dagster-io/ui';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
@@ -31,6 +32,7 @@ const config = {
   origin: process.env.REACT_APP_BACKEND_ORIGIN || document.location.origin,
   staticPathRoot: `${pathPrefix}/`,
   telemetryEnabled,
+  statusPolling: new Set<DeploymentStatusType>(['code-locations', 'daemons']),
 };
 
 const appCache = createAppCache();

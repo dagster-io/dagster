@@ -303,7 +303,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
         instance = graphql_context.instance
 
         pipeline = ReconstructableRepository.for_file(
-            file_relative_path(__file__, "setup.py"),
+            file_relative_path(__file__, "repo.py"),
             "test_repo",
         ).get_reconstructable_pipeline("noop_pipeline")
 

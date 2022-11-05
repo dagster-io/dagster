@@ -6,22 +6,20 @@ import {
   NonIdealState,
   PageHeader,
   Heading,
+  Page,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {RunListTabs} from '../runs/RunListTabs';
+import {OverviewTabs} from '../overview/OverviewTabs';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './BackfillTable';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
-import {InstancePageContext} from './InstancePageContext';
-import {InstanceTabs} from './InstanceTabs';
 import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
@@ -33,8 +31,6 @@ const PAGE_SIZE = 10;
 export const InstanceBackfills = () => {
   useTrackPageView();
 
-  const {flagNewWorkspace} = useFeatureFlags();
-  const {pageTitle} = React.useContext(InstancePageContext);
   const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
@@ -57,16 +53,10 @@ export const InstanceBackfills = () => {
   useDocumentTitle('Backfills');
 
   return (
-    <>
+    <Page>
       <PageHeader
-        title={<Heading>{flagNewWorkspace ? 'Runs' : pageTitle}</Heading>}
-        tabs={
-          flagNewWorkspace ? (
-            <RunListTabs />
-          ) : (
-            <InstanceTabs tab="backfills" refreshState={refreshState} />
-          )
-        }
+        title={<Heading>Overview</Heading>}
+        tabs={<OverviewTabs tab="backfills" refreshState={refreshState} />}
       />
       <Loading queryResult={queryResult} allowStaleData={true}>
         {({partitionBackfillsOrError}) => {
@@ -127,7 +117,7 @@ export const InstanceBackfills = () => {
           );
         }}
       </Loading>
-    </>
+    </Page>
   );
 };
 

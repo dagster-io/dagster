@@ -6,9 +6,9 @@ from dagster import ExperimentalWarning
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 import pendulum
+from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_module
 from dagster_test.toys.asset_lineage import asset_lineage_job, asset_lineage_partition_set
 from dagster_test.toys.asset_sensors import get_asset_sensors_repo
-from dagster_test.toys.big_honkin_asset_graph import big_honkin_asset_group
 from dagster_test.toys.branches import branch_failed_job, branch_job
 from dagster_test.toys.composition import composition_job
 from dagster_test.toys.conditional_assets import get_conditional_assets_repo
@@ -40,6 +40,7 @@ from dagster_test.toys.run_status_sensors import (
     cross_repo_success_job_sensor,
     fails_job,
     fails_sensor,
+    instance_success_sensor,
     return_multi_run_request_success_sensor,
     return_run_request_succeeds_sensor,
     status_job,
@@ -114,6 +115,7 @@ def toys_repository():
             yield_multi_run_request_success_sensor,
             return_multi_run_request_success_sensor,
             success_sensor_with_pipeline_run_reaction,
+            instance_success_sensor,
         ]
         + get_toys_schedules()
         + get_toys_sensors()
@@ -139,7 +141,7 @@ def long_asset_keys_repository():
 
 @repository
 def big_honkin_assets_repository():
-    return [big_honkin_asset_group]
+    return [load_assets_from_modules([big_honkin_asset_graph_module])]
 
 
 @repository

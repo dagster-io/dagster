@@ -1,15 +1,20 @@
+import hashlib
+import json
 import logging
 import sys
 import time
-from typing import Dict, List, Optional, cast
+from contextlib import contextmanager
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 
-from dagster import Failure, Field, StringSource, __version__
+from dagster import Failure, Field, StringSource
 from dagster import _check as check
 from dagster import get_dagster_logger, resource
+from dagster._config.field_utils import Permissive
+from dagster._utils.merger import deep_merge_dicts
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
@@ -36,15 +41,30 @@ class AirbyteResource:
         use_https: bool,
         request_max_retries: int = 3,
         request_retry_delay: float = 0.25,
+        request_timeout: int = 15,
+        request_additional_params: Optional[Dict[str, Any]] = None,
         log: logging.Logger = get_dagster_logger(),
+        forward_logs: bool = True,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         self._host = host
         self._port = port
         self._use_https = use_https
         self._request_max_retries = request_max_retries
         self._request_retry_delay = request_retry_delay
+        self._request_timeout = request_timeout
+        self._additional_request_params = request_additional_params or dict()
 
         self._log = log
+
+        self._forward_logs = forward_logs
+        self._request_cache: Dict[str, Optional[Dict[str, object]]] = {}
+        # Int in case we nest contexts
+        self._cache_enabled = 0
+
+        self._username = username
+        self._password = password
 
     @property
     def api_base_url(self) -> str:
@@ -53,6 +73,36 @@ class AirbyteResource:
             + (f"{self._host}:{self._port}" if self._port else self._host)
             + "/api/v1"
         )
+
+    @contextmanager
+    def cache_requests(self):
+        """
+        Context manager that enables caching certain requests to the Airbyte API,
+        cleared when the context is exited.
+        """
+        self.clear_request_cache()
+        self._cache_enabled += 1
+        try:
+            yield
+        finally:
+            self.clear_request_cache()
+            self._cache_enabled -= 1
+
+    def clear_request_cache(self):
+        self._request_cache = {}
+
+    def make_request_cached(self, endpoint: str, data: Optional[Dict[str, object]]):
+        if not self._cache_enabled > 0:
+            return self.make_request(endpoint, data)
+        data_json = json.dumps(data, sort_keys=True)
+        sha = hashlib.sha1()
+        sha.update(endpoint.encode("utf-8"))
+        sha.update(data_json.encode("utf-8"))
+        digest = sha.hexdigest()
+
+        if digest not in self._request_cache:
+            self._request_cache[digest] = self.make_request(endpoint, data)
+        return self._request_cache[digest]
 
     def make_request(
         self, endpoint: str, data: Optional[Dict[str, object]]
@@ -74,11 +124,19 @@ class AirbyteResource:
         while True:
             try:
                 response = requests.request(
-                    method="POST",
-                    url=self.api_base_url + endpoint,
-                    headers=headers,
-                    json=data,
-                    timeout=15,
+                    **deep_merge_dicts(
+                        dict(
+                            method="POST",
+                            url=self.api_base_url + endpoint,
+                            headers=headers,
+                            json=data,
+                            timeout=self._request_timeout,
+                            auth=(self._username, self._password)
+                            if self._username and self._password
+                            else None,
+                        ),
+                        self._additional_request_params,
+                    ),
                 )
                 response.raise_for_status()
                 if response.status_code == 204:
@@ -96,8 +154,103 @@ class AirbyteResource:
     def cancel_job(self, job_id: int):
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})
 
-    def get_job_status(self, job_id: int) -> dict:
-        return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
+    def get_default_workspace(self):
+        workspaces = cast(
+            List[Dict[str, Any]],
+            check.not_none(self.make_request_cached(endpoint="/workspaces/list", data={})).get(
+                "workspaces", []
+            ),
+        )
+        return workspaces[0].get("workspaceId")
+
+    def get_source_definition_by_name(self, name: str, workspace_id: str) -> Optional[str]:
+        name_lower = name.lower()
+        definitions = self.make_request_cached(
+            endpoint="/source_definitions/list_for_workspace", data={"workspaceId": workspace_id}
+        )
+
+        return next(
+            (
+                definition["sourceDefinitionId"]
+                for definition in definitions["sourceDefinitions"]
+                if definition["name"].lower() == name_lower
+            ),
+            None,
+        )
+
+    def get_destination_definition_by_name(self, name: str, workspace_id: str):
+        name_lower = name.lower()
+        definitions = cast(
+            Dict[str, List[Dict[str, str]]],
+            check.not_none(
+                self.make_request_cached(
+                    endpoint="/destination_definitions/list_for_workspace",
+                    data={"workspaceId": workspace_id},
+                )
+            ),
+        )
+        return next(
+            (
+                definition["destinationDefinitionId"]
+                for definition in definitions["destinationDefinitions"]
+                if definition["name"].lower() == name_lower
+            ),
+            None,
+        )
+
+    def get_source_catalog_id(self, source_id: str):
+        result = cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
+            ),
+        )
+        return result["catalogId"]
+
+    def get_source_schema(self, source_id: str) -> Dict[str, Any]:
+        return cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
+            ),
+        )
+
+    def does_dest_support_normalization(
+        self, destination_definition_id: str, workspace_id: str
+    ) -> Dict[str, Any]:
+        return cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request_cached(
+                    endpoint="/destination_definition_specifications/get",
+                    data={
+                        "destinationDefinitionId": destination_definition_id,
+                        "workspaceId": workspace_id,
+                    },
+                )
+            ),
+        ).get("supportsNormalization", False)
+
+    def get_job_status(self, connection_id: str, job_id: int) -> dict:
+        if self._forward_logs:
+            return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
+        else:
+            # the "list all jobs" endpoint doesn't return logs, which actually makes it much more
+            # lightweight for long-running syncs with many logs
+            out = check.not_none(
+                self.make_request(
+                    endpoint="/jobs/list",
+                    data={
+                        "configTypes": ["sync"],
+                        "configId": connection_id,
+                        # sync should be the most recent, so pageSize 5 is sufficient
+                        "pagination": {"pageSize": 5},
+                    },
+                )
+            )
+            job = next((job for job in cast(List, out["jobs"]) if job["job"]["id"] == job_id), None)
+
+            return check.not_none(job)
 
     def start_sync(self, connection_id: str) -> Dict[str, object]:
         return check.not_none(
@@ -147,17 +300,18 @@ class AirbyteResource:
                         f"Timeout: Airbyte job {job_id} is not ready after the timeout {poll_timeout} seconds"
                     )
                 time.sleep(poll_interval)
-                job_details = self.get_job_status(job_id)
+                job_details = self.get_job_status(connection_id, job_id)
                 attempts = cast(List, job_details.get("attempts", []))
                 cur_attempt = len(attempts)
                 # spit out the available Airbyte log info
                 if cur_attempt:
-                    log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
+                    if self._forward_logs:
+                        log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
 
-                    for line in log_lines[logged_lines:]:
-                        sys.stdout.write(line + "\n")
-                        sys.stdout.flush()
-                    logged_lines = len(log_lines)
+                        for line in log_lines[logged_lines:]:
+                            sys.stdout.write(line + "\n")
+                            sys.stdout.flush()
+                        logged_lines = len(log_lines)
 
                     # if there's a next attempt, this one will have no more log messages
                     if logged_attempts < cur_attempt - 1:
@@ -195,8 +349,18 @@ class AirbyteResource:
         ),
         "port": Field(
             StringSource,
-            is_required=False,
+            is_required=True,
             description="Port for the Airbyte Server.",
+        ),
+        "username": Field(
+            StringSource,
+            description="Username if using basic auth.",
+            is_required=False,
+        ),
+        "password": Field(
+            StringSource,
+            description="Password if using basic auth.",
+            is_required=False,
         ),
         "use_https": Field(
             bool,
@@ -213,6 +377,20 @@ class AirbyteResource:
             float,
             default_value=0.25,
             description="Time (in seconds) to wait between each request retry.",
+        ),
+        "request_timeout": Field(
+            int,
+            default_value=15,
+            description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+        ),
+        "request_additional_params": Field(
+            Permissive(),
+            description="Any additional kwargs to pass to the requests library when making requests to Airbyte.",
+        ),
+        "forward_logs": Field(
+            bool,
+            default_value=True,
+            description="Whether to forward Airbyte logs to the compute log, can be expensive for long-running syncs.",
         ),
     },
     description="This resource helps manage Airbyte connectors",
@@ -240,6 +418,9 @@ def airbyte_resource(context) -> AirbyteResource:
             {
                 "host": {"env": "AIRBYTE_HOST"},
                 "port": {"env": "AIRBYTE_PORT"},
+                # If using basic auth
+                "username": {"env": "AIRBYTE_USERNAME"},
+                "password": {"env": "AIRBYTE_PASSWORD"},
             }
         )
 
@@ -254,5 +435,10 @@ def airbyte_resource(context) -> AirbyteResource:
         use_https=context.resource_config["use_https"],
         request_max_retries=context.resource_config["request_max_retries"],
         request_retry_delay=context.resource_config["request_retry_delay"],
+        request_timeout=context.resource_config["request_timeout"],
+        request_additional_params=context.resource_config["request_additional_params"],
         log=context.log,
+        forward_logs=context.resource_config["forward_logs"],
+        username=context.resource_config.get("username"),
+        password=context.resource_config.get("password"),
     )

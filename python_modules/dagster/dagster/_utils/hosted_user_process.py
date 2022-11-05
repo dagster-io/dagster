@@ -44,7 +44,7 @@ def recon_repository_from_origin(origin: RepositoryPythonOrigin) -> "Reconstruct
 
 def external_repo_from_def(
     repository_def: "RepositoryDefinition", repository_handle: "RepositoryHandle"
-):
+) -> ExternalRepository:
     return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle)
 
 

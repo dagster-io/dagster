@@ -1,4 +1,6 @@
-from typing import Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional
+import base64
+import zlib
+from typing import Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -23,10 +25,10 @@ class ExecutionPlanSnapshotArgs(
         "_ExecutionPlanSnapshotArgs",
         [
             ("pipeline_origin", ExternalPipelineOrigin),
-            ("solid_selection", List[str]),
+            ("solid_selection", Sequence[str]),
             ("run_config", Mapping[str, object]),
             ("mode", str),
-            ("step_keys_to_execute", Optional[List[str]]),
+            ("step_keys_to_execute", Optional[Sequence[str]]),
             ("pipeline_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
@@ -37,10 +39,10 @@ class ExecutionPlanSnapshotArgs(
     def __new__(
         cls,
         pipeline_origin: ExternalPipelineOrigin,
-        solid_selection: List[str],
+        solid_selection: Sequence[str],
         run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         pipeline_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
@@ -51,16 +53,18 @@ class ExecutionPlanSnapshotArgs(
             pipeline_origin=check.inst_param(
                 pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
             ),
-            solid_selection=check.opt_list_param(solid_selection, "solid_selection", of_type=str),
+            solid_selection=check.opt_sequence_param(
+                solid_selection, "solid_selection", of_type=str
+            ),
             run_config=check.dict_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),
-            step_keys_to_execute=check.opt_nullable_list_param(
+            step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
-            asset_selection=check.opt_set_param(
+            asset_selection=check.opt_nullable_set_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
         )
@@ -106,7 +110,7 @@ class ExecuteRunArgs(
             set_exit_code_on_failure=(
                 True
                 if check.opt_bool_param(set_exit_code_on_failure, "set_exit_code_on_failure")
-                == True
+                is True
                 else None
             ),  # for back-compat
         )
@@ -151,7 +155,7 @@ class ResumeRunArgs(
             set_exit_code_on_failure=(
                 True
                 if check.opt_bool_param(set_exit_code_on_failure, "set_exit_code_on_failure")
-                == True
+                is True
                 else None
             ),  # for back-compat
         )
@@ -236,11 +240,33 @@ class ExecuteStepArgs(
             ),
         )
 
-    def get_command_args(self) -> List[str]:
-        return _get_entry_point(self.pipeline_origin) + [
-            "api",
-            "execute_step",
-            serialize_dagster_namedtuple(self),
+    def _get_compressed_args(self) -> str:
+        # Compress, then base64 encode so we can pass it around as a str
+        return base64.b64encode(zlib.compress(serialize_dagster_namedtuple(self).encode())).decode()
+
+    def get_command_args(self, skip_serialized_namedtuple=False) -> List[str]:
+        """
+        Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
+        be used to pass the args to Click using an env var.
+        """
+
+        return (
+            _get_entry_point(self.pipeline_origin)
+            + ["api", "execute_step"]
+            + (
+                ["--compressed-input-json", self._get_compressed_args()]
+                if not skip_serialized_namedtuple
+                else []
+            )
+        )
+
+    def get_command_env(self) -> List[Dict[str, str]]:
+        """
+        Get the env vars for overriding the Click args of this step. Used in conjuction with
+        get_command_args(skip_serialized_namedtuple=True).
+        """
+        return [
+            {"name": "DAGSTER_COMPRESSED_EXECUTE_STEP_ARGS", "value": self._get_compressed_args()},
         ]
 
 
@@ -388,7 +414,7 @@ class PartitionSetExecutionParamArgs(
         [
             ("repository_origin", ExternalRepositoryOrigin),
             ("partition_set_name", str),
-            ("partition_names", List[str]),
+            ("partition_names", Sequence[str]),
         ],
     )
 ):
@@ -396,7 +422,7 @@ class PartitionSetExecutionParamArgs(
         cls,
         repository_origin: ExternalRepositoryOrigin,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ):
         return super(PartitionSetExecutionParamArgs, cls).__new__(
             cls,
@@ -414,26 +440,26 @@ class PipelineSubsetSnapshotArgs(
         "_PipelineSubsetSnapshotArgs",
         [
             ("pipeline_origin", ExternalPipelineOrigin),
-            ("solid_selection", Optional[List[str]]),
-            ("asset_selection", Optional[List[AssetKey]]),
+            ("solid_selection", Optional[Sequence[str]]),
+            ("asset_selection", Optional[Sequence[AssetKey]]),
         ],
     )
 ):
     def __new__(
         cls,
         pipeline_origin: ExternalPipelineOrigin,
-        solid_selection: List[str],
-        asset_selection: Optional[List[AssetKey]] = None,
+        solid_selection: Sequence[str],
+        asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
         return super(PipelineSubsetSnapshotArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
                 pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
             ),
-            solid_selection=check.list_param(solid_selection, "solid_selection", of_type=str)
+            solid_selection=check.sequence_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,
-            asset_selection=check.opt_list_param(
+            asset_selection=check.opt_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
         )

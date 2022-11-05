@@ -29,23 +29,42 @@ def write_csv(_path, _obj):
     pass
 
 
-# start_partitioned_marker
-from dagster import IOManager
+# start_io_manager_marker
+from dagster import IOManager, io_manager
 
 
-class MyPartitionedIOManager(IOManager):
-    def path_for_partition(self, partition_key):
-        return f"some/path/{partition_key}.csv"
+class MyIOManager(IOManager):
+    def _get_path(self, context) -> str:
+        return "/".join(context.asset_key.path)
 
-    # `context.partition_key` is the run-scoped partition key
     def handle_output(self, context, obj):
-        write_csv(self.path_for_partition(context.partition_key), obj)
+        write_csv(self._get_path(context), obj)
 
-    # `context.asset_partition_key` is set to the partition key for an asset
-    # (if the `IOManager` is handling an asset). This is usually equal to the
-    # run `partition_key`.
     def load_input(self, context):
-        return read_csv(self.path_for_partition(context.asset_partition_key))
+        return read_csv(self._get_path(context))
+
+
+@io_manager
+def my_io_manager():
+    return MyIOManager()
+
+
+# end_io_manager_marker
+
+
+# start_partitioned_marker
+class MyPartitionedIOManager(IOManager):
+    def _get_path(self, context) -> str:
+        if context.has_partition_key:
+            return "/".join(context.asset_key.path + [context.asset_partition_key])
+        else:
+            return "/".join(context.asset_key.path)
+
+    def handle_output(self, context, obj):
+        write_csv(self._get_path(context), obj)
+
+    def load_input(self, context):
+        return read_csv(self._get_path(context))
 
 
 # end_partitioned_marker
@@ -67,7 +86,7 @@ class DataframeTableIOManager(IOManager):
 
 
 @io_manager
-def df_table_io_manager(_):
+def df_table_io_manager():
     return DataframeTableIOManager()
 
 

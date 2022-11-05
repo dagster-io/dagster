@@ -57,12 +57,30 @@ def wait_for_job(
     namespace,
     wait_timeout=DEFAULT_WAIT_TIMEOUT,
     wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    start_time=None,
 ):
     return DagsterKubernetesClient.production_client().wait_for_job(
         job_name=job_name,
         namespace=namespace,
         wait_timeout=wait_timeout,
         wait_time_between_attempts=wait_time_between_attempts,
+        start_time=start_time,
+    )
+
+
+def wait_for_job_to_have_pods(
+    job_name,
+    namespace,
+    wait_timeout=DEFAULT_WAIT_TIMEOUT,
+    wait_time_between_attempts=5,
+    start_time=None,
+):
+    return DagsterKubernetesClient.production_client().wait_for_job_to_have_pods(
+        job_name,
+        namespace,
+        wait_timeout=wait_timeout,
+        wait_time_between_attempts=wait_time_between_attempts,
+        start_time=start_time,
     )
 
 
@@ -74,6 +92,7 @@ def wait_for_running_job_to_succeed(
     wait_timeout=DEFAULT_WAIT_TIMEOUT,
     wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
     num_pods_to_wait_for=DEFAULT_JOB_POD_COUNT,
+    start_time=None,
 ):
     return DagsterKubernetesClient.production_client().wait_for_running_job_to_succeed(
         job_name,
@@ -83,6 +102,7 @@ def wait_for_running_job_to_succeed(
         wait_timeout,
         wait_time_between_attempts,
         num_pods_to_wait_for,
+        start_time,
     )
 
 
@@ -92,7 +112,13 @@ def wait_for_pod(
     wait_for_state=WaitForPodState.Ready,
     wait_timeout=DEFAULT_WAIT_TIMEOUT,
     wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    start_time=None,
 ):
     return DagsterKubernetesClient.production_client().wait_for_pod(
-        pod_name, namespace, wait_for_state, wait_timeout, wait_time_between_attempts
+        pod_name,
+        namespace,
+        wait_for_state,
+        wait_timeout,
+        wait_time_between_attempts,
+        start_time=start_time,
     )

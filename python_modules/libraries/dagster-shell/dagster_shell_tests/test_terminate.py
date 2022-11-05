@@ -68,7 +68,7 @@ def test_terminate_kills_subproc():
             external_pipeline = (
                 workspace.get_repository_location("test")
                 .get_repository("sleepy_repo")
-                .get_full_external_pipeline("sleepy_pipeline")
+                .get_full_external_job("sleepy_pipeline")
             )
             pipeline_run = instance.create_run_for_pipeline(
                 pipeline_def=sleepy_pipeline,

@@ -17,6 +17,7 @@ from .external import (
 from .external_data import (
     ExternalExecutionParamsData,
     ExternalExecutionParamsErrorData,
+    ExternalJobRef,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,

@@ -12,8 +12,8 @@ import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
+import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {Run} from './Run';
-import {RunAssetKeyTags} from './RunAssetKeyTags';
 import {RunConfigDialog, RunDetails} from './RunDetails';
 import {RunFragments} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
@@ -73,7 +73,7 @@ export const RunRoot = () => {
               <>
                 <RunStatusTag status={run.status} />
                 {isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <RunAssetKeyTags assetKeys={assetKeysForRun(run)} clickableTags />
+                  <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} clickableTags />
                 ) : (
                   <>
                     <Tag icon="run">
@@ -86,7 +86,7 @@ export const RunRoot = () => {
                         isJob={isJob}
                       />
                     </Tag>
-                    <RunAssetKeyTags assetKeys={run.assets.map((a) => a.key)} clickableTags />
+                    <AssetKeyTagCollection assetKeys={run.assets.map((a) => a.key)} clickableTags />
                   </>
                 )}
                 <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>

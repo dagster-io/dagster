@@ -43,6 +43,11 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
             "environment variables in the container."
         ),
     ),
+    "task_definition_arn": Field(
+        StringSource,
+        is_required=False,
+        description="ARN of the task definition to use to launch the container.",
+    ),
     **SHARED_ECS_SCHEMA,
 }
 
@@ -54,6 +59,7 @@ class EcsContainerContext(
             ("secrets", List[Any]),
             ("secrets_tags", List[str]),
             ("env_vars", List[str]),
+            ("task_definition_arn", Optional[str]),
         ],
     )
 ):
@@ -64,12 +70,14 @@ class EcsContainerContext(
         secrets: Optional[List[Any]] = None,
         secrets_tags: Optional[List[str]] = None,
         env_vars: Optional[List[str]] = None,
+        task_definition_arn: Optional[str] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
             secrets=check.opt_list_param(secrets, "secrets"),
             secrets_tags=check.opt_list_param(secrets_tags, "secrets_tags"),
             env_vars=check.opt_list_param(env_vars, "env_vars"),
+            task_definition_arn=check.opt_str_param(task_definition_arn, "task_definition_arn"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -77,6 +85,7 @@ class EcsContainerContext(
             secrets=other.secrets + self.secrets,
             secrets_tags=other.secrets_tags + self.secrets_tags,
             env_vars=other.env_vars + self.env_vars,
+            task_definition_arn=other.task_definition_arn or self.task_definition_arn,
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -98,6 +107,7 @@ class EcsContainerContext(
                     secrets=run_launcher.secrets,
                     secrets_tags=run_launcher.secrets_tags,
                     env_vars=run_launcher.env_vars,
+                    task_definition_arn=run_launcher.task_definition,  # run launcher converts this from short name to ARN in constructor
                 )
             )
 
@@ -146,5 +156,6 @@ class EcsContainerContext(
                 secrets=processed_context_value.get("secrets"),
                 secrets_tags=processed_context_value.get("secrets_tags"),
                 env_vars=processed_context_value.get("env_vars"),
+                task_definition_arn=processed_context_value.get("task_definition_arn"),
             )
         )

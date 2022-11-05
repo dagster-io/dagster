@@ -14,7 +14,7 @@ from dagster import (
     String,
 )
 from dagster import _check as check
-from dagster import build_op_context, io_manager, resource
+from dagster import build_op_context, io_manager, materialize_to_memory, resource
 from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,
@@ -22,7 +22,9 @@ from dagster._core.definitions import (
     build_assets_job,
     multi_asset,
 )
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.types.dagster_type import resolve_dagster_type
 
 
@@ -59,18 +61,24 @@ def test_asset_with_inputs():
 
 def test_asset_with_config_schema():
     @asset(config_schema={"foo": int})
-    def my_asset(arg1):
-        return arg1
+    def my_asset(context):
+        assert context.op_config["foo"] == 5
 
-    assert my_asset.op.config_schema
+    materialize_to_memory([my_asset], run_config={"ops": {"my_asset": {"config": {"foo": 5}}}})
+
+    with pytest.raises(DagsterInvalidConfigError):
+        materialize_to_memory([my_asset])
 
 
 def test_multi_asset_with_config_schema():
     @multi_asset(outs={"o1": AssetOut()}, config_schema={"foo": int})
-    def my_asset(arg1):
-        return arg1
+    def my_asset(context):
+        assert context.op_config["foo"] == 5
 
-    assert my_asset.op.config_schema
+    materialize_to_memory([my_asset], run_config={"ops": {"my_asset": {"config": {"foo": 5}}}})
+
+    with pytest.raises(DagsterInvalidConfigError):
+        materialize_to_memory([my_asset])
 
 
 def test_asset_with_compute_kind():
@@ -256,6 +264,15 @@ def test_asset_with_dagster_type():
         return arg1
 
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
+
+
+def test_asset_with_op_version():
+    @asset(op_version="foo")
+    def my_asset(arg1):
+        return arg1
+
+    assert my_asset.is_versioned
+    assert my_asset.op.version == "foo"
 
 
 def test_asset_with_key_prefix():
@@ -576,3 +593,29 @@ def test_asset_io_manager_def():
     # If IO manager def is provided as a resource def, it appears in required
     # resource keys on the underlying op.
     assert set(other_asset.node_def.required_resource_keys) == {"blah"}
+
+
+def test_asset_retry_policy():
+    retry_policy = RetryPolicy()
+
+    @asset(retry_policy=retry_policy)
+    def my_asset():
+        ...
+
+    assert my_asset.op.retry_policy == retry_policy
+
+
+def test_multi_asset_retry_policy():
+    retry_policy = RetryPolicy()
+
+    @multi_asset(
+        outs={
+            "key1": Out(asset_key=AssetKey("key1")),
+            "key2": Out(asset_key=AssetKey("key2")),
+        },
+        retry_policy=retry_policy,
+    )
+    def my_asset():
+        ...
+
+    assert my_asset.op.retry_policy == retry_policy

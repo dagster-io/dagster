@@ -538,6 +538,7 @@ def construct_dagster_k8s_job(
     pod_name=None,
     component=None,
     labels=None,
+    env_vars=None,
 ):
     """Constructs a Kubernetes Job object for a dagster-graphql invocation.
 
@@ -598,11 +599,11 @@ def construct_dagster_k8s_job(
     additional_labels = {k: sanitize_k8s_label(v) for k, v in (labels or {}).items()}
     dagster_labels = merge_dicts(k8s_common_labels, additional_labels)
 
-    env = (
-        [{"name": "DAGSTER_HOME", "value": job_config.dagster_home}]
-        if job_config.dagster_home
-        else []
-    )
+    env = env_vars or []
+
+    if job_config.dagster_home:
+        env.append({"name": "DAGSTER_HOME", "value": job_config.dagster_home})
+
     if job_config.postgres_password_secret:
         env.append(
             {

@@ -1,5 +1,7 @@
 import pytest
 import yaml
+from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
+from kubernetes import client as k8s_client
 from kubernetes.client import models
 from schema.charts.dagster.subschema.daemon import (
     Daemon,
@@ -7,6 +9,7 @@ from schema.charts.dagster.subschema.daemon import (
     RunCoordinator,
     RunCoordinatorConfig,
     RunCoordinatorType,
+    Schedules,
     Sensors,
     TagConcurrencyLimit,
 )
@@ -15,7 +18,7 @@ from schema.charts.dagster_user_deployments.subschema.user_deployments import Us
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
-from dagster._core.instance.config import sensors_daemon_config
+from dagster._core.instance.config import schedules_daemon_config, sensors_daemon_config
 
 from .utils import create_simple_user_deployment
 
@@ -217,7 +220,7 @@ def test_run_monitoring(
 
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
-    assert instance["run_monitoring"]["enabled"] == True
+    assert instance["run_monitoring"]["enabled"] is True
 
 
 def test_run_retries(
@@ -233,7 +236,7 @@ def test_run_retries(
 
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
-    assert instance["run_retries"]["enabled"] == True
+    assert instance["run_retries"]["enabled"] is True
 
 
 def test_daemon_labels(template: HelmTemplate):
@@ -252,6 +255,44 @@ def test_daemon_labels(template: HelmTemplate):
     assert set(pod_labels.items()).issubset(daemon_deployment.spec.template.metadata.labels.items())
 
 
+def test_daemon_volumes(template: HelmTemplate):
+    volumes = [
+        {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
+        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+    ]
+
+    volume_mounts = [
+        {
+            "name": "test-volume",
+            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+            "subPath": "volume_mounted_file.yaml",
+        }
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(volumes=volumes, volumeMounts=volume_mounts)
+    )
+
+    [daemon_deployment] = template.render(helm_values)
+
+    deployed_volume_mounts = daemon_deployment.spec.template.spec.containers[0].volume_mounts
+    assert deployed_volume_mounts[2:] == [
+        k8s_model_from_dict(
+            k8s_client.models.V1VolumeMount,
+            k8s_snake_case_dict(k8s_client.models.V1VolumeMount, volume_mount),
+        )
+        for volume_mount in volume_mounts
+    ]
+
+    deployed_volumes = daemon_deployment.spec.template.spec.volumes
+    assert deployed_volumes[2:] == [
+        k8s_model_from_dict(
+            k8s_client.models.V1Volume, k8s_snake_case_dict(k8s_client.models.V1Volume, volume)
+        )
+        for volume in volumes
+    ]
+
+
 def test_sensor_threading(instance_template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
@@ -267,8 +308,27 @@ def test_sensor_threading(instance_template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     sensors_config = instance["sensors"]
     assert sensors_config.keys() == sensors_daemon_config().config_type.fields.keys()
-    assert instance["sensors"]["use_threads"] == True
+    assert instance["sensors"]["use_threads"] is True
     assert instance["sensors"]["num_workers"] == 4
+
+
+def test_scheduler_threading(instance_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            schedules=Schedules.construct(
+                useThreads=True,
+                numWorkers=4,
+            )
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    schedules_config = instance["schedules"]
+    assert schedules_config.keys() == schedules_daemon_config().config_type.fields.keys()
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
 
 
 def test_scheduler_name(template: HelmTemplate):

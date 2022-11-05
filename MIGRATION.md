@@ -9,7 +9,7 @@ When new releases include breaking changes or deprecations, this document descri
 - **All submodules of dagster have been marked private.** We currently provide aliasing to avoid incurring linting errors, but in a future 1.x release, this will be removed, and imports from submodules of dagster may incur errors.
 - The `dagster.experimental` submodule has been deleted, which previously contained dynamic output APIs, which are available from the top level of the `dagster` module.
 - As of 1.0, **Dagster no longer guarantees support for python 3.6.** This is in line with [PEP 494](https://peps.python.org/pep-0494/), which outlines that 3.6 has reached end of life.
-- Dagster’s  integration libraries haven’t yet achieved the same API maturity as Dagster core. For this reason, all integration libraries will remain on a pre-1.0 (0.16.x) versioning track for the time being. However, 0.16.x library releases remain fully compatible with Dagster 1.x. In the coming months, we will graduate integration libraries one-by-one to the 1.x versioning track as they achieve API maturity. If you have installs of the form:
+- Dagster’s integration libraries haven’t yet achieved the same API maturity as Dagster core. For this reason, all integration libraries will remain on a pre-1.0 (0.16.x) versioning track for the time being. However, 0.16.x library releases remain fully compatible with Dagster 1.x. In the coming months, we will graduate integration libraries one-by-one to the 1.x versioning track as they achieve API maturity. If you have installs of the form:
 
 ```
 pip install dagster=={DAGSTER_VERSION} dagster-somelibrary=={DAGSTER_VERSION}
@@ -24,6 +24,7 @@ pip install dagster=={DAGSTER_VERSION} dagster-somelibrary
 to make sure the correct library version is installed.
 
 ### Legacy API Removals
+
 - Dagster's legacy APIs, which were marked "legacy" in 0.13.0, have been removed. This includes `@solid`, `SolidDefinition`, `@pipeline`, `PipelineDefinition`, `@composite_solid`, `CompositeSolidDefinition`, `ModeDefinition`, `PresetDefinition`, `PartitionSetDefinition`, `InputDefinition`, `OutputDefinition`, `DynamicOutputDefinition`, `pipeline_failure_sensor`, `@hourly_schedule`, `@daily_schedule`, `@weekly_schedule`, and `@monthly_schedule`. [Here is a guide](https://docs.dagster.io/0.15.6/guides/dagster/graph_job_op) to migrating from the legacy APIs to the stable APIs.
 - Deprecated arguments to library ops have been switched to reflect stable APIs. This includes `input_defs`/`output_defs` arguments on `define_dagstermill_op`, which have been changed to `ins`/`outs` respectively, and `input_defs` argument on `create_shell_script_op`, which has been changed to `ins`.
 - The `pipeline_selection` argument has been removed from `run_failure_sensor` and related decorators / functions, and `job_selection` has been deprecated. Instead, use `monitored_jobs`.
@@ -35,15 +36,17 @@ to make sure the correct library version is installed.
 - The deprecated `partition_mappings` arguments on `@asset` and `@multi_asset` have been removed. Instead, user the `partition_mapping` argument the corresponding `AssetIn`s.
 - The deprecated `namespace` arguments on `@asset` and `AssetIn` have been removed. Instead, use the `key_prefix` argument.
 - The `input_defs` and `output_defs` arguments on [OpDefinition](https://docs.dagster.io/_apidocs/ops#dagster.OpDefinition) have been removed, and replaced with `ins` and `outs` arguments. `input_defs`/`output_defs` have been deprecated since 0.13.0.
-- The `preset_defs` argument on [JobDefinition](https://docs.dagster.io/_apidocs/jobs#dagster.JobDefinition) has been removed. When constructing a `JobDefinition` directly, config can be provided using the `config` argument instead.  `preset_defs` has been deprecated since 0.13.0.
+- The `preset_defs` argument on [JobDefinition](https://docs.dagster.io/_apidocs/jobs#dagster.JobDefinition) has been removed. When constructing a `JobDefinition` directly, config can be provided using the `config` argument instead. `preset_defs` has been deprecated since 0.13.0.
 - `EventMetadata` and `EventMetadataEntryData` APIs have been removed. Instead, metadata should be specified using the [MetadataValue](https://docs.dagster.io/_apidocs/ops#dagster.MetadataValue) APIs.
 - APIs referencing pipelines/solids in extension libraries have been removed. This includes `define_dagstermill_solid`, `make_dagster_pipeline_from_airflow_dag`, `create_databricks_job_solid`, the various `dbt_cli_*` and `dbt_rpc_*` solids, `bq_solid_for_queries`, `ge_validation_solid_factory`, `end_mlflow_run_on_pipeline_finished`, the various `shell_command_solid` APIs, `make_slack_on_pipeline_failure_sensor`, `snowflake_solid_for_query`, `end_mlflow_run_on_pipeline_finished`, and `create_spark_solid`.
 - `custom_path_fs_io_manager` has been removed, as its functionality is entirely subsumed by the `fs_io_manager`, where a custom path can be specified via config.
 
 ### Removed API List
+
 This serves as an exhaustive list of the removed APIs.
 
 From the main Dagster module:
+
 - `AssetGroup`
 - `DagsterPipelineRunMetadataValue`
 - `CompositeSolidDefinition`
@@ -92,6 +95,7 @@ From the main Dagster module:
 - `custom_path_fs_io_manager`
 
 From libraries (APIs removed in 0.16.0 onwards):
+
 - `dagster_airflow.make_dagster_pipeline_from_airflow_dag`
 - `dagster_databricks.create_databricks_job_solid`
 - `dagster_dbt.dbt_cli_compile`
@@ -124,7 +128,7 @@ From libraries (APIs removed in 0.16.0 onwards):
 
 ## Migrating to 0.15.0
 
-All items below are breaking changes unless marked with *(deprecation)*.
+All items below are breaking changes unless marked with _(deprecation)_.
 
 ### Software-defined assets
 
@@ -132,14 +136,14 @@ This release marks the official transition of software-defined assets from exper
 
 - Support for adding tags to asset materializations, which was previously marked as experimental, has been removed.
 - Some of the properties of the previously-experimental AssetsDefinition class have been renamed. group_names is now group_names_by_key, asset_keys_by_input_name is now keys_by_input_name, and asset_keys_by_output_name is now keys_by_output_name, asset_key is now key, and asset_keys is now keys.
-- fs_asset_io_manager has been removed in favor of merging its functionality with fs_io_manager. fs_io_manager is now the default IO manager for asset jobs, and will store asset outputs in a directory named with the asset key.  Similarly, removed adls2_pickle_asset_io_manager, gcs_pickle_asset_io_manager , and s3_pickle_asset_io_manager. Instead, adls2_pickle_io_manager, gcs_pickle_io_manager , and s3_pickle_io_manager now support software-defined assets.
-- *(deprecation)* The namespace argument on the @asset decorator and AssetIn has been deprecated. Users should use key_prefix instead.
-- *(deprecation)* AssetGroup has been deprecated. Users should instead place assets directly on repositories, optionally attaching resources using with_resources. Asset jobs should be defined using define_assets_job (replacing AssetGroup.build_job), and arbitrary sets of assets can be materialized using the standalone function materialize (replacing AssetGroup.materialize).
-- *(deprecation)* The outs property of the previously-experimental @multi_asset decorator now prefers a dictionary whose values are AssetOut objects instead of a dictionary whose values are Out objects. The latter still works, but is deprecated.
+- fs_asset_io_manager has been removed in favor of merging its functionality with fs_io_manager. fs_io_manager is now the default IO manager for asset jobs, and will store asset outputs in a directory named with the asset key. Similarly, removed adls2_pickle_asset_io_manager, gcs_pickle_asset_io_manager , and s3_pickle_asset_io_manager. Instead, adls2_pickle_io_manager, gcs_pickle_io_manager , and s3_pickle_io_manager now support software-defined assets.
+- _(deprecation)_ The namespace argument on the @asset decorator and AssetIn has been deprecated. Users should use key_prefix instead.
+- _(deprecation)_ AssetGroup has been deprecated. Users should instead place assets directly on repositories, optionally attaching resources using with_resources. Asset jobs should be defined using define_asset_job (replacing AssetGroup.build_job), and arbitrary sets of assets can be materialized using the standalone function materialize (replacing AssetGroup.materialize).
+- _(deprecation)_ The outs property of the previously-experimental @multi_asset decorator now prefers a dictionary whose values are AssetOut objects instead of a dictionary whose values are Out objects. The latter still works, but is deprecated.
 
 ### Event records
 
-- The get_event_records method on DagsterInstance now requires a non-None argument event_records_filter.  Passing a None value for the event_records_filter argument will now raise an exception where previously it generated a deprecation warning.
+- The get_event_records method on DagsterInstance now requires a non-None argument event_records_filter. Passing a None value for the event_records_filter argument will now raise an exception where previously it generated a deprecation warning.
 - Removed methods events_for_asset_key and get_asset_events, which have been deprecated since 0.12.0.
 
 ### Extension libraries
@@ -157,17 +161,20 @@ This release marks the official transition of software-defined assets from exper
 ## Migrating to 0.14.0
 
 If migrating from below 0.13.17, you can run
+
 ```
 dagster instance migrate
 ```
+
 This optional migration makes performance improvements to the runs page in Dagit.
 
 ### Breaking Changes
 
 - The Dagster Daemon now uses the same workspace.yaml file as Dagit to locate your Dagster code. You should ensure that if you make any changes to your workspace.yaml file, they are included in both Dagit’s copy and the Dagster Daemon’s copy. When you make changes to the workspace.yaml file, you don’t need to restart either Dagit or the Dagster Daemon - in Dagit, you can reload the workspace from the Workspace tab, and the Dagster Daemon will periodically check the workspace.yaml file for changes every 60 seconds. If you are using the Dagster Helm chart, no changes are required to include the workspace in the Dagster Daemon.
 - In previous releases, it was possible to supply either an AssetKey, or a function that produced an AssetKey from an OutputContext as the asset_key argument to an Out/OutputDefinition. The latter behavior makes it impossible to gain information about these relationships without running a job, and has been deprecated. However, we still support supplying a static AssetKey as an argument.
-- We have renamed many of the core APIs that interact with ScheduleStorage, which keeps track of sensor/schedule state and ticks.  The old term for the generic schedule/sensor “job” has been replaced by the term “instigator” in order to avoid confusion with the execution API introduced in 0.12.0.  If you have implemented your own schedule storage, you may need to change your method signatures appropriately.
+- We have renamed many of the core APIs that interact with ScheduleStorage, which keeps track of sensor/schedule state and ticks. The old term for the generic schedule/sensor “job” has been replaced by the term “instigator” in order to avoid confusion with the execution API introduced in 0.12.0. If you have implemented your own schedule storage, you may need to change your method signatures appropriately.
 - Dagit is now powered by Starlette instead of Flask. If you have implemented a custom run coordinator, you may need to make the following change:
+
   ```python
   from flask import has_request_context, request
 
@@ -176,11 +183,14 @@ This optional migration makes performance improvements to the runs page in Dagit
           request.headers.get("X-Amzn-Oidc-Data", None) if has_request_context() else None
       )
   ```
+
   Should be replaced by:
+
   ```python
   def submit_run(self, context: SubmitRunContext) -> PipelineRun:
       jwt_claims_header = context.get_request_header("X-Amzn-Oidc-Data")
   ```
+
 - The Dagster Daemon now requires a workspace.yaml file, much like Dagit.
 - Ellipsis (“...”) is now an invalid substring of a partition key. This is because Dagit accepts an ellipsis to specify partition ranges.
 - [Helm] The Dagster Helm chart now only supported Kubernetes clusters above version 1.18.
@@ -188,19 +198,20 @@ This optional migration makes performance improvements to the runs page in Dagit
 ### Deprecation: Metadata API Renames
 
 Dagster’s metadata API has undergone a signficant overhaul. Changes include:
-  - To reflect the fact that metadata can be specified on definitions in addition to events, the following names are changing. The old names are deprecated, and will function as aliases for the new names until 0.15.0:
-      - `EventMetadata` > `MetadataValue`
-      - `EventMetadataEntry` > `MetadataEntry`
-      - `XMetadataEntryData` > `XMetadataValue` (e.g. `TextMetadataEntryData` > `TextMetadataValue`)
-  - The `metadata_entries` keyword argument to events and Dagster types is deprecated. Instead, users should use the metadata keyword argument, which takes a dictionary mapping string labels to `MetadataValue`s.
-  - Arbitrary metadata on In/InputDefinition and Out/OutputDefinition is deprecated. In 0.15.0, metadata passed for these classes will need to be resolvable to `MetadataValue` (i.e. function like metadata everywhere else in Dagster).
-  - The description attribute of `EventMetadataEntry` is deprecated.
-  - The static API of `EventMetadataEntry` (e.g. `EventMetadataEntry.text`) is deprecated. In 0.15.0, users should avoid constructing `EventMetadataEntry` objects directly, instead utilizing the metadata dictionary keyword argument, which maps string labels to `MetadataValues`.
+
+- To reflect the fact that metadata can be specified on definitions in addition to events, the following names are changing. The old names are deprecated, and will function as aliases for the new names until 0.15.0:
+  - `EventMetadata` > `MetadataValue`
+  - `EventMetadataEntry` > `MetadataEntry`
+  - `XMetadataEntryData` > `XMetadataValue` (e.g. `TextMetadataEntryData` > `TextMetadataValue`)
+- The `metadata_entries` keyword argument to events and Dagster types is deprecated. Instead, users should use the metadata keyword argument, which takes a dictionary mapping string labels to `MetadataValue`s.
+- Arbitrary metadata on In/InputDefinition and Out/OutputDefinition is deprecated. In 0.15.0, metadata passed for these classes will need to be resolvable to `MetadataValue` (i.e. function like metadata everywhere else in Dagster).
+- The description attribute of `EventMetadataEntry` is deprecated.
+- The static API of `EventMetadataEntry` (e.g. `EventMetadataEntry.text`) is deprecated. In 0.15.0, users should avoid constructing `EventMetadataEntry` objects directly, instead utilizing the metadata dictionary keyword argument, which maps string labels to `MetadataValues`.
 
 ## Migrating to 0.13.0
 
 Jobs, ops, and graphs have replaced pipelines, solids, modes, and presets as the stable core of the
-system. [Here](https://docs.dagster.io/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs. 0.13.0 is still compatible with the pipeline, solid, mode, and preset APIs, which means that you don't need to migrate your code to upgrade to 0.13.0.
+system. [Here](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs. 0.13.0 is still compatible with the pipeline, solid, mode, and preset APIs, which means that you don't need to migrate your code to upgrade to 0.13.0.
 
 ## Migrating to 0.12.0
 
@@ -295,7 +306,7 @@ Instead of relying on system cron or k8s cron jobs, the `DaemonScheduler` uses t
 `dagster-daemon` service to run schedules. This requires running the `dagster-daemon` service as a
 part of your deployment.
 
-Refer to our [deployment documentation](https://docs.dagster.io/deploying) for a guides on how to
+Refer to our [deployment documentation](https://docs.dagster.io/deployment) for a guides on how to
 set up and run the daemon process for local development, Docker, or Kubernetes deployments.
 
 **If you are currently using the SystemCronScheduler or K8sScheduler:**
@@ -314,7 +325,7 @@ set up and run the daemon process for local development, Docker, or Kubernetes d
    the `DagsterDaemonScheduler` is automatically used as the default scheduler.
 
 3. Start the `dagster-daemon` process. Guides can be found in our
-   [deployment documentations](https://docs.dagster.io/deploying).
+   [deployment documentations](https://docs.dagster.io/deployment).
 
 See our [schedules troubleshooting guide](https://docs.dagster.io/troubleshooting/schedules) for
 help if you experience any problems with the new scheduler.
@@ -328,7 +339,7 @@ upgrading to 0.10.0.
 
 We have deprecated the intermediate storage machinery in favor of the new IO manager abstraction,
 which offers finer-grained control over how inputs and outputs are serialized and persisted. Check
-out the [IO Managers Overview](https://docs.dagster.io/0.10.0/overview/io-managers/io-managers) for
+out the [IO Managers Overview](https://docs.dagster.io/concepts/io-management/io-managers) for
 more information.
 
 #### Steps to Migrate

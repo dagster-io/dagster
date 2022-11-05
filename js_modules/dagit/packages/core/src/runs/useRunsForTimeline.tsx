@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {InstigationStatus, RunsFilter, RunStatus} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -17,31 +18,36 @@ import {RunTimelineQuery, RunTimelineQueryVariables} from './types/RunTimelineQu
 export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilter = {}) => {
   const [start, end] = range;
 
-  const {data, previousData, loading} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(
-    RUN_TIMELINE_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-      notifyOnNetworkStatusChange: true,
-      variables: {
-        inProgressFilter: {
-          ...runsFilter,
-          statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-          createdBefore: end / 1000.0,
-        },
-        terminatedFilter: {
-          ...runsFilter,
-          statuses: Array.from(doneStatuses),
-          createdBefore: end / 1000.0,
-          updatedAfter: start / 1000.0,
-        },
-      },
-    },
-  );
+  const startSec = start / 1000.0;
+  const endSec = end / 1000.0;
 
+  const queryData = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
+    fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true,
+    variables: {
+      inProgressFilter: {
+        ...runsFilter,
+        statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+        createdBefore: endSec,
+      },
+      terminatedFilter: {
+        ...runsFilter,
+        statuses: Array.from(doneStatuses),
+        createdBefore: endSec,
+        updatedAfter: startSec,
+      },
+      tickCursor: startSec,
+      ticksUntil: endSec,
+    },
+  });
+
+  const {data, previousData, loading} = queryData;
+
+  const initialLoading = loading && !data;
   const {unterminated, terminated, workspaceOrError} = data || previousData || {};
 
-  const runsByJob = React.useMemo(() => {
-    const map: {[jobName: string]: TimelineRun[]} = {};
+  const runsByJobKey = React.useMemo(() => {
+    const map: {[jobKey: string]: TimelineRun[]} = {};
     const now = Date.now();
 
     // fetch all the runs in the given range
@@ -50,6 +56,9 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
       ...(terminated?.__typename === 'Runs' ? terminated.results : []),
     ].forEach((run) => {
       if (!run.startTime) {
+        return;
+      }
+      if (!run.repositoryOrigin) {
         return;
       }
 
@@ -65,8 +74,16 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
         return;
       }
 
-      map[run.pipelineName] = [
-        ...(map[run.pipelineName] || []),
+      const runJobKey = makeJobKey(
+        {
+          name: run.repositoryOrigin.repositoryName,
+          location: run.repositoryOrigin.repositoryLocationName,
+        },
+        run.pipelineName,
+      );
+
+      map[runJobKey] = [
+        ...(map[runJobKey] || []),
         {
           id: run.id,
           status: run.status,
@@ -93,6 +110,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
         continue;
       }
 
+      const now = Date.now();
       for (const repository of locationEntry.locationOrLoadError.repositories) {
         const repoAddress = buildRepoAddress(
           repository.name,
@@ -100,8 +118,6 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
         );
 
         for (const pipeline of repository.pipelines) {
-          const jobKey = makeJobKey(repoAddress, pipeline.name);
-
           const schedules = (repository.schedules || []).filter(
             (schedule) => schedule.pipelineName === pipeline.name,
           );
@@ -111,23 +127,28 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
             if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
               schedule.futureTicks.results.forEach(({timestamp}) => {
                 const startTime = timestamp * 1000;
-                if (overlap({start, end}, {start: startTime, end: startTime})) {
+                if (startTime > now && overlap({start, end}, {start: startTime, end: startTime})) {
                   jobTicks.push({
                     id: `${schedule.pipelineName}-future-run-${timestamp}`,
                     status: 'SCHEDULED',
                     startTime,
-                    endTime: startTime + 10 * 1000,
+                    endTime: startTime + 5 * 1000,
                   });
                 }
               });
             }
           }
 
-          const jobRuns = runsByJob[pipeline.name] || [];
+          const isAdHoc = isHiddenAssetGroupJob(pipeline.name);
+          const jobKey = makeJobKey(repoAddress, pipeline.name);
+          const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
+
+          const jobRuns = runsByJobKey[jobKey] || [];
           if (jobTicks.length || jobRuns.length) {
             jobs.push({
               key: jobKey,
-              jobName: pipeline.name,
+              jobName,
+              jobType: isAdHoc ? 'asset' : 'job',
               repoAddress,
               path: workspacePipelinePath({
                 repoName: repoAddress.name,
@@ -136,7 +157,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
                 isJob: pipeline.isJob,
               }),
               runs: [...jobRuns, ...jobTicks],
-            });
+            } as TimelineJob);
           }
         }
       }
@@ -148,24 +169,38 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
     }, {} as {[jobKey: string]: number});
 
     return jobs.sort((a, b) => earliest[a.key] - earliest[b.key]);
-  }, [workspaceOrError, runsByJob, start, end]);
+  }, [workspaceOrError, runsByJobKey, start, end]);
 
-  return {
-    jobs: jobsWithRuns,
-    loading: loading && !data && !previousData,
-  };
+  return React.useMemo(
+    () => ({
+      jobs: jobsWithRuns,
+      initialLoading,
+      queryData,
+    }),
+    [initialLoading, jobsWithRuns, queryData],
+  );
 };
 
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
   `${jobName}-${repoAddressAsString(repoAddress)}`;
 
 const RUN_TIMELINE_QUERY = gql`
-  query RunTimelineQuery($inProgressFilter: RunsFilter!, $terminatedFilter: RunsFilter!) {
+  query RunTimelineQuery(
+    $inProgressFilter: RunsFilter!
+    $terminatedFilter: RunsFilter!
+    $tickCursor: Float
+    $ticksUntil: Float
+  ) {
     unterminated: runsOrError(filter: $inProgressFilter) {
       ... on Runs {
         results {
           id
           pipelineName
+          repositoryOrigin {
+            id
+            repositoryName
+            repositoryLocationName
+          }
           ...RunTimeFragment
         }
       }
@@ -175,6 +210,11 @@ const RUN_TIMELINE_QUERY = gql`
         results {
           id
           pipelineName
+          repositoryOrigin {
+            id
+            repositoryName
+            repositoryLocationName
+          }
           ...RunTimeFragment
         }
       }

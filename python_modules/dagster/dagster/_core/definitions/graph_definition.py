@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -407,9 +407,7 @@ class GraphDefinition(NodeDefinition):
     T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
 
     def resolve_output_to_origin(
-        self,
-        output_name: str,
-        handle: Optional[NodeHandle],
+        self, output_name: str, handle: Optional[NodeHandle]
     ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
         check.str_param(output_name, "output_name")
         check.opt_inst_param(handle, "handle", NodeHandle)
@@ -421,6 +419,13 @@ class GraphDefinition(NodeDefinition):
             mapping.maps_from.output_name,
             NodeHandle(mapped_solid.name, handle),  # type: ignore
         )
+
+    def resolve_output_to_origin_op_def(self, output_name: str) -> "SolidDefinition":
+        mapping = self.get_output_mapping(output_name)
+        check.invariant(mapping, "Can only resolve outputs for valid output names")
+        return self.solid_named(
+            mapping.maps_from.solid_name
+        ).definition.resolve_output_to_origin_op_def(output_name)
 
     def default_value_for_input(self, input_name: str) -> object:
         check.str_param(input_name, "input_name")
@@ -807,6 +812,8 @@ def _validate_in_mappings(
     input_defs_by_name: Dict[str, InputDefinition] = OrderedDict()
     mapping_keys = set()
 
+    target_input_types_by_graph_input_name: Dict[str, Set[DagsterType]] = defaultdict(set)
+
     for mapping in input_mappings:
         # handle incorrect objects passed in as mappings
         if not isinstance(mapping, InputMapping):
@@ -857,6 +864,9 @@ def _validate_in_mappings(
                     f"the MultiDependencyDefinition is not a MappedInputPlaceholder"
                 )
             mapping_keys.add(f"{maps_to.node_name}.{maps_to.input_name}.{maps_to.fan_in_index}")
+            target_input_types_by_graph_input_name[mapping.graph_input_name].add(
+                target_input_def.dagster_type.get_inner_type_for_fan_in()
+            )
         else:
             if dependency_structure.has_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
@@ -866,6 +876,9 @@ def _validate_in_mappings(
                 )
 
             mapping_keys.add(f"{mapping.maps_to.node_name}.{mapping.maps_to.input_name}")
+            target_input_types_by_graph_input_name[mapping.graph_input_name].add(
+                target_input_def.dagster_type
+            )
 
     for input_handle in dependency_structure.input_handles():
         if dependency_structure.has_fan_in_deps(input_handle):
@@ -877,6 +890,16 @@ def _validate_in_mappings(
                             f"Unsatisfied MappedInputPlaceholder at index {idx} in "
                             f"MultiDependencyDefinition for '{input_handle.node_name}.{input_handle.input_name}'"
                         )
+
+    # if the dagster type on a graph input is Any and all its target inputs have the
+    # same dagster type, then use that dagster type for the graph input
+    for graph_input_name, graph_input_def in input_defs_by_name.items():
+        if graph_input_def.dagster_type.kind == DagsterTypeKind.ANY:
+            target_input_types = target_input_types_by_graph_input_name[graph_input_name]
+            if len(target_input_types) == 1:
+                input_defs_by_name[graph_input_name] = graph_input_def.with_dagster_type(
+                    next(iter(target_input_types))
+                )
 
     return list(input_defs_by_name.values())
 

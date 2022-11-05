@@ -183,6 +183,9 @@ class DagsterType(RequiresResources):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __hash__(self):
+        return hash(self.key)
+
     @staticmethod
     def from_builtin_enum(builtin_enum) -> "DagsterType":
         check.invariant(BuiltinEnum.contains(builtin_enum), "must be member of BuiltinEnum")

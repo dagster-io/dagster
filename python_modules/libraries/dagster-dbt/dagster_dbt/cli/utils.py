@@ -136,14 +136,10 @@ def execute_cli(
     raw_output = "\n\n".join(raw_output)
 
     if return_code == 2:
-        raise DagsterDbtCliFatalRuntimeError(
-            logs=json_lines, raw_output=raw_output, messages=messages
-        )
+        raise DagsterDbtCliFatalRuntimeError(messages=messages)
 
     if return_code == 1 and not ignore_handled_error:
-        raise DagsterDbtCliHandledRuntimeError(
-            logs=json_lines, raw_output=raw_output, messages=messages
-        )
+        raise DagsterDbtCliHandledRuntimeError(messages=messages)
 
     run_results = (
         parse_run_results(flags_dict["project-dir"], target_path)

@@ -209,7 +209,7 @@ class FivetranResource:
         return connector_details
 
     def start_resync(
-        self, connector_id: str, resync_parameters: Dict[str, List[str]]
+        self, connector_id: str, resync_parameters: Optional[Dict[str, List[str]]] = None
     ) -> Dict[str, Any]:
         """
         Initiates a historical sync of all data for multiple schema tables within a Fivetran connector.
@@ -217,8 +217,8 @@ class FivetranResource:
         Args:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
                 "Setup" tab of a given connector in the Fivetran UI.
-            resync_parameters (Dict[str, List[str]]): The resync parameters to send to the Fivetran API.
-                An example payload can be found here: https://fivetran.com/docs/rest-api/connectors#request_6
+            resync_parameters (Optional[Dict[str, List[str]]]): Optional resync parameters to send to the Fivetran API.
+                An example payload can be found here: https://fivetran.com/docs/rest-api/connectors#request_7
 
         Returns:
             Dict[str, Any]: Parsed json data representing the connector details API response after
@@ -230,8 +230,10 @@ class FivetranResource:
         self._assert_syncable_connector(connector_id)
         self.make_request(
             method="POST",
-            endpoint=f"{connector_id}/schemas/tables/resync",
-            data=json.dumps(resync_parameters),
+            endpoint=f"{connector_id}/schemas/tables/resync"
+            if resync_parameters is not None
+            else f"{connector_id}/resync",
+            data=json.dumps(resync_parameters) if resync_parameters is not None else None,
         )
         connector_details = self.get_connector_details(connector_id)
         self._log.info(
@@ -334,9 +336,9 @@ class FivetranResource:
     def resync_and_poll(
         self,
         connector_id: str,
-        resync_parameters: Dict[str, List[str]],
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
+        resync_parameters: Optional[Dict[str, List[str]]] = None,
     ) -> FivetranOutput:
         """
         Initializes a historical resync operation for the given connector, and polls until it completes.

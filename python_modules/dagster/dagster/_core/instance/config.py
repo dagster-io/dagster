@@ -141,7 +141,7 @@ def python_logs_config_schema():
     )
 
 
-DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 60
+DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 180
 
 
 def get_default_tick_retention_settings(
@@ -225,6 +225,16 @@ def sensors_daemon_config():
     )
 
 
+def schedules_daemon_config():
+    return Field(
+        {
+            "use_threads": Field(Bool, is_required=False, default_value=False),
+            "num_workers": Field(int, is_required=False),
+        },
+        is_required=False,
+    )
+
+
 def dagster_instance_config_schema():
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
@@ -264,4 +274,5 @@ def dagster_instance_config_schema():
         ),
         "retention": retention_config_schema(),
         "sensors": sensors_daemon_config(),
+        "schedules": schedules_daemon_config(),
     }

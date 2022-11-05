@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, cast
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr, experimental, public
 from dagster._serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._utils import frozenlist
 
 # ########################
 # ##### TABLE RECORD
@@ -115,10 +116,21 @@ class TableSchema(
     ):
         return super(TableSchema, cls).__new__(
             cls,
-            columns=check.list_param(columns, "columns", of_type=TableColumn),
+            columns=frozenlist(check.list_param(columns, "columns", of_type=TableColumn)),
             constraints=check.opt_inst_param(
                 constraints, "constraints", TableConstraints, default=_DEFAULT_TABLE_CONSTRAINTS
             ),
+        )
+
+    @public
+    @staticmethod
+    def from_name_type_dict(name_type_dict: Mapping[str, str]):
+        """
+        Constructs a TableSchema from a dictionary whose keys are column names and values are the
+        names of data types of those columns.
+        """
+        return TableSchema(
+            columns=[TableColumn(name=name, type=type) for name, type in name_type_dict.items()]
         )
 
 
@@ -151,7 +163,7 @@ class TableConstraints(
     ):
         return super(TableConstraints, cls).__new__(
             cls,
-            other=check.list_param(other, "other", of_type=str),
+            other=frozenlist(check.list_param(other, "other", of_type=str)),
         )
 
 
@@ -249,7 +261,7 @@ class TableColumnConstraints(
             cls,
             nullable=check.bool_param(nullable, "nullable"),
             unique=check.bool_param(unique, "unique"),
-            other=check.opt_list_param(other, "other"),
+            other=frozenlist(check.opt_list_param(other, "other")),
         )
 
 

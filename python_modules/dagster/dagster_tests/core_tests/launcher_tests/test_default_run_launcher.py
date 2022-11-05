@@ -156,7 +156,7 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("noop_pipeline")
+        .get_full_external_job("noop_pipeline")
     )
 
     pipeline_run = instance.create_run_for_pipeline(
@@ -177,6 +177,89 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
 
     pipeline_run = poll_for_finished_run(instance, run_id)
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
+
+
+def test_successful_run_from_pending(
+    instance, pending_workspace
+):  # pylint: disable=redefined-outer-name
+
+    repo_location = pending_workspace.get_repository_location("test2")
+    external_pipeline = repo_location.get_repository("pending").get_full_external_job(
+        "my_cool_asset_job"
+    )
+    external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline=external_pipeline,
+        run_config={},
+        mode="default",
+        step_keys_to_execute=None,
+        known_state=None,
+    )
+
+    call_counts = instance.run_storage.kvs_get(
+        {
+            "compute_cacheable_data_called_a",
+            "compute_cacheable_data_called_b",
+            "get_definitions_called_a",
+            "get_definitions_called_b",
+        }
+    )
+    assert call_counts.get("compute_cacheable_data_called_a") == "1"
+    assert call_counts.get("compute_cacheable_data_called_b") == "1"
+    assert call_counts.get("get_definitions_called_a") == "1"
+    assert call_counts.get("get_definitions_called_b") == "1"
+
+    created_pipeline_run = instance.create_run(
+        pipeline_name="my_cool_asset_job",
+        run_id="xyzabc",
+        run_config=None,
+        mode="default",
+        solids_to_execute=None,
+        step_keys_to_execute=None,
+        status=None,
+        tags=None,
+        root_run_id=None,
+        parent_run_id=None,
+        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )
+
+    run_id = created_pipeline_run.run_id
+
+    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+
+    instance.launch_run(run_id=run_id, workspace=pending_workspace)
+
+    stored_pipeline_run = instance.get_run_by_id(run_id)
+    assert created_pipeline_run.run_id == stored_pipeline_run.run_id
+    assert (
+        created_pipeline_run.execution_plan_snapshot_id
+        == stored_pipeline_run.execution_plan_snapshot_id
+    )
+    assert (
+        created_pipeline_run.has_repository_load_data
+        and stored_pipeline_run.has_repository_load_data
+    )
+
+    finished_pipeline_run = poll_for_finished_run(instance, run_id)
+    assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+
+    call_counts = instance.run_storage.kvs_get(
+        {
+            "compute_cacheable_data_called_a",
+            "compute_cacheable_data_called_b",
+            "get_definitions_called_a",
+            "get_definitions_called_b",
+        }
+    )
+    assert call_counts.get("compute_cacheable_data_called_a") == "1"
+    assert call_counts.get("compute_cacheable_data_called_b") == "1"
+    # once at initial load time, once inside the run launch process, once for each (3) subprocess
+    # upper bound of 5 here because race conditions result in lower count sometimes
+    assert int(call_counts.get("get_definitions_called_a")) < 6
+    assert int(call_counts.get("get_definitions_called_b")) < 6
 
 
 def test_invalid_instance_run():
@@ -212,7 +295,7 @@ def test_invalid_instance_run():
                         external_pipeline = (
                             workspace.get_repository_location("test")
                             .get_repository("nope")
-                            .get_full_external_pipeline("noop_pipeline")
+                            .get_full_external_job("noop_pipeline")
                         )
 
                         pipeline_run = instance.create_run_for_pipeline(
@@ -246,7 +329,7 @@ def test_crashy_run(instance, workspace, run_config):  # pylint: disable=redefin
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("crashy_pipeline")
+        .get_full_external_job("crashy_pipeline")
     )
 
     pipeline_run = instance.create_run_for_pipeline(
@@ -289,7 +372,7 @@ def test_exity_run(run_config, instance, workspace):  # pylint: disable=redefine
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("exity_pipeline")
+        .get_full_external_job("exity_pipeline")
     )
 
     pipeline_run = instance.create_run_for_pipeline(
@@ -330,7 +413,7 @@ def test_terminated_run(instance, workspace, run_config):  # pylint: disable=red
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("sleepy_pipeline")
+        .get_full_external_job("sleepy_pipeline")
     )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=sleepy_pipeline,
@@ -404,7 +487,7 @@ def test_cleanup_after_force_terminate(run_config, instance, workspace):
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("sleepy_pipeline")
+        .get_full_external_job("sleepy_pipeline")
     )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=sleepy_pipeline,
@@ -503,7 +586,7 @@ def test_single_solid_selection_execution(
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("math_diamond")
+        .get_full_external_job("math_diamond")
     )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=math_diamond,
@@ -540,7 +623,7 @@ def test_multi_solid_selection_execution(
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("math_diamond")
+        .get_full_external_job("math_diamond")
     )
 
     pipeline_run = instance.create_run_for_pipeline(
@@ -577,7 +660,7 @@ def test_engine_events(instance, workspace, run_config):  # pylint: disable=rede
     external_pipeline = (
         workspace.get_repository_location("test")
         .get_repository("nope")
-        .get_full_external_pipeline("math_diamond")
+        .get_full_external_job("math_diamond")
     )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=math_diamond,

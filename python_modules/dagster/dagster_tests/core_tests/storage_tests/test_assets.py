@@ -95,7 +95,7 @@ def test_backcompat_asset_materializations():
         assert isinstance(event, EventLogEntry)
         assert event.dagster_event
         assert event.dagster_event.is_step_materialization
-        assert event.dagster_event.step_materialization_data.materialization.asset_key == asset_key
+        assert event.dagster_event.materialization.asset_key == asset_key
 
     a = AssetKey("a")
     b = AssetKey("b")
@@ -109,6 +109,9 @@ def test_backcompat_asset_materializations():
             assert a_mat is None
 
             b_mat = storage.get_latest_materialization_events([b]).get(b)
+            _validate_materialization(b, b_mat)
+
+            b_mat = instance.get_latest_materialization_event(b)
             _validate_materialization(b, b_mat)
 
             c_mat = storage.get_latest_materialization_events([c]).get(c)
@@ -148,7 +151,7 @@ def test_backcompat_get_asset_records():
         assert isinstance(event, EventLogEntry)
         assert event.dagster_event
         assert event.dagster_event.is_step_materialization
-        assert event.dagster_event.step_materialization_data.materialization.asset_key == asset_key
+        assert event.dagster_event.materialization.asset_key == asset_key
 
     b = AssetKey("b")
 

@@ -5,7 +5,7 @@ import * as Flags from '../app/Flags';
 import {TestProvider} from '../testing/TestProvider';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {JobMetadata, useJobNavMetadata} from './JobMetadata';
+import {JobMetadata} from './JobMetadata';
 
 jest.mock('../app/Flags');
 
@@ -70,10 +70,7 @@ describe('JobMetadata', () => {
   };
 
   const JobMetadataContainer = () => {
-    const metadata = useJobNavMetadata(REPO_ADDRESS, PIPELINE_NAME);
-    return (
-      <JobMetadata metadata={metadata} pipelineName={PIPELINE_NAME} repoAddress={REPO_ADDRESS} />
-    );
+    return <JobMetadata pipelineName={PIPELINE_NAME} repoAddress={REPO_ADDRESS} />;
   };
 
   const renderWithMocks = (mocks?: any) => {
@@ -117,7 +114,6 @@ describe('JobMetadata', () => {
         renderWithMocks(mocks);
 
         await waitFor(() => {
-          expect(screen.getByText(/schedule:/i)).toBeVisible();
           expect(screen.getByRole('link', {name: /every 5 minutes/i})).toBeVisible();
         });
       });
@@ -133,7 +129,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 2 schedules/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /2 schedules/i})).toBeVisible();
         });
       });
 
@@ -148,7 +144,6 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByText(/sensor:/i)).toBeVisible();
           expect(screen.getByRole('link', {name: /cool_sensor/i})).toBeVisible();
         });
       });
@@ -164,7 +159,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 2 sensors/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /2 sensors/i})).toBeVisible();
         });
       });
 
@@ -179,7 +174,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 4 schedules\/sensors/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /4 schedules\/sensors/i})).toBeVisible();
         });
       });
     });
@@ -226,7 +221,6 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.queryByText(/schedule:/i)).toBeNull();
           expect(screen.queryByRole('link', {name: /every 5 minutes/i})).toBeNull();
         });
       });
@@ -242,7 +236,6 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByText(/schedule:/i)).toBeVisible();
           expect(screen.getByRole('link', {name: /every 5 minutes/i})).toBeVisible();
         });
       });
@@ -258,7 +251,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 2 schedules/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /2 schedules/i})).toBeVisible();
         });
       });
 
@@ -273,7 +266,6 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByText(/sensor:/i)).toBeVisible();
           expect(screen.getByRole('link', {name: /cool_sensor/i})).toBeVisible();
         });
       });
@@ -289,7 +281,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 2 sensors/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /2 sensors/i})).toBeVisible();
         });
       });
 
@@ -304,7 +296,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 4 schedules\/sensors/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /4 schedules\/sensors/i})).toBeVisible();
         });
       });
     });

@@ -74,7 +74,7 @@ def add_selector_id_to_jobs_table(storage, print_fn=None):
             conn.execute(
                 JobTable.update()  # pylint: disable=no-value-for-parameter
                 .where(JobTable.c.id == row_id)
-                .where(JobTable.c.selector_id == None)
+                .where(JobTable.c.selector_id.is_(None))
                 .values(selector_id=state.selector_id)
             )
 
@@ -98,7 +98,7 @@ def add_selector_id_to_ticks_table(storage, print_fn=None):
             conn.execute(
                 JobTickTable.update()  # pylint: disable=no-value-for-parameter
                 .where(JobTickTable.c.job_origin_id == state.instigator_origin_id)
-                .where(JobTickTable.c.selector_id == None)
+                .where(JobTickTable.c.selector_id.is_(None))
                 .values(selector_id=state.selector_id)
             )
 

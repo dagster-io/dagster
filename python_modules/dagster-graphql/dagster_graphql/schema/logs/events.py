@@ -289,8 +289,12 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent,)
         name = "LogsCapturedEvent"
 
+    fileKey = graphene.NonNull(graphene.String)
+    # legacy name for compute log file key... required for back-compat reasons, but has been
+    # renamed to fileKey for newer versions of dagit
     logKey = graphene.NonNull(graphene.String)
     stepKeys = graphene.List(graphene.NonNull(graphene.String))
+    externalUrl = graphene.String()
     pid = graphene.Int()
 
 
@@ -405,7 +409,7 @@ class GrapheneAssetMaterializationPlannedEvent(graphene.ObjectType):
         super().__init__(**construct_basic_params(event))
 
     def resolve_assetKey(self, _graphene_info):
-        return self._event.dagster_event.asset_materialization_planned_data
+        return self._event.dagster_event.asset_materialization_planned_data.asset_key
 
     def resolve_runOrError(self, graphene_info):
         return get_run_by_id(graphene_info, self._event.run_id)

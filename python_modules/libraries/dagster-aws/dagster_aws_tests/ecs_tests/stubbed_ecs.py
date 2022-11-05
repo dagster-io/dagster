@@ -44,12 +44,12 @@ def stubbed(function):
                 self.stubber.deactivate()
                 self.stubber.assert_no_pending_responses()
             return copy.deepcopy(response)
-        except Exception as ex:
+        except Exception:
             # Exceptions should reset the stubber
             self.stub_count = 0
             self.stubber.deactivate()
             self.stubber = Stubber(self.client)
-            raise ex
+            raise
 
     return wrapper
 
@@ -274,10 +274,14 @@ class StubbedEcs:
 
         # Container definitions default to empty secret lists
         container_definitions = kwargs.get("containerDefinitions", [])
+
+        new_container_definitions = []
         for container_definition in container_definitions:
-            if not container_definition.get("secrets"):
-                container_definition["secrets"] = []
-        kwargs["containerDefinitions"] = container_definitions
+            new_container_definitions.append(
+                {**container_definition, "secrets": container_definition.get("secrets", [])}
+            )
+
+        kwargs["containerDefinitions"] = new_container_definitions
 
         if self._valid_cpu_and_memory(cpu=cpu, memory=memory):
             task_definition = {
@@ -496,5 +500,7 @@ class StubbedEcs:
             "1024": [str(i) for i in range(2048, 8192 + 1, 1024)],
             "2048": [str(i) for i in range(4096, 16384 + 1, 1024)],
             "4096": [str(i) for i in range(8192, 30720 + 1, 1024)],
+            "8192": [str(i) for i in range(16384, 61440 + 1, 4096)],
+            "16384": [str(i) for i in range(32768, 122880 + 1, 8192)],
         }
         return bool(memory in constraints.get(cpu, []))

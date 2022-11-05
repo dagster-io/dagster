@@ -259,6 +259,9 @@ class SolidDefinition(NodeDefinition):
     ) -> Tuple[OutputDefinition, T_Handle]:
         return self.output_def_named(output_name), handle
 
+    def resolve_output_to_origin_op_def(self, output_name: str) -> "SolidDefinition":
+        return self
+
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
     ) -> List[InputDefinition]:

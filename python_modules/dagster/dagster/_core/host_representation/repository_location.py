@@ -3,7 +3,7 @@ import sys
 import threading
 from abc import abstractmethod
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._api.get_server_id import sync_get_server_id
@@ -22,7 +22,8 @@ from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_
 from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import ExternalPipelineSubsetResult
@@ -32,7 +33,11 @@ from dagster._core.host_representation.external import (
     ExternalPipeline,
     ExternalRepository,
 )
-from dagster._core.host_representation.external_data import ExternalPartitionNamesData
+from dagster._core.host_representation.external_data import (
+    ExternalPartitionNamesData,
+    ExternalScheduleExecutionErrorData,
+    ExternalSensorExecutionErrorData,
+)
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.handle import PipelineHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
@@ -67,9 +72,7 @@ if TYPE_CHECKING:
         ExternalPartitionExecutionErrorData,
         ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
-        ExternalScheduleExecutionErrorData,
     )
-    from dagster._core.host_representation.external_data import ExternalSensorExecutionErrorData
 
 
 class RepositoryLocation(AbstractContextManager):
@@ -117,7 +120,7 @@ class RepositoryLocation(AbstractContextManager):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
@@ -129,15 +132,20 @@ class RepositoryLocation(AbstractContextManager):
         a solid selection is specified, which requires access to the underlying PipelineDefinition
         to generate the subsetted pipeline snapshot."""
         if not selector.solid_selection and not selector.asset_selection:
-            return self.get_repository(selector.repository_name).get_full_external_pipeline(
+            return self.get_repository(selector.repository_name).get_full_external_job(
                 selector.pipeline_name
             )
 
         repo_handle = self.get_repository(selector.repository_name).handle
 
-        return ExternalPipeline(
-            self.get_subset_external_pipeline_result(selector).external_pipeline_data, repo_handle
-        )
+        subset_result = self.get_subset_external_pipeline_result(selector)
+        external_data = subset_result.external_pipeline_data
+        if external_data is None:
+            check.failed(
+                f"Failed to fetch subset data, success: {subset_result.success} error: {subset_result.error}"
+            )
+
+        return ExternalPipeline(external_data, repo_handle)
 
     @abstractmethod
     def get_subset_external_pipeline_result(
@@ -170,7 +178,7 @@ class RepositoryLocation(AbstractContextManager):
         self,
         repository_handle: RepositoryHandle,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -181,7 +189,7 @@ class RepositoryLocation(AbstractContextManager):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time,
-    ) -> Union["ScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
+    ) -> "ScheduleExecutionData":
         pass
 
     @abstractmethod
@@ -193,7 +201,7 @@ class RepositoryLocation(AbstractContextManager):
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
-    ) -> Union["SensorExecutionData", "ExternalSensorExecutionErrorData"]:
+    ) -> "SensorExecutionData":
         pass
 
     @abstractmethod
@@ -281,15 +289,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
 
-        self._recon_repos = {
-            repo_name: self._loaded_repositories.get_recon_repo(repo_name)
-            for repo_name in self._repository_code_pointer_dict
-        }
-
-        self._repositories = {}
-        for repo_name in self._repository_code_pointer_dict:
-            recon_repo = self._loaded_repositories.get_recon_repo(repo_name)
-            repo_def = recon_repo.get_definition()
+        self._repositories: Dict[str, ExternalRepository] = {}
+        for repo_name, repo_def in self._loaded_repositories.definitions_by_name.items():
             self._repositories[repo_name] = external_repo_from_def(
                 repo_def,
                 RepositoryHandle(repository_name=repo_name, repository_location=self),
@@ -326,7 +327,12 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def get_reconstructable_pipeline(
         self, repository_name: str, name: str
     ) -> ReconstructablePipeline:
-        return self._recon_repos[repository_name].get_reconstructable_pipeline(name)
+        return self._loaded_repositories.reconstructables_by_name[
+            repository_name
+        ].get_reconstructable_pipeline(name)
+
+    def _get_repo_def(self, name: str) -> RepositoryDefinition:
+        return self._loaded_repositories.definitions_by_name[name]
 
     def get_repository(self, name: str) -> ExternalRepository:
         return self._repositories[name]
@@ -351,7 +357,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
         from dagster._grpc.impl import get_external_pipeline_subset_result
 
         return get_external_pipeline_subset_result(
-            self.get_reconstructable_pipeline(selector.repository_name, selector.pipeline_name),
+            self._get_repo_def(selector.repository_name),
+            selector.pipeline_name,
             selector.solid_selection,
             selector.asset_selection,
         )
@@ -361,14 +368,16 @@ class InProcessRepositoryLocation(RepositoryLocation):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        step_keys_to_execute = check.opt_nullable_sequence_param(
+            step_keys_to_execute, "step_keys_to_execute", of_type=str
+        )
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
@@ -376,7 +385,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
             pipeline=self.get_reconstructable_pipeline(
                 external_pipeline.repository_handle.repository_name, external_pipeline.name
             ).subset_for_execution_from_existing_pipeline(
-                external_pipeline.solids_to_execute, external_pipeline.asset_selection
+                external_pipeline.solids_to_execute,
+                external_pipeline.asset_selection,
             ),
             run_config=run_config,
             mode=mode,
@@ -399,7 +409,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(partition_name, "partition_name")
 
         return get_partition_config(
-            recon_repo=self._recon_repos[repository_handle.repository_name],
+            self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_name=partition_name,
         )
@@ -412,7 +422,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(partition_name, "partition_name")
 
         return get_partition_tags(
-            recon_repo=self._recon_repos[repository_handle.repository_name],
+            self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_name=partition_name,
         )
@@ -430,7 +440,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             )
 
         return get_partition_names(
-            recon_repo=self._recon_repos[external_partition_set.repository_handle],
+            self._get_repo_def(external_partition_set.repository_handle.repository_name),
             partition_set_name=external_partition_set.name,
         )
 
@@ -440,14 +450,14 @@ class InProcessRepositoryLocation(RepositoryLocation):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time,
-    ) -> Union["ScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
+    ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
         check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
 
-        return get_external_schedule_execution(
-            recon_repo=self._recon_repos[repository_handle.repository_name],
+        result = get_external_schedule_execution(
+            self._get_repo_def(repository_handle.repository_name),
             instance_ref=instance.get_ref(),
             schedule_name=schedule_name,
             scheduled_execution_timestamp=scheduled_execution_time.timestamp()
@@ -457,6 +467,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
             if scheduled_execution_time
             else None,
         )
+        if isinstance(result, ExternalScheduleExecutionErrorData):
+            raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+        return result
 
     def get_external_sensor_execution_data(
         self,
@@ -466,28 +480,28 @@ class InProcessRepositoryLocation(RepositoryLocation):
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
-    ) -> Union["SensorExecutionData", "ExternalSensorExecutionErrorData"]:
-        return get_external_sensor_execution(
-            self._recon_repos[repository_handle.repository_name],
+    ) -> "SensorExecutionData":
+        result = get_external_sensor_execution(
+            self._get_repo_def(repository_handle.repository_name),
             instance.get_ref(),
             name,
             last_completion_time,
             last_run_key,
             cursor,
         )
+        if isinstance(result, ExternalSensorExecutionErrorData):
+            raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+        return result
 
     def get_external_partition_set_execution_param_data(
         self,
         repository_handle: RepositoryHandle,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
-        check.list_param(partition_names, "partition_names", of_type=str)
-
         return get_partition_set_execution_param_data(
-            recon_repo=self._recon_repos[repository_handle.repository_name],
+            self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_names=partition_names,
         )
@@ -508,6 +522,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         heartbeat: Optional[bool] = False,
         watch_server: Optional[bool] = True,
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
+        grpc_metadata: Optional[List[Tuple[str, str]]] = None,
     ):
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
@@ -527,9 +542,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self._socket = check.opt_str_param(socket, "socket")
             self._host = check.str_param(host, "host")
             self._use_ssl = False
-
-        self._watch_thread_shutdown_event = None
-        self._watch_thread = None
 
         self._heartbeat_shutdown_event = None
         self._heartbeat_thread = None
@@ -552,6 +564,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
                 socket=self._socket,
                 host=self._host,
                 use_ssl=self._use_ssl,
+                metadata=grpc_metadata,
             )
             list_repositories_response = sync_list_repositories_grpc(self.client)
 
@@ -657,17 +670,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self._heartbeat_shutdown_event.set()
             self._heartbeat_shutdown_event = None
 
-        if self._watch_thread_shutdown_event:
-            self._watch_thread_shutdown_event.set()
-            self._watch_thread_shutdown_event = None
-
         if self._heartbeat_thread:
             self._heartbeat_thread.join()
             self._heartbeat_thread = None
-
-        if self._watch_thread:
-            self._watch_thread.join()
-            self._watch_thread = None
 
     @property
     def is_reload_supported(self) -> bool:
@@ -688,16 +693,22 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, Any],
         mode: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         run_config = check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
+
+        asset_selection = (
+            frozenset(check.opt_set_param(external_pipeline.asset_selection, "asset_selection"))
+            if external_pipeline.asset_selection is not None
+            else None
+        )
 
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self.client,
@@ -705,7 +716,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             run_config=run_config,
             mode=mode,
             pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
-            asset_selection=external_pipeline.asset_selection,
+            asset_selection=asset_selection,
             solid_selection=external_pipeline.solid_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
@@ -815,12 +826,8 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         self,
         repository_handle: RepositoryHandle,
         partition_set_name: str,
-        partition_names: List[str],
+        partition_names: Sequence[str],
     ) -> "ExternalPartitionSetExecutionParamData":
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
-        check.list_param(partition_names, "partition_names", of_type=str)
-
         return sync_get_external_partition_set_execution_param_data_grpc(
             self.client, repository_handle, partition_set_name, partition_names
         )

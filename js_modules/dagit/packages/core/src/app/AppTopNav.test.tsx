@@ -1,6 +1,7 @@
 import {act, render, screen, waitFor, within} from '@testing-library/react';
 import * as React from 'react';
 
+import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {TestProvider} from '../testing/TestProvider';
 import {InstigationStatus} from '../types/globalTypes';
 
@@ -44,13 +45,22 @@ describe('AppTopNav', () => {
     }),
   };
 
+  const Test: React.FC<{statusPolling?: Set<DeploymentStatusType>}> = ({
+    children,
+    statusPolling = new Set(['code-locations', 'daemons']),
+  }) => {
+    return <DeploymentStatusProvider include={statusPolling}>{children}</DeploymentStatusProvider>;
+  };
+
   it('renders top nav without error', async () => {
     render(
       <TestProvider
         apolloProps={{mocks: [defaultMocks]}}
         routerProps={{initialEntries: ['/workspace/my_repository@my_location']}}
       >
-        <AppTopNav searchPlaceholder="Test..." rightOfSearchBar={<div>RightOfSearchBar</div>} />
+        <Test>
+          <AppTopNav searchPlaceholder="Test..." rightOfSearchBar={<div>RightOfSearchBar</div>} />
+        </Test>
       </TestProvider>,
     );
 
@@ -58,7 +68,7 @@ describe('AppTopNav', () => {
       const runsLink = screen.getByRole('link', {name: /runs/i});
       expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
       expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
-      expect(screen.getByText('Status').closest('a')).toHaveAttribute('href', '/instance');
+      expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/instance');
       expect(screen.getByText('RightOfSearchBar')).toBeVisible();
     });
   });
@@ -68,7 +78,9 @@ describe('AppTopNav', () => {
       await act(async () => {
         render(
           <TestProvider apolloProps={{mocks: [defaultMocks]}}>
-            <AppTopNav searchPlaceholder="Test..." />
+            <Test>
+              <AppTopNav searchPlaceholder="Test..." />
+            </Test>
           </TestProvider>,
         );
       });
@@ -91,7 +103,9 @@ describe('AppTopNav', () => {
       await act(async () => {
         render(
           <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
-            <AppTopNav searchPlaceholder="Test..." />
+            <Test>
+              <AppTopNav searchPlaceholder="Test..." />
+            </Test>
           </TestProvider>,
         );
       });
@@ -139,47 +153,53 @@ describe('AppTopNav', () => {
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithoutSensor]}}
           >
-            <AppTopNav searchPlaceholder="Test..." showStatusWarningIcon={false} />
+            <Test>
+              <AppTopNav searchPlaceholder="Test..." />
+            </Test>
           </TestProvider>,
         );
       });
 
       expect(screen.getByText(/workspace/i)).toBeVisible();
-      const link = screen.getByRole('link', {name: /status/i});
+      const link = screen.getByRole('link', {name: /deployment/i});
       expect(within(link).queryByText(/warning/i)).toBeNull();
     });
 
-    it('shows status warning icon by default, if there are errors', async () => {
+    it('shows deployment warning icon by default, if there are errors', async () => {
       await act(async () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithSensor]}}
           >
-            <AppTopNav searchPlaceholder="Test..." />
+            <Test>
+              <AppTopNav searchPlaceholder="Test..." />
+            </Test>
           </TestProvider>,
         );
       });
 
       const link = screen.getByRole('link', {
-        name: /status warning/i,
+        name: /deployment warning/i,
       });
 
-      expect(within(link).getByText(/status/i)).toBeVisible();
+      expect(within(link).getByText(/deployment/i)).toBeVisible();
     });
 
-    it('does not show status warning icon if `showStatusWarningIcon` is false, even with errors', async () => {
+    it('does not show deployment warning icon if `statusPolling` does not include `daemons`, even with errors', async () => {
       await act(async () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithDaemonError, mocksWithSensor]}}
           >
-            <AppTopNav searchPlaceholder="Test..." showStatusWarningIcon={false} />
+            <Test statusPolling={new Set(['code-locations'])}>
+              <AppTopNav searchPlaceholder="Test..." />
+            </Test>
           </TestProvider>,
         );
       });
 
       expect(screen.getByText(/workspace/i)).toBeVisible();
-      const link = screen.getByRole('link', {name: /status/i});
+      const link = screen.getByRole('link', {name: /deployment/i});
       expect(within(link).queryByText(/warning/i)).toBeNull();
     });
   });

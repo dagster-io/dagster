@@ -22,6 +22,7 @@ export * from './components/MainContent';
 export * from './components/Markdown';
 export * from './components/Menu';
 export * from './components/MetadataTable';
+export * from './components/MiddleTruncate';
 export * from './components/NonIdealState';
 export * from './components/Page';
 export * from './components/PageHeader';

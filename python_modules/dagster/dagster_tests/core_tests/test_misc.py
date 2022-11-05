@@ -28,7 +28,7 @@ def test_config_from_files():
         config_files=[file_relative_path(__file__, "./definitions_tests/pass_env.yaml")]
     )
 
-    assert run_config == {"solids": {"can_fail": {"config": {"error": False}}}}
+    assert run_config == {"ops": {"can_fail": {"config": {"error": False}}}}
 
     with pytest.raises(DagsterInvariantViolationError):
         config_from_files(config_files=[file_relative_path(__file__, "not_a_file.yaml")])
@@ -79,7 +79,7 @@ def test_config_from_pkg_resources():
         "pass_env.yaml",
     )
     run_config = config_from_pkg_resources([good])
-    assert run_config == {"solids": {"can_fail": {"config": {"error": False}}}}
+    assert run_config == {"ops": {"can_fail": {"config": {"error": False}}}}
 
     bad_defs = [
         ("dagster_tests.core_tests.definitions_tests", "does_not_exist.yaml"),

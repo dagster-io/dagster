@@ -65,7 +65,7 @@ class VersionedInMemoryIOManager(MemoizableIOManager):
 def test_join_and_hash():
     assert join_and_hash("foo") == hashlib.sha1(b"foo").hexdigest()
 
-    assert join_and_hash("foo", None, "bar") == None
+    assert join_and_hash("foo", None, "bar") is None
 
     assert join_and_hash("foo", "bar") == hashlib.sha1(b"barfoo").hexdigest()
 

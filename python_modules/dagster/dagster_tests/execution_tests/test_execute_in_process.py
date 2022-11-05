@@ -9,14 +9,16 @@ from dagster import (
     DynamicOutput,
     Out,
     Output,
+    RetryRequested,
     daily_partitioned_config,
+    graph,
     job,
     op,
     resource,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.output import GraphOut
+from dagster._core.errors import DagsterMaxRetriesExceededError
 from dagster._legacy import solid
 
 
@@ -352,3 +354,29 @@ def test_execute_in_process_input_values():
     result = requires_input_graph.to_job().execute_in_process(input_values={"x": 5})
     assert result.success
     assert result.output_value() == 6
+
+
+def test_retries_exceeded():
+    called = []
+
+    @op
+    def always_fail():
+        exception = Exception("I have failed.")
+        called.append("yes")
+        raise RetryRequested(max_retries=2) from exception
+
+    @graph
+    def fail():
+        always_fail()
+
+    with pytest.raises(DagsterMaxRetriesExceededError, match="Exceeded max_retries of 2"):
+        fail.execute_in_process()
+
+    result = fail.execute_in_process(raise_on_error=False)
+    assert not result.success
+    assert (
+        "Exception: I have failed"
+        in result.filter_events(lambda evt: evt.is_step_failure)[
+            0
+        ].event_specific_data.error_display_string
+    )

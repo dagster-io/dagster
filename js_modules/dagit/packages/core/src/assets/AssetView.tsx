@@ -14,6 +14,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -36,7 +37,9 @@ import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDe
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetLineageScope} from './AssetNodeLineageGraph';
+import {AssetOverview} from './AssetOverview';
 import {AssetPageHeader} from './AssetPageHeader';
+import {AssetPlots} from './AssetPlots';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
@@ -46,7 +49,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'activity' | 'definition' | 'lineage';
+  view?: 'activity' | 'definition' | 'lineage' | 'overview' | 'plots';
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
   partition?: string;
@@ -56,6 +59,7 @@ export interface AssetViewParams {
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const {flagNewAssetDetails} = useFeatureFlags();
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
@@ -89,16 +93,17 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   );
 
   const {upstream, downstream} = useNeighborsFromGraph(assetGraphData, assetKey);
-  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
+  const {liveDataRefreshState, liveDataByNode, runWatchers} = useLiveDataForAssetKeys(
+    graphAssetKeys,
+  );
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
-    useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS),
+    liveDataRefreshState,
   );
 
   // Refresh immediately when a run is launched from this page
   useDidLaunchEvent(queryResult.refetch);
-  useDidLaunchEvent(liveResult.refetch);
 
   // Avoid thrashing the materializations UI (which chooses a different default query based on whether
   // data is partitioned) by waiting for the definition to be loaded. (null OR a valid definition)
@@ -106,8 +111,11 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   const isUpstreamChanged =
     liveDataByNode[toGraphId(assetKey)]?.computeStatus === AssetComputeStatus.OUT_OF_DATE;
 
+  const defaultTab = flagNewAssetDetails ? 'overview' : 'activity';
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
+      {runWatchers}
       <AssetPageHeader
         assetKey={assetKey}
         tags={
@@ -149,31 +157,50 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           </>
         }
         tabs={
-          <Tabs size="large" selectedTabId={params.view || 'activity'}>
-            <Tab
-              id="activity"
-              title="Activity"
-              onClick={() => setParams({...params, view: 'activity'})}
-            />
-            <Tab
-              id="definition"
-              title="Definition"
-              onClick={() => setParams({...params, view: 'definition'})}
-              disabled={!definition}
-            />
-            <Tab
-              id="lineage"
-              title="Lineage"
-              onClick={() => setParams({...params, view: 'lineage'})}
-              disabled={!definition}
-            />
-          </Tabs>
+          <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+            <Tabs size="large" selectedTabId={params.view || defaultTab}>
+              {flagNewAssetDetails ? (
+                <Tab
+                  id="overview"
+                  title="Overview"
+                  onClick={() => setParams({...params, view: 'overview'})}
+                />
+              ) : (
+                <Tab
+                  id="activity"
+                  title="Activity"
+                  onClick={() => setParams({...params, view: 'activity'})}
+                />
+              )}
+              <Tab
+                id="definition"
+                title="Definition"
+                onClick={() => setParams({...params, view: 'definition'})}
+                disabled={!definition}
+              />
+              <Tab
+                id="lineage"
+                title="Lineage"
+                onClick={() => setParams({...params, view: 'lineage'})}
+                disabled={!definition}
+              />
+              {flagNewAssetDetails && (
+                <Tab
+                  id="plots"
+                  title="Plots"
+                  onClick={() => setParams({...params, view: 'plots'})}
+                />
+              )}
+            </Tabs>
+            {refreshState && (
+              <Box padding={{bottom: 8}}>
+                <QueryRefreshCountdown refreshState={refreshState} />
+              </Box>
+            )}
+          </Box>
         }
         right={
-          <Box style={{margin: '-4px 0'}} flex={{gap: 12, alignItems: 'baseline'}}>
-            <Box margin={{top: 4}}>
-              <QueryRefreshCountdown refreshState={refreshState} />
-            </Box>
+          <Box style={{margin: '-4px 0'}}>
             {definition && definition.jobNames.length > 0 && repoAddress && upstream && (
               <LaunchAssetExecutionButton assetKeys={[definition.assetKey]} />
             )}
@@ -234,6 +261,23 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : (
             <AssetNoDefinitionState />
           )
+        ) : (params.view || defaultTab) === 'overview' ? (
+          <AssetOverview
+            assetKey={assetKey}
+            assetLastMaterializedAt={lastMaterializedAt}
+            assetHasDefinedPartitions={!!definition?.partitionDefinition}
+            params={params}
+            paramsTimeWindowOnly={!!params.asOf}
+            setParams={setParams}
+            liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+          />
+        ) : params.view === 'plots' ? (
+          <AssetPlots
+            assetKey={assetKey}
+            assetHasDefinedPartitions={!!definition?.partitionDefinition}
+            params={params}
+            setParams={setParams}
+          />
         ) : (
           <AssetEvents
             assetKey={assetKey}

@@ -26,7 +26,7 @@ def test_pipeline_snapshot_api_grpc(instance):
 
         external_pipeline_subset_result = _test_pipeline_subset_grpc(pipeline_handle, api_client)
         assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
-        assert external_pipeline_subset_result.success == True
+        assert external_pipeline_subset_result.success is True
         assert external_pipeline_subset_result.external_pipeline_data.name == "foo"
 
 
@@ -41,7 +41,7 @@ def test_pipeline_with_valid_subset_snapshot_api_grpc(instance):
             pipeline_handle, api_client, ["do_something"]
         )
         assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
-        assert external_pipeline_subset_result.success == True
+        assert external_pipeline_subset_result.success is True
         assert external_pipeline_subset_result.external_pipeline_data.name == "foo"
 
 

@@ -33,12 +33,19 @@ def export_run(instance, run, output_file):
 @click.group(name="debug")
 def debug_cli():
     """
-    Commands for debugging Dagster job runs.
+    Commands for helping debug Dagster issues by dumping or loading artifacts from specific runs.
+
+    This can be used to send a file to someone like the Dagster team who doesn't have direct access
+    to your instance to allow them to view the events and details of a specific run.
+
+    Debug files can be viewed using `dagit-debug` cli.
+    Debug files can also be downloaded from dagit.
     """
 
 
 @debug_cli.command(
-    name="export", help="Export the relevant artifacts for a pipeline/job run to a file."
+    name="export",
+    help="Export the relevant artifacts for a job run from the current instance in to a file.",
 )
 @click.argument("run_id", type=str)
 @click.argument("output_file", type=click.Path())
@@ -57,7 +64,7 @@ def export_command(run_id, output_file):
 
 
 @debug_cli.command(
-    name="import", help="Import the relevant artifacts for a pipeline/job run from a file."
+    name="import", help="Import the relevant artifacts from debug files in to the current instance."
 )
 @click.argument("input_files", nargs=-1, type=click.Path(exists=True))
 def import_command(input_files: Tuple[str, ...]):

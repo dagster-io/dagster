@@ -1,10 +1,11 @@
 import datetime
 import logging  # pylint: disable=unused-import; used by mock in string form
 import re
+import sys
 import time
 from collections import Counter
 from contextlib import ExitStack, contextmanager
-from typing import List, Optional, cast
+from typing import List, Optional, Sequence, cast
 
 import mock
 import pendulum
@@ -18,6 +19,7 @@ from dagster import (
     EventLogRecord,
     EventRecordsFilter,
     Field,
+    JobDefinition,
     Output,
     RetryRequested,
     RunShardedEventsCursor,
@@ -28,6 +30,7 @@ from dagster import asset, op, resource
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.events import (
     DagsterEvent,
@@ -41,13 +44,20 @@ from dagster._core.execution.api import execute_run
 from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
+from dagster._core.host_representation.origin import (
+    ExternalPipelineOrigin,
+    ExternalRepositoryOrigin,
+    InProcessRepositoryLocationOrigin,
+)
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
+from dagster._core.storage.event_log.base import EventLogStorage
 from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
     migrate_asset_key_data,
 )
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import (
     AssetGroup,
@@ -74,7 +84,22 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: List[str]):
     check.list_param(run_ids, "run_ids", of_type=str)
     if instance:
         for run_id in run_ids:
-            create_run_for_test(instance, run_id=run_id)
+            create_run_for_test(
+                instance,
+                run_id=run_id,
+                external_pipeline_origin=ExternalPipelineOrigin(
+                    ExternalRepositoryOrigin(
+                        InProcessRepositoryLocationOrigin(
+                            LoadableTargetOrigin(
+                                executable_path=sys.executable,
+                                module_name="fake",
+                            )
+                        ),
+                        "fake",
+                    ),
+                    "fake",
+                ),
+            )
     yield
     if instance:
         for run_id in run_ids:
@@ -248,6 +273,7 @@ def _event_types(out_events):
 
 @solid
 def should_succeed(context):
+    time.sleep(0.001)
     context.log.info("succeed")
     return "yay"
 
@@ -291,8 +317,16 @@ def cursor_datetime_args():
     yield datetime.datetime.now()
 
 
-def _execute_job_and_store_events(instance, storage, job, run_id):
-    result = job.execute_in_process(instance=instance, raise_on_error=False, run_id=run_id)
+def _execute_job_and_store_events(
+    instance: DagsterInstance,
+    storage: EventLogStorage,
+    job: JobDefinition,
+    run_id: Optional[str] = None,
+    asset_selection: Optional[Sequence[AssetKey]] = None,
+):
+    result = job.execute_in_process(
+        instance=instance, raise_on_error=False, run_id=run_id, asset_selection=asset_selection
+    )
     events = instance.all_logs(run_id=result.run_id)
     for event in events:
         storage.store_event(event)
@@ -1084,7 +1118,8 @@ class TestEventLogStorage:
             input_defs=[InputDefinition("_input", str)],
             output_defs=[OutputDefinition(str)],
         )
-        def should_retry(context, _input):
+        def should_retry(_, _input):
+            time.sleep(0.001)
             raise RetryRequested(max_retries=3)
 
         def _one():
@@ -1153,7 +1188,7 @@ class TestEventLogStorage:
     def test_run_step_stats_with_resource_markers(self, storage, test_run_id):
         @solid(required_resource_keys={"foo"})
         def foo_solid():
-            pass
+            time.sleep(0.001)
 
         def _pipeline():
             foo_solid()
@@ -1843,6 +1878,7 @@ class TestEventLogStorage:
         def materialize():
             yield AssetMaterialization(b)
             yield AssetMaterialization(c, partition="a")
+            yield AssetObservation(a, partition="a")
             yield Output(None)
 
         @op
@@ -2017,12 +2053,12 @@ class TestEventLogStorage:
                 ][0]
                 assert asset_entry.last_materialization.dagster_event == materialize_event
                 assert asset_entry.last_run_id == result.run_id
-                assert asset_entry.asset_details == None
+                assert asset_entry.asset_details is None
 
                 if self.can_wipe():
                     storage.wipe_asset(my_asset_key)
 
-                    # confirm that last_run_id == None when asset is wiped
+                    # confirm that last_run_id is None when asset is wiped
                     assert len(storage.get_asset_records([my_asset_key])) == 0
 
                     result = _execute_job_and_store_events(
@@ -2078,7 +2114,7 @@ class TestEventLogStorage:
                 for event in events:
                     storage.store_event(event)
                 asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
-                assert asset_entry.last_run_id == None
+                assert asset_entry.last_run_id is None
 
                 events, result = _synthesize_events(
                     lambda: materialize_asset(),
@@ -2102,7 +2138,57 @@ class TestEventLogStorage:
                     for event in events:
                         storage.store_event(event)
                     asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
-                    assert asset_entry.last_run_id == None
+                    assert asset_entry.last_run_id is None
+
+    def test_fetch_asset_materialization_planned(self, storage, instance):
+        @asset
+        def materializes_asset():
+            return 1
+
+        @asset
+        def never_materializes_asset():
+            raise Exception("foo")
+
+        asset_job = build_assets_job("asset_job", [never_materializes_asset, materializes_asset])
+
+        run_id_1 = make_new_run_id()
+        run_id_2 = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
+
+            with instance_for_test() as created_instance:
+                if not storage._instance:  # pylint: disable=protected-access
+                    storage.register_instance(created_instance)
+
+                result = _execute_job_and_store_events(
+                    created_instance,
+                    storage,
+                    asset_job,
+                    run_id=run_id_1,
+                    asset_selection=[AssetKey("materializes_asset")],
+                )
+                assert result.success
+
+                materializations = created_instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+                )
+                assert len(materializations) == 1
+                storage_id = materializations[0].storage_id
+
+                result = _execute_job_and_store_events(
+                    created_instance,
+                    storage,
+                    asset_job,
+                    run_id=run_id_2,
+                    asset_selection=[AssetKey("never_materializes_asset")],
+                )
+
+                materialization_planned_events = created_instance.get_event_records(
+                    EventRecordsFilter(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED, after_cursor=storage_id
+                    )
+                )
+
+                assert len(materialization_planned_events) == 1
 
     def test_last_run_id_updates_on_materialization_planned(self, storage, instance):
         @asset
@@ -2134,7 +2220,7 @@ class TestEventLogStorage:
                 if self.can_wipe():
                     storage.wipe_asset(asset_key)
 
-                    # confirm that last_run_id == None when asset is wiped
+                    # confirm that last_run_id is None when asset is wiped
                     assert len(storage.get_asset_records([asset_key])) == 0
 
                     result = _execute_job_and_store_events(
@@ -2268,7 +2354,7 @@ class TestEventLogStorage:
             pytest.skip("storage does not support event consumer queries")
 
         storage.wipe()
-        assert storage.get_maximum_record_id() == None
+        assert storage.get_maximum_record_id() is None
 
         storage.store_event(
             EventLogEntry(
@@ -2305,3 +2391,347 @@ class TestEventLogStorage:
             )
 
         assert storage.get_maximum_record_id() == index + 10
+
+    def test_get_materialization_tag(self, storage, instance):
+        key = AssetKey("hello")
+
+        @op
+        def my_op():
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=AssetKey("other_key"),
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield Output(5)
+
+        run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id]):
+
+            events, _ = _synthesize_events(lambda: my_op(), run_id)
+            for event in events:
+                storage.store_event(event)
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+            )
+            assert len(materializations) == 2
+
+            asset_event_tags = storage.get_event_tags_for_asset(key)
+            assert asset_event_tags == [
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"}
+            ]
+
+    def test_materialization_tag_on_wipe(self, storage, instance):
+        key = AssetKey("hello")
+
+        @op
+        def us_op():
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "Portugal", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "Portugal",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-14",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=AssetKey("nonexistent_key"),
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield Output(5)
+
+        @op
+        def brazil_op():
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "Brazil", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "Brazil",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield Output(5)
+
+        def _sort_by_country_then_date(tags):
+            return sorted(
+                tags,
+                key=lambda tag: (tag["dagster/partition/country"]) + tag["dagster/partition/date"],
+            )
+
+        run_id = make_new_run_id()
+        run_id_2 = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id, run_id_2]):
+
+            events, _ = _synthesize_events(lambda: us_op(), run_id)
+            for event in events:
+                storage.store_event(event)
+
+            asset_event_tags = _sort_by_country_then_date(
+                storage.get_event_tags_for_asset(
+                    asset_key=key, filter_tags={"dagster/partition/country": "US"}
+                )
+            )
+            assert asset_event_tags == [
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-14"},
+            ]
+            asset_event_tags = _sort_by_country_then_date(
+                storage.get_event_tags_for_asset(
+                    asset_key=key, filter_tags={"dagster/partition/date": "2022-10-13"}
+                )
+            )
+            assert asset_event_tags == [
+                {"dagster/partition/country": "Portugal", "dagster/partition/date": "2022-10-13"},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+            ]
+            asset_event_tags = _sort_by_country_then_date(
+                storage.get_event_tags_for_asset(
+                    asset_key=key,
+                    filter_tags={
+                        "dagster/partition/date": "2022-10-13",
+                        "dagster/partition/country": "US",
+                    },
+                )
+            )
+            assert asset_event_tags == [
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+                {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
+            ]
+            if self.can_wipe():
+                storage.wipe_asset(key)
+                asset_event_tags = storage.get_event_tags_for_asset(
+                    asset_key=key,
+                )
+                assert asset_event_tags == []
+
+                events, _ = _synthesize_events(lambda: brazil_op(), run_id_2)
+                for event in events:
+                    storage.store_event(event)
+
+                asset_event_tags = storage.get_event_tags_for_asset(
+                    asset_key=key,
+                    filter_tags={
+                        "dagster/partition/date": "2022-10-13",
+                        "dagster/partition/country": "Brazil",
+                    },
+                )
+                assert asset_event_tags == [
+                    {"dagster/partition/country": "Brazil", "dagster/partition/date": "2022-10-13"}
+                ]
+
+    def test_event_record_filter_tags(self, storage, instance):
+        key = AssetKey("hello")
+
+        @op
+        def my_op():
+            yield AssetObservation(
+                asset_key=key, metadata={"foo": "bar"}
+            )  # should not show up in any queries
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "Canada", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "Canada",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "Mexico", "date": "2022-10-14"}),
+                tags={
+                    "dagster/partition/country": "Mexico",
+                    "dagster/partition/date": "2022-10-14",
+                },
+            )
+            yield Output(5)
+
+        run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id]):
+
+            events, _ = _synthesize_events(lambda: my_op(), run_id)
+            for event in events:
+                storage.store_event(event)
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+            )
+            assert len(materializations) == 4
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=key,
+                    tags={
+                        "dagster/partition/date": "2022-10-13",
+                        "dagster/partition/country": "US",
+                    },
+                )
+            )
+            assert len(materializations) == 2
+            for record in materializations:
+                materialization = (
+                    record.event_log_entry.dagster_event.step_materialization_data.materialization
+                )
+
+                assert isinstance(materialization.partition, MultiPartitionKey)
+                assert materialization.partition == MultiPartitionKey(
+                    {"country": "US", "date": "2022-10-13"}
+                )
+                assert materialization.partition.keys_by_dimension == {
+                    "country": "US",
+                    "date": "2022-10-13",
+                }
+                assert materialization.tags == {
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                }
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=key,
+                    tags={"nonexistent": "tag"},
+                )
+            )
+            assert len(materializations) == 0
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=key,
+                    tags={"dagster/partition/date": "2022-10-13"},
+                )
+            )
+            assert len(materializations) == 3
+            for record in materializations:
+                materialization = (
+                    record.event_log_entry.dagster_event.step_materialization_data.materialization
+                )
+                date_dimension = [
+                    dimension
+                    for dimension in materialization.partition.dimension_keys
+                    if dimension.dimension_name == "date"
+                ][0]
+                assert date_dimension.partition_key == "2022-10-13"
+
+    def test_event_records_filter_tags_requires_asset_key(self, storage):
+        with pytest.raises(Exception, match="Asset key must be set in event records"):
+            storage.get_event_records(
+                EventRecordsFilter(
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    tags={"dagster/partition/date": "2022-10-13"},
+                )
+            )
+
+    def test_multi_partitions_partition_deserialization(self, storage, instance):
+        key = AssetKey("hello")
+
+        @op
+        def my_op():
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "Canada", "date": "2022-10-13"}),
+            )
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "Mexico", "date": "2022-10-14"}),
+            )
+            yield Output(5)
+
+        with instance_for_test() as created_instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(created_instance)
+
+            run_id_1 = make_new_run_id()
+
+            with create_and_delete_test_runs(instance, [run_id_1]):
+                events_one, _ = _synthesize_events(
+                    lambda: my_op(), instance=created_instance, run_id=run_id_1
+                )
+                for event in events_one:
+                    storage.store_event(event)
+
+            materialization_counts = created_instance.get_materialization_count_by_partition([key])
+            assert (
+                materialization_counts[key][
+                    MultiPartitionKey({"country": "US", "date": "2022-10-13"})
+                ]
+                == 2
+            )
+            assert (
+                materialization_counts[key][
+                    MultiPartitionKey({"country": "Mexico", "date": "2022-10-14"})
+                ]
+                == 1
+            )
+            assert (
+                materialization_counts[key][
+                    MultiPartitionKey({"country": "Canada", "date": "2022-10-13"})
+                ]
+                == 1
+            )

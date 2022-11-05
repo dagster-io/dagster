@@ -98,7 +98,7 @@ class TestScheduleStorage:
         schedule = schedules[0]
         assert schedule.instigator_name == "my_schedule"
         assert schedule.instigator_data.cron_schedule == "* * * * *"
-        assert schedule.instigator_data.start_timestamp == None
+        assert schedule.instigator_data.start_timestamp is None
 
     def test_add_multiple_schedules(self, storage):
         assert storage
@@ -130,7 +130,7 @@ class TestScheduleStorage:
         schedule = storage.get_instigator_state(state.instigator_origin_id, state.selector_id)
 
         assert schedule.instigator_name == "my_schedule"
-        assert schedule.instigator_data.start_timestamp == None
+        assert schedule.instigator_data.start_timestamp is None
 
     def test_get_schedule_state_not_found(self, storage):
         assert storage
@@ -184,7 +184,7 @@ class TestScheduleStorage:
         schedule = schedules[0]
         assert schedule.instigator_name == "my_schedule"
         assert schedule.status == InstigatorStatus.STOPPED
-        assert schedule.instigator_data.start_timestamp == None
+        assert schedule.instigator_data.start_timestamp is None
 
     def test_update_schedule_not_found(self, storage):
         assert storage
@@ -256,7 +256,7 @@ class TestScheduleStorage:
         assert tick.timestamp == current_time
         assert tick.status == TickStatus.STARTED
         assert tick.run_ids == []
-        assert tick.error == None
+        assert tick.error is None
 
     def test_update_tick_to_success(self, storage):
         assert storage
@@ -276,7 +276,7 @@ class TestScheduleStorage:
         assert tick.timestamp == current_time
         assert tick.status == TickStatus.SUCCESS
         assert tick.run_ids == ["1234"]
-        assert tick.error == None
+        assert tick.error is None
 
     def test_update_tick_to_skip(self, storage):
         assert storage
@@ -296,7 +296,7 @@ class TestScheduleStorage:
         assert tick.timestamp == current_time
         assert tick.status == TickStatus.SKIPPED
         assert tick.run_ids == []
-        assert tick.error == None
+        assert tick.error is None
 
     def test_update_tick_to_failure(self, storage):
         assert storage
@@ -472,7 +472,7 @@ class TestScheduleStorage:
         assert tick.timestamp == current_time
         assert tick.status == TickStatus.STARTED
         assert tick.run_ids == []
-        assert tick.error == None
+        assert tick.error is None
 
     def test_get_sensor_tick(self, storage):
         assert storage
@@ -515,7 +515,7 @@ class TestScheduleStorage:
         assert tick.timestamp == current_time
         assert tick.status == TickStatus.SUCCESS
         assert tick.run_ids == ["1234"]
-        assert tick.error == None
+        assert tick.error is None
 
     def test_update_sensor_tick_to_skip(self, storage):
         assert storage
@@ -536,7 +536,7 @@ class TestScheduleStorage:
         assert tick.timestamp == current_time
         assert tick.status == TickStatus.SKIPPED
         assert tick.run_ids == []
-        assert tick.error == None
+        assert tick.error is None
 
     def test_update_sensor_tick_to_failure(self, storage):
         assert storage

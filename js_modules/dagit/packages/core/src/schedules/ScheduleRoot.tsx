@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui';
+import {Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -82,9 +82,10 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
               refreshState={refreshState}
             />
             {showDaemonWarning ? (
-              <Box padding={{vertical: 16, horizontal: 24}}>
-                <SchedulerInfo daemonHealth={instance.daemonHealth} />
-              </Box>
+              <SchedulerInfo
+                daemonHealth={instance.daemonHealth}
+                padding={{vertical: 16, horizontal: 24}}
+              />
             ) : null}
             {selectedTab === 'ticks' ? (
               <TicksTable tabs={tabs} repoAddress={repoAddress} name={scheduleOrError.name} />

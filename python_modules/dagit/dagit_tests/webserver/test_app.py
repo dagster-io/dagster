@@ -9,6 +9,7 @@ from starlette.testclient import TestClient
 
 from dagster import __version__ as dagster_version
 from dagster import job, op
+from dagster._core.events import DagsterEventType
 from dagster._seven import json
 
 EVENT_LOG_SUBSCRIPTION = """
@@ -110,7 +111,7 @@ def test_graphql_get(instance, test_client: TestClient):  # pylint: disable=unus
 def test_graphql_invalid_json(instance, test_client: TestClient):  # pylint: disable=unused-argument
     # base case
     response = test_client.post(
-        "/graphql", data='{"query": "foo}', headers={"Content-Type": "application/json"}
+        "/graphql", content='{"query": "foo}', headers={"Content-Type": "application/json"}
     )
 
     print(str(response.text))
@@ -162,7 +163,7 @@ def test_graphql_post(test_client: TestClient):
     # application/graphql
     response = test_client.post(
         "/graphql",
-        data="{__typename}",
+        content="{__typename}",
         headers={"Content-type": "application/graphql"},
     )
     assert response.status_code == 200, response.text
@@ -242,8 +243,10 @@ def test_download_debug_file(instance, test_client: TestClient):
 
 def test_download_compute(instance, test_client: TestClient):
     run_id = _add_run(instance)
-
-    response = test_client.get(f"/download/{run_id}/my_op/stdout")
+    logs = instance.all_logs(run_id, of_type=DagsterEventType.LOGS_CAPTURED)
+    entry = logs[0]
+    file_key = entry.dagster_event.logs_captured_data.file_key
+    response = test_client.get(f"/download/{run_id}/{file_key}/stdout")
     assert response.status_code == 200
     assert "STDOUT RULEZ" in str(response.content)
 

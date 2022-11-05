@@ -2,18 +2,22 @@ import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {Route, Switch, useParams} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
 
 import {GraphRoot} from './GraphRoot';
+import {WorkspaceAssetsRoot} from './WorkspaceAssetsRoot';
 import {WorkspaceContext} from './WorkspaceContext';
+import {WorkspaceGraphsRoot} from './WorkspaceGraphsRoot';
 import {WorkspaceJobsRoot} from './WorkspaceJobsRoot';
+import {WorkspaceOpsRoot} from './WorkspaceOpsRoot';
 import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
 import {WorkspaceRepoRoot} from './WorkspaceRepoRoot';
+import {WorkspaceSchedulesRoot} from './WorkspaceSchedulesRoot';
+import {WorkspaceSensorsRoot} from './WorkspaceSensorsRoot';
 import {repoAddressFromPath} from './repoAddressFromPath';
 
 const RepoRouteContainer = () => {
@@ -76,6 +80,24 @@ const RepoRouteContainer = () => {
 
   return (
     <Switch>
+      <Route path="/workspace/:repoPath/assets" exact>
+        <WorkspaceAssetsRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/jobs" exact>
+        <WorkspaceJobsRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/schedules" exact>
+        <WorkspaceSchedulesRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/sensors" exact>
+        <WorkspaceSensorsRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/graphs" exact>
+        <WorkspaceGraphsRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/ops/:name?" exact>
+        <WorkspaceOpsRoot repoAddress={addressForPath} />
+      </Route>
       <Route path="/workspace/:repoPath/graphs/(/?.*)">
         <GraphRoot repoAddress={addressForPath} />
       </Route>
@@ -113,18 +135,12 @@ const RepoRouteContainer = () => {
 };
 
 export const WorkspaceRoot = () => {
-  const {flagNewWorkspace} = useFeatureFlags();
   return (
     <MainContent>
       <Switch>
         <Route path="/workspace" exact>
           <WorkspaceOverviewRoot />
         </Route>
-        {flagNewWorkspace ? (
-          <Route path="/workspace/jobs" exact>
-            <WorkspaceJobsRoot />
-          </Route>
-        ) : null}
         <Route path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}>
           <WorkspacePipelineRoot />
         </Route>

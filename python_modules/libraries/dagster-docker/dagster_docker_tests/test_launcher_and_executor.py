@@ -1,6 +1,7 @@
 import os
 import time
 
+import pytest
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     find_local_test_image,
@@ -19,14 +20,12 @@ from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
-def test_image_on_pipeline():
+@pytest.mark.parametrize("from_pending_repository", [True, False])
+def test_image_on_pipeline(aws_env, from_pending_repository):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "networks": ["container:test-postgres-db-docker"],
         "container_kwargs": {
             "auto_remove": True,
@@ -39,17 +38,19 @@ def test_image_on_pipeline():
     else:
         find_local_test_image(docker_image)
 
-    executor_config = {
-        "execution": {"docker": {"config": {}}},
-    }
+    executor_config = (
+        {
+            "execution": {"docker": {"config": {}}},
+        }
+        if not from_pending_repository
+        else {}
+    )
 
+    env_yamls = [os.path.join(get_test_project_environments_path(), "env_s3.yaml")]
+    if not from_pending_repository:
+        env_yamls.append(os.path.join(get_test_project_environments_path(), "env.yaml"))
     run_config = merge_dicts(
-        merge_yamls(
-            [
-                os.path.join(get_test_project_environments_path(), "env.yaml"),
-                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
-            ]
-        ),
+        merge_yamls(env_yamls),
         executor_config,
     )
 
@@ -62,15 +63,24 @@ def test_image_on_pipeline():
             }
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_docker", docker_image)
+        filename = "pending_repo.py" if from_pending_repository else "repo.py"
+        recon_pipeline = get_test_project_recon_pipeline(
+            "demo_pipeline_docker", docker_image, filename=filename
+        )
+        repository_load_data = recon_pipeline.repository.get_definition().repository_load_data
+        recon_pipeline = recon_pipeline.with_repository_load_data(repository_load_data)
+
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline_docker", container_image=docker_image
+            instance,
+            "demo_pipeline_docker",
+            container_image=docker_image,
+            filename=filename,
         ) as (
             workspace,
             orig_pipeline,
         ):
             external_pipeline = ReOriginatedExternalPipelineForTest(
-                orig_pipeline, container_image=docker_image
+                orig_pipeline, container_image=docker_image, filename=filename
             )
 
             run = instance.create_run_for_pipeline(
@@ -78,6 +88,7 @@ def test_image_on_pipeline():
                 run_config=run_config,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
+                repository_load_data=repository_load_data,
             )
 
             instance.launch_run(run.run_id, workspace)
@@ -90,7 +101,7 @@ def test_image_on_pipeline():
             assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
 
 
-def test_container_context_on_pipeline():
+def test_container_context_on_pipeline(aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {}
@@ -128,10 +139,7 @@ def test_container_context_on_pipeline():
             docker_image,
             container_context={
                 "docker": {
-                    "env_vars": [
-                        "AWS_ACCESS_KEY_ID",
-                        "AWS_SECRET_ACCESS_KEY",
-                    ],
+                    "env_vars": aws_env,
                     "networks": ["container:test-postgres-db-docker"],
                     "container_kwargs": {
                         "auto_remove": True,
@@ -167,14 +175,11 @@ def test_container_context_on_pipeline():
             assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
 
 
-def test_recovery():
+def test_recovery(aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "networks": ["container:test-postgres-db-docker"],
         "container_kwargs": {
             "auto_remove": True,

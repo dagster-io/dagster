@@ -1,4 +1,4 @@
-from typing import Optional, Union, cast
+from typing import Mapping, Optional, Union, cast
 
 import dagster._check as check
 
@@ -19,6 +19,7 @@ def build_schedule_from_partitioned_job(
     day_of_week: Optional[int] = None,
     day_of_month: Optional[int] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> ScheduleDefinition:
     """
     Creates a schedule from a time window-partitioned job.
@@ -59,7 +60,9 @@ def build_schedule_from_partitioned_job(
         # Run for the latest partition. Prior partitions will have been handled by prior ticks.
         partition_key = partition_keys[-1]
 
-        yield job.run_request_for_partition(partition_key=partition_key, run_key=partition_key)
+        yield job.run_request_for_partition(
+            partition_key=partition_key, run_key=partition_key, tags=tags
+        )
 
     return schedule_def
 

@@ -4,6 +4,7 @@ import {
   createSingleSession,
   IExecutionSession,
   IExecutionSessionChanges,
+  useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
 import {RepoAddress} from '../workspace/types';
 
@@ -23,7 +24,12 @@ interface Props {
 export const LaunchpadTransientSessionContainer = (props: Props) => {
   const {launchpadType, pipeline, partitionSets, repoAddress, sessionPresets} = props;
 
-  const initialSessionComplete = createSingleSession(sessionPresets);
+  const initialData = useInitialDataForMode(pipeline, partitionSets);
+  const initialSessionComplete = createSingleSession({
+    ...sessionPresets,
+    runConfigYaml: initialData.runConfigYaml,
+  });
+
   const [session, setSession] = React.useState<IExecutionSession>(initialSessionComplete);
 
   const onSaveSession = (changes: IExecutionSessionChanges) => {

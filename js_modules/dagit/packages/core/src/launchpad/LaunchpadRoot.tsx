@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Dialog, DialogHeader} from '@dagster-io/ui';
+import {CodeMirrorInDialogStyle, Dialog, DialogHeader} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
@@ -49,6 +49,7 @@ export const AssetLaunchpad: React.FC<{
       onClose={() => setOpen(false)}
     >
       <DialogHeader icon="layers" label={title} />
+      <CodeMirrorInDialogStyle />
       <LaunchpadAllowedRoot
         launchpadType="asset"
         pipelinePath={assetJobName}
@@ -195,6 +196,7 @@ const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
   fragment LaunchpadSessionPipelineFragment on Pipeline {
     id
     isJob
+    isAssetJob
     ...ConfigEditorGeneratorPipelineFragment
     modes {
       id

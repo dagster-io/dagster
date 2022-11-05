@@ -285,18 +285,18 @@ def test_dynamic_dep_fields(graphql_context):
     assert not result.errors
     solids = {solid["name"]: solid for solid in result.data["pipelineOrError"]["solids"]}
 
-    assert solids["emit_ten"]["isDynamicMapped"] == False
-    assert solids["emit_ten"]["outputs"][0]["definition"]["isDynamic"] == False
+    assert solids["emit_ten"]["isDynamicMapped"] is False
+    assert solids["emit_ten"]["outputs"][0]["definition"]["isDynamic"] is False
 
-    assert solids["emit"]["isDynamicMapped"] == False
-    assert solids["emit"]["outputs"][0]["definition"]["isDynamic"] == True
+    assert solids["emit"]["isDynamicMapped"] is False
+    assert solids["emit"]["outputs"][0]["definition"]["isDynamic"] is True
 
-    assert solids["multiply_inputs"]["isDynamicMapped"] == True
+    assert solids["multiply_inputs"]["isDynamicMapped"] is True
 
-    assert solids["multiply_by_two"]["isDynamicMapped"] == True
+    assert solids["multiply_by_two"]["isDynamicMapped"] is True
 
-    assert solids["sum_numbers"]["isDynamicMapped"] == False
-    assert solids["sum_numbers"]["inputs"][0]["isDynamicCollect"] == True
+    assert solids["sum_numbers"]["isDynamicMapped"] is False
+    assert solids["sum_numbers"]["inputs"][0]["isDynamicCollect"] is True
 
-    assert solids["double_total"]["isDynamicMapped"] == False
-    assert solids["double_total"]["inputs"][0]["isDynamicCollect"] == False
+    assert solids["double_total"]["isDynamicMapped"] is False
+    assert solids["double_total"]["inputs"][0]["isDynamicCollect"] is False

@@ -32,7 +32,7 @@ def test_client_error_status():
     assert _client_error_status(ex) == code
 
     empty_ex = botocore.exceptions.ClientError({}, "foo")
-    assert _client_error_status(empty_ex) == None
+    assert _client_error_status(empty_ex) is None
 
 
 def test_is_retriable_client_error():

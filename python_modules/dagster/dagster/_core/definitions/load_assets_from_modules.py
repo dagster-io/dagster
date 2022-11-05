@@ -49,7 +49,7 @@ def assets_and_source_assets_from_modules(
     source_assets: List[SourceAsset] = list(
         check.opt_sequence_param(extra_source_assets, "extra_source_assets", of_type=SourceAsset)
     )
-    assets: List[AssetsDefinition] = []
+    assets: Dict[AssetKey, AssetsDefinition] = {}
     for module in modules:
         for asset in _find_assets_in_module(module):
             if id(asset) not in asset_ids:
@@ -58,16 +58,23 @@ def assets_and_source_assets_from_modules(
                 for key in keys:
                     if key in asset_keys:
                         modules_str = ", ".join(set([asset_keys[key].__name__, module.__name__]))
-                        raise DagsterInvalidDefinitionError(
-                            f"Asset key {key} is defined multiple times. Definitions found in modules: {modules_str}."
-                        )
+                        error_str = f"Asset key {key} is defined multiple times. Definitions found in modules: {modules_str}. "
+
+                        if key in assets and isinstance(asset, AssetsDefinition):
+                            if assets[key].node_def == asset.node_def:
+                                error_str += (
+                                    "One possible cause of this bug is a call to with_resources outside of "
+                                    "a repository definition, causing a duplicate asset definition."
+                                )
+
+                        raise DagsterInvalidDefinitionError(error_str)
                     else:
                         asset_keys[key] = module
+                        if isinstance(asset, AssetsDefinition):
+                            assets[key] = asset
                 if isinstance(asset, SourceAsset):
                     source_assets.append(asset)
-                else:
-                    assets.append(asset)
-    return assets, source_assets
+    return list(set(assets.values())), source_assets
 
 
 def load_assets_from_modules(
@@ -192,12 +199,7 @@ def load_assets_from_package_module(
     if key_prefix:
         assets = prefix_assets(assets, key_prefix)
     if group_name:
-        assets = [
-            asset.with_prefix_or_group(
-                group_names_by_key={asset_key: group_name for asset_key in asset.keys}
-            )
-            for asset in assets
-        ]
+        assets = list(with_group(assets, group_name))
         source_assets = [asset.with_group_name(group_name) for asset in source_assets]
 
     return [*assets, *source_assets]
@@ -313,3 +315,21 @@ def prefix_assets(
             )
         )
     return result_assets
+
+
+def with_group(
+    assets_defs: Sequence[AssetsDefinition], group_name: Optional[str]
+) -> Sequence[AssetsDefinition]:
+    """
+    Given a list of assets, groups them under the group_name.
+    """
+    group_name = check.opt_str_param(group_name, "group_name")
+    if not group_name:
+        return assets_defs
+
+    return [
+        assets_def.with_prefix_or_group(
+            group_names_by_key={asset_key: group_name for asset_key in assets_def.keys}
+        )
+        for assets_def in assets_defs
+    ]

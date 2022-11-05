@@ -163,7 +163,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       }
     }
     for (const group of Object.values(groups)) {
-      group.bounds = padBounds(group.bounds, {x: 15, top: 30, bottom: 15});
+      group.bounds = padBounds(group.bounds, {x: 15, top: 80, bottom: 15});
     }
   }
 

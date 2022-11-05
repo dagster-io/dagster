@@ -30,7 +30,8 @@ context = __dm_dagstermill._reconstitute_pipeline_context(
 
 class DagsterTranslator(papermill.translators.PythonTranslator):
     @classmethod
-    def codify(cls, parameters):  # pylint: disable=arguments-differ
+    def codify(cls, parameters, comment=None):
+        # comment is not used but is a required argument on newer versions of papermill
         assert "__dm_context" in parameters
         assert "__dm_executable_dict" in parameters
         assert "__dm_pipeline_run_dict" in parameters

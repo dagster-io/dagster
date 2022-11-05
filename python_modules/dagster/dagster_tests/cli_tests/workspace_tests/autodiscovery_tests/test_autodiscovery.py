@@ -6,6 +6,7 @@ import pytest
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
+from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._core.errors import DagsterImportError
 from dagster._core.workspace.autodiscovery import (
     LOAD_ALL_ASSETS,
@@ -146,6 +147,19 @@ def test_no_loadable_targets():
         str(exc_info.value)
         == 'No repositories, jobs, pipelines, graphs, asset groups, or asset definitions found in "nada".'
     )
+
+
+def test_single_pending_repository():
+    single_pending_repo_path = file_relative_path(__file__, "single_pending_repository.py")
+    loadable_targets = loadable_targets_from_python_file(single_pending_repo_path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == "single_pending_repository"
+
+    repo_def = CodePointer.from_python_file(single_pending_repo_path, symbol, None).load_target()
+    isinstance(repo_def, PendingRepositoryDefinition)
+    assert repo_def.name == "single_pending_repository"
 
 
 def test_single_repository_in_module():

@@ -18,7 +18,7 @@ This directory contains annotated files for deploying Dagster with an EcsRunLaun
   aws ecr create-repository --repository-name deploy_ecs/daemon
   aws ecr create-repository --repository-name deploy_ecs/user_code
   ```
-7. [Log in to your ECR Registry](https://docs.aws.amazon.com/AmazonECR/latest/userguide/getting-started-cli.html):
+7. [Log in to your ECR Registry](https://docs.aws.amazon.com/AmazonECR/latest/userguide/getting-started-cli.html) (ensure that the $AWS_REGION environment variable is set to your registry's AWS region):
   ```sh
   export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output text | cut -f1)
   export REGISTRY_URL=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com

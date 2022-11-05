@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Sequence, Union, cast
+from typing import AbstractSet, Any, Callable, List, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import JobDefinition, NodeHandle
@@ -162,6 +162,16 @@ class ExecutionResult(ABC):
 
     def get_step_success_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_success]
+
+    def get_failed_step_keys(self) -> AbstractSet[str]:
+        failure_events = self.filter_events(
+            lambda event: event.is_step_failure or event.is_resource_init_failure
+        )
+        keys = set()
+        for event in failure_events:
+            if event.step_key:
+                keys.add(event.step_key)
+        return keys
 
     def compute_events_for_handle(self, handle: NodeHandle) -> Sequence[DagsterEvent]:
         return [

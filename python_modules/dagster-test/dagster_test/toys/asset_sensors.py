@@ -1,9 +1,13 @@
+import time
+
 from dagster import (
     AssetKey,
     AssetOut,
+    AssetSelection,
     RunRequest,
     SkipReason,
     asset,
+    build_asset_reconciliation_sensor,
     job,
     multi_asset,
     multi_asset_sensor,
@@ -132,6 +136,27 @@ def every_fifth_materialization_sensor(context):
         )
 
 
+@asset
+def upstream():
+    return 1
+
+
+@asset
+def downstream(upstream):
+    return upstream + 1
+
+
+@asset
+def runs_long():
+    time.sleep(60)
+    return 1
+
+
+@asset
+def waits(runs_long):
+    return runs_long + 1
+
+
 def get_asset_sensors_repo():
     return [
         asset_a,
@@ -143,4 +168,14 @@ def get_asset_sensors_repo():
         multi_asset_a,
         asset_string_and_int_sensor,
         every_fifth_materialization_sensor,
+        upstream,
+        downstream,
+        runs_long,
+        waits,
+        build_asset_reconciliation_sensor(
+            asset_selection=AssetSelection.assets(downstream, waits),
+            name="generated_sensor",
+            wait_for_all_upstream=True,
+            wait_for_in_progress_runs=True,
+        ),
     ]

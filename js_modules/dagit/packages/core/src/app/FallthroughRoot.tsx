@@ -88,7 +88,7 @@ const FinalRedirectOrLoadingRoot = () => {
 
   // If we have more than one repo with a job, route to the instance overview
   if (reposWithVisibleJobs.length > 0) {
-    return <Redirect to="/instance" />;
+    return <Redirect to="/overview" />;
   }
 
   const repoWithNoJob = allRepos[0];

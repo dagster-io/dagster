@@ -2,13 +2,13 @@
 # pylint: disable=unused-argument,reimported
 
 # start_basic_multi_asset
-from dagster import Out, multi_asset
+from dagster import AssetOut, multi_asset
 
 
 @multi_asset(
     outs={
-        "my_string_asset": Out(),
-        "my_int_asset": Out(),
+        "my_string_asset": AssetOut(),
+        "my_int_asset": AssetOut(),
     }
 )
 def my_function():
@@ -18,13 +18,13 @@ def my_function():
 # end_basic_multi_asset
 
 # start_io_manager_multi_asset
-from dagster import Out, multi_asset
+from dagster import AssetOut, multi_asset
 
 
 @multi_asset(
     outs={
-        "s3_asset": Out(io_manager_key="s3_io_manager"),
-        "adls_asset": Out(io_manager_key="adls2_io_manager"),
+        "s3_asset": AssetOut(io_manager_key="s3_io_manager"),
+        "adls_asset": AssetOut(io_manager_key="adls2_io_manager"),
     },
 )
 def my_assets():
@@ -34,13 +34,13 @@ def my_assets():
 # end_io_manager_multi_asset
 
 # start_subsettable_multi_asset
-from dagster import Out, Output, multi_asset
+from dagster import AssetOut, Output, multi_asset
 
 
 @multi_asset(
     outs={
-        "a": Out(is_required=False),
-        "b": Out(is_required=False),
+        "a": AssetOut(is_required=False),
+        "b": AssetOut(is_required=False),
     },
     can_subset=True,
 )
@@ -54,11 +54,11 @@ def split_actions(context):
 # end_subsettable_multi_asset
 
 # start_asset_deps_multi_asset
-from dagster import AssetKey, Out, Output, multi_asset
+from dagster import AssetKey, AssetOut, Output, multi_asset
 
 
 @multi_asset(
-    outs={"c": Out(), "d": Out()},
+    outs={"c": AssetOut(), "d": AssetOut()},
     internal_asset_deps={
         "c": {AssetKey("a")},
         "d": {AssetKey("b")},

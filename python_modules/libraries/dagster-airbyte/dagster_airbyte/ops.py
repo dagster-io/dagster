@@ -1,6 +1,6 @@
 from dagster_airbyte.resources import DEFAULT_POLL_INTERVAL_SECONDS
 from dagster_airbyte.types import AirbyteOutput
-from dagster_airbyte.utils import generate_materializations
+from dagster_airbyte.utils import _get_attempt, generate_materializations
 
 from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
 
@@ -99,8 +99,8 @@ def airbyte_sync_op(context):
     yield Output(
         airbyte_output,
         metadata={
-            **airbyte_output.job_details.get("attempts", [{}])[-1]
-            .get("attempt", {})
-            .get("totalStats", {})
+            **_get_attempt(airbyte_output.job_details.get("attempts", [{}])[-1]).get(
+                "totalStats", {}
+            )
         },
     )

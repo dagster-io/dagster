@@ -24,7 +24,6 @@ class _BaseRedshiftResource(abc.ABC):
                 "user",
                 "password",
                 "database",
-                "schema",
                 "connect_timeout",
                 "sslmode",
             )
@@ -295,12 +294,6 @@ def define_redshift_config():
             StringSource,
             description="Name of the default database to use. After login, you can use USE DATABASE"
             " to change the database.",
-            is_required=False,
-        ),
-        "schema": Field(
-            StringSource,
-            description="Name of the default schema to use. After login, you can use USE SCHEMA to "
-            "change the schema.",
             is_required=False,
         ),
         "autocommit": Field(

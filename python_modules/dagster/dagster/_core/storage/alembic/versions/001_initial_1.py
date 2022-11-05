@@ -78,7 +78,7 @@ def upgrade():
 
         op.execute(
             SqlEventLogStorageTable.update(None)
-            .where(SqlEventLogStorageTable.c.run_id == None)
+            .where(SqlEventLogStorageTable.c.run_id.is_(None))
             .values({"run_id": context.config.attributes.get("run_id", None)})
         )
 

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 
@@ -13,6 +13,7 @@ class PartitionMapping(ABC):
     that it depends on.
     """
 
+    @public
     @abstractmethod
     def get_upstream_partitions_for_partition_range(
         self,
@@ -32,6 +33,7 @@ class PartitionMapping(ABC):
                 upstream asset.
         """
 
+    @public
     @abstractmethod
     def get_downstream_partitions_for_partition_range(
         self,

@@ -41,7 +41,7 @@ def test_submit_run(instance, coodinator):  # pylint: disable=redefined-outer-na
         external_pipeline = (
             workspace.get_repository_location("bar_repo_location")
             .get_repository("bar_repo")
-            .get_full_external_pipeline("foo")
+            .get_full_external_job("foo")
         )
 
         run = create_run(instance, external_pipeline, run_id="foo-1")
@@ -60,7 +60,7 @@ def test_submit_run_checks_status(instance, coodinator):  # pylint: disable=rede
         external_pipeline = (
             workspace.get_repository_location("bar_repo_location")
             .get_repository("bar_repo")
-            .get_full_external_pipeline("foo")
+            .get_full_external_job("foo")
         )
 
         run = create_run(

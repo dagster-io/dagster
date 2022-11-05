@@ -21,6 +21,10 @@ from dagster._core.definitions.metadata import (
     PartitionMetadataEntry,
     normalize_metadata,
 )
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionKey,
+    get_tags_from_multi_partition_key,
+)
 from dagster._core.errors import (
     DagsterExecutionHandleOutputError,
     DagsterInvariantViolationError,
@@ -100,14 +104,17 @@ def _step_output_error_checked_user_event_sequence(
             step_context.observe_output(output.output_name)
 
             metadata = step_context.get_output_metadata(output.output_name)
-            output = Output(
-                value=output.value,
-                output_name=output.output_name,
-                metadata_entries=[
-                    *output.metadata_entries,
-                    *normalize_metadata(cast(Dict[str, Any], metadata), []),
-                ],
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+
+                output = Output(
+                    value=output.value,
+                    output_name=output.output_name,
+                    metadata_entries=[
+                        *output.metadata_entries,
+                        *normalize_metadata(cast(Dict[str, Any], metadata), []),
+                    ],
+                )
         else:
             if not output_def.is_dynamic:
                 raise DagsterInvariantViolationError(
@@ -431,12 +438,9 @@ def _asset_key_and_partitions_for_output(
 ) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
-
-    pipeline_def = output_context.step_context.pipeline_def
     node_handle = output_context.step_context.solid_handle
-    output_asset_info = pipeline_def.asset_layer.asset_info_for_output(
-        node_handle=output_context.step_context.solid_handle, output_name=output_def.name
-    )
+    output_asset_info = output_context.asset_info
+
     if output_asset_info:
         if manager_asset_key is not None:
             raise DagsterInvariantViolationError(
@@ -488,12 +492,15 @@ def _get_output_asset_materializations(
 ) -> Iterator[AssetMaterialization]:
 
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
-
     if asset_partitions:
-        metadata_mapping: Dict[str, List[Union[MetadataEntry, PartitionMetadataEntry]]] = {
-            partition: [] for partition in asset_partitions
-        }
+        metadata_mapping: Dict[
+            str,
+            List[Union[MetadataEntry, PartitionMetadataEntry]],
+        ] = {partition: [] for partition in asset_partitions}
+
         for entry in all_metadata:
+            # TODO: Allow users to specify a multi-dimensional partition key in a PartitionMetadataEntry
+
             # if you target a given entry at a partition, only apply it to the requested partition
             # otherwise, apply it to all partitions
             if isinstance(entry, PartitionMetadataEntry):
@@ -511,10 +518,17 @@ def _get_output_asset_materializations(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
 
+                tags = (
+                    get_tags_from_multi_partition_key(partition)
+                    if isinstance(partition, MultiPartitionKey)
+                    else None
+                )
+
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     partition=partition,
                     metadata_entries=metadata_mapping[partition],
+                    tags=tags,
                 )
     else:
         for entry in all_metadata:

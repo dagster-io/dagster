@@ -4,8 +4,8 @@ from click.testing import CliRunner
 from dagster._cli.job import execute_scaffold_command, job_scaffold_command
 
 from .test_cli_commands import (
+    valid_job_python_origin_target_args,
     valid_job_python_origin_target_cli_args,
-    valid_pipeline_or_job_python_origin_target_args,
 )
 
 
@@ -13,7 +13,7 @@ def no_print(_):
     return None
 
 
-@pytest.mark.parametrize("cli_args", valid_pipeline_or_job_python_origin_target_args())
+@pytest.mark.parametrize("cli_args", valid_job_python_origin_target_args())
 def test_scaffold_command(cli_args):
     cli_args["print_only_required"] = True
     execute_scaffold_command(cli_args=cli_args, print_fn=no_print)

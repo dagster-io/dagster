@@ -18,7 +18,7 @@ from dagster._core.host_representation import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ
 
-from .test_cli_commands import schedule_command_contexts
+from .test_cli_commands import schedule_command_contexts, scheduler_instance
 
 
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())
@@ -102,43 +102,38 @@ def test_schedules_start_all(gen_schedule_args):
             assert result.output == "Started all schedules for repository bar\n"
 
 
-@pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())
-def test_schedules_wipe_correct_delete_message(gen_schedule_args):
-    with gen_schedule_args as (cli_args, instance):
-        runner = CliRunner()
-        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
-            _instance.return_value = instance
+def test_schedules_wipe_correct_delete_message():
+    runner = CliRunner()
+    with scheduler_instance() as instance, mock.patch(
+        "dagster._core.instance.DagsterInstance.get"
+    ) as _instance:
+        _instance.return_value = instance
 
-            result = runner.invoke(
-                schedule_wipe_command,
-                cli_args,
-                input="DELETE\n",
-            )
+        result = runner.invoke(
+            schedule_wipe_command,
+            input="DELETE\n",
+        )
 
-            if result.exception:
-                raise result.exception
+        if result.exception:
+            raise result.exception
 
-            assert result.exit_code == 0
-            assert "Turned off all schedules and deleted all schedule history" in result.output
+        assert result.exit_code == 0
+        assert "Turned off all schedules and deleted all schedule history" in result.output
 
 
-@pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())
-def test_schedules_wipe_incorrect_delete_message(gen_schedule_args):
-    with gen_schedule_args as (cli_args, instance):
-        runner = CliRunner()
-        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
-            _instance.return_value = instance
-            result = runner.invoke(
-                schedule_wipe_command,
-                cli_args,
-                input="WRONG\n",
-            )
+def test_schedules_wipe_incorrect_delete_message():
+    runner = CliRunner()
+    with scheduler_instance() as instance, mock.patch(
+        "dagster._core.instance.DagsterInstance.get"
+    ) as _instance:
+        _instance.return_value = instance
+        result = runner.invoke(
+            schedule_wipe_command,
+            input="WRONG\n",
+        )
 
-            assert result.exit_code == 0
-            assert (
-                "Exiting without turning off schedules or deleting schedule history"
-                in result.output
-            )
+        assert result.exit_code == 0
+        assert "Exiting without turning off schedules or deleting schedule history" in result.output
 
 
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())

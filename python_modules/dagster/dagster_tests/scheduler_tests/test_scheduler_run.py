@@ -2,9 +2,10 @@ import datetime
 import random
 import string
 import time
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 
 import pendulum
+import pytest
 
 from dagster import (
     Any,
@@ -32,12 +33,15 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
+from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.test_utils import (
-    create_test_daemon_workspace,
+    SingleThreadPoolExecutor,
+    create_test_daemon_workspace_context,
     instance_for_test,
     mock_system_timezone,
+    wait_for_futures,
 )
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerTarget, ModuleTarget
 from dagster._daemon import get_default_daemon_logger
@@ -48,6 +52,7 @@ from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster._seven import wait_for_process
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils import find_free_port
+from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 from .conftest import loadable_target_origin, workspace_load_target
@@ -69,6 +74,46 @@ def _throw_on_odd_day(context):
 
 def _never(_context):
     return False
+
+
+def get_schedule_executors():
+    return [
+        pytest.param(
+            None,
+            id="synchronous",
+        ),
+        pytest.param(
+            SingleThreadPoolExecutor(),
+            id="threadpool",
+        ),
+    ]
+
+
+def evaluate_schedules(
+    workspace_context,
+    executor,
+    end_datetime_utc,
+    max_tick_retries=0,
+    max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
+    debug_crash_flags=None,
+    timeout=75,
+):
+    logger = get_default_daemon_logger("SchedulerDaemon")
+    futures = {}
+    list(
+        launch_scheduled_runs(
+            workspace_context,
+            logger,
+            end_datetime_utc,
+            threadpool_executor=executor,
+            scheduler_run_futures=futures,
+            max_tick_retries=max_tick_retries,
+            max_catchup_runs=max_catchup_runs,
+            debug_crash_flags=debug_crash_flags,
+        )
+    )
+
+    wait_for_futures(futures, timeout=timeout)
 
 
 @solid(config_schema={"partition_time": str})
@@ -184,19 +229,23 @@ def bad_env_fn_schedule():
     return {}
 
 
-NUM_CALLS = {"calls": 0}
+NUM_CALLS = {"sync": 0, "async": 0}
 
 
-@daily_schedule(  # type: ignore
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
-    execution_timezone="UTC",
-)
-def passes_on_retry_schedule(date):
-    NUM_CALLS["calls"] = NUM_CALLS["calls"] + 1
-    if NUM_CALLS["calls"] > 1:
-        return _solid_config(date)
-    raise Exception("better luck next time")
+def get_passes_on_retry_schedule(key):
+    @daily_schedule(  # type: ignore
+        pipeline_name="the_pipeline",
+        start_date=_COUPLE_DAYS_AGO,
+        execution_timezone="UTC",
+        name=f"passes_on_retry_schedule_{key}",
+    )
+    def passes_on_retry_schedule(date):
+        NUM_CALLS[key] = NUM_CALLS[key] + 1
+        if NUM_CALLS[key] > 1:
+            return _solid_config(date)
+        raise Exception("better luck next time")
+
+    return passes_on_retry_schedule
 
 
 @hourly_schedule(
@@ -412,7 +461,8 @@ def the_repo():
         daily_eastern_time_schedule,
         hourly_central_time_schedule,
         bad_env_fn_schedule,
-        passes_on_retry_schedule,
+        get_passes_on_retry_schedule("sync"),
+        get_passes_on_retry_schedule("async"),
         bad_should_execute_schedule,
         bad_should_execute_schedule_on_odd_days,
         skip_schedule,
@@ -532,7 +582,8 @@ def wait_for_all_runs_to_start(instance, timeout=10):
             break
 
 
-def test_simple_schedule(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_simple_schedule(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -549,28 +600,15 @@ def test_simple_schedule(instance, workspace, external_repo):
         assert len(ticks) == 0
 
         # launch_scheduled_runs does nothing before the first tick
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 0
 
     freeze_datetime = freeze_datetime.add(seconds=2)
     with pendulum.test(freeze_datetime):
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -595,14 +633,8 @@ def test_simple_schedule(instance, workspace, external_repo):
         )
 
         # Verify idempotence
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
@@ -611,14 +643,8 @@ def test_simple_schedule(instance, workspace, external_repo):
     # Verify advancing in time but not going past a tick doesn't add any new runs
     freeze_datetime = freeze_datetime.add(seconds=2)
     with pendulum.test(freeze_datetime):
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
@@ -628,14 +654,7 @@ def test_simple_schedule(instance, workspace, external_repo):
     with pendulum.test(freeze_datetime):
 
         # Traveling two more days in the future before running results in two new ticks
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 3
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 3
@@ -647,14 +666,15 @@ def test_simple_schedule(instance, workspace, external_repo):
         assert "2019-03-01" in runs_by_partition
 
         # Check idempotence again
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 3
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 3
 
 
 # Verify that the scheduler uses selector and not origin to dedupe schedules
-def test_schedule_with_different_origin(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_schedule_with_different_origin(instance, workspace_context, external_repo, executor):
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     existing_origin = external_schedule.get_external_origin()
 
@@ -690,21 +710,15 @@ def test_schedule_with_different_origin(instance, workspace, external_repo):
         freeze_datetime = freeze_datetime.add(seconds=2)
 
     with pendulum.test(freeze_datetime):
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(existing_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
 
-def test_old_tick_schedule(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_old_tick_schedule(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -731,39 +745,34 @@ def test_old_tick_schedule(instance, workspace, external_repo):
 
     freeze_datetime = freeze_datetime.add(seconds=2)
     with pendulum.test(freeze_datetime):
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 2
 
 
-def test_no_started_schedules(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_no_started_schedules(instance, workspace_context, external_repo, executor):
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     schedule_origin = external_schedule.get_external_origin()
 
-    list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+    evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
     assert instance.get_runs_count() == 0
 
     ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
     assert len(ticks) == 0
 
 
-def test_schedule_without_timezone(instance):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_schedule_without_timezone(instance, executor):
     with mock_system_timezone("US/Eastern"):
-        with create_test_daemon_workspace(
+        with create_test_daemon_workspace_context(
             workspace_load_target=workspace_load_target(),
             instance=instance,
-        ) as workspace:
+        ) as workspace_context:
             external_repo = next(
-                iter(workspace.get_workspace_snapshot().values())
+                iter(workspace_context.create_request_context().get_workspace_snapshot().values())
             ).repository_location.get_repository("the_repo")
             external_schedule = external_repo.get_external_schedule(
                 "daily_schedule_without_timezone"
@@ -776,7 +785,7 @@ def test_schedule_without_timezone(instance):
             with pendulum.test(initial_datetime):
                 instance.start_schedule(external_schedule)
 
-                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+                evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
                 assert instance.get_runs_count() == 1
 
@@ -803,20 +812,21 @@ def test_schedule_without_timezone(instance):
                 )
 
                 # Verify idempotence
-                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+                evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
                 assert instance.get_runs_count() == 1
                 ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
                 assert len(ticks) == 1
 
 
-def test_bad_env_fn_no_retries(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_bad_env_fn_no_retries(instance, workspace_context, external_repo, executor):
     external_schedule = external_repo.get_external_schedule("bad_env_fn_schedule")
     schedule_origin = external_schedule.get_external_origin()
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     with pendulum.test(initial_datetime):
         instance.start_schedule(external_schedule)
 
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -833,7 +843,7 @@ def test_bad_env_fn_no_retries(instance, workspace, external_repo):
         )
 
         # Idempotency (tick does not retry)
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -851,7 +861,7 @@ def test_bad_env_fn_no_retries(instance, workspace, external_repo):
 
     initial_datetime = initial_datetime.add(days=1)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -868,18 +878,15 @@ def test_bad_env_fn_no_retries(instance, workspace, external_repo):
         )
 
 
-def test_bad_env_fn_with_retries(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_bad_env_fn_with_retries(instance, workspace_context, external_repo, executor):
     external_schedule = external_repo.get_external_schedule("bad_env_fn_schedule")
     schedule_origin = external_schedule.get_external_origin()
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     with pendulum.test(initial_datetime):
         instance.start_schedule(external_schedule)
 
-        list(
-            launch_scheduled_runs(
-                instance, workspace, logger(), pendulum.now("UTC"), max_tick_retries=2
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -895,16 +902,8 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
             expected_failure_count=1,
         )
 
-        list(
-            launch_scheduled_runs(
-                instance, workspace, logger(), pendulum.now("UTC"), max_tick_retries=2
-            )
-        )
-        list(
-            launch_scheduled_runs(
-                instance, workspace, logger(), pendulum.now("UTC"), max_tick_retries=2
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -920,11 +919,7 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
             expected_failure_count=3,
         )
 
-        list(
-            launch_scheduled_runs(
-                instance, workspace, logger(), pendulum.now("UTC"), max_tick_retries=2
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=2)
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
@@ -941,7 +936,7 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
 
     initial_datetime = initial_datetime.add(days=1)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -958,18 +953,20 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
         )
 
 
-def test_passes_on_retry(instance, workspace, external_repo):
-    external_schedule = external_repo.get_external_schedule("passes_on_retry_schedule")
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_passes_on_retry(instance, workspace_context, external_repo, executor):
+    # We need to use different keys across sync and async executors, as the dictionary is persisted across processes.
+    if isinstance(executor, SingleThreadPoolExecutor):
+        schedule_name = "passes_on_retry_schedule_sync"
+    else:
+        schedule_name = "passes_on_retry_schedule_async"
+    external_schedule = external_repo.get_external_schedule(schedule_name)
     schedule_origin = external_schedule.get_external_origin()
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     with pendulum.test(initial_datetime):
         instance.start_schedule(external_schedule)
 
-        list(
-            launch_scheduled_runs(
-                instance, workspace, logger(), pendulum.now("UTC"), max_tick_retries=1
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -981,15 +978,11 @@ def test_passes_on_retry(instance, workspace, external_repo):
             initial_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution of run_config_fn for schedule passes_on_retry_schedule",
+            f"Error occurred during the execution of run_config_fn for schedule {schedule_name}",
             expected_failure_count=1,
         )
 
-        list(
-            launch_scheduled_runs(
-                instance, workspace, logger(), pendulum.now("UTC"), max_tick_retries=1
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
 
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -1006,11 +999,7 @@ def test_passes_on_retry(instance, workspace, external_repo):
 
     initial_datetime = initial_datetime.add(days=1)
     with pendulum.test(initial_datetime):
-        list(
-            launch_scheduled_runs(
-                instance, workspace, logger(), pendulum.now("UTC"), max_tick_retries=1
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_tick_retries=1)
 
         assert instance.get_runs_count() == 2
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -1026,7 +1015,8 @@ def test_passes_on_retry(instance, workspace, external_repo):
         )
 
 
-def test_bad_should_execute(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_bad_should_execute(instance, workspace_context, external_repo, executor):
     external_schedule = external_repo.get_external_schedule("bad_should_execute_schedule")
     schedule_origin = external_schedule.get_external_origin()
     initial_datetime = create_pendulum_time(
@@ -1040,7 +1030,7 @@ def test_bad_should_execute(instance, workspace, external_repo):
     with pendulum.test(initial_datetime):
         instance.start_schedule(external_schedule)
 
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -1057,7 +1047,8 @@ def test_bad_should_execute(instance, workspace, external_repo):
         )
 
 
-def test_skip(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_skip(instance, workspace_context, external_repo, executor):
     external_schedule = external_repo.get_external_schedule("skip_schedule")
     schedule_origin = external_schedule.get_external_origin()
     initial_datetime = to_timezone(
@@ -1067,7 +1058,7 @@ def test_skip(instance, workspace, external_repo):
     with pendulum.test(initial_datetime):
         instance.start_schedule(external_schedule)
 
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -1082,14 +1073,15 @@ def test_skip(instance, workspace, external_repo):
         )
 
 
-def test_wrong_config_schedule(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_wrong_config_schedule(instance, workspace_context, external_repo, executor):
     external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
     schedule_origin = external_schedule.get_external_origin()
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     with pendulum.test(initial_datetime):
         instance.start_schedule(external_schedule)
 
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
 
@@ -1106,14 +1098,15 @@ def test_wrong_config_schedule(instance, workspace, external_repo):
         )
 
 
-def test_schedule_run_default_config(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_schedule_run_default_config(instance, workspace_context, external_repo, executor):
     external_schedule = external_repo.get_external_schedule("default_config_schedule")
     schedule_origin = external_schedule.get_external_origin()
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     with pendulum.test(initial_datetime):
         instance.start_schedule(external_schedule)
 
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 1
 
@@ -1157,7 +1150,10 @@ def _get_unloadable_workspace_load_target():
     )
 
 
-def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_bad_schedules_mixed_with_good_schedule(
+    instance, workspace_context, external_repo, executor
+):
     good_schedule = external_repo.get_external_schedule("simple_schedule")
     bad_schedule = external_repo.get_external_schedule("bad_should_execute_schedule_on_odd_days")
 
@@ -1184,7 +1180,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
         )
         instance.add_instigator_state(unloadable_schedule_state)
 
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 1
         wait_for_all_runs_to_start(instance)
@@ -1221,7 +1217,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
     initial_datetime = initial_datetime.add(days=1)
     with pendulum.test(initial_datetime):
         new_now = pendulum.now("UTC")
-        list(launch_scheduled_runs(instance, workspace, logger(), new_now))
+        evaluate_schedules(workspace_context, executor, new_now)
 
         assert instance.get_runs_count() == 3
         wait_for_all_runs_to_start(instance)
@@ -1268,7 +1264,8 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
         assert len(unloadable_ticks) == 0
 
 
-def test_run_scheduled_on_time_boundary(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_run_scheduled_on_time_boundary(instance, workspace_context, external_repo, executor):
     external_schedule = external_repo.get_external_schedule("simple_schedule")
 
     schedule_origin = external_schedule.get_external_origin()
@@ -1284,7 +1281,7 @@ def test_run_scheduled_on_time_boundary(instance, workspace, external_repo):
         # Start schedule exactly at midnight
         instance.start_schedule(external_schedule)
 
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -1292,7 +1289,8 @@ def test_run_scheduled_on_time_boundary(instance, workspace, external_repo):
         assert ticks[0].status == TickStatus.SUCCESS
 
 
-def test_bad_load_repository(instance, workspace, external_repo, caplog):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_bad_load_repository(instance, workspace_context, external_repo, caplog, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -1320,7 +1318,7 @@ def test_bad_load_repository(instance, workspace, external_repo, caplog):
 
     initial_datetime = freeze_datetime.add(seconds=1)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
 
@@ -1334,7 +1332,8 @@ def test_bad_load_repository(instance, workspace, external_repo, caplog):
         )
 
 
-def test_bad_load_schedule(instance, workspace, external_repo, caplog):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_bad_load_schedule(instance, workspace_context, external_repo, caplog, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -1359,7 +1358,7 @@ def test_bad_load_schedule(instance, workspace, external_repo, caplog):
 
     initial_datetime = freeze_datetime.add(seconds=1)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
 
@@ -1370,10 +1369,11 @@ def test_bad_load_schedule(instance, workspace, external_repo, caplog):
         assert "Could not find schedule invalid_schedule in repository the_repo." in caplog.text
 
 
-def test_error_load_repository_location(instance):
-    with create_test_daemon_workspace(
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_error_load_repository_location(instance, executor):
+    with create_test_daemon_workspace_context(
         _get_unloadable_workspace_load_target(), instance
-    ) as workspace:
+    ) as workspace_context:
         fake_origin = _get_unloadable_schedule_origin()
         initial_datetime = create_pendulum_time(
             year=2019,
@@ -1394,7 +1394,7 @@ def test_error_load_repository_location(instance):
 
         initial_datetime = initial_datetime.add(seconds=1)
         with pendulum.test(initial_datetime):
-            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 0
 
@@ -1404,13 +1404,16 @@ def test_error_load_repository_location(instance):
 
         initial_datetime = initial_datetime.add(days=1)
         with pendulum.test(initial_datetime):
-            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(fake_origin.get_id(), schedule_state.selector_id)
             assert len(ticks) == 0
 
 
-def test_load_repository_location_not_in_workspace(instance, workspace, external_repo, caplog):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_load_repository_location_not_in_workspace(
+    instance, workspace_context, external_repo, caplog, executor
+):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -1441,7 +1444,7 @@ def test_load_repository_location_not_in_workspace(instance, workspace, external
 
     initial_datetime = freeze_datetime.add(seconds=1)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
 
@@ -1455,7 +1458,10 @@ def test_load_repository_location_not_in_workspace(instance, workspace, external
         )
 
 
-def test_multiple_schedules_on_different_time_ranges(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_multiple_schedules_on_different_time_ranges(
+    instance, workspace_context, external_repo, executor
+):
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     external_hourly_schedule = external_repo.get_external_schedule("simple_hourly_schedule")
     initial_datetime = to_timezone(
@@ -1468,14 +1474,7 @@ def test_multiple_schedules_on_different_time_ranges(instance, workspace, extern
 
     initial_datetime = initial_datetime.add(seconds=2)
     with pendulum.test(initial_datetime):
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 2
         ticks = instance.get_ticks(
@@ -1493,7 +1492,7 @@ def test_multiple_schedules_on_different_time_ranges(instance, workspace, extern
 
     initial_datetime = initial_datetime.add(hours=1)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 3
 
@@ -1511,7 +1510,8 @@ def test_multiple_schedules_on_different_time_ranges(instance, workspace, extern
         assert len([tick for tick in hourly_ticks if tick.status == TickStatus.SUCCESS]) == 2
 
 
-def test_launch_failure(workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_launch_failure(workspace_context, external_repo, executor):
     with instance_for_test(
         overrides={
             "run_launcher": {
@@ -1529,9 +1529,10 @@ def test_launch_failure(workspace, external_repo):
         )
 
         with pendulum.test(initial_datetime):
+            exploding_ctx = workspace_context.copy_for_test_instance(instance)
             instance.start_schedule(external_schedule)
 
-            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+            evaluate_schedules(exploding_ctx, executor, pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 1
 
@@ -1556,7 +1557,8 @@ def test_launch_failure(workspace, external_repo):
             )
 
 
-def test_partitionless_schedule(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_partitionless_schedule(instance, workspace_context, external_repo, executor):
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, tz="US/Central")
     with pendulum.test(initial_datetime):
         external_schedule = external_repo.get_external_schedule("partitionless_schedule")
@@ -1566,7 +1568,7 @@ def test_partitionless_schedule(instance, workspace, external_repo):
     # Travel enough in the future that many ticks have passed, but only one run executes
     initial_datetime = initial_datetime.add(days=5)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 1
 
         wait_for_all_runs_to_start(instance)
@@ -1590,7 +1592,8 @@ def test_partitionless_schedule(instance, workspace, external_repo):
         )
 
 
-def test_union_schedule(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_union_schedule(instance, workspace_context, external_repo, executor):
     # This is a Wednesday.
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, tz="UTC")
     with pendulum.test(initial_datetime):
@@ -1600,7 +1603,7 @@ def test_union_schedule(instance, workspace, external_repo):
 
     # No new runs should be launched
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 0
 
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -1608,7 +1611,7 @@ def test_union_schedule(instance, workspace, external_repo):
 
     initial_datetime = initial_datetime.add(days=1)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 1
 
         wait_for_all_runs_to_start(instance)
@@ -1633,7 +1636,7 @@ def test_union_schedule(instance, workspace, external_repo):
 
     initial_datetime = initial_datetime.add(days=1)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 2
 
         wait_for_all_runs_to_start(instance)
@@ -1658,7 +1661,7 @@ def test_union_schedule(instance, workspace, external_repo):
 
     initial_datetime = initial_datetime.add(days=1)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 3
 
         wait_for_all_runs_to_start(instance)
@@ -1684,14 +1687,15 @@ def test_union_schedule(instance, workspace, external_repo):
     # No new runs should be launched
     initial_datetime = initial_datetime.add(days=1)
     with pendulum.test(initial_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 3
 
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 3
 
 
-def test_max_catchup_runs(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_max_catchup_runs(instance, workspace_context, external_repo, executor):
     initial_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -1704,15 +1708,7 @@ def test_max_catchup_runs(instance, workspace, external_repo):
     initial_datetime = initial_datetime.add(days=5)
     with pendulum.test(initial_datetime):
         # Day is now March 4 at 11:59PM
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-                max_catchup_runs=2,
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"), max_catchup_runs=2)
 
         assert instance.get_runs_count() == 2
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -1754,7 +1750,8 @@ def test_max_catchup_runs(instance, workspace, external_repo):
         )
 
 
-def test_multi_runs(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_multi_runs(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(
             year=2019,
@@ -1777,14 +1774,14 @@ def test_multi_runs(instance, workspace, external_repo):
         assert len(ticks) == 0
 
         # launch_scheduled_runs does nothing before the first tick
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 0
 
     freeze_datetime = freeze_datetime.add(seconds=2)
     with pendulum.test(freeze_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 2
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
@@ -1806,7 +1803,7 @@ def test_multi_runs(instance, workspace, external_repo):
         validate_run_started(instance, runs[1], execution_time=create_pendulum_time(2019, 2, 28))
 
         # Verify idempotence
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 2
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
@@ -1816,7 +1813,7 @@ def test_multi_runs(instance, workspace, external_repo):
     with pendulum.test(freeze_datetime):
 
         # Traveling one more day in the future before running results in a tick
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 4
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 2
@@ -1824,7 +1821,8 @@ def test_multi_runs(instance, workspace, external_repo):
         runs = instance.get_runs()
 
 
-def test_multi_run_list(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_multi_run_list(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(
             year=2019,
@@ -1847,14 +1845,14 @@ def test_multi_run_list(instance, workspace, external_repo):
         assert len(ticks) == 0
 
         # launch_scheduled_runs does nothing before the first tick
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 0
 
     freeze_datetime = freeze_datetime.add(seconds=2)
     with pendulum.test(freeze_datetime):
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 2
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
@@ -1876,7 +1874,7 @@ def test_multi_run_list(instance, workspace, external_repo):
         validate_run_started(instance, runs[1], execution_time=create_pendulum_time(2019, 2, 28))
 
         # Verify idempotence
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 2
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
@@ -1886,7 +1884,7 @@ def test_multi_run_list(instance, workspace, external_repo):
     with pendulum.test(freeze_datetime):
 
         # Traveling one more day in the future before running results in a tick
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 4
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 2
@@ -1894,7 +1892,8 @@ def test_multi_run_list(instance, workspace, external_repo):
         runs = instance.get_runs()
 
 
-def test_multi_runs_missing_run_key(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_multi_runs_missing_run_key(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"), "US/Central"
     )
@@ -1905,7 +1904,7 @@ def test_multi_runs_missing_run_key(instance, workspace, external_repo):
         schedule_origin = external_schedule.get_external_origin()
         instance.start_schedule(external_schedule)
 
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
@@ -1922,7 +1921,8 @@ def test_multi_runs_missing_run_key(instance, workspace, external_repo):
         )
 
 
-def test_large_schedule(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_large_schedule(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -1935,14 +1935,7 @@ def test_large_schedule(instance, workspace, external_repo):
         freeze_datetime = freeze_datetime.add(seconds=2)
 
     with pendulum.test(freeze_datetime):
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -1970,7 +1963,8 @@ def _grpc_server_external_repo(port):
             wait_for_process(server_process, timeout=30)
 
 
-def test_skip_reason_schedule(instance, workspace, external_repo):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_skip_reason_schedule(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=28, tz="UTC"),
         "US/Central",
@@ -1982,7 +1976,7 @@ def test_skip_reason_schedule(instance, workspace, external_repo):
 
         instance.start_schedule(external_schedule)
 
-        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -2000,7 +1994,8 @@ def test_skip_reason_schedule(instance, workspace, external_repo):
         )
 
 
-def test_grpc_server_down(instance):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_grpc_server_down(instance, executor):
     port = find_free_port()
     location_origin = GrpcServerRepositoryLocationOrigin(
         host="localhost", port=port, location_name="test_location"
@@ -2014,63 +2009,73 @@ def test_grpc_server_down(instance):
     )
 
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
-    with create_test_daemon_workspace(
-        GrpcServerTarget(host="localhost", port=port, socket=None, location_name="test_location"),
-        instance,
-    ) as workspace:
-        with pendulum.test(initial_datetime):
-            with _grpc_server_external_repo(port) as external_repo:
-                external_schedule = external_repo.get_external_schedule("simple_schedule")
-                instance.start_schedule(external_schedule)
-                workspace.get_repository_location(location_origin.location_name)
+    stack = ExitStack()
+    external_repo = stack.enter_context(_grpc_server_external_repo(port))
+    workspace_context = stack.enter_context(
+        create_test_daemon_workspace_context(
+            GrpcServerTarget(
+                host="localhost", port=port, socket=None, location_name="test_location"
+            ),
+            instance,
+        )
+    )
+    with pendulum.test(initial_datetime):
+        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        instance.start_schedule(external_schedule)
+        # freeze the working workspace snapshot
+        server_up_ctx = workspace_context.copy_for_test_instance(instance)
 
-            # Server is no longer running, ticks fail but indicate it will resume once it is reachable
-            for _trial in range(3):
-                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
-                assert instance.get_runs_count() == 0
-                ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-                assert len(ticks) == 1
+        # shut down the server
+        stack.pop_all()
 
-                validate_tick(
-                    ticks[0],
-                    external_schedule,
-                    initial_datetime,
-                    TickStatus.FAILURE,
-                    [],
-                    "Unable to reach the user code server for schedule simple_schedule. Schedule will resume execution once the server is available.",
-                    expected_failure_count=0,
-                )
+        # Server is no longer running, ticks fail but indicate it will resume once it is reachable
+        for _trial in range(3):
+            evaluate_schedules(server_up_ctx, executor, pendulum.now("UTC"))
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            assert len(ticks) == 1
 
-            # Server starts back up, tick now succeeds
-            with _grpc_server_external_repo(port) as external_repo:
-                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
-                assert instance.get_runs_count() == 1
-                ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-                assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                TickStatus.FAILURE,
+                [],
+                "Unable to reach the user code server for schedule simple_schedule. Schedule will resume execution once the server is available.",
+                expected_failure_count=0,
+            )
 
-                expected_datetime = create_pendulum_time(year=2019, month=2, day=27)
+        # Server starts back up, tick now succeeds
+        with _grpc_server_external_repo(port) as external_repo:
+            evaluate_schedules(server_up_ctx, executor, pendulum.now("UTC"))
+            assert instance.get_runs_count() == 1
+            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            assert len(ticks) == 1
 
-                validate_tick(
-                    ticks[0],
-                    external_schedule,
-                    expected_datetime,
-                    TickStatus.SUCCESS,
-                    [run.run_id for run in instance.get_runs()],
-                )
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=27)
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in instance.get_runs()],
+            )
 
 
 # Schedules with status defined in code have that status applied
-def test_status_in_code_schedule(instance):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_status_in_code_schedule(instance, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
     )
-    with create_test_daemon_workspace(
+    with create_test_daemon_workspace_context(
         workspace_load_target(attribute="the_status_in_code_repo"),
         instance,
-    ) as workspace:
+    ) as workspace_context:
         external_repo = next(
-            iter(workspace.get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
         ).repository_location.get_repository("the_status_in_code_repo")
 
         with pendulum.test(freeze_datetime):
@@ -2098,7 +2103,7 @@ def test_status_in_code_schedule(instance):
 
             assert len(instance.all_instigator_state()) == 0
 
-            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
             # No runs, but the job state is updated to set a checkpoing
             assert instance.get_runs_count() == 0
@@ -2128,14 +2133,7 @@ def test_status_in_code_schedule(instance):
 
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
-            list(
-                launch_scheduled_runs(
-                    instance,
-                    workspace,
-                    logger(),
-                    pendulum.now("UTC"),
-                )
-            )
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 1
 
@@ -2171,14 +2169,7 @@ def test_status_in_code_schedule(instance):
             )
 
             # Verify idempotence
-            list(
-                launch_scheduled_runs(
-                    instance,
-                    workspace,
-                    logger(),
-                    pendulum.now("UTC"),
-                )
-            )
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
             assert instance.get_runs_count() == 1
             ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 1
@@ -2187,14 +2178,7 @@ def test_status_in_code_schedule(instance):
         freeze_datetime = freeze_datetime.add(days=2)
         with pendulum.test(freeze_datetime):
             # Traveling two more days in the future before running results in two new ticks
-            list(
-                launch_scheduled_runs(
-                    instance,
-                    workspace,
-                    logger(),
-                    pendulum.now("UTC"),
-                )
-            )
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
             assert instance.get_runs_count() == 3
             ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 3
@@ -2205,35 +2189,47 @@ def test_status_in_code_schedule(instance):
             assert "2019-02-28" in runs_by_partition
             assert "2019-03-01" in runs_by_partition
 
+        # Now try with an error workspace - the job state should not be deleted
+        # since its associated with an errored out location
+        with pendulum.test(freeze_datetime):
+            # pylint: disable=protected-access
+            workspace_context._location_entry_dict[
+                "test_location"
+            ] = workspace_context._location_entry_dict["test_location"]._replace(
+                repository_location=None,
+                load_error=SerializableErrorInfo("error", [], "error"),
+            )
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
+            assert len(ticks) == 3
+            assert len(instance.all_instigator_state()) == 1
+
     # Now try with an empty workspace - ticks are still there, but the job state is deleted
     # once it's no longer present in the workspace
-    with create_test_daemon_workspace(EmptyWorkspaceTarget(), instance) as empty_workspace:
+    with create_test_daemon_workspace_context(
+        EmptyWorkspaceTarget(), instance
+    ) as empty_workspace_ctx:
         with pendulum.test(freeze_datetime):
-            list(
-                launch_scheduled_runs(
-                    instance,
-                    empty_workspace,
-                    logger(),
-                    pendulum.now("UTC"),
-                )
-            )
+            evaluate_schedules(empty_workspace_ctx, executor, pendulum.now("UTC"))
             ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 3
             assert len(instance.all_instigator_state()) == 0
 
 
-def test_change_default_status(instance):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_change_default_status(instance, executor):
     # Simulate the case where a schedule previously had a default running status set, but is now changed back to default status stopped
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with create_test_daemon_workspace(
+    with create_test_daemon_workspace_context(
         workspace_load_target(attribute="the_status_in_code_repo"),
         instance,
-    ) as workspace:
+    ) as workspace_context:
         external_repo = next(
-            iter(workspace.get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
         ).repository_location.get_repository("the_status_in_code_repo")
 
         not_running_schedule = external_repo.get_external_schedule("never_running_schedule")
@@ -2255,14 +2251,7 @@ def test_change_default_status(instance):
         freeze_datetime = freeze_datetime.add(days=2)
         with pendulum.test(freeze_datetime):
             # Traveling two more days in the future before running results in two new ticks
-            list(
-                launch_scheduled_runs(
-                    instance,
-                    workspace,
-                    logger(),
-                    pendulum.now("UTC"),
-                )
-            )
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
             ticks = instance.get_ticks(
                 never_running_origin.get_id(), not_running_schedule.selector_id
@@ -2288,14 +2277,7 @@ def test_change_default_status(instance):
             )
             instance.add_instigator_state(schedule_state)
 
-            list(
-                launch_scheduled_runs(
-                    instance,
-                    workspace,
-                    logger(),
-                    pendulum.now("UTC"),
-                )
-            )
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
             ticks = instance.get_ticks(
                 never_running_origin.get_id(), not_running_schedule.selector_id
@@ -2306,7 +2288,8 @@ def test_change_default_status(instance):
             assert ticks[0].status == TickStatus.SUCCESS
 
 
-def test_repository_namespacing(instance: DagsterInstance):
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_repository_namespacing(instance: DagsterInstance, executor):
     # ensure dupe schedules in different repos do not conflict on idempotence
 
     freeze_datetime = to_timezone(
@@ -2321,14 +2304,18 @@ def test_repository_namespacing(instance: DagsterInstance):
         ),
         "US/Central",
     )
-    with create_test_daemon_workspace(
+    with create_test_daemon_workspace_context(
         workspace_load_target=workspace_load_target(attribute=None),  # load all repos
         instance=instance,
-    ) as full_workspace:
+    ) as full_workspace_context:
 
         with pendulum.test(freeze_datetime):
             full_location = next(
-                iter(full_workspace.get_workspace_snapshot().values())
+                iter(
+                    full_workspace_context.create_request_context()
+                    .get_workspace_snapshot()
+                    .values()
+                )
             ).repository_location
             external_repo = full_location.get_repository("the_repo")
             other_repo = full_location.get_repository("the_other_repo")
@@ -2357,7 +2344,7 @@ def test_repository_namespacing(instance: DagsterInstance):
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
-            list(launch_scheduled_runs(instance, full_workspace, logger(), pendulum.now("UTC")))
+            evaluate_schedules(full_workspace_context, executor, pendulum.now("UTC"))
             assert instance.get_runs_count() == 0
 
             ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -2368,7 +2355,7 @@ def test_repository_namespacing(instance: DagsterInstance):
 
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
-            list(launch_scheduled_runs(instance, full_workspace, logger(), pendulum.now("UTC")))
+            evaluate_schedules(full_workspace_context, executor, pendulum.now("UTC"))
 
             assert (
                 instance.get_runs_count() == 4
@@ -2393,7 +2380,7 @@ def test_repository_namespacing(instance: DagsterInstance):
                 pendulum.now("UTC").timestamp(),
             )
 
-            list(launch_scheduled_runs(instance, full_workspace, logger(), pendulum.now("UTC")))
+            evaluate_schedules(full_workspace_context, executor, pendulum.now("UTC"))
             assert instance.get_runs_count() == 4  # still 4
             ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
             assert len(ticks) == 1
@@ -2402,3 +2389,9 @@ def test_repository_namespacing(instance: DagsterInstance):
             ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
+
+
+def test_settings():
+    settings = {"use_threads": True, "num_workers": 4}
+    with instance_for_test(overrides={"schedules": settings}) as thread_inst:
+        assert thread_inst.get_settings("schedules") == settings

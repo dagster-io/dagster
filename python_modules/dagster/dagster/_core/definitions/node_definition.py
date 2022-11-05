@@ -169,6 +169,10 @@ class NodeDefinition(NamedConfigurableDefinition):
         ...
 
     @abstractmethod
+    def resolve_output_to_origin_op_def(self, output_name: str) -> "SolidDefinition":
+        ...
+
+    @abstractmethod
     def input_has_default(self, input_name: str) -> bool:
         ...
 

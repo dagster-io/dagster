@@ -115,7 +115,16 @@ def test_context_logging_metadata():
     assert [entry.label for entry in context.get_logged_metadata_entries()] == ["foo"]
 
 
-def test_context_partition_key():
+def test_output_context_partition_key():
     context = build_output_context(partition_key="foo")
     assert context.partition_key == "foo"
     assert context.has_partition_key
+
+
+def test_input_context_partition_key():
+    context = build_input_context(partition_key="foo")
+    assert context.partition_key == "foo"
+    assert context.has_partition_key
+
+    context = build_input_context()
+    assert not context.has_partition_key

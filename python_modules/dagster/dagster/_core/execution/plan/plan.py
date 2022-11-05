@@ -29,6 +29,8 @@ from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.executor_definition import ExecutorRequirement
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
@@ -102,16 +104,24 @@ class _PlanBuilder:
         self,
         pipeline: IPipeline,
         resolved_run_config: ResolvedRunConfig,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         known_state: KnownExecutionState,
         instance_ref: Optional[InstanceRef],
         tags: Dict[str, str],
+        repository_load_data: Optional[RepositoryLoadData],
     ):
+        if isinstance(pipeline, ReconstructablePipeline) and repository_load_data is not None:
+            check.invariant(
+                pipeline.repository.repository_load_data == repository_load_data,
+                "When building an ExecutionPlan with explicit repository_load_data and a "
+                "ReconstructablePipeline, the repository_load_data on the pipeline must be identical "
+                "to passed-in repository_load_data.",
+            )
         self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
         self.resolved_run_config = check.inst_param(
             resolved_run_config, "resolved_run_config", ResolvedRunConfig
         )
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", str)
+        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", str)
         self.step_keys_to_execute = step_keys_to_execute
         self.mode_definition = (
             pipeline.get_definition().get_mode_definition(resolved_run_config.mode)
@@ -126,6 +136,9 @@ class _PlanBuilder:
         self._instance_ref = instance_ref
         self._seen_handles: Set[StepHandleUnion] = set()
         self._tags = check.dict_param(tags, "tags", key_type=str, value_type=str)
+        self.repository_load_data = check.opt_inst_param(
+            repository_load_data, "repository_load_data", RepositoryLoadData
+        )
 
     @property
     def pipeline_name(self) -> str:
@@ -232,6 +245,7 @@ class _PlanBuilder:
                 executable_map,
             ),
             executor_name=executor_name,
+            repository_load_data=self.repository_load_data,
         )
 
         if self.step_keys_to_execute is not None:
@@ -611,6 +625,7 @@ class ExecutionPlan(
             ("artifacts_persisted", bool),
             ("step_dict_by_key", Dict[str, IExecutionStep]),
             ("executor_name", Optional[str]),
+            ("repository_load_data", Optional[RepositoryLoadData]),
         ],
     )
 ):
@@ -624,6 +639,7 @@ class ExecutionPlan(
         artifacts_persisted: bool = False,
         step_dict_by_key: Optional[Dict[str, IExecutionStep]] = None,
         executor_name: Optional[str] = None,
+        repository_load_data: Optional[RepositoryLoadData] = None,
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
@@ -659,6 +675,9 @@ class ExecutionPlan(
                 ),
             ),
             executor_name=check.opt_str_param(executor_name, "executor_name"),
+            repository_load_data=check.opt_inst_param(
+                repository_load_data, "repository_load_data", RepositoryLoadData
+            ),
         )
 
     @property
@@ -761,12 +780,12 @@ class ExecutionPlan(
 
     def build_subset_plan(
         self,
-        step_keys_to_execute: List[str],
+        step_keys_to_execute: Sequence[str],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
         step_output_versions=None,
     ) -> "ExecutionPlan":
-        check.list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         step_output_versions = check.opt_dict_param(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
@@ -844,6 +863,7 @@ class ExecutionPlan(
                 executable_map,
             ),
             executor_name=self.executor_name,
+            repository_load_data=self.repository_load_data,
         )
 
     def get_version_for_step_output_handle(
@@ -856,7 +876,7 @@ class ExecutionPlan(
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
         instance: DagsterInstance,
-        selected_step_keys: Optional[List[str]],
+        selected_step_keys: Optional[Sequence[str]],
     ) -> "ExecutionPlan":
         """
         Returns:
@@ -985,10 +1005,11 @@ class ExecutionPlan(
     def build(
         pipeline: IPipeline,
         resolved_run_config: ResolvedRunConfig,
-        step_keys_to_execute: Optional[List[str]] = None,
+        step_keys_to_execute: Optional[Sequence[str]] = None,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
         tags: Optional[Dict[str, str]] = None,
+        repository_load_data: Optional[RepositoryLoadData] = None,
     ) -> "ExecutionPlan":
         """Here we build a new ExecutionPlan from a pipeline definition and the resolved run config.
 
@@ -1000,7 +1021,7 @@ class ExecutionPlan(
         """
         check.inst_param(pipeline, "pipeline", IPipeline)
         check.inst_param(resolved_run_config, "resolved_run_config", ResolvedRunConfig)
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         known_state = check.opt_inst_param(
             known_state,
             "known_state",
@@ -1009,6 +1030,9 @@ class ExecutionPlan(
             default=KnownExecutionState(),
         )
         tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+        repository_load_data = check.opt_inst_param(
+            repository_load_data, "repository_load_data", RepositoryLoadData
+        )
 
         plan_builder = _PlanBuilder(
             pipeline,
@@ -1017,6 +1041,7 @@ class ExecutionPlan(
             known_state=known_state,
             instance_ref=instance_ref,
             tags=tags,
+            repository_load_data=repository_load_data,
         )
 
         # Finally, we build and return the execution plan
@@ -1144,6 +1169,7 @@ class ExecutionPlan(
             execution_plan_snapshot.initial_known_state or KnownExecutionState(),
             execution_plan_snapshot.artifacts_persisted,
             executor_name=execution_plan_snapshot.executor_name,
+            repository_load_data=execution_plan_snapshot.repository_load_data,
         )
 
 

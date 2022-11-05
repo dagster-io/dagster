@@ -2,7 +2,7 @@ import shutil
 
 import pytest
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
-from dagster_pyspark import pyspark_resource
+from dagster_pyspark import lazy_pyspark_resource, pyspark_resource
 from pyspark.sql import Row, SparkSession
 
 from dagster import file_relative_path
@@ -12,14 +12,20 @@ from dagster._utils.test import get_temp_dir
 
 spark = SparkSession.builder.getOrCreate()
 
-dataframe_parametrize_argnames = "file_type,read,other"
+dataframe_parametrize_argnames = "file_type,read,other,resource"
 dataframe_parametrize_argvalues = [
-    pytest.param("csv", spark.read.csv, False, id="csv"),
-    pytest.param("parquet", spark.read.parquet, False, id="parquet"),
-    pytest.param("json", spark.read.json, False, id="json"),
-    pytest.param("csv", spark.read.load, True, id="other_csv"),
-    pytest.param("parquet", spark.read.load, True, id="other_parquet"),
-    pytest.param("json", spark.read.load, True, id="other_json"),
+    pytest.param("csv", spark.read.csv, False, pyspark_resource, id="csv"),
+    pytest.param("parquet", spark.read.parquet, False, pyspark_resource, id="parquet"),
+    pytest.param("json", spark.read.json, False, pyspark_resource, id="json"),
+    pytest.param("csv", spark.read.load, True, pyspark_resource, id="other_csv"),
+    pytest.param("parquet", spark.read.load, True, pyspark_resource, id="other_parquet"),
+    pytest.param("json", spark.read.load, True, pyspark_resource, id="other_json"),
+    pytest.param("csv", spark.read.csv, False, lazy_pyspark_resource, id="csv"),
+    pytest.param("parquet", spark.read.parquet, False, lazy_pyspark_resource, id="lazy_parquet"),
+    pytest.param("json", spark.read.json, False, lazy_pyspark_resource, id="lazy_json"),
+    pytest.param("csv", spark.read.load, True, lazy_pyspark_resource, id="lazy_other_csv_lazy"),
+    pytest.param("parquet", spark.read.load, True, lazy_pyspark_resource, id="lazy_other_parquet"),
+    pytest.param("json", spark.read.load, True, lazy_pyspark_resource, id="lazy_other_json"),
 ]
 
 
@@ -29,7 +35,7 @@ def create_pyspark_df():
 
 
 @pytest.mark.parametrize(dataframe_parametrize_argnames, dataframe_parametrize_argvalues)
-def test_dataframe_outputs(file_type, read, other):
+def test_dataframe_outputs(file_type, read, other, resource):
     df = create_pyspark_df()
 
     @solid(output_defs=[OutputDefinition(dagster_type=DagsterPySparkDataFrame, name="df")])
@@ -46,7 +52,7 @@ def test_dataframe_outputs(file_type, read, other):
 
         result = execute_solid(
             return_df,
-            mode_def=ModeDefinition(resource_defs={"pyspark": pyspark_resource}),
+            mode_def=ModeDefinition(resource_defs={"pyspark": resource}),
             run_config={"solids": {"return_df": {"outputs": [{"df": {file_type: options}}]}}},
         )
         assert result.success
@@ -55,7 +61,7 @@ def test_dataframe_outputs(file_type, read, other):
 
         result = execute_solid(
             return_df,
-            mode_def=ModeDefinition(resource_defs={"pyspark": pyspark_resource}),
+            mode_def=ModeDefinition(resource_defs={"pyspark": resource}),
             run_config={
                 "solids": {
                     "return_df": {
@@ -82,7 +88,7 @@ def test_dataframe_outputs(file_type, read, other):
 
 
 @pytest.mark.parametrize(dataframe_parametrize_argnames, dataframe_parametrize_argvalues)
-def test_dataframe_inputs(file_type, read, other):
+def test_dataframe_inputs(file_type, read, other, resource):
     @solid(
         input_defs=[InputDefinition(dagster_type=DagsterPySparkDataFrame, name="input_df")],
     )
@@ -96,7 +102,7 @@ def test_dataframe_inputs(file_type, read, other):
 
     result = execute_solid(
         return_df,
-        mode_def=ModeDefinition(resource_defs={"pyspark": pyspark_resource}),
+        mode_def=ModeDefinition(resource_defs={"pyspark": resource}),
         run_config={"solids": {"return_df": {"inputs": {"input_df": {file_type: options}}}}},
     )
     assert result.success

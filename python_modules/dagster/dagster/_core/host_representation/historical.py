@@ -1,3 +1,5 @@
+from typing import Optional
+
 import dagster._check as check
 from dagster._core.snap import PipelineSnapshot
 
@@ -16,16 +18,28 @@ class HistoricalPipeline(RepresentedPipeline):
     """
 
     def __init__(
-        self, pipeline_snapshot, identifying_pipeline_snapshot_id, parent_pipeline_snapshot
+        self,
+        pipeline_snapshot: PipelineSnapshot,
+        identifying_pipeline_snapshot_id: str,
+        parent_pipeline_snapshot: Optional[PipelineSnapshot],
     ):
-        check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
-        check.opt_inst_param(parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot)
+        self._snapshot = check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+        self._parent_snapshot = check.opt_inst_param(
+            parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot
+        )
         self._identifying_pipeline_snapshot_id = check.str_param(
             identifying_pipeline_snapshot_id, "identifying_pipeline_snapshot_id"
         )
-        super(HistoricalPipeline, self).__init__(
-            pipeline_index=PipelineIndex(pipeline_snapshot, parent_pipeline_snapshot),
-        )
+        self._index = None
+
+    @property
+    def _pipeline_index(self):
+        if self._index is None:
+            self._index = PipelineIndex(
+                self._snapshot,
+                self._parent_snapshot,
+            )
+        return self._index
 
     @property
     def identifying_pipeline_snapshot_id(self):

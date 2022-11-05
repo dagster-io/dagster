@@ -30,7 +30,7 @@ Before you start, note that:
 
 - **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
 
-- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. These users will be granted Viewer permissions by default.
+- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/developing-testing/deployment-settings-reference#sso-default-role).
 
 To add a new user to a deployment:
 

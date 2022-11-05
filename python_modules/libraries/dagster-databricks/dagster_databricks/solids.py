@@ -30,13 +30,13 @@ def create_databricks_job_op(
 
         .. code-block:: python
 
-            from dagster import graph
+            from dagster import job
             from dagster_databricks import create_databricks_job_op, databricks_client
 
             sparkpi = create_databricks_job_op().configured(
                 {
                     "job": {
-                        "name": "SparkPi Python job",
+                        "run_name": "SparkPi Python job",
                         "new_cluster": {
                             "spark_version": "7.3.x-scala2.12",
                             "node_type_id": "i3.xlarge",
@@ -48,17 +48,15 @@ def create_databricks_job_op(
                 name="sparkpi",
             )
 
-            @graph
-            def my_spark():
-                sparkpi()
-
-            my_spark.to_job(
+            @job(
                 resource_defs={
                     "databricks_client": databricks_client.configured(
                         {"host": "my.workspace.url", "token": "my.access.token"}
                     )
                 }
             )
+            def do_stuff():
+                sparkpi()
     """
     check.str_param(name, "name")
     check.opt_str_param(description, "description")

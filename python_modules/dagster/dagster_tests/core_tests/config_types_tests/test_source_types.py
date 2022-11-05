@@ -91,8 +91,8 @@ def test_bool_source():
 
     with environ({"DAGSTER_TEST_ENV_VAR": ""}):
         assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).success
-        assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).value == False
+        assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).value is False
 
     with environ({"DAGSTER_TEST_ENV_VAR": "True"}):
         assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).success
-        assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).value == True
+        assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).value is True

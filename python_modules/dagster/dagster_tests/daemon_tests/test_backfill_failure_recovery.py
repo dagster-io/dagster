@@ -7,7 +7,7 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
     cleanup_test_instance,
-    create_test_daemon_workspace,
+    create_test_daemon_workspace_context,
     get_crash_signals,
 )
 from dagster._daemon import get_default_daemon_logger
@@ -31,13 +31,12 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     )
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime), create_test_daemon_workspace(
+            with pendulum.test(execution_datetime), create_test_daemon_workspace_context(
                 workspace_load_target=workspace_load_target(), instance=instance
-            ) as workspace:
+            ) as workspace_context:
                 list(
                     execute_backfill_iteration(
-                        instance,
-                        workspace,
+                        workspace_context,
                         get_default_daemon_logger("BackfillDaemon"),
                         debug_crash_flags=debug_crash_flags,
                     )

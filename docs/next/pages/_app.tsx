@@ -1,6 +1,6 @@
-import '../styles/globals.css';
-import '../styles/prism.css';
-
+import '/styles/fonts.css';
+import '/styles/globals.css';
+import '/styles/prism.css';
 import {useVersion} from 'util/useVersion';
 
 import {PersistentTabProvider} from 'components/PersistentTabContext';
@@ -16,7 +16,7 @@ const BASE_URL = 'https://docs.dagster.io';
 const DEFAULT_SEO = {
   title: 'Dagster Docs',
   twitter: {
-    site: '@dagsterio',
+    site: '@dagster',
     cardType: 'summary_large_image',
     images: {
       url: `${BASE_URL}/assets/shared/dagster-og-share.png`,

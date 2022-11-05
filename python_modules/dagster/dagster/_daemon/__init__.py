@@ -30,4 +30,3 @@ from .monitoring.monitoring_daemon import monitor_started_run, monitor_starting_
 from .run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from .sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from .types import DaemonHeartbeat, DaemonStatus
-from .workspace import BaseDaemonWorkspace, DaemonWorkspace

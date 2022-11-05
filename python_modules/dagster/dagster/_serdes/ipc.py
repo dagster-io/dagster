@@ -162,7 +162,7 @@ def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
 
     with open(os.path.abspath(file_path), "r", encoding="utf8") as file_pointer:
         message = _process_line(file_pointer)
-        while elapsed_time < timeout and message == None:
+        while elapsed_time < timeout and message is None:
             _poll_process(ipc_process)
             elapsed_time += sleep_interval
             sleep(sleep_interval)
@@ -177,7 +177,7 @@ def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
 
         message = _process_line(file_pointer)
         while not isinstance(message, IPCEndMessage):
-            if message == None:
+            if message is None:
                 _poll_process(ipc_process)
             yield message
             message = _process_line(file_pointer)

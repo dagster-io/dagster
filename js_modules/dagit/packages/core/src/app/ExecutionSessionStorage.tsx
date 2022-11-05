@@ -229,13 +229,16 @@ export const useInitialDataForMode = (
   pipeline: LaunchpadSessionPipelineFragment,
   partitionSets: LaunchpadSessionPartitionSetsFragment,
 ) => {
-  const {isJob, presets} = pipeline;
+  const {isJob, isAssetJob, presets} = pipeline;
   const partitionSetsForMode = partitionSets.results;
 
   return React.useMemo(() => {
     const presetsForMode = isJob ? (presets.length ? [presets[0]] : []) : presets;
 
-    if (presetsForMode.length === 1 && partitionSetsForMode.length === 0) {
+    // I believe that partition sets in asset jobs do not provide config (at least right now),
+    // so even in the presence of a partition set we want to use config from the
+    // `default` preset
+    if (presetsForMode.length === 1 && (isAssetJob || partitionSetsForMode.length === 0)) {
       return {
         base: {presetName: presetsForMode[0].name, tags: null},
         runConfigYaml: presetsForMode[0].runConfigYaml,
@@ -249,5 +252,5 @@ export const useInitialDataForMode = (
     }
 
     return {};
-  }, [isJob, partitionSetsForMode, presets]);
+  }, [isAssetJob, isJob, partitionSetsForMode, presets]);
 };

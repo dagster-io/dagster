@@ -1,0 +1,6 @@
+load_from:
+  # Each entry here corresponds to a service in the docker-compose file that exposes jobs.
+  - grpc_server:
+      host: user_code
+      port: 4000
+      location_name: "example_jobs"

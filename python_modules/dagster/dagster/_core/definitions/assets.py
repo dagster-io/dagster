@@ -18,6 +18,7 @@ from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
@@ -91,6 +92,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
+        freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
     ):
@@ -155,6 +157,12 @@ class AssetsDefinition(ResourceAddable):
                 node_def.resolve_output_to_origin(output_name, None)[0].metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+        self._freshness_policies_by_key = check.opt_dict_param(
+            freshness_policies_by_key,
+            "freshness_policies_by_key",
+            key_type=AssetKey,
+            value_type=FreshnessPolicy,
+        )
 
     def __call__(self, *args, **kwargs):
         from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
@@ -506,10 +514,19 @@ class AssetsDefinition(ResourceAddable):
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
 
+    @property
+    def freshness_policies_by_key(self) -> Mapping[AssetKey, FreshnessPolicy]:
+        return self._freshness_policies_by_key
+
     @public  # type: ignore
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
+
+    @public  # type: ignore
+    @property
+    def is_versioned(self) -> bool:
+        return self.op.version is not None
 
     @property
     def metadata_by_key(self):
@@ -526,6 +543,21 @@ class AssetsDefinition(ResourceAddable):
                 if self._partitions_def
                 else AllPartitionMapping(),
             )
+
+    def get_output_name_for_asset_key(self, key: AssetKey) -> str:
+        for output_name, asset_key in self.keys_by_output_name.items():
+            if key == asset_key:
+                return output_name
+
+        check.failed(f"Asset key {key.to_user_string()} not found in AssetsDefinition")
+
+    def get_op_def_for_asset_key(self, key: AssetKey) -> OpDefinition:
+        """
+        If this is an op-backed asset, returns the op def. If it's a graph-backed asset,
+        returns the op def within the graph that produces the given asset key.
+        """
+        output_name = self.get_output_name_for_asset_key(key)
+        return cast(OpDefinition, self.node_def.resolve_output_to_origin_op_def(output_name))
 
     def with_prefix_or_group(
         self,
@@ -567,6 +599,11 @@ class AssetsDefinition(ResourceAddable):
             for key, group_name in self.group_names_by_key.items()
         }
 
+        replaced_freshness_policies_by_key = {
+            output_asset_key_replacements.get(key, key): policy
+            for key, policy in self._freshness_policies_by_key.items()
+        }
+
         return self.__class__(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -578,7 +615,10 @@ class AssetsDefinition(ResourceAddable):
             },
             node_def=self.node_def,
             partitions_def=self.partitions_def,
-            partition_mappings=self._partition_mappings,
+            partition_mappings={
+                input_asset_key_replacements.get(key, key): partition_mapping
+                for key, partition_mapping in self._partition_mappings.items()
+            },
             asset_deps={
                 # replace both the keys and the values in this mapping
                 output_asset_key_replacements.get(key, key): {
@@ -599,6 +639,7 @@ class AssetsDefinition(ResourceAddable):
                 **replaced_group_names_by_key,
                 **group_names_by_key,
             },
+            freshness_policies_by_key=replaced_freshness_policies_by_key,
         )
 
     def _subset_graph_backed_asset(
@@ -705,6 +746,7 @@ class AssetsDefinition(ResourceAddable):
                 selected_asset_keys=selected_asset_keys & self.keys,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
+                freshness_policies_by_key=self.freshness_policies_by_key,
             )
         else:
             # multi_asset subsetting
@@ -745,6 +787,12 @@ class AssetsDefinition(ResourceAddable):
                 )
 
             return result
+
+    def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
+        output_name = self.get_output_name_for_asset_key(key)
+        return self.node_def.resolve_output_to_origin(
+            output_name, NodeHandle(self.node_def.name, parent=None)
+        )[0].io_manager_key
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
         yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
@@ -806,6 +854,7 @@ class AssetsDefinition(ResourceAddable):
             can_subset=self._can_subset,
             resource_defs=relevant_resource_defs,
             group_names_by_key=self.group_names_by_key,
+            freshness_policies_by_key=self.freshness_policies_by_key,
         )
 
 

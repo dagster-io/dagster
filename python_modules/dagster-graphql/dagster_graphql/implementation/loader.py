@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 from dagster import DagsterInstance
 from dagster import _check as check
@@ -51,7 +51,7 @@ class RepositoryScopedBatchLoader:
         self._data: Dict[RepositoryDataType, Dict[str, List[Any]]] = {}
         self._limits: Dict[RepositoryDataType, int] = {}
 
-    def _get(self, data_type, key, limit):
+    def _get(self, data_type: RepositoryDataType, key: str, limit: int) -> Sequence[Any]:
         check.inst_param(data_type, "data_type", RepositoryDataType)
         check.str_param(key, "key")
         check.int_param(limit, "limit")
@@ -59,15 +59,15 @@ class RepositoryScopedBatchLoader:
             self._fetch(data_type, limit)
         return self._data[data_type].get(key, [])[:limit]
 
-    def _fetch(self, data_type, limit):
+    def _fetch(self, data_type: RepositoryDataType, limit: int) -> None:
         check.inst_param(data_type, "data_type", RepositoryDataType)
         check.int_param(limit, "limit")
 
-        fetched = defaultdict(list)
+        fetched: Dict[str, List[Any]] = defaultdict(list)
 
         if data_type == RepositoryDataType.JOB_RUNS:
-            job_names = [x.name for x in self._repository.get_all_external_pipelines()]
-            if self._instance.supports_bucket_queries:
+            job_names = [x.name for x in self._repository.get_all_external_jobs()]
+            if self._instance.supports_bucket_queries and len(job_names) > 1:
                 records = self._instance.get_run_records(
                     filters=RunsFilter(
                         tags={
@@ -99,7 +99,7 @@ class RepositoryScopedBatchLoader:
             schedule_names = [
                 schedule.name for schedule in self._repository.get_external_schedules()
             ]
-            if self._instance.supports_bucket_queries:
+            if self._instance.supports_bucket_queries and len(schedule_names) > 1:
                 records = self._instance.get_run_records(
                     filters=RunsFilter(
                         tags={
@@ -129,11 +129,12 @@ class RepositoryScopedBatchLoader:
                         )
                     )
             for record in records:
-                fetched[record.pipeline_run.tags.get(SCHEDULE_NAME_TAG)].append(record)
+                tag: str = check.not_none(record.pipeline_run.tags.get(SCHEDULE_NAME_TAG))
+                fetched[tag].append(record)
 
         elif data_type == RepositoryDataType.SENSOR_RUNS:
             sensor_names = [sensor.name for sensor in self._repository.get_external_sensors()]
-            if self._instance.supports_bucket_queries:
+            if self._instance.supports_bucket_queries and len(sensor_names) > 1:
                 records = self._instance.get_run_records(
                     filters=RunsFilter(
                         tags={
@@ -163,7 +164,8 @@ class RepositoryScopedBatchLoader:
                         )
                     )
             for record in records:
-                fetched[record.pipeline_run.tags.get(SENSOR_NAME_TAG)].append(record)
+                tag = check.not_none(record.pipeline_run.tags.get(SENSOR_NAME_TAG))
+                fetched[tag].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_STATES:
             schedule_states = self._instance.all_instigator_state(
@@ -190,14 +192,14 @@ class RepositoryScopedBatchLoader:
                 ]
                 ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
                 for schedule in self._repository.get_external_schedules():
-                    fetched[schedule.get_external_origin_id()] = ticks_by_selector.get(
-                        schedule.selector_id, []
+                    fetched[schedule.get_external_origin_id()] = list(
+                        ticks_by_selector.get(schedule.selector_id, [])
                     )
             else:
                 for schedule in self._repository.get_external_schedules():
                     origin_id = schedule.get_external_origin_id()
-                    fetched[origin_id] = self._instance.get_ticks(
-                        origin_id, schedule.selector_id, limit=limit
+                    fetched[origin_id] = list(
+                        self._instance.get_ticks(origin_id, schedule.selector_id, limit=limit)
                     )
 
         elif data_type == RepositoryDataType.SENSOR_TICKS:
@@ -207,14 +209,14 @@ class RepositoryScopedBatchLoader:
                 ]
                 ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
                 for sensor in self._repository.get_external_sensors():
-                    fetched[sensor.get_external_origin_id()] = ticks_by_selector.get(
-                        sensor.selector_id, []
+                    fetched[sensor.get_external_origin_id()] = list(
+                        ticks_by_selector.get(sensor.selector_id, [])
                     )
             else:
                 for sensor in self._repository.get_external_sensors():
                     origin_id = sensor.get_external_origin_id()
-                    fetched[origin_id] = self._instance.get_ticks(
-                        origin_id, sensor.selector_id, limit=limit
+                    fetched[origin_id] = list(
+                        self._instance.get_ticks(origin_id, sensor.selector_id, limit=limit)
                     )
 
         else:
@@ -223,27 +225,26 @@ class RepositoryScopedBatchLoader:
         self._data[data_type] = fetched
         self._limits[data_type] = limit
 
-    def get_run_records_for_job(self, job_name, limit):
+    def get_run_records_for_job(self, job_name: str, limit: int) -> Sequence[Any]:
         check.invariant(
-            job_name
-            in [pipeline.name for pipeline in self._repository.get_all_external_pipelines()]
+            job_name in [pipeline.name for pipeline in self._repository.get_all_external_jobs()]
         )
         return self._get(RepositoryDataType.JOB_RUNS, job_name, limit)
 
-    def get_run_records_for_schedule(self, schedule_name, limit):
+    def get_run_records_for_schedule(self, schedule_name: str, limit: int) -> Sequence[Any]:
         check.invariant(
             schedule_name
             in [schedule.name for schedule in self._repository.get_external_schedules()]
         )
         return self._get(RepositoryDataType.SCHEDULE_RUNS, schedule_name, limit)
 
-    def get_run_records_for_sensor(self, sensor_name, limit):
+    def get_run_records_for_sensor(self, sensor_name: str, limit: int) -> Sequence[Any]:
         check.invariant(
             sensor_name in [sensor.name for sensor in self._repository.get_external_sensors()]
         )
         return self._get(RepositoryDataType.SENSOR_RUNS, sensor_name, limit)
 
-    def get_schedule_state(self, schedule_name):
+    def get_schedule_state(self, schedule_name: str) -> Optional[Sequence[Any]]:
         check.invariant(
             schedule_name
             in [schedule.name for schedule in self._repository.get_external_schedules()]
@@ -251,21 +252,21 @@ class RepositoryScopedBatchLoader:
         states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
         return states[0] if states else None
 
-    def get_sensor_state(self, sensor_state):
+    def get_sensor_state(self, sensor_name: str) -> Optional[Sequence[Any]]:
         check.invariant(
-            sensor_state in [sensor.name for sensor in self._repository.get_external_sensors()]
+            sensor_name in [sensor.name for sensor in self._repository.get_external_sensors()]
         )
-        states = self._get(RepositoryDataType.SENSOR_STATES, sensor_state, 1)
+        states = self._get(RepositoryDataType.SENSOR_STATES, sensor_name, 1)
         return states[0] if states else None
 
-    def get_sensor_ticks(self, origin_id, selector_id, limit):
+    def get_sensor_ticks(self, origin_id: str, selector_id: str, limit: int) -> Sequence[Any]:
         check.invariant(
             selector_id
             in [sensor.selector_id for sensor in self._repository.get_external_sensors()]
         )
         return self._get(RepositoryDataType.SENSOR_TICKS, origin_id, limit)
 
-    def get_schedule_ticks(self, origin_id, selector_id, limit):
+    def get_schedule_ticks(self, origin_id: str, selector_id: str, limit: int) -> Sequence[Any]:
         check.invariant(
             selector_id
             in [schedule.selector_id for schedule in self._repository.get_external_schedules()]
@@ -294,7 +295,7 @@ class BatchRunLoader:
             self._fetch()
         return self._records.get(run_id)
 
-    def _fetch(self):
+    def _fetch(self) -> None:
         records = self._instance.get_run_records(RunsFilter(run_ids=list(self._run_ids)))
         for record in records:
             self._records[record.pipeline_run.run_id] = record
@@ -324,7 +325,7 @@ class BatchMaterializationLoader:
             self._fetch()
         return self._materializations.get(asset_key)
 
-    def _fetch(self):
+    def _fetch(self) -> None:
         self._fetched = True
         self._materializations = {
             record.asset_entry.asset_key: record.asset_entry.last_materialization

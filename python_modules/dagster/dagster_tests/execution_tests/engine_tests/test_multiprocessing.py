@@ -1,13 +1,24 @@
+# pylint: disable=unused-argument
 import os
 import sys
 import time
 
 import pytest
 
-from dagster import Failure, Field, MetadataEntry, Nothing, Output, String, reconstructable
+from dagster import (
+    Failure,
+    Field,
+    MetadataEntry,
+    Nothing,
+    Output,
+    String,
+    multiprocess_executor,
+    reconstructable,
+)
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
     InputDefinition,
@@ -19,6 +30,12 @@ from dagster._legacy import (
     solid,
 )
 from dagster._utils import safe_tempfile_path, segfault
+
+from .retry_jobs import (
+    assert_expected_failure_behavior,
+    get_dynamic_job_op_failure,
+    get_dynamic_job_resource_init_failure,
+)
 
 
 def test_diamond_simple_execution():
@@ -439,22 +456,26 @@ def test_crash_multiprocessing():
 
         assert failure_data.user_failure_data is None
 
-        assert (
-            "Crashy output to stdout"
-            in instance.compute_log_manager.read_logs_file(
-                result.run_id, "sys_exit", ComputeIOType.STDOUT
-            ).data
+        capture_events = [
+            event
+            for event in result.event_list
+            if event.event_type == DagsterEventType.LOGS_CAPTURED
+        ]
+        event = capture_events[0]
+        assert isinstance(instance.compute_log_manager, CapturedLogManager)
+        log_key = instance.compute_log_manager.build_log_key_for_run(
+            result.run_id, event.logs_captured_data.file_key
         )
+        log_data = instance.compute_log_manager.get_log_data(log_key)
+
+        assert "Crashy output to stdout" in log_data.stdout.decode("utf-8")
 
         # The argument to sys.exit won't (reliably) make it to the compute logs for stderr b/c the
         # LocalComputeLogManger is in-process -- documenting this behavior here though we may want to
         # change it
 
         # assert (
-        #     'Crashy output to stderr'
-        #     not in instance.compute_log_manager.read_logs_file(
-        #         result.run_id, 'sys_exit', ComputeIOType.STDERR
-        #     ).data
+        #     'Crashy output to stderr' not in log_data.stdout.decode("utf-8")
         # )
 
 
@@ -505,3 +526,31 @@ def test_crash_hard_multiprocessing():
         #     ).data
         #     is None
         # )
+
+
+def get_dynamic_resource_init_failure_job():
+    return get_dynamic_job_resource_init_failure(multiprocess_executor)[0]
+
+
+def get_dynamic_op_failure_job():
+    return get_dynamic_job_op_failure(multiprocess_executor)[0]
+
+
+# Tests identical retry behavior when a job fails because of resource
+# initialization of a dynamic step, and failure during op runtime of a
+# dynamic step.
+@pytest.mark.parametrize(
+    "job_fn,config_fn",
+    [
+        (
+            get_dynamic_resource_init_failure_job,
+            get_dynamic_job_resource_init_failure(multiprocess_executor)[1],
+        ),
+        (
+            get_dynamic_op_failure_job,
+            get_dynamic_job_op_failure(multiprocess_executor)[1],
+        ),
+    ],
+)
+def test_dynamic_failure_retry(job_fn, config_fn):
+    assert_expected_failure_behavior(job_fn, config_fn)

@@ -14,6 +14,7 @@ import arrow_upward from '../icon-svgs/arrow_upward.svg';
 import asset from '../icon-svgs/asset.svg';
 import asset_group from '../icon-svgs/asset_group.svg';
 import asset_non_sda from '../icon-svgs/asset_non_sda.svg';
+import asset_plot from '../icon-svgs/asset_plot.svg';
 import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
@@ -22,6 +23,7 @@ import expectation from '../icon-svgs/bp-automatic-updates.svg';
 import op from '../icon-svgs/bp-git-commit.svg';
 import op_selector from '../icon-svgs/bp-send-to-graph.svg';
 import cached from '../icon-svgs/cached.svg';
+import calendar from '../icon-svgs/calendar.svg';
 import cancel from '../icon-svgs/cancel.svg';
 import chat_support from '../icon-svgs/chat-support.svg';
 import check_circle from '../icon-svgs/check_circle.svg';
@@ -52,6 +54,7 @@ import github from '../icon-svgs/github.svg';
 import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
 import github_pr_open from '../icon-svgs/github_pr_open.svg';
+import gitlab from '../icon-svgs/gitlab.svg';
 import graph_downstream from '../icon-svgs/graph_downstream.svg';
 import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
 import graph_upstream from '../icon-svgs/graph_upstream.svg';
@@ -81,6 +84,7 @@ import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
 import panel_show_left from '../icon-svgs/panel_show_left.svg';
 import panel_show_right from '../icon-svgs/panel_show_right.svg';
 import panel_show_top from '../icon-svgs/panel_show_top.svg';
+import partition from '../icon-svgs/partition.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
@@ -129,6 +133,7 @@ import {Colors} from './Colors';
 export const Icons = {
   // Core icons
   asset,
+  asset_plot,
   asset_non_sda,
   asset_group,
   expectation,
@@ -139,6 +144,7 @@ export const Icons = {
   op_selector,
   op_dynamic: bolt,
   partition_set: schedule,
+  partition,
   repo: source,
   resource: layers,
   run: history,
@@ -156,6 +162,7 @@ export const Icons = {
   panel_hide_right,
   panel_show_bottom,
   panel_show_both,
+  calendar,
   copy_to_clipboard: assignment,
   copy_to_clipboard_done: assignment_turned_in,
   chat_support,
@@ -168,6 +175,7 @@ export const Icons = {
   github_pr_open,
   github_pr_closed,
   github_pr_merged,
+  gitlab,
   youtube,
 
   graph_downstream,
@@ -275,7 +283,7 @@ export const IconNames = Object.keys(Icons) as IconName[];
 interface Props {
   color?: string;
   name: IconName;
-  size?: 16 | 20 | 24 | 48;
+  size?: 12 | 16 | 20 | 24 | 48;
   style?: React.CSSProperties;
 }
 
@@ -286,10 +294,7 @@ export const Icon = React.memo((props: Props) => {
     // in Dagit but not in Storybook due to webpack config differences
     img = (img as {default: any}).default;
   }
-  let color: string | null = props.color || Colors.Dark;
-  if (SVGS_WITH_COLORS.has(img)) {
-    color = null;
-  }
+  const color: string | null = props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.Dark);
   return (
     <IconWrapper
       role="img"
@@ -321,15 +326,16 @@ export const IconWrapper = styled.div<WrapperProps>`
         // We could just use !important but specificity is a little more flexible
         `
         background: url(${p.$img});
+        background-size: cover;
         &[role='img'][role='img'] {
           background-color: transparent;
         }
       `
       : `
         background: ${p.$color};
+        mask-size: cover;
         mask-image: url(${p.$img});
       `}
-  mask-size: cover;
   object-fit: cover;
   transition: transform 150ms linear;
 

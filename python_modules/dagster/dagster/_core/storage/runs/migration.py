@@ -167,7 +167,7 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
         .select_from(
             RunsTable.join(subquery, RunsTable.c.run_id == subquery.c.tags_run_id, isouter=True)
         )
-        .where(subquery.c.tags_run_id == None)
+        .where(subquery.c.tags_run_id.is_(None))
         .order_by(db.asc(RunsTable.c.id))
         .limit(CHUNK_SIZE)
     )
@@ -222,7 +222,7 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn=None):
 
     base_query = (
         db.select([BulkActionsTable.c.body, BulkActionsTable.c.id])
-        .where(BulkActionsTable.c.action_type == None)
+        .where(BulkActionsTable.c.action_type.is_(None))
         .order_by(db.asc(BulkActionsTable.c.id))
         .limit(CHUNK_SIZE)
     )
