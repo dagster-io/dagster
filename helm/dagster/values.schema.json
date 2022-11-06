@@ -414,6 +414,17 @@
                         }
                     ]
                 },
+                "dbPoolRecycle": {
+                    "title": "DbPoolRecycle",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "logLevel": {
                     "title": "Loglevel",
                     "anyOf": [
