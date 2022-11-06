@@ -733,11 +733,17 @@ class DagsterInstance:
             self._schedule_storage.upgrade()
             self._schedule_storage.migrate(print_fn)
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout, pool_recycle):
         if self._schedule_storage:
-            self._schedule_storage.optimize_for_dagit(statement_timeout=statement_timeout)
-        self._run_storage.optimize_for_dagit(statement_timeout=statement_timeout)
-        self._event_storage.optimize_for_dagit(statement_timeout=statement_timeout)
+            self._schedule_storage.optimize_for_dagit(
+                statement_timeout=statement_timeout, pool_recycle=pool_recycle
+            )
+        self._run_storage.optimize_for_dagit(
+            statement_timeout=statement_timeout, pool_recycle=pool_recycle
+        )
+        self._event_storage.optimize_for_dagit(
+            statement_timeout=statement_timeout, pool_recycle=pool_recycle
+        )
 
     def reindex(self, print_fn=lambda _: None):
         print_fn("Checking for reindexing...")
