@@ -332,33 +332,33 @@ def _attempt_resolve_cycles(
     asset_deps = generate_asset_dep_graph(assets_defs, source_assets)
 
     # index AssetsDefinitions by their asset names
-    assets_defs_by_asset_name = {}
+    assets_defs_by_asset_key: Dict[AssetKey, AssetsDefinition] = {}
     for assets_def in assets_defs:
         for asset_key in assets_def.keys:
-            assets_defs_by_asset_name[asset_key.to_user_string()] = assets_def
+            assets_defs_by_asset_key[asset_key] = assets_def
 
     # color for each asset
     colors = {}
 
     # recursively color an asset and all of its downstream assets
-    def _dfs(name, cur_color):
-        colors[name] = cur_color
-        if name in assets_defs_by_asset_name:
-            cur_node_asset_keys = assets_defs_by_asset_name[name].keys
+    def _dfs(key, cur_color):
+        colors[key] = cur_color
+        if key in assets_defs_by_asset_key:
+            cur_node_asset_keys = assets_defs_by_asset_key[key].keys
         else:
             # in a SourceAsset, treat all downstream as if they're in the same node
-            cur_node_asset_keys = asset_deps["downstream"][name]
+            cur_node_asset_keys = asset_deps["downstream"][key]
 
-        for downstream_name in asset_deps["downstream"][name]:
+        for downstream_key in asset_deps["downstream"][key]:
             # if the downstream asset is in the current node,keep the same color
-            if AssetKey.from_user_string(downstream_name) in cur_node_asset_keys:
+            if downstream_key in cur_node_asset_keys:
                 new_color = cur_color
             else:
                 new_color = cur_color + 1
 
             # if current color of the downstream asset is less than the new color, re-do dfs
-            if colors.get(downstream_name, -1) < new_color:
-                _dfs(downstream_name, new_color)
+            if colors.get(downstream_key, -1) < new_color:
+                _dfs(downstream_key, new_color)
 
     # validate that there are no cycles in the overall asset graph
     toposorted = list(toposort(asset_deps["upstream"]))
@@ -370,14 +370,11 @@ def _attempt_resolve_cycles(
     color_mapping_by_assets_defs: Dict[AssetsDefinition, Any] = defaultdict(
         lambda: defaultdict(set)
     )
-    for name, color in colors.items():
-        asset_key = AssetKey.from_user_string(name)
+    for key, color in colors.items():
         # ignore source assets
-        if name not in assets_defs_by_asset_name:
+        if key not in assets_defs_by_asset_key:
             continue
-        color_mapping_by_assets_defs[assets_defs_by_asset_name[name]][color].add(
-            AssetKey.from_user_string(name)
-        )
+        color_mapping_by_assets_defs[assets_defs_by_asset_key[key]][color].add(key)
 
     ret = []
     for assets_def, color_mapping in color_mapping_by_assets_defs.items():

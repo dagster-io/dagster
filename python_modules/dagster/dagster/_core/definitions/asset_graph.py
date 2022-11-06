@@ -1,10 +1,7 @@
 from typing import Sequence, Union
 
 import dagster._check as check
-from dagster._core.selector.subset_selector import (
-    generate_asset_dep_graph,
-    generate_asset_name_to_definition_map,
-)
+from dagster._core.selector.subset_selector import generate_asset_dep_graph
 
 from .assets import AssetsDefinition
 from .source_asset import SourceAsset
@@ -23,8 +20,10 @@ class AssetGraph:
                 check.failed(f"Expected SourceAsset or AssetsDefinition, got {type(asset)}")
 
         self.assets_defs = assets_defs
-        self.asset_dep_graph = generate_asset_dep_graph(assets_defs, source_assets)
-        self.all_assets_by_key_str = generate_asset_name_to_definition_map(assets_defs)
-        self.source_asset_key_strs = {
-            source_asset.key.to_user_string() for source_asset in source_assets
+        self.all_asset_keys = {
+            asset_key
+            for assets_def in assets_defs
+            for asset_key, group in assets_def.group_names_by_key.items()
         }
+        self.asset_dep_graph = generate_asset_dep_graph(assets_defs, source_assets)
+        self.source_asset_keys = {source_asset.key for source_asset in source_assets}
