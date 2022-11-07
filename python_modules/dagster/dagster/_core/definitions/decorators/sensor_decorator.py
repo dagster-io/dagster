@@ -37,6 +37,7 @@ def sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    asset_selection: Optional[AssetSelection] = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
@@ -62,6 +63,8 @@ def sensor(
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
+            the sensor condition is met. This can be provided instead of specifying a job.
     """
     check.opt_str_param(name, "name")
 
@@ -77,6 +80,7 @@ def sensor(
             job=job,
             jobs=jobs,
             default_status=default_status,
+            asset_selection=asset_selection,
         )
 
         update_wrapper(sensor_def, wrapped=fn)
