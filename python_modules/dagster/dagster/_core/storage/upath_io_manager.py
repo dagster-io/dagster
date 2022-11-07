@@ -13,15 +13,15 @@ from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 
 class UPathIOManager(MemoizableIOManager):
     """
-    Abstract IOManager base class compatible with local and cloud storage via `fsspec` (using `universal-pathlib`).
+    Abstract IOManager base class compatible with local and cloud storage via `universal-pathlib` and `fsspec`.
 
     Features:
-     - working with any filesystem supported by `fsspec`
-     - handling loading multiple upstream asset partitions via PartitionDict
-     (returns a dictionary with mapping from partition_keys to loaded objects)
+     - compatible with any filesystem supported by `fsspec`
+     - handling loading multiple upstream asset partitions
+     (returns a dictionary with mapping from partition_keys to partitions in this case)
      - the `get_metadata` method can be customized to add additional metadata to the outputs
-     - the `allow_missing_partitions: bool` metadata value can control
-     either raising an error or skipping on missing partitions
+     - the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions
+     (the default behavior is to raise an error)
     """
 
     extension: str = ""  # override in child class

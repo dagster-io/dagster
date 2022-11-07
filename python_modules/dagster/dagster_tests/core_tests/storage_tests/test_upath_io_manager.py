@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 
+import pandas as pd
 import pytest
 from upath import UPath
 
@@ -80,7 +81,6 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
         def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
             with path.open("w") as file:
                 json.dump(obj, file)
-                # file.write(json.dumps(obj).encode())
 
         def load_from_path(self, context: InputContext, path: UPath) -> Any:
             with path.open("r") as file:
@@ -111,6 +111,58 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
         dagster_type=DagsterType(type_check_fn=lambda _, value: True, name="any", typing_type=Any),
     )
     assert manager.load_input(context) == json_data
+
+
+def test_upath_io_manager_with_pandas_csv(tmp_path: Path):
+    class PandasCSVIOManager(UPathIOManager):
+        extension: str = ".csv"
+
+        def dump_to_path(self, context: OutputContext, obj: pd.DataFrame, path: UPath):
+            with path.open("wb") as file:
+                obj.to_csv(file, index=False)
+
+        def load_from_path(self, context: InputContext, path: UPath) -> pd.DataFrame:
+            with path.open("rb") as file:
+                return pd.read_csv(file)
+
+    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
+    def pandas_csv_io_manager(init_context: InitResourceContext):
+        assert init_context.instance is not None
+        base_path = UPath(
+            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
+        )
+        return PandasCSVIOManager(base_path=base_path)
+
+    manager = pandas_csv_io_manager(
+        build_init_resource_context(config={"base_path": str(tmp_path)})
+    )
+
+    df = pd.DataFrame({"a": [1, 2, 3], "b": ["a", "b", "c"]})
+
+    context = build_output_context(
+        name="abc",
+        step_key="123",
+        dagster_type=DagsterType(
+            type_check_fn=lambda _, value: isinstance(value, pd.DataFrame),
+            name="pandas.DataFrame",
+            typing_type=pd.DataFrame,
+        ),
+    )
+    manager.handle_output(context, df)
+
+    with manager._get_path(context).open("rb") as file:  # pylint: disable=W0212
+        pd.testing.assert_frame_equal(df, pd.read_csv(file))
+
+    context = build_input_context(
+        name="abc",
+        upstream_output=context,
+        dagster_type=DagsterType(
+            type_check_fn=lambda _, value: isinstance(value, pd.DataFrame),
+            name="pandas.DataFrame",
+            typing_type=pd.DataFrame,
+        ),
+    )
+    pd.testing.assert_frame_equal(manager.load_input(context), df)
 
 
 def test_upath_io_manager_multiple_time_partitions(
