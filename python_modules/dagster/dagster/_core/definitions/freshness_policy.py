@@ -94,7 +94,9 @@ class MinimumFreshnessPolicy(FreshnessPolicy):
             constraints.extend(
                 [
                     (key, required_materialization_time, time)
-                    for key in upstream_materialization_times.keys()
+                    for key, actual_time in upstream_materialization_times.items()
+                    # remove constraints that have already been addressed based off of current data
+                    if actual_time < required_materialization_time
                 ]
             )
 
@@ -155,7 +157,13 @@ class CronMinimumFreshnessPolicy(FreshnessPolicy):
             required_materialization_time = current_tick - pendulum.duration(
                 self.minimum_freshness_minutes
             )
-            constraints.extend([(key, required_materialization_time, current_tick)])
+            constraints.extend(
+                [
+                    (key, required_materialization_time, current_tick)
+                    for key, actual_time in upstream_materialization_times.items()
+                    if actual_time < required_materialization_time
+                ]
+            )
             current_tick = next(schedule_ticks)
         return constraints
 
