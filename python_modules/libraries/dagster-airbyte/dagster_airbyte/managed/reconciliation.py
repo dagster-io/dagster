@@ -589,7 +589,7 @@ def reconcile_connections_post(
             connection_base_json["namespaceDefinition"] = config_conn.destination_namespace.value
         else:
             connection_base_json["namespaceDefinition"] = "customformat"
-            connection_base_json["namespaceFormat"] = config_conn.destination_namespace
+            connection_base_json["namespaceFormat"] = cast(str, config_conn.destination_namespace)
 
         if existing_conn:
             if not dry_run:
