@@ -28,6 +28,7 @@ from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import make_readonly_value, merge_dicts
 
+from .asset_selection import AssetGraph
 from .assets_job import get_base_asset_jobs, is_base_asset_job_name
 from .cacheable_assets import AssetsDefinitionCacheableData
 from .events import AssetKey, CoercibleToAssetKey
@@ -1421,6 +1422,10 @@ class RepositoryDefinition:
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
         return AssetValueLoader(self._assets_defs_by_key, instance=instance)
+
+    @property
+    def asset_graph(self) -> AssetGraph:
+        return AssetGraph([*self._assets_defs_by_key.values(), *self.source_assets_by_key.values()])
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.

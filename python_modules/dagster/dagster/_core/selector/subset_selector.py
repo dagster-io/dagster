@@ -247,6 +247,19 @@ def fetch_sinks(graph: DependencyGraph, within_selection: AbstractSet[str]) -> F
     return frozenset(sinks)
 
 
+def fetch_sources(graph: DependencyGraph, within_selection: AbstractSet[str]) -> FrozenSet[str]:
+    """
+    A source is a node that has no upstream dependencies within the provided selection.
+    It can have other dependencies outside of the selection.
+    """
+    traverser = Traverser(graph)
+    sources = set()
+    for item in within_selection:
+        if len(traverser.fetch_upstream(item, depth=MAX_NUM) & within_selection) == 0:
+            sources.add(item)
+    return frozenset(sources)
+
+
 # Maps string names of individual assets (used in the dependency graphs) to `AssetsDefinition`
 # objects
 def generate_asset_name_to_definition_map(
