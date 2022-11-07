@@ -44,7 +44,7 @@ Built-in IO Managers
 
 The :py::class::`UPathIOManager` can be used to easily define filesystem-based IO Managers.
 
-.. autoclass:: dagster._core.storage.UPathIOManager
+.. autoclass:: UPathIOManager
 
 
 Input Managers (Experimental)

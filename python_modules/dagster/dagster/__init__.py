@@ -538,6 +538,7 @@ from dagster._serdes.serdes import (
     deserialize_value as deserialize_value,
     serialize_value as serialize_value,
 )
+from dagster._core.storage.upath_io_manager import UPathIOManager as UPathIOManager
 from dagster._utils import (
     file_relative_path as file_relative_path,
 )
