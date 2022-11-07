@@ -144,6 +144,7 @@ def test_basic_integration(empty_airbyte_instance, airbyte_source_files, filenam
             "streams": {
                 "my_data_stream": "FULL_REFRESH_APPEND",
             },
+            "destination namespace": "SAME_AS_SOURCE",
         },
     }
     expected_result = diff_dicts(
@@ -311,3 +312,60 @@ def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source
             include_all_secrets=True,
         )
         assert ManagedElementDiff() != check_result
+
+
+def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_files):
+
+    # Set up example element and ensure no diff
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert check_result == ManagedElementDiff()
+
+    # Change the destination namespace, ensure that we get the proper diff
+    expected_diff = diff_dicts(
+        {
+            "local-json-conn": {
+                "destination namespace": "DESTINATION_DEFAULT",
+            },
+        },
+        {
+            "local-json-conn": {
+                "destination namespace": "SAME_AS_SOURCE",
+            },
+        },
+    )
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_dest_default")
+    assert check_result == expected_diff
+
+    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_dest_default")
+    assert apply_result == expected_diff
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_dest_default")
+    assert check_result == ManagedElementDiff()
+
+    # Reset to original state
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert check_result == ManagedElementDiff()
+
+    # Change the destination namespace, ensure that we get the proper diff
+    expected_diff = diff_dicts(
+        {
+            "local-json-conn": {
+                "destination namespace": "my-cool-namespace",
+            },
+        },
+        {
+            "local-json-conn": {
+                "destination namespace": "SAME_AS_SOURCE",
+            },
+        },
+    )
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_namespace")
+    assert check_result == expected_diff
+
+    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_namespace")
+    assert apply_result == expected_diff
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_namespace")
+    assert check_result == ManagedElementDiff()
