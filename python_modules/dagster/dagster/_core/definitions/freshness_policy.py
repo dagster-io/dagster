@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Sequence, Tuple
 
 import pendulum
 from croniter import croniter
@@ -82,23 +82,34 @@ class MinimumFreshnessPolicy(FreshnessPolicy):
 
         constraints = []
         period = pendulum.period(window_start, window_end)
+        print(".................")
+        print(upstream_materialization_times)
+        print(period)
+        print(window_start, window_end)
 
         # a MinimumFreshnessPolicy corresponds to an infinite series of constraints, as at
         # each point in time, the upstream materialization time of a given parent asset must
         # be no more than N minutes before that point in time.
         #
-        # we interpolate this infinite series with to approximate it.
-        for time in period.range("minutes", self.minimum_freshness_minutes / 5):
+        # we interpolate this infinite series with to approximate it, keeping only the first fifty
+        # distinct times to keep things manageable
+        total_times = 0
+        for time in period.range("minutes", self.minimum_freshness_minutes / 10.0):
             # add a constraint for each upstream key
-            required_materialization_time = time - pendulum.duration(self.minimum_freshness_minutes)
+            required_materialization_time = time - pendulum.duration(
+                minutes=self.minimum_freshness_minutes
+            )
             constraints.extend(
                 [
                     (key, required_materialization_time, time)
                     for key, actual_time in upstream_materialization_times.items()
                     # remove constraints that have already been addressed based off of current data
-                    if actual_time < required_materialization_time
+                    if actual_time is None or actual_time < required_materialization_time
                 ]
             )
+            total_times += 1
+            if total_times > 50:
+                break
 
         return constraints
 
@@ -161,7 +172,7 @@ class CronMinimumFreshnessPolicy(FreshnessPolicy):
                 [
                     (key, required_materialization_time, current_tick)
                     for key, actual_time in upstream_materialization_times.items()
-                    if actual_time < required_materialization_time
+                    if actual_time is None or actual_time < required_materialization_time
                 ]
             )
             current_tick = next(schedule_ticks)

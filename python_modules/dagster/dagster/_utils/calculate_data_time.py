@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from typing import AbstractSet, Mapping, Optional, cast
 
 from dagster import AssetKey, DagsterEventType, DagsterInstance, EventLogRecord, EventRecordsFilter
@@ -11,7 +11,7 @@ def get_upstream_materialization_times_for_record(
     upstream_asset_key_mapping: Mapping[str, AbstractSet[str]],
     relevant_upstream_keys: AbstractSet[AssetKey],
     record: EventLogRecord,
-) -> Mapping[AssetKey, Optional[datetime]]:
+) -> Mapping[AssetKey, Optional[datetime.datetime]]:
     """Helper method to enable calculating the timestamps of materializations of upstream assets
     which were relevant to a given AssetMaterialization. These timestamps can be calculated relative
     to any upstream asset keys.
@@ -29,7 +29,7 @@ def get_upstream_materialization_times_for_record(
     def _get_upstream_times_and_ids(record: EventLogRecord, required_keys: AbstractSet[AssetKey]):
         # no record available, so the data time for all keys upstream of here is None
         if record is None:
-            return {k: (None, None) for k in required_keys}
+            return {k.to_user_string(): (None, None) for k in required_keys}
 
         cur_tags = instance.get_asset_event_tags(record.storage_id)
 
@@ -100,7 +100,9 @@ def get_upstream_materialization_times_for_record(
 
     return {
         # convert to nicer output format
-        AssetKey.from_user_string(k): datetime.fromtimestamp(timestamp)
+        AssetKey.from_user_string(k): datetime.datetime.fromtimestamp(
+            timestamp, tz=datetime.timezone.utc
+        )
         if timestamp is not None
         else None
         for k, (_, timestamp) in _get_upstream_times_and_ids(record, relevant_upstream_keys).items()
