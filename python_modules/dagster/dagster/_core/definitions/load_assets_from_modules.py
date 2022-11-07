@@ -33,7 +33,7 @@ def _find_assets_in_module(
 
 def assets_from_modules(
     modules: Iterable[ModuleType], extra_source_assets: Optional[Sequence[SourceAsset]] = None
-) -> Sequence[List[AssetsDefinition], List[SourceAsset], List[CacheableAssetsDefinition]]:
+) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
     """
     Constructs three lists, a list of assets, a list of source assets, and a list of cacheable
     assets from the given modules.
