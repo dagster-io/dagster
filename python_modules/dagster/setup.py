@@ -68,7 +68,7 @@ setup(
         # grpcio 1.48 and 1.49 have hanging/crashing issues: https://github.com/grpc/grpc/issues/30843
         # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
         "grpcio>=1.32.0,!=1.48.*,!=1.49.*",
-        "grpcio-health-checking>=1.32.0,<1.44.0",
+        "grpcio-health-checking>=1.32.0,!=1.44.0",
         "packaging>=20.9",
         "pendulum",
         "protobuf>=3.13.0,<4",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
