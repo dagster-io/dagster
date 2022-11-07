@@ -64,6 +64,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {flagNewAssetDetails} = useFeatureFlags();
   const defaultTab = flagNewAssetDetails ? 'overview' : 'activity';
+  const selectedTab = params.view || defaultTab;
 
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} = useAssetViewAssetDefinition(
@@ -99,6 +100,44 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     liveDataRefreshState,
   );
 
+  const renderDefinitionTab = () => {
+    if (!definition) {
+      return <AssetNoDefinitionState />;
+    }
+    return (
+      <AssetNodeDefinition
+        assetNode={definition}
+        upstream={upstream}
+        downstream={downstream}
+        liveDataByNode={liveDataByNode}
+      />
+    );
+  };
+
+  const renderLineageTab = () => {
+    if (!definition) {
+      return <AssetNoDefinitionState />;
+    }
+    if (!visibleAssetGraph.assetGraphData) {
+      return (
+        <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+          <Spinner purpose="page" />
+        </Box>
+      );
+    }
+    return (
+      <AssetNodeLineage
+        params={params}
+        setParams={setParams}
+        assetNode={definition}
+        liveDataByNode={liveDataByNode}
+        requestedDepth={visible.requestedDepth}
+        assetGraphData={visibleAssetGraph.assetGraphData}
+        graphQueryItems={visibleAssetGraph.graphQueryItems}
+      />
+    );
+  };
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
       {runWatchers}
@@ -113,7 +152,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         }
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
-            <Tabs size="large" selectedTabId={params.view || defaultTab}>
+            <Tabs size="large" selectedTabId={selectedTab}>
               {flagNewAssetDetails ? (
                 <Tab
                   id="overview"
@@ -175,50 +214,19 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         </Box>
       ) : (
         <>
-          {viewingMostRecent ? null : (
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
-              <HistoricalViewAlert
-                asOf={params.asOf}
-                onClick={() => setParams({asOf: undefined, time: params.asOf})}
-                hasDefinition={!!definition}
-              />
-            </Box>
+          {!viewingMostRecent && (
+            <HistoricalViewAlert
+              asOf={params.asOf}
+              onClick={() => setParams({asOf: undefined, time: params.asOf})}
+              hasDefinition={!!definition}
+            />
           )}
-          {params.view === 'definition' ? (
-            definition ? (
-              <AssetNodeDefinition
-                assetNode={definition}
-                upstream={upstream}
-                downstream={downstream}
-                liveDataByNode={liveDataByNode}
-              />
-            ) : (
-              <AssetNoDefinitionState />
-            )
-          ) : params.view === 'lineage' ? (
-            definition ? (
-              visibleAssetGraph.assetGraphData ? (
-                <AssetNodeLineage
-                  params={params}
-                  setParams={setParams}
-                  assetNode={definition}
-                  liveDataByNode={liveDataByNode}
-                  requestedDepth={visible.requestedDepth}
-                  assetGraphData={visibleAssetGraph.assetGraphData}
-                  graphQueryItems={visibleAssetGraph.graphQueryItems}
-                />
-              ) : (
-                <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
-                  <Spinner purpose="page" />
-                </Box>
-              )
-            ) : (
-              <AssetNoDefinitionState />
-            )
-          ) : (params.view || defaultTab) === 'overview' ? (
+
+          {selectedTab === 'definition' ? (
+            renderDefinitionTab()
+          ) : selectedTab === 'lineage' ? (
+            renderLineageTab()
+          ) : selectedTab === 'overview' ? (
             <AssetOverview
               assetKey={assetKey}
               assetLastMaterializedAt={lastMaterializedAt}
@@ -228,7 +236,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               setParams={setParams}
               liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
             />
-          ) : params.view === 'plots' ? (
+          ) : selectedTab === 'plots' ? (
             <AssetPlots
               assetKey={assetKey}
               assetHasDefinedPartitions={!!definition?.partitionDefinition}
@@ -369,28 +377,33 @@ const HistoricalViewAlert: React.FC<{
   onClick: () => void;
   hasDefinition: boolean;
 }> = ({asOf, onClick, hasDefinition}) => (
-  <Alert
-    intent="info"
-    title={
-      <span>
-        This is a historical view of materializations as of{' '}
-        <span style={{fontWeight: 600}}>
-          <Timestamp
-            timestamp={{ms: Number(asOf)}}
-            timeFormat={{showSeconds: true, showTimezone: true}}
-          />
+  <Box
+    padding={{vertical: 16, horizontal: 24}}
+    border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+  >
+    <Alert
+      intent="info"
+      title={
+        <span>
+          This is a historical view of materializations as of{' '}
+          <span style={{fontWeight: 600}}>
+            <Timestamp
+              timestamp={{ms: Number(asOf)}}
+              timeFormat={{showSeconds: true, showTimezone: true}}
+            />
+          </span>
+          .
         </span>
-        .
-      </span>
-    }
-    description={
-      <ButtonLink onClick={onClick} underline="always">
-        {hasDefinition
-          ? 'Show definition and latest materializations'
-          : 'Show latest materializations'}
-      </ButtonLink>
-    }
-  />
+      }
+      description={
+        <ButtonLink onClick={onClick} underline="always">
+          {hasDefinition
+            ? 'Show definition and latest materializations'
+            : 'Show latest materializations'}
+        </ButtonLink>
+      }
+    />
+  </Box>
 );
 
 const AssetViewPageHeaderTags: React.FC<{
