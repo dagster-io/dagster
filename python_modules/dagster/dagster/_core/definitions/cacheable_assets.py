@@ -98,14 +98,19 @@ class CacheableAssetsDefinition(ResourceAddable):
 
     @property
     def unique_id(self) -> str:
+        """
+        A unique identifier, which can be used to index the cacheable data.
+        """
         return self._unique_id
 
+    @abstractmethod
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
         """Returns an object representing cacheable information about assets which are not defined
         in Python code.
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
