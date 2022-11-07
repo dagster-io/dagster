@@ -1428,3 +1428,28 @@ def test_default_loggers_keys_conflict():
         return [the_job]
 
     assert the_repo.get_job("the_job").loggers == {"foo": some_logger}
+
+
+def test_base_jobs():
+    @asset
+    def asset1():
+        ...
+
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+    def asset2():
+        ...
+
+    @asset(partitions_def=StaticPartitionsDefinition(["x", "y", "z"]))
+    def asset3():
+        ...
+
+    @repository
+    def repo():
+        return [asset1, asset2, asset3]
+
+    assert sorted(repo.get_base_asset_job_names()) == ["__ASSET_JOB_0", "__ASSET_JOB_1"]
+    assert repo.get_base_job_for_assets([asset1.key, asset2.key]).asset_layer.asset_keys == {
+        asset1.key,
+        asset2.key,
+    }
+    assert repo.get_base_job_for_assets([asset2.key, asset3.key]) is None

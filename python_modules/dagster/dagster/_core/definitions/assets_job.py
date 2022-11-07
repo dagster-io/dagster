@@ -61,22 +61,24 @@ def get_base_asset_jobs(
             ]
         else:
             unpartitioned_assets = assets_by_partitions_def.get(None, [])
+            partitioned_assets_by_partitions_def = {
+                k: v for k, v in assets_by_partitions_def.items() if k is not None
+            }
             jobs = []
 
             # sort to ensure some stability in the ordering
-            for i, (partitions_def, assets_with_partitions) in enumerate(
-                sorted(assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
+            for i, (_, assets_with_partitions) in enumerate(
+                sorted(partitioned_assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
             ):
-                if partitions_def is not None:
-                    jobs.append(
-                        build_assets_job(
-                            f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                            assets=assets_with_partitions + unpartitioned_assets,
-                            source_assets=[*source_assets, *assets],
-                            resource_defs=resource_defs,
-                            executor_def=executor_def,
-                        )
+                jobs.append(
+                    build_assets_job(
+                        f"{ASSET_BASE_JOB_PREFIX}_{i}",
+                        assets=assets_with_partitions + unpartitioned_assets,
+                        source_assets=[*source_assets, *assets],
+                        resource_defs=resource_defs,
+                        executor_def=executor_def,
                     )
+                )
 
             return jobs
 
