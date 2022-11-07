@@ -196,7 +196,7 @@ def test_clause_to_subset(clause, expected_subset):
             "e": {"f"},
         },
     }
-    assert set(clause_to_subset(graph, clause)) == set(expected_subset.split(","))
+    assert set(clause_to_subset(graph, clause, lambda x: x)) == set(expected_subset.split(","))
 
 
 def test_parse_step_selection_single():

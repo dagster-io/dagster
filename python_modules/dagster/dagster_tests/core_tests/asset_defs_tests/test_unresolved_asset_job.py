@@ -179,22 +179,22 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         (
             "x",
             False,
-            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
+            (DagsterInvalidSubsetError, r"were selected"),
         ),
         (
             "x",
             True,
-            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
+            (DagsterInvalidSubsetError, r"were selected"),
         ),
         (
             ["start", "x"],
             False,
-            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
+            (DagsterInvalidSubsetError, r"were selected"),
         ),
         (
             ["start", "x"],
             True,
-            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
+            (DagsterInvalidSubsetError, r"were selected"),
         ),
         (["d", "e", "f"], False, None),
         (["d", "e", "f"], True, None),
