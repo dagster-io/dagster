@@ -350,7 +350,7 @@ class CountByPartitionLoader:
             self._fetch()
 
         counts = self._counts_by_partition.get(asset_key)
-        if not counts:
+        if counts is None:
             check.failed(
                 f"Asset key {asset_key} not recognized for this loader.  Expected one of: {self._asset_keys}"
             )
