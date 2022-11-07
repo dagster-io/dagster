@@ -156,21 +156,8 @@ def assets_to_materialize(
 
         expected_data_times = {key: current_time}
 
-        # first, set your expected data times for each of your directly upstream keys to either
-        # the current time (if we plan on materializing this key this tick), or the latest
-        # materialization time for that key
-        for upstream_key in upstream_keys[key]:
-            if upstream_key in will_materialize:
-                expected_data_times[upstream_key] = current_time
-            else:
-                expected_data_times[upstream_key] = datetime.datetime.fromtimestamp(
-                    _latest_record_for_key(
-                        instance, upstream_key, _latest_record_cache
-                    ).event_log_entry.timestamp,
-                    tz=datetime.timezone.utc,
-                )
-
-        # next, combine together all information from upstreams
+        # get the expected data time for each upstream asset key if you were to run this asset on
+        # this tick
         for upstream_key in upstream_keys[key]:
             for upstream_upstream_key, expected_data_time in expected_data_times_by_key[
                 upstream_key
