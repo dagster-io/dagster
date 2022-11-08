@@ -41,6 +41,15 @@ def configurable_class_data_or_default(config_value, field_name, default):
     )
 
 
+def configurable_secrets_loader_data(config_field, default) -> Optional[ConfigurableClassData]:
+    if not config_field:
+        return default
+    elif "custom" in config_field:
+        return configurable_class_data(config_field["custom"])
+    else:
+        return None
+
+
 def configurable_storage_data(config_field, defaults) -> Sequence[ConfigurableClassData]:
     if not config_field:
         storage_data = defaults.get("storage")
@@ -161,6 +170,7 @@ class InstanceRef(
             ("custom_instance_class_data", Optional[ConfigurableClassData]),
             # unified storage field
             ("storage_data", Optional[ConfigurableClassData]),
+            ("secrets_loader_data", Optional[ConfigurableClassData]),
         ],
     )
 ):
@@ -182,6 +192,7 @@ class InstanceRef(
         schedule_storage_data: ConfigurableClassData,
         custom_instance_class_data: Optional[ConfigurableClassData] = None,
         storage_data: Optional[ConfigurableClassData] = None,
+        secrets_loader_data: Optional[ConfigurableClassData] = None,
     ):
         return super(cls, InstanceRef).__new__(
             cls,
@@ -216,6 +227,9 @@ class InstanceRef(
                 ConfigurableClassData,
             ),
             storage_data=check.opt_inst_param(storage_data, "storage_data", ConfigurableClassData),
+            secrets_loader_data=check.opt_inst_param(
+                secrets_loader_data, "secrets_loader_data", ConfigurableClassData
+            ),
         )
 
     @staticmethod
@@ -265,6 +279,7 @@ class InstanceRef(
                 "DefaultRunLauncher",
                 yaml.dump({}),
             ),
+            "secrets": None,
             # LEGACY DEFAULTS
             "run_storage": default_run_storage_data,
             "event_log_storage": default_event_log_storage_data,
@@ -368,6 +383,10 @@ class InstanceRef(
             defaults["run_launcher"],
         )
 
+        secrets_loader_data = configurable_secrets_loader_data(
+            config_value.get("secrets"), defaults["secrets"]
+        )
+
         settings_keys = {
             "telemetry",
             "python_logs",
@@ -392,6 +411,7 @@ class InstanceRef(
             settings=settings,
             custom_instance_class_data=custom_instance_class_data,
             storage_data=storage_data,
+            secrets_loader_data=secrets_loader_data,
         )
 
     @staticmethod
@@ -440,6 +460,10 @@ class InstanceRef(
     @property
     def run_launcher(self):
         return self.run_launcher_data.rehydrate() if self.run_launcher_data else None
+
+    @property
+    def secrets_loader(self):
+        return self.secrets_loader_data.rehydrate() if self.secrets_loader_data else None
 
     @property
     def custom_instance_class(self):

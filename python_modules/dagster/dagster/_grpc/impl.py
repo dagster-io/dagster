@@ -74,11 +74,30 @@ def core_execute_run(
     recon_pipeline: ReconstructablePipeline,
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
+    inject_env_vars: bool,
     resume_from_failure: bool = False,
 ) -> Generator[DagsterEvent, None, None]:
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
+
+    if inject_env_vars:
+        try:
+            location_name = (
+                pipeline_run.external_pipeline_origin.location_name
+                if pipeline_run.external_pipeline_origin
+                else None
+            )
+
+            instance.inject_env_vars(location_name)
+        except Exception:
+            yield instance.report_engine_event(
+                "Error while loading environment variables.",
+                pipeline_run,
+                EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+            )
+            yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+            raise
 
     # try to load the pipeline definition early
     try:
@@ -187,7 +206,9 @@ def _run_in_subprocess(
     # https://amir.rachum.com/blog/2017/03/03/generator-cleanup/
     closed = False
     try:
-        for event in core_execute_run(recon_pipeline, pipeline_run, instance):
+        for event in core_execute_run(
+            recon_pipeline, pipeline_run, instance, inject_env_vars=False
+        ):
             run_event_handler(event)
     except GeneratorExit:
         closed = True
