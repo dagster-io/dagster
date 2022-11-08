@@ -3,7 +3,6 @@
 import functools
 import itertools
 import json
-from collections import defaultdict
 from heapq import heapify, heappop, heappush
 from typing import (
     TYPE_CHECKING,
@@ -21,14 +20,11 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.cached_method import cached_method
 
 from .asset_selection import AssetGraph, AssetSelection
-from .partition import PartitionsDefinition
-from .partitions_subset import PartitionsSubset
 from .repository_definition import RepositoryDefinition
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
@@ -44,91 +40,50 @@ class AssetReconciliationCursor(NamedTuple):
     Attributes:
         latest_storage_id: The latest observed storage ID across all assets. Useful for
             finding out what has happened since the last tick.
-        materialized_or_requested_root_asset_keys: Every entry is a non-partitioned asset with no
+        materialized_or_requested_root_asset_keys: Every entry is an asset with no
             parents that has been requested by this sensor or has been materialized (even if not by
             this sensor).
-        materialized_or_requested_root_partitions_by_asset_key: Every key is a partitioned root
-            asset. Every value is the set of that asset's partitoins that have been requested by
-            this sensor or have been materialized (even if not by this sensor).
     """
 
     latest_storage_id: Optional[int]
     materialized_or_requested_root_asset_keys: AbstractSet[AssetKey]
-    materialized_or_requested_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
 
     def was_previously_materialized_or_requested(self, asset_key: AssetKey) -> bool:
         return asset_key in self.materialized_or_requested_root_asset_keys
-
-    def get_never_requested_never_materialized_partitions(self, asset_key, asset_graph):
-        return self.materialized_or_requested_root_partitions_by_asset_key.get(
-            asset_key, PartitionsSubset(asset_graph.get_partitions_def(asset_key))
-        ).get_partition_keys_not_in_subset()
 
     def with_updates(
         self,
         latest_storage_id: Optional[int],
         run_requests: Sequence[RunRequest],
         newly_materialized_root_asset_keys: AbstractSet[AssetKey],
-        newly_materialized_root_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
         asset_graph: AssetGraph,
     ) -> "AssetReconciliationCursor":
         """
         Returns a cursor that represents this cursor plus the updates that have happened within the
         tick.
         """
-        requested_root_partitions_by_asset_key: Dict[AssetKey, Set[str]] = defaultdict(set)
-        requested_non_partitioned_root_assets: Set[AssetKey] = set()
+        requested_root_assets: Set[AssetKey] = set()
 
         for run_request in run_requests:
             for asset_key in cast(Iterable[AssetKey], run_request.asset_selection):
                 if len(asset_graph.get_parents(asset_key)) == 0:
-                    if run_request.partition_key:
-                        requested_root_partitions_by_asset_key[asset_key].add(
-                            run_request.partition_key
-                        )
-                    else:
-                        requested_non_partitioned_root_assets.add(asset_key)
-
-        result_materialized_or_requested_root_partitions_by_asset_key = {
-            **self.materialized_or_requested_root_partitions_by_asset_key
-        }
-        for asset_key in set(newly_materialized_root_partitions_by_asset_key.keys()) | set(
-            requested_root_partitions_by_asset_key.keys()
-        ):
-            prior_materialized_partitions = (
-                self.materialized_or_requested_root_partitions_by_asset_key.get(asset_key)
-            )
-            if prior_materialized_partitions is None:
-                prior_materialized_partitions = PartitionsSubset(
-                    partitions_def=asset_graph.get_partitions_def(asset_key),
-                )
-
-            result_materialized_or_requested_root_partitions_by_asset_key[
-                asset_key
-            ] = prior_materialized_partitions.with_partition_keys(
-                itertools.chain(
-                    newly_materialized_root_partitions_by_asset_key[asset_key],
-                    requested_root_partitions_by_asset_key[asset_key],
-                )
-            )
+                    requested_root_assets.add(asset_key)
 
         result_materialized_or_requested_root_asset_keys = (
             self.materialized_or_requested_root_asset_keys
             | newly_materialized_root_asset_keys
-            | requested_non_partitioned_root_assets
+            | requested_root_assets
         )
 
         return AssetReconciliationCursor(
             latest_storage_id=latest_storage_id,
             materialized_or_requested_root_asset_keys=result_materialized_or_requested_root_asset_keys,
-            materialized_or_requested_root_partitions_by_asset_key=result_materialized_or_requested_root_partitions_by_asset_key,
         )
 
     @classmethod
     def empty(cls) -> "AssetReconciliationCursor":
         return AssetReconciliationCursor(
             latest_storage_id=None,
-            materialized_or_requested_root_partitions_by_asset_key={},
             materialized_or_requested_root_asset_keys=set(),
         )
 
@@ -137,38 +92,20 @@ class AssetReconciliationCursor(NamedTuple):
         (
             latest_storage_id,
             serialized_materialized_or_requested_root_asset_keys,
-            serialized_materialized_or_requested_root_partitions_by_asset_key,
         ) = json.loads(cursor)
-        materialized_or_requested_root_partitions_by_asset_key = {}
-        for (
-            key_str,
-            serialized_subset,
-        ) in serialized_materialized_or_requested_root_partitions_by_asset_key.items():
-            key = AssetKey.from_user_string(key_str)
-            materialized_or_requested_root_partitions_by_asset_key[
-                key
-            ] = PartitionsSubset.from_serialized(
-                serialized_subset, cast(PartitionsDefinition, asset_graph.get_partitions_def(key))
-            )
         return cls(
             latest_storage_id=latest_storage_id,
             materialized_or_requested_root_asset_keys={
                 AssetKey.from_user_string(key_str)
                 for key_str in serialized_materialized_or_requested_root_asset_keys
             },
-            materialized_or_requested_root_partitions_by_asset_key=materialized_or_requested_root_partitions_by_asset_key,
         )
 
     def serialize(self) -> str:
-        serializable_materialized_or_requested_root_partitions_by_asset_key = {
-            key.to_user_string(): subset.serialize()
-            for key, subset in self.materialized_or_requested_root_partitions_by_asset_key.items()
-        }
         serialized = json.dumps(
             (
                 self.latest_storage_id,
                 [key.to_user_string() for key in self.materialized_or_requested_root_asset_keys],
-                serializable_materialized_or_requested_root_partitions_by_asset_key,
             )
         )
         return serialized
@@ -180,26 +117,21 @@ class TickInstanceQueryer:
     def __init__(self, instance: "DagsterInstance"):
         self._instance = instance
 
-        self._latest_materialization_record_cache: Dict[AssetKeyPartitionKey, "EventLogRecord"] = {}
+        self._latest_materialization_record_cache: Dict[AssetKey, "EventLogRecord"] = {}
         # if we try to fetch the latest materialization record after a given cursor and don't find
         # anything, we can keep track of that fact, so that the next time try to fetch the latest
         # materialization record for a >= cursor, we don't need to query the instance
-        self._no_materializations_after_cursor_cache: Dict[AssetKeyPartitionKey, int] = {}
+        self._no_materializations_after_cursor_cache: Dict[AssetKey, int] = {}
 
-    def is_asset_partition_in_run(self, run_id: str, asset_partition: AssetKeyPartitionKey) -> bool:
+    def is_asset_in_run(self, run_id: str, asset_key: AssetKey) -> bool:
         run = self._get_run_by_id(run_id=run_id)
         if not run:
             check.failed("")
 
-        if run.tags.get(PARTITION_NAME_TAG) != asset_partition.partition_key:
-            return False
-
         if run.asset_selection:
-            return asset_partition.asset_key in run.asset_selection
+            return asset_key in run.asset_selection
         else:
-            return asset_partition.asset_key in self._get_planned_materializations_for_run(
-                run_id=run_id
-            )
+            return asset_key in self._get_planned_materializations_for_run(run_id=run_id)
 
     @cached_method
     def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
@@ -216,31 +148,28 @@ class TickInstanceQueryer:
         return set(cast(AssetKey, record.asset_key) for record in materializations_planned)
 
     def get_latest_materialization_record(
-        self, asset_partition: AssetKeyPartitionKey, after_cursor: Optional[int]
+        self, asset_key: AssetKey, after_cursor: Optional[int]
     ) -> Optional["EventLogRecord"]:
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
-        if asset_partition in self._latest_materialization_record_cache:
-            cached_record = self._latest_materialization_record_cache[asset_partition]
+        if asset_key in self._latest_materialization_record_cache:
+            cached_record = self._latest_materialization_record_cache[asset_key]
             if after_cursor is None or after_cursor < cached_record.storage_id:
                 return cached_record
             else:
                 return None
-        elif asset_partition in self._no_materializations_after_cursor_cache:
+        elif asset_key in self._no_materializations_after_cursor_cache:
             if (
                 after_cursor is not None
-                and after_cursor >= self._no_materializations_after_cursor_cache[asset_partition]
+                and after_cursor >= self._no_materializations_after_cursor_cache[asset_key]
             ):
                 return None
 
         materialization_records = self._instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_partition.asset_key,
-                asset_partitions=[asset_partition.partition_key]
-                if asset_partition.partition_key
-                else None,
+                asset_key=asset_key,
                 after_cursor=after_cursor,
             ),
             ascending=False,
@@ -249,13 +178,13 @@ class TickInstanceQueryer:
 
         if materialization_records:
             record = next(iter(materialization_records))
-            self._latest_materialization_record_cache[asset_partition] = record
+            self._latest_materialization_record_cache[asset_key] = record
             return record
         else:
             if after_cursor is not None:
-                self._no_materializations_after_cursor_cache[asset_partition] = min(
+                self._no_materializations_after_cursor_cache[asset_key] = min(
                     after_cursor,
-                    self._no_materializations_after_cursor_cache.get(asset_partition, after_cursor),
+                    self._no_materializations_after_cursor_cache.get(asset_key, after_cursor),
                 )
             return None
 
@@ -268,36 +197,26 @@ class TickInstanceQueryer:
         result: Dict[AssetKey, "EventLogRecord"] = {}
 
         for asset_key in asset_keys:
-            latest_record = self.get_latest_materialization_record(
-                AssetKeyPartitionKey(asset_key), cursor
-            )
+            latest_record = self.get_latest_materialization_record(asset_key, cursor)
             if latest_record is not None:
                 result[asset_key] = latest_record
 
         return result
 
     @cached_method
-    def is_reconciled(
-        self,
-        asset_partition: AssetKeyPartitionKey,
-        asset_graph: AssetGraph,
-    ) -> bool:
+    def is_reconciled(self, asset_key: AssetKey, asset_graph: AssetGraph) -> bool:
         """
-        An asset (partition) is considered unreconciled if any of:
+        An asset is considered unreconciled if any of:
         - It has never been materialized
         - One of its parents has been updated more recently than it has
         - One of its parents is unreconciled
         """
-        latest_materialization_record = self.get_latest_materialization_record(
-            asset_partition, None
-        )
+        latest_materialization_record = self.get_latest_materialization_record(asset_key, None)
 
         if latest_materialization_record is None:
             return False
 
-        for parent in asset_graph.get_parents_partitions(
-            asset_partition.asset_key, asset_partition.partition_key
-        ):
+        for parent in asset_graph.get_parents(asset_key):
             if (
                 self.get_latest_materialization_record(
                     parent, after_cursor=latest_materialization_record.storage_id
@@ -306,7 +225,7 @@ class TickInstanceQueryer:
             ):
                 return False
 
-            if not self.is_reconciled(asset_partition=parent, asset_graph=asset_graph):
+            if not self.is_reconciled(asset_key=parent, asset_graph=asset_graph):
                 return False
 
         return True
@@ -318,7 +237,7 @@ class ToposortedPriorityQueue:
     @functools.total_ordering
     class QueueItem(NamedTuple):
         level: int
-        asset_partition: AssetKeyPartitionKey
+        asset_key: AssetKey
 
         def __eq__(self, other):
             return self.level == other.level
@@ -326,7 +245,7 @@ class ToposortedPriorityQueue:
         def __lt__(self, other):
             return self.level < other.level
 
-    def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKeyPartitionKey]):
+    def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKey]):
         toposorted_asset_keys = asset_graph.toposort_asset_keys()
         self._toposort_level_by_asset_key = {
             asset_key: i
@@ -335,18 +254,18 @@ class ToposortedPriorityQueue:
         }
         self._heap = [
             ToposortedPriorityQueue.QueueItem(
-                self._toposort_level_by_asset_key[asset_partition.asset_key], asset_partition
+                self._toposort_level_by_asset_key[asset_key], asset_key
             )
-            for asset_partition in items
+            for asset_key in items
         ]
         heapify(self._heap)
 
-    def enqueue(self, asset_partition: AssetKeyPartitionKey) -> None:
-        priority = self._toposort_level_by_asset_key[asset_partition.asset_key]
-        heappush(self._heap, ToposortedPriorityQueue.QueueItem(priority, asset_partition))
+    def enqueue(self, asset_key: AssetKey) -> None:
+        priority = self._toposort_level_by_asset_key[asset_key]
+        heappush(self._heap, ToposortedPriorityQueue.QueueItem(priority, asset_key))
 
-    def dequeue(self) -> AssetKeyPartitionKey:
-        return heappop(self._heap).asset_partition
+    def dequeue(self) -> AssetKey:
+        return heappop(self._heap).asset_key
 
     def __len__(self) -> int:
         return len(self._heap)
@@ -357,13 +276,13 @@ def find_stale_candidates(
     cursor: AssetReconciliationCursor,
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
-) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
+) -> Tuple[AbstractSet[AssetKey], Optional[int]]:
     """
     Cheaply identifies a set of reconciliation candidates, which can then be vetted with more
     heavyweight logic after.
 
     The contract of this function is:
-    - Every asset (partition) that requires reconciliation must either be one of the returned
+    - Every asset that requires reconciliation must either be one of the returned
         candidates or a descendant of one of the returned candidates.
     - Not every returned candidate must require reconciliation.
 
@@ -373,7 +292,7 @@ def find_stale_candidates(
             the same events the next time this function is called.
     """
 
-    stale_candidates: Set[AssetKeyPartitionKey] = set()
+    stale_candidates: Set[AssetKey] = set()
     latest_storage_id = None
 
     target_asset_keys = target_asset_selection.resolve(asset_graph)
@@ -383,10 +302,9 @@ def find_stale_candidates(
         cursor.latest_storage_id,
     ).items():
         # The children of updated assets might now be unreconciled:
-        for child in asset_graph.get_children_partitions(asset_key, record.partition_key):
-            if (
-                child.asset_key in target_asset_keys
-                and not instance_queryer.is_asset_partition_in_run(record.run_id, child)
+        for child in asset_graph.get_children(asset_key):
+            if child in target_asset_keys and not instance_queryer.is_asset_in_run(
+                record.run_id, child
             ):
                 stale_candidates.add(child)
 
@@ -396,69 +314,46 @@ def find_stale_candidates(
     return (stale_candidates, latest_storage_id)
 
 
-def find_never_materialized_or_requested_root_asset_partitions(
+def find_never_materialized_or_requested_root_assets(
     instance_queryer: TickInstanceQueryer,
     cursor: AssetReconciliationCursor,
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
-) -> Tuple[
-    Iterable[AssetKeyPartitionKey], AbstractSet[AssetKey], Mapping[AssetKey, AbstractSet[str]]
-]:
-    """Finds asset partitions that have never been materialized or requested and that have no
+) -> Tuple[Iterable[AssetKey], AbstractSet[AssetKey]]:
+    """Finds assets that have never been materialized or requested and that have no
     parents.
 
     Returns:
-    - Asset (partition)s that have never been materialized or requested.
-    - Non-partitioned assets that had never been materialized or requested up to the previous cursor
+    - Assets that have never been materialized or requested.
+    - Assets that had never been materialized or requested up to the previous cursor
         but are now materialized.
-    - Asset (partition)s that had never been materialized or requested up to the previous cursor but
-        are now materialized.
     """
     never_materialized_or_requested = set()
     newly_materialized_root_asset_keys = set()
-    newly_materialized_root_partitions_by_asset_key = defaultdict(set)
 
     for asset_key in (target_asset_selection & AssetSelection.all().sources()).resolve(asset_graph):
-        if asset_graph.is_partitioned(asset_key):
-            for partition_key in cursor.get_never_requested_never_materialized_partitions(
-                asset_key, asset_graph
-            ):
-                asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
-                if instance_queryer.get_latest_materialization_record(asset_partition, None):
-                    newly_materialized_root_partitions_by_asset_key[asset_key].add(partition_key)
-                else:
-                    never_materialized_or_requested.add(asset_partition)
-        else:
-            if not cursor.was_previously_materialized_or_requested(asset_key):
-                asset = AssetKeyPartitionKey(asset_key)
-                if instance_queryer.get_latest_materialization_record(asset, None):
-                    newly_materialized_root_asset_keys.add(asset)
-                else:
-                    never_materialized_or_requested.add(asset)
+        if not cursor.was_previously_materialized_or_requested(asset_key):
+            if instance_queryer.get_latest_materialization_record(asset_key, None):
+                newly_materialized_root_asset_keys.add(asset_key)
+            else:
+                never_materialized_or_requested.add(asset_key)
 
     return (
         never_materialized_or_requested,
         newly_materialized_root_asset_keys,
-        newly_materialized_root_partitions_by_asset_key,
     )
 
 
-def determine_asset_partitions_to_reconcile(
+def determine_assets_to_reconcile(
     instance_queryer: TickInstanceQueryer,
     cursor: AssetReconciliationCursor,
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
-) -> Tuple[
-    AbstractSet[AssetKeyPartitionKey],
-    AbstractSet[AssetKey],
-    Mapping[AssetKey, AbstractSet[str]],
-    Optional[int],
-]:
+) -> Tuple[AbstractSet[AssetKey], AbstractSet[AssetKey], Optional[int],]:
     (
         never_materialized_or_requested_roots,
         newly_materialized_root_asset_keys,
-        newly_materialized_root_partitions_by_asset_key,
-    ) = find_never_materialized_or_requested_root_asset_partitions(
+    ) = find_never_materialized_or_requested_root_assets(
         instance_queryer=instance_queryer,
         cursor=cursor,
         target_asset_selection=target_asset_selection,
@@ -473,7 +368,7 @@ def determine_asset_partitions_to_reconcile(
     )
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
-    to_reconcile: Set[AssetKeyPartitionKey] = set()
+    to_reconcile: Set[AssetKey] = set()
     all_candidates = set(itertools.chain(never_materialized_or_requested_roots, stale_candidates))
 
     # invariant: we never consider a candidate before considering its ancestors
@@ -486,45 +381,22 @@ def determine_asset_partitions_to_reconcile(
             # all of its parents reconciled first
             all(
                 (
-                    (
-                        parent in to_reconcile
-                        # if they don't have the same partitioning, then we can't launch a run that
-                        # targets both, so we need to wait until the parent is reconciled before
-                        # launching a run for the child
-                        and asset_graph.have_same_partitioning(
-                            parent.asset_key, candidate.asset_key
-                        )
-                    )
-                    or (
-                        instance_queryer.is_reconciled(
-                            asset_partition=parent, asset_graph=asset_graph
-                        )
-                    )
+                    (parent in to_reconcile)
+                    or (instance_queryer.is_reconciled(asset_key=parent, asset_graph=asset_graph))
                 )
-                for parent in asset_graph.get_parents_partitions(
-                    candidate.asset_key, candidate.partition_key
-                )
+                for parent in asset_graph.get_parents(candidate)
             )
-            and not instance_queryer.is_reconciled(
-                asset_partition=candidate, asset_graph=asset_graph
-            )
+            and not instance_queryer.is_reconciled(asset_key=candidate, asset_graph=asset_graph)
         ):
             to_reconcile.add(candidate)
-            for child in asset_graph.get_children_partitions(
-                candidate.asset_key, candidate.partition_key
-            ):
-                if (
-                    child.asset_key in target_asset_keys
-                    and child not in all_candidates
-                    and asset_graph.have_same_partitioning(child.asset_key, candidate.asset_key)
-                ):
+            for child in asset_graph.get_children(candidate):
+                if child in target_asset_keys and child not in all_candidates:
                     candidates_queue.enqueue(child)
                     all_candidates.add(child)
 
     return (
         to_reconcile,
         newly_materialized_root_asset_keys,
-        newly_materialized_root_partitions_by_asset_key,
         latest_storage_id,
     )
 
@@ -540,49 +412,26 @@ def reconcile(
     asset_graph = repository_def.asset_graph
 
     (
-        asset_partitions_to_reconcile,
+        assets_to_reconcile,
         newly_materialized_root_asset_keys,
-        newly_materialized_root_partitions_by_asset_key,
         latest_storage_id,
-    ) = determine_asset_partitions_to_reconcile(
+    ) = determine_assets_to_reconcile(
         instance_queryer=instance_queryer,
         asset_graph=asset_graph,
         cursor=cursor,
         target_asset_selection=asset_selection,
     )
 
-    assets_to_reconcile_by_partitions_def_partition_key: Mapping[
-        Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]
-    ] = defaultdict(set)
-
-    for asset_partition in asset_partitions_to_reconcile:
-        assets_to_reconcile_by_partitions_def_partition_key[
-            asset_graph.get_partitions_def(asset_partition.asset_key), asset_partition.partition_key
-        ].add(asset_partition.asset_key)
-
-    run_requests = []
-
-    for (
-        _,
-        partition_key,
-    ), asset_keys in assets_to_reconcile_by_partitions_def_partition_key.items():
-        tags = {**(run_tags or {})}
-        if partition_key is not None:
-            tags[PARTITION_NAME_TAG] = partition_key
-
-        run_requests.append(
-            RunRequest(
-                asset_selection=list(asset_keys),
-                tags=tags,
-            )
-        )
+    if assets_to_reconcile:
+        run_requests = [RunRequest(asset_selection=list(assets_to_reconcile), tags=run_tags)]
+    else:
+        run_requests = []
 
     return run_requests, cursor.with_updates(
         latest_storage_id=latest_storage_id,
         run_requests=run_requests,
         asset_graph=repository_def.asset_graph,
         newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
-        newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
     )
 
 
