@@ -192,11 +192,13 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         filebase = "__".join(log_key)
         return FileResponse(location, filename=f"{filebase}.{file_extension}")
 
-    def index_html_endpoint(self, _request: Request):
+    def index_html_endpoint(self, request: Request):
         """
         Serves root html
         """
         index_path = self.relative_path("webapp/build/index.html")
+
+        context = self.make_request_context(request)
 
         try:
             with open(index_path, encoding="utf8") as f:
@@ -210,6 +212,7 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     rendered_template.replace('href="/', f'href="{self._app_path_prefix}/')
                     .replace('src="/', f'src="{self._app_path_prefix}/')
                     .replace("__PATH_PREFIX__", self._app_path_prefix)
+                    .replace("__TELEMETRY_ENABLED__", str(context.instance.telemetry_enabled))
                     .replace("NONCE-PLACEHOLDER", nonce),
                     headers=headers,
                 )
