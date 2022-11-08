@@ -15,6 +15,7 @@ import itertools
 import dagster._check as check
 from dagster._utils import file_relative_path, mkdir_p
 from dagster._utils.merger import deep_merge_dicts
+import textwrap
 
 
 def _remove_invalid_chars(name: str) -> str:
@@ -109,21 +110,6 @@ class RawType(SchemaType):
         return "check.inst_param({}, '{}', {}{})".format(name, name, scope, self.type_str)
 
 
-class OptType(SchemaType):
-    def __init__(self, inner: SchemaType):
-        self.inner = inner
-
-    def __str__(self):
-        return f"Optional[{self.inner}]"
-
-    def annotation(self, scope: Optional[str] = None, quote: bool = False):
-        return f"Optional[{self.inner.annotation(scope, quote)}] = None"
-
-    def get_check(self, name: str, scope: Optional[str] = None):
-        inner_check = self.inner.get_check(name, scope)
-        return ".opt_".join(inner_check.split(".", 1))
-
-
 class ListType(SchemaType):
     def __init__(self, inner: SchemaType):
         self.inner = inner
@@ -136,6 +122,27 @@ class ListType(SchemaType):
 
     def get_check(self, name: str, scope: Optional[str] = None):
         return "check.list_param({}, '{}', {})".format(name, name, self.inner.annotation(scope))
+
+
+class OptType(SchemaType):
+    def __init__(self, inner: SchemaType):
+        self.inner = inner
+
+    def __str__(self):
+        return f"Optional[{self.inner}]"
+
+    def annotation(self, scope: Optional[str] = None, quote: bool = False):
+        return f"Optional[{self.inner.annotation(scope, quote)}] = None"
+
+    def get_check(self, name: str, scope: Optional[str] = None):
+        inner_check = self.inner.get_check(name, scope)
+
+        # For ListType, we want to make sure that the value does not default to an empty list
+        # if it is not provided, so we use opt_nullable_list_param instead of opt_list_param
+        # see https://github.com/dagster-io/dagster/pull/10272#discussion_r1016035044 for more
+        if isinstance(self.inner, ListType):
+            return ".opt_nullable_".join(inner_check.split(".", 1))
+        return ".opt_".join(inner_check.split(".", 1))
 
 
 class UnionType(SchemaType):
@@ -319,9 +326,7 @@ def create_connector_class_definition(
 ):
     nested_defs = ""
     if nested:
-        nested_defs = "\n".join(
-            ["\n".join([f"    {x}" for x in nested_def.split("\n")]) for nested_def in nested]
-        )
+        nested_defs = "\n".join([textwrap.indent(nested_def, "    ") for nested_def in nested])
     fields_in = ", ".join(
         [
             f"{field_name}: {field_type} = None"
@@ -354,43 +359,6 @@ def create_connector_class_definition(
         human_readable_name=connector_name_human_readable,
         docs_url=docs_url,
     )
-
-
-class GithubSource:
-    class ServiceAccount:
-        def __init__(self, username: str, secret: str):
-            self.username = check.str_param(username, "username")
-            self.secret = check.str_param(secret, "secret")
-
-    class ProjectSecret:
-        def __init__(self, api_secret: str):
-            self.api_secret = check.str_param(api_secret, "api_secret")
-
-    def __init__(
-        self,
-        credentials: Optional[Union[ServiceAccount, ProjectSecret]],
-        project_id: Optional[int],
-        attribution_window: Optional[int],
-        project_timezone: Optional[str],
-        select_properties_by_default: Optional[bool],
-        start_date: Optional[str],
-        end_date: Optional[str],
-        region: Optional[str],
-        date_window_size: Optional[int],
-    ):
-        self.credentials = check.opt_inst_param(
-            credentials, "credentials", (GithubSource.ServiceAccount, GithubSource.ProjectSecret)
-        )
-        self.project_id = check.opt_int_param(project_id, "project_id")
-        self.attribution_window = check.opt_int_param(attribution_window, "attribution_window")
-        self.project_timezone = check.opt_str_param(project_timezone, "project_timezone")
-        self.select_properties_by_default = check.opt_bool_param(
-            select_properties_by_default, "select_properties_by_default"
-        )
-        self.start_date = check.opt_str_param(start_date, "start_date")
-        self.end_date = check.opt_str_param(end_date, "end_date")
-        self.region = check.opt_str_param(region, "region")
-        self.date_window_size = check.opt_int_param(date_window_size, "date_window_size")
 
 
 def load_from_spec_file(
@@ -430,8 +398,18 @@ def load_from_spec_file(
     )
 
 
-SOURCE_OUT_FILE = "/Users/ben/Documents/repos/dagster/python_modules/libraries/dagster-airbyte/dagster_airbyte/managed/generated/sources.py"
-DEST_OUT_FILE = "/Users/ben/Documents/repos/dagster/python_modules/libraries/dagster-airbyte/dagster_airbyte/managed/generated/destinations.py"
+SOURCE_OUT_FILE = os.path.abspath(
+    file_relative_path(
+        __file__,
+        "../python_modules/libraries/dagster-airbyte/dagster_airbyte/managed/generated/sources.py",
+    )
+)
+DEST_OUT_FILE = os.path.abspath(
+    file_relative_path(
+        __file__,
+        "../python_modules/libraries/dagster-airbyte/dagster_airbyte/managed/generated/destinations.py",
+    )
+)
 
 SSH_TUNNEL_SPEC = "airbyte-integrations/bases/base-java/src/main/resources/ssh-tunnel-spec.json"
 

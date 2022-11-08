@@ -136,7 +136,7 @@ class LinkedinAdsSource(GeneratedAirbyteSource):
             credentials, "credentials", (LinkedinAdsSource.OAuth20, LinkedinAdsSource.AccessToken)
         )
         self.start_date = check.str_param(start_date, "start_date")
-        self.account_ids = check.opt_list_param(account_ids, "account_ids", int)
+        self.account_ids = check.opt_nullable_list_param(account_ids, "account_ids", int)
         super().__init__("Linkedin Ads", name)
 
 
@@ -643,9 +643,11 @@ class JiraSource(GeneratedAirbyteSource):
         self.api_token = check.str_param(api_token, "api_token")
         self.domain = check.str_param(domain, "domain")
         self.email = check.str_param(email, "email")
-        self.projects = check.opt_list_param(projects, "projects", str)
+        self.projects = check.opt_nullable_list_param(projects, "projects", str)
         self.start_date = check.opt_str_param(start_date, "start_date")
-        self.additional_fields = check.opt_list_param(additional_fields, "additional_fields", str)
+        self.additional_fields = check.opt_nullable_list_param(
+            additional_fields, "additional_fields", str
+        )
         self.expand_issue_changelog = check.opt_bool_param(
             expand_issue_changelog, "expand_issue_changelog"
         )
@@ -826,7 +828,7 @@ class QualarooSource(GeneratedAirbyteSource):
         self.token = check.str_param(token, "token")
         self.key = check.str_param(key, "key")
         self.start_date = check.str_param(start_date, "start_date")
-        self.survey_ids = check.opt_list_param(survey_ids, "survey_ids", str)
+        self.survey_ids = check.opt_nullable_list_param(survey_ids, "survey_ids", str)
         super().__init__("Qualaroo", name)
 
 
@@ -1082,7 +1084,7 @@ class OracleSource(GeneratedAirbyteSource):
         )
         self.username = check.str_param(username, "username")
         self.password = check.opt_str_param(password, "password")
-        self.schemas = check.opt_list_param(schemas, "schemas", str)
+        self.schemas = check.opt_nullable_list_param(schemas, "schemas", str)
         self.jdbc_url_params = check.opt_str_param(jdbc_url_params, "jdbc_url_params")
         self.encryption = check.inst_param(
             encryption,
@@ -1298,7 +1300,7 @@ class LookerSource(GeneratedAirbyteSource):
         self.domain = check.str_param(domain, "domain")
         self.client_id = check.str_param(client_id, "client_id")
         self.client_secret = check.str_param(client_secret, "client_secret")
-        self.run_look_ids = check.opt_list_param(run_look_ids, "run_look_ids", str)
+        self.run_look_ids = check.opt_nullable_list_param(run_look_ids, "run_look_ids", str)
         super().__init__("Looker", name)
 
 
@@ -1376,8 +1378,8 @@ class AmazonAdsSource(GeneratedAirbyteSource):
             report_generation_max_retries, "report_generation_max_retries"
         )
         self.start_date = check.opt_str_param(start_date, "start_date")
-        self.profiles = check.opt_list_param(profiles, "profiles", int)
-        self.state_filter = check.opt_list_param(state_filter, "state_filter", str)
+        self.profiles = check.opt_nullable_list_param(profiles, "profiles", int)
+        self.state_filter = check.opt_nullable_list_param(state_filter, "state_filter", str)
         super().__init__("Amazon Ads", name)
 
 
@@ -1670,7 +1672,7 @@ class TypeformSource(GeneratedAirbyteSource):
         """
         self.start_date = check.str_param(start_date, "start_date")
         self.token = check.str_param(token, "token")
-        self.form_ids = check.opt_list_param(form_ids, "form_ids", str)
+        self.form_ids = check.opt_nullable_list_param(form_ids, "form_ids", str)
         super().__init__("Typeform", name)
 
 
@@ -1788,7 +1790,7 @@ class AdjustSource(GeneratedAirbyteSource):
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/adjust
         """
-        self.additional_metrics = check.opt_list_param(
+        self.additional_metrics = check.opt_nullable_list_param(
             additional_metrics, "additional_metrics", str
         )
         self.api_token = check.str_param(api_token, "api_token")
@@ -1867,7 +1869,7 @@ class GoogleAdsSource(GeneratedAirbyteSource):
         self.customer_id = check.str_param(customer_id, "customer_id")
         self.start_date = check.str_param(start_date, "start_date")
         self.end_date = check.opt_str_param(end_date, "end_date")
-        self.custom_queries = check.opt_list_param(
+        self.custom_queries = check.opt_nullable_list_param(
             custom_queries, "custom_queries", GoogleAdsSource.CustomGAQLQueriesEntry
         )
         self.login_customer_id = check.opt_str_param(login_customer_id, "login_customer_id")
@@ -1976,7 +1978,7 @@ class SalesforceSource(GeneratedAirbyteSource):
         self.client_secret = check.str_param(client_secret, "client_secret")
         self.refresh_token = check.str_param(refresh_token, "refresh_token")
         self.start_date = check.opt_str_param(start_date, "start_date")
-        self.streams_criteria = check.opt_list_param(
+        self.streams_criteria = check.opt_nullable_list_param(
             streams_criteria, "streams_criteria", SalesforceSource.FilterSalesforceObjectsEntry
         )
         super().__init__("Salesforce", name)
@@ -2178,10 +2180,10 @@ class OrbSource(GeneratedAirbyteSource):
         self.lookback_window_days = check.opt_int_param(
             lookback_window_days, "lookback_window_days"
         )
-        self.string_event_properties_keys = check.opt_list_param(
+        self.string_event_properties_keys = check.opt_nullable_list_param(
             string_event_properties_keys, "string_event_properties_keys", str
         )
-        self.numeric_event_properties_keys = check.opt_list_param(
+        self.numeric_event_properties_keys = check.opt_nullable_list_param(
             numeric_event_properties_keys, "numeric_event_properties_keys", str
         )
         super().__init__("Orb", name)
@@ -2483,7 +2485,7 @@ class SlackSource(GeneratedAirbyteSource):
         self.start_date = check.str_param(start_date, "start_date")
         self.lookback_window = check.int_param(lookback_window, "lookback_window")
         self.join_channels = check.bool_param(join_channels, "join_channels")
-        self.channel_filter = check.opt_list_param(channel_filter, "channel_filter", str)
+        self.channel_filter = check.opt_nullable_list_param(channel_filter, "channel_filter", str)
         self.credentials = check.inst_param(
             credentials,
             "credentials",
@@ -2759,7 +2761,7 @@ class PostgresSource(GeneratedAirbyteSource):
         self.host = check.str_param(host, "host")
         self.port = check.int_param(port, "port")
         self.database = check.str_param(database, "database")
-        self.schemas = check.opt_list_param(schemas, "schemas", str)
+        self.schemas = check.opt_nullable_list_param(schemas, "schemas", str)
         self.username = check.str_param(username, "username")
         self.password = check.opt_str_param(password, "password")
         self.jdbc_url_params = check.opt_str_param(jdbc_url_params, "jdbc_url_params")
@@ -2810,7 +2812,7 @@ class TrelloSource(GeneratedAirbyteSource):
         self.token = check.str_param(token, "token")
         self.key = check.str_param(key, "key")
         self.start_date = check.str_param(start_date, "start_date")
-        self.board_ids = check.opt_list_param(board_ids, "board_ids", str)
+        self.board_ids = check.opt_nullable_list_param(board_ids, "board_ids", str)
         super().__init__("Trello", name)
 
 
@@ -2886,7 +2888,7 @@ class S3Source(GeneratedAirbyteSource):
             buffer_size: Optional[int] = None,
         ):
             self.filetype = check.opt_str_param(filetype, "filetype")
-            self.columns = check.opt_list_param(columns, "columns", str)
+            self.columns = check.opt_nullable_list_param(columns, "columns", str)
             self.batch_size = check.opt_int_param(batch_size, "batch_size")
             self.buffer_size = check.opt_int_param(buffer_size, "buffer_size")
 
@@ -3105,7 +3107,7 @@ class MssqlSource(GeneratedAirbyteSource):
         self.host = check.str_param(host, "host")
         self.port = check.int_param(port, "port")
         self.database = check.str_param(database, "database")
-        self.schemas = check.opt_list_param(schemas, "schemas", str)
+        self.schemas = check.opt_nullable_list_param(schemas, "schemas", str)
         self.username = check.str_param(username, "username")
         self.password = check.opt_str_param(password, "password")
         self.jdbc_url_params = check.opt_str_param(jdbc_url_params, "jdbc_url_params")
@@ -3173,7 +3175,7 @@ class RedshiftSource(GeneratedAirbyteSource):
         self.host = check.str_param(host, "host")
         self.port = check.int_param(port, "port")
         self.database = check.str_param(database, "database")
-        self.schemas = check.opt_list_param(schemas, "schemas", str)
+        self.schemas = check.opt_nullable_list_param(schemas, "schemas", str)
         self.username = check.str_param(username, "username")
         self.password = check.str_param(password, "password")
         self.jdbc_url_params = check.opt_str_param(jdbc_url_params, "jdbc_url_params")
@@ -3273,7 +3275,9 @@ class SentrySource(GeneratedAirbyteSource):
         self.hostname = check.opt_str_param(hostname, "hostname")
         self.organization = check.str_param(organization, "organization")
         self.project = check.str_param(project, "project")
-        self.discover_fields = check.opt_list_param(discover_fields, "discover_fields", str)
+        self.discover_fields = check.opt_nullable_list_param(
+            discover_fields, "discover_fields", str
+        )
         super().__init__("Sentry", name)
 
 
@@ -3957,7 +3961,7 @@ class NetsuiteSource(GeneratedAirbyteSource):
         self.consumer_secret = check.str_param(consumer_secret, "consumer_secret")
         self.token_key = check.str_param(token_key, "token_key")
         self.token_secret = check.str_param(token_secret, "token_secret")
-        self.object_types = check.opt_list_param(object_types, "object_types", str)
+        self.object_types = check.opt_nullable_list_param(object_types, "object_types", str)
         self.start_datetime = check.str_param(start_datetime, "start_datetime")
         self.window_in_days = check.opt_int_param(window_in_days, "window_in_days")
         super().__init__("Netsuite", name)
@@ -4010,7 +4014,7 @@ class Dv360Source(GeneratedAirbyteSource):
         self.partner_id = check.int_param(partner_id, "partner_id")
         self.start_date = check.str_param(start_date, "start_date")
         self.end_date = check.opt_str_param(end_date, "end_date")
-        self.filters = check.opt_list_param(filters, "filters", str)
+        self.filters = check.opt_nullable_list_param(filters, "filters", str)
         super().__init__("Dv 360", name)
 
 
@@ -4495,9 +4499,9 @@ class FacebookMarketingSource(GeneratedAirbyteSource):
             insights_lookback_window: Optional[int] = None,
         ):
             self.name = check.str_param(name, "name")
-            self.fields = check.opt_list_param(fields, "fields", str)
-            self.breakdowns = check.opt_list_param(breakdowns, "breakdowns", str)
-            self.action_breakdowns = check.opt_list_param(
+            self.fields = check.opt_nullable_list_param(fields, "fields", str)
+            self.breakdowns = check.opt_nullable_list_param(breakdowns, "breakdowns", str)
+            self.action_breakdowns = check.opt_nullable_list_param(
                 action_breakdowns, "action_breakdowns", str
             )
             self.time_increment = check.opt_int_param(time_increment, "time_increment")
@@ -4534,7 +4538,7 @@ class FacebookMarketingSource(GeneratedAirbyteSource):
         self.fetch_thumbnail_images = check.opt_bool_param(
             fetch_thumbnail_images, "fetch_thumbnail_images"
         )
-        self.custom_insights = check.opt_list_param(
+        self.custom_insights = check.opt_nullable_list_param(
             custom_insights, "custom_insights", FacebookMarketingSource.InsightConfig
         )
         self.page_size = check.opt_int_param(page_size, "page_size")
@@ -4556,7 +4560,7 @@ class SurveymonkeySource(GeneratedAirbyteSource):
         """
         self.access_token = check.str_param(access_token, "access_token")
         self.start_date = check.str_param(start_date, "start_date")
-        self.survey_ids = check.opt_list_param(survey_ids, "survey_ids", str)
+        self.survey_ids = check.opt_nullable_list_param(survey_ids, "survey_ids", str)
         super().__init__("Surveymonkey", name)
 
 
