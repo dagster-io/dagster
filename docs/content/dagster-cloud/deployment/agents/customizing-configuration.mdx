@@ -22,7 +22,7 @@ User code servers support a configurable time-to-live (TTL). The agent will spin
 To configure TTL:
 
 ```yaml
-# dagster_cloud.yaml
+# dagster.yaml
 instance_class:
   module: dagster_cloud.instance
   class: DagsterCloudAgentInstance
@@ -48,7 +48,7 @@ user_code_launcher:
 You can disable forwarding compute logs to Dagster Cloud by configuring the `NoOpComputeLogManager` setting:
 
 ```yaml
-# dagster_cloud.yaml
+# dagster.yaml
 instance_class:
   module: dagster_cloud.instance
   class: DagsterCloudAgentInstance
