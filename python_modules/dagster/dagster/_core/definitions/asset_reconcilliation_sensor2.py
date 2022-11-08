@@ -210,7 +210,7 @@ def assets_to_materialize(
                     )
 
         # now that you have a compressed constraint which has merged as many constraints as
-        # possible, kick off a run when you're halfway through that time window
+        # possible, kick off a run at the beginning of that time window
         if merged_constraint is not None and merged_constraint[0] <= current_time:
             will_materialize.add(key)
             # only propogate these expected data times if you plan on kicking off a run
