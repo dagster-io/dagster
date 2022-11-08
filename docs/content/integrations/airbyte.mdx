@@ -31,6 +31,18 @@ An [Airbyte connection](https://docs.airbyte.com/understanding-airbyte/connectio
 
 ---
 
+## Prerequisites
+
+To get started, you will need to install the `dagster` and `dagster-airbyte` Python packages:
+
+```bash
+pip install dagster dagster-airbyte
+```
+
+You'll also want to have an Airbyte instance running. If you don't have one already, you can [run Airbyte locally using `docker-compose`](https://docs.airbyte.com/deploying-airbyte/local-deployment#setup--launch-airbyte).
+
+---
+
 ## Step 1: Connecting to Airbyte
 
 The first step in using Airbyte with Dagster is to tell Dagster how to connect to your Airbyte instance using an Airbyte [resource](/concepts/resources). This resource contains information on where the Airbyte instance is located and any credentials needed to access it.
@@ -70,7 +82,7 @@ You can also [manually-build asset definitions](#manually-building-airbyte-asset
 
 ### Loading Airbyte asset definitions from an Airbyte instance
 
-To load Airbyte assets into Dagster from a live Airbyte instance, you will need to configure an Airbyte resource which defines how to connect to that instance. Here, the Airbyte instance is treated as the source of truth.
+To load Airbyte assets into Dagster from a live Airbyte instance, you will need to supply the Airbyte resource that we defined above in step 1. Here, the Airbyte instance is treated as the source of truth.
 
 ```python startafter=start_load_assets_from_airbyte_instance endbefore=end_load_assets_from_airbyte_instance file=/integrations/airbyte/airbyte.py dedent=4
 from dagster_airbyte import load_assets_from_airbyte_instance
@@ -79,8 +91,6 @@ airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
 ```
 
 The `load_assets_from_airbyte_instance` function retrieves all of the connections you have defined in the Airbyte interface, creating software-defined assets for each data stream. Each connection has an associated [op](https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops) which triggers a sync of that connection.
-
-You don't need to use `with_resources` to bind an Airbyte resource to the assets produced by `load_asset_from_airbyte_instance`; the Airbyte instance you supply to the function will automatically be bound to them.
 
 </TabItem>
 
@@ -104,7 +114,7 @@ The `load_assets_from_airbyte_project` function parses the YAML metadata, genera
 
 Assets loaded from Airbyte require an `airbyte_resource`, which defines how to connect and interact with your Airbyte instance.
 
-You can configure this resource and add it to your Airbyte assets by doing the following:
+We can add the Airbyte resource we configured above to our Airbyte assets by doing the following:
 
 ```python startafter=start_airbyte_project_config endbefore=end_airbyte_project_config file=/integrations/airbyte/airbyte.py dedent=4
 from dagster_airbyte import load_assets_from_airbyte_project
@@ -148,7 +158,7 @@ airbyte_assets = build_airbyte_assets(
 
 Manually built Airbyte assets require an `airbyte_resource`, which defines how to connect and interact with your Airbyte instance.
 
-You can configure this resource and add it to your Airbyte assets by doing the following:
+We can add the Airbyte resource we configured above to our Airbyte assets by doing the following:
 
 ```python startafter=start_airbyte_manual_config endbefore=end_airbyte_manual_config file=/integrations/airbyte/airbyte.py dedent=4
 from dagster_airbyte import build_airbyte_assets

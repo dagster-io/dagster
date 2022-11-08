@@ -43,6 +43,7 @@ def scope_load_assets_from_airbyte_instance():
     # start_load_assets_from_airbyte_instance
     from dagster_airbyte import load_assets_from_airbyte_instance
 
+    # Use the airbyte_instance resource we defined in Step 1
     airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
     # end_load_assets_from_airbyte_instance
 
@@ -64,6 +65,7 @@ def scope_airbyte_project_config():
 
     from dagster import with_resources
 
+    # Use the airbyte_instance resource we defined in Step 1
     airbyte_assets = with_resources(
         [load_assets_from_airbyte_project(project_dir="path/to/airbyte/project")],
         {"airbyte": airbyte_instance},
@@ -104,6 +106,7 @@ def scope_airbyte_manual_config():
             connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
             destination_tables=["releases", "tags", "teams"],
         ),
+        # Use the airbyte_instance resource we defined in Step 1
         {"airbyte": airbyte_instance},
     )
     # end_airbyte_manual_config
