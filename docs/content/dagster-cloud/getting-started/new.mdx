@@ -31,17 +31,116 @@ You'll also be asked to create a Dagster Cloud organization. When your organizat
 
 ## Step 2: Select a deployment type
 
-In this step, you'll select the type of deployment you want to use: **Serverless** or **Hybrid**:
+In this step, you'll select the type of deployment you want to use: **Serverless** or **Hybrid**.
 
-- **Serverless** - Serverless Deployment is a fully-managed version of Dagster Cloud that allows you to run your Dagster jobs without spinning up any infrastructure. Refer to the [Serverless deployment documentation](/dagster-cloud/deployment/serverless) for more info.
+In the following table, you'll find:
 
-  **Note**: This deployment type works best with jobs that aren't computationally expensive.
+- **Type** - The name of the deployment type
+- **How it works** - Summary of how the deployment type works
+- **May be a good fit if...** - A high-level summary of when the deployment type may be a good fit
 
-- **Hybrid** - With a Hybrid Deployment, your Dagster code is executed in your infrastructure. Refer to the [Hybrid deployment documentation](/dagster-cloud/deployment/hybrid) for more info.
-
-  This deployment type requires **the ability to create and configure an agent in your infrastructure**. The agent runs in your infrastructure, executes your code, and streams metadata about code execution over HTTPS back to Dagster Cloud.
-
-  Dagster Cloud supports a handful of agents, each with its own prerequisites for setup. Refer to the [Agent documentation](/dagster-cloud/deployment/agents) for more info.
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "15%",
+        }}
+      >
+        Type
+      </th>
+      <th
+        style={{
+          width: "45%",
+        }}
+      >
+        How it works
+      </th>
+      <th>May be a good fit if...</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>Serverless</strong>
+      </td>
+      <td>
+        Serverless Deployment is a fully-managed version of Dagster Cloud that
+        allows you to run your Dagster jobs without spinning up any
+        infrastructure. Refer to the{" "}
+        <a href="/dagster-cloud/deployment/serverless">
+          Serverless deployment documentation
+        </a>{" "}
+        for more info.
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            You want to try Dagster Cloud without a lot of time investment
+          </li>
+          <li>You don't want to focus on infrastructure management</li>
+          <li>Your Dagster jobs aren't computationally expensive</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Hybrid</strong>
+      </td>
+      <td>
+        With a Hybrid Deployment, your Dagster code is executed in your
+        infrastructure. The agent runs in your infrastructure, executes your
+        code, and streams metadata about code execution over HTTPS back to
+        Dagster Cloud. Refer to the{" "}
+        <a href="/dagster-cloud/deployment/hybrid">
+          Hybrid deployment documentation
+        </a>{" "}
+        for more info.
+        <br></br>
+        <br></br>
+        Dagster Cloud supports a handful of agents, each with its own prerequisites
+        for setup. Refer to the <a href="/dagster-cloud/deployment/agents">
+          Agent documentation
+        </a> for more info.
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            You want to use your own infrastructure
+          </li>
+          <li>You can create and configure an agent in your infrastructure</li>
+          <li>
+            You can use one of the{" "}
+            <a href="/dagster-cloud/deployment/agents">
+              agents currently supported for Dagster Cloud
+            </a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 Select the deployment type you want to use and [proceed to the next step](#step-3-deploy-your-code). **Note**: If you find your deployment type isn't right for you, it can be changed at any time.
 
