@@ -25,6 +25,7 @@ def materialize(
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Mapping[str, object]] = None,
     partition_key: Optional[str] = None,
+    raise_on_error: bool = True,
 ) -> "ExecuteInProcessResult":
     """
     Executes a single-threaded, in-process run which materializes provided assets.
@@ -69,7 +70,12 @@ def materialize(
             assets=assets_defs,
             source_assets=source_assets,
             resource_defs=resource_defs,
-        ).execute_in_process(run_config=run_config, instance=instance, partition_key=partition_key)
+        ).execute_in_process(
+            run_config=run_config,
+            instance=instance,
+            partition_key=partition_key,
+            raise_on_error=raise_on_error,
+        )
 
 
 def materialize_to_memory(
@@ -78,6 +84,7 @@ def materialize_to_memory(
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Mapping[str, object]] = None,
     partition_key: Optional[str] = None,
+    raise_on_error: bool = True,
 ) -> "ExecuteInProcessResult":
     """
     Executes a single-threaded, in-process run which materializes provided assets in memory.
@@ -136,7 +143,12 @@ def materialize_to_memory(
             assets=assets_defs,
             source_assets=source_assets,
             resource_defs=resource_defs,
-        ).execute_in_process(run_config=run_config, instance=instance, partition_key=partition_key)
+        ).execute_in_process(
+            run_config=run_config,
+            instance=instance,
+            partition_key=partition_key,
+            raise_on_error=raise_on_error,
+        )
 
 
 def _get_required_io_manager_keys(
