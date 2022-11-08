@@ -3,6 +3,7 @@ from importlib import import_module
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
     FrozenSet,
@@ -193,7 +194,7 @@ class AssetGroup:
         check.str_param(name, "name")
         check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
 
-        selected_asset_keys: FrozenSet[AssetKey] = frozenset()
+        selected_asset_keys: AbstractSet[AssetKey] = frozenset()
         if isinstance(selection, str):
             selected_asset_keys = parse_asset_selection(
                 self.assets, self.source_assets, [selection]

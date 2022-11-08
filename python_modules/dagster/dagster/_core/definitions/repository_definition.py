@@ -8,6 +8,7 @@ from typing import (
     Dict,
     FrozenSet,
     Generic,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -28,7 +29,8 @@ from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import make_readonly_value, merge_dicts
 
-from .assets_job import get_base_asset_jobs, is_base_asset_job_name
+from .asset_selection import AssetGraph
+from .assets_job import ASSET_BASE_JOB_PREFIX, get_base_asset_jobs, is_base_asset_job_name
 from .cacheable_assets import AssetsDefinitionCacheableData
 from .events import AssetKey, CoercibleToAssetKey
 from .executor_definition import ExecutorDefinition
@@ -1343,6 +1345,31 @@ class RepositoryDefinition:
     def _assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._repository_data.get_assets_defs_by_key()
 
+    def get_base_asset_job_names(self) -> Sequence[str]:
+        return [
+            job_name for job_name in self.job_names if job_name.startswith(ASSET_BASE_JOB_PREFIX)
+        ]
+
+    def get_base_job_for_assets(self, asset_keys: Iterable[AssetKey]) -> Optional[JobDefinition]:
+        """
+        Returns the asset base job that contains all the given assets, or None if there is no such
+        job.
+        """
+        if self.has_job(ASSET_BASE_JOB_PREFIX):
+            base_job = self.get_job(ASSET_BASE_JOB_PREFIX)
+            if all(key in base_job.asset_layer.assets_defs_by_key for key in asset_keys):
+                return base_job
+        else:
+            i = 0
+            while self.has_job(f"{ASSET_BASE_JOB_PREFIX}_{i}"):
+                base_job = self.get_job(f"{ASSET_BASE_JOB_PREFIX}_{i}")
+                if all(key in base_job.asset_layer.assets_defs_by_key for key in asset_keys):
+                    return base_job
+
+                i += 1
+
+        return None
+
     def get_maybe_subset_job_def(
         self,
         job_name: str,
@@ -1421,6 +1448,10 @@ class RepositoryDefinition:
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
         return AssetValueLoader(self._assets_defs_by_key, instance=instance)
+
+    @property
+    def asset_graph(self) -> AssetGraph:
+        return AssetGraph([*self._assets_defs_by_key.values(), *self.source_assets_by_key.values()])
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.

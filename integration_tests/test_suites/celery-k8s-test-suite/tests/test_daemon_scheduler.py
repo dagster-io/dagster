@@ -12,7 +12,7 @@ from dagster._core.test_utils import poll_for_finished_run
 
 
 @mark_daemon
-@pytest.mark.flaky(reruns=2)
+@pytest.mark.skip("Temporarily skip until we figure out why this is so flaky")
 def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name, disable=unused-argument
     dagster_instance_for_daemon, helm_namespace_for_daemon
 ):

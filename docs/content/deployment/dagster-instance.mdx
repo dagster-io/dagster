@@ -148,11 +148,11 @@ storage:
       env: PG_DB_CONN_STRING
 ```
 
-### MySQL storage
+#### MySQL storage
 
-<PyObject module="dagster_mysql" object="DagsterMySQLStorage" /> uses a Postgres
-DB as the backing storage solution. This requires that the `dagster-mysql` library
-be installed.
+<PyObject module="dagster_mysql" object="DagsterMySQLStorage" /> uses a MySQL DB
+as the backing storage solution. This requires that the `dagster-mysql` library be
+installed.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_storage_mysql endbefore=end_marker_storage_mysql
 # MySQL storage can be set using either credentials or a connection string.  This requires that the

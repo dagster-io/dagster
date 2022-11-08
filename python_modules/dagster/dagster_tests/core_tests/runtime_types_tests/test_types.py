@@ -9,32 +9,27 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     Failure,
+    In,
     Int,
     List,
     MetadataEntry,
     Optional,
+    Out,
     String,
     Tuple,
     TypeCheck,
     check_dagster_type,
+    fs_io_manager,
+    job,
     make_python_type_usable_as_dagster_type,
+    op,
     resource,
 )
-from dagster._core.test_utils import default_mode_def_for_test
 from dagster._core.types.dagster_type import (
     DagsterType,
     ListType,
     PythonObjectDagsterType,
     resolve_dagster_type,
-)
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
 )
 
 
@@ -139,71 +134,79 @@ def test_nullable_list_combos_coerciion():
 
 
 def execute_no_throw(pipeline_def):
-    return execute_pipeline(pipeline_def, raise_on_error=False)
+    return pipeline_def.execute_in_process(raise_on_error=False)
 
 
-def _type_check_data_for_input(solid_result, input_name):
-    return solid_result.compute_input_event_dict[input_name].event_specific_data.type_check_data
+def _type_check_data_for_input(result, op_name, input_name):
+    events_for_op = result.events_for_node(op_name)
+    step_input_event = [
+        event
+        for event in events_for_op
+        if event.event_type == DagsterEventType.STEP_INPUT
+        and event.step_handle.to_key() == op_name
+        and event.event_specific_data.input_name == input_name
+    ][0]
+    return step_input_event.event_specific_data.type_check_data
 
 
 def test_input_types_succeed_in_pipeline():
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("num", int)])
+    @op(ins={"num": In(int)})
     def take_num(num):
         return num
 
-    @pipeline
+    @job
     def pipe():
         take_num(return_one())
 
-    pipeline_result = execute_pipeline(pipe)
+    pipeline_result = pipe.execute_in_process()
     assert pipeline_result.success
 
-    solid_result = pipeline_result.result_for_solid("take_num")
-    assert solid_result.success
-
-    type_check_data = _type_check_data_for_input(solid_result, "num")
+    type_check_data = _type_check_data_for_input(
+        pipeline_result, op_name="take_num", input_name="num"
+    )
     assert type_check_data.success
 
 
 def test_output_types_succeed_in_pipeline():
-    @lambda_solid(output_def=OutputDefinition(int))
+    @op(out=Out(int))
     def return_one():
         return 1
 
-    @pipeline
+    @job
     def pipe():
         return_one()
 
-    pipeline_result = execute_pipeline(pipe)
+    pipeline_result = pipe.execute_in_process()
     assert pipeline_result.success
 
-    solid_result = pipeline_result.result_for_solid("return_one")
-    assert solid_result.success
+    events_for_node = pipeline_result.events_for_node("return_one")
+    output_event = [
+        event for event in events_for_node if event.event_type == DagsterEventType.STEP_OUTPUT
+    ].pop()
 
-    output_event = solid_result.get_output_event_for_compute()
     type_check_data = output_event.event_specific_data.type_check_data
     assert type_check_data.success
 
 
 def test_input_types_fail_in_pipeline():
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("string", str)])
+    @op(ins={"string": In(str)})
     def take_string(string):
         return string
 
-    @pipeline
+    @job
     def pipe():
         take_string(return_one())
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_pipeline(pipe)
+        pipe.execute_in_process()
 
     # now check events in no throw case
 
@@ -211,43 +214,52 @@ def test_input_types_fail_in_pipeline():
 
     assert not pipeline_result.success
 
-    solid_result = pipeline_result.result_for_solid("take_string")
-
-    type_check_data = _type_check_data_for_input(solid_result, "string")
+    type_check_data = _type_check_data_for_input(
+        pipeline_result, op_name="take_string", input_name="string"
+    )
     assert not type_check_data.success
     assert type_check_data.description == 'Value "1" of python type "int" must be a string.'
 
-    step_failure_event = solid_result.compute_step_failure_event
-    assert step_failure_event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+    failure_event = [
+        event
+        for event in pipeline_result.events_for_node("take_string")
+        if event.event_type == DagsterEventType.STEP_FAILURE
+    ].pop()
+    assert failure_event.step_failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"
 
 
 def test_output_types_fail_in_pipeline():
-    @lambda_solid(output_def=OutputDefinition(str))
+    @op(out=Out(str))
     def return_int_fails():
         return 1
 
-    @pipeline
+    @job
     def pipe():
         return_int_fails()
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_pipeline(pipe)
+        pipe.execute_in_process()
 
     pipeline_result = execute_no_throw(pipe)
 
     assert not pipeline_result.success
 
-    solid_result = pipeline_result.result_for_solid("return_int_fails")
+    events_for_node = pipeline_result.events_for_node("return_int_fails")
+    output_event = [
+        event for event in events_for_node if event.event_type == DagsterEventType.STEP_OUTPUT
+    ].pop()
 
-    assert not solid_result.success
-
-    output_event = solid_result.get_output_event_for_compute()
     type_check_data = output_event.event_specific_data.type_check_data
     assert not type_check_data.success
     assert type_check_data.description == 'Value "1" of python type "int" must be a string.'
 
-    step_failure_event = solid_result.compute_step_failure_event
-    assert step_failure_event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+    failure_event = [
+        event
+        for event in pipeline_result.events_for_node("return_int_fails")
+        if event.event_type == DagsterEventType.STEP_FAILURE
+    ].pop()
+
+    assert failure_event.step_failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"
 
 
 # TODO add more step output use cases
@@ -276,15 +288,15 @@ BadType = DagsterType(name="BadType", type_check_fn=_return_bad_value)
 
 
 def test_input_type_returns_wrong_thing():
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("value", BadType)])
+    @op(ins={"value": In(BadType)})
     def take_bad_thing(value):
         return value
 
-    @pipeline
+    @job
     def pipe():
         take_bad_thing(return_one())
 
@@ -297,73 +309,90 @@ def test_input_type_returns_wrong_thing():
             "TypeCheck or a bool."
         ),
     ):
-        execute_pipeline(pipe)
+        pipe.execute_in_process()
 
     pipeline_result = execute_no_throw(pipe)
     assert not pipeline_result.success
 
-    solid_result = pipeline_result.result_for_solid("take_bad_thing")
-    assert solid_result.failure_data.error.cls_name == "DagsterInvariantViolationError"
+    failure_event = [
+        event
+        for event in pipeline_result.events_for_node("take_bad_thing")
+        if event.event_type == DagsterEventType.STEP_FAILURE
+    ].pop()
+
+    assert failure_event.step_failure_data.error.cls_name == "DagsterInvariantViolationError"
 
 
 def test_output_type_returns_wrong_thing():
-    @lambda_solid(output_def=OutputDefinition(BadType))
+    @op(out=Out(BadType))
     def return_one_bad_thing():
         return 1
 
-    @pipeline
+    @job
     def pipe():
         return_one_bad_thing()
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline(pipe)
+        pipe.execute_in_process()
 
     pipeline_result = execute_no_throw(pipe)
     assert not pipeline_result.success
 
-    solid_result = pipeline_result.result_for_solid("return_one_bad_thing")
-    assert solid_result.failure_data.error.cls_name == "DagsterInvariantViolationError"
+    failure_event = [
+        event
+        for event in pipeline_result.events_for_node("return_one_bad_thing")
+        if event.event_type == DagsterEventType.STEP_FAILURE
+    ].pop()
+    assert failure_event.step_failure_data.error.cls_name == "DagsterInvariantViolationError"
 
 
 def test_input_type_throw_arbitrary_exception():
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("value", ThrowsExceptionType)])
+    @op(ins={"value": In(ThrowsExceptionType)})
     def take_throws(value):
         return value
 
-    @pipeline
+    @job
     def pipe():
         take_throws(return_one())
 
     with pytest.raises(AlwaysFailsException):
-        execute_pipeline(pipe)
+        pipe.execute_in_process()
 
     pipeline_result = execute_no_throw(pipe)
     assert not pipeline_result.success
-    solid_result = pipeline_result.result_for_solid("take_throws")
-    assert solid_result.failure_data.error.cause.cls_name == "AlwaysFailsException"
+    failure_event = [
+        event
+        for event in pipeline_result.events_for_node("take_throws")
+        if event.event_type == DagsterEventType.STEP_FAILURE
+    ].pop()
+    assert failure_event.step_failure_data.error.cause.cls_name == "AlwaysFailsException"
 
 
 def test_output_type_throw_arbitrary_exception():
-    @lambda_solid(output_def=OutputDefinition(ThrowsExceptionType))
+    @op(out=Out(ThrowsExceptionType))
     def return_one_throws():
         return 1
 
-    @pipeline
+    @job
     def pipe():
         return_one_throws()
 
     with pytest.raises(AlwaysFailsException):
-        execute_pipeline(pipe)
+        pipe.execute_in_process()
 
     pipeline_result = execute_no_throw(pipe)
     assert not pipeline_result.success
-    solid_result = pipeline_result.result_for_solid("return_one_throws")
-    assert solid_result.failure_data.error.cause.cls_name == "AlwaysFailsException"
-    assert "kdjfkjd" in solid_result.failure_data.error.cause.message
+    failure_event = [
+        event
+        for event in pipeline_result.events_for_node("return_one_throws")
+        if event.event_type == DagsterEventType.STEP_FAILURE
+    ].pop()
+    assert failure_event.step_failure_data.error.cause.cls_name == "AlwaysFailsException"
+    assert "kdjfkjd" in failure_event.step_failure_data.error.cause.message
 
 
 def define_custom_dict(name, permitted_key_names):
@@ -397,24 +426,24 @@ def define_custom_dict(name, permitted_key_names):
 def test_fan_in_custom_types_with_storage():
     CustomDict = define_custom_dict("CustomDict", ["foo", "bar"])
 
-    @solid(output_defs=[OutputDefinition(CustomDict)])
+    @op(out=Out(CustomDict))
     def return_dict_1(_context):
         return {"foo": 3}
 
-    @solid(output_defs=[OutputDefinition(CustomDict)])
+    @op(out=Out(CustomDict))
     def return_dict_2(_context):
         return {"bar": "zip"}
 
-    @solid(input_defs=[InputDefinition("dicts", List[CustomDict])])
+    @op(ins={"dicts": In(List[CustomDict])})
     def get_foo(_context, dicts):
         return dicts[0]["foo"]
 
-    @pipeline(mode_defs=[default_mode_def_for_test])
-    def dict_pipeline():
+    @job(resource_defs={"io_manager": fs_io_manager})
+    def dict_job():
         # Fan-in
         get_foo([return_dict_1(), return_dict_2()])
 
-    pipeline_result = execute_pipeline(dict_pipeline)
+    pipeline_result = dict_job.execute_in_process()
     assert pipeline_result.success
 
 
@@ -422,39 +451,39 @@ ReturnBoolType = DagsterType(name="ReturnBoolType", type_check_fn=lambda _, _val
 
 
 def test_return_bool_type():
-    @solid(output_defs=[OutputDefinition(ReturnBoolType)])
+    @op(out=Out(ReturnBoolType))
     def return_always_pass_bool_type(_):
         return 1
 
-    @pipeline
-    def bool_type_pipeline():
+    @job
+    def bool_type_job():
         return_always_pass_bool_type()
 
-    assert execute_pipeline(bool_type_pipeline).success
+    assert bool_type_job.execute_in_process().success
 
 
 def test_raise_on_error_type_check_returns_false():
     FalsyType = DagsterType(name="FalsyType", type_check_fn=lambda _, _val: False)
 
-    @solid(output_defs=[OutputDefinition(FalsyType)])
-    def foo_solid(_):
+    @op(out=Out(FalsyType))
+    def foo_op(_):
         return 1
 
-    @pipeline
-    def foo_pipeline():
-        foo_solid()
+    @job
+    def foo_job():
+        foo_op()
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_pipeline(foo_pipeline)
+        foo_job.execute_in_process()
 
-    pipeline_result = execute_pipeline(foo_pipeline, raise_on_error=False)
+    pipeline_result = foo_job.execute_in_process(raise_on_error=False)
     assert not pipeline_result.success
-    assert [event.event_type_value for event in pipeline_result.step_event_list] == [
+    assert [event.event_type_value for event in pipeline_result.all_node_events] == [
         DagsterEventType.STEP_START.value,
         DagsterEventType.STEP_OUTPUT.value,
         DagsterEventType.STEP_FAILURE.value,
     ]
-    for event in pipeline_result.step_event_list:
+    for event in pipeline_result.all_node_events:
         if event.event_type_value == DagsterEventType.STEP_FAILURE.value:
             assert event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
 
@@ -467,28 +496,28 @@ def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
         ),
     )
 
-    @solid(output_defs=[OutputDefinition(FalsyType)])
-    def foo_solid(_):
+    @op(out=Out(FalsyType))
+    def foo_op(_):
         return 1
 
-    @pipeline
-    def foo_pipeline():
-        foo_solid()
+    @job
+    def foo_job():
+        foo_op()
 
     with pytest.raises(DagsterTypeCheckDidNotPass) as e:
-        execute_pipeline(foo_pipeline)
+        foo_job.execute_in_process()
     assert e.value.metadata_entries[0].label == "bar"
     assert e.value.metadata_entries[0].entry_data.text == "foo"
     assert isinstance(e.value.dagster_type, DagsterType)
 
-    pipeline_result = execute_pipeline(foo_pipeline, raise_on_error=False)
+    pipeline_result = foo_job.execute_in_process(raise_on_error=False)
     assert not pipeline_result.success
-    assert [event.event_type_value for event in pipeline_result.step_event_list] == [
+    assert [event.event_type_value for event in pipeline_result.all_node_events] == [
         DagsterEventType.STEP_START.value,
         DagsterEventType.STEP_OUTPUT.value,
         DagsterEventType.STEP_FAILURE.value,
     ]
-    for event in pipeline_result.step_event_list:
+    for event in pipeline_result.all_node_events:
         if event.event_type_value == DagsterEventType.STEP_FAILURE.value:
             assert event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
 
@@ -499,24 +528,24 @@ def test_raise_on_error_true_type_check_raises_exception():
 
     ThrowExceptionType = DagsterType(name="ThrowExceptionType", type_check_fn=raise_exception_inner)
 
-    @solid(output_defs=[OutputDefinition(ThrowExceptionType)])
-    def foo_solid(_):
+    @op(out=Out(ThrowExceptionType))
+    def foo_op(_):
         return 1
 
-    @pipeline
-    def foo_pipeline():
-        foo_solid()
+    @job
+    def foo_job():
+        foo_op()
 
     with pytest.raises(Failure, match=re.escape("I am dissapoint")):
-        execute_pipeline(foo_pipeline)
+        foo_job.execute_in_process()
 
-    pipeline_result = execute_pipeline(foo_pipeline, raise_on_error=False)
+    pipeline_result = foo_job.execute_in_process(raise_on_error=False)
     assert not pipeline_result.success
-    assert [event.event_type_value for event in pipeline_result.step_event_list] == [
+    assert [event.event_type_value for event in pipeline_result.all_node_events] == [
         DagsterEventType.STEP_START.value,
         DagsterEventType.STEP_FAILURE.value,
     ]
-    for event in pipeline_result.step_event_list:
+    for event in pipeline_result.all_node_events:
         if event.event_type_value == DagsterEventType.STEP_FAILURE.value:
             assert event.event_specific_data.error.cause.cls_name == "Failure"
 
@@ -526,17 +555,17 @@ def test_raise_on_error_true_type_check_returns_true():
         name="TruthyExceptionType", type_check_fn=lambda _, _val: True
     )
 
-    @solid(output_defs=[OutputDefinition(TruthyExceptionType)])
-    def foo_solid(_):
+    @op(out=Out(TruthyExceptionType))
+    def foo_op(_):
         return 1
 
-    @pipeline
-    def foo_pipeline():
-        foo_solid()
+    @job
+    def foo_job():
+        foo_op()
 
-    assert execute_pipeline(foo_pipeline).success
+    assert foo_job.execute_in_process().success
 
-    pipeline_result = execute_pipeline(foo_pipeline, raise_on_error=False)
+    pipeline_result = foo_job.execute_in_process(raise_on_error=False)
     assert pipeline_result.success
     assert set(
         [
@@ -544,7 +573,7 @@ def test_raise_on_error_true_type_check_returns_true():
             DagsterEventType.STEP_OUTPUT.value,
             DagsterEventType.STEP_SUCCESS.value,
         ]
-    ).issubset([event.event_type_value for event in pipeline_result.step_event_list])
+    ).issubset([event.event_type_value for event in pipeline_result.all_node_events])
 
 
 def test_raise_on_error_true_type_check_returns_successful_type_check():
@@ -555,17 +584,17 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
         ),
     )
 
-    @solid(output_defs=[OutputDefinition(TruthyExceptionType)])
-    def foo_solid(_):
+    @op(out=Out(TruthyExceptionType))
+    def foo_op(_):
         return 1
 
-    @pipeline
-    def foo_pipeline():
-        foo_solid()
+    @job
+    def foo_job():
+        foo_op()
 
-    pipeline_result = execute_pipeline(foo_pipeline)
+    pipeline_result = foo_job.execute_in_process()
     assert pipeline_result.success
-    for event in pipeline_result.step_event_list:
+    for event in pipeline_result.all_node_events:
         if event.event_type_value == DagsterEventType.STEP_OUTPUT.value:
             assert event.event_specific_data.type_check_data
             assert event.event_specific_data.type_check_data.metadata_entries[0].label == "bar"
@@ -575,7 +604,7 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
             )
             assert event.event_specific_data.type_check_data.metadata_entries[0]
 
-    pipeline_result = execute_pipeline(foo_pipeline, raise_on_error=False)
+    pipeline_result = foo_job.execute_in_process(raise_on_error=False)
     assert pipeline_result.success
     assert set(
         [
@@ -583,7 +612,7 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
             DagsterEventType.STEP_OUTPUT.value,
             DagsterEventType.STEP_SUCCESS.value,
         ]
-    ).issubset([event.event_type_value for event in pipeline_result.step_event_list])
+    ).issubset([event.event_type_value for event in pipeline_result.all_node_events])
 
 
 def test_contextual_type_check():
@@ -605,19 +634,19 @@ def test_contextual_type_check():
 
         return _Foo()
 
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @solid(input_defs=[InputDefinition("inp", custom)])
+    @op(ins={"inp": In(custom)})
     def bar(_context, inp):
         return inp
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"foo": foo})])
-    def fancy_pipeline():
+    @job(resource_defs={"foo": foo})
+    def fancy_job():
         bar(return_one())
 
-    assert execute_pipeline(fancy_pipeline).success
+    assert fancy_job.execute_in_process().success
 
 
 def test_type_equality():

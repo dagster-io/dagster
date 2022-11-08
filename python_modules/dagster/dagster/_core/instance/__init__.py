@@ -647,8 +647,6 @@ class DagsterInstance:
 
         if "enabled" in telemetry_settings:
             return telemetry_settings["enabled"]
-        elif "experimental_dagit" in telemetry_settings:
-            return telemetry_settings["experimental_dagit"]
         else:
             return dagster_telemetry_enabled_default
 
@@ -733,11 +731,17 @@ class DagsterInstance:
             self._schedule_storage.upgrade()
             self._schedule_storage.migrate(print_fn)
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout, pool_recycle):
         if self._schedule_storage:
-            self._schedule_storage.optimize_for_dagit(statement_timeout=statement_timeout)
-        self._run_storage.optimize_for_dagit(statement_timeout=statement_timeout)
-        self._event_storage.optimize_for_dagit(statement_timeout=statement_timeout)
+            self._schedule_storage.optimize_for_dagit(
+                statement_timeout=statement_timeout, pool_recycle=pool_recycle
+            )
+        self._run_storage.optimize_for_dagit(
+            statement_timeout=statement_timeout, pool_recycle=pool_recycle
+        )
+        self._event_storage.optimize_for_dagit(
+            statement_timeout=statement_timeout, pool_recycle=pool_recycle
+        )
 
     def reindex(self, print_fn=lambda _: None):
         print_fn("Checking for reindexing...")
@@ -2131,14 +2135,3 @@ class DagsterInstance:
         )
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         return get_tick_retention_settings(tick_settings, default_tick_settings)
-
-
-def is_dagit_telemetry_enabled(instance):
-    telemetry_settings = instance.get_settings("telemetry")
-    if not telemetry_settings:
-        return False
-
-    if "experimental_dagit" in telemetry_settings:
-        return telemetry_settings["experimental_dagit"]
-    else:
-        return False

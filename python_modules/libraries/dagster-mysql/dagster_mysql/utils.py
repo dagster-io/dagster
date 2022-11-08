@@ -10,9 +10,6 @@ import sqlalchemy as db
 from dagster import _check as check
 from dagster._core.storage.sql import get_alembic_config
 
-# 1 hr - anything less than 8 hrs (MySQL's default `wait_timeout` should work)
-MYSQL_POOL_RECYCLE = 3600
-
 
 class DagsterMySQLException(Exception):
     pass
