@@ -14,10 +14,10 @@ from dagster import (
     multi_asset,
     repository,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_layer import build_asset_selection_job
-from dagster._core.selector.subset_selector import generate_asset_dep_graph
 from dagster._core.test_utils import instance_for_test
-from dagster._utils.calculate_data_time import get_upstream_materialization_times_for_record
+from dagster._utils.calculate_data_time import get_used_upstream_materialization_times_for_record
 
 
 @pytest.mark.parametrize(
@@ -133,19 +133,17 @@ def test_calculate_data_time(relative_to, runs_to_expected_data_times_index):
 
     all_assets = [a, bcd, e, f]
 
-    upstream_mapping = generate_asset_dep_graph(all_assets, [])["upstream"]
+    asset_graph = AssetGraph(all_assets)
 
     @repository
     def my_repo():
         return [all_assets]
 
-    def _get_root_keys(key_str):
-        upstream_key_strs = upstream_mapping[key_str]
-        if not upstream_key_strs:
-            return {AssetKey.from_user_string(key_str)}
-        return set().union(
-            *(_get_root_keys(upstream_key_str) for upstream_key_str in upstream_key_strs)
-        )
+    def _get_root_keys(key):
+        upstream_keys = asset_graph.get_parents(key)
+        if not upstream_keys:
+            return {key}
+        return set().union(*(_get_root_keys(upstream_key) for upstream_key in upstream_keys))
 
     with instance_for_test() as instance:
 
@@ -187,16 +185,16 @@ def test_calculate_data_time(relative_to, runs_to_expected_data_times_index):
                         limit=1,
                     )[0]
                     if relative_to == "ROOTS":
-                        relevant_upstream_keys = _get_root_keys(ak)
+                        relevant_upstream_keys = _get_root_keys(AssetKey(ak))
                     elif relative_to == "SELF":
                         relevant_upstream_keys = {AssetKey(ak)}
                     else:
                         relevant_upstream_keys = {AssetKey(u) for u in relative_to}
-                    upstream_data_times = get_upstream_materialization_times_for_record(
+                    upstream_data_times = get_used_upstream_materialization_times_for_record(
                         instance=instance,
-                        upstream_asset_key_mapping=upstream_mapping,
-                        relevant_upstream_keys=relevant_upstream_keys,
+                        asset_graph=asset_graph,
                         record=latest_asset_record,
+                        upstream_keys=relevant_upstream_keys,
                     )
                     assert upstream_data_times == {
                         AssetKey(k): materialization_times_index[AssetKey(k)][v]

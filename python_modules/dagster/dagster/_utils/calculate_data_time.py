@@ -1,18 +1,18 @@
-from datetime import datetime
-from typing import AbstractSet, Mapping, Optional, cast
+import datetime
+import json
+from typing import AbstractSet, Dict, Iterator, Mapping, Optional, Tuple, cast
 
 from dagster import AssetKey, DagsterEventType, DagsterInstance, EventLogRecord, EventRecordsFilter
+from dagster._core.definitions.asset_graph import AssetGraph
 
-UPSTREAM_MATERIALIZATION_TIMES_TAG = ".dagster/upstream_times"
 
-
-def get_upstream_materialization_times_for_record(
-    instance: DagsterInstance,
-    upstream_asset_key_mapping: Mapping[str, AbstractSet[str]],
-    relevant_upstream_keys: AbstractSet[AssetKey],
+def get_used_upstream_materialization_times_for_record(
     record: EventLogRecord,
-) -> Mapping[AssetKey, Optional[datetime]]:
-    """Helper method to enable calculating the timestamps of materializations of upstream assets
+    instance: DagsterInstance,
+    asset_graph: AssetGraph,
+    upstream_keys: AbstractSet[AssetKey],
+) -> Mapping[AssetKey, Optional[datetime.datetime]]:
+    """Method to enable calculating the timestamps of materializations of upstream assets
     which were relevant to a given AssetMaterialization. These timestamps can be calculated relative
     to any upstream asset keys.
 
@@ -21,47 +21,73 @@ def get_upstream_materialization_times_for_record(
     given materialization event.
     """
 
-    def _upstream_key_str_iterator(asset_key_str: str):
-        for key_str in upstream_asset_key_mapping[asset_key_str]:
-            yield key_str
-            yield from _upstream_key_str_iterator(key_str)
+    def _storage_key(storage_id: int) -> str:
+        return f".dagster-used_upstream_times-{storage_id}"
 
-    def _get_upstream_times_and_ids(record: EventLogRecord, required_keys: AbstractSet[AssetKey]):
-        # no record available, so the data time for all keys upstream of here is None
+    _local_cache: Dict[int, Dict[AssetKey, Tuple[Optional[int], Optional[float]]]] = {}
+
+    def _get_known_times(
+        storage_id: int,
+    ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
+        if storage_id in _local_cache:
+            # fetch from local cache if possible
+            return _local_cache[storage_id]
+        elif instance.run_storage.supports_kvs():
+            # otherwise, attempt to fetch from the instance key-value store
+            storage_key = _storage_key(storage_id)
+            serialized_times = instance.run_storage.kvs_get({storage_key}).get(storage_key, "{}")
+            return {
+                AssetKey.from_user_string(key): tuple(value)  # type:ignore
+                for key, value in json.loads(serialized_times).items()
+            }
+        return {}
+
+    def _set_known_times(
+        storage_id: int, known_times: Dict[AssetKey, Tuple[Optional[int], Optional[float]]]
+    ):
+        if known_times != _local_cache.get(storage_id):
+            _local_cache[storage_id] = known_times
+            if instance.run_storage.supports_kvs():
+                # store this info in the instance key-value store for future calls
+                storage_key = _storage_key(storage_id)
+                serialized_times = json.dumps(
+                    {key.to_user_string(): value for key, value in known_times.items()}
+                )
+                instance.run_storage.kvs_set({storage_key: serialized_times})
+
+    def _upstream_key_iterator(key: AssetKey) -> Iterator[AssetKey]:
+        yield key
+        for parent_key in asset_graph.get_parents(key):
+            yield from _upstream_key_iterator(parent_key)
+
+    def _get_upstream_ids_and_times(
+        record: Optional[EventLogRecord], required_keys: AbstractSet[AssetKey]
+    ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
+
         if record is None:
-            return {k: (None, None) for k in required_keys}
+            return {key: (None, None) for key in required_keys}
 
-        cur_tags = instance.get_asset_event_tags(record.storage_id)
-
-        cur_key = cast(AssetKey, record.asset_key)
-        cur_key_str = cur_key.to_user_string()
+        key = cast(AssetKey, record.asset_key)
 
         # grab the existing upstream data times already calculated for this record (if any)
-        if UPSTREAM_MATERIALIZATION_TIMES_TAG in cur_tags:
-            known_times = cur_tags[UPSTREAM_MATERIALIZATION_TIMES_TAG]
-        else:
-            known_times = {}
-
-        # this is a required key to track, so grab its record
-        if cur_key in required_keys:
-            known_times[cur_key_str] = (
+        known_times = _get_known_times(record.storage_id)
+        if key in required_keys:
+            known_times[key] = (
                 record.storage_id,
                 record.event_log_entry.timestamp,
             )
 
-        # not all required data times are present in the tags
-        if required_keys - set(known_times.keys()):
-
-            # find all the required keys that are upstream of this key
-            required_upstream_keys = set()
-            for upstream_key_str in _upstream_key_str_iterator(cur_key_str):
-                upstream_key = AssetKey.from_user_string(upstream_key_str)
-                if upstream_key in required_keys:
-                    required_upstream_keys.add(upstream_key)
+        # not all required keys have known values
+        unknown_required_keys = required_keys - set(known_times.keys())
+        if unknown_required_keys:
 
             # find the upstream times of each of the parents of this asset
-            for parent_key_str in upstream_asset_key_mapping[cur_key_str]:
-                parent_key = AssetKey.from_user_string(parent_key_str)
+            for parent_key in asset_graph.get_parents(key):
+                # the set of required keys which are upstream of this key
+                upstream_required_keys = set()
+                for upstream_key in _upstream_key_iterator(parent_key):
+                    if upstream_key in unknown_required_keys:
+                        upstream_required_keys.add(upstream_key)
 
                 # get the most recent asset materialization for this parent which happened before
                 # the current record
@@ -77,31 +103,24 @@ def get_upstream_materialization_times_for_record(
                 latest_parent_record = parent_records[0] if parent_records else None
 
                 # recurse to find the data times of this parent
-                for key, tup in _get_upstream_times_and_ids(
-                    latest_parent_record, required_upstream_keys
+                for key, tup in _get_upstream_ids_and_times(
+                    latest_parent_record, upstream_required_keys
                 ).items():
-                    tup = tuple(tup)
-                    # if root data is missing, override other values
+                    # if root data is missing, this overrides other values
                     if tup == (None, None) or known_times.get(key) == (None, None):
                         known_times[key] = (None, None)
                     else:
-                        known_times[key] = min(tuple(known_times.get(key, tup)), tup)
+                        known_times[key] = min(known_times.get(key, tup), tup)
 
-        # cache asset event in the database
-        instance.add_asset_event_tags(
-            record.storage_id, {UPSTREAM_MATERIALIZATION_TIMES_TAG: known_times}
-        )
-        return {
-            k: v
-            for k, v in known_times.items()
-            # filter out unnecessary info
-            if AssetKey.from_user_string(k) in required_keys
-        }
+        # cache these calculated values
+        _set_known_times(record.storage_id, known_times)
+
+        return {k: v for k, v in known_times.items() if k in required_keys}
 
     return {
         # convert to nicer output format
-        AssetKey.from_user_string(k): datetime.fromtimestamp(timestamp)
+        k: datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
         if timestamp is not None
         else None
-        for k, (_, timestamp) in _get_upstream_times_and_ids(record, relevant_upstream_keys).items()
+        for k, (_, timestamp) in _get_upstream_ids_and_times(record, upstream_keys).items()
     }
