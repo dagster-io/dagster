@@ -225,16 +225,18 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         if asset_selection is not None:
             repo_assets = self._repository_def._assets_defs_by_key.values()
             repo_source_assets = self._repository_def.source_assets_by_key.values()
-            self._asset_keys = list(asset_selection.resolve([*repo_assets, *repo_source_assets]))
+            self._monitored_asset_keys = list(
+                asset_selection.resolve([*repo_assets, *repo_source_assets])
+            )
         elif asset_keys is not None:
-            self._asset_keys = list(asset_keys)
+            self._monitored_asset_keys = list(asset_keys)
         else:
             raise DagsterInvalidDefinitionError(
                 "MultiAssetSensorDefinition requires one of asset_selection or asset_keys"
             )
 
         self._assets_by_key: Dict[AssetKey, Optional[AssetsDefinition]] = {}
-        for asset_key in self._asset_keys:
+        for asset_key in self._monitored_asset_keys:
             assets_def = (
                 self._repository_def._assets_defs_by_key.get(  # pylint:disable=protected-access
                     asset_key
@@ -277,7 +279,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         if self._fetched_initial_unconsumed_events:
             return
 
-        for asset_key in self._asset_keys:
+        for asset_key in self._monitored_asset_keys:
             event_records = self.instance.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -378,7 +380,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         # recent event.
 
         if asset_keys is None:
-            asset_keys = self._asset_keys
+            asset_keys = self._monitored_asset_keys
         else:
             asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
 
@@ -577,7 +579,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             str, Dict[AssetKey, "EventLogRecord"]
         ] = defaultdict(dict)
 
-        for asset_key in self._asset_keys:
+        for asset_key in self._monitored_asset_keys:
             materialization_by_partition = self.latest_materialization_records_by_partition(
                 asset_key
             )
@@ -590,14 +592,16 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def get_cursor_partition(self, asset_key: Optional[AssetKey]) -> Optional[str]:
         """A utility method to get the current partition the cursor is on."""
         asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
-        if asset_key not in self._asset_keys:
+        if asset_key not in self._monitored_asset_keys:
             raise DagsterInvalidInvocationError(
                 "Provided asset key must correspond to a provided asset"
             )
         if asset_key:
             partition_key = self._get_cursor(asset_key).latest_consumed_event_partition
-        elif self._asset_keys is not None and len(self._asset_keys) == 1:
-            partition_key = self._get_cursor(self._asset_keys[0]).latest_consumed_event_partition
+        elif self._monitored_asset_keys is not None and len(self._monitored_asset_keys) == 1:
+            partition_key = self._get_cursor(
+                self._monitored_asset_keys[0]
+            ).latest_consumed_event_partition
         else:
             raise DagsterInvalidInvocationError(
                 "Asset key must be provided when multiple assets are defined"
@@ -634,7 +638,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             [asset_key]
         ).get(asset_key, {})
         if not partitions:
-            if asset_key not in self._asset_keys:
+            if asset_key not in self._monitored_asset_keys:
                 raise DagsterInvariantViolationError(
                     f"Asset key {asset_key} not monitored by sensor"
                 )
@@ -791,7 +795,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     @public  # type: ignore
     @property
     def asset_keys(self) -> Sequence[AssetKey]:
-        return self._asset_keys
+        return self._monitored_asset_keys
 
 
 class MultiAssetSensorCursorAdvances:
@@ -1106,15 +1110,15 @@ class MultiAssetSensorDefinition(SensorDefinition):
     ):
 
         check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
-        self._asset_selection: Optional[AssetSelection] = None
-        self._asset_keys: Optional[List[AssetKey]] = None
+        self._monitored_asset_selection: Optional[AssetSelection] = None
+        self._monitored_asset_keys: Optional[List[AssetKey]] = None
         if asset_selection:
-            self._asset_selection = check.inst_param(
+            self._monitored_asset_selection = check.inst_param(
                 asset_selection, "asset_selection", AssetSelection
             )
         else:  # asset keys provided
             asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
-            self._asset_keys = asset_keys
+            self._monitored_asset_keys = asset_keys
 
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
@@ -1125,8 +1129,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     cursor=context.cursor,
                     repository_name=context.repository_def.name,
                     repository_def=context.repository_def,
-                    asset_selection=self._asset_selection,
-                    asset_keys=self._asset_keys,
+                    asset_selection=self._monitored_asset_selection,
+                    asset_keys=self._monitored_asset_keys,
                     instance=context.instance,
                 )
 
@@ -1228,10 +1232,10 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
     @public  # type: ignore
     @property
-    def asset_selection(self) -> Optional[AssetSelection]:
-        return self._asset_selection
+    def monitored_asset_selection(self) -> Optional[AssetSelection]:
+        return self._monitored_asset_selection
 
     @public  # type: ignore
     @property
-    def asset_keys(self) -> Optional[Sequence[AssetKey]]:
-        return self._asset_keys
+    def monitored_asset_keys(self) -> Optional[Sequence[AssetKey]]:
+        return self._monitored_asset_keys
