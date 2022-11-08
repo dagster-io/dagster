@@ -1,7 +1,7 @@
 import hashlib
 import inspect
 import json
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
@@ -92,7 +92,7 @@ class AssetsDefinitionCacheableData(
         )
 
 
-class CacheableAssetsDefinition(ResourceAddable):
+class CacheableAssetsDefinition(ResourceAddable, ABC):
     def __init__(self, unique_id: str):
         self._unique_id = unique_id
 
