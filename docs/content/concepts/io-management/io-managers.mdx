@@ -64,17 +64,7 @@ Consider the following diagram. In this example, a job has two IO managers, each
 
 The default IO manager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values from pickle files in the local filesystem. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default IO manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
 
-Dagster provides out-of-the-box IO managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own.
-
-Dagster provides a feature-rich base class for filesystem-based IO Managers: <PyObject module="dagster" object="UPathIOManager" />. It's compatible with both local and remote filesystems (like S3 or GCS) by using `universal-pathlib` and `fsspec`. The full list of supported filesystems can be found [here](https://github.com/fsspec/universal_pathlib#currently-supported-filesystems-and-schemes). The `UPathIOManager` also has other important features:
- - handles partitioned assets
- - handles loading a single upstream partition
- - handles loading multiple upstream partitions (with respect to <PyObject object="PartitionMapping" />)
- - the `get_metadata` method can be customized to add additional metadata to the output
- - the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions
- (the default behavior is to raise an error)
-
-The default IO manager inherits from the `UPathIOManager` and therefore has all of these features too.
+Dagster provides out-of-the-box IO managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own: either from scratch or by extending the `UPathIOManager` if you want to store data in an `fsspec`-supported filesystem.
 
 ### IO managers are resources
 
@@ -364,7 +354,17 @@ The provided `context` argument for `handle_output` is an <PyObject module="dags
 
 ## Defining filesystem-based IO Managers
 
-The <PyObject module="dagster" object="UPathIOManager" /> can be easily used to write specific filesystem-based IO Managers. It already implements the `load_input` and `handle_output` methods. Instead, saving and loading for a given `universal_pathlib.UPath` has to be implemented. Here are some examples:
+Dagster provides a feature-rich base class for filesystem-based IO Managers: <PyObject module="dagster" object="UPathIOManager" />. It's compatible with both local and remote filesystems (like S3 or GCS) by using `universal-pathlib` and `fsspec`. The full list of supported filesystems can be found [here](https://github.com/fsspec/universal_pathlib#currently-supported-filesystems-and-schemes). The `UPathIOManager` also has other important features:
+ - handles partitioned assets
+ - handles loading a single upstream partition
+ - handles loading multiple upstream partitions (with respect to <PyObject object="PartitionMapping" />)
+ - the `get_metadata` method can be customized to add additional metadata to the output
+ - the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions
+ (the default behavior is to raise an error)
+
+The default IO manager inherits from the `UPathIOManager` and therefore has all of these features too.
+
+The `UPathIOManager`  already implements the `load_input` and `handle_output` methods. Instead, saving and loading for a given `universal_pathlib.UPath` has to be implemented. Here are some examples:
 
 ```python file=/concepts/io_management/upath_io_manager.py startafter=start_upath_io_manager endbefore=end_upath_io_manager
 from dagster import UPathIOManager
@@ -429,7 +429,7 @@ If you're working with time window partitions, you can also use the `asset_parti
 
 A single partition of one asset might depend on a range of partitions of an upstream asset.
 
-The default IO Manager has support for loading multiple upstream partitions. In this case, the downstream asset should use `Dict[str, ...]` type for the upstream `DagsterType` (otherwise an error will be raised). Here is an example of loading multiple upstream partitions:
+The default IO Manager has support for loading multiple upstream partitions. In this case, the downstream asset should use `Dict[str, ...]` (or leave it blank) type for the upstream `DagsterType`. Here is an example of loading multiple upstream partitions:
 
 ```python file=/concepts/io_management/loading_multiple_upstream_partitions.py startafter=start_loading_multiple_upstream_partitions endbefore=end_loading_multiple_upstream_partitions
 start = datetime.datetime(2022, 1, 1)
@@ -442,7 +442,7 @@ def upstream() -> pd.DataFrame:
     return pd.DataFrame(hour_data)
 
 @asset(partitions_def=daily)
-def downstream(upstream: Dict[str, pd.DataFrame]) -> pd.DataFrame:  # Dict type annotation is important here
+def downstream(upstream: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     # hourly_asset is now a dictionary which maps partition keys to partitions
     # the hourly partitions have a default behavior for mapping to daily partitions (24 hours -> 1 day).
     return pd.concat(list(upstream.values()))

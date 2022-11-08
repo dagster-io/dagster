@@ -248,11 +248,34 @@ def test_user_forgot_dict_type_annotation_for_multiple_partitions(
 
     with pytest.raises(
         CheckError,
-        match=r".* If you are loading multiple partitions, the upstream asset type annotation "
-        "should be a typing.Dict.",
+        match=r".* but the input has multiple partitions. .* should be used in this case.",
     ):
         materialize(
             [*upstream_asset.to_source_assets(), downstream_asset],
             partition_key=start.strftime(daily.fmt),
             resources={"io_manager": dummy_io_manager},
         )
+
+
+def test_skip_type_check_for_multiple_partitions_with_any_type(
+    start: datetime,
+    daily: DailyPartitionsDefinition,
+    hourly: HourlyPartitionsDefinition,
+    dummy_io_manager: DummyIOManager,
+):
+    @asset(partitions_def=hourly)
+    def upstream_asset(context: OpExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(
+        partitions_def=daily,
+    )
+    def downstream_asset(upstream_asset):
+        return upstream_asset
+
+    result = materialize(
+        [*upstream_asset.to_source_assets(), downstream_asset],
+        partition_key=start.strftime(daily.fmt),
+        resources={"io_manager": dummy_io_manager},
+    )
+    assert isinstance(result.output_for_node("downstream_asset"), dict)
