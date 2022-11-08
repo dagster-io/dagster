@@ -30,6 +30,7 @@ DEFAULT_DAGIT_HOST = "127.0.0.1"
 DEFAULT_DAGIT_PORT = 3000
 
 DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
+DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 
 
 @click.command(
@@ -87,6 +88,13 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
     show_default=True,
 )
 @click.option(
+    "--db-pool-recycle",
+    help="The maximum age of a connection to use from the sqlalchemy pool without connection recycling. Set to -1 to disable. Not respected in all configurations.",
+    default=DEFAULT_POOL_RECYCLE,
+    type=click.INT,
+    show_default=True,
+)
+@click.option(
     "--read-only",
     help="Start Dagit in read-only mode, where all mutations such as launching runs and "
     "turning schedules on/off are turned off.",
@@ -112,6 +120,7 @@ def dagit(
     port,
     path_prefix,
     db_statement_timeout,
+    db_pool_recycle,
     read_only,
     suppress_warnings,
     log_level,
@@ -122,7 +131,7 @@ def dagit(
 
     with get_instance_for_service("dagit") as instance:
         # Allow the instance components to change behavior in the context of a long running server process
-        instance.optimize_for_dagit(db_statement_timeout)
+        instance.optimize_for_dagit(db_statement_timeout, db_pool_recycle)
 
         with get_workspace_process_context_from_kwargs(
             instance,

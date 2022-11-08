@@ -265,8 +265,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def dispose(self):
         return self._storage.run_storage.dispose()
 
-    def optimize_for_dagit(self, statement_timeout: int):
-        return self._storage.run_storage.optimize_for_dagit(statement_timeout)
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
+        return self._storage.run_storage.optimize_for_dagit(statement_timeout, pool_recycle)
 
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat"):
         return self._storage.run_storage.add_daemon_heartbeat(daemon_heartbeat)
@@ -370,8 +370,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def dispose(self):
         return self._storage.event_storage.dispose()
 
-    def optimize_for_dagit(self, statement_timeout: int):
-        return self._storage.event_storage.optimize_for_dagit(statement_timeout)
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
+        return self._storage.event_storage.optimize_for_dagit(statement_timeout, pool_recycle)
 
     def get_event_records(
         self,
@@ -542,5 +542,5 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         return self._storage.schedule_storage.optimize(print_fn, force_rebuild_all)
 
-    def optimize_for_dagit(self, statement_timeout: int):
-        return self._storage.schedule_storage.optimize_for_dagit(statement_timeout)
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
+        return self._storage.schedule_storage.optimize_for_dagit(statement_timeout, pool_recycle)
