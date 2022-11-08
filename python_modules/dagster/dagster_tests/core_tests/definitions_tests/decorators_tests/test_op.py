@@ -21,6 +21,7 @@ from dagster import (
     Out,
     Output,
     build_op_context,
+    fs_io_manager,
     graph,
     job,
     mem_io_manager,
@@ -38,12 +39,12 @@ def some_fn(a):
 the_lambda = lambda a: a
 
 
-def execute_op_in_graph(an_op, instance=None):
+def execute_op_in_graph(an_op, instance=None, resources=None):
     @graph
     def my_graph():
         an_op()
 
-    result = my_graph.execute_in_process(instance=instance)
+    result = my_graph.execute_in_process(instance=instance, resources=resources)
     return result
 
 
@@ -672,7 +673,7 @@ def test_log_metadata_asset_materialization():
         context.add_output_metadata({"bar": "baz"})
         return 5
 
-    result = execute_op_in_graph(the_op)
+    result = execute_op_in_graph(the_op, resources={"io_manager": fs_io_manager})
     materialization = result.asset_materializations_for_node("the_op")[0]
     assert len(materialization.metadata_entries) == 2
     assert materialization.metadata_entries[0].label == "bar"
