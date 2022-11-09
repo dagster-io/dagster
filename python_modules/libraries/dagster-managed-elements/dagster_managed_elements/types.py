@@ -76,9 +76,9 @@ class ManagedElementDiff(
 
     def __new__(
         cls,
-        additions: Optional[List[DiffData]] = None,
-        deletions: Optional[List[DiffData]] = None,
-        modifications: Optional[List[ModifiedDiffData]] = None,
+        additions: Optional[Sequence[DiffData]] = None,
+        deletions: Optional[Sequence[DiffData]] = None,
+        modifications: Optional[Sequence[ModifiedDiffData]] = None,
     ):
         additions = check.opt_list_param(additions, "additions", of_type=DiffData)
         deletions = check.opt_list_param(deletions, "deletions", of_type=DiffData)
@@ -175,7 +175,7 @@ class ManagedElementDiff(
             == sorted(list(other.nested.items()), key=lambda x: x[0])
         )
 
-    def get_diff_display_entries(self, indent: int = 0) -> Tuple[List[str], List[str], List[str]]:
+    def get_diff_display_entries(self, indent: int = 0) -> Tuple[Sequence[str], Sequence[str], Sequence[str]]:
         """
         Returns a tuple of additions, deletions, and modification entries associated with this diff object.
         """

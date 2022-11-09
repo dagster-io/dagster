@@ -45,8 +45,8 @@ from dagster._utils import merge_dicts
 
 def _build_airbyte_asset_defn_metadata(
     connection_id: str,
-    destination_tables: List[str],
-    asset_key_prefix: Optional[List[str]] = None,
+    destination_tables: Sequence[str],
+    asset_key_prefix: Optional[Sequence[str]] = None,
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     upstream_assets: Optional[Iterable[AssetKey]] = None,
     group_name: Optional[str] = None,
@@ -177,7 +177,7 @@ def _build_airbyte_assets_from_metadata(
 @experimental
 def build_airbyte_assets(
     connection_id: str,
-    destination_tables: List[str],
+    destination_tables: Sequence[str],
     asset_key_prefix: Optional[Sequence[str]] = None,
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     upstream_assets: Optional[Set[AssetKey]] = None,
@@ -264,7 +264,7 @@ def build_airbyte_assets(
     return [_assets]
 
 
-def _get_schema_types(schema: Mapping[str, Any]) -> List[str]:
+def _get_schema_types(schema: Mapping[str, Any]) -> Sequence[str]:
     """
     Given a schema definition, return a list of data types that are valid for this schema.
     """
@@ -276,7 +276,7 @@ def _get_schema_types(schema: Mapping[str, Any]) -> List[str]:
     return types
 
 
-def _get_sub_schemas(schema: Mapping[str, Any]) -> List[Mapping[str, Any]]:
+def _get_sub_schemas(schema: Mapping[str, Any]) -> Sequence[Mapping[str, Any]]:
     """
     Returns a list of sub-schema definitions for a given schema. This is used to handle union types.
     """
@@ -285,7 +285,7 @@ def _get_sub_schemas(schema: Mapping[str, Any]) -> List[Mapping[str, Any]]:
 
 def _get_normalization_tables_for_schema(
     key: str, schema: Mapping[str, Any], prefix: str = ""
-) -> Dict[str, AirbyteTableMetadata]:
+) -> Mapping[str, AirbyteTableMetadata]:
     """
     Recursively traverses a schema, returning metadata for the tables that will be created by the Airbyte
     normalization process.
@@ -430,7 +430,7 @@ class AirbyteConnectionMetadata(
 
 def _get_schema_by_table_name(
     stream_table_metadata: Mapping[str, AirbyteTableMetadata]
-) -> Dict[str, TableSchema]:
+) -> Mapping[str, TableSchema]:
 
     schema_by_base_table_name = [(k, v.schema) for k, v in stream_table_metadata.items()]
     schema_by_normalization_table_name = list(
@@ -453,7 +453,7 @@ def _get_schema_by_table_name(
 class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
-        key_prefix: List[str],
+        key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
@@ -475,7 +475,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         super().__init__(unique_id=f"airbyte-{contents.hexdigest()}")
 
     @abstractmethod
-    def _get_connections(self) -> List[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
         pass
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
@@ -527,7 +527,7 @@ class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefiniti
         self,
         airbyte_resource_def: ResourceDefinition,
         workspace_id: Optional[str],
-        key_prefix: List[str],
+        key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
@@ -546,7 +546,7 @@ class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefiniti
             build_init_resource_context()
         )
 
-    def _get_connections(self) -> List[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
         workspace_id = self._workspace_id
         if not workspace_id:
             workspaces = cast(
@@ -605,12 +605,12 @@ class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
         self,
         project_dir: str,
         workspace_id: Optional[str],
-        key_prefix: List[str],
+        key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
-        connection_directories: Optional[List[str]],
+        connection_directories: Optional[Sequence[str]],
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -623,7 +623,7 @@ class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
         self._project_dir = project_dir
         self._connection_directories = connection_directories
 
-    def _get_connections(self) -> List[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
         connections_dir = os.path.join(self._project_dir, "connections")
 
         output_connections: List[Tuple[str, AirbyteConnectionMetadata]] = []
@@ -775,7 +775,7 @@ def load_assets_from_airbyte_project(
     io_manager_key: Optional[str] = None,
     connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
-    connection_directories: Optional[List[str]] = None,
+    connection_directories: Optional[Sequence[str]] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads an Airbyte project into a set of Dagster assets.

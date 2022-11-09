@@ -19,7 +19,7 @@ def get_fivetran_logs_url(connector_details: Mapping[str, Any]) -> str:
 
 
 def metadata_for_table(
-    table_data: Dict[str, Any], connector_url: str, include_column_info: bool = False
+    table_data: Mapping[str, Any], connector_url: str, include_column_info: bool = False
 ) -> MetadataUserInput:
     metadata: Dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
     if table_data.get("columns"):

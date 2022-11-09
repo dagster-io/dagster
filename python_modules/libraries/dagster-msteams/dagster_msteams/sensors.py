@@ -36,7 +36,7 @@ def make_teams_on_run_failure_sensor(
     dagit_base_url: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     monitored_jobs: Optional[
-        List[
+        Sequence[
             Union[
                 PipelineDefinition,
                 GraphDefinition,

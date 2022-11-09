@@ -7,7 +7,7 @@ class AirbyteTableMetadata:
     def __init__(
         self,
         schema: TableSchema,
-        normalization_tables: Optional[Dict[str, "AirbyteTableMetadata"]] = None,
+        normalization_tables: Optional[Mapping[str, "AirbyteTableMetadata"]] = None,
     ):
         """
         Contains metadata about an Airbyte table, including its schema and any created normalization tables.

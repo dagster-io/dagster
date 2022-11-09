@@ -18,7 +18,7 @@ def _deepgetattr(obj, attr: str):
 
 def get_reconcilable_objects_from_module(
     module_dir: Optional[str], import_str: str
-) -> List[ManagedElementReconciler]:
+) -> Sequence[ManagedElementReconciler]:
     module_str = import_str
     object_paths = None
 
@@ -49,7 +49,7 @@ def get_reconcilable_objects_from_module(
     return reconcilable_objects
 
 
-def get_reconcilable_objects(module: ModuleType) -> List[ManagedElementReconciler]:
+def get_reconcilable_objects(module: ModuleType) -> Sequence[ManagedElementReconciler]:
     """
     Collect all ManagedElementReconciler-implementing objects in the root of the
     module.

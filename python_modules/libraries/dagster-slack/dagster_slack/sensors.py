@@ -32,11 +32,11 @@ T = TypeVar("T", bound=RunStatusSensorContext)
 def _build_slack_blocks_and_text(
     context: T,
     text_fn: Callable[[T], str],
-    blocks_fn: Optional[Callable[[T], Sequence[Dict]]],
+    blocks_fn: Optional[Callable[[T], List[Dict[Any, Any]]]],
     dagit_base_url: Optional[str],
-) -> Tuple[Sequence[Dict[str, Any]], str]:
+) -> Tuple[List[Dict[str, Any]], str]:
     main_body_text = text_fn(context)
-    blocks: List[Dict[str, Any]] = []
+    blocks: List[Dict[Any, Any]] = []
     if blocks_fn:
         blocks.extend(blocks_fn(context))
     else:
@@ -80,11 +80,11 @@ def make_slack_on_run_failure_sensor(
     channel: str,
     slack_token: str,
     text_fn: Callable[[RunFailureSensorContext], str] = _default_failure_message_text_fn,
-    blocks_fn: Optional[Callable[[RunFailureSensorContext], Sequence[Dict]]] = None,
+    blocks_fn: Optional[Callable[[RunFailureSensorContext], List[Dict[Any, Any]]]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     monitored_jobs: Optional[
-        List[
+        Sequence[
             Union[
                 PipelineDefinition,
                 GraphDefinition,

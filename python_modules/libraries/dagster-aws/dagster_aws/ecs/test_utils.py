@@ -42,7 +42,7 @@ class CustomECSRunLauncher(EcsRunLauncher):
     def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Mapping[str, str]:
         return {"cpu": "4096", "memory": "16384"}
 
-    def _get_task_overrides(self, run: PipelineRun) -> Dict[str, Any]:
+    def _get_task_overrides(self, run: PipelineRun) -> Mapping[str, Any]:
         return {"ephemeralStorage": {"sizeInGiB": 128}}
 
     def report_launch_events(
