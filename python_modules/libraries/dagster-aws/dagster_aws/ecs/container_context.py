@@ -48,6 +48,11 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
         is_required=False,
         description="ARN of the task definition to use to launch the container.",
     ),
+    "container_name": Field(
+        StringSource,
+        is_required=False,
+        description="Name of the container in the task definition to use to run Dagster code.",
+    ),
     **SHARED_ECS_SCHEMA,
 }
 
@@ -60,6 +65,7 @@ class EcsContainerContext(
             ("secrets_tags", List[str]),
             ("env_vars", List[str]),
             ("task_definition_arn", Optional[str]),
+            ("container_name", Optional[str]),
         ],
     )
 ):
@@ -71,6 +77,7 @@ class EcsContainerContext(
         secrets_tags: Optional[List[str]] = None,
         env_vars: Optional[List[str]] = None,
         task_definition_arn: Optional[str] = None,
+        container_name: Optional[str] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
@@ -78,6 +85,7 @@ class EcsContainerContext(
             secrets_tags=check.opt_list_param(secrets_tags, "secrets_tags"),
             env_vars=check.opt_list_param(env_vars, "env_vars"),
             task_definition_arn=check.opt_str_param(task_definition_arn, "task_definition_arn"),
+            container_name=check.opt_str_param(container_name, "container_name"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -86,6 +94,7 @@ class EcsContainerContext(
             secrets_tags=other.secrets_tags + self.secrets_tags,
             env_vars=other.env_vars + self.env_vars,
             task_definition_arn=other.task_definition_arn or self.task_definition_arn,
+            container_name=other.container_name or self.container_name,
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -157,5 +166,6 @@ class EcsContainerContext(
                 secrets_tags=processed_context_value.get("secrets_tags"),
                 env_vars=processed_context_value.get("env_vars"),
                 task_definition_arn=processed_context_value.get("task_definition_arn"),
+                container_name=processed_context_value.get("container_name"),
             )
         )
