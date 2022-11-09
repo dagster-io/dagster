@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import zlib
+from contextlib import ExitStack
 from typing import Any, Callable, Optional, cast
 
 import click
@@ -20,7 +21,7 @@ from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
 from dagster._core.execution.run_cancellation_thread import start_run_cancellation_thread
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,
@@ -123,6 +124,7 @@ def _execute_run_command_body(
             recon_pipeline,
             pipeline_run,
             instance,
+            inject_env_vars=True,
         ):
             write_stream_fn(event)
             if event.event_type == DagsterEventType.PIPELINE_FAILURE:
@@ -226,6 +228,7 @@ def _resume_run_command_body(
             pipeline_run,
             instance,
             resume_from_failure=True,
+            inject_env_vars=True,
         ):
             write_stream_fn(event)
             if event.event_type == DagsterEventType.PIPELINE_FAILURE:
@@ -391,6 +394,14 @@ def _execute_step_command_body(
             ),
             step_key=single_step_key,
         )
+
+        location_name = (
+            pipeline_run.external_pipeline_origin.location_name
+            if pipeline_run.external_pipeline_origin
+            else None
+        )
+
+        instance.inject_env_vars(location_name)
 
         if args.should_verify_step:
             success = verify_step(
@@ -573,6 +584,28 @@ def _execute_step_command_body(
     "code from this server.",
     envvar="DAGSTER_CONTAINER_CONTEXT",
 )
+@click.option(
+    "--inject-env-vars-from-instance",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Whether to load env vars from the instance and inject them into the environment.",
+    envvar="DAGSTER_INJECT_ENV_VARS_FROM_INSTANCE",
+)
+@click.option(
+    "--location-name",
+    type=click.STRING,
+    required=False,
+    help="Name of the code location this server corresponds to.",
+    envvar="DAGSTER_LOCATION_NAME",
+)
+@click.option(
+    "--instance-ref",
+    type=click.STRING,
+    required=False,
+    help="[INTERNAL] Serialized InstanceRef to use for accessing the instance",
+    envvar="DAGSTER_INSTANCE_REF",
+)
 def grpc_command(
     port=None,
     socket=None,
@@ -588,6 +621,9 @@ def grpc_command(
     use_python_environment_entry_point=False,
     container_image=None,
     container_context=None,
+    location_name=None,
+    instance_ref=None,
+    inject_env_vars_from_instance=False,
     **kwargs,
 ):
     from dagster._core.test_utils import mock_system_timezone
@@ -629,11 +665,11 @@ def grpc_command(
             package_name=kwargs["package_name"],
         )
 
-    with (
-        mock_system_timezone(override_system_timezone)
-        if override_system_timezone
-        else seven.nullcontext()
-    ):
+    with ExitStack() as exit_stack:
+
+        if override_system_timezone:
+            exit_stack.enter_context(mock_system_timezone(override_system_timezone))
+
         server = DagsterGrpcServer(
             port=port,
             socket=socket,
@@ -652,6 +688,9 @@ def grpc_command(
             ),
             container_image=container_image,
             container_context=json.loads(container_context) if container_context != None else None,
+            inject_env_vars_from_instance=inject_env_vars_from_instance,
+            instance_ref=deserialize_as(instance_ref, InstanceRef) if instance_ref else None,
+            location_name=location_name,
         )
 
         code_desc = " "

@@ -24,7 +24,8 @@ class FreshnessPolicy(ABC):
     def minutes_late(
         self,
         evaluation_time: datetime,
-        upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+        used_upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+        latest_upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
     ) -> Optional[float]:
         raise NotImplementedError()
 
@@ -49,6 +50,14 @@ class FreshnessPolicy(ABC):
             cron_schedule=cron_schedule,
         )
 
+    @staticmethod
+    def maximum_latency(allowed_latency_minutes: float) -> "MaximumLatencyFreshnessPolicy":
+        """Static constructor for a freshness policy which specifies that this asset should
+        incorporate the latest available upstream data no more than `allowed_latency_minutes` after
+        that data is produced.
+        """
+        return MaximumLatencyFreshnessPolicy(allowed_latency_minutes=allowed_latency_minutes)
+
 
 @experimental
 class MinimumFreshnessPolicy(FreshnessPolicy):
@@ -67,12 +76,13 @@ class MinimumFreshnessPolicy(FreshnessPolicy):
     def minutes_late(
         self,
         evaluation_time: datetime,
-        upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+        used_upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+        latest_upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
     ) -> Optional[float]:
         minimum_time = evaluation_time - pendulum.duration(minutes=self.minimum_freshness_minutes)
 
         minutes_late = 0.0
-        for upstream_time in upstream_materialization_times.values():
+        for upstream_time in used_upstream_materialization_times.values():
             # if any upstream materialization data is missing, then exit early
             if upstream_time is None:
                 return None
@@ -106,7 +116,8 @@ class CronMinimumFreshnessPolicy(FreshnessPolicy):
     def minutes_late(
         self,
         evaluation_time: datetime,
-        upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+        used_upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+        latest_upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
     ) -> Optional[float]:
         minimum_freshness_duration = pendulum.duration(minutes=self.minimum_freshness_minutes)
 
@@ -120,16 +131,63 @@ class CronMinimumFreshnessPolicy(FreshnessPolicy):
             latest_required_tick = next(schedule_ticks)
 
         minutes_late = 0.0
-        for upstream_materialization_time in upstream_materialization_times.values():
+        for upstream_materialization_time in used_upstream_materialization_times.values():
 
-            # if any upstream materialization data is missing, then exit early
-            if upstream_materialization_time is None:
-                return None
-
-            if upstream_materialization_time < latest_required_tick:
+            if (
+                upstream_materialization_time is None
+                or upstream_materialization_time < latest_required_tick
+            ):
                 # find the difference between the actual data time and the latest time that you would
                 # have expected to get this data by
                 expected_by_time = latest_required_tick + minimum_freshness_duration
+                minutes_late = max(
+                    minutes_late, (evaluation_time - expected_by_time).total_seconds() / 60
+                )
+
+        return minutes_late
+
+
+@experimental
+class MaximumLatencyFreshnessPolicy(FreshnessPolicy):
+    """A freshness policy which specifies that this asset should incorporate the latest available
+    upstream data no more than `allowed_latency_minutes` after that data is produced.
+    """
+
+    def __init__(self, allowed_latency_minutes: float):
+        self._allowed_latency_minutes = allowed_latency_minutes
+
+    @property
+    def allowed_latency_minutes(self) -> float:
+        return self._allowed_latency_minutes
+
+    def minutes_late(
+        self,
+        evaluation_time: datetime,
+        used_upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+        latest_upstream_materialization_times: Mapping[AssetKey, Optional[datetime]],
+    ) -> Optional[float]:
+        allowed_latency_duration = pendulum.duration(minutes=self.allowed_latency_minutes)
+
+        minutes_late = 0.0
+        for (
+            upstream_key,
+            latest_available_time,
+        ) in latest_upstream_materialization_times.items():
+
+            # if upstream asset does not exist yet, then you're not out of date with respect to it
+            if latest_available_time is None:
+                continue
+
+            # get the time of the materialization that was actually used
+            used_time = used_upstream_materialization_times[upstream_key]
+
+            # already incorporated the latest available time
+            if used_time == latest_available_time:
+                continue
+
+            # expect to have incorporated this data within allowed_latency_duration
+            expected_by_time = latest_available_time + allowed_latency_duration
+            if evaluation_time > expected_by_time:
                 minutes_late = max(
                     minutes_late, (evaluation_time - expected_by_time).total_seconds() / 60
                 )

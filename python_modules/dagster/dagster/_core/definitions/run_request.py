@@ -5,6 +5,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -90,6 +91,21 @@ class RunRequest(
             asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
+        )
+
+    @property
+    def partition_key(self) -> Optional[str]:
+        return self.tags.get(PARTITION_NAME_TAG)
+
+    def with_replaced_attrs(
+        self, job_name: Optional[str] = None, asset_selection: Optional[Sequence[AssetKey]] = None
+    ) -> "RunRequest":
+        return RunRequest(
+            run_key=self.run_key,
+            run_config=self.run_config,
+            tags=self.tags,
+            job_name=job_name or self.job_name,
+            asset_selection=asset_selection or self.asset_selection,
         )
 
 

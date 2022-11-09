@@ -27,7 +27,7 @@ from dagster._core.host_representation.external_data import (
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import deserialize_as, serialize_dagster_namedtuple, whitelist_for_serdes
@@ -185,6 +185,9 @@ class DagsterApiServer(DagsterApiServicer):
         entry_point: Optional[List[str]] = None,
         container_image: Optional[str] = None,
         container_context: Optional[dict] = None,
+        inject_env_vars_from_instance: Optional[bool] = False,
+        instance_ref: Optional[InstanceRef] = None,
+        location_name: Optional[str] = None,
     ):
         super(DagsterApiServer, self).__init__()
 
@@ -227,6 +230,14 @@ class DagsterApiServer(DagsterApiServicer):
         self._container_context = check.opt_dict_param(container_context, "container_context")
 
         try:
+            if inject_env_vars_from_instance:
+                # If arguments indicate it wants to load env vars, use the passed-in instance
+                # ref (or the dagster.yaml on the filesystem if no instance ref is provided)
+                with DagsterInstance.from_ref(
+                    instance_ref
+                ) if instance_ref else DagsterInstance.get() as instance:
+                    instance.inject_env_vars(location_name)
+
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
                 self._entry_point,
@@ -811,6 +822,9 @@ class DagsterGrpcServer:
         entry_point=None,
         container_image=None,
         container_context=None,
+        inject_env_vars_from_instance=False,
+        instance_ref=None,
+        location_name=None,
     ):
         check.opt_str_param(host, "host")
         check.opt_int_param(port, "port")
@@ -841,6 +855,10 @@ class DagsterGrpcServer:
             "If set to None, the server will use the gRPC default.",
         )
 
+        check.opt_bool_param(inject_env_vars_from_instance, "inject_env_vars_from_instance")
+        check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+        check.opt_str_param(location_name, "location_name")
+
         self.server = grpc.server(
             ThreadPoolExecutor(max_workers=max_workers),
             compression=grpc.Compression.Gzip,
@@ -862,6 +880,9 @@ class DagsterGrpcServer:
                 entry_point=entry_point,
                 container_image=container_image,
                 container_context=container_context,
+                inject_env_vars_from_instance=inject_env_vars_from_instance,
+                instance_ref=instance_ref,
+                location_name=location_name,
             )
         except Exception:
             if self._ipc_output_file:

@@ -183,6 +183,16 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
             return AssetKey(arg)
 
 
+class AssetKeyPartitionKey(NamedTuple):
+    """
+    An AssetKey with an (optional) partition key. Refers either to a non-partitioned asset or a
+    partition of a partitioned asset.
+    """
+
+    asset_key: AssetKey
+    partition_key: Optional[str] = None
+
+
 CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
 CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
 

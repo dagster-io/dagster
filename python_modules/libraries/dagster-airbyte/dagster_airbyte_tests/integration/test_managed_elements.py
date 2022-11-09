@@ -105,7 +105,8 @@ def airbyte_source_files_fixture():
             f.write(contents)
 
 
-def test_basic_integration(empty_airbyte_instance, airbyte_source_files):
+@pytest.mark.parametrize("filename", ["example_airbyte_stack", "example_airbyte_stack_generated"])
+def test_basic_integration(empty_airbyte_instance, airbyte_source_files, filename):
 
     ab_instance = airbyte_resource.configured(
         {
@@ -124,7 +125,7 @@ def test_basic_integration(empty_airbyte_instance, airbyte_source_files):
         )
 
     # First, check that we get the expected diff
-    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    check_result = check(TEST_ROOT_DIR, f"{filename}:reconciler")
 
     config_dict = {
         "local-json-input": {
@@ -154,13 +155,13 @@ def test_basic_integration(empty_airbyte_instance, airbyte_source_files):
 
     # Then, apply the diff and check that we get the expected diff again
 
-    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    apply_result = apply(TEST_ROOT_DIR, f"{filename}:reconciler")
 
     assert expected_result == apply_result
 
     # Now, check that we get no diff after applying the stack
 
-    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    check_result = check(TEST_ROOT_DIR, f"{filename}:reconciler")
 
     assert check_result == ManagedElementDiff()
 

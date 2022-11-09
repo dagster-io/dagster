@@ -73,6 +73,11 @@ dagit:
   # The timeout in milliseconds to set on database statements sent to the Dagster instance.
   dbStatementTimeout: ~
 
+  # The maximum age in seconds of a connection to use in the sqlalchemy connection pool.
+  # Defaults to 1 hour if not set.
+  # Set to -1 to disable.
+  dbPoolRecycle: ~
+
   # The log level of the uvicorn web server, defaults to warning if not set
   logLevel: ~
 
