@@ -187,7 +187,7 @@ def define_asset_job(
     config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
-    partitions_def: Optional["PartitionsDefinition[object]"] = None,
+    partitions_def: Optional["PartitionsDefinition[Any]"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will materialize a selection of assets. This will only be

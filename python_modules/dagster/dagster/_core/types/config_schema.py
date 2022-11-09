@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union, cast
@@ -184,7 +186,7 @@ def _create_type_loader_for_decorator(
     )
 
 
-DagsterTypeLoaderFn: TypeAlias = Callable[[StepExecutionContext, object], object]
+DagsterTypeLoaderFn: TypeAlias = Callable[["StepExecutionContext", object], object]
 
 
 def dagster_type_loader(
