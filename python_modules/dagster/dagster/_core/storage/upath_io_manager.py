@@ -21,7 +21,7 @@ class UPathIOManager(MemoizableIOManager):
      (returns a dictionary with mapping from partition_keys to partitions in this case)
      - the `get_metadata` method can be customized to add additional metadata to the outputs
      - the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions
-     (the default behavior is to raise an error)
+    (the default behavior is to raise an error)
     """
 
     extension: str = ""  # override in child class
@@ -36,44 +36,16 @@ class UPathIOManager(MemoizableIOManager):
 
     @abstractmethod
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
-        """
-        Child classes should override this method to write the object to the filesystem.
-
-        Args:
-            context:
-            obj:
-            path:
-
-        Returns:
-
-        """
+        """Child classes should override this method to write the object to the filesystem."""
 
     @abstractmethod
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
-        """
-        Child classes should override this method to load the object from the filesystem.
-
-        Args:
-            context:
-            path:
-
-        Returns:
-
-        """
+        """Child classes should override this method to load the object from the filesystem."""
 
     def get_metadata(
         self, context: OutputContext, obj: Any  # pylint: disable=unused-argument
     ) -> Dict[str, MetadataValue]:
-        """
-        Child classes should override this method to add custom metadata to the outputs.
-
-        Args:
-            context:
-            obj:
-
-        Returns:
-
-        """
+        """Child classes should override this method to add custom metadata to the outputs."""
         return {}
 
     def has_output(self, context: OutputContext) -> bool:
@@ -101,11 +73,6 @@ class UPathIOManager(MemoizableIOManager):
         """
         Returns the I/O path for a given context.
         Should not be used with partitions (use `_get_paths_for_partitions` instead).
-        Args:
-            context:
-
-        Returns:
-
         """
         return self._get_path_without_extension(context).with_suffix(self.extension)
 
@@ -114,11 +81,6 @@ class UPathIOManager(MemoizableIOManager):
     ) -> Dict[str, UPath]:
         """
         Returns a dict of partition_keys into I/O paths for a given context.
-        Args:
-            context:
-
-        Returns:
-
         """
         if not context.has_asset_partitions:
             raise TypeError(

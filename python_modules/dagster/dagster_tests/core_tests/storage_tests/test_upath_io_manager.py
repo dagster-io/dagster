@@ -1,9 +1,9 @@
 import json
+import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-import pandas as pd
 import pytest
 from upath import UPath
 
@@ -16,6 +16,7 @@ from dagster import (
     HourlyPartitionsDefinition,
     InitResourceContext,
     InputContext,
+    MetadataValue,
     OpExecutionContext,
     OutputContext,
     StaticPartitionsDefinition,
@@ -113,56 +114,52 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
     assert manager.load_input(context) == json_data
 
 
-def test_upath_io_manager_with_pandas_csv(tmp_path: Path):
-    class PandasCSVIOManager(UPathIOManager):
-        extension: str = ".csv"
-
-        def dump_to_path(self, context: OutputContext, obj: pd.DataFrame, path: UPath):
+def test_upath_io_manager_with_non_any_type_annotation(tmp_path: Path):
+    class MyIOManager(UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
             with path.open("wb") as file:
-                obj.to_csv(file, index=False)
+                pickle.dump(obj, file)
 
-        def load_from_path(self, context: InputContext, path: UPath) -> pd.DataFrame:
+        def load_from_path(self, context: InputContext, path: UPath) -> List:
             with path.open("rb") as file:
-                return pd.read_csv(file)
+                return pickle.load(file)
 
     @io_manager(config_schema={"base_path": Field(str, is_required=False)})
-    def pandas_csv_io_manager(init_context: InitResourceContext):
+    def my_io_manager(init_context: InitResourceContext):
         assert init_context.instance is not None
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
-        return PandasCSVIOManager(base_path=base_path)
+        return MyIOManager(base_path=base_path)
 
-    manager = pandas_csv_io_manager(
-        build_init_resource_context(config={"base_path": str(tmp_path)})
-    )
+    manager = my_io_manager(build_init_resource_context(config={"base_path": str(tmp_path)}))
 
-    df = pd.DataFrame({"a": [1, 2, 3], "b": ["a", "b", "c"]})
+    data = [0, 1, "a", "b"]
 
     context = build_output_context(
         name="abc",
         step_key="123",
         dagster_type=DagsterType(
-            type_check_fn=lambda _, value: isinstance(value, pd.DataFrame),
-            name="pandas.DataFrame",
-            typing_type=pd.DataFrame,
+            type_check_fn=lambda _, value: isinstance(value, list),
+            name="List",
+            typing_type=list,
         ),
     )
-    manager.handle_output(context, df)
+    manager.handle_output(context, data)
 
     with manager._get_path(context).open("rb") as file:  # pylint: disable=W0212
-        pd.testing.assert_frame_equal(df, pd.read_csv(file))
+        assert data == pickle.load(file)
 
     context = build_input_context(
         name="abc",
         upstream_output=context,
         dagster_type=DagsterType(
-            type_check_fn=lambda _, value: isinstance(value, pd.DataFrame),
-            name="pandas.DataFrame",
-            typing_type=pd.DataFrame,
+            type_check_fn=lambda _, value: isinstance(value, list),
+            name="List",
+            typing_type=list,
         ),
     )
-    pd.testing.assert_frame_equal(manager.load_input(context), df)
+    assert manager.load_input(context) == data
 
 
 def test_upath_io_manager_multiple_time_partitions(
@@ -257,7 +254,7 @@ def test_user_forgot_dict_type_annotation_for_multiple_partitions(
         )
 
 
-def test_skip_type_check_for_multiple_partitions_with_any_type(
+def test_skip_type_check_for_multiple_partitions_with_no_type_annotation(
     start: datetime,
     daily: DailyPartitionsDefinition,
     hourly: HourlyPartitionsDefinition,
@@ -279,3 +276,72 @@ def test_skip_type_check_for_multiple_partitions_with_any_type(
         resources={"io_manager": dummy_io_manager},
     )
     assert isinstance(result.output_for_node("downstream_asset"), dict)
+
+
+def test_skip_type_check_for_multiple_partitions_with_any_type(
+    start: datetime,
+    daily: DailyPartitionsDefinition,
+    hourly: HourlyPartitionsDefinition,
+    dummy_io_manager: DummyIOManager,
+):
+    @asset(partitions_def=hourly)
+    def upstream_asset(context: OpExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(
+        partitions_def=daily,
+    )
+    def downstream_asset(upstream_asset: Any):
+        return upstream_asset
+
+    result = materialize(
+        [*upstream_asset.to_source_assets(), downstream_asset],
+        partition_key=start.strftime(daily.fmt),
+        resources={"io_manager": dummy_io_manager},
+    )
+    assert isinstance(result.output_for_node("downstream_asset"), dict)
+
+
+@pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
+def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
+    def get_length(obj: Any) -> int:
+        try:
+            return len(obj)
+        except TypeError:
+            return 0
+
+    class MetadataIOManager(UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
+            return
+
+        def load_from_path(self, context: InputContext, path: UPath) -> Any:
+            return
+
+        def get_metadata(
+            self, context: OutputContext, obj: Any  # pylint: disable=unused-argument
+        ) -> Dict[str, MetadataValue]:
+            return {"length": MetadataValue.int(get_length(obj))}
+
+    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
+    def metadata_io_manager(init_context: InitResourceContext):
+        assert init_context.instance is not None
+        base_path = UPath(
+            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
+        )
+        return MetadataIOManager(base_path=base_path)
+
+    manager = metadata_io_manager(build_init_resource_context(config={"base_path": str(tmp_path)}))
+
+    @asset
+    def my_asset() -> Any:
+        return json_data
+
+    result = materialize(
+        [my_asset],
+        resources={"io_manager": manager},
+    )
+    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
+
+    assert handled_output_events[0].event_specific_data.metadata_entries[
+        1
+    ].entry_data.value == get_length(json_data)
