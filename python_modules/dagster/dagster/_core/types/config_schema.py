@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.system import (
         DagsterTypeLoaderContext,
         DagsterTypeMaterializerContext,
+        StepExecutionContext,
     )
 
 
@@ -183,7 +184,7 @@ def _create_type_loader_for_decorator(
     )
 
 
-DagsterTypeLoaderFn: TypeAlias = Callable[["StepExecutionContext", object], object]
+DagsterTypeLoaderFn: TypeAlias = Callable[[StepExecutionContext, object], object]
 
 
 def dagster_type_loader(
