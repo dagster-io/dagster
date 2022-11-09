@@ -12,7 +12,7 @@ from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
 
 from ..asset_defs import _get_asset_deps, _get_deps, _get_node_asset_key, _get_node_group_name
-from ..utils import ASSET_RESOURCE_TYPES
+from ..utils import ASSET_RESOURCE_TYPES, result_to_events
 from .resources import DbtCloudResourceV2
 
 
@@ -83,7 +83,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         # In the future, we should target the correct execution step, rather than assuming that
         # the last step is the one that we want.
         last_run_id = cast(int, runs[0]["id"])
-        step = None
+        step: Optional[int] = None
 
         manifest_json = self._dbt_cloud.get_manifest(run_id=last_run_id, step=step)
         run_results_json = self._dbt_cloud.get_run_results(run_id=last_run_id, step=step)
@@ -219,10 +219,28 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             required_resource_keys={"dbt_cloud"},
             compute_kind="dbt",
         )
-        def _assets(_context):
-            # Defer implementation of the asset for now. For simplicity, we just want the
-            # dependency structure of the dbt Cloud assets to be defined.
-            pass
+        def _assets(context):
+            dbt_cloud = cast(DbtCloudResourceV2, context.resources.dbt_cloud)
+
+            # Run the dbt Cloud job to rematerialize the assets.
+            dbt_cloud_output = dbt_cloud.run_job_and_poll(job_id=job_id)
+
+            # Assume the run completely fails or completely succeeds. We can relax this
+            # assumption in the future.
+            step: Optional[int] = None
+            manifest_json = dbt_cloud.get_manifest(run_id=dbt_cloud_output.run_id, step=step)
+
+            for result in dbt_cloud_output.result.get("results", []):
+                yield from result_to_events(
+                    result=result,
+                    docs_url=dbt_cloud_output.docs_url,
+                    node_info_to_asset_key=self._node_info_to_asset_key,
+                    manifest_json=manifest_json,
+                    # In the future, allow arbitrary mappings to Dagster output metadata from
+                    # the dbt metadata.
+                    extra_metadata=None,
+                    generate_asset_outputs=True,
+                )
 
         return _assets
 

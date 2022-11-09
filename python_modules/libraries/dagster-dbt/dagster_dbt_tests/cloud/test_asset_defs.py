@@ -3,7 +3,13 @@ import json
 import responses
 from dagster_dbt import dbt_cloud_resource, load_assets_from_dbt_cloud_job
 
-from dagster import MetadataValue, build_init_resource_context, file_relative_path
+from dagster import (
+    AssetSelection,
+    MetadataValue,
+    build_init_resource_context,
+    define_asset_job,
+    file_relative_path,
+)
 
 from ..utils import assert_assets_match_project
 
@@ -46,6 +52,12 @@ def test_load_assets_from_dbt_cloud_job():
         status=200,
     )
     responses.add(
+        method=responses.POST,
+        url=f"{dbt_cloud_service.api_base_url}{account_id}/jobs/{job_id}/",
+        json={"data": {}},
+        status=200,
+    )
+    responses.add(
         method=responses.GET,
         url=f"{dbt_cloud_service.api_base_url}{account_id}/runs/",
         json={"data": [{"id": run_id}]},
@@ -63,6 +75,18 @@ def test_load_assets_from_dbt_cloud_job():
         json=run_results_json,
         status=200,
     )
+    responses.add(
+        method=responses.POST,
+        url=f"{dbt_cloud_service.api_base_url}{account_id}/jobs/{job_id}/run/",
+        json={"data": {"id": run_id, "href": "/"}},
+        status=200,
+    )
+    responses.add(
+        method=responses.GET,
+        url=f"{dbt_cloud_service.api_base_url}{account_id}/runs/{run_id}/",
+        json={"data": {"status_humanized": "Success", "job": {}, "id": run_id}},
+        status=200,
+    )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(dbt_cloud=dbt_cloud, job_id=job_id)
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
@@ -78,3 +102,10 @@ def test_load_assets_from_dbt_cloud_job():
         assert output.metadata["dbt Cloud Job"] == MetadataValue.url(
             dbt_cloud_service.build_url_for_job(project_id=project_id, job_id=job_id)
         )
+
+    materialize_cereal_assets = define_asset_job(
+        name="materialize_cereal_assets",
+        selection=AssetSelection.assets(*dbt_cloud_assets),
+    ).resolve(assets=dbt_cloud_assets, source_assets=[])
+
+    assert materialize_cereal_assets.execute_in_process().success
