@@ -267,7 +267,7 @@ class UPathIOManager(MemoizableIOManager):
         self.dump_to_path(context=context, obj=obj, path=path)
 
         metadata = {"path": MetadataValue.path(path)}
-        custom_metadata = self.get_metadata(obj, context)
+        custom_metadata = self.get_metadata(context=context, obj=obj)
         metadata.update(custom_metadata)  # type: ignore
 
         context.add_output_metadata(metadata)
