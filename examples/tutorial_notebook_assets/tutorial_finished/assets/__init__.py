@@ -6,7 +6,9 @@ from dagster import AssetIn, Field, Int, asset, file_relative_path
 
 
 # fetch the iris dataset
-@asset
+@asset(
+    group_name="finished_tutorial"
+)
 def iris_dataset():
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
@@ -23,17 +25,10 @@ def iris_dataset():
 # Asset backed by a Jupyter notebook
 
 iris_kmeans_jupyter_notebook = define_dagstermill_asset(
-    name="iris_kmeans",
+    name="iris_kmeans_jupyter",
     notebook_path=file_relative_path(__file__, "../notebooks/iris-kmeans.ipynb"),
     ins={"iris": AssetIn("iris_dataset")},
-    config_schema={
-        "num_clusters": Field(
-            Int,
-            default_value=3,
-            is_required=False,
-            description="The number of clusters to find",
-        )
-    },
+    group_name="finished_tutorial"
 )
 
 
@@ -44,12 +39,5 @@ iris_kmeans_noteable_notebook = define_noteable_dagster_asset(
     name="iris_kmeans_noteable",
     notebook_id=notebook_id,
     ins={"iris": AssetIn("iris_dataset")},
-    config_schema={
-        "num_clusters": Field(
-            Int,
-            default_value=3,
-            is_required=False,
-            description="The number of clusters to find",
-        )
-    },
+    group_name="finished_tutorial"
 )
