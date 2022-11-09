@@ -417,5 +417,7 @@ class ExecutionConfig(
         config = check.opt_mapping_param(config, "config", key_type=str)
         if config:
             execution_engine_name, execution_engine_config = ensure_single_item(config)
-            return ExecutionConfig(execution_engine_name, check.is_dict(execution_engine_config).get("config"))
+            return ExecutionConfig(
+                execution_engine_name, check.is_dict(execution_engine_config).get("config")
+            )
         return ExecutionConfig(None, None)

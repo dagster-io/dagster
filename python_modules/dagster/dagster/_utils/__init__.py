@@ -639,7 +639,8 @@ class Counter:
 
 traced_counter = contextvars.ContextVar("traced_counts", default=Counter())
 
-T_Callable = TypeVar('T_Callable', bound=Callable)
+T_Callable = TypeVar("T_Callable", bound=Callable)
+
 
 def traced(func: T_Callable) -> T_Callable:
     """

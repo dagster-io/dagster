@@ -98,7 +98,9 @@ def _recurse_in_to_scalar_union(
         )
 
 
-def _recurse_in_to_selector(context: TraversalContext, config_value: Mapping[str, Any]) -> EvaluateValueResult:
+def _recurse_in_to_selector(
+    context: TraversalContext, config_value: Mapping[str, Any]
+) -> EvaluateValueResult:
     check.invariant(
         context.config_type.kind == ConfigTypeKind.SELECTOR,
         "Non-selector not caught in validation",
