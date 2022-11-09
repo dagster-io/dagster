@@ -43,7 +43,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[]) {
         (data &&
           data.assetNodeOrError.__typename === 'AssetNode' &&
           data.assetNodeOrError.partitionMaterializationCounts &&
-          data.assetNodeOrError.partitionMaterializationCounts.__typename ==
+          data.assetNodeOrError.partitionMaterializationCounts.__typename ===
             'MaterializationCountByPartition' &&
           data.assetNodeOrError.partitionMaterializationCounts.partitionsCounts) ||
         [];
@@ -52,7 +52,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[]) {
         data &&
         data.assetNodeOrError.__typename === 'AssetNode' &&
         data.assetNodeOrError.partitionMaterializationCounts &&
-        data.assetNodeOrError.partitionMaterializationCounts.__typename ==
+        data.assetNodeOrError.partitionMaterializationCounts.__typename ===
           'MaterializationCountByPartition' &&
         data.assetNodeOrError.partitionMaterializationCounts.partitionsCounts
           ? data.assetNodeOrError.partitionMaterializationCounts.partitionsCounts.map(

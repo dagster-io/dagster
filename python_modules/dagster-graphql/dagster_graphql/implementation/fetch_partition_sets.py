@@ -1,10 +1,6 @@
-from collections import defaultdict
-from typing import Dict
-
 from graphene import ResolveInfo
 
 import dagster._check as check
-from dagster import AssetKey
 from dagster._core.host_representation import (
     ExternalPartitionSet,
     RepositoryHandle,

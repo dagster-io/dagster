@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union, cast
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -38,10 +38,10 @@ from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .errors import GrapheneAssetNotFoundError
 from .logs.events import GrapheneMaterializationEvent
 from .pipelines.pipeline import (  # GraphenePartitionMaterializationS,
+    GrapheneMaterializationCountByPartition,
+    GrapheneMaterializationCountGroupedByDimension,
     GraphenePartitionMaterializationCount,
     GraphenePartitionMaterializationCounts,
-    GrapheneMaterializationCountGroupedByDimension,
-    GrapheneMaterializationCountByPartition,
     GraphenePipeline,
     GrapheneRun,
 )
@@ -276,8 +276,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             check.failed(
                 "Expected partitions_def_data to be an ExternalMultiPartitionsDefinitionData"
             )
-
-        external_multipartitions_def = self._external_asset_node.partitions_def_data
+        external_multipartitions_def = cast(
+            ExternalMultiPartitionsDefinitionData, self._external_asset_node.partitions_def_data
+        )
         static_dimensions = [
             dim
             for dim in external_multipartitions_def.external_partition_dimension_definitions
@@ -296,7 +297,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                 "Expected partitions_def_data to be an ExternalMultiPartitionsDefinitionData"
             )
 
-        external_multipartitions_def = self._external_asset_node.partitions_def_data
+        external_multipartitions_def = cast(
+            ExternalMultiPartitionsDefinitionData, self._external_asset_node.partitions_def_data
+        )
 
         partition_keys_by_dimension: Dict[str, List[str]] = {}
         for dimension in external_multipartitions_def.external_partition_dimension_definitions:

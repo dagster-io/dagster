@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Tuple, Sequence, Union
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence
 
 from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 
@@ -7,9 +7,7 @@ import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter
 from dagster import _check as check
 from dagster._core.events import ASSET_EVENTS
-from dagster._core.storage.tags import (
-    get_dimension_from_partition_tag,
-)
+from dagster._core.storage.tags import get_dimension_from_partition_tag
 
 from .utils import capture_error
 

@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Dict, List
+from typing import List
 
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -764,9 +764,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["assetNodes"]
 
-        print(result.data["assetNodes"])
         materialization_count = result.data["assetNodes"][0]["partitionMaterializationCounts"][
-            'partitionsCounts'
+            "partitionsCounts"
         ]
         assert len(materialization_count) == 0
 
@@ -782,7 +781,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         materialization_count_result = result.data["assetNodes"][0][
             "partitionMaterializationCounts"
-        ]['partitionsCounts']
+        ]["partitionsCounts"]
         assert len(materialization_count_result) == 4
         for materialization_count in materialization_count_result:
             assert materialization_count["materializationCount"] == 0
@@ -800,7 +799,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["assetNodes"]
         asset_node = result.data["assetNodes"][0]
-        materialization_count = asset_node["partitionMaterializationCounts"]['partitionsCounts']
+        materialization_count = asset_node["partitionMaterializationCounts"]["partitionsCounts"]
 
         assert len(materialization_count) == 4
         assert materialization_count[0]["partition"] == "a"
@@ -821,7 +820,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["assetNodes"]
         asset_node = result.data["assetNodes"][0]
-        materialization_count = asset_node["partitionMaterializationCounts"]['partitionsCounts']
+        materialization_count = asset_node["partitionMaterializationCounts"]["partitionsCounts"]
 
         assert len(materialization_count) == 4
         assert materialization_count[0]["partition"] == "a"
@@ -1188,11 +1187,11 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
 
         assert result.data["assetNodes"]
-        assert result.data["assetNodes"][0]['partitionMaterializationCounts'][
-            'materializationCounts'
+        assert result.data["assetNodes"][0]["partitionMaterializationCounts"][
+            "materializationCounts"
         ] == [[2, 0], [0, 0]]
-        assert result.data["assetNodes"][1]['partitionMaterializationCounts'][
-            'materializationCounts'
+        assert result.data["assetNodes"][1]["partitionMaterializationCounts"][
+            "materializationCounts"
         ] == [[0, 0], [0, 0]]
 
         _create_partitioned_run(
@@ -1215,11 +1214,11 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert result.data["assetNodes"]
-        assert result.data["assetNodes"][0]['partitionMaterializationCounts'][
-            'materializationCounts'
+        assert result.data["assetNodes"][0]["partitionMaterializationCounts"][
+            "materializationCounts"
         ] == [[2, 0], [0, 1]]
-        assert result.data["assetNodes"][1]['partitionMaterializationCounts'][
-            'materializationCounts'
+        assert result.data["assetNodes"][1]["partitionMaterializationCounts"][
+            "materializationCounts"
         ] == [[0, 0], [0, 2]]
 
         result = execute_dagster_graphql(
@@ -1231,8 +1230,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert result.data["assetNodes"]
-        assert result.data["assetNodes"][0]['partitionMaterializationCounts'][
-            'materializationCounts'
+        assert result.data["assetNodes"][0]["partitionMaterializationCounts"][
+            "materializationCounts"
         ] == [[2, 0], [0, 1]]
 
     def test_get_materialization_for_multipartition(self, graphql_context):
