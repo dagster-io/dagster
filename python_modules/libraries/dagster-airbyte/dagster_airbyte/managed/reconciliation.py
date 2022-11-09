@@ -667,6 +667,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         connections: Iterable[AirbyteConnection],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
     ):
+        defined_conn_names = {conn.name for conn in connections}
         super().__init__(
             airbyte_resource_def=airbyte_resource_def,
             workspace_id=None,
@@ -674,7 +675,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
             create_assets_for_normalization_tables=create_assets_for_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
-            connection_filter=None,
+            connection_filter=lambda conn: conn.name in defined_conn_names,
         )
         self._connections: List[AirbyteConnection] = list(connections)
 
