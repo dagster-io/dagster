@@ -86,7 +86,7 @@ def merge_yamls(file_list: Sequence[str], loader=DagsterRunConfigYamlLoader) -> 
     merged: Dict[str, Any] = {}
 
     for yaml_file in file_list:
-        yaml_dict = check.is_dict(load_yaml_from_path(yaml_file, loader=loader) or {})
+        yaml_dict = load_yaml_from_path(yaml_file, loader=loader) or {}
 
         if isinstance(yaml_dict, dict):
             merged = deep_merge_dicts(merged, yaml_dict)
