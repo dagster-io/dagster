@@ -22,6 +22,7 @@ class UPathIOManager(MemoizableIOManager):
      - the `get_metadata` method can be customized to add additional metadata to the outputs
      - the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions
     (the default behavior is to raise an error)
+
     """
 
     extension: str = ""  # override in child class
