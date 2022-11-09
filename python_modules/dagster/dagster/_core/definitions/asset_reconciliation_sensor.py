@@ -166,7 +166,7 @@ class TickInstanceQueryer:
             ):
                 return None
 
-        materialization_records = self._instance.get_event_records(
+        materialization_records = list(self._instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
@@ -174,7 +174,7 @@ class TickInstanceQueryer:
             ),
             ascending=False,
             limit=1,
-        )
+        ))
 
         if materialization_records:
             record = next(iter(materialization_records))
