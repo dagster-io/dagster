@@ -1,3 +1,4 @@
+import os.path
 from contextlib import contextmanager
 
 from dagster_aws.utils import BOTO3_SESSION_CONFIG
@@ -99,15 +100,13 @@ tag_shape = Shape(
                 Array(str),
                 is_required=False,
                 default_value=[],
-                description=("An array of AWS SSM Parameter Store parameter names to fetch."),
+                description="An array of AWS SSM Parameter Store parameter names to fetch.",
             ),
             "parameter_tags": Field(
                 Array(tag_shape),
                 is_required=False,
                 default_value=[],
-                description=(
-                    "AWS SSM Parameter store parameters with this tag will be fetched and made available."
-                ),
+                description="AWS SSM Parameter store parameters with this tag will be fetched and made available.",
             ),
             "parameter_paths": Field(
                 str,
@@ -125,7 +124,7 @@ tag_shape = Shape(
                 bool,
                 is_required=False,
                 default_value=False,
-                description=("Whether to mount the parameters as environment variables."),
+                description="Whether to mount the parameters as environment variables.",
             ),
         },
     )
@@ -133,7 +132,7 @@ tag_shape = Shape(
 @contextmanager
 def parameter_store_resource(context):
     """Resource that provides a dict which maps selected SSM Parameter Store parameters to
-    their string values. Also optionally sets chosen secrets as environment variables.
+    their string values. Optionally sets selected parameters as environment variables.
 
     Example:
 
