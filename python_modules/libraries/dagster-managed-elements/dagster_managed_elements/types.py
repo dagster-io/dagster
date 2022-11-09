@@ -216,21 +216,23 @@ class ManagedElementDiff(
             elif len(nested_deletions) == 0 and len(nested_modifications) == 0:
                 # If there are only additions, display the nested entry as an addition
                 my_additions += [
-                    click.style(f"{' ' * indent}+ {key}:", fg="green")
-                ] + nested_additions
+                    click.style(f"{' ' * indent}+ {key}:", fg="green"),
+                    *nested_additions,
+                ]
             elif len(nested_additions) == 0 and len(nested_modifications) == 0:
                 # If there are only deletions, display the nested entry as a deletion
                 my_deletions += [
-                    click.style(f"{' ' * indent}- {key}:", fg="red")
-                ] + nested_deletions
+                    click.style(f"{' ' * indent}- {key}:", fg="red"),
+                    *nested_deletions,
+                ]
             else:
                 # Otherwise, display the nested entry as a modification
-                my_modifications += (
-                    [click.style(f"{' ' * indent}~ {key}:", fg="yellow")]
-                    + nested_additions
-                    + nested_deletions
-                    + nested_modifications
-                )
+                my_modifications += [
+                    click.style(f"{' ' * indent}~ {key}:", fg="yellow"),
+                    *nested_additions,
+                    *nested_deletions,
+                    *nested_modifications,
+                ]
 
         return (my_additions, my_deletions, my_modifications)
 

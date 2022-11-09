@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Mapping, Optional
 
 import requests
 from airflow import __version__ as airflow_version
