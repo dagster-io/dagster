@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
 
 import requests
 

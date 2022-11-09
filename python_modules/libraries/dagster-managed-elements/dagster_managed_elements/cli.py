@@ -2,7 +2,7 @@ import functools
 import importlib
 import sys
 from types import ModuleType
-from typing import List, Optional
+from typing import Optional, Sequence
 
 import click
 from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler

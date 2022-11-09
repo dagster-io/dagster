@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient

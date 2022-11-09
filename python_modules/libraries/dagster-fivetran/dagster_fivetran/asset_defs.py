@@ -91,7 +91,7 @@ def build_fivetran_assets(
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     tracked_asset_keys = {
-        table: AssetKey(*[asset_key_prefix, *table.split(".")]) for table in destination_tables
+        table: AssetKey([*asset_key_prefix, *table.split(".")]) for table in destination_tables
     }
 
     metadata_by_table_name = check.opt_dict_param(

@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 import uuid
-from typing import Any, Dict, Mapping, Optional, Set, Union
+from typing import Any, Mapping, Optional, Set, Union
 
 import papermill
 from dagstermill.compat import ExecutionError

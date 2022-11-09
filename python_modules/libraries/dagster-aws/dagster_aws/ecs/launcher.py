@@ -432,7 +432,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def _get_container_name(self, container_context) -> str:
         return container_context.container_name or self.container_name
 
-    def _run_task_kwargs(self, run, image, container_context) -> Mapping[str, Any]:
+    def _run_task_kwargs(self, run, image, container_context) -> Dict[str, Any]:
         """
         Return a dictionary of args to launch the ECS task, registering a new task
         definition if needed.

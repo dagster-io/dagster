@@ -1,6 +1,6 @@
 import enum
 from abc import ABC, abstractmethod
-from typing import Any, List, NamedTuple, Optional, OrderedDict, Tuple, Union
+from typing import Any, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import click
 
@@ -175,7 +175,9 @@ class ManagedElementDiff(
             == sorted(list(other.nested.items()), key=lambda x: x[0])
         )
 
-    def get_diff_display_entries(self, indent: int = 0) -> Tuple[Sequence[str], Sequence[str], Sequence[str]]:
+    def get_diff_display_entries(
+        self, indent: int = 0
+    ) -> Tuple[Sequence[str], Sequence[str], Sequence[str]]:
         """
         Returns a tuple of additions, deletions, and modification entries associated with this diff object.
         """

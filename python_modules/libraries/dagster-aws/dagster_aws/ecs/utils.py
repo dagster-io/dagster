@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict
+from typing import Any, Mapping
 
 from .tasks import DagsterEcsTaskDefinitionConfig
 

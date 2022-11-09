@@ -109,7 +109,7 @@ class DbtRpcResource(DbtResource):
 
     def _default_request(
         self, method: str, params: Optional[Mapping[str, Any]] = None
-    ) -> Mapping[str, Any]:
+    ) -> Dict[str, Any]:
         """Constructs a standard HTTP request body, to be sent to a dbt RPC server.
 
         Args:

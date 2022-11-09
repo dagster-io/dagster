@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, Mapping, Sequence
+from typing import Any, Iterator, Mapping, Sequence
 
 from dagster_airbyte.types import AirbyteOutput
 

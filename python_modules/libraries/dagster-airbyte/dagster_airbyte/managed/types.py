@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Mapping, Optional
 
 import dagster._check as check
 
@@ -61,7 +61,9 @@ class AirbyteDestination:
     Represents a user-defined Airbyte destination.
     """
 
-    def __init__(self, name: str, destination_type: str, destination_configuration: Mapping[str, Any]):
+    def __init__(
+        self, name: str, destination_type: str, destination_configuration: Mapping[str, Any]
+    ):
         self.name = check.str_param(name, "name")
         self.destination_type = check.str_param(destination_type, "destination_type")
         self.destination_configuration = check.dict_param(
