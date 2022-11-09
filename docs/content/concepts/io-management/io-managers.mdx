@@ -351,12 +351,11 @@ The <PyObject module="dagster" object="io_manager" /> decorator behaves nearly i
 
 The provided `context` argument for `handle_output` is an <PyObject module="dagster" object="OutputContext" />. The provided `context` argument for `load_input` is an <PyObject module="dagster" object="InputContext" />. The linked API documentation lists all the fields that are available on these objects.
 
-
 ### Handling partitioned assets
 
 IO managers can be written to handle [partitioned](/concepts/partitions-schedules-sensors/partitions) assets. For a partitioned asset, each invocation of `handle_output` will (over)write a single partition, and each invocation of `load_input` will load one or more partitions. When the IO manager is backed by a filesystem or object store, then each partition will typically correspond to a file or object. When it's backed by a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
 
-The default IO Manager has support for loading a partitioned upstream asset for a downstream asset with matching partitions out of the box (see the section below for loading multiple partitions). The <PyObject module="dagster" object="UPathIOManager" />  can be used to handle partitions in custom filesystem-based IO Managers.
+The default IO Manager has support for loading a partitioned upstream asset for a downstream asset with matching partitions out of the box (see the section below for loading multiple partitions). The <PyObject module="dagster" object="UPathIOManager" /> can be used to handle partitions in custom filesystem-based IO Managers.
 
 To handle partitions in an custom IO manager, you'll need to determine which partition you're dealing with when you're storing an output or loading an input. For this, <PyObject object="OutputContext" /> and <PyObject object="InputContext" /> have a `asset_partition_key` property:
 
@@ -384,25 +383,12 @@ A single partition of one asset might depend on a range of partitions of an upst
 The default IO Manager has support for loading multiple upstream partitions. In this case, the downstream asset should use `Dict[str, ...]` (or leave it blank) type for the upstream `DagsterType`. Here is an example of loading multiple upstream partitions:
 
 ```python file=/concepts/io_management/loading_multiple_upstream_partitions.py startafter=start_loading_multiple_upstream_partitions endbefore=end_loading_multiple_upstream_partitions
-start = datetime.datetime(2022, 1, 1)
-
-hourly = HourlyPartitionsDefinition(start_date=f"{start:%Y-%m-%d-%H:%M}")
-daily = DailyPartitionsDefinition(start_date=f"{start:%Y-%m-%d}")
-
-@asset(partitions_def=hourly)
-def upstream() -> pd.DataFrame:
-    return pd.DataFrame(hour_data)
-
-@asset(partitions_def=daily)
-def downstream(upstream: Dict[str, pd.DataFrame]) -> pd.DataFrame:
-    # hourly_asset is now a dictionary which maps partition keys to partitions
-    # the hourly partitions have a default behavior for mapping to daily partitions (24 hours -> 1 day).
-    return pd.concat(list(upstream.values()))
+ENOENT: no such file or directory, open '/home/dan/Projects/personal/dagster/examples/docs_snippets/docs_snippets/concepts/io_management/loading_multiple_upstream_partitions.py'
 ```
 
 A custom <PyObject object="PartitionMapping" /> instance can be provided to `In` to configure the mapped upstream partitions.
 
-When writing a custom IO Manager for loading multiple upstream partitions, the mapped keys can be accessed using  <PyObject object="InputContext" method="asset_partition_keys" />, <PyObject object="InputContext" method="asset_partition_key_range" />, or <PyObject object="InputContext" method="asset_partitions_time_window" />.
+When writing a custom IO Manager for loading multiple upstream partitions, the mapped keys can be accessed using <PyObject object="InputContext" method="asset_partition_keys" />, <PyObject object="InputContext" method="asset_partition_key_range" />, or <PyObject object="InputContext" method="asset_partitions_time_window" />.
 
 ### Writing a per-input IO Manager
 
@@ -518,27 +504,28 @@ def my_job():
     op_2(op_1())
 ```
 
-
 ### Custom filesystem-based IO Manager
 
 Dagster provides a feature-rich base class for filesystem-based IO Managers: <PyObject module="dagster" object="UPathIOManager" />. It's compatible with both local and remote filesystems (like S3 or GCS) by using `universal-pathlib` and `fsspec`. The full list of supported filesystems can be found [here](https://github.com/fsspec/universal_pathlib#currently-supported-filesystems-and-schemes). The `UPathIOManager` also has other important features:
- - handles partitioned assets
- - handles loading a single upstream partition
- - handles loading multiple upstream partitions (with respect to <PyObject object="PartitionMapping" />)
- - the `get_metadata` method can be customized to add additional metadata to the output
- - the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions
- (the default behavior is to raise an error)
 
-The default IO manager inherits from the `UPathIOManager` and therefore has all of these features too.
+- handles partitioned assets
+- handles loading a single upstream partition
+- handles loading multiple upstream partitions (with respect to <PyObject object="PartitionMapping" />)
+- the `get_metadata` method can be customized to add additional metadata to the output
+- the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions (the default behavior is to raise an error)
 
-The `UPathIOManager` already implements the `load_input` and `handle_output` methods. Instead, saving and loading for a given `universal_pathlib.UPath` has to be implemented. Here are some examples:
+The default IO manager inherits from the `UPathIOManager` and therefore has these features too.
+
+The `UPathIOManager` already implements the `load_input` and `handle_output` methods. Instead, <PyObject module="dagster" object="UPathIOManager" method="dump_to_path" /> and <PyObject module="dagster" object="UPathIOManager" method="load_from_path" /> for a given `universal_pathlib.UPath` have to be implemented. Here are some examples:
 
 ```python file=/concepts/io_management/filesystem_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster import UPathIOManager, OutputContext, InputContext
 import json
-import pandas as pd
 from typing import Any
+
+import pandas as pd
 from universal_pathlib import UPath
+
+from dagster import InputContext, OutputContext, UPathIOManager
 
 
 class JSONIOManager(UPathIOManager):
