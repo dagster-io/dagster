@@ -171,7 +171,7 @@ class DbtCliResource(DbtResource):
         exclude: Optional[Sequence[str]] = None,
         data: bool = True,
         schema: bool = True,
-        select: Optional[List[str]] = None,
+        select: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtCliOutput:
         """

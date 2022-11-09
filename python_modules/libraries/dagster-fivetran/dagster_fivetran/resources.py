@@ -56,7 +56,7 @@ class FivetranResource:
 
     def make_connector_request(
         self, method: str, endpoint: str, data: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> Mapping[str, Any]:
         return self.make_request(method, urljoin(FIVETRAN_CONNECTOR_PATH, endpoint), data)
 
     def make_request(

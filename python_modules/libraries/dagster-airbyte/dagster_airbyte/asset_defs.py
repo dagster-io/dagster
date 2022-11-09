@@ -209,7 +209,7 @@ def build_airbyte_assets(
     )
     outputs = {
         table: AssetOut(
-            key=AssetKey(asset_key_prefix + [table]),
+            key=AssetKey([*asset_key_prefix, table]),
             metadata={"table_schema": MetadataValue.table_schema(schema_by_table_name[table])}
             if schema_by_table_name
             else None,
