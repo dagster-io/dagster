@@ -12,12 +12,16 @@ from .events import AssetKey
 
 @experimental
 class FreshnessPolicy(ABC):
-    """A FreshnessPolicy is a policy that defines how up-to-date a given asset is expected to be.
-    We calculate the current time of the data within an asset by traversing the history of asset
-    materializations of upstream assets which occured before the most recent materialization.
+    """A FreshnessPolicy is a policy that defines how up-to-date the data in a given asset is
+    expected to be.
 
-    This gives a lower bound on the most recent records that could possibly be incorporated into the
-    current state of the asset to which this policy is attached.
+    For time-partitioned assets, the current time of the data within an asset is based on the
+    available partitions for that asset.
+
+    For all other assets, the current time of the data within an asset is calculated by
+    traversing the history of asset materializations of upstream assets which occured before the
+    most recent materialization. This gives a lower bound on the most recent records that could
+    possibly be incorporated into the current state of the asset to which this policy is attached.
     """
 
     @abstractmethod
@@ -31,17 +35,36 @@ class FreshnessPolicy(ABC):
 
     @staticmethod
     def minimum_freshness(minimum_freshness_minutes: float) -> "MinimumFreshnessPolicy":
-        """Static constructor for a freshness policy which specifies that the upstream data that
-        was used for the most recent asset materialization must have been materialized no more than
-        `minimum_freshness_minutes` ago, relative to the current time.
+        """At any point in time, the most recent data for this asset should be no more than
+        `allowed_latency_minutes` old.
+
+        Example:
+            If you have the following asset graph:
+
+            .. code-block:: python
+
+                a   b
+                 \ /
+                  c
+
+            where `c` has `FreshnessPolicy.minimum_freshness(30)`. Assume `a` and `b` executed at
+            1:00AM, and `c` executed at 1:15AM.
+
+            You will observe the following behavior:
+                * At 1:15AM, `c` is abiding by its FreshnessPolicy, as its data time is 1:00AM
+                (because it read in data for `a` and `b` that was from 1:00AM), which is less than
+                the
+                * At 1:40AM, `c` is no longer abiding by its FreshnessPolicy, as its data time is
+                still 1:00AM, which is more than 30 minutes
         """
         return MinimumFreshnessPolicy(minimum_freshness_minutes=minimum_freshness_minutes)
 
     @staticmethod
     def cron_minimum_freshness(
-        minimum_freshness_minutes: float, cron_schedule: str
+        allowed_latency_minutes: float, cron_schedule: str
     ) -> "CronMinimumFreshnessPolicy":
-        """Static constructor for a freshness policy which specifies that the upstream data that
+        """By each cron schedule tick, the most recent data for this asset should be no more than
+        `allowed_latency_minutes` before that tick.
         was used for the most recent asset materialization must have been materialized no more than
         `minimum_freshness_minutes` ago, relative to the most recent cron schedule tick.
         """
