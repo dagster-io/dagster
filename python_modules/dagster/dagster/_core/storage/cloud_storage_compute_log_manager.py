@@ -51,30 +51,42 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
 
     @abstractmethod
     def delete_logs(self, log_key: List[str]):
-        pass
+        """
+        Deletes logs for a given log_key
+        """
 
     @abstractmethod
     def download_url_for_type(self, log_key: List[str], io_type: ComputeIOType):
-        pass
+        """
+        Calculates a download url given a log key and compute io type
+        """
 
     @abstractmethod
     def display_path_for_type(self, log_key: List[str], io_type: ComputeIOType):
-        pass
+        """
+        Returns a display path given a log key and compute io type
+        """
 
     @abstractmethod
     def cloud_storage_has_logs(
         self, log_key: List[str], io_type: ComputeIOType, partial: bool = False
     ) -> bool:
-        pass
+        """
+        Returns whether the cloud storage contains logs for a given log key
+        """
 
     @abstractmethod
     def upload_to_cloud_storage(self, log_key: List[str], io_type: ComputeIOType, partial=False):
-        pass
+        """
+        Uploads the logs for a given log key from local storage to cloud storage
+        """
 
     def download_from_cloud_storage(
         self, log_key: List[str], io_type: ComputeIOType, partial=False
     ):
-        pass
+        """
+        Downloads the logs for a given log key from cloud storage to local storage
+        """
 
     @contextmanager
     def capture_logs(self, log_key: List[str]) -> Generator[CapturedLogContext, None, None]:
