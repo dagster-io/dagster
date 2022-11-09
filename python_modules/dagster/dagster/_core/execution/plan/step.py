@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Type,
     Union,
     cast,
@@ -21,7 +22,7 @@ from dagster._utils import merge_dicts
 
 from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle
 from .inputs import StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput
-from .outputs import StepOutput
+from .outputs import StepOutput, create_mapping_groups
 
 if TYPE_CHECKING:
     from dagster._core.definitions.dependency import Node, NodeHandle
@@ -208,6 +209,8 @@ class ExecutionStep(
         return None
 
 
+
+
 class UnresolvedMappedExecutionStep(
     NamedTuple(
         "_UnresolvedMappedExecutionStep",
@@ -217,6 +220,7 @@ class UnresolvedMappedExecutionStep(
             ("step_input_dict", Dict[str, Union[StepInput, UnresolvedMappedStepInput]]),
             ("step_output_dict", Dict[str, StepOutput]),
             ("tags", Dict[str, str]),
+            ("partially_resolved_by_keys", List[str]),
         ],
     ),
     IExecutionStep,
@@ -232,6 +236,7 @@ class UnresolvedMappedExecutionStep(
         step_inputs: List[Union[StepInput, UnresolvedMappedStepInput]],
         step_outputs: List[StepOutput],
         tags: Optional[Dict[str, str]],
+        partially_resolved_by_keys: Optional[List[str]] = None,
     ):
         return super(UnresolvedMappedExecutionStep, cls).__new__(
             cls,
@@ -248,6 +253,9 @@ class UnresolvedMappedExecutionStep(
                 for so in check.list_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
             tags=check.opt_dict_param(tags, "tags", key_type=str),
+            partially_resolved_by_keys=check.opt_list_param(
+                partially_resolved_by_keys, "partially_resolved_by_keys"
+            ),
         )
 
     @property
@@ -297,57 +305,97 @@ class UnresolvedMappedExecutionStep(
 
         return deps
 
+    # @property
+    # def resolved_by_step_key(self) -> str:
+    #     # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
+    #     keys = self.resolved_by_step_keys
+    #     # check.invariant(len(keys) == 1, "Unresolved step expects one and only one dynamic step key")
+    #     return list(keys)
+
     @property
-    def resolved_by_step_key(self) -> str:
-        # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
-        keys = self.resolved_by_step_keys
-        check.invariant(len(keys) == 1, "Unresolved step expects one and only one dynamic step key")
-        return list(keys)[0]
+    def resolution_sources(self):
+        sources = [] # note - should this be a set? ideally need to keep ordered so that the mapping key is deterministic
+        for inp in self.step_inputs:
+            if isinstance(inp, UnresolvedMappedStepInput):
+                sources.append(inp.source)
+
+        return sources
 
     @property
     def resolved_by_output_name(self) -> str:
         # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
-        keys = set()
+        keys = []
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedMappedStepInput):
-                keys.add(inp.resolved_by_output_name)
+                keys.append(inp.resolved_by_output_name)
 
-        check.invariant(
-            len(keys) == 1, "Unresolved step expects one and only one dynamic output name"
-        )
+        # check.invariant(
+        #     len(keys) == 1, "Unresolved step expects one and only one dynamic output name"
+        # )
 
-        return list(keys)[0]
+        return keys
 
     @property
-    def resolved_by_step_keys(self) -> FrozenSet[str]:
-        keys = set()
-        for inp in self.step_inputs:
-            if isinstance(inp, UnresolvedMappedStepInput):
-                keys.add(inp.resolved_by_step_key)
+    def resolved_by_step_keys(self) -> Sequence[str]:
+        # keys = []
+        # for inp in self.step_inputs:
+        #     if isinstance(inp, UnresolvedMappedStepInput):
+        #         keys.append(inp.resolved_by_step_key)
 
-        return frozenset(keys)
+        # return keys
 
-    def resolve(self, mappings: Dict[str, Dict[str, List[str]]]) -> List[ExecutionStep]:
-        check.invariant(
-            all(key in mappings for key in self.resolved_by_step_keys),
-            "resolving with mappings that do not contain all required step keys",
-        )
-        execution_steps = []
+        return frozenset([h.step_key for h in self.get_resolving_handles()])
 
-        for mapped_key in mappings[self.resolved_by_step_key][self.resolved_by_output_name]:
-            resolved_inputs = [_resolved_input(inp, mapped_key) for inp in self.step_inputs]
+    def get_resolving_handles(self):
+        return [h for s in self.resolution_sources for h in s.get_resolving_handles()]
 
-            execution_steps.append(
-                ExecutionStep(
-                    handle=ResolvedFromDynamicStepHandle(self.handle.solid_handle, mapped_key),
-                    pipeline_name=self.pipeline_name,
-                    step_inputs=resolved_inputs,
-                    step_outputs=self.step_outputs,
-                    tags=self.tags,
-                )
+    def resolve(
+        self, mappings: Dict[str, Dict[str, List[str]]]
+    ) -> Tuple[List[ExecutionStep], List["UnresolvedMappedExecutionStep"]]:
+        if not all(key in mappings for key in self.resolved_by_step_keys):
+            check.failed(
+                "resolving with mappings that do not contain all required step keys",
             )
 
-        return execution_steps
+        execution_steps = []
+        unresolved_steps = []
+        handles = self.get_resolving_handles()
+
+        # here we create groups that combine one output from each of the dynamic ops to pass
+        # as a set of inputs into the mapped op
+        # the groups can be created by zipping values or doing permutations
+        mapping_groups = create_mapping_groups(handles, mappings, zip_groups=True)
+
+        for _, group in mapping_groups:
+            group_mapped_key = ",".join([group[h.step_key][h.output_name] for h in handles])
+            # TODO - check that indexing to [0] is ok here
+            resolved_inputs = [_resolved_input(inp, group[inp.get_resolving_handles()[0].step_key][inp.get_resolving_handles()[0].output_name]) for inp in self.step_inputs]
+            # guard against any([]) => true
+            check.invariant(len(resolved_inputs) > 0, "there must some resolved inputs")
+            keys = [*self.partially_resolved_by_keys, group_mapped_key]
+            if any(isinstance(inp, UnresolvedMappedStepInput) for inp in resolved_inputs):
+                unresolved_steps.append(
+                    UnresolvedMappedExecutionStep(
+                        handle=self.handle.partial_resolve(group_mapped_key),
+                        pipeline_name=self.pipeline_name,
+                        step_inputs=resolved_inputs,
+                        step_outputs=self.step_outputs,
+                        tags=self.tags,
+                        partially_resolved_by_keys=keys,
+                    )
+                )
+            else:
+                execution_steps.append(
+                    ExecutionStep(
+                        handle=ResolvedFromDynamicStepHandle(self.handle.solid_handle, keys),
+                        pipeline_name=self.pipeline_name,
+                        step_inputs=resolved_inputs,
+                        step_outputs=self.step_outputs,
+                        tags=self.tags,
+                    )
+                )
+
+        return execution_steps, unresolved_steps
 
 
 def _resolved_input(
@@ -356,8 +404,7 @@ def _resolved_input(
 ):
     if isinstance(step_input, StepInput):
         return step_input
-
-    return step_input.resolve(map_key)
+    return step_input.resolve(map_key=map_key)
 
 
 class UnresolvedCollectExecutionStep(
@@ -451,12 +498,13 @@ class UnresolvedCollectExecutionStep(
 
     @property
     def resolved_by_step_keys(self) -> FrozenSet[str]:
-        keys = set()
+        keys = []
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedCollectStepInput):
-                keys.add(inp.resolved_by_step_key)
+                for h in inp.source.get_resolving_handles():
+                    keys.append(h.step_key)
 
-        return frozenset(keys)
+        return keys
 
     def resolve(self, mappings: Dict[str, Dict[str, List[str]]]) -> ExecutionStep:
         check.invariant(
@@ -465,18 +513,48 @@ class UnresolvedCollectExecutionStep(
         )
 
         resolved_inputs = []
+        unresolved = False
         for inp in self.step_inputs:
             if isinstance(inp, StepInput):
                 resolved_inputs.append(inp)
             else:
-                resolved_inputs.append(
-                    inp.resolve(mappings[inp.resolved_by_step_key][inp.resolved_by_output_name])
-                )
+                # this is super hacky. what we really need is a way to pass the combined mapping keys from
+                # the map step down to this resolve. Instead i'm just recreating them from the mappings
+                # dict, which is prone to error
 
-        return ExecutionStep(
-            handle=self.handle,
-            pipeline_name=self.pipeline_name,
-            step_inputs=resolved_inputs,
-            step_outputs=self.step_outputs,
-            tags=self.tags,
-        )
+                # zipped_mappings = []
+                # handles = inp.get_resolving_handles()
+                # mappings_lists = [mappings[h.step_key][h.output_name] for h in handles]
+
+                # for i in range(len(mappings_lists[0])):
+                #     zipped_mappings.append([])
+                #     for h in handles:
+                #         zipped_mapping_i = zipped_mappings[i]
+                #         zipped_mapping_i.append(mappings[h.step_key][h.output_name][i])
+                #         zipped_mappings[i] = zipped_mapping_i
+
+                # zipped_mapping_keys = [",".join(zip_group) for zip_group in zipped_mappings]
+
+
+                # this is where we want the new input to have the correct mapping keys (ie dynamic outputs zipped together)
+                new_inp = inp.resolve(mappings)
+                if isinstance(new_inp, UnresolvedCollectStepInput):
+                    unresolved = True
+                resolved_inputs.append(new_inp)
+
+        if unresolved:
+            return UnresolvedCollectExecutionStep(
+                handle=self.handle,
+                pipeline_name=self.pipeline_name,
+                step_inputs=resolved_inputs,
+                step_outputs=self.step_outputs,
+                tags=self.tags,
+            )
+        else:
+            return ExecutionStep(
+                handle=self.handle,
+                pipeline_name=self.pipeline_name,
+                step_inputs=resolved_inputs,
+                step_outputs=self.step_outputs,
+                tags=self.tags,
+            )

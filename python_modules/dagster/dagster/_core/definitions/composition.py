@@ -782,9 +782,13 @@ class InvokedSolidDynamicOutputWrapper:
     def describe_node(self):
         return f"{self.node_type} '{self.solid_name}'"
 
-    def map(self, fn):
+    def map(self, fn, zip_with=None):
         check.is_callable(fn)
-        result = fn(InvokedSolidOutputHandle(self.solid_name, self.output_name, self.node_type))
+        args = [InvokedSolidOutputHandle(self.solid_name, self.output_name, self.node_type)]
+        if zip_with:
+            for addl_arg in zip_with:
+                args.append(InvokedSolidOutputHandle(addl_arg.solid_name, addl_arg.output_name, addl_arg.node_type))
+        result = fn(*args)
 
         if isinstance(result, InvokedSolidOutputHandle):
             return InvokedSolidDynamicOutputWrapper(

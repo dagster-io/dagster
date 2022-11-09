@@ -150,3 +150,24 @@ class StepSuccessData(NamedTuple("_StepSuccessData", [("duration_ms", float)])):
         return super(StepSuccessData, cls).__new__(
             cls, duration_ms=check.float_param(duration_ms, "duration_ms")
         )
+
+@whitelist_for_serdes
+class StepKeyOutputNamePair(
+    NamedTuple(
+        "_StepKeyOutputNamePair",
+        [
+            ("step_key", str),
+            ("output_name", str)
+        ]
+    )
+):
+    def __new__(
+        cls,
+        step_key: str,
+        output_name: str,
+    ):
+        return super(StepKeyOutputNamePair, cls). __new__(
+            cls,
+            step_key=check.str_param(step_key, "step_key"),
+            output_name=check.str_param(output_name, "output_name")
+        )

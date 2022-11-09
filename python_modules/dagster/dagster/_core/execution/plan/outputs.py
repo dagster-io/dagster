@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional, Union
+from typing import List, NamedTuple, Optional, Union, Any, Dict, Tuple
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -11,7 +11,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._serdes import whitelist_for_serdes
 
 from .handle import UnresolvedStepHandle
-from .objects import TypeCheckData
+from .objects import StepKeyOutputNamePair, TypeCheckData
 
 
 @whitelist_for_serdes
@@ -166,8 +166,9 @@ class UnresolvedStepOutputHandle(
         [
             ("unresolved_step_handle", UnresolvedStepHandle),
             ("output_name", str),
-            ("resolved_by_step_key", str),
-            ("resolved_by_output_name", str),
+            ("resolution_sources", List[Any]) # TODO - real type here
+            # ("resolved_by_step_key", str),
+            # ("resolved_by_output_name", str),
         ],
     )
 ):
@@ -180,8 +181,9 @@ class UnresolvedStepOutputHandle(
         cls,
         unresolved_step_handle: UnresolvedStepHandle,
         output_name: str,
-        resolved_by_step_key: str,
-        resolved_by_output_name: str,
+        resolution_sources,
+        # resolved_by_step_key: str,
+        # resolved_by_output_name: str,
     ):
         return super(UnresolvedStepOutputHandle, cls).__new__(
             cls,
@@ -189,19 +191,72 @@ class UnresolvedStepOutputHandle(
                 unresolved_step_handle, "unresolved_step_handle", UnresolvedStepHandle
             ),
             output_name=check.str_param(output_name, "output_name"),
-            # this could be a set of resolution keys to support multiple mapping operations
-            resolved_by_step_key=check.str_param(resolved_by_step_key, "resolved_by_step_key"),
-            resolved_by_output_name=check.str_param(
-                resolved_by_output_name, "resolved_by_output_name"
-            ),
+            resolution_sources=resolution_sources,
+            # resolved_by_step_key=check.str_param(resolved_by_step_key, "resolved_by_step_key"),
+            # resolved_by_output_name=check.str_param(
+            #     resolved_by_output_name, "resolved_by_output_name"
+            # ),
         )
 
-    def resolve(self, map_key) -> StepOutputHandle:
-        """Return a resolved StepOutputHandle"""
-        return StepOutputHandle(
-            self.unresolved_step_handle.resolve(map_key).to_key(), self.output_name
-        )
+    def resolve(self, mappings) -> List[Union[StepOutputHandle, "UnresolvedStepOutputHandle"]]:
+        """
+        Return either a fully resolved StepOutputHandle or a partially resolved UnresolvedStepOutputHandle
+        """
+
+        result = create_mapping_groups(self.get_resolving_handles(), mappings, zip_groups=True)
+        all_handles = []
+
+        for key_group, _ in result:
+            all_handles.append(StepOutputHandle(
+                self.unresolved_step_handle.resolve(",".join(key_group)).to_key(),
+                self.output_name,
+            ))
+
+            # TODO - add something like this back in to support chaining of maps
+            # from .inputs import FromStepOutput
+            # if isinstance(source, FromStepOutput):
+            #     all_handles.append(StepOutputHandle(
+            #         self.unresolved_step_handle.resolve(",".join(key_group)).to_key(),
+            #         self.output_name,
+            #     ))
+            # else:
+            #     all_handles.append(UnresolvedStepOutputHandle(
+            #         self.unresolved_step_handle.partial_resolve(key),
+            #         self.output_name,
+            #         source,
+            #     ))
+
+        return all_handles
+
 
     def get_step_output_handle_with_placeholder(self) -> StepOutputHandle:
         """Return a StepOutputHandle with a unresolved step key as a placeholder"""
         return StepOutputHandle(self.unresolved_step_handle.to_key(), self.output_name)
+
+    def get_resolving_handles(self) -> List[Any]: # TODO - type annotation
+        return [h for s in self.resolution_sources for h in s.get_resolving_handles()]
+
+def create_mapping_groups(source_resolving_handles, mappings, zip_groups=True):
+
+    mapping_key_groups = [] # list of tuples where first entry is the combined key array and second
+    # entry is a dict mapping each handle to the mapping key it's providing
+
+    if zip_groups:
+        mappings_lists = [mappings[h.step_key][h.output_name] for h in source_resolving_handles]
+        if not all(len(mappings_lists[0])== len(i) for i in mappings_lists):
+            # TODO - replace with real exception
+            raise Exception("All upstream ops must return an equal number of outputs to use zip")
+        for i in range(len(mappings_lists[0])):
+            mapping_key_dict = {}
+            combined_key = []
+            for h in source_resolving_handles:
+                step_key_group = mapping_key_dict.get(h.step_key, {})
+                step_key_group[h.output_name] = mappings[h.step_key][h.output_name][i]
+
+                combined_key.append(mappings[h.step_key][h.output_name][i])
+                mapping_key_dict[h.step_key] = step_key_group
+            mapping_key_groups.append((combined_key, mapping_key_dict))
+    else:
+        raise Exception("only zip=True supported at this time")
+
+    return mapping_key_groups
