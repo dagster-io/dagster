@@ -665,6 +665,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connections: Iterable[AirbyteConnection],
+        connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
     ):
         super().__init__(
             airbyte_resource_def=airbyte_resource_def,
@@ -672,6 +673,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
             key_prefix=key_prefix,
             create_assets_for_normalization_tables=create_assets_for_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
+            connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=None,
         )
         self._connections: List[AirbyteConnection] = list(connections)
@@ -697,6 +699,8 @@ def load_assets_from_connections(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    io_manager_key: Optional[str] = None,
+    connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
@@ -712,12 +716,24 @@ def load_assets_from_connections(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
+        io_manager_key (Optional[str]): The IO manager key to use for all assets. Defaults to "io_manager".
+            Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
+        connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
+            IO manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
+            the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
 
     """
 
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
+
+    check.invariant(
+        not io_manager_key or not connection_to_io_manager_key_fn,
+        "Cannot specify both io_manager_key and connection_to_io_manager_key_fn",
+    )
+    if not connection_to_io_manager_key_fn:
+        connection_to_io_manager_key_fn = lambda _: io_manager_key
 
     return AirbyteManagedElementCacheableAssetsDefinition(
         airbyte_resource_def=check.inst_param(airbyte, "airbyte", ResourceDefinition),
@@ -728,5 +744,6 @@ def load_assets_from_connections(
         connection_to_group_fn=check.opt_callable_param(
             connection_to_group_fn, "connection_to_group_fn"
         ),
+        connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connections=check.iterable_param(connections, "connections", of_type=AirbyteConnection),
     )
