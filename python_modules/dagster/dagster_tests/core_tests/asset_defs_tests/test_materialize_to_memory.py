@@ -286,3 +286,11 @@ def test_materialize_to_memory_provided_io_manager_instance():
         "io management behavior for all keys.",
     ):
         materialize_to_memory([the_asset], resources={"blah": MyIOManager()})
+
+
+def test_raise_on_error():
+    @asset
+    def asset1():
+        raise ValueError()
+
+    assert not materialize_to_memory([asset1], raise_on_error=False).success

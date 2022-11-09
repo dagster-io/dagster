@@ -20,6 +20,7 @@ from dagster._annotations import public
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
+    DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
 from dagster._core.instance import DagsterInstance
@@ -27,6 +28,7 @@ from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
 
 from ..decorator_utils import get_function_params
+from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
@@ -208,6 +210,8 @@ class SensorDefinition:
         jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): (experimental) A list of jobs to execute when this sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
+            the sensor condition is met. This can be provided instead of specifying a job.
     """
 
     def __init__(
@@ -221,24 +225,28 @@ class SensorDefinition:
         job: Optional[ExecutableDefinition] = None,
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+        asset_selection: Optional[AssetSelection] = None,
     ):
         if evaluation_fn is None:
             raise DagsterInvalidDefinitionError("Must provide evaluation_fn to SensorDefinition.")
 
-        if job and jobs:
+        if (
+            sum(
+                [
+                    int(job is not None),
+                    int(jobs is not None),
+                    int(job_name is not None),
+                    int(asset_selection is not None),
+                ]
+            )
+            > 1
+        ):
             raise DagsterInvalidDefinitionError(
-                "Attempted to provide both job and jobs to SensorDefinition. Must provide only one "
-                "of the two."
+                "Attempted to provide more than one of 'job', 'jobs', 'job_name', and "
+                "'asset_selection' params to SensorDefinition. Must provide only one."
             )
 
-        job_param_name = "job" if job else "jobs"
         jobs = jobs if jobs else [job] if job else None
-
-        if job_name and jobs:
-            raise DagsterInvalidDefinitionError(
-                f"Attempted to provide both job_name and {job_param_name} to "
-                "SensorDefinition. Must provide only one of the two."
-            )
 
         targets: Optional[List[Union[RepoRelativeTarget, DirectTarget]]] = None
         if job_name:
@@ -253,6 +261,8 @@ class SensorDefinition:
             targets = [DirectTarget(job)]
         elif jobs:
             targets = [DirectTarget(job) for job in jobs]
+        elif asset_selection:
+            targets = []
 
         if name:
             self._name = check_valid_name(name)
@@ -276,6 +286,9 @@ class SensorDefinition:
         self._targets = check.opt_list_param(targets, "targets", (DirectTarget, RepoRelativeTarget))
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
+        )
+        self._asset_selection = check.opt_inst_param(
+            asset_selection, "asset_selection", AssetSelection
         )
 
     def __call__(self, *args, **kwargs):
@@ -402,6 +415,11 @@ class SensorDefinition:
 
         self.check_valid_run_requests(run_requests)
 
+        if self._asset_selection:
+            run_requests = _run_requests_with_base_asset_jobs(
+                run_requests, context, self._asset_selection
+            )
+
         return SensorExecutionData(
             run_requests,
             skip_message,
@@ -428,7 +446,7 @@ class SensorDefinition:
         has_multiple_targets = len(self._targets) > 1
         target_names = [target.pipeline_name for target in self._targets]
 
-        if run_requests and not self._targets:
+        if run_requests and not self._targets and not self._asset_selection:
             raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
                 "for a sensor lacking a specified target (job_name, job, or jobs). Targets "
@@ -465,6 +483,10 @@ class SensorDefinition:
     @property
     def default_status(self) -> DefaultSensorStatus:
         return self._default_status
+
+    @property
+    def asset_selection(self) -> Optional[AssetSelection]:
+        return self._asset_selection
 
 
 @whitelist_for_serdes
@@ -569,3 +591,36 @@ def build_sensor_context(
         instance=instance,
         repository_def=repository_def,
     )
+
+
+def _run_requests_with_base_asset_jobs(
+    run_requests, context, outer_asset_selection
+) -> List[RunRequest]:
+    """
+    For sensors that target asset selections instead of jobs, finds the corresponding base asset
+    for a selected set of assets.
+    """
+    asset_graph = context.repository_def.asset_graph
+    result = []
+    for run_request in run_requests:
+        if run_request.asset_selection:
+            asset_keys = run_request.asset_selection
+
+            unexpected_asset_keys = (
+                AssetSelection.keys(*asset_keys) - outer_asset_selection
+            ).resolve(asset_graph)
+            if unexpected_asset_keys:
+                raise DagsterInvalidSubsetError(
+                    f"RunRequest includes asset keys that are not part of sensor's asset_selection: {unexpected_asset_keys}"
+                )
+        else:
+            asset_keys = outer_asset_selection.resolve(asset_graph)
+
+        base_job = context.repository_def.get_base_job_for_assets(asset_keys)
+        result.append(
+            run_request.with_replaced_attrs(
+                job_name=base_job.name, asset_selection=list(asset_keys)
+            )
+        )
+
+    return result

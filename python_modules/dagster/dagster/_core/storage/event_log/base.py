@@ -222,7 +222,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def dispose(self):
         """Explicit lifecycle management."""
 
-    def optimize_for_dagit(self, statement_timeout: int):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
 
     @abstractmethod

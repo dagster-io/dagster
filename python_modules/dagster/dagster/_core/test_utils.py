@@ -12,7 +12,7 @@ from contextlib import ExitStack, contextmanager
 import pendulum
 import yaml
 
-from dagster import Shape
+from dagster import Permissive, Shape
 from dagster import _check as check
 from dagster import fs_io_manager
 from dagster._config import Array, Field
@@ -23,6 +23,7 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
+from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
@@ -412,6 +413,31 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def cancel_run(self, run_id):
         check.not_implemented("Cancellation not supported")
+
+
+class TestSecretsLoader(SecretsLoader, ConfigurableClass):
+    def __init__(
+        self,
+        inst_data,
+        env_vars,
+    ):
+        self._inst_data = inst_data
+        self.env_vars = env_vars
+
+    def get_secrets_for_environment(self, location_name):
+        return self.env_vars.copy()
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return {"env_vars": Field(Permissive())}
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return TestSecretsLoader(inst_data=inst_data, **config_value)
 
 
 def get_terminate_signal():
