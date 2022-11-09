@@ -435,6 +435,7 @@ def define_dagstermill_op(
     asset_key_prefix: Optional[Union[List[str], str]] = None,
     description: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
+    io_manager_key: Optional[str] = None,
 ):
     """Wrap a Jupyter notebook in a op.
 
@@ -456,6 +457,9 @@ def define_dagstermill_op(
         tags (Optional[Dict[str, str]]): If set, additional tags used to annotate op.
             Dagster uses the tag keys `notebook_path` and `kind`, which cannot be
             overwritten by the user.
+        io_manager_key (Optional[str]): If using output_notebook_name, you can additionally provide
+            a string key for the IO manager used to store the output notebook.
+            If not provided, the default key output_notebook_io_manager will be used.
 
     Returns:
         :py:class:`~dagster.OpDefinition`
@@ -469,10 +473,13 @@ def define_dagstermill_op(
     ins = check.opt_mapping_param(ins, "ins", key_type=str, value_type=In)
 
     if output_notebook_name is not None:
-        required_resource_keys.add("output_notebook_io_manager")
+        io_mgr_key = check.opt_str_param(
+            io_manager_key, "io_manager_key", default="output_notebook_io_manager"
+        )
+        required_resource_keys.add(io_mgr_key)
         outs = {
             **outs,
-            cast(str, output_notebook_name): Out(io_manager_key="output_notebook_io_manager"),
+            cast(str, output_notebook_name): Out(io_manager_key=io_mgr_key),
         }
 
     if isinstance(asset_key_prefix, str):
