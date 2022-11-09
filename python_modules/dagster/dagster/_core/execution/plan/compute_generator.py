@@ -30,6 +30,7 @@ def create_solid_compute_wrapper(solid_def: SolidDefinition):
     input_defs = solid_def.input_defs
     output_defs = solid_def.output_defs
     context_arg_provided = compute_fn.has_context_arg()
+    config_arg_cls = compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
 
     input_names = [
         input_def.name
@@ -38,7 +39,7 @@ def create_solid_compute_wrapper(solid_def: SolidDefinition):
     ]
 
     @wraps(fn)
-    def compute(context, input_defs) -> Generator[Output, None, None]:
+    def compute(context: OpExecutionContext, input_defs) -> Generator[Output, None, None]:
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = input_defs[input_name]
@@ -49,7 +50,7 @@ def create_solid_compute_wrapper(solid_def: SolidDefinition):
             or inspect.iscoroutinefunction(fn)
         ):
             # safe to execute the function, as doing so will not immediately execute user code
-            result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
+            result = _invoke(fn, context, kwargs, context_arg_provided, config_arg_cls)
             if inspect.iscoroutine(result):
                 return _coerce_async_solid_to_async_gen(result, context, output_defs)
             # already a generator
@@ -58,7 +59,7 @@ def create_solid_compute_wrapper(solid_def: SolidDefinition):
             # we have a regular function, do not execute it before we are in an iterator
             # (as we want all potential failures to happen inside iterators)
             return _coerce_solid_compute_fn_to_iterator(
-                fn, output_defs, context, context_arg_provided, kwargs
+                fn, output_defs, context, context_arg_provided, kwargs, config_arg_cls
             )
 
     return compute
@@ -70,8 +71,18 @@ async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
         yield event
 
 
-def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_provided, kwargs):
-    result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
+def _invoke(fn, context: OpExecutionContext, kwargs, context_arg_provided, config_arg_cls):
+    # if no config_arg config_arg_cls is null
+    args_to_pass = kwargs
+    if config_arg_cls:
+        args_to_pass["config"] = config_arg_cls(**context.op_config)
+    return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
+
+
+def _coerce_solid_compute_fn_to_iterator(
+    fn, output_defs, context, context_arg_provided, kwargs, config_arg_class
+):
+    result = _invoke(fn, context, kwargs, context_arg_provided, config_arg_class)
     for event in validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
         yield event
 
