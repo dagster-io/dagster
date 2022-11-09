@@ -1,5 +1,5 @@
+import datetime
 from collections import defaultdict
-from datetime import datetime
 
 import pytest
 
@@ -8,7 +8,6 @@ from dagster import (
     AssetOut,
     AssetSelection,
     DagsterEventType,
-    EventRecordsFilter,
     Output,
     asset,
     multi_asset,
@@ -17,7 +16,7 @@ from dagster import (
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_layer import build_asset_selection_job
 from dagster._core.test_utils import instance_for_test
-from dagster._utils.calculate_data_time import get_used_upstream_materialization_times_for_record
+from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
 
 
 @pytest.mark.parametrize(
@@ -165,34 +164,30 @@ def test_calculate_data_time(relative_to, runs_to_expected_data_times_index):
 
             assert result.success
 
+            # rebuild the data time queryer after each run
+            data_time_queryer = DataTimeInstanceQueryer(instance, asset_graph)
+
             # build mapping of expected timestamps
             for entry in instance.all_logs(
                 result.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
             ):
                 asset_key = entry.dagster_event.event_specific_data.materialization.asset_key
-                materialization_times_index[asset_key][idx] = datetime.fromtimestamp(
-                    entry.timestamp
+                materialization_times_index[asset_key][idx] = datetime.datetime.fromtimestamp(
+                    entry.timestamp, tz=datetime.timezone.utc
                 )
 
             for asset_keys, expected_data_times in expected_index_mapping.items():
                 for ak in asset_keys:
-                    latest_asset_record = instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=AssetKey(ak),
-                        ),
-                        ascending=False,
-                        limit=1,
-                    )[0]
+                    latest_asset_record = data_time_queryer.get_most_recent_materialization_record(
+                        asset_key=AssetKey(ak)
+                    )
                     if relative_to == "ROOTS":
-                        relevant_upstream_keys = _get_root_keys(AssetKey(ak))
+                        relevant_upstream_keys = None
                     elif relative_to == "SELF":
                         relevant_upstream_keys = {AssetKey(ak)}
                     else:
                         relevant_upstream_keys = {AssetKey(u) for u in relative_to}
-                    upstream_data_times = get_used_upstream_materialization_times_for_record(
-                        instance=instance,
-                        asset_graph=asset_graph,
+                    upstream_data_times = data_time_queryer.get_used_data_times_for_record(
                         record=latest_asset_record,
                         upstream_keys=relevant_upstream_keys,
                     )
