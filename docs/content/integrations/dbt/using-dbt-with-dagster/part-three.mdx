@@ -131,7 +131,7 @@ def tutorial_dbt_dagster():
                 },
             ),
             "io_manager": duckdb_io_manager.configured(
-                {"duckdb_path": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
+                {"database": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
             ),
         },
     )

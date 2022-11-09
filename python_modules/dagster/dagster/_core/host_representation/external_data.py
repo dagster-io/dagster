@@ -888,7 +888,10 @@ def external_repository_data_from_def(
             key=lambda psd: psd.name,
         ),
         external_sensor_datas=sorted(
-            list(map(external_sensor_data_from_def, repository_def.sensor_defs)),
+            [
+                external_sensor_data_from_def(sensor_def, repository_def)
+                for sensor_def in repository_def.sensor_defs
+            ],
             key=lambda sd: sd.name,
         ),
         external_asset_graph_data=external_asset_graph_from_defs(
@@ -1156,26 +1159,38 @@ def external_partition_set_data_from_def(
     )
 
 
-def external_sensor_data_from_def(sensor_def: SensorDefinition) -> ExternalSensorData:
+def external_sensor_data_from_def(
+    sensor_def: SensorDefinition, repository_def: RepositoryDefinition
+) -> ExternalSensorData:
     first_target = sensor_def.targets[0] if sensor_def.targets else None
 
     asset_keys = None
     if isinstance(sensor_def, AssetSensorDefinition):
         asset_keys = [sensor_def.asset_key]
 
-    return ExternalSensorData(
-        name=sensor_def.name,
-        pipeline_name=first_target.pipeline_name if first_target else None,
-        mode=first_target.mode if first_target else None,
-        solid_selection=first_target.solid_selection if first_target else None,
-        target_dict={
+    if sensor_def.asset_selection is not None:
+        target_dict = {
+            base_asset_job_name: ExternalTargetData(
+                pipeline_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, solid_selection=None
+            )
+            for base_asset_job_name in repository_def.get_base_asset_job_names()
+        }
+    else:
+        target_dict = {
             target.pipeline_name: ExternalTargetData(
                 pipeline_name=target.pipeline_name,
                 mode=target.mode,
                 solid_selection=target.solid_selection,
             )
             for target in sensor_def.targets
-        },
+        }
+
+    return ExternalSensorData(
+        name=sensor_def.name,
+        pipeline_name=first_target.pipeline_name if first_target else None,
+        mode=first_target.mode if first_target else None,
+        solid_selection=first_target.solid_selection if first_target else None,
+        target_dict=target_dict,
         min_interval=sensor_def.minimum_interval_seconds,
         description=sensor_def.description,
         metadata=ExternalSensorMetadata(asset_keys=asset_keys),

@@ -122,7 +122,7 @@ class PythonPackages:
             [
                 PythonPackage(Path(setup))
                 for setup in git_info.directory.rglob("setup.py")
-                if "_tests" not in str(setup) and not git_ignore_spec.match_file(str(setup))
+                if not git_ignore_spec.match_file(str(setup))
             ]
         )
 
@@ -142,6 +142,7 @@ class PythonPackages:
                     and (change.suffix in [".py", ".cfg", ".toml"])
                     # The file is not part of a test suite. We treat this differently
                     # because we don't want to run tests in dependent packages
+                    and "_tests/" not in str(change)
                 ):
                     packages_with_changes.add(package)
 

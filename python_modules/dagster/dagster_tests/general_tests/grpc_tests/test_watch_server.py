@@ -29,7 +29,20 @@ def test_run_grpc_watch_thread():
     watch_thread.join()
 
 
-def test_grpc_watch_thread_server_update():
+@pytest.fixture
+def process_cleanup():
+    to_clean = []
+
+    yield to_clean
+
+    for process in to_clean:
+        process.terminate()
+
+    for process in to_clean:
+        process.wait()
+
+
+def test_grpc_watch_thread_server_update(process_cleanup):
     port = find_free_port()
 
     called = {}
@@ -40,6 +53,7 @@ def test_grpc_watch_thread_server_update():
 
     # Create initial server
     server_process = open_server_process(port=port, socket=None)
+    process_cleanup.append(server_process)
 
     try:
         # Start watch thread
@@ -60,6 +74,7 @@ def test_grpc_watch_thread_server_update():
 
     # Create updated server
     server_process = open_server_process(port=port, socket=None)
+    process_cleanup.append(server_process)
 
     try:
         wait_for_condition(lambda: called, interval=watch_interval)
@@ -71,7 +86,7 @@ def test_grpc_watch_thread_server_update():
     assert called
 
 
-def test_grpc_watch_thread_server_reconnect():
+def test_grpc_watch_thread_server_reconnect(process_cleanup):
     port = find_free_port()
     fixed_server_id = "fixed_id"
 
@@ -90,6 +105,7 @@ def test_grpc_watch_thread_server_reconnect():
 
     # Create initial server
     server_process = open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
+    process_cleanup.append(server_process)
 
     # Start watch thread
     client = DagsterGrpcClient(port=port)
@@ -111,13 +127,14 @@ def test_grpc_watch_thread_server_reconnect():
     wait_for_condition(lambda: called.get("on_disconnect"), watch_interval)
 
     server_process = open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
+    process_cleanup.append(server_process)
     wait_for_condition(lambda: called.get("on_reconnected"), watch_interval)
 
     shutdown_event.set()
     watch_thread.join()
 
 
-def test_grpc_watch_thread_server_error():
+def test_grpc_watch_thread_server_error(process_cleanup):
     port = find_free_port()
     fixed_server_id = "fixed_id"
 
@@ -141,6 +158,7 @@ def test_grpc_watch_thread_server_error():
 
     # Create initial server
     server_process = open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
+    process_cleanup.append(server_process)
 
     # Start watch thread
     client = DagsterGrpcClient(port=port)
@@ -170,6 +188,7 @@ def test_grpc_watch_thread_server_error():
 
     new_server_id = "new_server_id"
     server_process = open_server_process(port=port, socket=None, fixed_server_id=new_server_id)
+    process_cleanup.append(server_process)
 
     wait_for_condition(lambda: called.get("on_updated"), watch_interval)
 
@@ -177,142 +196,6 @@ def test_grpc_watch_thread_server_error():
     watch_thread.join()
 
     assert called["on_updated"] == new_server_id
-
-
-@pytest.mark.skip
-def test_grpc_watch_thread_server_complex_cycle():
-    # Server goes down, comes back up as the same server three times, then goes away and comes
-    # back as a new server
-
-    port = find_free_port()
-    fixed_server_id = "fixed_id"
-
-    events = []
-
-    def on_disconnect(location_name):
-        assert location_name == "test_location"
-        events.append("on_disconnect")
-
-    def on_reconnected(location_name):
-        assert location_name == "test_location"
-        events.append("on_reconnected")
-
-    def on_updated(location_name, _):
-        assert location_name == "test_location"
-        events.append("on_updated")
-
-    def on_error(location_name):
-        assert location_name == "test_location"
-        events.append("on_error")
-
-    # Create initial server
-    open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
-
-    # Start watch thread
-    client = DagsterGrpcClient(port=port)
-    watch_interval = 1  # This is a faster watch interval than we would use in practice
-
-    shutdown_event, watch_thread = create_grpc_watch_thread(
-        "test_location",
-        client,
-        on_disconnect=on_disconnect,
-        on_reconnected=on_reconnected,
-        on_updated=on_updated,
-        on_error=on_error,
-        watch_interval=watch_interval,
-        max_reconnect_attempts=3,
-    )
-    watch_thread.start()
-    time.sleep(watch_interval * 3)
-
-    cycles = 3
-    for x in range(1, cycles + 1):
-        # Simulate server restart three times with same server ID
-        client.shutdown_server()
-        wait_for_condition(lambda: events.count("on_disconnect") == x, watch_interval)
-        open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
-        wait_for_condition(lambda: events.count("on_reconnected") == x, watch_interval)
-
-    # SImulate server update
-    client.shutdown_server()
-    wait_for_condition(lambda: events.count("on_disconnect") == cycles + 1, watch_interval)
-    open_server_process(port=port, socket=None)
-    wait_for_condition(lambda: "on_updated" in events, watch_interval)
-
-    shutdown_event.set()
-    watch_thread.join()
-
-    assert "on_disconnect" in events
-    assert "on_reconnected" in events
-    assert events[-1] == "on_updated"
-
-
-@pytest.mark.skip
-def test_grpc_watch_thread_server_complex_cycle_2():
-    # Server goes down, comes back up as the same server three times, then goes away and comes
-    # back as a new server
-
-    port = find_free_port()
-    fixed_server_id = "fixed_id"
-
-    events = []
-    called = {}
-
-    def on_disconnect(location_name):
-        assert location_name == "test_location"
-        events.append("on_disconnect")
-
-    def on_reconnected(location_name):
-        assert location_name == "test_location"
-        events.append("on_reconnected")
-
-    def on_updated(location_name, _):
-        assert location_name == "test_location"
-        events.append("on_updated")
-
-    def on_error(location_name):
-        assert location_name == "test_location"
-        called["on_error"] = True
-        events.append("on_error")
-
-    # Create initial server
-    open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
-
-    # Start watch thread
-    client = DagsterGrpcClient(port=port)
-    watch_interval = 1  # This is a faster watch interval than we would use in practice
-
-    shutdown_event, watch_thread = create_grpc_watch_thread(
-        "test_location",
-        client,
-        on_disconnect=on_disconnect,
-        on_reconnected=on_reconnected,
-        on_updated=on_updated,
-        on_error=on_error,
-        watch_interval=watch_interval,
-        max_reconnect_attempts=3,
-    )
-    watch_thread.start()
-    time.sleep(watch_interval * 3)
-
-    cycles = 3
-    for x in range(1, cycles + 1):
-        # Simulate server restart three times with same server ID
-        client.shutdown_server()
-        wait_for_condition(lambda: events.count("on_disconnect") == x, watch_interval)
-        open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
-        wait_for_condition(lambda: events.count("on_reconnected") == x, watch_interval)
-
-    # Simulate server failure
-    client.shutdown_server()
-
-    # Wait for reconnect attempts to exhaust and on_error callback to be called
-    wait_for_condition(lambda: called.get("on_error"), watch_interval)
-
-    shutdown_event.set()
-    watch_thread.join()
-
-    assert events[-1] == "on_error"
 
 
 def test_run_grpc_watch_without_server():

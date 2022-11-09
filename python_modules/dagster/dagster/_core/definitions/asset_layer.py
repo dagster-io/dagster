@@ -6,7 +6,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    FrozenSet,
     Iterable,
     List,
     Mapping,
@@ -614,6 +613,7 @@ class AssetLayer:
                     check.not_none(inner_node_handle), inner_output_def.name
                 )
                 partition_fn = lambda context: {context.partition_key}
+
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
                     asset_key,
                     partitions_fn=partition_fn if assets_def.partitions_def else None,
@@ -788,7 +788,7 @@ def build_asset_selection_job(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
-    asset_selection: Optional[FrozenSet[AssetKey]] = None,
+    asset_selection: Optional[AbstractSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> "JobDefinition":
     from dagster._core.definitions import build_assets_job

@@ -222,7 +222,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def dispose(self):
         """Explicit lifecycle management."""
 
-    def optimize_for_dagit(self, statement_timeout: int):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
 
     @abstractmethod
@@ -290,6 +290,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def get_latest_materialization_events(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
+        pass
+
+    @abstractmethod
+    def get_event_tags_for_asset(
+        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
+    ) -> Sequence[Mapping[str, str]]:
         pass
 
     @abstractmethod

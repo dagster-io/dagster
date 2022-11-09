@@ -555,18 +555,9 @@ def _schedule_runs_at_time(
     schedule_origin = external_schedule.get_external_origin()
     repository_handle = external_schedule.handle.repository_handle
 
-    pipeline_selector = PipelineSelector(
-        location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
-        repository_name=schedule_origin.external_repository_origin.repository_name,
-        pipeline_name=external_schedule.pipeline_name,
-        solid_selection=external_schedule.solid_selection,
-    )
-
     repo_location = workspace_process_context.create_request_context().get_repository_location(
         schedule_origin.external_repository_origin.repository_location_origin.location_name
     )
-
-    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
 
     schedule_execution_data = repo_location.get_external_schedule_execution_data(
         instance=instance,
@@ -591,6 +582,15 @@ def _schedule_runs_at_time(
         return
 
     for run_request in schedule_execution_data.run_requests:
+        pipeline_selector = PipelineSelector(
+            location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
+            repository_name=schedule_origin.external_repository_origin.repository_name,
+            pipeline_name=external_schedule.pipeline_name,
+            solid_selection=external_schedule.solid_selection,
+            asset_selection=run_request.asset_selection,
+        )
+        external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+
         run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
         if run:
             if run.status != PipelineRunStatus.NOT_STARTED:
@@ -735,4 +735,7 @@ def _create_scheduler_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        asset_selection=frozenset(run_request.asset_selection)
+        if run_request.asset_selection
+        else None,
     )

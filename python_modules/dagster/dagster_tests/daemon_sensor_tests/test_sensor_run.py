@@ -267,6 +267,11 @@ def asset_selection_sensor(context):
     assert context.latest_materialization_records_by_key().keys() == {AssetKey("asset_b")}
 
 
+@sensor(asset_selection=AssetSelection.keys("asset_a", "asset_b"))
+def targets_asset_selection_sensor():
+    return [RunRequest(), RunRequest(asset_selection=[AssetKey("asset_b")])]
+
+
 hourly_partitions_def_2022 = HourlyPartitionsDefinition(start_date="2022-08-01-00:00")
 
 
@@ -531,6 +536,7 @@ def the_repo():
         multi_asset_sensor_hourly_to_hourly,
         partitioned_asset_selection_sensor,
         asset_selection_sensor,
+        targets_asset_selection_sensor,
     ]
 
 
@@ -672,99 +678,67 @@ def asset_sensor_repo():
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(y),
             name="just_y_OR",
-            wait_for_all_upstream=False,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(d),
             name="just_d_OR",
-            wait_for_all_upstream=False,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(d, f),
             name="d_and_f_OR",
-            wait_for_all_upstream=False,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(d, f, g),
             name="d_and_f_and_g_OR",
-            wait_for_all_upstream=False,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(y, d),
             name="y_and_d_OR",
-            wait_for_all_upstream=False,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(y, i),
             name="y_and_i_OR",
-            wait_for_all_upstream=False,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(g),
             name="just_g_OR",
-            wait_for_all_upstream=False,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(y),
             name="just_y_AND",
-            wait_for_all_upstream=True,
-            wait_for_in_progress_runs=False,
             run_tags={"hello": "world"},
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(d),
             name="just_d_AND",
-            wait_for_all_upstream=True,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(d, f),
             name="d_and_f_AND",
-            wait_for_all_upstream=True,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(d, f, g),
             name="d_and_f_and_g_AND",
-            wait_for_all_upstream=True,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(y, d),
             name="y_and_d_AND",
-            wait_for_all_upstream=True,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(y, i),
             name="y_and_i_AND",
-            wait_for_all_upstream=True,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(g),
             name="just_g_AND",
-            wait_for_all_upstream=True,
-            wait_for_in_progress_runs=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(waits_on_sleep),
             name="in_progress_condition_sensor",
-            wait_for_in_progress_runs=True,
-            wait_for_all_upstream=False,
         ),
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(depends_on_source),
             name="source_asset_sensor",
-            wait_for_in_progress_runs=True,
-            wait_for_all_upstream=False,
         ),
     ]
 
@@ -1727,6 +1701,55 @@ def test_run_request_asset_selection_sensor(executor, instance, workspace_contex
             )
         }
         assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_targets_asset_selection_sensor(executor, instance, workspace_context, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("targets_asset_selection_sensor")
+        external_origin_id = external_sensor.get_external_origin_id()
+        instance.start_sensor(external_sensor)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+        assert len(ticks) == 0
+
+        evaluate_sensors(workspace_context, executor)
+
+        assert instance.get_runs_count() == 2
+        runs = instance.get_runs()
+        assert (
+            len(
+                [
+                    run
+                    for run in runs
+                    if run.asset_selection == {AssetKey("asset_a"), AssetKey("asset_b")}
+                ]
+            )
+            == 1
+        )
+        assert len([run for run in runs if run.asset_selection == {AssetKey("asset_b")}]) == 1
+        ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in runs],
+        )
+        planned_asset_keys = [
+            record.event_log_entry.dagster_event.event_specific_data.asset_key
+            for record in instance.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            )
+        ]
+        assert len(planned_asset_keys) == 3
+        assert set(planned_asset_keys) == {AssetKey("asset_a"), AssetKey("asset_b")}
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())

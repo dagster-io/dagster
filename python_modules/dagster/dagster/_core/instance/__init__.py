@@ -11,6 +11,7 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -104,6 +105,7 @@ if TYPE_CHECKING:
         TickData,
         TickStatus,
     )
+    from dagster._core.secrets import SecretsLoader
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.event_log import EventLogStorage
@@ -291,11 +293,13 @@ class DagsterInstance:
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Dict[str, Any]] = None,
+        secrets_loader: Optional["SecretsLoader"] = None,
         ref: Optional[InstanceRef] = None,
     ):
         from dagster._core.launcher import RunLauncher
         from dagster._core.run_coordinator import RunCoordinator
         from dagster._core.scheduler import Scheduler
+        from dagster._core.secrets import SecretsLoader
         from dagster._core.storage.compute_log_manager import ComputeLogManager
         from dagster._core.storage.event_log import EventLogStorage
         from dagster._core.storage.root import LocalArtifactStorage
@@ -331,6 +335,11 @@ class DagsterInstance:
         self._run_launcher.register_instance(self)
 
         self._settings = check.opt_dict_param(settings, "settings")
+
+        self._secrets_loader = check.opt_inst_param(secrets_loader, "secrets_loader", SecretsLoader)
+
+        if self._secrets_loader:
+            self._secrets_loader.register_instance(self)
 
         self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
 
@@ -478,6 +487,7 @@ class DagsterInstance:
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
             settings=instance_ref.settings,
+            secrets_loader=instance_ref.secrets_loader,
             ref=instance_ref,
             **kwargs,
         )
@@ -646,8 +656,6 @@ class DagsterInstance:
 
         if "enabled" in telemetry_settings:
             return telemetry_settings["enabled"]
-        elif "experimental_dagit" in telemetry_settings:
-            return telemetry_settings["experimental_dagit"]
         else:
             return dagster_telemetry_enabled_default
 
@@ -732,11 +740,17 @@ class DagsterInstance:
             self._schedule_storage.upgrade()
             self._schedule_storage.migrate(print_fn)
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout, pool_recycle):
         if self._schedule_storage:
-            self._schedule_storage.optimize_for_dagit(statement_timeout=statement_timeout)
-        self._run_storage.optimize_for_dagit(statement_timeout=statement_timeout)
-        self._event_storage.optimize_for_dagit(statement_timeout=statement_timeout)
+            self._schedule_storage.optimize_for_dagit(
+                statement_timeout=statement_timeout, pool_recycle=pool_recycle
+            )
+        self._run_storage.optimize_for_dagit(
+            statement_timeout=statement_timeout, pool_recycle=pool_recycle
+        )
+        self._event_storage.optimize_for_dagit(
+            statement_timeout=statement_timeout, pool_recycle=pool_recycle
+        )
 
     def reindex(self, print_fn=lambda _: None):
         print_fn("Checking for reindexing...")
@@ -752,6 +766,8 @@ class DagsterInstance:
         self._run_launcher.dispose()
         self._event_storage.dispose()
         self._compute_log_manager.dispose()
+        if self._secrets_loader:
+            self._secrets_loader.dispose()
 
     # run storage
     @public
@@ -1452,6 +1468,23 @@ class DagsterInstance:
         return self._event_storage.get_asset_records(asset_keys)
 
     @traced
+    def get_event_tags_for_asset(
+        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
+    ) -> Sequence[Mapping[str, str]]:
+        """
+        Fetches asset event tags for the given asset key.
+
+        If filter_tags is provided, searches for events containing all of the filter tags. Then,
+        returns all tags for those events. This enables searching for multipartitioned asset
+        partition tags with a fixed dimension value, e.g. all of the tags for events where
+        "country" == "US".
+
+        Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
+        single event.
+        """
+        return self._event_storage.get_event_tags_for_asset(asset_key, filter_tags)
+
+    @traced
     def run_ids_for_asset_key(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         return self._event_storage.get_asset_run_ids(asset_key)
@@ -2114,13 +2147,10 @@ class DagsterInstance:
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         return get_tick_retention_settings(tick_settings, default_tick_settings)
 
+    def inject_env_vars(self, location_name: Optional[str]):
+        if not self._secrets_loader:
+            return
 
-def is_dagit_telemetry_enabled(instance):
-    telemetry_settings = instance.get_settings("telemetry")
-    if not telemetry_settings:
-        return False
-
-    if "experimental_dagit" in telemetry_settings:
-        return telemetry_settings["experimental_dagit"]
-    else:
-        return False
+        new_env = self._secrets_loader.get_secrets_for_environment(location_name)
+        for k, v in new_env.items():
+            os.environ[k] = v

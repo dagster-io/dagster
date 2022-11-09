@@ -2213,7 +2213,6 @@ type Instance {
   executablePath: String!
   daemonHealth: DaemonHealth!
   hasInfo: Boolean!
-  dagitTelemetryEnabled: Boolean!
   hasCapturedLogManager: Boolean!
 }
 
@@ -2431,7 +2430,12 @@ type DagitMutation {
   """
   Log telemetry about the Dagster instance.
   """
-  logTelemetry(action: String!, clientTime: String!, metadata: String!): LogTelemetryMutationResult!
+  logTelemetry(
+    action: String!
+    clientId: String!
+    clientTime: String!
+    metadata: String!
+  ): LogTelemetryMutationResult!
 }
 
 union LaunchRunResult =

@@ -152,7 +152,7 @@ def get_main_workspace(instance):
     with WorkspaceProcessContext(
         instance,
         PythonFileTarget(
-            python_file=file_relative_path(__file__, "setup.py"),
+            python_file=file_relative_path(__file__, "repo.py"),
             attribute=main_repo_name(),
             working_directory=None,
             location_name=main_repo_location_name(),

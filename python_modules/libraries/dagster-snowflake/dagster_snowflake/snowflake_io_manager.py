@@ -98,7 +98,11 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
         }
     )
     def snowflake_io_manager():
-        return DbIOManager(type_handlers=type_handlers, db_client=SnowflakeDbClient())
+        return DbIOManager(
+            type_handlers=type_handlers,
+            db_client=SnowflakeDbClient(),
+            io_manager_name="SnowflakeIOManager",
+        )
 
     return snowflake_io_manager
 
