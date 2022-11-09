@@ -27,8 +27,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.cached_method import cached_method
 
 from .asset_selection import AssetGraph, AssetSelection
-from .partition import PartitionsDefinition
-from .partitions_subset import PartitionsSubset
+from .partition import PartitionsDefinition, PartitionsSubset
 from .repository_definition import RepositoryDefinition
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
@@ -59,9 +58,11 @@ class AssetReconciliationCursor(NamedTuple):
     def was_previously_materialized_or_requested(self, asset_key: AssetKey) -> bool:
         return asset_key in self.materialized_or_requested_root_asset_keys
 
-    def get_never_requested_never_materialized_partitions(self, asset_key, asset_graph):
+    def get_never_requested_never_materialized_partitions(
+        self, asset_key: AssetKey, asset_graph
+    ) -> Iterable[str]:
         return self.materialized_or_requested_root_partitions_by_asset_key.get(
-            asset_key, PartitionsSubset(asset_graph.get_partitions_def(asset_key))
+            asset_key, asset_graph.get_partitions_def(asset_key).empty_subset()
         ).get_partition_keys_not_in_subset()
 
     def with_updates(
@@ -99,9 +100,9 @@ class AssetReconciliationCursor(NamedTuple):
                 self.materialized_or_requested_root_partitions_by_asset_key.get(asset_key)
             )
             if prior_materialized_partitions is None:
-                prior_materialized_partitions = PartitionsSubset(
-                    partitions_def=asset_graph.get_partitions_def(asset_key),
-                )
+                prior_materialized_partitions = cast(
+                    PartitionsDefinition, asset_graph.get_partitions_def(asset_key)
+                ).empty_subset()
 
             result_materialized_or_requested_root_partitions_by_asset_key[
                 asset_key
@@ -133,7 +134,7 @@ class AssetReconciliationCursor(NamedTuple):
         )
 
     @classmethod
-    def from_serialized(cls, cursor: str) -> "AssetReconciliationCursor":
+    def from_serialized(cls, cursor: str, asset_graph: AssetGraph) -> "AssetReconciliationCursor":
         (
             latest_storage_id,
             serialized_materialized_or_requested_root_asset_keys,
@@ -145,11 +146,9 @@ class AssetReconciliationCursor(NamedTuple):
             serialized_subset,
         ) in serialized_materialized_or_requested_root_partitions_by_asset_key.items():
             key = AssetKey.from_user_string(key_str)
-            materialized_or_requested_root_partitions_by_asset_key[
-                key
-            ] = PartitionsSubset.from_serialized(
-                serialized_subset, cast(PartitionsDefinition, asset_graph.get_partitions_def(key))
-            )
+            materialized_or_requested_root_partitions_by_asset_key[key] = cast(
+                PartitionsDefinition, asset_graph.get_partitions_def(key)
+            ).deserialize_subset(serialized_subset)
         return cls(
             latest_storage_id=latest_storage_id,
             materialized_or_requested_root_asset_keys={
@@ -432,7 +431,7 @@ def find_never_materialized_or_requested_root_asset_partitions(
             if not cursor.was_previously_materialized_or_requested(asset_key):
                 asset = AssetKeyPartitionKey(asset_key)
                 if instance_queryer.get_latest_materialization_record(asset, None):
-                    newly_materialized_root_asset_keys.add(asset)
+                    newly_materialized_root_asset_keys.add(asset_key)
                 else:
                     never_materialized_or_requested.add(asset)
 
@@ -652,7 +651,9 @@ def build_asset_reconciliation_sensor(
 
     def sensor_fn(context):
         cursor = (
-            AssetReconciliationCursor.from_serialized(context.cursor)
+            AssetReconciliationCursor.from_serialized(
+                context.cursor, context.repository_def.asset_graph
+            )
             if context.cursor
             else AssetReconciliationCursor.empty()
         )
