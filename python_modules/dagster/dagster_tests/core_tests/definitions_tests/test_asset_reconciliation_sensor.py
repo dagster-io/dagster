@@ -32,16 +32,16 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 
 
-class PriorRun(NamedTuple):
+class RunSpec(NamedTuple):
     asset_keys: Sequence[AssetKey]
     partition_key: Optional[str] = None
     failed_asset_keys: Optional[Sequence[AssetKey]] = None
 
 
 class AssetReconciliationScenario(NamedTuple):
-    prior_runs: Sequence[PriorRun]
+    unevaluated_runs: Sequence[RunSpec]
     assets: Sequence[AssetsDefinition]
-    cursor_from: Optional["AssetReconciliationScenario"] = None
+    cursor_from: Optional["AssetReconciliationScenario"] = None  # type: ignore
 
     expected_run_requests: Optional[Sequence[RunRequest]] = None
 
@@ -67,7 +67,7 @@ class AssetReconciliationScenario(NamedTuple):
         else:
             cursor = AssetReconciliationCursor.empty()
 
-        for run in self.prior_runs:
+        for run in self.unevaluated_runs:
             assets_in_run = [
                 asset if asset.key in run.asset_keys else asset.to_source_assets()[0]
                 for asset in self.assets
@@ -99,16 +99,16 @@ class AssetReconciliationScenario(NamedTuple):
         return run_requests, cursor
 
 
-def single_asset_run(asset_key: str, partition_key: Optional[str] = None) -> PriorRun:
-    return PriorRun(asset_keys=[AssetKey.from_coerceable(asset_key)], partition_key=partition_key)
+def single_asset_run(asset_key: str, partition_key: Optional[str] = None) -> RunSpec:
+    return RunSpec(asset_keys=[AssetKey.from_coerceable(asset_key)], partition_key=partition_key)
 
 
-def prior_run(
+def run(
     asset_keys: Iterable[str],
     partition_key: Optional[str] = None,
     failed_asset_keys: Optional[Iterable[str]] = None,
 ):
-    return PriorRun(
+    return RunSpec(
         asset_keys=list(
             map(AssetKey.from_coerceable, itertools.chain(asset_keys, failed_asset_keys or []))
         ),
@@ -138,7 +138,7 @@ def asset_def(
     else:
         non_argument_deps = None
         ins = {
-            dep: AssetIn(partition_mapping=partition_mapping, dagster_type=Nothing)
+            dep: AssetIn(partition_mapping=partition_mapping, dagster_type=Nothing)  # type: ignore
             for dep, partition_mapping in deps.items()
         }
 
@@ -150,6 +150,8 @@ def asset_def(
         config_schema={"fail": Field(bool, default_value=False)},
     )
     def _asset(context, **kwargs):
+        del kwargs
+
         if context.op_config["fail"]:
             raise ValueError("")
 
@@ -265,29 +267,6 @@ two_assets_in_sequence_fan_out_partitions = [
     ),
 ]
 
-two_assets_in_sequence_same_partitioning = [
-    asset_def("asset1", partitions_def=daily_partitions_def),
-    asset_def("asset2", ["asset1"], partitions_def=daily_partitions_def),
-]
-
-three_assets_in_sequence_same_partitioning = two_assets_in_sequence_same_partitioning + [
-    asset_def("asset3", ["asset2"], partitions_def=daily_partitions_def)
-]
-
-
-joined_assets_same_partitioning = [
-    asset_def("asset1", partitions_def=daily_partitions_def),
-    asset_def("asset2", partitions_def=daily_partitions_def),
-    asset_def("asset3", ["asset1", "asset2"], partitions_def=daily_partitions_def),
-]
-
-
-three_assets_in_sequence_prev_partition_mapping = [
-    asset_def("asset1", partitions_def=daily_partitions_def),
-    asset_def("asset2", ["asset1"], partitions_def=daily_partitions_def),
-    asset_def("asset3", {"asset2": None}, partitions_def=daily_partitions_def),
-]
-
 
 scenarios = {
     ################################################################################################
@@ -295,91 +274,98 @@ scenarios = {
     ################################################################################################
     "one_asset_never_materialized": AssetReconciliationScenario(
         assets=one_asset,
-        prior_runs=[],
+        unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1"])],
     ),
     "two_assets_in_sequence_never_materialized": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
-        prior_runs=[],
+        unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
     ),
     "one_asset_already_launched": AssetReconciliationScenario(
         assets=one_asset,
-        prior_runs=[],
+        unevaluated_runs=[],
         cursor_from=AssetReconciliationScenario(
             assets=one_asset,
-            prior_runs=[],
+            unevaluated_runs=[],
         ),
         expected_run_requests=[],
     ),
     "parent_materialized_child_not": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
-        prior_runs=[single_asset_run(asset_key="asset1")],
+        unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
     "parent_materialized_launch_two_children": AssetReconciliationScenario(
         assets=two_assets_depend_on_one,
-        prior_runs=[single_asset_run(asset_key="asset1")],
+        unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
     ),
     "parent_rematerialized_after_tick": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
         cursor_from=AssetReconciliationScenario(
-            assets=two_assets_in_sequence, prior_runs=[prior_run(["asset1", "asset2"])]
+            assets=two_assets_in_sequence, unevaluated_runs=[run(["asset1", "asset2"])]
         ),
-        prior_runs=[single_asset_run(asset_key="asset1")],
+        unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
     "parent_rematerialized": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
-        prior_runs=[prior_run(["asset1", "asset2"]), single_asset_run(asset_key="asset1")],
+        unevaluated_runs=[
+            run(["asset1", "asset2"]),
+            single_asset_run(asset_key="asset1"),
+        ],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
     "one_parent_materialized_other_never_materialized": AssetReconciliationScenario(
         assets=one_asset_depends_on_two,
-        prior_runs=[single_asset_run(asset_key="parent1")],
+        unevaluated_runs=[single_asset_run(asset_key="parent1")],
         expected_run_requests=[run_request(asset_keys=["parent2", "child"])],
     ),
     "one_parent_materialized_others_materialized_before": AssetReconciliationScenario(
         assets=one_asset_depends_on_two,
-        prior_runs=[single_asset_run(asset_key="parent1")],
+        unevaluated_runs=[single_asset_run(asset_key="parent1")],
         cursor_from=AssetReconciliationScenario(
-            assets=one_asset_depends_on_two, prior_runs=[prior_run(["parent1", "parent2", "child"])]
+            assets=one_asset_depends_on_two,
+            unevaluated_runs=[run(["parent1", "parent2", "child"])],
         ),
         expected_run_requests=[run_request(asset_keys=["child"])],
     ),
     "diamond_only_root_materialized": AssetReconciliationScenario(
         assets=diamond,
-        prior_runs=[single_asset_run("asset1")],
+        unevaluated_runs=[single_asset_run("asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3", "asset4"])],
     ),
     "diamond_root_rematerialized": AssetReconciliationScenario(
         assets=diamond,
-        prior_runs=[single_asset_run("asset1")],
+        unevaluated_runs=[single_asset_run("asset1")],
         cursor_from=AssetReconciliationScenario(
-            assets=diamond, prior_runs=[prior_run(["asset1", "asset2", "asset3", "asset4"])]
+            assets=diamond,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
         ),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3", "asset4"])],
     ),
     "diamond_root_and_one_in_middle_rematerialized": AssetReconciliationScenario(
         assets=diamond,
-        prior_runs=[prior_run(["asset1", "asset2"])],
+        unevaluated_runs=[run(["asset1", "asset2"])],
         cursor_from=AssetReconciliationScenario(
-            assets=diamond, prior_runs=[prior_run(["asset1", "asset2", "asset3", "asset4"])]
+            assets=diamond,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
         ),
         expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
     ),
     "diamond_root_and_sink_rematerialized": AssetReconciliationScenario(
         assets=diamond,
-        prior_runs=[single_asset_run("asset1"), single_asset_run("asset4")],
+        unevaluated_runs=[single_asset_run("asset1"), single_asset_run("asset4")],
         cursor_from=AssetReconciliationScenario(
-            assets=diamond, prior_runs=[prior_run(["asset1", "asset2", "asset3", "asset4"])]
+            assets=diamond,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
         ),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3", "asset4"])],
     ),
     "parents_materialized_separate_runs": AssetReconciliationScenario(
         assets=three_assets_in_sequence,
-        prior_runs=[single_asset_run("asset1"), single_asset_run("asset2")],
+        unevaluated_runs=[single_asset_run("asset1"), single_asset_run("asset2")],
         expected_run_requests=[run_request(asset_keys=["asset3"])],
     ),
     ################################################################################################
@@ -387,7 +373,7 @@ scenarios = {
     ################################################################################################
     "partial_run": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
-        prior_runs=[prior_run(["asset1"], failed_asset_keys=["asset2"])],
+        unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"])],
         expected_run_requests=[],
     ),
 }
@@ -396,7 +382,7 @@ scenarios = {
 @pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
-    run_requests, cursor = scenario.do_scenario(instance)
+    run_requests, _ = scenario.do_scenario(instance)
 
     assert len(run_requests) == len(scenario.expected_run_requests)
 

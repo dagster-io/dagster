@@ -88,7 +88,7 @@ class AssetReconciliationCursor(NamedTuple):
         )
 
     @classmethod
-    def from_serialized(cls, cursor: str, asset_graph: AssetGraph) -> "AssetReconciliationCursor":
+    def from_serialized(cls, cursor: str) -> "AssetReconciliationCursor":
         (
             latest_storage_id,
             serialized_materialized_or_requested_root_asset_keys,
@@ -495,17 +495,13 @@ def build_asset_reconciliation_sensor(
               materialize ``d``, ``e``, and ``f``, because they're downstream of ``a`` and ``b``.
               Even though ``c`` hasn't been materialized, the downstream assets can still be
               updated, because ``c`` is still considered "reconciled".
-            * If, during the next sensor tick, there is a materialization of ``a`` in progress, the sensor will not launch a run to
-              materialize ``d``. Once ``a`` has completed materialization, the next sensor tick will launch a run to materialize ``d``.
     """
     check_valid_name(name)
     check.opt_dict_param(run_tags, "run_tags", key_type=str, value_type=str)
 
     def sensor_fn(context):
         cursor = (
-            AssetReconciliationCursor.from_serialized(
-                context.cursor, context.repository_def.asset_graph
-            )
+            AssetReconciliationCursor.from_serialized(context.cursor)
             if context.cursor
             else AssetReconciliationCursor.empty()
         )
