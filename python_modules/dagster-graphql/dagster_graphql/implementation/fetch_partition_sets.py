@@ -16,7 +16,6 @@ from dagster._core.storage.tags import (
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     TagType,
-    get_dimension_from_partition_tag,
     get_tag_type,
 )
 from dagster._utils.yaml_utils import dump_run_config_yaml
@@ -267,26 +266,3 @@ def get_partition_set_partition_runs(graphene_info, partition_set):
         # for partition_name, run_record in by_partition.items()
         for partition_name in result.partition_names
     ]
-
-
-def get_materialization_ct_by_dimension_partition_keys(
-    graphene_info, asset_key: AssetKey, primary_dimension: str, secondary_dimension: str
-) -> Dict[str, Dict[str, int]]:
-    # This dict will by keyed by the primary dimension partition keys.
-    # The values are dicts keyed by the secondary dimension partition keys, mapped to
-    # the number of materializations.
-    materialization_ct: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
-
-    for event_tags in graphene_info.context.instance.get_event_tags_for_asset(asset_key):
-        event_partition_keys_by_dimension = {
-            get_dimension_from_partition_tag(key): value for key, value in event_tags.items()
-        }
-
-        if (
-            primary_dimension in event_partition_keys_by_dimension.keys()
-            and secondary_dimension in event_partition_keys_by_dimension.keys()
-        ):
-            materialization_ct[event_partition_keys_by_dimension[primary_dimension]][
-                event_partition_keys_by_dimension[secondary_dimension]
-            ] += 1
-    return materialization_ct

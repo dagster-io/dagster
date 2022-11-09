@@ -412,10 +412,7 @@ type AssetNode {
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
-  materializationCountByPartition: [MaterializationCountByPartition!]!
-  materializationCountByDimensionPartition(
-    primaryDimension: String
-  ): [PrimaryPartitionDimensionMaterializationCount!]!
+  partitionMaterializationCounts(primaryDimension: String): PartitionMaterializationCounts
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
@@ -850,7 +847,7 @@ type Asset {
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
-    dimensionPartition: DimensionPartitionKey
+    tags: [InputTag!]
   ): [MaterializationEvent!]!
   assetObservations(
     partitions: [String]
@@ -862,9 +859,9 @@ type Asset {
   definition: AssetNode
 }
 
-input DimensionPartitionKey {
+input InputTag {
   name: String!
-  partitionKey: String!
+  value: String!
 }
 
 type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
@@ -1437,30 +1434,21 @@ type AssetDependency {
   inputName: String!
 }
 
+union PartitionMaterializationCounts =
+    MaterializationCountByPartition
+  | MaterializationCountGroupedByDimension
+
 type MaterializationCountByPartition {
+  partitionsCounts: [PartitionMaterializationCount!]!
+}
+
+type PartitionMaterializationCount {
   partition: String!
   materializationCount: Int!
 }
 
-"""
-This object is used to return the number of materializations for a given partition
-in the primary dimension of a multi-partitioned asset.
-
-For example, with a multipartitions definition with two dimensions:
-color: ["red", "blue"]
-numbers: [1, 2, 3]
-
-One instance of this class, if the primary dimension is "color", would be:
-
-primaryDimensionPartitionKey: "red"
-materializationCountForSecondaryDimension: ["1": 1, "2": 0, "3": 1]
-
-Each entry in materializationCountPerPartition represents the number of materializations
-for the given partition in the secondary dimension: ["red|1", "red|2", "red|3"]
-"""
-type PrimaryPartitionDimensionMaterializationCount {
-  primaryDimensionPartitionKey: String!
-  materializationCountForSecondaryDimension: [MaterializationCountByPartition!]!
+type MaterializationCountGroupedByDimension {
+  materializationCounts: [[Int!]!]!
 }
 
 type PartitionDefinition {

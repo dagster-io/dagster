@@ -275,12 +275,12 @@ class GrapheneInstigationSelector(graphene.InputObjectType):
     name = graphene.NonNull(graphene.String)
 
 
-class GrapheneDimensionPartitionKey(graphene.InputObjectType):
+class GrapheneInputTag(graphene.InputObjectType):
     name = graphene.NonNull(graphene.String)
-    partitionKey = graphene.NonNull(graphene.String)
+    value = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "DimensionPartitionKey"
+        name = "InputTag"
 
 
 types = [
@@ -300,5 +300,5 @@ types = [
     GrapheneSensorSelector,
     GrapheneStepExecution,
     GrapheneStepOutputHandle,
-    GrapheneDimensionPartitionKey,
+    GrapheneInputTag,
 ]

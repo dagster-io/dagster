@@ -42,12 +42,22 @@ export function usePartitionHealthData(assetKeys: AssetKey[]) {
       const latest =
         (data &&
           data.assetNodeOrError.__typename === 'AssetNode' &&
-          data.assetNodeOrError.materializationCountByPartition) ||
+          data.assetNodeOrError.partitionMaterializationCounts &&
+          data.assetNodeOrError.partitionMaterializationCounts.__typename ==
+            'MaterializationCountByPartition' &&
+          data.assetNodeOrError.partitionMaterializationCounts.partitionsCounts) ||
         [];
 
       const keys =
-        data && data.assetNodeOrError.__typename === 'AssetNode'
-          ? data.assetNodeOrError.materializationCountByPartition.map(({partition}) => partition)
+        data &&
+        data.assetNodeOrError.__typename === 'AssetNode' &&
+        data.assetNodeOrError.partitionMaterializationCounts &&
+        data.assetNodeOrError.partitionMaterializationCounts.__typename ==
+          'MaterializationCountByPartition' &&
+        data.assetNodeOrError.partitionMaterializationCounts.partitionsCounts
+          ? data.assetNodeOrError.partitionMaterializationCounts.partitionsCounts.map(
+              ({partition}) => partition,
+            )
           : [];
 
       const statusByPartition = fromPairs(
@@ -192,9 +202,13 @@ const PARTITION_HEALTH_QUERY = gql`
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
         id
-        materializationCountByPartition {
-          partition
-          materializationCount
+        partitionMaterializationCounts {
+          ... on MaterializationCountByPartition {
+            partitionsCounts {
+              partition
+              materializationCount
+            }
+          }
         }
       }
     }
