@@ -296,7 +296,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         self._fetched_initial_unconsumed_events = True
 
-    def _get_unconsumed_events_with_ids(self, event_ids: List[int]) -> Sequence["EventLogRecord"]:
+    def _get_unconsumed_events_with_ids(
+        self, event_ids: Sequence[int]
+    ) -> Sequence["EventLogRecord"]:
         self._cache_initial_unconsumed_events()
         unconsumed_events = []
         for event_id in sorted(event_ids):
@@ -323,7 +325,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             list(self._get_cursor(asset_key).trailing_unconsumed_partitioned_event_ids.values())
         )
 
-    def _get_partitions_after_cursor(self, asset_key: AssetKey) -> List[str]:
+    def _get_partitions_after_cursor(self, asset_key: AssetKey) -> Sequence[str]:
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         partition_key = self._get_cursor(asset_key).latest_consumed_event_partition
 

@@ -315,7 +315,7 @@ def orchestration_context_event_generator(
     instance: DagsterInstance,
     raise_on_error: bool,
     executor_defs: Optional[Sequence[ExecutorDefinition]],
-    output_capture: Optional[Dict["StepOutputHandle", Any]],
+    output_capture: Optional[Mapping["StepOutputHandle", Any]],
     resume_from_failure: bool = False,
 ) -> Generator[Union[DagsterEvent, PlanOrchestrationContext], None, None]:
     check.invariant(executor_defs is None)

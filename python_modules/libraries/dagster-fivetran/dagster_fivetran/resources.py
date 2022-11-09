@@ -350,7 +350,7 @@ class FivetranResource:
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
-        resync_parameters: Optional[Dict[str, List[str]]] = None,
+        resync_parameters: Optional[Mapping[str, Sequence[str]]] = None,
     ) -> FivetranOutput:
         """
         Initializes a historical resync operation for the given connector, and polls until it completes.

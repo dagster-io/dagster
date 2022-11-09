@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Iterable, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
@@ -59,7 +59,7 @@ class PartitionBackfill(
             ("backfill_timestamp", float),
             ("last_submitted_partition_name", Optional[str]),
             ("error", Optional[SerializableErrorInfo]),
-            ("asset_selection", Optional[List[AssetKey]]),
+            ("asset_selection", Optional[Sequence[AssetKey]]),
         ],
     ),
 ):
@@ -75,7 +75,7 @@ class PartitionBackfill(
         backfill_timestamp: float,
         last_submitted_partition_name: Optional[str] = None,
         error: Optional[SerializableErrorInfo] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
         check.invariant(
             not (asset_selection and reexecution_steps),

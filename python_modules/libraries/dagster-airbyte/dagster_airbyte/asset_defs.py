@@ -224,7 +224,7 @@ def build_airbyte_assets(
     if normalization_tables:
         for base_table, derived_tables in normalization_tables.items():
             for derived_table in derived_tables:
-                internal_deps[derived_table] = {AssetKey(asset_key_prefix + [base_table])}
+                internal_deps[derived_table] = {AssetKey([*asset_key_prefix, base_table])}
 
     # All non-normalization tables depend on any user-provided upstream assets
     for table in destination_tables:

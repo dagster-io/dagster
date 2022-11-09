@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import (
     Any,
     Callable,
-    Dict,
     Iterable,
     List,
     Mapping,
@@ -802,7 +801,7 @@ def weekly_partitioned_config(
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
-    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
 ) -> Callable[[Callable[[datetime, datetime], Mapping[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of weekly partitions.
 

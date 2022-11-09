@@ -1,6 +1,6 @@
 import base64
 import zlib
-from typing import Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, FrozenSet, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -260,7 +260,7 @@ class ExecuteStepArgs(
             )
         )
 
-    def get_command_env(self) -> List[Dict[str, str]]:
+    def get_command_env(self) -> Sequence[Mapping[str, str]]:
         """
         Get the env vars for overriding the Click args of this step. Used in conjuction with
         get_command_args(skip_serialized_namedtuple=True).

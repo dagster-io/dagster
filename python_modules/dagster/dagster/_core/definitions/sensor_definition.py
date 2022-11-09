@@ -416,9 +416,9 @@ class SensorDefinition:
         self.check_valid_run_requests(run_requests)
 
         if self._asset_selection:
-            run_requests = _run_requests_with_base_asset_jobs(
-                run_requests, context, self._asset_selection
-            )
+            run_requests = [
+                *_run_requests_with_base_asset_jobs(run_requests, context, self._asset_selection)
+            ]
 
         return SensorExecutionData(
             run_requests,
@@ -597,7 +597,7 @@ def build_sensor_context(
 
 def _run_requests_with_base_asset_jobs(
     run_requests, context, outer_asset_selection
-) -> List[RunRequest]:
+) -> Sequence[RunRequest]:
     """
     For sensors that target asset selections instead of jobs, finds the corresponding base asset
     for a selected set of assets.
