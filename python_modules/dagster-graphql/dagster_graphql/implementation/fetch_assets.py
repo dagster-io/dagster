@@ -16,7 +16,7 @@ from .utils import capture_error
 
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
-    from ..schema.freshness_policy import GrapheneFreshnessPolicy
+    from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
 
 
 def _normalize_asset_cursor_str(cursor_string):
