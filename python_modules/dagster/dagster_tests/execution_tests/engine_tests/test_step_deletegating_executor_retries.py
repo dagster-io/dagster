@@ -1,8 +1,6 @@
 # pylint: disable=unused-argument
 import subprocess
 
-from mock import MagicMock
-
 from dagster import OpExecutionContext, RetryRequested, executor, job, op, reconstructable
 from dagster._config import Permissive
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
@@ -20,14 +18,31 @@ from dagster._utils import merge_dicts
 class TestStepHandler(StepHandler):
     launched_first_attempt = False
     launched_second_attempt = False
+    processes = []  # type: ignore
 
     @property
     def name(self):
         return "TestStepHandler"
 
     def launch_step(self, step_handler_context):
-        TestStepHandler.launch_step_count += 1
+
         assert step_handler_context.execute_step_args.step_keys_to_execute == ["retry_op"]
+
+        attempt_count = (
+            step_handler_context.execute_step_args.known_state.get_retry_state().get_attempt_count(
+                "retry_op"
+            )
+        )
+        if attempt_count == 0:
+            assert TestStepHandler.launched_first_attempt is False
+            assert TestStepHandler.launched_second_attempt is False
+            TestStepHandler.launched_first_attempt = True
+        elif attempt_count == 1:
+            assert TestStepHandler.launched_first_attempt is True
+            assert TestStepHandler.launched_second_attempt is False
+            TestStepHandler.launched_second_attempt = True
+        else:
+            raise Exception("Unexpected attempt count")
 
         print("TestStepHandler Launching Step!")  # pylint: disable=print-call
         TestStepHandler.processes.append(
@@ -36,14 +51,22 @@ class TestStepHandler(StepHandler):
         return iter(())
 
     def check_step_health(self, step_handler_context) -> CheckStepHealthResult:
-        TestStepHandler.check_step_health_count += 1
 
         assert step_handler_context.execute_step_args.step_keys_to_execute == ["retry_op"]
 
-        if step_handler_context.execute_step_args.known_state.get_retry_state().get_attempt_count(
+        attempt_count = (
+            step_handler_context.execute_step_args.known_state.get_retry_state().get_attempt_count(
                 "retry_op"
-            ) == 1:
-            assert TestStepHandler.
+            )
+        )
+        if attempt_count == 0:
+            assert TestStepHandler.launched_first_attempt is True
+            assert TestStepHandler.launched_second_attempt is False
+        elif attempt_count == 1:
+            assert TestStepHandler.launched_first_attempt is True
+            assert (
+                TestStepHandler.launched_second_attempt
+            ), "Second attempt not launched, shouldn't be checking on it"
 
         return CheckStepHealthResult.healthy()
 
@@ -52,11 +75,8 @@ class TestStepHandler(StepHandler):
 
     @classmethod
     def reset(cls):
-        cls.processes = []
-        cls.launch_step_count = 0
-        cls.check_step_health_count = 0
-        cls.terminate_step_count = 0
-        cls.verify_step_count = 0
+        cls.launched_first_attempt = False
+        cls.launched_second_attempt = False
 
     @classmethod
     def wait_for_processes(cls):
@@ -65,11 +85,11 @@ class TestStepHandler(StepHandler):
 
 
 @executor(
-    name="mocked_executor",
+    name="retry_assertion_executor",
     requirements=multiple_process_executor_requirements(),
     config_schema=Permissive(),
 )
-def mocked_executor(exc_init):
+def retry_assertion_executor(exc_init):
     return StepDelegatingExecutor(
         TestStepHandler(),
         **(merge_dicts({"retries": RetryMode.ENABLED}, exc_init.executor_config)),
@@ -77,26 +97,49 @@ def mocked_executor(exc_init):
     )
 
 
-@op
+@op(config_schema={"fails_before_pass": int})
 def retry_op(context: OpExecutionContext):
-    if not context.retry_number:
-        raise RetryRequested(seconds_to_wait=30)
+    if context.retry_number < context.op_config["fails_before_pass"]:
+        # enough for check_step_health to be called, since we set check_step_health_interval_seconds=0
+        raise RetryRequested(seconds_to_wait=5)
 
 
-@job(executor_def=mocked_executor)
+@job(executor_def=retry_assertion_executor)
 def retry_job():
     retry_op()
 
 
-def test_mocked_executor():
+def test_retries_no_check_step_health_during_wait():
     TestStepHandler.reset()
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(retry_job),
             instance=instance,
-            run_config={"execution": {"config": {}}},
+            run_config={
+                "execution": {"config": {}},
+                "ops": {"retry_op": {"config": {"fails_before_pass": 1}}},
+            },
         )
         TestStepHandler.wait_for_processes()
-
     assert result.success
-    assert TestStepHandler.launch_step_count == 2
+
+
+def test_retries_exhausted():
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(retry_job),
+            instance=instance,
+            run_config={
+                "execution": {"config": {}},
+                "ops": {"retry_op": {"config": {"fails_before_pass": 2}}},
+            },
+        )
+        TestStepHandler.wait_for_processes()
+    assert not result.success
+    assert not [
+        e
+        for e in result.event_list
+        if "Attempted to mark step retry_op as complete that was not known to be in flight"
+        in str(e)
+    ]
