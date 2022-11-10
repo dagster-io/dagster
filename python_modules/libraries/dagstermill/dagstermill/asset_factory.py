@@ -112,6 +112,7 @@ def define_dagstermill_asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
+    io_manager_key: Optional[str] = None,
 ):
     """Creates a Dagster asset for a Jupyter notebook.
 
@@ -144,6 +145,8 @@ def define_dagstermill_asset(
             (Experimental) A mapping of resource keys to resource definitions. These resources
             will be initialized during execution, and can be accessed from the
             context within the notebook.
+        io_manager_key (Optional[str]): A string key for the IO manager used to store the output notebook.
+            If not provided, the default key output_notebook_io_manager will be used.
 
     Examples:
 
@@ -189,6 +192,10 @@ def define_dagstermill_asset(
     default_description = f"This asset is backed by the notebook at {notebook_path}"
     description = check.opt_str_param(description, "description", default=default_description)
 
+    io_mgr_key = check.opt_str_param(
+        io_manager_key, "io_manager_key", default="output_notebook_io_manager"
+    )
+
     user_tags = validate_tags(op_tags)
     if op_tags is not None:
         check.invariant(
@@ -215,7 +222,7 @@ def define_dagstermill_asset(
         op_tags={**user_tags, **default_tags},
         group_name=group_name,
         output_required=False,
-        io_manager_key="output_notebook_io_manager",
+        io_manager_key=io_mgr_key,
     )(
         _dm_compute(
             name=name,
