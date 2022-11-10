@@ -17,6 +17,7 @@ from dagster._core.scheduler.instigation import InstigatorType
 from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
 
 
 class RepositoryDataType(Enum):
@@ -312,6 +313,7 @@ class BatchMaterializationLoader:
         self._asset_keys: List[AssetKey] = list(asset_keys)
         self._fetched = False
         self._materializations: Mapping[AssetKey, Optional[EventLogEntry]] = {}
+        self._data_time_queryer = DataTimeInstanceQueryer(instance)
 
     def get_latest_materialization_for_asset_key(
         self, asset_key: AssetKey

@@ -152,7 +152,7 @@ class AssetSelection(ABC):
             asset_graph = all_assets
         else:
             check.sequence_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
-            asset_graph = AssetGraph(all_assets)
+            asset_graph = AssetGraph.from_assets(all_assets)
 
         return self.resolve_inner(asset_graph)
 

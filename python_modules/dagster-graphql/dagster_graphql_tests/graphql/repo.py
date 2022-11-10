@@ -87,6 +87,7 @@ from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._legacy import (
     AssetGroup,
     DynamicOutputDefinition,
@@ -1732,6 +1733,26 @@ def untyped_asset(typed_asset):
     return typed_asset
 
 
+@asset
+def fresh_diamond_top():
+    return 1
+
+
+@asset
+def fresh_diamond_left(diamond_top):
+    return diamond_top + 1
+
+
+@asset
+def fresh_diamond_right(diamond_top):
+    return diamond_top + 1
+
+
+@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=0))
+def fresh_diamond_bottom(diamond_left, diamond_right):
+    return diamond_left + diamond_right
+
+
 multipartitions_def = MultiPartitionsDefinition(
     {
         "12": StaticPartitionsDefinition(["1", "2"]),
@@ -1847,6 +1868,13 @@ def define_asset_jobs():
             "multipartitions_job",
             AssetSelection.assets(multipartitions_1, multipartitions_2),
             partitions_def=multipartitions_def,
+        ),
+        fresh_diamond_top,
+        fresh_diamond_left,
+        fresh_diamond_right,
+        fresh_diamond_bottom,
+        define_asset_job(
+            "fresh_diamond_assets", AssetSelection.assets(fresh_diamond_bottom).upstream()
         ),
     ]
 

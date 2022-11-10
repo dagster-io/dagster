@@ -25,15 +25,18 @@ from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
+from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
 
 from ..implementation.fetch_assets import (
     get_materialization_cts_by_partition,
     get_materialization_cts_grouped_by_dimension,
+    get_freshness_info,
 )
 from ..implementation.fetch_runs import AssetComputeStatus
 from ..implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
 from . import external
 from .asset_key import GrapheneAssetKey
+from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
 from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .errors import GrapheneAssetNotFoundError
 from .logs.events import GrapheneMaterializationEvent
@@ -140,6 +143,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     dependencies = non_null_list(GrapheneAssetDependency)
     dependencyKeys = non_null_list(GrapheneAssetKey)
     description = graphene.String()
+    freshnessInfo = graphene.Field(GrapheneAssetFreshnessInfo)
+    freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
     graphName = graphene.String()
     groupName = graphene.String()
     id = graphene.NonNull(graphene.ID)
@@ -478,6 +483,27 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
             for dep in self._external_asset_node.dependencies
         ]
+
+    def resolve_freshnessInfo(self, graphene_info) -> Optional[GrapheneAssetFreshnessInfo]:
+        if self._external_asset_node.freshness_policy:
+            asset_graph = AssetGraph.from_external_assets(
+                self._external_repository.get_external_asset_nodes()
+            )
+            return get_freshness_info(
+                asset_key=self._external_asset_node.asset_key,
+                freshness_policy=self._external_asset_node.freshness_policy,
+                # in the future, we can share this same DataTimeInstanceQueryer across all
+                # GrapheneAssetNodes which share an external repository for improved performance
+                data_time_queryer=DataTimeInstanceQueryer(
+                    instance=graphene_info.context.instance, asset_graph=asset_graph
+                ),
+            )
+        return None
+
+    def resolve_freshnessPolicy(self, _graphene_info) -> Optional[GrapheneFreshnessPolicy]:
+        if self._external_asset_node.freshness_policy:
+            return GrapheneFreshnessPolicy(self._external_asset_node.freshness_policy)
+        return None
 
     def resolve_jobNames(self, _graphene_info) -> Sequence[str]:
         return self._external_asset_node.job_names

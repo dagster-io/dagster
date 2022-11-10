@@ -22,6 +22,7 @@ from dagster._core.definitions import (
     ScheduleDefinition,
     SourceAsset,
 )
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.dependency import NodeOutputHandle
@@ -842,6 +843,7 @@ class ExternalAssetNode(
             ("output_description", Optional[str]),
             ("metadata_entries", Sequence[MetadataEntry]),
             ("group_name", Optional[str]),
+            ("freshness_policy", Optional[FreshnessPolicy]),
         ],
     )
 ):
@@ -867,6 +869,7 @@ class ExternalAssetNode(
         output_description: Optional[str] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         group_name: Optional[str] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -898,6 +901,9 @@ class ExternalAssetNode(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             group_name=check.opt_str_param(group_name, "group_name"),
+            freshness_policy=check.opt_inst_pram(
+                freshness_policy, "freshness_policy", FreshnessPolicy
+            ),
         )
 
 
@@ -953,6 +959,7 @@ def external_asset_graph_from_defs(
         AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
     ] = defaultdict(list)
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
+    freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
     metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
@@ -990,6 +997,7 @@ def external_asset_graph_from_defs(
 
         for assets_def in pipeline_def.asset_layer.assets_defs_by_key.values():
             metadata_by_asset_key.update(assets_def.metadata_by_key)
+            freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
         group_names.update(pipeline_def.asset_layer.group_names_by_assets())
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
@@ -1083,6 +1091,7 @@ def external_asset_graph_from_defs(
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
                 # such assets are part of the default group
                 group_name=group_names.get(asset_key, DEFAULT_GROUP_NAME),
+                freshness_policy=freshness_policy_by_asset_key.get(asset_key),
             )
         )
 
