@@ -77,7 +77,7 @@ class DataTimeInstanceQueryer:
                 limit=1,
             )
         )
-        return records[0] if records else None
+        return next(iter(records), None)
 
     @cached_method
     def calculate_used_data(

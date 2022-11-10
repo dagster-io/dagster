@@ -17,9 +17,24 @@ import threading
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, ContextManager, Generator, Generic, Iterator
-from typing import Mapping as TypingMapping
-from typing import Optional, Tuple, Type, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ContextManager,
+    Generator,
+    Generic,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 from warnings import warn
 
 import packaging.version
@@ -27,9 +42,6 @@ from typing_extensions import Literal
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._seven import IS_WINDOWS
-from dagster._seven.abc import Mapping
 
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
@@ -136,7 +148,7 @@ def script_relative_path(file_path: str) -> str:
 
 
 # Adapted from https://github.com/okunishinishi/python-stringcase/blob/master/stringcase.py
-def camelcase(string):
+def camelcase(string: str) -> str:
     check.str_param(string, "string")
 
     string = re.sub(r"^[\-_\.]", "", str(string))
@@ -147,14 +159,14 @@ def camelcase(string):
     )
 
 
-def ensure_single_item(ddict: TypingMapping[T, U]) -> Tuple[T, U]:
+def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
     check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
     return list(ddict.items())[0]
 
 
 @contextlib.contextmanager
-def pushd(path):
+def pushd(path: str) -> Iterator[str]:
     old_cwd = os.getcwd()
     os.chdir(path)
     try:
@@ -163,7 +175,7 @@ def pushd(path):
         os.chdir(old_cwd)
 
 
-def safe_isfile(path):
+def safe_isfile(path: str) -> bool:
     """ "Backport of Python 3.8 os.path.isfile behavior.
 
     This is intended to backport https://docs.python.org/dev/whatsnew/3.8.html#os-path. I'm not
@@ -178,13 +190,13 @@ def safe_isfile(path):
         return False
 
 
-def mkdir_p(path):
+def mkdir_p(path: str) -> str:
     try:
         os.makedirs(path)
         return path
     except OSError as exc:  # Python >2.5
         if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
+            return path
         else:
             raise
 
@@ -392,7 +404,7 @@ def _kill_on_event(termination_event):
 
 
 def send_interrupt():
-    if IS_WINDOWS:
+    if seven.IS_WINDOWS:
         # This will raise a KeyboardInterrupt in python land - meaning this wont be able to
         # interrupt things like sleep()
         thread.interrupt_main()
@@ -517,25 +529,25 @@ class EventGenerationManager(Generic[GeneratedContext]):
             yield from self.generator
 
 
-def utc_datetime_from_timestamp(timestamp):
+def utc_datetime_from_timestamp(timestamp: float) -> datetime.datetime:
     tz = timezone.utc
     return datetime.datetime.fromtimestamp(timestamp, tz=tz)
 
 
-def utc_datetime_from_naive(dt):
+def utc_datetime_from_naive(dt: datetime.datetime) -> datetime.datetime:
     tz = timezone.utc
     return dt.replace(tzinfo=tz)
 
 
-def is_enum_value(value):
+def is_enum_value(value: object) -> bool:
     return False if value is None else issubclass(value.__class__, Enum)
 
 
-def git_repository_root():
+def git_repository_root() -> str:
     return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
 
 
-def segfault():
+def segfault() -> None:
     """Reliable cross-Python version segfault.
 
     https://bugs.python.org/issue1215#msg143236
@@ -545,7 +557,7 @@ def segfault():
     ctypes.string_at(0)
 
 
-def find_free_port():
+def find_free_port() -> int:
     with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -553,7 +565,7 @@ def find_free_port():
 
 
 @contextlib.contextmanager
-def alter_sys_path(to_add, to_remove):
+def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Generator[None, None, None]:
     to_restore = [path for path in sys.path]
 
     # remove paths
@@ -583,7 +595,7 @@ def restore_sys_modules():
 
 
 def process_is_alive(pid):
-    if IS_WINDOWS:
+    if seven.IS_WINDOWS:
         import psutil  # pylint: disable=import-error
 
         return psutil.pid_exists(pid=pid)
@@ -619,7 +631,7 @@ class Counter:
         with self._lock:
             self._counts[key] = self._counts.get(key, 0) + 1
 
-    def counts(self) -> TypingMapping[str, int]:
+    def counts(self) -> Mapping[str, int]:
         with self._lock:
             copy = {k: v for k, v in self._counts.items()}
         return copy
