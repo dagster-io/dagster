@@ -6,6 +6,7 @@
 - With the new `asset_selection` parameter on `@sensor` and `SensorDefinition`, you can now define a sensor that directly targets a selection of assets, instead of targeting a job.
 - `materialize` and `materialize_to_memory` now accept a `raise_on_error` argument, which allows you to determine whether to raise an Error if the run hits an error or just return as failed.
 - (experimental) Dagster now supports multi-dimensional asset partitions, through a new `MultiPartitionsDefinition` object. An optional schema migration enables support for this feature (run via `dagster instance migrate`). Users who are not using this feature do not need to run the migration.
+- You can now launch a run that targets a range of asset partitions, by supplying the "dagster/asset_partition_range_start" and "dagster/asset_partition_range_end" tags.
 - [dagit] Asset and op graphs in Dagit now show integration logos, making it easier to identify assets backed by notebooks, DBT, Airbyte, and more.
 - [dagit] a `-db-pool-recycle` cli flag (and dbPoolRecycle helm option) have been added to control how long the pooled connection dagit uses persists before recycle. The default of 1 hour is now respected by postgres (mysql previously already had a hard coded 1hr setting). Thanks **[@adam-bloom](https://github.com/adam-bloom)**!
 - [dagster-airbyte] Introduced the ability to specify output IO managers when using `load_assets_from_airbyte_instance` and `load_assets_from_airbyte_project`.
