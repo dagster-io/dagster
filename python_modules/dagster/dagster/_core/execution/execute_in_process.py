@@ -6,6 +6,7 @@ from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterTypeKind
 
 from .api import (
@@ -78,7 +79,7 @@ def core_execute_in_process(
     return ExecuteInProcessResult(
         job_def=ephemeral_pipeline,
         event_list=event_list,
-        dagster_run=execute_instance.get_run_by_id(run_id),
+        dagster_run=cast(DagsterRun, execute_instance.get_run_by_id(run_id)),
         output_capture=output_capture,
     )
 

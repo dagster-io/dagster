@@ -11,6 +11,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -48,7 +49,7 @@ class NodeInvocation(
         [
             ("name", PublicAttr[str]),
             ("alias", PublicAttr[Optional[str]]),
-            ("tags", PublicAttr[Dict[str, Any]]),
+            ("tags", PublicAttr[Mapping[str, Any]]),
             ("hook_defs", PublicAttr[AbstractSet[HookDefinition]]),
             ("retry_policy", PublicAttr[Optional[RetryPolicy]]),
         ],
@@ -86,7 +87,7 @@ class NodeInvocation(
         cls,
         name: str,
         alias: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
@@ -94,7 +95,7 @@ class NodeInvocation(
             cls,
             name=check.str_param(name, "name"),
             alias=check.opt_str_param(alias, "alias"),
-            tags=frozentags(check.opt_dict_param(tags, "tags", value_type=str, key_type=str)),
+            tags=frozentags(check.opt_mapping_param(tags, "tags", value_type=str, key_type=str)),
             hook_defs=frozenset(
                 check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
             ),
@@ -113,18 +114,18 @@ class Node:
     name: str
     definition: "NodeDefinition"
     graph_definition: "GraphDefinition"
-    _additional_tags: Dict[str, str]
+    _additional_tags: Mapping[str, str]
     _hook_defs: AbstractSet[HookDefinition]
     _retry_policy: Optional[RetryPolicy]
-    _input_handles: Dict[str, "SolidInputHandle"]
-    _output_handles: Dict[str, "SolidOutputHandle"]
+    _input_handles: Mapping[str, "SolidInputHandle"]
+    _output_handles: Mapping[str, "SolidOutputHandle"]
 
     def __init__(
         self,
         name: str,
         definition: "NodeDefinition",
         graph_definition: "GraphDefinition",
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
@@ -330,7 +331,7 @@ class NodeHandle(
         return self.to_string()
 
     @property
-    def path(self) -> List[str]:
+    def path(self) -> Sequence[str]:
         """Return a list representation of the handle.
 
         Inverse of NodeHandle.from_path.
@@ -420,15 +421,16 @@ class NodeHandle(
         """
         check.opt_inst_param(ancestor, "ancestor", NodeHandle)
 
-        return NodeHandle.from_path((ancestor.path if ancestor else []) + self.path)
+        return NodeHandle.from_path([*(ancestor.path if ancestor else []), *self.path])
 
     @staticmethod
-    def from_path(path: List[str]) -> "NodeHandle":
-        check.list_param(path, "path", of_type=str)
+    def from_path(path: Sequence[str]) -> "NodeHandle":
+        check.sequence_param(path, "path", of_type=str)
 
         cur: Optional["NodeHandle"] = None
-        while len(path) > 0:
-            cur = NodeHandle(name=path.pop(0), parent=cur)
+        _path = list(path)
+        while len(_path) > 0:
+            cur = NodeHandle(name=_path.pop(0), parent=cur)
 
         if cur is None:
             check.failed(f"Invalid handle path {path}")
@@ -581,7 +583,7 @@ class DependencyType(Enum):
 
 class IDependencyDefinition(ABC):  # pylint: disable=no-init
     @abstractmethod
-    def get_solid_dependencies(self) -> List["DependencyDefinition"]:
+    def get_solid_dependencies(self) -> Sequence["DependencyDefinition"]:
         pass
 
     @abstractmethod
@@ -660,7 +662,7 @@ class DependencyDefinition(
             check.opt_str_param(description, "description"),
         )
 
-    def get_solid_dependencies(self) -> List["DependencyDefinition"]:
+    def get_solid_dependencies(self) -> Sequence["DependencyDefinition"]:
         return [self]
 
     def is_fan_in(self) -> bool:
@@ -670,7 +672,7 @@ class DependencyDefinition(
     def solid(self) -> str:
         return self.node
 
-    def get_op_dependencies(self) -> List["DependencyDefinition"]:
+    def get_op_dependencies(self) -> Sequence["DependencyDefinition"]:
         return [self]
 
 
@@ -680,7 +682,7 @@ class MultiDependencyDefinition(
         [
             (
                 "dependencies",
-                PublicAttr[List[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]],
+                PublicAttr[Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]],
             )
         ],
     ),
@@ -728,11 +730,11 @@ class MultiDependencyDefinition(
 
     def __new__(
         cls,
-        dependencies: List[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]],
+        dependencies: Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]],
     ):
         from .composition import MappedInputPlaceholder
 
-        deps = check.list_param(dependencies, "dependencies")
+        deps = check.sequence_param(dependencies, "dependencies")
         seen = {}
         for dep in deps:
             if isinstance(dep, DependencyDefinition):
@@ -750,11 +752,11 @@ class MultiDependencyDefinition(
 
         return super(MultiDependencyDefinition, cls).__new__(cls, deps)
 
-    def get_solid_dependencies(self) -> List[DependencyDefinition]:
+    def get_solid_dependencies(self) -> Sequence[DependencyDefinition]:
         return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
 
     @public
-    def get_node_dependencies(self) -> List[DependencyDefinition]:
+    def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
         return self.get_solid_dependencies()
 
     @public
@@ -762,7 +764,9 @@ class MultiDependencyDefinition(
         return True
 
     @public
-    def get_dependencies_and_mappings(self) -> List:
+    def get_dependencies_and_mappings(
+        self,
+    ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
         return self.dependencies
 
 
@@ -770,7 +774,7 @@ class DynamicCollectDependencyDefinition(
     NamedTuple("_DynamicCollectDependencyDefinition", [("solid_name", str), ("output_name", str)]),
     IDependencyDefinition,
 ):
-    def get_solid_dependencies(self) -> List[DependencyDefinition]:
+    def get_solid_dependencies(self) -> Sequence[DependencyDefinition]:
         return [DependencyDefinition(self.solid_name, self.output_name)]
 
     def is_fan_in(self) -> bool:
@@ -792,7 +796,7 @@ def _create_handle_dict(
     from .composition import MappedInputPlaceholder
 
     check.mapping_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
-    check.two_dim_dict_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
+    check.two_dim_mapping_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
 
     handle_dict: InputToOutputHandleDict = {}
 
@@ -837,7 +841,7 @@ class DependencyStructure:
     def from_definitions(solids: Mapping[str, Node], dep_dict: Mapping[str, Any]):
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
 
-    def __init__(self, solid_names: List[str], handle_dict: InputToOutputHandleDict):
+    def __init__(self, solid_names: Sequence[str], handle_dict: InputToOutputHandleDict):
         self._solid_names = solid_names
         self._handle_dict = handle_dict
 
@@ -970,7 +974,7 @@ class DependencyStructure:
                 f'"{self._dynamic_fan_out_index[output_handle.solid_name].describe()}"'
             )
 
-    def all_upstream_outputs_from_solid(self, solid_name: str) -> List[SolidOutputHandle]:
+    def all_upstream_outputs_from_solid(self, solid_name: str) -> Sequence[SolidOutputHandle]:
         check.str_param(solid_name, "solid_name")
 
         # flatten out all outputs that feed into the inputs of this solid
@@ -1024,7 +1028,7 @@ class DependencyStructure:
 
     def get_fan_in_deps(
         self, solid_input_handle: SolidInputHandle
-    ) -> List[Union[SolidOutputHandle, Type["MappedInputPlaceholder"]]]:
+    ) -> Sequence[Union[SolidOutputHandle, Type["MappedInputPlaceholder"]]]:
         check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
         dep_type, deps = self._handle_dict[solid_input_handle]
         check.invariant(
@@ -1053,7 +1057,7 @@ class DependencyStructure:
         check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
         return solid_input_handle in self._handle_dict
 
-    def get_deps_list(self, solid_input_handle: SolidInputHandle) -> List[SolidOutputHandle]:
+    def get_deps_list(self, solid_input_handle: SolidInputHandle) -> Sequence[SolidOutputHandle]:
         check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
         check.invariant(self.has_deps(solid_input_handle))
         dep_type, handle_or_list = self._handle_dict[solid_input_handle]
@@ -1066,7 +1070,7 @@ class DependencyStructure:
         else:
             check.failed(f"Unexpected dep type {dep_type}")
 
-    def input_handles(self) -> List[SolidInputHandle]:
+    def input_handles(self) -> Sequence[SolidInputHandle]:
         return list(self._handle_dict.keys())
 
     def get_upstream_dynamic_handle_for_solid(self, solid_name: str) -> Any:

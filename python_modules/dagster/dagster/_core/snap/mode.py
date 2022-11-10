@@ -1,5 +1,5 @@
 # Contains mode, resources, loggers
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
@@ -33,8 +33,8 @@ class ModeDefSnap(
         [
             ("name", str),
             ("description", Optional[str]),
-            ("resource_def_snaps", List["ResourceDefSnap"]),
-            ("logger_def_snaps", List["LoggerDefSnap"]),
+            ("resource_def_snaps", Sequence["ResourceDefSnap"]),
+            ("logger_def_snaps", Sequence["LoggerDefSnap"]),
             ("root_config_key", Optional[str]),
         ],
     )
@@ -43,18 +43,18 @@ class ModeDefSnap(
         cls,
         name: str,
         description: Optional[str],
-        resource_def_snaps: List["ResourceDefSnap"],
-        logger_def_snaps: List["LoggerDefSnap"],
+        resource_def_snaps: Sequence["ResourceDefSnap"],
+        logger_def_snaps: Sequence["LoggerDefSnap"],
         root_config_key: Optional[str] = None,
     ):
         return super(ModeDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
-            resource_def_snaps=check.list_param(
+            resource_def_snaps=check.sequence_param(
                 resource_def_snaps, "resource_def_snaps", of_type=ResourceDefSnap
             ),
-            logger_def_snaps=check.list_param(
+            logger_def_snaps=check.sequence_param(
                 logger_def_snaps, "logger_def_snaps", of_type=LoggerDefSnap
             ),
             root_config_key=check.opt_str_param(root_config_key, "root_config_key"),

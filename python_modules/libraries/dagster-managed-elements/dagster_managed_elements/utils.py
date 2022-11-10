@@ -1,11 +1,11 @@
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Mapping, Optional
 
 from .types import ManagedElementDiff
 
 
 def diff_dicts(
-    config_dict: Optional[Dict[str, Any]],
-    dst_dict: Optional[Dict[str, Any]],
+    config_dict: Optional[Mapping[str, Any]],
+    dst_dict: Optional[Mapping[str, Any]],
     custom_compare_fn: Optional[Callable[[str, Any, Any], bool]] = None,
 ) -> ManagedElementDiff:
     """

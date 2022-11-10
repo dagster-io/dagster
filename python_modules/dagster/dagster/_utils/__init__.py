@@ -19,7 +19,7 @@ from datetime import timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, ContextManager, Generator, Generic, Iterator
 from typing import Mapping as TypingMapping
-from typing import Optional, Type, TypeVar, Union, cast, overload
+from typing import Optional, Tuple, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
 import packaging.version
@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
 
 T = TypeVar("T")
+U = TypeVar("U")
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -146,8 +147,8 @@ def camelcase(string):
     )
 
 
-def ensure_single_item(ddict):
-    check.dict_param(ddict, "ddict")
+def ensure_single_item(ddict: TypingMapping[T, U]) -> Tuple[T, U]:
+    check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
     return list(ddict.items())[0]
 
@@ -626,8 +627,10 @@ class Counter:
 
 traced_counter = contextvars.ContextVar("traced_counts", default=Counter())
 
+T_Callable = TypeVar("T_Callable", bound=Callable)
 
-def traced(func=None):
+
+def traced(func: T_Callable) -> T_Callable:
     """
     A decorator that keeps track of how many times a function is called.
     """
@@ -639,4 +642,4 @@ def traced(func=None):
 
         return func(*args, **kwargs)
 
-    return inner
+    return cast(T_Callable, inner)

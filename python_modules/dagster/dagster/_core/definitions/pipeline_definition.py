@@ -6,7 +6,6 @@ from typing import (
     Dict,
     FrozenSet,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -227,7 +226,7 @@ class PipelineDefinition:
 
         self._current_level_node_defs = self._graph_def.node_defs
 
-        mode_definitions = check.opt_list_param(mode_defs, "mode_defs", of_type=ModeDefinition)
+        mode_definitions = check.opt_sequence_param(mode_defs, "mode_defs", of_type=ModeDefinition)
 
         if not mode_definitions:
             mode_definitions = [ModeDefinition()]
@@ -250,7 +249,7 @@ class PipelineDefinition:
             solid_retry_policy, "solid_retry_policy", RetryPolicy
         )
 
-        self._preset_defs = check.opt_list_param(preset_defs, "preset_defs", PresetDefinition)
+        self._preset_defs = check.opt_sequence_param(preset_defs, "preset_defs", PresetDefinition)
         self._preset_dict: Dict[str, PresetDefinition] = {}
         for preset in self._preset_defs:
             if preset.name in self._preset_dict:
@@ -396,7 +395,7 @@ class PipelineDefinition:
     def is_multi_mode(self) -> bool:
         return len(self._mode_definitions) > 1
 
-    def is_using_memoization(self, run_tags: Dict[str, str]) -> bool:
+    def is_using_memoization(self, run_tags: Mapping[str, str]) -> bool:
         tags = merge_dicts(self.tags, run_tags)
         # If someone provides a false value for memoized run tag, then they are intentionally
         # switching off memoization.
@@ -429,10 +428,10 @@ class PipelineDefinition:
         return mode_def
 
     @property
-    def available_modes(self) -> List[str]:
+    def available_modes(self) -> Sequence[str]:
         return [mode_def.name for mode_def in self._mode_definitions]
 
-    def get_required_resource_defs_for_mode(self, mode: str) -> Dict[str, ResourceDefinition]:
+    def get_required_resource_defs_for_mode(self, mode: str) -> Mapping[str, ResourceDefinition]:
         return {
             resource_key: resource
             for resource_key, resource in self.get_mode_definition(mode).resource_defs.items()
@@ -440,7 +439,7 @@ class PipelineDefinition:
         }
 
     @property
-    def all_node_defs(self) -> List[NodeDefinition]:
+    def all_node_defs(self) -> Sequence[NodeDefinition]:
         return list(self._all_node_defs.values())
 
     @property
@@ -645,7 +644,7 @@ class PipelineSubsetDefinition(PipelineDefinition):
         return frozenset(self._graph_def.node_names())
 
     @property
-    def solid_selection(self) -> List[str]:
+    def solid_selection(self) -> Sequence[str]:
         # we currently don't pass the real solid_selection (the solid query list) down here.
         # so in the short-term, to make the call sites cleaner, we will convert the solids to execute
         # to a list
@@ -774,7 +773,7 @@ def _iterate_all_nodes(root_node_dict: Mapping[str, Node]) -> Iterator[Node]:
             yield from _iterate_all_nodes(node.definition.ensure_graph_def().node_dict)
 
 
-def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Dict[str, NodeDefinition]:
+def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, NodeDefinition]:
     all_defs: Dict[str, NodeDefinition] = {}
     for current_level_node_def in node_defs:
         for node_def in current_level_node_def.iterate_node_defs():

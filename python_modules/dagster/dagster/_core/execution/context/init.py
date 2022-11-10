@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import public
@@ -126,7 +126,7 @@ class UnboundInitResourceContext(InitResourceContext):
     def __init__(
         self,
         resource_config: Any,
-        resources: Optional[Union[Resources, Dict[str, Any]]],
+        resources: Optional[Union[Resources, Mapping[str, Any]]],
         instance: Optional[DagsterInstance],
     ):
         from dagster._core.execution.api import ephemeral_instance_if_missing
@@ -223,8 +223,8 @@ class UnboundInitResourceContext(InitResourceContext):
 
 
 def build_init_resource_context(
-    config: Optional[Dict[str, Any]] = None,
-    resources: Optional[Dict[str, Any]] = None,
+    config: Optional[Mapping[str, Any]] = None,
+    resources: Optional[Mapping[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> InitResourceContext:
     """Builds resource initialization context from provided parameters.
@@ -254,7 +254,7 @@ def build_init_resource_context(
 
     """
     return UnboundInitResourceContext(
-        resource_config=check.opt_dict_param(config, "config", key_type=str),
+        resource_config=check.opt_mapping_param(config, "config", key_type=str),
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
-        resources=check.opt_dict_param(resources, "resources", key_type=str),
+        resources=check.opt_mapping_param(resources, "resources", key_type=str),
     )

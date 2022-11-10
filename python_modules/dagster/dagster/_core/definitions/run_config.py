@@ -530,7 +530,7 @@ def define_solid_dictionary_cls(
     asset_layer: AssetLayer,
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
-    ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Node)
+    ignored_solids = check.opt_sequence_param(ignored_solids, "ignored_solids", of_type=Node)
 
     fields = {}
     for solid in solids:

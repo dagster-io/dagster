@@ -5,7 +5,7 @@ import sys
 import time
 import uuid
 from base64 import standard_b64encode as b64
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, Mapping, Optional, Sequence, cast
 
 import requests
 
@@ -108,7 +108,7 @@ class DbtRpcResource(DbtResource):
         return self._post(data)
 
     def _default_request(
-        self, method: str, params: Optional[Dict[str, Any]] = None
+        self, method: str, params: Optional[Mapping[str, Any]] = None
     ) -> Dict[str, Any]:
         """Constructs a standard HTTP request body, to be sent to a dbt RPC server.
 
@@ -164,9 +164,9 @@ class DbtRpcResource(DbtResource):
 
     def ls(
         self,
-        select: Optional[List[str]] = None,
-        models: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+        select: Optional[Sequence[str]] = None,
+        models: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``list`` to the dbt RPC server, and returns the
@@ -252,7 +252,10 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def compile(
-        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        models: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+        **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``compile`` to the dbt RPC server, and returns the
         response. For more details, see the dbt docs for `compiling projects via RPC
@@ -273,7 +276,10 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def run(
-        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        models: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+        **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``run`` to the dbt RPC server, and returns the response.
         For more details, see the dbt docs for the RPC method `run
@@ -293,7 +299,10 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def snapshot(
-        self, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        select: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+        **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``snapshot`` to the dbt RPC server, and returns the
         response. For more details, see the dbt docs for the command `snapshot
@@ -314,8 +323,8 @@ class DbtRpcResource(DbtResource):
 
     def test(
         self,
-        models: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+        models: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
         data: bool = True,
         schema: bool = True,
         **kwargs,
@@ -342,8 +351,8 @@ class DbtRpcResource(DbtResource):
     def seed(
         self,
         show: bool = False,
-        select: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+        select: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``seed`` to the dbt RPC server, and returns the response.
@@ -387,7 +396,7 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def run_operation(
-        self, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs
+        self, macro: str, args: Optional[Mapping[str, Any]] = None, **kwargs
     ) -> DbtRpcOutput:
         """Sends a request with the method ``run-operation`` to the dbt RPC server, and returns the
         response. For more details, see the dbt docs for the command `run-operation
@@ -406,7 +415,7 @@ class DbtRpcResource(DbtResource):
 
         return self._get_result(data=json.dumps(data))
 
-    def snapshot_freshness(self, select: Optional[List[str]] = None, **kwargs) -> DbtRpcOutput:
+    def snapshot_freshness(self, select: Optional[Sequence[str]] = None, **kwargs) -> DbtRpcOutput:
         """Sends a request with the method ``snapshot-freshness`` to the dbt RPC server, and returns
         the response. For more details, see the dbt docs for the command `source snapshot-freshness
         <https://docs.getdbt.com/reference/commands/source#dbt-source-snapshot-freshness>`_.
@@ -459,7 +468,7 @@ class DbtRpcResource(DbtResource):
 
         return self._get_result(data=json.dumps(data))
 
-    def build(self, select: Optional[List[str]] = None, **kwargs) -> DbtRpcOutput:
+    def build(self, select: Optional[Sequence[str]] = None, **kwargs) -> DbtRpcOutput:
         """
         Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
 
@@ -472,7 +481,7 @@ class DbtRpcResource(DbtResource):
         ...  # pylint: disable=unnecessary-ellipsis
         raise NotImplementedError()
 
-    def get_run_results_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+    def get_run_results_json(self, **kwargs) -> Optional[Mapping[str, Any]]:
         """
         Get a parsed version of the run_results.json file for the relevant dbt project.
 
@@ -483,7 +492,7 @@ class DbtRpcResource(DbtResource):
         ...  # pylint: disable=unnecessary-ellipsis
         raise NotImplementedError()
 
-    def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+    def get_manifest_json(self, **kwargs) -> Optional[Mapping[str, Any]]:
         """
         Get a parsed version of the manifest.json file for the relevant dbt project.
 

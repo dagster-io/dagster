@@ -1,5 +1,15 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, List, Optional, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+    overload,
+)
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -191,7 +201,7 @@ def success_hook(
 
         @event_list_hook(name=_name, required_resource_keys=required_resource_keys, decorated_fn=fn)
         def _success_hook(
-            context: "HookContext", event_list: List["DagsterEvent"]
+            context: "HookContext", event_list: Sequence["DagsterEvent"]
         ) -> HookExecutionResult:
             for event in event_list:
                 if event.is_step_success:
@@ -264,7 +274,7 @@ def failure_hook(
 
         @event_list_hook(name=_name, required_resource_keys=required_resource_keys, decorated_fn=fn)
         def _failure_hook(
-            context: "HookContext", event_list: List["DagsterEvent"]
+            context: "HookContext", event_list: Sequence["DagsterEvent"]
         ) -> HookExecutionResult:
             for event in event_list:
                 if event.is_step_failure:

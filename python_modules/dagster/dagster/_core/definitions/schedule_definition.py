@@ -290,7 +290,7 @@ class ScheduleDefinition:
 
         self._description = check.opt_str_param(description, "description")
 
-        self._environment_vars = check.opt_dict_param(
+        self._environment_vars = check.opt_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
         self._execution_timezone = check.opt_str_param(execution_timezone, "execution_timezone")

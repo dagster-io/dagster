@@ -166,14 +166,16 @@ class TickInstanceQueryer:
             ):
                 return None
 
-        materialization_records = self._instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-                after_cursor=after_cursor,
-            ),
-            ascending=False,
-            limit=1,
+        materialization_records = list(
+            self._instance.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=asset_key,
+                    after_cursor=after_cursor,
+                ),
+                ascending=False,
+                limit=1,
+            )
         )
 
         if materialization_records:

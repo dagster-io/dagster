@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -104,7 +104,7 @@ class StepOutputData(
             ("step_output_handle", "StepOutputHandle"),
             ("type_check_data", Optional[TypeCheckData]),
             ("version", Optional[str]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
         ],
     )
 ):
@@ -115,7 +115,7 @@ class StepOutputData(
         step_output_handle: "StepOutputHandle",
         type_check_data: Optional[TypeCheckData] = None,
         version: Optional[str] = None,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         # graveyard
         # pylint: disable=unused-argument
         intermediate_materialization: Optional[Union[AssetMaterialization, Materialization]] = None,
@@ -127,7 +127,7 @@ class StepOutputData(
             ),
             type_check_data=check.opt_inst_param(type_check_data, "type_check_data", TypeCheckData),
             version=check.opt_str_param(version, "version"),
-            metadata_entries=check.opt_list_param(
+            metadata_entries=check.opt_sequence_param(
                 metadata_entries, "metadata_entries", MetadataEntry
             ),
         )

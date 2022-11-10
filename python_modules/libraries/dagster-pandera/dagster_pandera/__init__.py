@@ -1,6 +1,6 @@
 import itertools
 import re
-from typing import TYPE_CHECKING, Callable, List, Type, Union
+from typing import TYPE_CHECKING, Callable, Sequence, Type, Union
 
 import pandas as pd
 import pandera as pa
@@ -202,7 +202,7 @@ def _pandera_schema_to_table_schema(schema: pa.DataFrameSchema) -> TableSchema:
 
 
 def _pandera_schema_wide_checks_to_table_constraints(
-    checks: List[Union[pa.Check, pa.Hypothesis]]
+    checks: Sequence[Union[pa.Check, pa.Hypothesis]]
 ) -> TableConstraints:
     return TableConstraints(other=[_pandera_check_to_table_constraint(check) for check in checks])
 

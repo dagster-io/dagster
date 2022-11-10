@@ -1,4 +1,4 @@
-from typing import Dict, List, Mapping, Optional, Set, TypeVar, cast
+from typing import Dict, List, Mapping, Optional, Sequence, Set, TypeVar, cast
 
 import dagster._check as check
 from dagster._utils import ensure_single_item, frozendict
@@ -139,7 +139,7 @@ def _validate_scalar_union_config(
         )
 
 
-def _validate_empty_selector_config(context: ValidationContext) -> EvaluateValueResult[Dict]:
+def _validate_empty_selector_config(context: ValidationContext) -> EvaluateValueResult[Mapping]:
     fields = check.not_none(context.config_type_snap.fields)
     if len(fields) > 1:
         return EvaluateValueResult.for_error(
@@ -156,7 +156,7 @@ def _validate_empty_selector_config(context: ValidationContext) -> EvaluateValue
 
 def validate_selector_config(
     context: ValidationContext, config_value: object
-) -> EvaluateValueResult[Dict[str, object]]:
+) -> EvaluateValueResult[Mapping[str, object]]:
     check.inst_param(context, "context", ValidationContext)
     check.param_invariant(context.config_type_snap.kind == ConfigTypeKind.SELECTOR, "selector_type")
     check.not_none_param(config_value, "config_value")
@@ -215,7 +215,7 @@ def validate_selector_config(
 
 def _validate_shape_config(
     context: ValidationContext, config_value: object, check_for_extra_incoming_fields: bool
-) -> EvaluateValueResult[Dict[str, object]]:
+) -> EvaluateValueResult[Mapping[str, object]]:
     check.inst_param(context, "context", ValidationContext)
     check.not_none_param(config_value, "config_value")
     check.bool_param(check_for_extra_incoming_fields, "check_for_extra_incoming_fields")
@@ -291,7 +291,7 @@ def _validate_shape_config(
 
 def validate_permissive_shape_config(
     context: ValidationContext, config_value: object
-) -> EvaluateValueResult[Dict[str, object]]:
+) -> EvaluateValueResult[Mapping[str, object]]:
     check.inst_param(context, "context", ValidationContext)
     check.invariant(context.config_type_snap.kind == ConfigTypeKind.PERMISSIVE_SHAPE)
     check.not_none_param(config_value, "config_value")
@@ -301,7 +301,7 @@ def validate_permissive_shape_config(
 
 def validate_map_config(
     context: ValidationContext, config_value: object
-) -> EvaluateValueResult[Dict[str, object]]:
+) -> EvaluateValueResult[Mapping[str, object]]:
     check.inst_param(context, "context", ValidationContext)
     check.invariant(context.config_type_snap.kind == ConfigTypeKind.MAP)
     check.not_none_param(config_value, "config_value")
@@ -327,7 +327,7 @@ def validate_map_config(
 
 def validate_shape_config(
     context: ValidationContext, config_value: object
-) -> EvaluateValueResult[Dict[str, object]]:
+) -> EvaluateValueResult[Mapping[str, object]]:
     check.inst_param(context, "context", ValidationContext)
     check.invariant(context.config_type_snap.kind == ConfigTypeKind.STRICT_SHAPE)
     check.not_none_param(config_value, "config_value")
@@ -355,9 +355,9 @@ def _check_for_extra_incoming_fields(
 
 def _compute_missing_fields_error(
     context: ValidationContext,
-    field_snaps: List[ConfigFieldSnap],
+    field_snaps: Sequence[ConfigFieldSnap],
     incoming_fields: Set[str],
-    field_aliases: Dict[str, str],
+    field_aliases: Mapping[str, str],
 ) -> Optional[EvaluationError]:
     missing_fields = []
 
@@ -378,7 +378,7 @@ def _compute_missing_fields_error(
 
 def validate_array_config(
     context: ValidationContext, config_value: object
-) -> EvaluateValueResult[List[object]]:
+) -> EvaluateValueResult[Sequence[object]]:
     check.inst_param(context, "context", ValidationContext)
     check.invariant(context.config_type_snap.kind == ConfigTypeKind.ARRAY)
     check.not_none_param(config_value, "config_value")

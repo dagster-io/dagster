@@ -1,6 +1,6 @@
 # encoding: utf-8
 import hashlib
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence
 
 import dagster._check as check
 from dagster._annotations import public
@@ -346,31 +346,31 @@ def is_potential_field(potential_field: object) -> bool:
     )
 
 
-def convert_fields_to_dict_type(fields: Dict[str, object]):
+def convert_fields_to_dict_type(fields: Mapping[str, object]):
     return _convert_fields_to_dict_type(fields, fields, [])
 
 
 def _convert_fields_to_dict_type(
-    original_root: object, fields: Dict[str, object], stack: List[str]
+    original_root: object, fields: Mapping[str, object], stack: List[str]
 ) -> Shape:
     return Shape(_expand_fields_dict(original_root, fields, stack))
 
 
-def expand_fields_dict(fields: Dict[str, object]) -> Dict[str, "Field"]:
+def expand_fields_dict(fields: Mapping[str, object]) -> Mapping[str, "Field"]:
     return _expand_fields_dict(fields, fields, [])
 
 
 def _expand_fields_dict(
-    original_root: object, fields: Dict[str, object], stack: List[str]
-) -> Dict[str, "Field"]:
-    check.dict_param(fields, "fields")
+    original_root: object, fields: Mapping[str, object], stack: List[str]
+) -> Mapping[str, "Field"]:
+    check.mapping_param(fields, "fields")
     return {
         name: _convert_potential_field(original_root, value, stack + [name])
         for name, value in fields.items()
     }
 
 
-def expand_list(original_root: object, the_list: List[object], stack: List[str]) -> Array:
+def expand_list(original_root: object, the_list: Sequence[object], stack: List[str]) -> Array:
 
     if len(the_list) != 1:
         raise DagsterInvalidConfigDefinitionError(
@@ -391,7 +391,7 @@ def expand_list(original_root: object, the_list: List[object], stack: List[str])
     return Array(inner_type)
 
 
-def expand_map(original_root: object, the_dict: Dict[object, object], stack: List[str]) -> Map:
+def expand_map(original_root: object, the_dict: Mapping[object, object], stack: List[str]) -> Map:
 
     if len(the_dict) != 1:
         raise DagsterInvalidConfigDefinitionError(
@@ -429,7 +429,7 @@ def convert_potential_field(potential_field: object) -> "Field":
 def _convert_potential_type(original_root: object, potential_type, stack: List[str]):
     from .field import resolve_to_config_type
 
-    if isinstance(potential_type, dict):
+    if isinstance(potential_type, Mapping):
         # A dictionary, containing a single key which is a type (int, str, etc) and not a string is interpreted as a Map
         if len(potential_type) == 1:
             key = list(potential_type.keys())[0]

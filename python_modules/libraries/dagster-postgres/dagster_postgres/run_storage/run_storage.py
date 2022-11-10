@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Mapping
 
 import sqlalchemy as db
 
@@ -172,8 +172,8 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 )
             )
 
-    def kvs_set(self, pairs: Dict[str, str]) -> None:
-        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
+    def kvs_set(self, pairs: Mapping[str, str]) -> None:
+        check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
 
         # pg speciic on_conflict_do_update
         insert_stmt = db.dialects.postgresql.insert(KeyValueStoreTable).values(

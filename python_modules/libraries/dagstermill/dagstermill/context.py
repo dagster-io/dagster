@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Dict, Mapping, Optional, cast
+from typing import AbstractSet, Any, Mapping, Optional, cast
 
 from dagster import DagsterRun, JobDefinition, OpDefinition
 from dagster import _check as check
@@ -81,7 +81,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
     @public  # type: ignore
     @property
-    def logging_tags(self) -> Dict[str, str]:
+    def logging_tags(self) -> Mapping[str, str]:
         """dict: The logging tags for the context."""
         return self._pipeline_context.logging_tags
 

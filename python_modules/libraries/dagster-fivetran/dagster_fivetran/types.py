@@ -1,12 +1,12 @@
-from typing import Any, Dict, NamedTuple
+from typing import Any, Mapping, NamedTuple
 
 
 class FivetranOutput(
     NamedTuple(
         "_FivetranOutput",
         [
-            ("connector_details", Dict[str, Any]),
-            ("schema_config", Dict[str, Any]),
+            ("connector_details", Mapping[str, Any]),
+            ("schema_config", Mapping[str, Any]),
         ],
     )
 ):

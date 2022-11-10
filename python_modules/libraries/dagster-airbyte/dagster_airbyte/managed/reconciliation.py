@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple, cast
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, cast
 
 from dagster_airbyte.asset_defs import (
     AirbyteConnectionMetadata,
@@ -38,8 +38,8 @@ from dagster._utils.merger import deep_merge_dicts
 
 
 def gen_configured_stream_json(
-    source_stream: Dict[str, Any], user_stream_config: Dict[str, AirbyteSyncMode]
-) -> Dict[str, Any]:
+    source_stream: Mapping[str, Any], user_stream_config: Mapping[str, AirbyteSyncMode]
+) -> Mapping[str, Any]:
     """
     Generates an Airbyte API stream defintiion based on the succinct user-provided config and the
     full stream definition from the source.
@@ -58,7 +58,7 @@ def _ignore_secrets_compare_fn(k: str, _cv: Any, dv: Any) -> Optional[bool]:
 
 
 def _diff_configs(
-    config_dict: Dict[str, Any], dst_dict: Dict[str, Any], ignore_secrets: bool = True
+    config_dict: Mapping[str, Any], dst_dict: Mapping[str, Any], ignore_secrets: bool = True
 ) -> ManagedElementDiff:
     return diff_dicts(
         config_dict=config_dict,
@@ -107,7 +107,7 @@ def diff_destinations(
     return ManagedElementDiff()
 
 
-def conn_dict(conn: Optional[AirbyteConnection]) -> Dict[str, Any]:
+def conn_dict(conn: Optional[AirbyteConnection]) -> Mapping[str, Any]:
     if not conn:
         return {}
     return {
@@ -315,7 +315,7 @@ def reconcile_destinations(
 
 def reconcile_config(
     res: AirbyteResource,
-    objects: List[AirbyteConnection],
+    objects: Sequence[AirbyteConnection],
     dry_run: bool = False,
     should_delete: bool = False,
     ignore_secrets: bool = True,
@@ -661,12 +661,13 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
     def __init__(
         self,
         airbyte_resource_def: ResourceDefinition,
-        key_prefix: List[str],
+        key_prefix: Sequence[str],
         create_assets_for_normalization_tables: bool,
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connections: Iterable[AirbyteConnection],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
     ):
+        defined_conn_names = {conn.name for conn in connections}
         super().__init__(
             airbyte_resource_def=airbyte_resource_def,
             workspace_id=None,
@@ -674,11 +675,11 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
             create_assets_for_normalization_tables=create_assets_for_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
-            connection_filter=None,
+            connection_filter=lambda conn: conn.name in defined_conn_names,
         )
         self._connections: List[AirbyteConnection] = list(connections)
 
-    def _get_connections(self) -> List[Tuple[str, AirbyteConnectionMetadata]]:
+    def _get_connections(self) -> Sequence[Tuple[str, AirbyteConnectionMetadata]]:
         diff = reconcile_config(self._airbyte_instance, self._connections, dry_run=True)
         if isinstance(diff, ManagedElementDiff) and not diff.is_empty():
             raise ValueError(

@@ -22,7 +22,7 @@ class AirbyteSource:
     Represents a user-defined Airbyte source.
     """
 
-    def __init__(self, name: str, source_type: str, source_configuration: Dict[str, Any]):
+    def __init__(self, name: str, source_type: str, source_configuration: Mapping[str, Any]):
         self.name = check.str_param(name, "name")
         self.source_type = check.str_param(source_type, "source_type")
         self.source_configuration = check.dict_param(
@@ -44,7 +44,7 @@ class InitializedAirbyteSource:
         self.source_definition_id = source_definition_id
 
     @classmethod
-    def from_api_json(cls, api_json: Dict[str, Any]):
+    def from_api_json(cls, api_json: Mapping[str, Any]):
         return cls(
             source=AirbyteSource(
                 name=api_json["name"],
@@ -61,7 +61,9 @@ class AirbyteDestination:
     Represents a user-defined Airbyte destination.
     """
 
-    def __init__(self, name: str, destination_type: str, destination_configuration: Dict[str, Any]):
+    def __init__(
+        self, name: str, destination_type: str, destination_configuration: Mapping[str, Any]
+    ):
         self.name = check.str_param(name, "name")
         self.destination_type = check.str_param(destination_type, "destination_type")
         self.destination_configuration = check.dict_param(
@@ -91,7 +93,7 @@ class InitializedAirbyteDestination:
         self.destination_definition_id = destination_definition_id
 
     @classmethod
-    def from_api_json(cls, api_json: Dict[str, Any]):
+    def from_api_json(cls, api_json: Mapping[str, Any]):
         return cls(
             destination=AirbyteDestination(
                 name=api_json["name"],
@@ -113,7 +115,7 @@ class AirbyteConnection:
         name: str,
         source: AirbyteSource,
         destination: AirbyteDestination,
-        stream_config: Dict[str, AirbyteSyncMode],
+        stream_config: Mapping[str, AirbyteSyncMode],
         normalize_data: Optional[bool] = None,
     ):
         self.name = check.str_param(name, "name")
@@ -148,7 +150,7 @@ class InitializedAirbyteConnection:
     @classmethod
     def from_api_json(
         cls,
-        api_dict: Dict[str, Any],
+        api_dict: Mapping[str, Any],
         init_sources: Mapping[str, InitializedAirbyteSource],
         init_dests: Mapping[str, InitializedAirbyteDestination],
     ):

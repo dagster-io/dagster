@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, cast
 
 from dagster import Array, Field, Noneable, Shape, StringSource
 from dagster import _check as check
@@ -61,9 +61,9 @@ class EcsContainerContext(
     NamedTuple(
         "_EcsContainerContext",
         [
-            ("secrets", List[Any]),
-            ("secrets_tags", List[str]),
-            ("env_vars", List[str]),
+            ("secrets", Sequence[Any]),
+            ("secrets_tags", Sequence[str]),
+            ("env_vars", Sequence[str]),
             ("task_definition_arn", Optional[str]),
             ("container_name", Optional[str]),
         ],
@@ -73,26 +73,26 @@ class EcsContainerContext(
 
     def __new__(
         cls,
-        secrets: Optional[List[Any]] = None,
-        secrets_tags: Optional[List[str]] = None,
-        env_vars: Optional[List[str]] = None,
+        secrets: Optional[Sequence[Any]] = None,
+        secrets_tags: Optional[Sequence[str]] = None,
+        env_vars: Optional[Sequence[str]] = None,
         task_definition_arn: Optional[str] = None,
         container_name: Optional[str] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
-            secrets=check.opt_list_param(secrets, "secrets"),
-            secrets_tags=check.opt_list_param(secrets_tags, "secrets_tags"),
-            env_vars=check.opt_list_param(env_vars, "env_vars"),
+            secrets=check.opt_sequence_param(secrets, "secrets"),
+            secrets_tags=check.opt_sequence_param(secrets_tags, "secrets_tags"),
+            env_vars=check.opt_sequence_param(env_vars, "env_vars"),
             task_definition_arn=check.opt_str_param(task_definition_arn, "task_definition_arn"),
             container_name=check.opt_str_param(container_name, "container_name"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
         return EcsContainerContext(
-            secrets=other.secrets + self.secrets,
-            secrets_tags=other.secrets_tags + self.secrets_tags,
-            env_vars=other.env_vars + self.env_vars,
+            secrets=[*other.secrets, *self.secrets],
+            secrets_tags=[*other.secrets_tags, *self.secrets_tags],
+            env_vars=[*other.env_vars, *self.env_vars],
             task_definition_arn=other.task_definition_arn or self.task_definition_arn,
             container_name=other.container_name or self.container_name,
         )
@@ -103,7 +103,7 @@ class EcsContainerContext(
             {secret["name"]: secret["valueFrom"] for secret in self.secrets},
         )
 
-    def get_environment_dict(self) -> Dict[str, str]:
+    def get_environment_dict(self) -> Mapping[str, str]:
         parsed_env_var_tuples = [parse_env_var(env_var) for env_var in self.env_vars]
         return {env_var_tuple[0]: env_var_tuple[1] for env_var_tuple in parsed_env_var_tuples}
 

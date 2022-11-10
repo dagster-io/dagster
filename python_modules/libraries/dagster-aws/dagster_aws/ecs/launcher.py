@@ -2,7 +2,7 @@ import json
 import os
 import warnings
 from collections import namedtuple
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -58,7 +58,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         env_vars=None,
         include_sidecars=False,
         use_current_ecs_task_config: bool = True,
-        run_task_kwargs: Optional[Dict[str, Any]] = None,
+        run_task_kwargs: Optional[Mapping[str, Any]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -375,7 +375,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Dict[str, str]:
+    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Mapping[str, str]:
         overrides = {}
 
         cpu = run.tags.get("ecs/cpu")
@@ -387,7 +387,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             overrides["memory"] = memory
         return overrides
 
-    def _get_task_overrides(self, run: PipelineRun) -> Dict[str, Any]:
+    def _get_task_overrides(self, run: PipelineRun) -> Mapping[str, Any]:
         overrides = run.tags.get("ecs/task_overrides")
         if overrides:
             return json.loads(overrides)

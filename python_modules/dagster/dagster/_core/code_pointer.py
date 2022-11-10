@@ -4,7 +4,7 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from types import ModuleType
-from typing import Callable, List, NamedTuple, Optional, cast
+from typing import Callable, List, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
@@ -118,7 +118,7 @@ def load_python_file(python_file: str, working_directory: Optional[str]) -> Modu
 def load_python_module(
     module_name: str,
     working_directory: Optional[str],
-    remove_from_path_fn: Callable[[], List[str]] = None,
+    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
 ) -> ModuleType:
     check.str_param(module_name, "module_name")
     check.opt_str_param(working_directory, "working_directory")
@@ -126,7 +126,9 @@ def load_python_module(
 
     # Use the passed in working directory for local imports (sys.path[0] isn't
     # consistently set in the different entry points that Dagster uses to import code)
-    remove_paths: List[str] = remove_from_path_fn() if remove_from_path_fn else []  # hook for tests
+    remove_paths: List[str] = (
+        list(remove_from_path_fn()) if remove_from_path_fn else []
+    )  # hook for tests
     remove_paths.insert(0, sys.path[0])  # remove the script path
 
     with alter_sys_path(
@@ -270,8 +272,8 @@ class CustomPointer(
         "_CustomPointer",
         [
             ("reconstructor_pointer", ModuleCodePointer),
-            ("reconstructable_args", List[object]),
-            ("reconstructable_kwargs", List[List]),
+            ("reconstructable_args", Sequence[object]),
+            ("reconstructable_kwargs", Sequence[Sequence]),
         ],
     ),
     CodePointer,
@@ -279,14 +281,14 @@ class CustomPointer(
     def __new__(
         cls,
         reconstructor_pointer: ModuleCodePointer,
-        reconstructable_args: List[object],
-        reconstructable_kwargs: List[List],
+        reconstructable_args: Sequence[object],
+        reconstructable_kwargs: Sequence[Sequence],
     ):
         check.inst_param(reconstructor_pointer, "reconstructor_pointer", ModuleCodePointer)
         # These are lists rather than tuples to circumvent the tuple serdes machinery -- since these
         # are user-provided, they aren't whitelisted for serdes.
-        check.list_param(reconstructable_args, "reconstructable_args")
-        check.list_param(reconstructable_kwargs, "reconstructable_kwargs")
+        check.sequence_param(reconstructable_args, "reconstructable_args")
+        check.sequence_param(reconstructable_kwargs, "reconstructable_kwargs")
         for reconstructable_kwarg in reconstructable_kwargs:
             check.list_param(reconstructable_kwarg, "reconstructable_kwarg")
             check.invariant(isinstance(reconstructable_kwarg[0], str), "Bad kwarg key")

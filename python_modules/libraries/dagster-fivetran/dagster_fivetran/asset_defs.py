@@ -1,7 +1,7 @@
 import hashlib
 import inspect
 import re
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Sequence, Set, cast
+from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 from dagster_fivetran.utils import (
@@ -29,13 +29,13 @@ from dagster._core.execution.with_resources import with_resources
 @experimental
 def build_fivetran_assets(
     connector_id: str,
-    destination_tables: List[str],
+    destination_tables: Sequence[str],
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
     io_manager_key: Optional[str] = None,
-    asset_key_prefix: Optional[List[str]] = None,
-    metadata_by_table_name: Optional[Dict[str, MetadataUserInput]] = None,
-) -> List[AssetsDefinition]:
+    asset_key_prefix: Optional[Sequence[str]] = None,
+    metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
+) -> Sequence[AssetsDefinition]:
 
     """
     Build a set of assets for a given Fivetran connector.
@@ -88,10 +88,10 @@ def build_fivetran_assets(
 
     """
 
-    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+    asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     tracked_asset_keys = {
-        table: AssetKey(asset_key_prefix + table.split(".")) for table in destination_tables
+        table: AssetKey([*asset_key_prefix, *table.split(".")]) for table in destination_tables
     }
 
     metadata_by_table_name = check.opt_dict_param(
@@ -141,13 +141,13 @@ class FivetranConnectionMetadata(
             ("name", str),
             ("connector_id", str),
             ("connector_url", str),
-            ("schemas", Dict[str, Any]),
+            ("schemas", Mapping[str, Any]),
         ],
     )
 ):
     def build_asset_defn_metadata(
         self,
-        key_prefix: List[str],
+        key_prefix: Sequence[str],
         group_name: Optional[str],
     ) -> AssetsDefinitionCacheableData:
 
@@ -166,7 +166,7 @@ class FivetranConnectionMetadata(
         else:
             schema_table_meta[self.name] = {}
 
-        outputs = {table: AssetKey(key_prefix + [table]) for table in schema_table_meta.keys()}
+        outputs = {table: AssetKey([*key_prefix, table]) for table in schema_table_meta.keys()}
 
         internal_deps: Dict[str, Set[AssetKey]] = {}
 
@@ -210,7 +210,7 @@ class FivetranInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
     def __init__(
         self,
         fivetran_resource_def: ResourceDefinition,
-        key_prefix: List[str],
+        key_prefix: Sequence[str],
         connector_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
     ):
@@ -231,7 +231,7 @@ class FivetranInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
 
         super().__init__(unique_id=f"fivetran-{contents.hexdigest()}")
 
-    def _get_connectors(self) -> List[FivetranConnectionMetadata]:
+    def _get_connectors(self) -> Sequence[FivetranConnectionMetadata]:
         output_connectors: List[FivetranConnectionMetadata] = []
 
         groups = self._fivetran_instance.make_request("GET", "groups")["items"]

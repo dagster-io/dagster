@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, FrozenSet, List, Optional
+from typing import TYPE_CHECKING, FrozenSet, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -25,7 +25,7 @@ class IPipeline(ABC):
     @abstractmethod
     def subset_for_execution(
         self,
-        solid_selection: Optional[List[str]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ) -> "IPipeline":
         pass
@@ -99,11 +99,11 @@ class InMemoryPipeline(IPipeline, object):
 
     def subset_for_execution(
         self,
-        solid_selection: Optional[List[str]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         # take a list of solid queries and resolve the queries to names of solids to execute
-        solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        solid_selection = check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         check.invariant(
@@ -134,7 +134,7 @@ class InMemoryPipeline(IPipeline, object):
         return self._subset_for_execution(solids_to_execute, asset_selection=asset_selection)
 
     @property
-    def solid_selection(self) -> List[str]:
+    def solid_selection(self) -> Sequence[str]:
         # a list of solid queries provided by the user
         return self._solid_selection  # List[str]
 

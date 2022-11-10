@@ -4,7 +4,6 @@ from typing import (
     Any,
     Callable,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -142,10 +141,10 @@ class SolidDefinition(NodeDefinition):
 
         super(SolidDefinition, self).__init__(
             name=name,
-            input_defs=check.list_param(input_defs, "input_defs", InputDefinition),
-            output_defs=check.list_param(output_defs, "output_defs", OutputDefinition),
+            input_defs=check.sequence_param(input_defs, "input_defs", InputDefinition),
+            output_defs=check.sequence_param(output_defs, "output_defs", OutputDefinition),
             description=description,
-            tags=check.opt_dict_param(tags, "tags", key_type=str),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str),
             positional_inputs=positional_inputs,
         )
 
@@ -264,7 +263,7 @@ class SolidDefinition(NodeDefinition):
 
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
-    ) -> List[InputDefinition]:
+    ) -> Sequence[InputDefinition]:
         handle = cast(NodeHandle, check.inst_param(handle, "handle", NodeHandle))
         unresolveable_input_defs = []
         for input_def in self.input_defs:

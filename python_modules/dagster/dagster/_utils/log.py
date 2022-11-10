@@ -3,7 +3,7 @@ import logging
 import sys
 import traceback
 from contextlib import contextmanager
-from typing import Dict, NamedTuple, Optional
+from typing import Mapping, NamedTuple, Optional
 
 import coloredlogs
 import pendulum
@@ -57,7 +57,7 @@ class StructuredLoggerMessage(
             ("name", str),
             ("message", str),
             ("level", int),
-            ("meta", Dict[object, object]),
+            ("meta", Mapping[object, object]),
             ("record", logging.LogRecord),
         ],
     )
@@ -67,7 +67,7 @@ class StructuredLoggerMessage(
         name: str,
         message: str,
         level: int,
-        meta: Dict[object, object],
+        meta: Mapping[object, object],
         record: logging.LogRecord,
     ):
         return super(StructuredLoggerMessage, cls).__new__(
@@ -75,7 +75,7 @@ class StructuredLoggerMessage(
             check.str_param(name, "name"),
             check.str_param(message, "message"),
             coerce_valid_log_level(level),
-            check.dict_param(meta, "meta"),
+            check.mapping_param(meta, "meta"),
             check.inst_param(record, "record", logging.LogRecord),
         )
 
