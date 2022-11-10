@@ -406,6 +406,8 @@ type AssetNode {
   dependencies: [AssetDependency!]!
   dependencyKeys: [AssetKey!]!
   description: String
+  freshnessInfo: AssetFreshnessInfo
+  freshnessPolicy: FreshnessPolicy
   graphName: String
   groupName: String
   id: ID!
@@ -1432,6 +1434,16 @@ type ConfigTypeField {
 type AssetDependency {
   asset: AssetNode!
   inputName: String!
+}
+
+type AssetFreshnessInfo {
+  currentMinutesLate: Float
+  latestMaterializationMinutesLate: Float
+}
+
+type FreshnessPolicy {
+  maximumLagMinutes: Float!
+  cronSchedule: String
 }
 
 union PartitionMaterializationCounts =
