@@ -1,9 +1,8 @@
-import os.path
 from contextlib import contextmanager
 
 from dagster_aws.utils import BOTO3_SESSION_CONFIG
 
-from dagster import Array, Enum, EnumValue, Field, Shape
+from dagster import Array, Field, Shape
 from dagster import _check as check
 from dagster import resource
 from dagster._core.test_utils import environ
@@ -78,9 +77,7 @@ def ssm_resource(context):
 
 tag_shape = Shape(
     {
-        "key": Field(
-            str, is_required=True, description="Name or prefix of tag to retrieve parameters for"
-        ),
+        "key": Field(str, is_required=True, description="Tag key to search for."),
         "values": Field(
             [str],
             is_required=False,
