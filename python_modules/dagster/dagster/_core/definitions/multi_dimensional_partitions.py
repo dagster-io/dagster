@@ -4,15 +4,13 @@ from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
 )
 
-from .partition import Partition, PartitionsDefinition, StaticPartitionsDefinition
-
-INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
+from .partition import Partition, PartitionsDefinition
 
 
 class PartitionDimensionKey(
@@ -131,20 +129,6 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         check.mapping_param(
             partitions_defs, "partitions_defs", key_type=str, value_type=PartitionsDefinition
         )
-
-        for dim_name, partitions_def in partitions_defs.items():
-            if isinstance(partitions_def, StaticPartitionsDefinition):
-                if any(
-                    [
-                        INVALID_STATIC_PARTITIONS_KEY_CHARACTERS & set(key)
-                        for key in partitions_def.get_partition_keys()
-                    ]
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        f"Invalid character in partition key for dimension {dim_name}. "
-                        "A multi-partitions definition cannot contain partition keys with "
-                        "the following characters: |, [, ], ,"
-                    )
 
         self._partitions_defs: List[PartitionDimensionDefinition] = sorted(
             [

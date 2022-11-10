@@ -52,6 +52,10 @@ def test_static_partitions(partition_keys: Sequence[str]):
 def test_invalid_partition_key():
     with pytest.raises(DagsterInvalidDefinitionError, match="'...'"):
         StaticPartitionsDefinition(["foo", "foo...bar"])
+    with pytest.raises(DagsterInvalidDefinitionError, match="'|'"):
+        StaticPartitionsDefinition(["foo", "foo|bar"])
+    with pytest.raises(DagsterInvalidDefinitionError, match="','"):
+        StaticPartitionsDefinition(["foo", "foo,bar"])
 
 
 @pytest.mark.parametrize(

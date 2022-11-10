@@ -56,6 +56,8 @@ from .utils import check_valid_name, validate_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
+INVALID_STATIC_PARTITIONS_KEY_SUBSTRINGS = set(["|", ",", "[", "]", "..."])
+
 RawPartitionFunction: TypeAlias = Union[
     Callable[[Optional[datetime]], Sequence[Union[str, "Partition[Any]"]]],
     Callable[[], Sequence[Union[str, "Partition"]]],
@@ -251,10 +253,19 @@ class StaticPartitionsDefinition(
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
-        # Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
-        # "..." is an invalid substring in partition keys
-        if any(["..." in partition_key for partition_key in partition_keys]):
-            raise DagsterInvalidDefinitionError("'...' is an invalid substring in a partition key")
+        # Certain substrings that Dagit uses to select partition ranges are invalid, including
+        # "...", "|" (for multidimensional partitions), ",", etc.
+        if any(
+            [
+                any(
+                    [invalid_str in key for invalid_str in INVALID_STATIC_PARTITIONS_KEY_SUBSTRINGS]
+                )
+                for key in partition_keys
+            ]
+        ):
+            raise DagsterInvalidDefinitionError(
+                f"The following strings are invalid substrings in partition keys: {str(INVALID_STATIC_PARTITIONS_KEY_SUBSTRINGS)}"
+            )
 
         self._partitions = [Partition(key) for key in partition_keys]
 
