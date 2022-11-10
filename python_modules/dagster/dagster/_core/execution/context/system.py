@@ -50,7 +50,12 @@ from dagster._core.executor.base import Executor
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.pipeline_run import PipelineRun
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, PARTITION_NAME_TAG
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    MULTIDIMENSIONAL_PARTITION_PREFIX,
+    PARTITION_NAME_TAG,
+)
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import DagsterType
 
@@ -353,6 +358,19 @@ class PlanExecutionContext(IPlanContext):
         return MultiPartitionKey(partitions_by_dimension)
 
     @property
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        tags = self._plan_data.pipeline_run.tags
+        partition_key = tags.get(PARTITION_NAME_TAG)
+        if partition_key is not None:
+            return PartitionKeyRange(partition_key, partition_key)
+
+        partition_key_range_start = tags.get(ASSET_PARTITION_RANGE_START_TAG)
+        if partition_key_range_start is not None:
+            return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
+
+        check.failed("Tried to access partition_key_range for a non-partitioned run")
+
+    @property
     def partition_time_window(self) -> str:
         from dagster._core.definitions.job_definition import JobDefinition
 
@@ -380,6 +398,10 @@ class PlanExecutionContext(IPlanContext):
                 for tag in self._plan_data.pipeline_run.tags.keys()
             ]
         )
+
+    @property
+    def has_partition_key_range(self) -> bool:
+        return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.pipeline_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(
@@ -787,9 +809,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
             if assets_def is not None and upstream_asset_partitions_def is not None:
                 partition_key_range = (
-                    PartitionKeyRange(self.partition_key, self.partition_key)
-                    if assets_def.partitions_def
-                    else None
+                    self.asset_partition_key_range if assets_def.partitions_def else None
                 )
                 return get_upstream_partitions_for_partition_range(
                     assets_def,
@@ -817,14 +837,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if asset_info:
             return asset_info.partitions_def
         else:
-            return asset_info
+            return None
 
     def has_asset_partitions_for_output(self, output_name: str) -> bool:
         return self._partitions_def_for_output(output_name) is not None
 
     def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
         if self._partitions_def_for_output(output_name) is not None:
-            return PartitionKeyRange(self.partition_key, self.partition_key)
+            return self.asset_partition_key_range
 
         check.failed("The output has no asset partitions")
 
