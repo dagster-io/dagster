@@ -1,28 +1,16 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Button,
-  Dialog,
-  Icon,
-  Tooltip,
-  Colors,
-  CursorPaginationControls,
-  CursorPaginationProps,
-  NonIdealState,
-  Subheading,
-} from '@dagster-io/ui';
+import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useViewport} from '../gantt/useViewport';
-import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/BackfillTable';
-import {RepositorySelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {BackfillPartitionSelector} from './BackfillSelector';
+import {JobBackfillsTable} from './JobBackfillsTable';
 import {PartitionGraph} from './PartitionGraph';
 import {PartitionState, PartitionStatus, runStatusToPartitionState} from './PartitionStatus';
 import {PartitionStepStatus} from './PartitionStepStatus';
@@ -32,25 +20,18 @@ import {
   PartitionsStatusQuery,
   PartitionsStatusQueryVariables,
 } from './types/PartitionsStatusQuery';
-import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from './types/PipelinePartitionsRootQuery';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
 
-type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 type PartitionStatus = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results;
 
-export const PartitionView: React.FC<{
-  partitionSet: PartitionSet;
+export const OpJobPartitionsView: React.FC<{
+  partitionSetName: string;
   repoAddress: RepoAddress;
-}> = ({partitionSet, repoAddress}) => {
+}> = ({partitionSetName, repoAddress}) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const queryResult = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
     PARTITIONS_STATUS_QUERY,
-    {
-      variables: {
-        partitionSetName: partitionSet.name,
-        repositorySelector,
-      },
-    },
+    {variables: {partitionSetName, repositorySelector}},
   );
 
   return (
@@ -66,7 +47,7 @@ export const PartitionView: React.FC<{
         const partitionNames = partitionSetOrError.partitionsOrError.results.map(({name}) => name);
 
         return (
-          <PartitionViewContent
+          <OpJobPartitionsViewContent
             partitionNames={partitionNames}
             partitionSet={partitionSetOrError}
             repoAddress={repoAddress}
@@ -77,20 +58,22 @@ export const PartitionView: React.FC<{
   );
 };
 
-const PartitionViewContent: React.FC<{
+const OpJobPartitionsViewContent: React.FC<{
   partitionNames: string[];
   partitionSet: PartitionsStatusQuery_partitionSetOrError_PartitionSet;
   repoAddress: RepoAddress;
 }> = ({partitionSet, partitionNames, repoAddress}) => {
+  const {canLaunchPartitionBackfill} = usePermissions();
+  const {viewport, containerProps} = useViewport();
+
   const [pageSize, setPageSize] = React.useState(60);
   const [offset, setOffset] = React.useState<number>(0);
   const [showSteps, setShowSteps] = React.useState(false);
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const [blockDialog, setBlockDialog] = React.useState(false);
   const repositorySelector = repoAddressToSelector(repoAddress);
-  const {canLaunchPartitionBackfill} = usePermissions();
-  const {viewport, containerProps} = useViewport();
   const [backfillRefetchCounter, setBackfillRefetchCounter] = React.useState(0);
+
   const partitions = usePartitionStepQuery(
     partitionSet.name,
     partitionNames,
@@ -203,7 +186,7 @@ const PartitionViewContent: React.FC<{
       <Box
         flex={{direction: 'row', alignItems: 'center'}}
         border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
-        padding={{horizontal: 8}}
+        padding={{left: 8}}
       >
         <CountBox count={partitionNames.length} label="Total partitions" />
         <CountBox
@@ -253,7 +236,7 @@ const PartitionViewContent: React.FC<{
       </Box>
       <Box
         padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
       >
         <Subheading>Run duration</Subheading>
       </Box>
@@ -282,12 +265,15 @@ const PartitionViewContent: React.FC<{
           </Box>
         </>
       ) : null}
-      <Box padding={{horizontal: 24, vertical: 16}}>
+      <Box
+        padding={{horizontal: 24, vertical: 16}}
+        border={{side: 'horizontal', color: Colors.KeylineGray, width: 1}}
+      >
         <Subheading>Backfill history</Subheading>
       </Box>
       <Box margin={{bottom: 20}}>
-        <JobBackfills
-          partitionSet={partitionSet}
+        <JobBackfillsTable
+          partitionSetName={partitionSet.name}
           repositorySelector={repositorySelector}
           partitionNames={partitionNames}
           refetchCounter={backfillRefetchCounter}
@@ -297,85 +283,7 @@ const PartitionViewContent: React.FC<{
   );
 };
 
-const BACKFILL_PAGE_SIZE = 10;
-
-const JobBackfills = ({
-  partitionSet,
-  partitionNames,
-  repositorySelector,
-  refetchCounter,
-}: {
-  partitionSet: PartitionsStatusQuery_partitionSetOrError_PartitionSet;
-  partitionNames: string[];
-  repositorySelector: RepositorySelector;
-  refetchCounter: number;
-}) => {
-  const [cursorStack, setCursorStack] = React.useState<string[]>(() => []);
-  const [cursor, setCursor] = React.useState<string | undefined>();
-  const queryResult = useQuery(JOB_BACKFILLS_QUERY, {
-    variables: {
-      partitionSetName: partitionSet.name,
-      repositorySelector,
-      cursor,
-      limit: BACKFILL_PAGE_SIZE,
-    },
-    partialRefetch: true,
-  });
-
-  const refetch = queryResult.refetch;
-  React.useEffect(() => {
-    refetchCounter && refetch();
-  }, [refetch, refetchCounter]);
-
-  return (
-    <Loading queryResult={queryResult}>
-      {({partitionSetOrError}) => {
-        const {backfills, pipelineName} = partitionSetOrError;
-
-        if (!backfills.length) {
-          return <NonIdealState title={`No backfills for ${pipelineName}`} icon="no-results" />;
-        }
-
-        const paginationProps: CursorPaginationProps = {
-          hasPrevCursor: !!cursor,
-          hasNextCursor: backfills && backfills.length === BACKFILL_PAGE_SIZE,
-          popCursor: () => {
-            const nextStack = [...cursorStack];
-            setCursor(nextStack.pop());
-            setCursorStack(nextStack);
-          },
-          advanceCursor: () => {
-            if (cursor) {
-              setCursorStack((current) => [...current, cursor]);
-            }
-            const nextCursor = backfills && backfills[backfills.length - 1].backfillId;
-            if (!nextCursor) {
-              return;
-            }
-            setCursor(nextCursor);
-          },
-          reset: () => {
-            setCursorStack([]);
-            setCursor(undefined);
-          },
-        };
-        return (
-          <>
-            <BackfillTable
-              backfills={backfills}
-              refetch={refetch}
-              showBackfillTarget={false}
-              allPartitions={partitionNames}
-            />
-            <CursorPaginationControls {...paginationProps} />
-          </>
-        );
-      }}
-    </Loading>
-  );
-};
-
-const CountBox: React.FC<{
+export const CountBox: React.FC<{
   count: number;
   label: string;
 }> = ({count, label}) => (
@@ -424,27 +332,4 @@ const PARTITIONS_STATUS_QUERY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const JOB_BACKFILLS_QUERY = gql`
-  query JobBackfillsQuery(
-    $partitionSetName: String!
-    $repositorySelector: RepositorySelector!
-    $cursor: String
-    $limit: Int
-  ) {
-    partitionSetOrError(
-      repositorySelector: $repositorySelector
-      partitionSetName: $partitionSetName
-    ) {
-      ... on PartitionSet {
-        id
-        pipelineName
-        backfills(cursor: $cursor, limit: $limit) {
-          ...BackfillTableFragment
-        }
-      }
-    }
-  }
-  ${BACKFILL_TABLE_FRAGMENT}
 `;

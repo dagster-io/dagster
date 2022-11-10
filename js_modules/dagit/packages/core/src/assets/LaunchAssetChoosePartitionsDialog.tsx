@@ -1,4 +1,4 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
+import {useApolloClient} from '@apollo/client';
 import {
   Dialog,
   DialogHeader,
@@ -9,15 +9,13 @@ import {
   ButtonLink,
   DialogFooter,
   Alert,
-  Tooltip,
 } from '@dagster-io/ui';
 import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissions} from '../app/Permissions';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
@@ -40,11 +38,8 @@ import {RepoAddress} from '../workspace/types';
 
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {
-  AssetJobPartitionSetsQuery,
-  AssetJobPartitionSetsQueryVariables,
-} from './types/AssetJobPartitionSetsQuery';
 import {LaunchAssetExecutionAssetNodeFragment_partitionDefinition} from './types/LaunchAssetExecutionAssetNodeFragment';
+import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
 
 interface Props {
   open: boolean;
@@ -97,7 +92,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
   const data = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const upstreamData = usePartitionHealthData(upstreamAssetKeys);
-  const {canLaunchPartitionBackfill} = usePermissions();
 
   const allKeys = React.useMemo(() => (data[0] ? data[0].keys : []), [data]);
   const mostRecentKey = allKeys[allKeys.length - 1];
@@ -116,35 +110,16 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   // Find the partition set name. This seems like a bit of a hack, unclear
   // how it would work if there were two different partition spaces in the asset job
-  const {data: partitionSetsData} = useQuery<
-    AssetJobPartitionSetsQuery,
-    AssetJobPartitionSetsQueryVariables
-  >(ASSET_JOB_PARTITION_SETS_QUERY, {
-    variables: {
-      repositoryLocationName: repoAddress.location,
-      repositoryName: repoAddress.name,
-      pipelineName: assetJobName,
-    },
-  });
-
-  const partitionSet =
-    partitionSetsData?.partitionSetsOrError.__typename === 'PartitionSets'
-      ? partitionSetsData.partitionSetsOrError.results[0]
-      : undefined;
+  const {partitionSet, partitionSetError} = usePartitionNameForPipeline(repoAddress, assetJobName);
 
   const onLaunch = async () => {
     setLaunching(true);
 
     if (!partitionSet) {
-      const error =
-        partitionSetsData?.partitionSetsOrError.__typename === 'PythonError'
-          ? partitionSetsData.partitionSetsOrError
-          : {message: 'No details provided.'};
-
       setLaunching(false);
       showCustomAlert({
         title: `Unable to find partition set on ${assetJobName}`,
-        body: <PythonErrorInfo error={error} />,
+        body: partitionSetError ? <PythonErrorInfo error={partitionSetError} /> : <span />,
       });
       return;
     }
@@ -331,55 +306,19 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
         </Button>
-        {selected.length !== 1 && !canLaunchPartitionBackfill.enabled ? (
-          <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
-            <Button disabled>{`Launch ${selected.length}-Run Backfill`}</Button>
-          </Tooltip>
-        ) : (
-          <Button
-            intent="primary"
-            onClick={onLaunch}
-            disabled={selected.length === 0}
-            loading={launching}
-          >
-            {launching
-              ? 'Launching...'
-              : selected.length !== 1
-              ? `Launch ${selected.length}-Run Backfill`
-              : `Launch 1 Run`}
-          </Button>
-        )}
+        <Button
+          intent="primary"
+          onClick={onLaunch}
+          disabled={selected.length === 0}
+          loading={launching}
+        >
+          {launching
+            ? 'Launching...'
+            : selected.length !== 1
+            ? `Launch ${selected.length}-Run Backfill`
+            : `Launch 1 Run`}
+        </Button>
       </DialogFooter>
     </>
   );
 };
-
-const ASSET_JOB_PARTITION_SETS_QUERY = gql`
-  query AssetJobPartitionSetsQuery(
-    $pipelineName: String!
-    $repositoryName: String!
-    $repositoryLocationName: String!
-  ) {
-    partitionSetsOrError(
-      pipelineName: $pipelineName
-      repositorySelector: {
-        repositoryName: $repositoryName
-        repositoryLocationName: $repositoryLocationName
-      }
-    ) {
-      __typename
-      ...PythonErrorFragment
-      ... on PartitionSets {
-        __typename
-        results {
-          id
-          name
-          mode
-          solidSelection
-        }
-      }
-    }
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
