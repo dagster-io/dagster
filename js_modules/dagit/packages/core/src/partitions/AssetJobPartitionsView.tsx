@@ -11,6 +11,8 @@ import {RepoAddress} from '../workspace/types';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {CountBox} from './OpJobPartitionsView';
 import {PartitionState, PartitionStatus} from './PartitionStatus';
+import {getVisibleItemCount, PartitionPerAssetStatus} from './PartitionStepStatus';
+import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 
 export const AssetJobPartitionsView: React.FC<{
   pipelineName: string;
@@ -54,8 +56,8 @@ export const AssetJobPartitionsView: React.FC<{
       // magical numbers to approximate the size of the window, which is calculated in the step
       // status component.  This approximation is to make sure that the window does not jump as
       // the pageSize gets recalculated
-      const _approximatePageSize = Math.ceil((viewport.width - 330) / 32) - 3;
-      setPageSize(_approximatePageSize);
+      const approxPageSize = getVisibleItemCount(viewport.width - GRID_FLOATING_CONTAINER_WIDTH);
+      setPageSize(approxPageSize);
     }
   }, [viewport.width, showSteps, setPageSize]);
 
@@ -118,11 +120,24 @@ export const AssetJobPartitionsView: React.FC<{
             tooltipMessage="Click to view per-step status"
           />
         </div>
-        {showSteps && <Box margin={{top: 16}} />}
+        {showSteps && (
+          <Box margin={{top: 16}}>
+            <PartitionPerAssetStatus
+              partitionNames={partitionNames}
+              assetHealth={assetHealth}
+              assetQueryItems={assetGraph.graphQueryItems}
+              pipelineName={pipelineName}
+              setPageSize={setPageSize}
+              offset={offset}
+              setOffset={setOffset}
+            />
+          </Box>
+        )}
       </Box>
       <Box
         padding={{horizontal: 24, vertical: 16}}
         border={{side: 'horizontal', color: Colors.KeylineGray, width: 1}}
+        style={{marginBottom: -1}}
       >
         <Subheading>Backfill history</Subheading>
       </Box>

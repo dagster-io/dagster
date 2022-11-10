@@ -260,11 +260,13 @@ const TopLabelTiltedInner = styled.div`
   }
 `;
 
+export const GRID_FLOATING_CONTAINER_WIDTH = 330;
+
 export const GridFloatingContainer = styled.div<{floating: boolean}>`
   display: flex;
   border-right: 1px solid ${Colors.Gray200};
   padding-bottom: 16px;
-  width: 330px;
+  width: ${GRID_FLOATING_CONTAINER_WIDTH}px;
   z-index: 1;
   ${({floating}) => (floating ? 'box-shadow: 1px 0 4px rgba(0, 0, 0, 0.15)' : '')};
 `;
