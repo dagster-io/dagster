@@ -5,7 +5,10 @@ from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._core.storage.tags import get_multidimensional_partition_tag
+from dagster._core.storage.tags import (
+    MULTIDIMENSIONAL_PARTITION_PREFIX,
+    get_multidimensional_partition_tag,
+)
 
 from .partition import Partition, PartitionsDefinition, StaticPartitionsDefinition
 
@@ -218,3 +221,13 @@ def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) ->
         get_multidimensional_partition_tag(dimension.dimension_name): dimension.partition_key
         for dimension in multi_partition_key.dimension_keys
     }
+
+
+def get_multipartition_key_from_tags(tags: Mapping[str, str]) -> str:
+    partitions_by_dimension: Dict[str, str] = {}
+    for tag in tags:
+        if tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX):
+            dimension = tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
+            partitions_by_dimension[dimension] = tags[tag]
+
+    return MultiPartitionKey(partitions_by_dimension)

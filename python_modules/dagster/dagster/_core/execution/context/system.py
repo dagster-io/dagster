@@ -336,7 +336,9 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def partition_key(self) -> str:
-        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            get_multipartition_key_from_tags,
+        )
 
         tags = self._plan_data.pipeline_run.tags
 
@@ -349,19 +351,21 @@ class PlanExecutionContext(IPlanContext):
         if PARTITION_NAME_TAG in tags:
             return tags[PARTITION_NAME_TAG]
 
-        partitions_by_dimension: Dict[str, str] = {}
-        for tag in tags:
-            if tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX):
-                dimension = tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
-                partitions_by_dimension[dimension] = tags[tag]
-
-        return MultiPartitionKey(partitions_by_dimension)
+        return get_multipartition_key_from_tags(tags)
 
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            get_multipartition_key_from_tags,
+        )
+
         tags = self._plan_data.pipeline_run.tags
         partition_key = tags.get(PARTITION_NAME_TAG)
         if partition_key is not None:
+            return PartitionKeyRange(partition_key, partition_key)
+
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            partition_key = get_multipartition_key_from_tags(tags)
             return PartitionKeyRange(partition_key, partition_key)
 
         partition_key_range_start = tags.get(ASSET_PARTITION_RANGE_START_TAG)
