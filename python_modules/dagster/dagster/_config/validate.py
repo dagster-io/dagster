@@ -56,7 +56,6 @@ def is_config_scalar_valid(config_type_snap: ConfigTypeSnap, config_value: objec
 def validate_config(config_schema: object, config_value: T) -> EvaluateValueResult[T]:
 
     config_type = resolve_to_config_type(config_schema)
-    config_type = check.inst(cast(ConfigType, config_type), ConfigType)
 
     return validate_config_from_snap(
         config_schema_snapshot=config_type.get_schema_snapshot(),
@@ -426,7 +425,6 @@ def process_config(
     config_type: object, config_dict: Mapping[str, object]
 ) -> EvaluateValueResult[Mapping[str, object]]:
     config_type = resolve_to_config_type(config_type)
-    config_type = check.inst(cast(ConfigType, config_type), ConfigType)
     validate_evr = validate_config(config_type, config_dict)
     if not validate_evr.success:
         return validate_evr

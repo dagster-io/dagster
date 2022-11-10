@@ -426,11 +426,11 @@ def convert_potential_field(potential_field: object) -> "Field":
     return _convert_potential_field(potential_field, potential_field, [])
 
 
-def _convert_potential_type(original_root: object, potential_type, stack: List[str]):
+def _convert_potential_type(original_root: object, potential_type, stack: List[str]) -> ConfigType:
     from .field import resolve_to_config_type
 
     if isinstance(potential_type, Mapping):
-        # A dictionary, containing a single key which is a type (int, str, etc) and not a string is interpreted as a Map
+        # A dictionary, containing a single key which is a type (int, str, etc) is interpreted as a Map
         if len(potential_type) == 1:
             key = list(potential_type.keys())[0]
             if not isinstance(key, str) and _convert_potential_type(original_root, key, stack):

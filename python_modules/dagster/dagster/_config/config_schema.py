@@ -33,7 +33,7 @@ class ConfigSchema:
        * ``@op(config_schema=int)``
        * ``@op(config_schema=str)``
 
-    #. A built-in python collection (:py:class:`~python:list`, or :py:class:`~python:dict`).
+    #. A built-in python collection class (:py:class:`~python:list`, or :py:class:`~python:dict`).
        :py:class:`~python:list` is exactly equivalent to :py:class:`~dagster.Array` [
        :py:class:`~dagster.Any` ] and :py:class:`~python:dict` is equivalent to
        :py:class:`~dagster.Permissive`. For example:

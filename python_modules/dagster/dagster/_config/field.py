@@ -37,17 +37,7 @@ VALID_CONFIG_DESC = """
 """
 
 
-@overload
-def resolve_to_config_type(obj: Union[ConfigType, UserConfigSchema]) -> ConfigType:
-    pass
-
-
-@overload
-def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
-    pass
-
-
-def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
+def resolve_to_config_type(obj: object) -> ConfigType:
     from .field_utils import convert_fields_to_dict_type
 
     # Short circuit if it's already a Config Type
@@ -56,33 +46,29 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
 
     if isinstance(obj, dict):
         # Dicts of the special form {type: value} are treated as Maps
-        # mapping from the type to value type, otherwise treat as dict type
+        # mapping from the key type to value type, otherwise treat as dict type
         if len(obj) == 1:
             key = list(obj.keys())[0]
-            key_type = resolve_to_config_type(key)
             if not isinstance(key, str):
-                if not key_type:
+                try:
+                    key_type = resolve_to_config_type(key)
+                except DagsterInvalidConfigError:
                     raise DagsterInvalidDefinitionError(
-                        "Invalid key in map specification: {key} in map {collection}".format(
-                            key=repr(key), collection=obj
-                        )
+                        f"Invalid key in map specification: {repr(key)} in map {obj}"
                     )
 
                 if not key_type.kind == ConfigTypeKind.SCALAR:
                     raise DagsterInvalidDefinitionError(
-                        "Non-scalar key in map specification: {key} in map {collection}".format(
-                            key=repr(key), collection=obj
-                        )
+                        f"Non-scalar key in map specification: {repr(key)} in map {obj}"
                     )
 
-                inner_type = resolve_to_config_type(obj[key])
-
-                if not inner_type:
+                try:
+                    inner_type = resolve_to_config_type(obj[key])
+                except DagsterInvalidDefinitionError:
                     raise DagsterInvalidDefinitionError(
-                        "Invalid value in map specification: {value} in map {collection}".format(
-                            value=repr(obj[str]), collection=obj
-                        )
+                        f"Invalid value in map specification: {repr(obj[str])} in map {obj}"
                     )
+
                 return Map(key_type, inner_type)
         return convert_fields_to_dict_type(obj)
 
@@ -90,13 +76,11 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
         if len(obj) != 1:
             raise DagsterInvalidDefinitionError("Array specifications must only be of length 1")
 
-        inner_type = resolve_to_config_type(obj[0])
-
-        if not inner_type:
+        try:
+            inner_type = resolve_to_config_type(obj[0])
+        except DagsterInvalidDefinitionError:
             raise DagsterInvalidDefinitionError(
-                "Invalid member of array specification: {value} in list {the_list}".format(
-                    value=repr(obj[0]), the_list=obj
-                )
+                f"Invalid member of array specification: {repr(obj[0])} in list {obj}"
             )
         return Array(inner_type)
 
@@ -184,9 +168,7 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
             ),
         )
 
-    # This means that this is an error and we are return False to a callsite
-    # We do the error reporting there because those callsites have more context
-    return False
+    raise DagsterInvalidDefinitionError(f"Invalid value in config type specification: {obj}")
 
 
 def has_implicit_default(config_type):

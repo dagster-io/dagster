@@ -202,9 +202,9 @@ class Noneable(ConfigType):
     def __init__(self, inner_type: object):
         from .field import resolve_to_config_type
 
-        self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
+        self.inner_type = resolve_to_config_type(inner_type)
         super(Noneable, self).__init__(
-            key="Noneable.{inner_type}".format(inner_type=self.inner_type.key),
+            key=f"Noneable.{self.inner_type.key}",
             kind=ConfigTypeKind.NONEABLE,
             type_params=[self.inner_type],
         )
@@ -225,7 +225,7 @@ class Array(ConfigType):
     def __init__(self, inner_type: object):
         from .field import resolve_to_config_type
 
-        self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
+        self.inner_type = resolve_to_config_type(inner_type)
         super(Array, self).__init__(
             key="Array.{inner_type}".format(inner_type=self.inner_type.key),
             type_params=[self.inner_type],
