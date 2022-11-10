@@ -269,6 +269,8 @@ def make_readonly_value(value):
         return frozenlist(list(map(make_readonly_value, value)))
     elif isinstance(value, dict):
         return frozendict({key: make_readonly_value(value) for key, value in value.items()})
+    elif isinstance(value, set):
+        return frozenset(map(make_readonly_value, value))
     else:
         return value
 

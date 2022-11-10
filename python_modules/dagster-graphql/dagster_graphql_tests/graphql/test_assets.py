@@ -177,6 +177,22 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
     }
 """
 
+GET_FRESHNESS_INFO = """
+    query AssetNodeQuery {
+        assetNodes {
+            id
+            freshnessInfo {
+                currentMinutesLate
+                latestMaterializationMinutesLate
+            }
+            freshnessPolicy {
+                cronSchedule
+                maximumLagMinutes
+            }
+        }
+    }
+"""
+
 GET_ASSET_OBSERVATIONS = """
     query AssetGraphQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
@@ -1286,6 +1302,15 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(materializations) == 1
         assert materializations[0]["partition"] == "2|b"
         assert materializations[0]["runId"] == second_run_id
+
+    def test_freshness_info(self, graphql_context, snapshot):
+        _create_run(graphql_context, "fresh_diamond_assets")
+        result = execute_dagster_graphql(graphql_context, GET_FRESHNESS_INFO)
+
+        assert result.data
+        assert result.data["assetNodes"]
+
+        snapshot.assert_match(result.data)
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

@@ -35,7 +35,7 @@ from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
-from .partition_mapping import AllPartitionMapping, PartitionMapping
+from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .resource_definition import ResourceDefinition
 from .resource_requirement import (
     ResourceAddable,
@@ -539,12 +539,8 @@ class AssetsDefinition(ResourceAddable):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            return self._partition_mappings.get(
-                in_asset_key,
-                self._partitions_def.get_default_partition_mapping()
-                if self._partitions_def
-                else AllPartitionMapping(),
-            )
+            partition_mapping = self._partition_mappings.get(in_asset_key)
+            return infer_partition_mapping(partition_mapping, self._partitions_def)
 
     def get_output_name_for_asset_key(self, key: AssetKey) -> str:
         for output_name, asset_key in self.keys_by_output_name.items():
