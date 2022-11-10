@@ -92,6 +92,17 @@ class RunRequest(
             ),
         )
 
+    def with_replaced_attrs(
+        self, job_name: Optional[str] = None, asset_selection: Optional[Sequence[AssetKey]] = None
+    ) -> "RunRequest":
+        return RunRequest(
+            run_key=self.run_key,
+            run_config=self.run_config,
+            tags=self.tags,
+            job_name=job_name or self.job_name,
+            asset_selection=asset_selection or self.asset_selection,
+        )
+
 
 @whitelist_for_serdes
 class PipelineRunReaction(

@@ -45,25 +45,30 @@ def test_server_socket():
             assert DagsterGrpcClient(socket=skt).ping("foobar") == "foobar"
         finally:
             interrupt_ipc_subprocess_pid(server_process.pid)
+            server_process.terminate()
+            server_process.wait()
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_process_killed_after_client_finished():
 
     server_process = GrpcServerProcess()
+    try:
+        with server_process.create_ephemeral_client() as client:
+            socket = client.socket
+            assert socket and os.path.exists(socket)
 
-    with server_process.create_ephemeral_client() as client:
-        socket = client.socket
-        assert socket and os.path.exists(socket)
+        start_time = time.time()
+        while server_process.server_process.poll() is None:
+            time.sleep(0.05)
+            # Verify server process cleans up eventually
+            assert time.time() - start_time < 5
 
-    start_time = time.time()
-    while server_process.server_process.poll() is None:
-        time.sleep(0.05)
-        # Verify server process cleans up eventually
-        assert time.time() - start_time < 5
-
-    # verify socket is cleaned up
-    assert not os.path.exists(socket)
+        # verify socket is cleaned up
+        assert not os.path.exists(socket)
+    finally:
+        server_process.server_process.terminate()
+        server_process.server_process.wait()
 
 
 def test_server_port():
@@ -74,8 +79,9 @@ def test_server_port():
     try:
         assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
     finally:
-        if server_process is not None:
-            interrupt_ipc_subprocess_pid(server_process.pid)
+        interrupt_ipc_subprocess_pid(server_process.pid)
+        server_process.terminate()
+        server_process.wait()
 
 
 def test_client_bad_port():
@@ -163,6 +169,8 @@ def test_fixed_server_id():
         assert api_client.get_server_id() == "fixed_id"
     finally:
         interrupt_ipc_subprocess_pid(server_process.pid)
+        server_process.terminate()
+        server_process.wait()
 
 
 def test_detect_server_restart():
@@ -174,6 +182,8 @@ def test_detect_server_restart():
         assert server_id_one
     finally:
         interrupt_ipc_subprocess_pid(server_process.pid)
+        server_process.terminate()
+        server_process.wait()
 
     seven.wait_for_process(server_process, timeout=5)
     with pytest.raises(DagsterUserCodeUnreachableError):
@@ -187,5 +197,7 @@ def test_detect_server_restart():
         assert server_id_two
     finally:
         interrupt_ipc_subprocess_pid(server_process.pid)
+        server_process.terminate()
+        server_process.wait()
 
     assert server_id_one != server_id_two

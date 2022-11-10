@@ -17,7 +17,8 @@ from dagster import _check as check
 from dagster import get_dagster_logger, resource
 
 FIVETRAN_API_BASE = "https://api.fivetran.com"
-FIVETRAN_CONNECTOR_PATH = "v1/connectors/"
+FIVETRAN_API_VERSION_PATH = "v1/"
+FIVETRAN_CONNECTOR_PATH = "connectors/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
@@ -47,7 +48,16 @@ class FivetranResource:
 
     @property
     def api_base_url(self) -> str:
-        return urljoin(FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH)
+        return urljoin(FIVETRAN_API_BASE, FIVETRAN_API_VERSION_PATH)
+
+    @property
+    def api_connector_url(self) -> str:
+        return urljoin(self.api_base_url, FIVETRAN_CONNECTOR_PATH)
+
+    def make_connector_request(
+        self, method: str, endpoint: str, data: Optional[str] = None
+    ) -> Dict[str, Any]:
+        return self.make_request(method, urljoin(FIVETRAN_CONNECTOR_PATH, endpoint), data)
 
     def make_request(
         self, method: str, endpoint: str, data: Optional[str] = None
@@ -102,7 +112,7 @@ class FivetranResource:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
-        return self.make_request(method="GET", endpoint=connector_id)
+        return self.make_connector_request(method="GET", endpoint=connector_id)
 
     def _assert_syncable_connector(self, connector_id: str):
         """
@@ -160,7 +170,9 @@ class FivetranResource:
         Returns:
             Dict[str, Any]: Parsed json data representing the API response.
         """
-        return self.make_request(method="PATCH", endpoint=connector_id, data=json.dumps(properties))
+        return self.make_connector_request(
+            method="PATCH", endpoint=connector_id, data=json.dumps(properties)
+        )
 
     def update_schedule_type(
         self, connector_id: str, schedule_type: Optional[str] = None
@@ -182,7 +194,7 @@ class FivetranResource:
         return self.update_connector(connector_id, properties={"schedule_type": schedule_type})
 
     def get_connector_schema_config(self, connector_id: str) -> Dict[str, Any]:
-        return self.make_request("GET", endpoint=f"{connector_id}/schemas")
+        return self.make_connector_request("GET", endpoint=f"{connector_id}/schemas")
 
     def start_sync(self, connector_id: str) -> Dict[str, Any]:
         """
@@ -200,7 +212,7 @@ class FivetranResource:
             self._log.info("Disabling Fivetran sync schedule.")
             self.update_schedule_type(connector_id, "manual")
         self._assert_syncable_connector(connector_id)
-        self.make_request(method="POST", endpoint=f"{connector_id}/force")
+        self.make_connector_request(method="POST", endpoint=f"{connector_id}/force")
         connector_details = self.get_connector_details(connector_id)
         self._log.info(
             f"Sync initialized for connector_id={connector_id}. View this sync in the Fivetran UI: "
@@ -228,7 +240,7 @@ class FivetranResource:
             self._log.info("Disabling Fivetran sync schedule.")
             self.update_schedule_type(connector_id, "manual")
         self._assert_syncable_connector(connector_id)
-        self.make_request(
+        self.make_connector_request(
             method="POST",
             endpoint=f"{connector_id}/schemas/tables/resync"
             if resync_parameters is not None

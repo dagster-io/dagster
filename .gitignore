@@ -157,3 +157,6 @@ pythonenv*/
 
 # DuckDB
 *.duckdb
+
+# PyRight config
+pyrightconfig.json

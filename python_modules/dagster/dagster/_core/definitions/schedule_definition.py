@@ -536,6 +536,7 @@ class ScheduleDefinition:
                 run_key=request.run_key,
                 run_config=request.run_config,
                 tags=merge_dicts(request.tags, PipelineRun.tags_for_schedule(self)),
+                asset_selection=request.asset_selection,
             )
             for request in run_requests
         ]

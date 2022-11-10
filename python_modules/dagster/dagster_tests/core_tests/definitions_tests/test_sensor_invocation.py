@@ -355,7 +355,7 @@ def test_multi_asset_sensor_has_assets():
     def my_repo():
         return [two_assets, passing_sensor]
 
-    assert passing_sensor.asset_keys == [AssetKey("asset_a"), AssetKey("asset_b")]
+    assert passing_sensor.monitored_asset_keys == [AssetKey("asset_a"), AssetKey("asset_b")]
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(
             asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],

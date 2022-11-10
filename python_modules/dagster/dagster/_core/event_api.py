@@ -31,6 +31,14 @@ class EventLogRecord(NamedTuple):
     event_log_entry: PublicAttr[EventLogEntry]
 
     @property
+    def run_id(self) -> str:
+        return self.event_log_entry.run_id
+
+    @property
+    def timestamp(self) -> float:
+        return self.event_log_entry.timestamp
+
+    @property
     def asset_key(self) -> Optional[AssetKey]:
         dagster_event = self.event_log_entry.dagster_event
         if dagster_event:

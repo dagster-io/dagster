@@ -140,10 +140,19 @@ const StyledInput = styled.input<StyledInputProps>`
 
 interface TextAreaProps {
   $resize: React.CSSProperties['resize'];
+  $strokeColor?: string;
 }
 
 export const TextArea = styled.textarea<TextAreaProps>`
   ${TextInputStyles}
+
+  box-shadow: ${({$strokeColor}) => $strokeColor || Colors.Gray300} inset 0px 0px 0px 1px,
+    ${Colors.KeylineGray} inset 2px 2px 1.5px;
+
+  :focus {
+    box-shadow: ${({$strokeColor}) => $strokeColor || Colors.Gray300} inset 0px 0px 0px 1px,
+      ${Colors.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
+  }
 
   ${({$resize}) => ($resize ? `resize: ${$resize};` : null)}
 `;
