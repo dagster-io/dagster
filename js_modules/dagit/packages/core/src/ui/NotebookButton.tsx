@@ -6,7 +6,8 @@ import {AppContext} from '../app/AppContext';
 export const NotebookButton: React.FC<{
   path?: string;
   repoLocation: string;
-}> = ({path, repoLocation}) => {
+  label?: string;
+}> = ({path, repoLocation, label}) => {
   const {rootServerURI} = React.useContext(AppContext);
   const [open, setOpen] = React.useState(false);
 
@@ -31,17 +32,19 @@ export const NotebookButton: React.FC<{
     return <span />;
   }
 
+  const buttonLabel = label || 'View Notebook';
+
   if (url) {
     return (
       <ExternalAnchorButton href={url} icon={<Icon name="open_in_new" />}>
-        View Notebook
+        {buttonLabel}
       </ExternalAnchorButton>
     );
   }
   return (
     <div>
       <Button icon={<Icon name="content_copy" />} onClick={() => setOpen(true)}>
-        View Notebook
+        {buttonLabel}
       </Button>
       <Dialog
         icon="info"
