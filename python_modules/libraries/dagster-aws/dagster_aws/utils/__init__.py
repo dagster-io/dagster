@@ -20,7 +20,7 @@ def construct_boto_client_retry_config(max_attempts):
 BOTO3_SESSION_CONFIG = {
     "region_name": Field(
         str,
-        description="Specifies a custom region for the SSM session",
+        description="Specifies a custom region for the Boto3 session",
         is_required=False,
     ),
     "max_attempts": Field(
