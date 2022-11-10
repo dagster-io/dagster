@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, cast
 
 from dagster import Array, Field, Permissive, StringSource
 from dagster import _check as check
@@ -47,10 +47,10 @@ class DockerContainerContext(
     NamedTuple(
         "_DockerContainerContext",
         [
-            ("registry", Optional[Dict[str, str]]),
-            ("env_vars", List[str]),
-            ("networks", List[str]),
-            ("container_kwargs", Dict[str, Any]),
+            ("registry", Optional[Mapping[str, str]]),
+            ("env_vars", Sequence[str]),
+            ("networks", Sequence[str]),
+            ("container_kwargs", Mapping[str, Any]),
         ],
     )
 ):
@@ -64,17 +64,17 @@ class DockerContainerContext(
 
     def __new__(
         cls,
-        registry: Optional[Dict[str, str]] = None,
-        env_vars: Optional[List[str]] = None,
-        networks: Optional[List[str]] = None,
-        container_kwargs: Optional[Dict[str, Any]] = None,
+        registry: Optional[Mapping[str, str]] = None,
+        env_vars: Optional[Sequence[str]] = None,
+        networks: Optional[Sequence[str]] = None,
+        container_kwargs: Optional[Mapping[str, Any]] = None,
     ):
         return super(DockerContainerContext, cls).__new__(
             cls,
-            registry=check.dict_param(registry, "registry") if registry != None else None,
-            env_vars=check.opt_list_param(env_vars, "env_vars", of_type=str),
-            networks=check.opt_list_param(networks, "networks", of_type=str),
-            container_kwargs=check.opt_dict_param(container_kwargs, "container_kwargs"),
+            registry=check.opt_nullable_mapping_param(registry, "registry"),
+            env_vars=check.opt_sequence_param(env_vars, "env_vars", of_type=str),
+            networks=check.opt_sequence_param(networks, "networks", of_type=str),
+            container_kwargs=check.opt_mapping_param(container_kwargs, "container_kwargs"),
         )
 
     def merge(self, other: "DockerContainerContext"):
@@ -86,8 +86,8 @@ class DockerContainerContext(
         # or replaced without replacing the full set of arguments.
         return DockerContainerContext(
             registry=other.registry if other.registry != None else self.registry,
-            env_vars=self.env_vars + other.env_vars,
-            networks=self.networks + other.networks,
+            env_vars=[*self.env_vars, *other.env_vars],
+            networks=[*self.networks, *other.networks],
             container_kwargs=merge_dicts(other.container_kwargs, self.container_kwargs),
         )
 

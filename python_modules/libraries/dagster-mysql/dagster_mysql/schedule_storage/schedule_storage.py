@@ -15,7 +15,6 @@ from dagster._core.storage.sql import (
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 
 from ..utils import (
-    MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
     mysql_url_from_config,
@@ -74,14 +73,14 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self.migrate()
         self.optimize()
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout, pool_recycle):
         # When running in dagit, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
             self.mysql_url,
             isolation_level="AUTOCOMMIT",
             pool_size=1,
-            pool_recycle=MYSQL_POOL_RECYCLE,
+            pool_recycle=pool_recycle,
         )
 
     @property

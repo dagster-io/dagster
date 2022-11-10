@@ -12,6 +12,11 @@ export interface AssetTableFragment_key {
   path: string[];
 }
 
+export interface AssetTableFragment_definition_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
 export interface AssetTableFragment_definition_repository_location {
   __typename: "RepositoryLocation";
   id: string;
@@ -29,7 +34,7 @@ export interface AssetTableFragment_definition {
   __typename: "AssetNode";
   id: string;
   groupName: string | null;
-  partitionDefinition: string | null;
+  partitionDefinition: AssetTableFragment_definition_partitionDefinition | null;
   description: string | null;
   repository: AssetTableFragment_definition_repository;
 }

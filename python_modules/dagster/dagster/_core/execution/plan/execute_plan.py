@@ -1,7 +1,7 @@
 import os
 import sys
 from contextlib import ExitStack
-from typing import Iterator, List, cast
+from typing import Iterator, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions import Failure, HookExecutionResult, RetryRequested
@@ -138,7 +138,7 @@ def inner_plan_execution_iterator(
 
 
 def _trigger_hook(
-    step_context: StepExecutionContext, step_event_list: List[DagsterEvent]
+    step_context: StepExecutionContext, step_event_list: Sequence[DagsterEvent]
 ) -> Iterator[DagsterEvent]:
     """Trigger hooks and record hook's operatonal events"""
     hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.solid_handle)

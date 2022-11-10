@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import Dict, List, Optional, cast
+from typing import Dict, Optional, Sequence, cast
 
 import pendulum
 
@@ -61,7 +61,7 @@ class StepDelegatingExecutor(Executor):
     def retries(self):
         return self._retries
 
-    def _pop_events(self, instance, run_id) -> List[DagsterEvent]:
+    def _pop_events(self, instance, run_id) -> Sequence[DagsterEvent]:
         events = instance.logs_after(run_id, self._event_cursor, of_type=set(DagsterEventType))
         self._event_cursor += len(events)
         dagster_events = [event.dagster_event for event in events]
@@ -222,10 +222,15 @@ class StepDelegatingExecutor(Executor):
                             dagster_event.is_step_success
                             or dagster_event.is_step_failure
                             or dagster_event.is_resource_init_failure
+                            or dagster_event.is_step_up_for_retry
                         ):
                             assert isinstance(dagster_event.step_key, str)
                             del running_steps[dagster_event.step_key]
-                            active_execution.verify_complete(plan_context, dagster_event.step_key)
+
+                            if not dagster_event.is_step_up_for_retry:
+                                active_execution.verify_complete(
+                                    plan_context, dagster_event.step_key
+                                )
 
                 # process skips from failures or uncovered inputs
                 list(active_execution.plan_events_iterator(plan_context))

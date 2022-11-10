@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, NamedTuple, Union
+from typing import Mapping, NamedTuple, Sequence, Union
 
 import dagster._check as check
 from dagster._utils.error import SerializableErrorInfo
@@ -23,11 +23,11 @@ class DagsterEvaluationErrorReason(Enum):
 
 
 class FieldsNotDefinedErrorData(
-    NamedTuple("_FieldsNotDefinedErrorData", [("field_names", List[str])])
+    NamedTuple("_FieldsNotDefinedErrorData", [("field_names", Sequence[str])])
 ):
-    def __new__(cls, field_names: List[str]):
+    def __new__(cls, field_names: Sequence[str]):
         return super(FieldsNotDefinedErrorData, cls).__new__(
-            cls, check.list_param(field_names, "field_names", of_type=str)
+            cls, check.sequence_param(field_names, "field_names", of_type=str)
         )
 
 
@@ -57,7 +57,7 @@ class MissingFieldErrorData(
 class MissingFieldsErrorData(
     NamedTuple(
         "_MissingFieldErrorData",
-        [("field_names", List[str]), ("field_snaps", List[ConfigFieldSnap])],
+        [("field_names", Sequence[str]), ("field_snaps", Sequence[ConfigFieldSnap])],
     )
 ):
     def __new__(cls, field_names, field_snaps):
@@ -85,7 +85,7 @@ class RuntimeMismatchErrorData(
 class SelectorTypeErrorData(
     NamedTuple(
         "_SelectorTypeErrorData",
-        [("config_type_snap", ConfigTypeSnap), ("incoming_fields", List[str])],
+        [("config_type_snap", ConfigTypeSnap), ("incoming_fields", Sequence[str])],
     )
 ):
     def __new__(cls, config_type_snap, incoming_fields):
@@ -319,7 +319,7 @@ def create_missing_required_field_error(
 
 
 def create_missing_required_fields_error(
-    context: ContextData, missing_fields: List[str]
+    context: ContextData, missing_fields: Sequence[str]
 ) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
     check_config_type_in_context_has_fields(context, "context")
@@ -365,7 +365,7 @@ def create_scalar_error(context: ContextData, config_value: object) -> Evaluatio
 
 
 def create_selector_multiple_fields_error(
-    context: ContextData, config_value: Dict[str, object]
+    context: ContextData, config_value: Mapping[str, object]
 ) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
 

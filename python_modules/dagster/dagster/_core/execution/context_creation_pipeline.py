@@ -11,10 +11,10 @@ from typing import (
     Generator,
     Generic,
     Iterable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -228,7 +228,7 @@ def execution_context_event_generator(
     execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     pipeline_def = pipeline.get_definition()
 
-    run_config = check.dict_param(run_config, "run_config", key_type=str)
+    run_config = check.mapping_param(run_config, "run_config", key_type=str)
     pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     instance = check.inst_param(instance, "instance", DagsterInstance)
 
@@ -286,7 +286,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         instance: DagsterInstance,
         raise_on_error: Optional[bool] = False,
         output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
-        executor_defs: Optional[List[ExecutorDefinition]] = None,
+        executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
         resume_from_failure=False,
     ):
         event_generator = context_event_generator(
@@ -314,8 +314,8 @@ def orchestration_context_event_generator(
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
     raise_on_error: bool,
-    executor_defs: Optional[List[ExecutorDefinition]],
-    output_capture: Optional[Dict["StepOutputHandle", Any]],
+    executor_defs: Optional[Sequence[ExecutorDefinition]],
+    output_capture: Optional[Mapping["StepOutputHandle", Any]],
     resume_from_failure: bool = False,
 ) -> Generator[Union[DagsterEvent, PlanOrchestrationContext], None, None]:
     check.invariant(executor_defs is None)
@@ -446,7 +446,7 @@ def scoped_pipeline_context(
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", IPipeline)
-    check.dict_param(run_config, "run_config", key_type=str)
+    check.mapping_param(run_config, "run_config", key_type=str)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.callable_param(scoped_resources_builder_cm, "scoped_resources_builder_cm")

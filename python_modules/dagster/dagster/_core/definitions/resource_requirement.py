@@ -3,7 +3,6 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Iterator,
-    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -47,7 +46,9 @@ class ResourceRequirement(ABC):
             or self.expected_type == IInputManagerDefinition
         )
 
-    def keys_of_expected_type(self, resource_defs: Mapping[str, "ResourceDefinition"]) -> List[str]:
+    def keys_of_expected_type(
+        self, resource_defs: Mapping[str, "ResourceDefinition"]
+    ) -> Sequence[str]:
         """Get resource keys that correspond to resource definitions of expected type.
 
         For example, if this particular ResourceRequirement subclass required an ``IOManagerDefinition``, this method would vend all keys that corresponded to ``IOManagerDefinition``s."""

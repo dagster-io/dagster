@@ -3,6 +3,7 @@ import typing
 import pytest
 
 from dagster import (
+    DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
     Dict,
@@ -215,9 +216,7 @@ def test_dict_type_loader_inner_type_mismatch():
     def emit_dict(dict_input):
         return dict_input
 
-    # TODO: change this depending on the resolution of
-    # https://github.com/dagster-io/dagster/issues/3180
-    with pytest.raises(DagsterTypeCheckDidNotPass):
+    with pytest.raises(DagsterInvalidConfigError):
         execute_solid(
             emit_dict,
             run_config={"ops": {"emit_dict": {"inputs": {"dict_input": test_input}}}},

@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._serdes import whitelist_for_serdes
@@ -37,7 +37,7 @@ class LoadableTargetOrigin(
             package_name=check.opt_str_param(package_name, "package_name"),
         )
 
-    def get_cli_args(self) -> List[str]:
+    def get_cli_args(self) -> Sequence[str]:
         args = (
             (["-f", self.python_file] if self.python_file else [])
             + (["-m", self.module_name] if self.module_name else [])

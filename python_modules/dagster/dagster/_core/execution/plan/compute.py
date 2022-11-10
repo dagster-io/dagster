@@ -1,6 +1,6 @@
 import asyncio
 import inspect
-from typing import Any, AsyncGenerator, Callable, Dict, Iterator, List, Set, Union
+from typing import Any, AsyncGenerator, Callable, Iterator, List, Mapping, Sequence, Set, Union
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -37,7 +37,7 @@ SolidOutputUnion = Union[
 
 def create_step_outputs(
     solid: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig, asset_layer: AssetLayer
-) -> List[StepOutput]:
+) -> Sequence[StepOutput]:
     check.inst_param(solid, "solid", Node)
     check.inst_param(handle, "handle", NodeHandle)
 
@@ -112,7 +112,7 @@ def gen_from_async_gen(async_gen: AsyncGenerator) -> Iterator:
 
 
 def _yield_compute_results(
-    step_context: StepExecutionContext, inputs: Dict[str, Any], compute_fn: Callable
+    step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: Callable
 ) -> Iterator[SolidOutputUnion]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
@@ -159,14 +159,14 @@ def _yield_compute_results(
 
 
 def execute_core_compute(
-    step_context: StepExecutionContext, inputs: Dict[str, Any], compute_fn
+    step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn
 ) -> Iterator[SolidOutputUnion]:
     """
     Execute the user-specified compute for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     """
     check.inst_param(step_context, "step_context", StepExecutionContext)
-    check.dict_param(inputs, "inputs", key_type=str)
+    check.mapping_param(inputs, "inputs", key_type=str)
 
     step = step_context.step
 

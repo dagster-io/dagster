@@ -1,7 +1,19 @@
 import inspect
 import warnings
 from collections import defaultdict
-from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -392,12 +404,12 @@ def core_dagster_event_sequence_for_step(
 def _type_check_and_store_output(
     step_context: StepExecutionContext,
     output: Union[DynamicOutput, Output],
-    input_lineage: List[AssetLineageInfo],
+    input_lineage: Sequence[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
 
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
-    check.list_param(input_lineage, "input_lineage", AssetLineageInfo)
+    check.sequence_param(input_lineage, "input_lineage", AssetLineageInfo)
 
     mapping_key = output.mapping_key if isinstance(output, DynamicOutput) else None
 
@@ -464,7 +476,7 @@ def _asset_key_and_partitions_for_output(
     return None, set()
 
 
-def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLineageInfo]:
+def _dedup_asset_lineage(asset_lineage: Sequence[AssetLineageInfo]) -> Sequence[AssetLineageInfo]:
     """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
     information. Duplicates can occur naturally when calculating transitive dependencies from solids
     with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will
@@ -488,7 +500,7 @@ def _get_output_asset_materializations(
     asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
-    io_manager_metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]],
+    io_manager_metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]],
 ) -> Iterator[AssetMaterialization]:
 
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
@@ -547,7 +559,7 @@ def _store_output(
     step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
     output: Union[Output, DynamicOutput],
-    input_lineage: List[AssetLineageInfo],
+    input_lineage: Sequence[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
 
     output_def = step_context.solid_def.output_def_named(step_output_handle.output_name)

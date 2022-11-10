@@ -352,7 +352,9 @@ const ASSET_VIEW_DEFINITION_QUERY = gql`
         definition {
           id
           groupName
-          partitionDefinition
+          partitionDefinition {
+            description
+          }
           repository {
             id
             name

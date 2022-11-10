@@ -248,12 +248,15 @@ def test_reuse_task_definition(instance, ecs):
             "value": "MY_VALUE",
         }
     ]
+
+    container_name = instance.run_launcher.container_name
+
     original_task_definition = {
         "family": "hello",
         "containerDefinitions": [
             {
                 "image": image,
-                "name": instance.run_launcher.container_name,
+                "name": container_name,
                 "secrets": secrets,
                 "environment": environment,
                 "command": ["echo", "HELLO"],
@@ -268,41 +271,47 @@ def test_reuse_task_definition(instance, ecs):
     }
 
     task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-        original_task_definition, instance.run_launcher.container_name
+        original_task_definition, container_name
     )
 
     # New task definition not re-used since it is new
-    assert not instance.run_launcher._reuse_task_definition(task_definition_config)
+    assert not instance.run_launcher._reuse_task_definition(task_definition_config, container_name)
     # Once it's registered, it is re-used
 
     ecs.register_task_definition(**original_task_definition)
 
-    assert instance.run_launcher._reuse_task_definition(task_definition_config)
+    assert instance.run_launcher._reuse_task_definition(task_definition_config, container_name)
 
     # Changed image fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["image"] = "new-image"
 
     assert not instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Changed container name fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["name"] = "new-container"
     assert not instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, "new-container")
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, "new-container"),
+        container_name,
+    )
+
+    assert not instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            original_task_definition, container_name
+        ),
+        "new-container",
     )
 
     # Changed secrets fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["secrets"].append("new-secrets")
     assert not instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Changed environment fails
@@ -313,44 +322,42 @@ def test_reuse_task_definition(instance, ecs):
     )
     assert not instance.run_launcher._reuse_task_definition(
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+            task_definition,
+            container_name,
+        ),
+        container_name,
     )
 
     # Changed execution role fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["executionRoleArn"] = "new-role"
     assert not instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Changed task role fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["taskRoleArn"] = "new-role"
     assert not instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Changed command fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["command"] = ["echo", "GOODBYE"]
     assert not instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Any other diff passes
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["somethingElse"] = "boom"
     assert instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Different sidecar image fails
@@ -358,9 +365,8 @@ def test_reuse_task_definition(instance, ecs):
     task_definition["containerDefinitions"][1]["image"] = "new_sidecar_image"
 
     assert not instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Different sidecar name fails
@@ -368,9 +374,8 @@ def test_reuse_task_definition(instance, ecs):
     task_definition["containerDefinitions"][1]["name"] = "new_sidecar_name"
 
     assert not instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Different sidecar environments fail
@@ -378,9 +383,8 @@ def test_reuse_task_definition(instance, ecs):
     task_definition["containerDefinitions"][1]["environment"] = environment
 
     assert not instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Different sidecar secrets fail
@@ -390,18 +394,16 @@ def test_reuse_task_definition(instance, ecs):
     ]
 
     assert not instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Other changes to sidecars do not fail
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][1]["cpu"] = "256"
     assert instance.run_launcher._reuse_task_definition(
-        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            task_definition, instance.run_launcher.container_name
-        )
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
     )
 
     # Fails if the existing task definition has a different container name
@@ -411,8 +413,9 @@ def test_reuse_task_definition(instance, ecs):
 
     assert not instance.run_launcher._reuse_task_definition(
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
-            original_task_definition, instance.run_launcher.container_name
-        )
+            original_task_definition, container_name
+        ),
+        container_name,
     )
 
 

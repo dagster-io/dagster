@@ -18,6 +18,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
@@ -296,6 +297,15 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @public  # type: ignore
     @property
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        """The asset partition key for the current run.
+
+        Raises an error if the current run is not a partitioned run.
+        """
+        return self._step_execution_context.asset_partition_key_range
+
+    @public  # type: ignore
+    @property
     def partition_time_window(self) -> str:
         """The partition time window for the current run.
 
@@ -389,6 +399,16 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
+
+    @public
+    def asset_partition_key_range_for_output(
+        self, output_name: str = "result"
+    ) -> PartitionKeyRange:
+        return self._step_execution_context.asset_partition_key_range_for_output(output_name)
+
+    @public
+    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
@@ -545,7 +565,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
                 return ("dog", 5)
 
         """
-        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        metadata = check.mapping_param(metadata, "metadata", key_type=str)
         output_name = check.opt_str_param(output_name, "output_name")
         mapping_key = check.opt_str_param(mapping_key, "mapping_key")
 

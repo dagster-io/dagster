@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import IO, Generator, List, NamedTuple, Optional
+from typing import IO, Generator, NamedTuple, Optional, Sequence
 
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
@@ -13,7 +13,7 @@ class CapturedLogContext(
     NamedTuple(
         "_CapturedLogContext",
         [
-            ("log_key", List[str]),
+            ("log_key", Sequence[str]),
             ("external_url", Optional[str]),
         ],
     )
@@ -24,7 +24,7 @@ class CapturedLogContext(
     Dagster-managed location.
     """
 
-    def __new__(cls, log_key: List[str], external_url: Optional[str] = None):
+    def __new__(cls, log_key: Sequence[str], external_url: Optional[str] = None):
         return super(CapturedLogContext, cls).__new__(cls, log_key, external_url=external_url)
 
 
@@ -32,7 +32,7 @@ class CapturedLogData(
     NamedTuple(
         "_CapturedLogData",
         [
-            ("log_key", List[str]),
+            ("log_key", Sequence[str]),
             ("stdout", Optional[bytes]),
             ("stderr", Optional[bytes]),
             ("cursor", Optional[str]),
@@ -46,7 +46,7 @@ class CapturedLogData(
 
     def __new__(
         cls,
-        log_key: List[str],
+        log_key: Sequence[str],
         stdout: Optional[bytes] = None,
         stderr: Optional[bytes] = None,
         cursor: Optional[str] = None,
@@ -143,7 +143,7 @@ class CapturedLogManager(ABC):
 
     @abstractmethod
     @contextmanager
-    def capture_logs(self, log_key: List[str]) -> Generator[CapturedLogContext, None, None]:
+    def capture_logs(self, log_key: Sequence[str]) -> Generator[CapturedLogContext, None, None]:
         """
         Context manager for capturing the stdout/stderr within the current process, and persisting
         it under the given log key.
@@ -155,7 +155,7 @@ class CapturedLogManager(ABC):
     @abstractmethod
     @contextmanager
     def open_log_stream(
-        self, log_key: List[str], io_type: ComputeIOType
+        self, log_key: Sequence[str], io_type: ComputeIOType
     ) -> Generator[Optional[IO], None, None]:
         """
         Context manager for providing an IO stream that enables the caller to write to a log stream
@@ -166,7 +166,7 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def is_capture_complete(self, log_key: List[str]) -> bool:
+    def is_capture_complete(self, log_key: Sequence[str]) -> bool:
         """Flag indicating when the log capture for a given log key has completed.
 
         Args:
@@ -179,7 +179,7 @@ class CapturedLogManager(ABC):
     @abstractmethod
     def get_log_data(
         self,
-        log_key: List[str],
+        log_key: Sequence[str],
         cursor: Optional[str] = None,
         max_bytes: Optional[int] = None,
     ) -> CapturedLogData:
@@ -195,7 +195,7 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def get_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
+    def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         """Returns the metadata of the captured logs for a given log key, including
         displayable information on where the logs are persisted.
 
@@ -207,7 +207,7 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def delete_logs(self, log_key: List[str]):
+    def delete_logs(self, log_key: Sequence[str]):
         """Deletes the captured logs for a given log key.
 
         Args:
@@ -216,7 +216,7 @@ class CapturedLogManager(ABC):
 
     @abstractmethod
     def subscribe(
-        self, log_key: List[str], cursor: Optional[str] = None
+        self, log_key: Sequence[str], cursor: Optional[str] = None
     ) -> CapturedLogSubscription:
         """Registers an observable object for log data
 

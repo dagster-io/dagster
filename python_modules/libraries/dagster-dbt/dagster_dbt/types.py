@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Mapping, Optional
 
 import dagster._check as check
 
@@ -11,11 +11,11 @@ class DbtOutput:
     Used internally, should not be instantiated directly by the user.
     """
 
-    def __init__(self, result: Dict[str, Any]):
-        self._result = check.dict_param(result, "result", key_type=str)
+    def __init__(self, result: Mapping[str, Any]):
+        self._result = check.mapping_param(result, "result", key_type=str)
 
     @property
-    def result(self) -> Dict[str, Any]:
+    def result(self) -> Mapping[str, Any]:
         return self._result
 
     @property

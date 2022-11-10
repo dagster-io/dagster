@@ -232,7 +232,7 @@ def build_node_deps(
     assets_defs: Iterable[AssetsDefinition],
     resolved_asset_deps: ResolvedAssetDependencies,
 ) -> Tuple[
-    Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
+    Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]],
     Mapping[NodeHandle, AssetsDefinition],
 ]:
     # sort so that nodes get a consistent name
@@ -285,7 +285,9 @@ def build_node_deps(
     return deps, assets_defs_by_node_handle
 
 
-def _has_cycles(deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]) -> bool:
+def _has_cycles(
+    deps: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+) -> bool:
     """Detect if there are cycles in a dependency dictionary."""
     try:
         node_deps: Dict[str, Set[str]] = {}
@@ -445,7 +447,7 @@ def get_all_resource_defs(
     assets: Iterable[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
-) -> Dict[str, ResourceDefinition]:
+) -> Mapping[str, ResourceDefinition]:
 
     # Ensures that no resource keys conflict, and each asset has its resource requirements satisfied.
     check_resources_satisfy_requirements(assets, source_assets, resource_defs)

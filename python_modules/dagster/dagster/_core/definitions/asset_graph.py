@@ -1,5 +1,6 @@
 import warnings
-from typing import AbstractSet, Optional, Sequence, Union
+from collections import deque
+from typing import AbstractSet, Iterator, Optional, Sequence, Set, Union
 
 import toposort
 
@@ -59,6 +60,24 @@ class AssetGraph:
     def get_parents(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """Returns all assets that the given asset depends on"""
         return self.asset_dep_graph["upstream"][asset_key]
+
+    def get_roots(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        """Returns all root assets that the given asset depends on"""
+        if not self.get_parents(asset_key):
+            return {asset_key}
+        return {key for key in self.upstream_key_iterator(asset_key) if not self.get_parents(key)}
+
+    def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:
+        """Iterates through all asset keys which are upstream of the given key."""
+        visited: Set[AssetKey] = set()
+        queue = deque([asset_key])
+        while queue:
+            current_key = queue.popleft()
+            for parent_key in self.get_parents(current_key):
+                if parent_key not in visited:
+                    yield parent_key
+                    queue.append(parent_key)
+                    visited.add(parent_key)
 
     def get_children_partitions(
         self, asset_key: AssetKey, partition_key: Optional[str] = None

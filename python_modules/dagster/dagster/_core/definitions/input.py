@@ -145,7 +145,7 @@ class InputDefinition:
 
         self._input_manager_key = check.opt_str_param(input_manager_key, "input_manager_key")
 
-        self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._metadata_entries = normalize_metadata(self._metadata, [], allow_invalid=True)
 
         if asset_key:
@@ -537,7 +537,7 @@ class In(
             description=check.opt_str_param(description, "description"),
             default_value=default_value,
             root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
-            metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
+            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),  # type: ignore  # (mypy bug)
             asset_partitions=asset_partitions,
             input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),

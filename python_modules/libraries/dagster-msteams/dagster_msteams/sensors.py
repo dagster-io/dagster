@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient
@@ -36,7 +36,7 @@ def make_teams_on_run_failure_sensor(
     dagit_base_url: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     monitored_jobs: Optional[
-        List[
+        Sequence[
             Union[
                 PipelineDefinition,
                 GraphDefinition,

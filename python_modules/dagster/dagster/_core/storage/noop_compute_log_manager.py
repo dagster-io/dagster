@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import IO, Generator, List, Optional
+from typing import IO, Generator, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.storage.captured_log_manager import (
@@ -65,34 +65,34 @@ class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableC
         pass
 
     @contextmanager
-    def capture_logs(self, log_key: List[str]) -> Generator[CapturedLogContext, None, None]:
+    def capture_logs(self, log_key: Sequence[str]) -> Generator[CapturedLogContext, None, None]:
         yield CapturedLogContext(log_key=log_key)
 
-    def is_capture_complete(self, log_key: List[str]):
+    def is_capture_complete(self, log_key: Sequence[str]):
         return True
 
     @contextmanager
     def open_log_stream(
-        self, log_key: List[str], io_type: ComputeIOType
+        self, log_key: Sequence[str], io_type: ComputeIOType
     ) -> Generator[Optional[IO], None, None]:
         yield None
 
     def get_log_data(
         self,
-        log_key: List[str],
+        log_key: Sequence[str],
         cursor: Optional[str] = None,
         max_bytes: Optional[int] = None,
     ) -> CapturedLogData:
         return CapturedLogData(log_key=log_key)
 
-    def get_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
+    def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         return CapturedLogMetadata()
 
-    def delete_logs(self, log_key: List[str]):
+    def delete_logs(self, log_key: Sequence[str]):
         pass
 
     def subscribe(
-        self, log_key: List[str], cursor: Optional[str] = None
+        self, log_key: Sequence[str], cursor: Optional[str] = None
     ) -> CapturedLogSubscription:
         return CapturedLogSubscription(self, log_key, cursor)
 

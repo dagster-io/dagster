@@ -18,8 +18,8 @@ from dagster._core.test_utils import environ, instance_for_test, new_cwd
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process, wait_for_grpc_server
-from dagster._grpc.types import SensorExecutionArgs
-from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._grpc.types import ListRepositoriesResponse, SensorExecutionArgs
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, find_free_port
 from dagster._utils.error import SerializableErrorInfo
@@ -460,7 +460,6 @@ def test_load_timeout():
     assert "StatusCode.UNAVAILABLE" in str(timeout_exception)
 
 
-@pytest.mark.skip(reason="Sporadically failing with segfault")
 def test_lazy_load_with_error():
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo_with_error.py")
@@ -492,7 +491,6 @@ def test_lazy_load_with_error():
         process.wait()
 
 
-@pytest.mark.skip(reason="Sporadically failing with segfault")
 def test_lazy_load_via_env_var():
     with environ({"DAGSTER_CLI_API_GRPC_LAZY_LOAD_USER_CODE": "1"}):
         port = find_free_port()
@@ -527,6 +525,110 @@ def test_lazy_load_via_env_var():
         finally:
             process.terminate()
             process.wait()
+
+
+def test_load_with_secrets_manager():
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo_with_env_vars.py")
+
+    subprocess_args = [
+        "dagster",
+        "api",
+        "grpc",
+        "--port",
+        str(port),
+        "--python-file",
+        python_file,
+        "--lazy-load-user-code",
+    ]
+
+    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+
+    try:
+        wait_for_grpc_server(
+            process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
+        )
+        list_repositories_response = deserialize_json_to_dagster_namedtuple(
+            DagsterGrpcClient(port=port).list_repositories()
+        )
+        assert isinstance(list_repositories_response, SerializableErrorInfo)
+        assert "Missing env var" in list_repositories_response.message
+    finally:
+        process.terminate()
+        process.wait()
+
+    # Now with secrets manager and correct args
+
+    with environ({"FOO": None}):
+        with instance_for_test(
+            overrides={
+                "secrets": {
+                    "custom": {
+                        "module": "dagster._core.test_utils",
+                        "class": "TestSecretsLoader",
+                        "config": {"env_vars": {"FOO": "BAR"}},
+                    }
+                },
+            },
+            set_dagster_home=False,
+        ) as instance:
+
+            process = subprocess.Popen(
+                subprocess_args
+                + [
+                    "--inject-env-vars-from-instance",
+                    "--instance-ref",
+                    serialize_dagster_namedtuple(instance.get_ref()),
+                ],
+                stdout=subprocess.PIPE,
+            )
+
+            try:
+                wait_for_grpc_server(
+                    process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
+                )
+                list_repositories_response = deserialize_json_to_dagster_namedtuple(
+                    DagsterGrpcClient(port=port).list_repositories()
+                )
+
+                assert isinstance(list_repositories_response, ListRepositoriesResponse)
+
+            finally:
+                process.terminate()
+                process.wait()
+
+    # also works if the instance is loaded via DAGSTER_HOME and ref is not passed in
+    with environ({"FOO": None}):
+        with instance_for_test(
+            overrides={
+                "secrets": {
+                    "custom": {
+                        "module": "dagster._core.test_utils",
+                        "class": "TestSecretsLoader",
+                        "config": {"env_vars": {"FOO": "BAR"}},
+                    }
+                },
+            },
+            set_dagster_home=True,
+        ) as instance:
+            process = subprocess.Popen(
+                subprocess_args + ["--inject-env-vars-from-instance"],
+                stdout=subprocess.PIPE,
+            )
+
+            try:
+                wait_for_grpc_server(
+                    process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
+                )
+                list_repositories_response = deserialize_json_to_dagster_namedtuple(
+                    DagsterGrpcClient(port=port).list_repositories()
+                )
+
+                assert isinstance(list_repositories_response, ListRepositoriesResponse)
+
+            finally:
+                process.terminate()
+                process.wait()
 
 
 def test_streaming():

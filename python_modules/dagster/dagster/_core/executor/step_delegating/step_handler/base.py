@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Iterator, List, NamedTuple, Optional
+from typing import Iterator, Mapping, NamedTuple, Optional, Sequence
 
 from dagster import DagsterInstance
 from dagster import _check as check
@@ -15,7 +15,7 @@ class StepHandlerContext:
         self,
         instance: DagsterInstance,
         plan_context: PlanOrchestrationContext,
-        steps: List[ExecutionStep],
+        steps: Sequence[ExecutionStep],
         execute_step_args: ExecuteStepArgs,
         pipeline_run: Optional[PipelineRun] = None,
     ) -> None:
@@ -42,7 +42,7 @@ class StepHandlerContext:
         return self._pipeline_run
 
     @property
-    def step_tags(self) -> Dict[str, Dict[str, str]]:
+    def step_tags(self) -> Mapping[str, Mapping[str, str]]:
         return {step_key: step.tags for step_key, step in self._steps_by_key.items()}
 
     @property

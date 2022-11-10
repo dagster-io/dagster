@@ -1,15 +1,5 @@
 from functools import update_wrapper
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Mapping,
-    Optional,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import format_docstring_for_description
@@ -34,10 +24,10 @@ class _Job:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        tags: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -126,9 +116,9 @@ def job(
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
-    config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = ...,
-    tags: Optional[Dict[str, Any]] = ...,
-    metadata: Optional[Dict[str, RawMetadataValue]] = ...,
+    config: Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"] = ...,
+    tags: Optional[Mapping[str, Any]] = ...,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     executor_def: Optional["ExecutorDefinition"] = ...,
     hooks: Optional[AbstractSet[HookDefinition]] = ...,
@@ -146,9 +136,9 @@ def job(
     name: Optional[str] = None,
     description: Optional[str] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
-    tags: Optional[Dict[str, Any]] = None,
-    metadata: Optional[Dict[str, RawMetadataValue]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,

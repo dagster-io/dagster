@@ -23,6 +23,11 @@ export interface AssetViewDefinitionQuery_assetOrError_Asset_assetMaterializatio
   timestamp: string;
 }
 
+export interface AssetViewDefinitionQuery_assetOrError_Asset_definition_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
 export interface AssetViewDefinitionQuery_assetOrError_Asset_definition_repository_location {
   __typename: "RepositoryLocation";
   id: string;
@@ -3167,7 +3172,7 @@ export interface AssetViewDefinitionQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
   groupName: string | null;
-  partitionDefinition: string | null;
+  partitionDefinition: AssetViewDefinitionQuery_assetOrError_Asset_definition_partitionDefinition | null;
   repository: AssetViewDefinitionQuery_assetOrError_Asset_definition_repository;
   jobs: AssetViewDefinitionQuery_assetOrError_Asset_definition_jobs[];
   configField: AssetViewDefinitionQuery_assetOrError_Asset_definition_configField | null;

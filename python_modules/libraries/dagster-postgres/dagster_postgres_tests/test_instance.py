@@ -189,7 +189,7 @@ def test_connection_leak(hostname, conn_string):
 
 def test_statement_timeouts(hostname):
     with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
-        instance.optimize_for_dagit(statement_timeout=500)  # 500ms
+        instance.optimize_for_dagit(statement_timeout=500, pool_recycle=-1)  # 500ms
 
         # ensure migration error is not raised by being up to date
         instance.upgrade()

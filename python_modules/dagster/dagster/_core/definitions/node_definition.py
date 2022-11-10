@@ -2,7 +2,6 @@ from abc import abstractmethod
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Dict,
     Iterable,
     Iterator,
     Mapping,
@@ -63,7 +62,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         check.invariant(
             len(self._output_defs) == len(self._output_dict), "Duplicate output def names"
         )
-        check.opt_list_param(positional_inputs, "positional_inputs", str)
+        check.opt_sequence_param(positional_inputs, "positional_inputs", str)
         self._positional_inputs = (
             positional_inputs
             if positional_inputs is not None
@@ -217,7 +216,7 @@ class NodeDefinition(NamedConfigurableDefinition):
             retry_policy=None,
         )
 
-    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
+    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
         from .composition import PendingNodeInvocation
 
         return PendingNodeInvocation(

@@ -504,6 +504,19 @@ def composite_pipeline():
     outer()
 
 
+custom_io_mgr_key_op = dagstermill.factory.define_dagstermill_op(
+    name="custom_io_mgr_op",
+    notebook_path=nb_test_path("hello_world"),
+    io_manager_key="my_custom_io_manager",
+    output_notebook_name="my_notebook",
+)
+
+
+@job(resource_defs={"my_custom_io_manager": local_output_notebook_io_manager})
+def custom_io_mgr_key_job():
+    custom_io_mgr_key_op()
+
+
 ###################################################################################################
 # Back compat
 ###################################################################################################
@@ -589,6 +602,12 @@ hello_world_resource_asset = dagstermill.define_dagstermill_asset(
     "hello_world_resource_asset",
     notebook_path=nb_test_path("hello_world_resource"),
     required_resource_keys={"list"},
+)
+
+custom_io_mgr_key_asset = dagstermill.define_dagstermill_asset(
+    name="custom_io_mgr_key",
+    notebook_path=nb_test_path("hello_world"),
+    io_manager_key="my_custom_io_manager",
 )
 
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
+from typing import Any, Callable, Mapping, Optional, TypeVar, Union
 
 from typing_extensions import Self
 
@@ -117,7 +117,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         self,
         config_or_config_fn: Any,
         name: str,
-        config_schema: Optional[Dict[str, Any]] = None,
+        config_schema: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
     ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
         """
@@ -198,7 +198,7 @@ T_Configurable = TypeVar(
 
 def configured(
     configurable: T_Configurable,
-    config_schema: Optional[Dict[str, Any]] = None,
+    config_schema: Optional[Mapping[str, Any]] = None,
     **kwargs: Any,
 ) -> Callable[[object], T_Configurable]:
     """

@@ -84,9 +84,8 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 _convert_timestamp_to_string, axis="index"
             )
             with_uppercase_cols.to_sql(
-                name=table_slice.table,
+                table_slice.table,
                 con=con.engine,
-                schema=table_slice.schema,
                 if_exists="append",
                 index=False,
                 method=pd_writer,

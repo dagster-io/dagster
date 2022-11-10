@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, NamedTuple
+from typing import Mapping, NamedTuple, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import GraphDefinition
@@ -52,14 +52,15 @@ def build_dep_structure_snapshot_from_icontains_solids(icontains_solids):
 @whitelist_for_serdes
 class DependencyStructureSnapshot(
     NamedTuple(
-        "_DependencyStructureSnapshot", [("solid_invocation_snaps", List["SolidInvocationSnap"])]
+        "_DependencyStructureSnapshot",
+        [("solid_invocation_snaps", Sequence["SolidInvocationSnap"])],
     )
 ):
-    def __new__(cls, solid_invocation_snaps: List["SolidInvocationSnap"]):
+    def __new__(cls, solid_invocation_snaps: Sequence["SolidInvocationSnap"]):
         return super(DependencyStructureSnapshot, cls).__new__(
             cls,
             sorted(
-                check.list_param(
+                check.sequence_param(
                     solid_invocation_snaps, "solid_invocation_snaps", of_type=SolidInvocationSnap
                 ),
                 key=lambda si: si.solid_name,
@@ -174,7 +175,7 @@ class InputDependencySnap(
         "_InputDependencySnap",
         [
             ("input_name", str),
-            ("upstream_output_snaps", List[OutputHandleSnap]),
+            ("upstream_output_snaps", Sequence[OutputHandleSnap]),
             ("is_dynamic_collect", bool),
         ],
     )
@@ -182,13 +183,13 @@ class InputDependencySnap(
     def __new__(
         cls,
         input_name: str,
-        upstream_output_snaps: List[OutputHandleSnap],
+        upstream_output_snaps: Sequence[OutputHandleSnap],
         is_dynamic_collect: bool = False,
     ):
         return super(InputDependencySnap, cls).__new__(
             cls,
             input_name=check.str_param(input_name, "input_name"),
-            upstream_output_snaps=check.list_param(
+            upstream_output_snaps=check.sequence_param(
                 upstream_output_snaps, "upstream_output_snaps", of_type=OutputHandleSnap
             ),
             # Could be derived from a dependency type enum as well
@@ -204,8 +205,8 @@ class SolidInvocationSnap(
         [
             ("solid_name", str),
             ("solid_def_name", str),
-            ("tags", Dict[object, object]),
-            ("input_dep_snaps", List[InputDependencySnap]),
+            ("tags", Mapping[object, object]),
+            ("input_dep_snaps", Sequence[InputDependencySnap]),
             ("is_dynamic_mapped", bool),
         ],
     )
@@ -214,16 +215,16 @@ class SolidInvocationSnap(
         cls,
         solid_name: str,
         solid_def_name: str,
-        tags: Dict[object, object],
-        input_dep_snaps: List[InputDependencySnap],
+        tags: Mapping[object, object],
+        input_dep_snaps: Sequence[InputDependencySnap],
         is_dynamic_mapped: bool = False,
     ):
         return super(SolidInvocationSnap, cls).__new__(
             cls,
             solid_name=check.str_param(solid_name, "solid_name"),
             solid_def_name=check.str_param(solid_def_name, "solid_def_name"),
-            tags=check.dict_param(tags, "tags"),
-            input_dep_snaps=check.list_param(
+            tags=check.mapping_param(tags, "tags"),
+            input_dep_snaps=check.sequence_param(
                 input_dep_snaps, "input_dep_snaps", of_type=InputDependencySnap
             ),
             is_dynamic_mapped=check.bool_param(is_dynamic_mapped, "is_dynamic_mapped"),

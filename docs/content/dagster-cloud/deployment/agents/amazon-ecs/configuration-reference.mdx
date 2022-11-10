@@ -12,9 +12,11 @@ This reference describes the various configuration options Dagster Cloud current
 
 ---
 
-## Per-location configuration: Secrets and environment variables
+## Per-location configuration
 
-When [adding a code location](/dagster-cloud/developing-testing/code-locations) to Dagster Cloud with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location. If you're using the Dagster Cloud Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file.
+When [adding a code location](/dagster-cloud/developing-testing/code-locations) to Dagster Cloud with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
+
+**Note**: If you're using the Dagster Cloud Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file.
 
 The following example `dagster_cloud.yaml` file illustrates the available fields:
 
@@ -37,6 +39,10 @@ locations:
         secrets_tags:
           - "my_tag_name"
 ```
+
+### Environment variables and secrets
+
+Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` properties, you can configure environment variables and secrets for a specific code location.
 
 <ReferenceTable>
   <ReferenceTableItem propertyName="container_context.ecs.env_vars">
@@ -62,6 +68,11 @@ locations:
     secret.
   </ReferenceTableItem>
 </ReferenceTable>
+
+Refer to the following guides for more info about environment variables:
+
+- [Dagster Cloud environment variables and secrets](/dagster-cloud/developing-testing/environment-variables-and-secrets)
+- [Using environment variables and secrets in Dagster code](/guides/dagster/using-environment-variables-and-secrets)
 
 ---
 

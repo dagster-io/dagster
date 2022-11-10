@@ -1,6 +1,6 @@
 import sys
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, Tuple
 
 from dagster import DagsterEvent, DagsterEventType
 from dagster import _check as check
@@ -28,7 +28,7 @@ class _TagConcurrencyLimitsCounter:
         check.list_param(in_progress_runs, "in_progress_runs", of_type=PipelineRun)
 
         self._key_limits: Dict[str, int] = {}
-        self._key_value_limits: Dict[(str, str), int] = {}
+        self._key_value_limits: Dict[Tuple[str, str], int] = {}
         self._unique_value_limits: Dict[str, int] = {}
 
         for tag_limit in tag_concurrency_limits:
@@ -44,8 +44,8 @@ class _TagConcurrencyLimitsCounter:
                 self._unique_value_limits[key] = limit
 
         self._key_counts: Dict[str, int] = defaultdict(lambda: 0)
-        self._key_value_counts: Dict[(str, str), int] = defaultdict(lambda: 0)
-        self._unique_value_counts: Dict[(str, str), int] = defaultdict(lambda: 0)
+        self._key_value_counts: Dict[Tuple[str, str], int] = defaultdict(lambda: 0)
+        self._unique_value_counts: Dict[Tuple[str, str], int] = defaultdict(lambda: 0)
 
         # initialize counters based on current in progress runs
         for run in in_progress_runs:
@@ -209,7 +209,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         workspace_process_context: IWorkspaceProcessContext,
     ):
         # double check that the run is still queued before dequeing
-        reloaded_run = instance.get_run_by_id(run.run_id)
+        reloaded_run = check.not_none(instance.get_run_by_id(run.run_id))
 
         if reloaded_run.status != PipelineRunStatus.QUEUED:
             self._logger.info(
