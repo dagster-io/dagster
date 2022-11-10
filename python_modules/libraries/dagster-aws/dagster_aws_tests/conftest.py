@@ -1,6 +1,7 @@
 import boto3
 import pytest
-from moto import mock_s3, mock_secretsmanager
+from _pytest.fixtures import fixture
+from moto import mock_s3, mock_secretsmanager, mock_ssm
 
 
 # Make sure unit tests never connect to real AWS
@@ -25,3 +26,9 @@ def mock_s3_bucket(mock_s3_resource):  # pylint: disable=redefined-outer-name
 def mock_secretsmanager_resource():
     with mock_secretsmanager():
         yield boto3.client("secretsmanager")
+
+
+@fixture
+def mock_ssm_client():
+    with mock_ssm():
+        yield boto3.client("ssm")

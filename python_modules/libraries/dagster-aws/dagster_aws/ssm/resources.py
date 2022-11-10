@@ -86,7 +86,12 @@ tag_shape = Shape(
             str, is_required=True, description="Name or prefix of tag to retrieve parameters for"
         ),
         "values": Field(
-            [str], is_required=True, description="List of tag values to match on"
+            [str],
+            is_required=False,
+            description="List of tag values to match on. If no values are provided, "
+            "all parameters with the given tag key will be returned. Note: the "
+            "underlying AWS API will throw an exception when more than 10 "
+            "parameters match the tag filter query.",
         ),
     }
 )
@@ -201,10 +206,10 @@ def parameter_store_resource(context):
     add_to_environment = check.bool_param(
         context.resource_config["add_to_environment"], "add_to_environment"
     )
-    parameter_tags = check.opt_str_param(context.resource_config["secrets_tag"], "parameter_tags")
-    parameters = check.list_param(
-        context.resource_config["parameter_paths"], "parameters", of_type=str
+    parameter_tags = check.opt_list_param(
+        context.resource_config["parameter_tags"], "parameter_tags", of_type=dict
     )
+    parameters = check.list_param(context.resource_config["parameters"], "parameters", of_type=str)
     parameter_paths = check.list_param(
         context.resource_config["parameter_paths"], "parameter_paths", of_type=str
     )
@@ -218,15 +223,22 @@ def parameter_store_resource(context):
         profile_name=context.resource_config.get("profile_name"),
     )
 
-    parameter_values = merge_dicts(
-        (
-            get_parameters_by_tags(ssm_manager, parameter_tags, with_decryption)
-            if parameter_tags
-            else {}
-        ),
-        get_parameters_by_name(ssm_manager, parameters, with_decryption),
-        get_parameters_by_paths(ssm_manager, parameter_paths, with_decryption, recursive=True),
-    )
+    results = []
+    if parameters:
+        results.append(get_parameters_by_name(ssm_manager, parameters, with_decryption))
+    if parameter_tags:
+        results.append(get_parameters_by_tags(ssm_manager, parameter_tags, with_decryption))
+    if parameter_paths:
+        results.append(
+            get_parameters_by_paths(ssm_manager, parameter_paths, with_decryption, recursive=True)
+        )
+    if not results:
+        parameter_values = {}
+    else:
+        if len(results) > 1:
+            parameter_values = merge_dicts(*results)
+        else:
+            parameter_values = results[0]
 
     with environ(parameter_values if add_to_environment else {}):
         yield parameter_values
