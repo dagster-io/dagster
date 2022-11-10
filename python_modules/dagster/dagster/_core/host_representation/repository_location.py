@@ -842,4 +842,4 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
-        return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)
+        return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)  # type: ignore

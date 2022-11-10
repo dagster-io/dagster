@@ -307,7 +307,7 @@ class ListRepositoriesResponse(
     ):
         return super(ListRepositoriesResponse, cls).__new__(
             cls,
-            repository_symbols=check.list_param(
+            repository_symbols=check.sequence_param(
                 repository_symbols, "repository_symbols", of_type=LoadableRepositorySymbol
             ),
             executable_path=check.opt_str_param(executable_path, "executable_path"),
@@ -318,7 +318,7 @@ class ListRepositoriesResponse(
                 value_type=CodePointer,
             ),
             entry_point=(
-                frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
+                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
                 if entry_point != None
                 else None
             ),

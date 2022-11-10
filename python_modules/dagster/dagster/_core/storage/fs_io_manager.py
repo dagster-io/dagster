@@ -16,7 +16,7 @@ from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 
 
 @io_manager(
-    config_schema={"base_dir": Field(StringSource, is_required=False)},
+    config_schema={"base_dir": Field(StringSource, is_required=False)},  # type: ignore  # mypy bug
     description="Built-in filesystem IO manager that stores and retrieves values using pickling.",
 )
 def fs_io_manager(init_context):
@@ -291,7 +291,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
             return pickle.load(read_obj)
 
 
-@io_manager(config_schema={"base_dir": Field(StringSource, is_required=True)})
+@io_manager(config_schema={"base_dir": Field(StringSource, is_required=True)})  # type: ignore  # (mypy bug)
 @experimental
 def custom_path_fs_io_manager(init_context):
     """Built-in IO manager that allows users to custom output file path per output definition.
