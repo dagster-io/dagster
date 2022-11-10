@@ -287,6 +287,7 @@ class JobDefinition(PipelineDefinition):
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.
@@ -363,7 +364,7 @@ class JobDefinition(PipelineDefinition):
             op_selection, frozenset(asset_selection) if asset_selection else None
         )
 
-        tags = None
+        merged_tags = merge_dicts(self.tags, tags or {})
         if partition_key:
             if not self.partitioned_config:
                 check.failed(
@@ -379,7 +380,7 @@ class JobDefinition(PipelineDefinition):
             run_config = (
                 run_config if run_config else partition_set.run_config_for_partition(partition)
             )
-            tags = partition_set.tags_for_partition(partition)
+            merged_tags.update(partition_set.tags_for_partition(partition))
 
         return core_execute_in_process(
             ephemeral_pipeline=ephemeral_job,
@@ -387,7 +388,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            run_tags=tags,
+            run_tags=merged_tags,
             run_id=run_id,
             asset_selection=frozenset(asset_selection),
         )
