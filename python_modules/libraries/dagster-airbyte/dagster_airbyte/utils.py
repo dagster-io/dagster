@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Mapping
+from typing import Any, Iterator, Mapping, Sequence
 
 from dagster_airbyte.types import AirbyteOutput
 
@@ -18,7 +18,7 @@ def generate_table_schema(stream_schema_props: Mapping[str, Any]) -> TableSchema
     )
 
 
-def is_basic_normalization_operation(operation_def: Dict[str, Any]) -> bool:
+def is_basic_normalization_operation(operation_def: Mapping[str, Any]) -> bool:
     return (
         operation_def.get("operatorType", operation_def.get("operator_type")) == "normalization"
         and operation_def.get("normalization", {}).get("option") == "basic"
@@ -27,13 +27,13 @@ def is_basic_normalization_operation(operation_def: Dict[str, Any]) -> bool:
 
 def _materialization_for_stream(
     name: str,
-    stream_schema_props: Dict[str, Any],
-    stream_stats: Dict[str, Any],
-    asset_key_prefix: List[str],
+    stream_schema_props: Mapping[str, Any],
+    stream_stats: Mapping[str, Any],
+    asset_key_prefix: Sequence[str],
 ) -> AssetMaterialization:
 
     return AssetMaterialization(
-        asset_key=asset_key_prefix + [name],
+        asset_key=[*asset_key_prefix, name],
         metadata={
             "schema": MetadataValue.table_schema(generate_table_schema(stream_schema_props)),
             **{k: v for k, v in stream_stats.items() if v is not None},
@@ -47,7 +47,7 @@ def _get_attempt(attempt: dict):
 
 
 def generate_materializations(
-    output: AirbyteOutput, asset_key_prefix: List[str]
+    output: AirbyteOutput, asset_key_prefix: Sequence[str]
 ) -> Iterator[AssetMaterialization]:
     prefix = output.connection_details.get("prefix") or ""
     # all the streams that are set to be sync'd by this connection

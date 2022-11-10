@@ -119,7 +119,7 @@ if TYPE_CHECKING:
 
 def _check_run_equality(
     pipeline_run: PipelineRun, candidate_run: PipelineRun
-) -> Dict[str, Tuple[Any, Any]]:
+) -> Mapping[str, Tuple[Any, Any]]:
     field_diff = {}
     for field in pipeline_run._fields:
         expected_value = getattr(pipeline_run, field)
@@ -130,7 +130,7 @@ def _check_run_equality(
     return field_diff
 
 
-def _format_field_diff(field_diff: Dict[str, Tuple[Any, Any]]) -> str:
+def _format_field_diff(field_diff: Mapping[str, Tuple[Any, Any]]) -> str:
     return "\n".join(
         [
             (
@@ -292,7 +292,7 @@ class DagsterInstance:
         run_launcher: "RunLauncher",
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
-        settings: Optional[Dict[str, Any]] = None,
+        settings: Optional[Mapping[str, Any]] = None,
         secrets_loader: Optional["SecretsLoader"] = None,
         ref: Optional[InstanceRef] = None,
     ):
@@ -334,7 +334,7 @@ class DagsterInstance:
         self._run_launcher = check.inst_param(run_launcher, "run_launcher", RunLauncher)
         self._run_launcher.register_instance(self)
 
-        self._settings = check.opt_dict_param(settings, "settings")
+        self._settings = check.opt_mapping_param(settings, "settings")
 
         self._secrets_loader = check.opt_inst_param(secrets_loader, "secrets_loader", SecretsLoader)
 
@@ -377,7 +377,7 @@ class DagsterInstance:
     @public
     @staticmethod
     def ephemeral(
-        tempdir: Optional[str] = None, preload: Optional[List["DebugRunPayload"]] = None
+        tempdir: Optional[str] = None, preload: Optional[Sequence["DebugRunPayload"]] = None
     ) -> "DagsterInstance":
         from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
         from dagster._core.run_coordinator import DefaultRunCoordinator
@@ -666,7 +666,7 @@ class DagsterInstance:
         return self._run_monitoring_enabled
 
     @property
-    def run_monitoring_settings(self) -> Dict:
+    def run_monitoring_settings(self) -> Mapping:
         return self.get_settings("run_monitoring")
 
     @property
@@ -674,7 +674,7 @@ class DagsterInstance:
         return self.run_monitoring_settings.get("start_timeout_seconds", 180)
 
     @property
-    def code_server_settings(self) -> Dict:
+    def code_server_settings(self) -> Mapping:
         return self.get_settings("code_servers")
 
     @property
@@ -711,7 +711,7 @@ class DagsterInstance:
     # python logs
 
     @property
-    def managed_python_loggers(self) -> List[str]:
+    def managed_python_loggers(self) -> Sequence[str]:
         python_log_settings = self.get_settings("python_logs") or {}
         return python_log_settings.get("managed_python_loggers", [])
 
@@ -812,11 +812,11 @@ class DagsterInstance:
         return self._event_storage.get_stats_for_run(run_id)
 
     @traced
-    def get_run_step_stats(self, run_id, step_keys=None) -> List["RunStepKeyStatsSnapshot"]:
+    def get_run_step_stats(self, run_id, step_keys=None) -> Sequence["RunStepKeyStatsSnapshot"]:
         return self._event_storage.get_step_stats_for_run(run_id, step_keys)
 
     @traced
-    def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
+    def get_run_tags(self) -> Sequence[Tuple[str, Set[str]]]:
         return self._run_storage.get_run_tags()
 
     @traced
@@ -840,7 +840,7 @@ class DagsterInstance:
         external_pipeline_origin=None,
         pipeline_code_origin=None,
         repository_load_data=None,
-    ):
+    ) -> PipelineRun:
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.execution.plan.plan import ExecutionPlan
@@ -1131,7 +1131,7 @@ class DagsterInstance:
         repo_location: "RepositoryLocation",
         external_pipeline: "ExternalPipeline",
         strategy: "ReexecutionStrategy",
-        extra_tags: Optional[Dict[str, Any]] = None,
+        extra_tags: Optional[Mapping[str, Any]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
         mode: Optional[str] = None,
         use_parent_run_tags: bool = False,
@@ -1146,8 +1146,8 @@ class DagsterInstance:
         check.inst_param(repo_location, "repo_location", RepositoryLocation)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.inst_param(strategy, "strategy", ReexecutionStrategy)
-        check.opt_dict_param(extra_tags, "extra_tags", key_type=str)
-        check.opt_dict_param(run_config, "run_config", key_type=str)
+        check.opt_mapping_param(extra_tags, "extra_tags", key_type=str)
+        check.opt_mapping_param(run_config, "run_config", key_type=str)
         check.opt_str_param(mode, "mode")
 
         check.bool_param(use_parent_run_tags, "use_parent_run_tags")
@@ -1297,7 +1297,7 @@ class DagsterInstance:
         return self._run_storage.handle_run_event(run_id, event)
 
     @traced
-    def add_run_tags(self, run_id: str, new_tags: Dict[str, str]):
+    def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]):
         return self._run_storage.add_run_tags(run_id, new_tags)
 
     @traced
@@ -1324,7 +1324,7 @@ class DagsterInstance:
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
+    ) -> Mapping[str, Mapping[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     @public
@@ -1337,7 +1337,7 @@ class DagsterInstance:
         ascending: bool = False,
         cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> List[RunRecord]:
+    ) -> Sequence[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
         Args:
@@ -1359,7 +1359,7 @@ class DagsterInstance:
         return self._run_storage.supports_bucket_queries
 
     @traced
-    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
         return self._run_storage.get_run_partition_data(runs_filter)
 
@@ -1950,10 +1950,11 @@ class DagsterInstance:
         )
 
         stored_state = self.get_instigator_state(instigator_origin_id, selector_id)
+        computed_state: InstigatorState
         if external_sensor:
             computed_state = external_sensor.get_current_instigator_state(stored_state)
         else:
-            computed_state = stored_state
+            computed_state = check.not_none(stored_state)
 
         if not computed_state.is_running:
             return computed_state
@@ -1975,6 +1976,8 @@ class DagsterInstance:
     def all_instigator_state(
         self, repository_origin_id=None, repository_selector_id=None, instigator_type=None
     ):
+        if not self._schedule_storage:
+            check.failed("Schedule storage not available")
         return self._schedule_storage.all_instigator_state(
             repository_origin_id, repository_selector_id, instigator_type
         )
@@ -2057,7 +2060,7 @@ class DagsterInstance:
         """Called on a regular interval by the daemon"""
         self._run_storage.add_daemon_heartbeat(daemon_heartbeat)
 
-    def get_daemon_heartbeats(self) -> Dict[str, "DaemonHeartbeat"]:
+    def get_daemon_heartbeats(self) -> Mapping[str, "DaemonHeartbeat"]:
         """Latest heartbeats of all daemon types"""
         return self._run_storage.get_daemon_heartbeats()
 
@@ -2093,15 +2096,15 @@ class DagsterInstance:
         return daemons
 
     def get_daemon_statuses(
-        self, daemon_types: Optional[List[str]] = None
-    ) -> Dict[str, "DaemonStatus"]:
+        self, daemon_types: Optional[Sequence[str]] = None
+    ) -> Mapping[str, "DaemonStatus"]:
         """
         Get the current status of the daemons. If daemon_types aren't provided, defaults to all
         required types. Returns a dict of daemon type to status.
         """
         from dagster._daemon.controller import get_daemon_statuses
 
-        check.opt_list_param(daemon_types, "daemon_types", of_type=str)
+        check.opt_sequence_param(daemon_types, "daemon_types", of_type=str)
         return get_daemon_statuses(
             self, daemon_types=daemon_types or self.get_required_daemon_types(), ignore_errors=True
         )
@@ -2135,7 +2138,7 @@ class DagsterInstance:
 
     def get_tick_retention_settings(
         self, instigator_type: "InstigatorType"
-    ) -> Dict["TickStatus", int]:
+    ) -> Mapping["TickStatus", int]:
         from dagster._core.definitions.run_request import InstigatorType
 
         retention_settings = self.get_settings("retention")

@@ -230,12 +230,12 @@ def _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types):
 
 def _get_dbt_op(
     op_name: str,
-    ins: Dict[str, In],
-    outs: Dict[str, Out],
+    ins: Mapping[str, In],
+    outs: Mapping[str, Out],
     select: str,
     exclude: str,
     use_build_command: bool,
-    fqns_by_output_name: Dict[str, str],
+    fqns_by_output_name: Mapping[str, str],
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
     runtime_metadata_fn: Optional[
@@ -317,7 +317,7 @@ def _dbt_nodes_to_assets(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
     display_raw_sql: bool = True,
 ) -> AssetsDefinition:
 
@@ -423,7 +423,7 @@ def load_assets_from_dbt_project(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
     display_raw_sql: Optional[bool] = None,
 ) -> Sequence[AssetsDefinition]:
     """
@@ -517,7 +517,7 @@ def load_assets_from_dbt_manifest(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
     display_raw_sql: Optional[bool] = None,
 ) -> Sequence[AssetsDefinition]:
     """
@@ -561,7 +561,7 @@ def load_assets_from_dbt_manifest(
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
     """
-    check.dict_param(manifest_json, "manifest_json", key_type=str)
+    check.mapping_param(manifest_json, "manifest_json", key_type=str)
     if partitions_def:
         experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
     if partition_key_to_vars_fn:
@@ -604,12 +604,13 @@ def load_assets_from_dbt_manifest(
         node_info_to_group_fn=node_info_to_group_fn,
         display_raw_sql=display_raw_sql,
     )
+    dbt_assets: Sequence[AssetsDefinition]
     if source_key_prefix:
         if isinstance(source_key_prefix, str):
             source_key_prefix = [source_key_prefix]
         source_key_prefix = check.list_param(source_key_prefix, "source_key_prefix", of_type=str)
         input_key_replacements = {
-            input_key: AssetKey(source_key_prefix + input_key.path)
+            input_key: AssetKey([*source_key_prefix, *input_key.path])
             for input_key in dbt_assets_def.keys_by_input_name.values()
         }
         dbt_assets = [

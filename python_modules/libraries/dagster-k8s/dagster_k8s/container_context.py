@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, cast
 
 import kubernetes
 
@@ -26,16 +26,16 @@ class K8sContainerContext(
         "_K8sContainerContext",
         [
             ("image_pull_policy", Optional[str]),
-            ("image_pull_secrets", List[Dict[str, str]]),
+            ("image_pull_secrets", Sequence[Mapping[str, str]]),
             ("service_account_name", Optional[str]),
-            ("env_config_maps", List[str]),
-            ("env_secrets", List[str]),
-            ("env_vars", List[str]),
-            ("volume_mounts", List[Dict[str, Any]]),
-            ("volumes", List[Dict[str, Any]]),
-            ("labels", Dict[str, str]),
+            ("env_config_maps", Sequence[str]),
+            ("env_secrets", Sequence[str]),
+            ("env_vars", Sequence[str]),
+            ("volume_mounts", Sequence[Mapping[str, Any]]),
+            ("volumes", Sequence[Mapping[str, Any]]),
+            ("labels", Mapping[str, str]),
             ("namespace", Optional[str]),
-            ("resources", Dict[str, Any]),
+            ("resources", Mapping[str, Any]),
             ("scheduler_name", Optional[str]),
         ],
     )
@@ -48,37 +48,37 @@ class K8sContainerContext(
     def __new__(
         cls,
         image_pull_policy: Optional[str] = None,
-        image_pull_secrets: Optional[List[Dict[str, str]]] = None,
+        image_pull_secrets: Optional[Sequence[Mapping[str, str]]] = None,
         service_account_name: Optional[str] = None,
-        env_config_maps: Optional[List[str]] = None,
-        env_secrets: Optional[List[str]] = None,
-        env_vars: Optional[List[str]] = None,
-        volume_mounts: Optional[List[Dict[str, Any]]] = None,
-        volumes: Optional[List[Dict[str, Any]]] = None,
-        labels: Optional[Dict[str, str]] = None,
+        env_config_maps: Optional[Sequence[str]] = None,
+        env_secrets: Optional[Sequence[str]] = None,
+        env_vars: Optional[Sequence[str]] = None,
+        volume_mounts: Optional[Sequence[Mapping[str, Any]]] = None,
+        volumes: Optional[Sequence[Mapping[str, Any]]] = None,
+        labels: Optional[Mapping[str, str]] = None,
         namespace: Optional[str] = None,
-        resources: Optional[Dict[str, Any]] = None,
+        resources: Optional[Mapping[str, Any]] = None,
         scheduler_name: Optional[str] = None,
     ):
         return super(K8sContainerContext, cls).__new__(
             cls,
             image_pull_policy=check.opt_str_param(image_pull_policy, "image_pull_policy"),
-            image_pull_secrets=check.opt_list_param(image_pull_secrets, "image_pull_secrets"),
+            image_pull_secrets=check.opt_sequence_param(image_pull_secrets, "image_pull_secrets"),
             service_account_name=check.opt_str_param(service_account_name, "service_account_name"),
-            env_config_maps=check.opt_list_param(env_config_maps, "env_config_maps"),
-            env_secrets=check.opt_list_param(env_secrets, "env_secrets"),
-            env_vars=check.opt_list_param(env_vars, "env_vars"),
+            env_config_maps=check.opt_sequence_param(env_config_maps, "env_config_maps"),
+            env_secrets=check.opt_sequence_param(env_secrets, "env_secrets"),
+            env_vars=check.opt_sequence_param(env_vars, "env_vars"),
             volume_mounts=[
                 k8s_snake_case_dict(kubernetes.client.V1VolumeMount, mount)
-                for mount in check.opt_list_param(volume_mounts, "volume_mounts")
+                for mount in check.opt_sequence_param(volume_mounts, "volume_mounts")
             ],
             volumes=[
                 k8s_snake_case_dict(kubernetes.client.V1Volume, volume)
-                for volume in check.opt_list_param(volumes, "volumes")
+                for volume in check.opt_sequence_param(volumes, "volumes")
             ],
-            labels=check.opt_dict_param(labels, "labels"),
+            labels=check.opt_mapping_param(labels, "labels"),
             namespace=check.opt_str_param(namespace, "namespace"),
-            resources=check.opt_dict_param(resources, "resources"),
+            resources=check.opt_mapping_param(resources, "resources"),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
         )
 
@@ -89,24 +89,24 @@ class K8sContainerContext(
             image_pull_policy=(
                 other.image_pull_policy if other.image_pull_policy else self.image_pull_policy
             ),
-            image_pull_secrets=_dedupe_list(other.image_pull_secrets + self.image_pull_secrets),
+            image_pull_secrets=_dedupe_list([*other.image_pull_secrets, *self.image_pull_secrets]),
             service_account_name=(
                 other.service_account_name
                 if other.service_account_name
                 else self.service_account_name
             ),
-            env_config_maps=_dedupe_list(other.env_config_maps + self.env_config_maps),
-            env_secrets=_dedupe_list(other.env_secrets + self.env_secrets),
-            env_vars=_dedupe_list(other.env_vars + self.env_vars),
-            volume_mounts=_dedupe_list(other.volume_mounts + self.volume_mounts),
-            volumes=_dedupe_list(other.volumes + self.volumes),
+            env_config_maps=_dedupe_list([*other.env_config_maps, *self.env_config_maps]),
+            env_secrets=_dedupe_list([*other.env_secrets, *self.env_secrets]),
+            env_vars=_dedupe_list([*other.env_vars, *self.env_vars]),
+            volume_mounts=_dedupe_list([*other.volume_mounts, *self.volume_mounts]),
+            volumes=_dedupe_list([*other.volumes, *self.volumes]),
             labels=merge_dicts(other.labels, self.labels),
             namespace=other.namespace if other.namespace else self.namespace,
             resources=other.resources if other.resources else self.resources,
             scheduler_name=other.scheduler_name if other.scheduler_name else self.scheduler_name,
         )
 
-    def get_environment_dict(self) -> Dict[str, str]:
+    def get_environment_dict(self) -> Mapping[str, str]:
         parsed_env_var_tuples = [parse_env_var(env_var) for env_var in self.env_vars]
         return {env_var_tuple[0]: env_var_tuple[1] for env_var_tuple in parsed_env_var_tuples}
 

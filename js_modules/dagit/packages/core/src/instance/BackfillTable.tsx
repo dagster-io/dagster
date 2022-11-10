@@ -183,7 +183,9 @@ const BackfillRow = ({
   return (
     <tr>
       <td style={{width: 120}}>
-        <Mono style={{fontSize: '16px', lineHeight: '18px'}}>{backfill.backfillId}</Mono>
+        <Mono style={{fontSize: '16px', lineHeight: '18px'}}>
+          <Link to={runsUrl}>{backfill.backfillId}</Link>
+        </Mono>
       </td>
       <td style={{width: 240}}>
         {backfill.timestamp ? <TimestampDisplay timestamp={backfill.timestamp} /> : '-'}

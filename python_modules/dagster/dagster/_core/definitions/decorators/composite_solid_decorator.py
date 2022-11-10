@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, List, Optional, Union, overload
+from typing import Any, Callable, Optional, Sequence, Union, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
@@ -15,15 +15,17 @@ class _CompositeSolid:
     def __init__(
         self,
         name: Optional[str] = None,
-        input_defs: Optional[List[InputDefinition]] = None,
-        output_defs: Optional[List[OutputDefinition]] = None,
+        input_defs: Optional[Sequence[InputDefinition]] = None,
+        output_defs: Optional[Sequence[OutputDefinition]] = None,
         description: Optional[str] = None,
         config_schema: Optional[UserConfigSchema] = None,
         config_fn: Optional[Callable[[dict], dict]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
-        self.output_defs = check.opt_nullable_list_param(output_defs, "output", OutputDefinition)
+        self.input_defs = check.opt_sequence_param(input_defs, "input_defs", InputDefinition)
+        self.output_defs = check.opt_nullable_sequence_param(
+            output_defs, "output", OutputDefinition
+        )
         self.description = check.opt_str_param(description, "description")
 
         self.config_schema = config_schema  # gets validated in do_composition
@@ -80,8 +82,8 @@ def composite_solid(
 @overload
 def composite_solid(
     name: Optional[str] = ...,
-    input_defs: Optional[List[InputDefinition]] = ...,
-    output_defs: Optional[List[OutputDefinition]] = ...,
+    input_defs: Optional[Sequence[InputDefinition]] = ...,
+    output_defs: Optional[Sequence[OutputDefinition]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = ...,
     config_fn: Optional[Callable[[dict], dict]] = ...,
@@ -91,8 +93,8 @@ def composite_solid(
 
 def composite_solid(
     name: Optional[Union[Callable[..., Any], str]] = None,
-    input_defs: Optional[List[InputDefinition]] = None,
-    output_defs: Optional[List[OutputDefinition]] = None,
+    input_defs: Optional[Sequence[InputDefinition]] = None,
+    output_defs: Optional[Sequence[OutputDefinition]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     config_fn: Optional[Callable[[dict], dict]] = None,

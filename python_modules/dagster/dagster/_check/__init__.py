@@ -947,6 +947,18 @@ def opt_nullable_mapping_param(
         return mapping_param(obj, param_name, key_type, value_type, additional_message)
 
 
+def two_dim_mapping_param(
+    obj: object,
+    param_name: str,
+    key_type: TypeOrTupleOfTypes = str,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Mapping:
+    if not isinstance(obj, Mapping):
+        raise _param_type_mismatch_exception(obj, dict, param_name, additional_message)
+    return _check_two_dim_mapping_entries(obj, key_type, value_type)
+
+
 # ########################
 # ##### NOT NONE
 # ########################

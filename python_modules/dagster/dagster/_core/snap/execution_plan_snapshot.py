@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Optional, Set
+from typing import Mapping, NamedTuple, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
@@ -44,10 +44,10 @@ class ExecutionPlanSnapshot(
     NamedTuple(
         "_ExecutionPlanSnapshot",
         [
-            ("steps", List["ExecutionStepSnap"]),
+            ("steps", Sequence["ExecutionStepSnap"]),
             ("artifacts_persisted", bool),
             ("pipeline_snapshot_id", str),
-            ("step_keys_to_execute", List[str]),
+            ("step_keys_to_execute", Sequence[str]),
             ("initial_known_state", Optional[KnownExecutionState]),
             ("snapshot_version", Optional[int]),
             ("executor_name", Optional[str]),
@@ -66,10 +66,10 @@ class ExecutionPlanSnapshot(
     # added repository_load_data
     def __new__(
         cls,
-        steps: List["ExecutionStepSnap"],
+        steps: Sequence["ExecutionStepSnap"],
         artifacts_persisted: bool,
         pipeline_snapshot_id: str,
-        step_keys_to_execute: Optional[List[str]] = None,
+        step_keys_to_execute: Optional[Sequence[str]] = None,
         initial_known_state: Optional[KnownExecutionState] = None,
         snapshot_version: Optional[int] = None,
         executor_name: Optional[str] = None,
@@ -77,10 +77,10 @@ class ExecutionPlanSnapshot(
     ):
         return super(ExecutionPlanSnapshot, cls).__new__(
             cls,
-            steps=check.list_param(steps, "steps", of_type=ExecutionStepSnap),
+            steps=check.sequence_param(steps, "steps", of_type=ExecutionStepSnap),
             artifacts_persisted=check.bool_param(artifacts_persisted, "artifacts_persisted"),
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
-            step_keys_to_execute=check.opt_list_param(
+            step_keys_to_execute=check.opt_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
             initial_known_state=check.opt_inst_param(
@@ -129,12 +129,12 @@ class ExecutionStepSnap(
         "_ExecutionStepSnap",
         [
             ("key", str),
-            ("inputs", List["ExecutionStepInputSnap"]),
-            ("outputs", List["ExecutionStepOutputSnap"]),
+            ("inputs", Sequence["ExecutionStepInputSnap"]),
+            ("outputs", Sequence["ExecutionStepOutputSnap"]),
             ("solid_handle_id", str),
             ("kind", StepKind),
-            ("metadata_items", List["ExecutionPlanMetadataItemSnap"]),
-            ("tags", Optional[Dict[str, str]]),
+            ("metadata_items", Sequence["ExecutionPlanMetadataItemSnap"]),
+            ("tags", Optional[Mapping[str, str]]),
             ("step_handle", Optional[StepHandleUnion]),
         ],
     )
@@ -142,25 +142,25 @@ class ExecutionStepSnap(
     def __new__(
         cls,
         key: str,
-        inputs: List["ExecutionStepInputSnap"],
-        outputs: List["ExecutionStepOutputSnap"],
+        inputs: Sequence["ExecutionStepInputSnap"],
+        outputs: Sequence["ExecutionStepOutputSnap"],
         solid_handle_id: str,
         kind: StepKind,
-        metadata_items: List["ExecutionPlanMetadataItemSnap"],
-        tags: Optional[Dict[str, str]] = None,
+        metadata_items: Sequence["ExecutionPlanMetadataItemSnap"],
+        tags: Optional[Mapping[str, str]] = None,
         step_handle: Optional[StepHandleUnion] = None,
     ):
         return super(ExecutionStepSnap, cls).__new__(
             cls,
             key=check.str_param(key, "key"),
-            inputs=check.list_param(inputs, "inputs", ExecutionStepInputSnap),
-            outputs=check.list_param(outputs, "outputs", ExecutionStepOutputSnap),
+            inputs=check.sequence_param(inputs, "inputs", ExecutionStepInputSnap),
+            outputs=check.sequence_param(outputs, "outputs", ExecutionStepOutputSnap),
             solid_handle_id=check.str_param(solid_handle_id, "solid_handle_id"),
             kind=check.inst_param(kind, "kind", StepKind),
-            metadata_items=check.list_param(
+            metadata_items=check.sequence_param(
                 metadata_items, "metadata_items", ExecutionPlanMetadataItemSnap
             ),
-            tags=check.opt_nullable_dict_param(tags, "tags", key_type=str, value_type=str),
+            tags=check.opt_nullable_mapping_param(tags, "tags", key_type=str, value_type=str),
             step_handle=check.opt_inst_param(step_handle, "step_handle", StepHandleTypes),
         )
 
@@ -172,7 +172,7 @@ class ExecutionStepInputSnap(
         [
             ("name", str),
             ("dagster_type_key", str),
-            ("upstream_output_handles", List[StepOutputHandle]),
+            ("upstream_output_handles", Sequence[StepOutputHandle]),
             ("source", Optional[StepInputSourceUnion]),
         ],
     )
@@ -181,14 +181,14 @@ class ExecutionStepInputSnap(
         cls,
         name: str,
         dagster_type_key: str,
-        upstream_output_handles: List[StepOutputHandle],
+        upstream_output_handles: Sequence[StepOutputHandle],
         source: Optional[StepInputSourceUnion] = None,
     ):
         return super(ExecutionStepInputSnap, cls).__new__(
             cls,
             check.str_param(name, "name"),
             check.str_param(dagster_type_key, "dagster_type_key"),
-            check.list_param(
+            check.sequence_param(
                 upstream_output_handles, "upstream_output_handles", of_type=StepOutputHandle
             ),
             check.opt_inst_param(source, "source", StepInputSourceUnion.__args__),  # type: ignore

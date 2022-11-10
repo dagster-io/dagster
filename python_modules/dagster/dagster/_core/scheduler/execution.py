@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._serdes import whitelist_for_serdes
@@ -20,15 +20,15 @@ class ScheduledExecutionSkipped(
 class ScheduledExecutionFailed(
     NamedTuple(
         "_ScheduledExecutionFailed",
-        [("run_id", Optional[str]), ("errors", List[SerializableErrorInfo])],
+        [("run_id", Optional[str]), ("errors", Sequence[SerializableErrorInfo])],
     ),
     ScheduledExecutionResult,
 ):
-    def __new__(cls, run_id: Optional[str], errors: List[SerializableErrorInfo]):
+    def __new__(cls, run_id: Optional[str], errors: Sequence[SerializableErrorInfo]):
         return super(ScheduledExecutionFailed, cls).__new__(
             cls,
             run_id=check.opt_str_param(run_id, "run_id"),
-            errors=check.list_param(errors, "errors", of_type=SerializableErrorInfo),
+            errors=check.sequence_param(errors, "errors", of_type=SerializableErrorInfo),
         )
 
 

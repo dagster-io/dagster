@@ -5,9 +5,9 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    List,
     NamedTuple,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -170,7 +170,7 @@ class OutputDefinition:
         return self._metadata
 
     @property
-    def metadata_entries(self) -> List[MetadataEntry]:
+    def metadata_entries(self) -> Sequence[MetadataEntry]:
         return self._metadata_entries
 
     @property

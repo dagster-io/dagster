@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Mapping, Optional, Sequence
 
 from dagster import get_dagster_logger
 
@@ -23,8 +23,8 @@ class DbtResource:
         self._logger = logger or get_dagster_logger()
 
     def _format_params(
-        self, flags: Dict[str, Any], replace_underscores: bool = False
-    ) -> Dict[str, Any]:
+        self, flags: Mapping[str, Any], replace_underscores: bool = False
+    ) -> Mapping[str, Any]:
         """
         Reformats arguments that are easier to express as a list into the format that dbt expects,
         and deletes and keys with no value.
@@ -51,7 +51,10 @@ class DbtResource:
 
     @abstractmethod
     def compile(
-        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        models: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+        **kwargs,
     ) -> DbtOutput:
         """
         Run the ``compile`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -66,7 +69,10 @@ class DbtResource:
 
     @abstractmethod
     def run(
-        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        models: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+        **kwargs,
     ) -> DbtOutput:
         """
         Run the ``run`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -81,7 +87,10 @@ class DbtResource:
 
     @abstractmethod
     def snapshot(
-        self, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        select: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+        **kwargs,
     ) -> DbtOutput:
         """
         Run the ``snapshot`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -97,8 +106,8 @@ class DbtResource:
     @abstractmethod
     def test(
         self,
-        models: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+        models: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
         data: bool = True,
         schema: bool = True,
         **kwargs,
@@ -120,8 +129,8 @@ class DbtResource:
     def seed(
         self,
         show: bool = False,
-        select: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+        select: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtOutput:
         """
@@ -141,9 +150,9 @@ class DbtResource:
     @abstractmethod
     def ls(
         self,
-        select: Optional[List[str]] = None,
-        models: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+        select: Optional[Sequence[str]] = None,
+        models: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtOutput:
         """
@@ -160,7 +169,7 @@ class DbtResource:
         """
 
     @abstractmethod
-    def build(self, select: Optional[List[str]] = None, **kwargs) -> DbtOutput:
+    def build(self, select: Optional[Sequence[str]] = None, **kwargs) -> DbtOutput:
         """
         Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
 
@@ -186,7 +195,7 @@ class DbtResource:
 
     @abstractmethod
     def run_operation(
-        self, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs
+        self, macro: str, args: Optional[Mapping[str, Any]] = None, **kwargs
     ) -> DbtOutput:
         """
         Run the ``run-operation`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -200,7 +209,7 @@ class DbtResource:
         """
 
     @abstractmethod
-    def get_run_results_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+    def get_run_results_json(self, **kwargs) -> Optional[Mapping[str, Any]]:
         """
         Get a parsed version of the run_results.json file for the relevant dbt project.
 
@@ -210,7 +219,7 @@ class DbtResource:
         """
 
     @abstractmethod
-    def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+    def get_manifest_json(self, **kwargs) -> Optional[Mapping[str, Any]]:
         """
         Get a parsed version of the manifest.json file for the relevant dbt project.
 

@@ -104,7 +104,7 @@ def core_execute_run(
         # add in cached metadata to load repository more efficiently
         if pipeline_run.has_repository_load_data:
             execution_plan_snapshot = instance.get_execution_plan_snapshot(
-                pipeline_run.execution_plan_snapshot_id
+                check.not_none(pipeline_run.execution_plan_snapshot_id)
             )
             recon_pipeline = recon_pipeline.with_repository_load_data(
                 execution_plan_snapshot.repository_load_data,
@@ -120,15 +120,13 @@ def core_execute_run(
         raise
 
     # Reload the run to verify that its status didn't change while the pipeline was loaded
-    pipeline_run = instance.get_run_by_id(pipeline_run.run_id)
-    check.inst(
-        pipeline_run,
-        PipelineRun,
+    dagster_run = check.not_none(
+        instance.get_run_by_id(pipeline_run.run_id),
         f"Pipeline run with id '{pipeline_run.run_id}' was deleted after the run worker started.",
     )
 
     try:
-        pipeline_run = instance.get_run_by_id(pipeline_run.run_id)
+        dagster_run = check.not_none(instance.get_run_by_id(dagster_run.run_id))
         yield from execute_run_iterator(
             recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
         )

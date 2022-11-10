@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 import uuid
-from typing import Any, Dict, Mapping, Optional, Set, Union
+from typing import Any, Mapping, Optional, Set, Union
 
 import papermill
 from dagstermill.compat import ExecutionError
@@ -105,12 +105,12 @@ def define_dagstermill_asset(
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
-    config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
+    config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    op_tags: Optional[Dict[str, Any]] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
 ):

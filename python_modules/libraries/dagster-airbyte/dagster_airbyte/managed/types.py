@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from typing import Any, Dict, Mapping, Optional
 
@@ -21,7 +22,7 @@ class AirbyteSource:
     Represents a user-defined Airbyte source.
     """
 
-    def __init__(self, name: str, source_type: str, source_configuration: Dict[str, Any]):
+    def __init__(self, name: str, source_type: str, source_configuration: Mapping[str, Any]):
         self.name = check.str_param(name, "name")
         self.source_type = check.str_param(source_type, "source_type")
         self.source_configuration = check.dict_param(
@@ -43,7 +44,7 @@ class InitializedAirbyteSource:
         self.source_definition_id = source_definition_id
 
     @classmethod
-    def from_api_json(cls, api_json: Dict[str, Any]):
+    def from_api_json(cls, api_json: Mapping[str, Any]):
         return cls(
             source=AirbyteSource(
                 name=api_json["name"],
@@ -60,7 +61,9 @@ class AirbyteDestination:
     Represents a user-defined Airbyte destination.
     """
 
-    def __init__(self, name: str, destination_type: str, destination_configuration: Dict[str, Any]):
+    def __init__(
+        self, name: str, destination_type: str, destination_configuration: Mapping[str, Any]
+    ):
         self.name = check.str_param(name, "name")
         self.destination_type = check.str_param(destination_type, "destination_type")
         self.destination_configuration = check.dict_param(
@@ -90,7 +93,7 @@ class InitializedAirbyteDestination:
         self.destination_definition_id = destination_definition_id
 
     @classmethod
-    def from_api_json(cls, api_json: Dict[str, Any]):
+    def from_api_json(cls, api_json: Mapping[str, Any]):
         return cls(
             destination=AirbyteDestination(
                 name=api_json["name"],
@@ -112,7 +115,7 @@ class AirbyteConnection:
         name: str,
         source: AirbyteSource,
         destination: AirbyteDestination,
-        stream_config: Dict[str, AirbyteSyncMode],
+        stream_config: Mapping[str, AirbyteSyncMode],
         normalize_data: Optional[bool] = None,
     ):
         self.name = check.str_param(name, "name")
@@ -147,7 +150,7 @@ class InitializedAirbyteConnection:
     @classmethod
     def from_api_json(
         cls,
-        api_dict: Dict[str, Any],
+        api_dict: Mapping[str, Any],
         init_sources: Mapping[str, InitializedAirbyteSource],
         init_dests: Mapping[str, InitializedAirbyteDestination],
     ):
@@ -192,4 +195,44 @@ class InitializedAirbyteConnection:
                 normalize_data=len(api_dict["operationIds"]) > 0,
             ),
             api_dict["connectionId"],
+        )
+
+
+def _remove_none_values(obj: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: v for k, v in obj.items() if v is not None}
+
+
+def _dump_class(obj: Any) -> Dict[str, Any]:
+    return json.loads(json.dumps(obj, default=lambda o: _remove_none_values(o.__dict__)))
+
+
+class GeneratedAirbyteSource(AirbyteSource):
+    """
+    Base class used by the codegen Airbyte sources. This class is not intended to be used directly.
+
+    Converts all of its attributes into a source configuration dict which is passed down to the base
+    AirbyteSource class.
+    """
+
+    def __init__(self, source_type: str, name: str):
+        source_configuration = _dump_class(self)
+        super().__init__(
+            name=name, source_type=source_type, source_configuration=source_configuration
+        )
+
+
+class GeneratedAirbyteDestination(AirbyteDestination):
+    """
+    Base class used by the codegen Airbyte destinations. This class is not intended to be used directly.
+
+    Converts all of its attributes into a destination configuration dict which is passed down to the
+    base AirbyteDestination class.
+    """
+
+    def __init__(self, source_type: str, name: str):
+        destination_configuration = _dump_class(self)
+        super().__init__(
+            name=name,
+            destination_type=source_type,
+            destination_configuration=destination_configuration,
         )

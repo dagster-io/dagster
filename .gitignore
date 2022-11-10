@@ -160,3 +160,6 @@ pythonenv*/
 
 # PyRight config
 pyrightconfig.json
+
+# Scripts working directory
+scripts/.build

@@ -5,7 +5,7 @@ import sys
 import time
 from collections import Counter
 from contextlib import ExitStack, contextmanager
-from typing import List, Optional, Sequence, cast
+from typing import Optional, Sequence, cast
 
 import mock
 import pendulum
@@ -79,9 +79,9 @@ TEST_TIMEOUT = 5
 
 
 @contextmanager
-def create_and_delete_test_runs(instance: DagsterInstance, run_ids: List[str]):
+def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str]):
     check.opt_inst_param(instance, "instance", DagsterInstance)
-    check.list_param(run_ids, "run_ids", of_type=str)
+    check.sequence_param(run_ids, "run_ids", of_type=str)
     if instance:
         for run_id in run_ids:
             create_run_for_test(

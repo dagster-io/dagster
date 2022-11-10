@@ -164,7 +164,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """Get a summary of events that have ocurred in a run."""
         return build_run_stats_from_events(run_id, self.get_logs_for_run(run_id))
 
-    def get_step_stats_for_run(self, run_id: str, step_keys=None) -> List[RunStepKeyStatsSnapshot]:
+    def get_step_stats_for_run(
+        self, run_id: str, step_keys=None
+    ) -> Sequence[RunStepKeyStatsSnapshot]:
         """Get per-step stats for a pipeline run."""
         logs = self.get_logs_for_run(run_id)
         if step_keys:
@@ -266,7 +268,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     def get_asset_keys(
         self,
-        prefix: Optional[List[str]] = None,
+        prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> Iterable[AssetKey]:

@@ -961,7 +961,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_asset_keys(
         self,
-        prefix: Optional[List[str]] = None,
+        prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> Iterable[AssetKey]:
@@ -972,7 +972,7 @@ class SqlEventLogStorage(EventLogStorage):
     def get_latest_materialization_events(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
-        check.list_param(asset_keys, "asset_keys", AssetKey)
+        check.sequence_param(asset_keys, "asset_keys", AssetKey)
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         return self._get_latest_materializations(rows)
 
@@ -1165,7 +1165,7 @@ class SqlEventLogStorage(EventLogStorage):
         return query
 
     def _get_assets_details(self, asset_keys: Sequence[AssetKey]):
-        check.list_param(asset_keys, "asset_key", AssetKey)
+        check.sequence_param(asset_keys, "asset_key", AssetKey)
         rows = None
         with self.index_connection() as conn:
             rows = conn.execute(
@@ -1405,7 +1405,7 @@ class SqlEventLogStorage(EventLogStorage):
     def get_materialization_count_by_partition(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Mapping[str, int]]:
-        check.list_param(asset_keys, "asset_keys", AssetKey)
+        check.sequence_param(asset_keys, "asset_keys", AssetKey)
 
         query = (
             db.select(

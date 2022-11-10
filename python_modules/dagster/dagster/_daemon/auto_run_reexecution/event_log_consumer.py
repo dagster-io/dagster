@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Dict, Iterator, List, Optional
+from typing import Callable, Dict, Iterator, List, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster import DagsterEventType
@@ -33,7 +33,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
     @property
     def handle_updated_runs_fns(
         self,
-    ) -> List[Callable[[IWorkspaceProcessContext, List[RunRecord]], Iterator]]:
+    ) -> Sequence[Callable[[IWorkspaceProcessContext, Sequence[RunRecord]], Iterator]]:
         """
         List of functions that will be called with the list of run records that have new events.
         """
@@ -100,10 +100,10 @@ def _create_cursor_key(event_type: DagsterEventType):
 
 
 def _fetch_persisted_cursors(
-    instance: DagsterInstance, event_types: List[DagsterEventType], logger
-) -> Dict[DagsterEventType, int]:
+    instance: DagsterInstance, event_types: Sequence[DagsterEventType], logger
+) -> Mapping[DagsterEventType, int]:
     check.inst_param(instance, "instance", DagsterInstance)
-    check.list_param(event_types, "event_types", of_type=DagsterEventType)
+    check.sequence_param(event_types, "event_types", of_type=DagsterEventType)
 
     # get the persisted cursor for each event type
     persisted_cursors = instance.run_storage.kvs_get(
@@ -133,9 +133,9 @@ def _fetch_persisted_cursors(
     return fetched_cursors
 
 
-def _persist_cursors(instance: DagsterInstance, cursors: Dict[DagsterEventType, int]) -> None:
+def _persist_cursors(instance: DagsterInstance, cursors: Mapping[DagsterEventType, int]) -> None:
     check.inst_param(instance, "instance", DagsterInstance)
-    check.dict_param(cursors, "cursors", key_type=DagsterEventType, value_type=int)
+    check.mapping_param(cursors, "cursors", key_type=DagsterEventType, value_type=int)
 
     if cursors:
         instance.run_storage.kvs_set(
@@ -150,7 +150,7 @@ def get_new_cursor(
     persisted_cursor: int,
     overall_max_event_id: Optional[int],
     fetch_limit: int,
-    new_event_ids: List[int],
+    new_event_ids: Sequence[int],
 ) -> Optional[int]:
     """
     Return the new cursor value for an event type, or None if one shouldn't be persisted. The cursor
@@ -167,7 +167,7 @@ def get_new_cursor(
     check.int_param(persisted_cursor, "persisted_cursor")
     check.opt_int_param(overall_max_event_id, "overall_max_event_id")
     check.int_param(fetch_limit, "fetch_limit")
-    check.list_param(new_event_ids, "new_event_ids", of_type=int)
+    check.sequence_param(new_event_ids, "new_event_ids", of_type=int)
 
     if overall_max_event_id is None:
         # We only get here if the event log was empty when we queried it for the overall max.

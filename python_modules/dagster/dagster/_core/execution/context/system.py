@@ -16,6 +16,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Union,
     cast,
@@ -49,7 +50,12 @@ from dagster._core.executor.base import Executor
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.pipeline_run import PipelineRun
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, PARTITION_NAME_TAG
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    MULTIDIMENSIONAL_PARTITION_PREFIX,
+    PARTITION_NAME_TAG,
+)
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import DagsterType
 
@@ -128,7 +134,7 @@ class IPlanContext(ABC):
 
     @property
     @abstractmethod
-    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+    def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
         raise NotImplementedError()
 
     @property
@@ -136,7 +142,7 @@ class IPlanContext(ABC):
         raise NotImplementedError()
 
     @property
-    def logging_tags(self) -> Dict[str, str]:
+    def logging_tags(self) -> Mapping[str, str]:
         return self.log.logging_metadata.to_tags()
 
     def has_tag(self, key: str) -> bool:
@@ -201,7 +207,7 @@ class PlanOrchestrationContext(IPlanContext):
         plan_data: PlanData,
         log_manager: DagsterLogManager,
         executor: Executor,
-        output_capture: Optional[Dict[StepOutputHandle, Any]],
+        output_capture: Optional[Mapping[StepOutputHandle, Any]],
         resume_from_failure: bool = False,
     ):
         self._plan_data = plan_data
@@ -231,7 +237,7 @@ class PlanOrchestrationContext(IPlanContext):
         return self._executor
 
     @property
-    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+    def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
         return self._output_capture
 
     def for_step(self, step: ExecutionStep) -> "IStepContext":
@@ -330,7 +336,9 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def partition_key(self) -> str:
-        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            get_multipartition_key_from_tags,
+        )
 
         tags = self._plan_data.pipeline_run.tags
 
@@ -343,13 +351,28 @@ class PlanExecutionContext(IPlanContext):
         if PARTITION_NAME_TAG in tags:
             return tags[PARTITION_NAME_TAG]
 
-        partitions_by_dimension: Dict[str, str] = {}
-        for tag in tags:
-            if tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX):
-                dimension = tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
-                partitions_by_dimension[dimension] = tags[tag]
+        return get_multipartition_key_from_tags(tags)
 
-        return MultiPartitionKey(partitions_by_dimension)
+    @property
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            get_multipartition_key_from_tags,
+        )
+
+        tags = self._plan_data.pipeline_run.tags
+        partition_key = tags.get(PARTITION_NAME_TAG)
+        if partition_key is not None:
+            return PartitionKeyRange(partition_key, partition_key)
+
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            partition_key = get_multipartition_key_from_tags(tags)
+            return PartitionKeyRange(partition_key, partition_key)
+
+        partition_key_range_start = tags.get(ASSET_PARTITION_RANGE_START_TAG)
+        if partition_key_range_start is not None:
+            return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
+
+        check.failed("Tried to access partition_key_range for a non-partitioned run")
 
     @property
     def partition_time_window(self) -> str:
@@ -379,6 +402,10 @@ class PlanExecutionContext(IPlanContext):
                 for tag in self._plan_data.pipeline_run.tags.keys()
             ]
         )
+
+    @property
+    def has_partition_key_range(self) -> bool:
+        return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.pipeline_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(
@@ -786,9 +813,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
             if assets_def is not None and upstream_asset_partitions_def is not None:
                 partition_key_range = (
-                    PartitionKeyRange(self.partition_key, self.partition_key)
-                    if assets_def.partitions_def
-                    else None
+                    self.asset_partition_key_range if assets_def.partitions_def else None
                 )
                 return get_upstream_partitions_for_partition_range(
                     assets_def,
@@ -816,14 +841,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if asset_info:
             return asset_info.partitions_def
         else:
-            return asset_info
+            return None
 
     def has_asset_partitions_for_output(self, output_name: str) -> bool:
         return self._partitions_def_for_output(output_name) is not None
 
     def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
         if self._partitions_def_for_output(output_name) is not None:
-            return PartitionKeyRange(self.partition_key, self.partition_key)
+            return self.asset_partition_key_range
 
         check.failed("The output has no asset partitions")
 
@@ -864,7 +889,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
         )
 
-    def get_input_lineage(self) -> List[AssetLineageInfo]:
+    def get_input_lineage(self) -> Sequence[AssetLineageInfo]:
         if not self._input_lineage:
 
             for step_input in self.step.step_inputs:
@@ -901,7 +926,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
 
-def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLineageInfo]:
+def _dedup_asset_lineage(asset_lineage: Sequence[AssetLineageInfo]) -> List[AssetLineageInfo]:
     """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
     information. Duplicates can occur naturally when calculating transitive dependencies from solids
     with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will

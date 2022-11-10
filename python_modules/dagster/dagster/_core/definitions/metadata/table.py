@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union, cast
+from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -14,7 +14,7 @@ class _TableRecordSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def value_from_unpacked(
         cls,
-        unpacked_dict: Dict[str, Any],
+        unpacked_dict: Mapping[str, Any],
         klass: Type,
     ):
         return klass(**unpacked_dict["data"])
@@ -23,7 +23,7 @@ class _TableRecordSerializer(DefaultNamedTupleSerializer):
 @experimental
 @whitelist_for_serdes(serializer=_TableRecordSerializer)
 class TableRecord(
-    NamedTuple("TableRecord", [("data", PublicAttr[Dict[str, Union[str, int, float, bool]]])])
+    NamedTuple("TableRecord", [("data", PublicAttr[Mapping[str, Union[str, int, float, bool]]])])
 ):
     """Represents one record in a table. All passed keyword arguments are treated as field key/value
     pairs in the record. Field keys are arbitrary strings-- field values must be strings, integers,
@@ -50,7 +50,7 @@ class TableSchema(
     NamedTuple(
         "TableSchema",
         [
-            ("columns", PublicAttr[List["TableColumn"]]),
+            ("columns", PublicAttr[Sequence["TableColumn"]]),
             ("constraints", PublicAttr["TableConstraints"]),
         ],
     )
@@ -111,12 +111,12 @@ class TableSchema(
 
     def __new__(
         cls,
-        columns: List["TableColumn"],
+        columns: Sequence["TableColumn"],
         constraints: Optional["TableConstraints"] = None,
     ):
         return super(TableSchema, cls).__new__(
             cls,
-            columns=frozenlist(check.list_param(columns, "columns", of_type=TableColumn)),
+            columns=frozenlist(check.sequence_param(columns, "columns", of_type=TableColumn)),
             constraints=check.opt_inst_param(
                 constraints, "constraints", TableConstraints, default=_DEFAULT_TABLE_CONSTRAINTS
             ),
@@ -144,7 +144,7 @@ class TableConstraints(
     NamedTuple(
         "TableConstraints",
         [
-            ("other", PublicAttr[List[str]]),
+            ("other", PublicAttr[Sequence[str]]),
         ],
     )
 ):
@@ -159,11 +159,11 @@ class TableConstraints(
 
     def __new__(
         cls,
-        other: List[str],
+        other: Sequence[str],
     ):
         return super(TableConstraints, cls).__new__(
             cls,
-            other=frozenlist(check.list_param(other, "other", of_type=str)),
+            other=frozenlist(check.sequence_param(other, "other", of_type=str)),
         )
 
 
@@ -236,7 +236,7 @@ class TableColumnConstraints(
         [
             ("nullable", PublicAttr[bool]),
             ("unique", PublicAttr[bool]),
-            ("other", PublicAttr[Optional[List[str]]]),
+            ("other", PublicAttr[Optional[Sequence[str]]]),
         ],
     )
 ):
@@ -255,13 +255,13 @@ class TableColumnConstraints(
         cls,
         nullable: bool = True,
         unique: bool = False,
-        other: Optional[List[str]] = None,
+        other: Optional[Sequence[str]] = None,
     ):
         return super(TableColumnConstraints, cls).__new__(
             cls,
             nullable=check.bool_param(nullable, "nullable"),
             unique=check.bool_param(unique, "unique"),
-            other=frozenlist(check.opt_list_param(other, "other")),
+            other=frozenlist(check.opt_sequence_param(other, "other")),
         )
 
 

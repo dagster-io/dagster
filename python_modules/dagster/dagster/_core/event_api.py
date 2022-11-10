@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Mapping, NamedTuple, Optional, Union
+from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -62,13 +62,13 @@ class EventRecordsFilter(
         [
             ("event_type", DagsterEventType),
             ("asset_key", Optional[AssetKey]),
-            ("asset_partitions", Optional[List[str]]),
+            ("asset_partitions", Optional[Sequence[str]]),
             ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
             ("before_cursor", Optional[Union[int, RunShardedEventsCursor]]),
             ("after_timestamp", Optional[float]),
             ("before_timestamp", Optional[float]),
-            ("storage_ids", Optional[List[int]]),
-            ("tags", Optional[Mapping[str, Union[str, List[str]]]]),
+            ("storage_ids", Optional[Sequence[int]]),
+            ("tags", Optional[Mapping[str, Union[str, Sequence[str]]]]),
         ],
     )
 ):
@@ -99,13 +99,13 @@ class EventRecordsFilter(
         cls,
         event_type: DagsterEventType,
         asset_key: Optional[AssetKey] = None,
-        asset_partitions: Optional[List[str]] = None,
+        asset_partitions: Optional[Sequence[str]] = None,
         after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
         before_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
-        storage_ids: Optional[List[int]] = None,
-        tags: Optional[Mapping[str, Union[str, List[str]]]] = None,
+        storage_ids: Optional[Sequence[int]] = None,
+        tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
     ):
         check.opt_list_param(asset_partitions, "asset_partitions", of_type=str)
         check.inst_param(event_type, "event_type", DagsterEventType)

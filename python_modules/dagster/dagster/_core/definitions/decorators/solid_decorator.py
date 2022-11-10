@@ -3,8 +3,8 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    Dict,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -43,10 +43,10 @@ class DecoratedSolidFunction(NamedTuple):
         return is_context_provided(get_function_params(self.decorated_fn))
 
     @lru_cache(maxsize=1)
-    def _get_function_params(self) -> List[funcsigs.Parameter]:
+    def _get_function_params(self) -> Sequence[funcsigs.Parameter]:
         return get_function_params(self.decorated_fn)
 
-    def positional_inputs(self) -> List[str]:
+    def positional_inputs(self) -> Sequence[str]:
         params = self._get_function_params()
         input_args = params[1:] if self.has_context_arg() else params
         return positional_arg_name_list(input_args)
@@ -81,13 +81,13 @@ class _Solid:
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         config_schema: Optional[UserConfigSchema] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         version: Optional[str] = None,
         decorator_takes_context: Optional[bool] = True,
         retry_policy: Optional[RetryPolicy] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
+        self.input_defs = check.opt_sequence_param(input_defs, "input_defs", InputDefinition)
         self.output_defs = check.opt_nullable_sequence_param(
             output_defs, "output_defs", OutputDefinition
         )
@@ -163,7 +163,7 @@ def solid(
     output_defs: Optional[Sequence[OutputDefinition]] = ...,
     config_schema: Optional[UserConfigSchema] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
-    tags: Optional[Dict[str, Any]] = ...,
+    tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
 ) -> Union[_Solid, SolidDefinition]:
@@ -177,7 +177,7 @@ def solid(
     output_defs: Optional[Sequence[OutputDefinition]] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-    tags: Optional[Dict[str, Any]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
 ) -> Union[_Solid, SolidDefinition]:
@@ -312,7 +312,7 @@ def resolve_checked_solid_fn_inputs(
     compute_fn: DecoratedSolidFunction,
     explicit_input_defs: Sequence[InputDefinition],
     exclude_nothing: bool,
-) -> List[InputDefinition]:
+) -> Sequence[InputDefinition]:
     """
     Validate provided input definitions and infer the remaining from the type signature of the compute_fn.
     Returns the resolved set of InputDefinitions.
@@ -421,7 +421,7 @@ def resolve_checked_solid_fn_inputs(
     return input_defs
 
 
-def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
+def is_context_provided(params: Sequence[funcsigs.Parameter]) -> bool:
     if len(params) == 0:
         return False
     return params[0].name in get_valid_name_permutations("context")
@@ -430,7 +430,7 @@ def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
 def lambda_solid(
     name: Optional[Union[str, Callable[..., Any]]] = None,
     description: Optional[str] = None,
-    input_defs: Optional[List[InputDefinition]] = None,
+    input_defs: Optional[Sequence[InputDefinition]] = None,
     output_def: Optional[OutputDefinition] = None,
 ) -> Union[_Solid, SolidDefinition]:
     """Create a simple solid from the decorated function.

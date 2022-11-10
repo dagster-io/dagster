@@ -933,6 +933,54 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'multipartitions_1'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_0'
+                        },
+                        'solidHandle': {
+                            'handleID': 'multipartitions_1'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'multipartitions_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'multipartitions_1'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'multipartitions_2'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_0'
+                        },
+                        'solidHandle': {
+                            'handleID': 'multipartitions_2'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'multipartitions_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'multipartitions_2'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'multiply_by_two'
                 },
                 'invocations': [
@@ -1834,7 +1882,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': '__ASSET_JOB'
+                            'name': '__ASSET_JOB_0'
                         },
                         'solidHandle': {
                             'handleID': 'typed_asset'
@@ -1858,7 +1906,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': '__ASSET_JOB'
+                            'name': '__ASSET_JOB_0'
                         },
                         'solidHandle': {
                             'handleID': 'typed_multi_asset'
@@ -1930,7 +1978,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': '__ASSET_JOB'
+                            'name': '__ASSET_JOB_0'
                         },
                         'solidHandle': {
                             'handleID': 'untyped_asset'
