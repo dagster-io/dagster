@@ -1,6 +1,7 @@
 # Changelog
 
 # 1.0.17 (core) / 0.16.17 (libraries)
+
 ### New
 
 - With the new `asset_selection` parameter on `@sensor` and `SensorDefinition`, you can now define a sensor that directly targets a selection of assets, instead of targeting a job.
