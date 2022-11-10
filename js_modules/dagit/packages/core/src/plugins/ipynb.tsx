@@ -10,8 +10,12 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   const repoLocName = props.repoAddress?.location;
 
   return (
-    <Box>
-      <NotebookButton path={notebookPath?.value} repoLocation={repoLocName || ''} />
+    <Box padding={{horizontal: 16}}>
+      <NotebookButton
+        path={notebookPath?.value}
+        repoLocation={repoLocName || ''}
+        label="View Source Notebook"
+      />
     </Box>
   );
 };
