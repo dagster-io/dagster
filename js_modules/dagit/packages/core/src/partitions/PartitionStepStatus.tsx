@@ -50,6 +50,11 @@ import {
   MatrixData,
 } from './useMatrixData';
 
+const BUFFER = 3;
+
+export const getVisibleItemCount = (viewportWidth: number) =>
+  Math.ceil(viewportWidth / BOX_SIZE) - BUFFER;
+
 interface PartitionRunSelection {
   partitionName: string;
   stepName?: string;
@@ -177,8 +182,7 @@ const PartitionStepStatus: React.FC<
 
   React.useEffect(() => {
     if (viewport.width) {
-      const pageSize = Math.ceil(viewport.width / BOX_SIZE) - BUFFER;
-      setPageSize(pageSize);
+      setPageSize(getVisibleItemCount(viewport.width));
     }
   }, [viewport.width, setPageSize]);
 
@@ -190,8 +194,7 @@ const PartitionStepStatus: React.FC<
     return stepRows.map((stepRow) => stepsByName[stepRow.name]);
   };
 
-  const BUFFER = 3;
-  const visibleCount = Math.ceil(viewport.width / BOX_SIZE) - BUFFER;
+  const visibleCount = getVisibleItemCount(viewport.width);
   const visibleStart = Math.max(0, partitionColumns.length - props.offset - visibleCount);
   const visibleEnd = Math.max(visibleCount, partitionColumns.length - props.offset);
   const visibleColumns = partitionColumns.slice(visibleStart, visibleEnd);

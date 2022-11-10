@@ -13,7 +13,8 @@ import {BackfillPartitionSelector} from './BackfillSelector';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {PartitionGraph} from './PartitionGraph';
 import {PartitionState, PartitionStatus, runStatusToPartitionState} from './PartitionStatus';
-import {PartitionPerOpStatus} from './PartitionStepStatus';
+import {getVisibleItemCount, PartitionPerOpStatus} from './PartitionStepStatus';
+import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {
   PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results,
   PartitionsStatusQuery_partitionSetOrError_PartitionSet,
@@ -89,8 +90,8 @@ const OpJobPartitionsViewContent: React.FC<{
       // magical numbers to approximate the size of the window, which is calculated in the step
       // status component.  This approximation is to make sure that the window does not jump as
       // the pageSize gets recalculated
-      const _approximatePageSize = Math.ceil((viewport.width - 330) / 32) - 3;
-      setPageSize(_approximatePageSize);
+      const approxPageSize = getVisibleItemCount(viewport.width - GRID_FLOATING_CONTAINER_WIDTH);
+      setPageSize(approxPageSize);
     }
   }, [viewport.width, showSteps, setPageSize]);
 

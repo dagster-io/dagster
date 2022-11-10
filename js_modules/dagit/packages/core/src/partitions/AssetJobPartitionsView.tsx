@@ -11,7 +11,8 @@ import {RepoAddress} from '../workspace/types';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {CountBox} from './OpJobPartitionsView';
 import {PartitionState, PartitionStatus} from './PartitionStatus';
-import {PartitionPerAssetStatus} from './PartitionStepStatus';
+import {getVisibleItemCount, PartitionPerAssetStatus} from './PartitionStepStatus';
+import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 
 export const AssetJobPartitionsView: React.FC<{
   pipelineName: string;
@@ -55,8 +56,8 @@ export const AssetJobPartitionsView: React.FC<{
       // magical numbers to approximate the size of the window, which is calculated in the step
       // status component.  This approximation is to make sure that the window does not jump as
       // the pageSize gets recalculated
-      const _approximatePageSize = Math.ceil((viewport.width - 330) / 32) - 3;
-      setPageSize(_approximatePageSize);
+      const approxPageSize = getVisibleItemCount(viewport.width - GRID_FLOATING_CONTAINER_WIDTH);
+      setPageSize(approxPageSize);
     }
   }, [viewport.width, showSteps, setPageSize]);
 
