@@ -17,19 +17,40 @@ PythonDict = PythonObjectDagsterType(
     dict,
     "PythonDict",
     loader=_dict_input,
-    description="""Represents a python dictionary to pass between solids""",
+    description="""Represents a python dictionary to pass between ops""",
 )
 
 
 class TypedDictLoader(DagsterTypeLoader):
-    def __init__(self, value_dagster_type):
+    def __init__(self, key_dagster_type, value_dagster_type):
+        from ..._config import ConfigTypeKind, Map, ScalarUnion
+
+        self._key_dagster_type = check.inst_param(key_dagster_type, "key_dagster_type", DagsterType)
+        check.param_invariant(self._key_dagster_type.loader, "key_dagster_type")
+
+        # Scalar union config types allow for passing scalar values either directly,
+        # or as a dictionary mapping set keys to a value. When a scalar union config type
+        # is used as the key type for a dictionary, we extract the scalar type
+        # only, so that we only permit passing the scalar value directly.
+        if self._key_dagster_type.loader.schema_type.kind == ConfigTypeKind.SCALAR_UNION:
+            key_schema_type = typing.cast(
+                ScalarUnion, self._key_dagster_type.loader.schema_type
+            ).scalar_type
+        else:
+            key_schema_type = self._key_dagster_type.loader.schema_type
+
         self._value_dagster_type = check.inst_param(
             value_dagster_type, "value_dagster_type", DagsterType
+        )
+        check.param_invariant(self._value_dagster_type.loader, "value_dagster_type")
+        self._schema_type = Map(
+            key_type=key_schema_type,
+            inner_type=self._value_dagster_type.loader.schema_type,
         )
 
     @property
     def schema_type(self):
-        return Permissive()
+        return self._schema_type
 
     def construct_from_config_value(self, context, config_value):
         config_value = check.dict_param(config_value, "config_value")
@@ -52,7 +73,9 @@ class _TypedPythonDict(DagsterType):
         super(_TypedPythonDict, self).__init__(
             key="TypedPythonDict.{}.{}".format(key_type.key, value_type.key),
             name=None,
-            loader=(TypedDictLoader(self.value_type) if can_get_from_config else None),
+            loader=(
+                TypedDictLoader(self.key_type, self.value_type) if can_get_from_config else None
+            ),
             type_check_fn=self.type_check_method,
             typing_type=typing.Dict[key_type.typing_type, value_type.typing_type],
         )

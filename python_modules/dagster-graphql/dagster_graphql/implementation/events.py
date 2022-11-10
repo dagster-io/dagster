@@ -1,4 +1,5 @@
 from math import isnan
+from typing import Any, Iterator, Sequence, no_type_check
 
 from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
@@ -12,6 +13,7 @@ from dagster import (
     JsonMetadataValue,
     MarkdownMetadataValue,
     MetadataEntry,
+    NotebookMetadataValue,
     PathMetadataValue,
     PythonArtifactMetadataValue,
     TableMetadataValue,
@@ -28,7 +30,7 @@ MAX_INT = 2147483647
 MIN_INT = -2147483648
 
 
-def iterate_metadata_entries(metadata_entries):
+def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Iterator[Any]:
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
@@ -36,6 +38,7 @@ def iterate_metadata_entries(metadata_entries):
         GrapheneIntMetadataEntry,
         GrapheneJsonMetadataEntry,
         GrapheneMarkdownMetadataEntry,
+        GrapheneNotebookMetadataEntry,
         GraphenePathMetadataEntry,
         GraphenePipelineRunMetadataEntry,
         GraphenePythonArtifactMetadataEntry,
@@ -45,10 +48,16 @@ def iterate_metadata_entries(metadata_entries):
         GrapheneUrlMetadataEntry,
     )
 
-    check.list_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
+    check.sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
     for metadata_entry in metadata_entries:
         if isinstance(metadata_entry.entry_data, PathMetadataValue):
             yield GraphenePathMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                path=metadata_entry.entry_data.path,
+            )
+        elif isinstance(metadata_entry.entry_data, NotebookMetadataValue):
+            yield GrapheneNotebookMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 path=metadata_entry.entry_data.path,
@@ -88,7 +97,7 @@ def iterate_metadata_entries(metadata_entries):
             float_val = metadata_entry.entry_data.value
 
             # coerce NaN to null
-            if isnan(float_val):
+            if float_val is not None and isnan(float_val):
                 float_val = None
 
             yield GrapheneFloatMetadataEntry(
@@ -99,7 +108,10 @@ def iterate_metadata_entries(metadata_entries):
         elif isinstance(metadata_entry.entry_data, IntMetadataValue):
             # coerce > 32 bit ints to null
             int_val = None
-            if MIN_INT <= metadata_entry.entry_data.value <= MAX_INT:
+            if (
+                isinstance(metadata_entry.entry_data.value, int)
+                and MIN_INT <= metadata_entry.entry_data.value <= MAX_INT
+            ):
                 int_val = metadata_entry.entry_data.value
 
             yield GrapheneIntMetadataEntry(
@@ -155,11 +167,14 @@ def iterate_metadata_entries(metadata_entries):
             )
 
 
-def _to_metadata_entries(metadata_entries):
+def _to_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Sequence[Any]:
     return list(iterate_metadata_entries(metadata_entries) or [])
 
 
-def from_dagster_event_record(event_record, pipeline_name):
+# We don't typecheck this due to the excessive number of type errors resulting from the
+# non-type-checker legible relationship between `event_type` and the class of `event_specific_data`.
+@no_type_check
+def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
     from ..schema.errors import GraphenePythonError
     from ..schema.logs.events import (
         GrapheneAlertFailureEvent,
@@ -206,7 +221,7 @@ def from_dagster_event_record(event_record, pipeline_name):
     check.param_invariant(event_record.is_dagster_event, "event_record")
     check.str_param(pipeline_name, "pipeline_name")
 
-    dagster_event = event_record.dagster_event
+    dagster_event = check.not_none(event_record.dagster_event)
     basic_params = construct_basic_params(event_record)
     if dagster_event.event_type == DagsterEventType.STEP_START:
         return GrapheneExecutionStepStartEvent(**basic_params)
@@ -223,7 +238,7 @@ def from_dagster_event_record(event_record, pipeline_name):
     elif dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
         return GrapheneExecutionStepSuccessEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_INPUT:
-        input_data = dagster_event.event_specific_data
+        input_data = check.not_none(dagster_event.event_specific_data)
         return GrapheneExecutionStepInputEvent(
             input_name=input_data.input_name,
             type_check=input_data.type_check_data,
@@ -322,7 +337,7 @@ def from_dagster_event_record(event_record, pipeline_name):
             output_name=dagster_event.event_specific_data.output_name,
             manager_key=dagster_event.event_specific_data.manager_key,
             metadataEntries=_to_metadata_entries(
-                dagster_event.event_specific_data.metadata_entries
+                dagster_event.event_specific_data.metadata_entries  # type: ignore
             ),
             **basic_params,
         )
@@ -333,7 +348,7 @@ def from_dagster_event_record(event_record, pipeline_name):
             upstream_output_name=dagster_event.event_specific_data.upstream_output_name,
             upstream_step_key=dagster_event.event_specific_data.upstream_step_key,
             metadataEntries=_to_metadata_entries(
-                dagster_event.event_specific_data.metadata_entries
+                dagster_event.event_specific_data.metadata_entries  # type: ignore
             ),
             **basic_params,
         )
@@ -361,8 +376,10 @@ def from_dagster_event_record(event_record, pipeline_name):
         )
     elif dagster_event.event_type == DagsterEventType.LOGS_CAPTURED:
         return GrapheneLogsCapturedEvent(
-            logKey=dagster_event.logs_captured_data.log_key,
+            fileKey=dagster_event.logs_captured_data.file_key,
+            logKey=dagster_event.logs_captured_data.file_key,
             stepKeys=dagster_event.logs_captured_data.step_keys,
+            externalUrl=dagster_event.logs_captured_data.external_url,
             pid=dagster_event.pid,
             **basic_params,
         )
@@ -410,7 +427,7 @@ def from_dagster_event_record(event_record, pipeline_name):
         )
 
 
-def from_event_record(event_record, pipeline_name):
+def from_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
     from ..schema.logs.events import GrapheneLogMessageEvent
 
     check.inst_param(event_record, "event_record", EventLogEntry)
@@ -422,20 +439,21 @@ def from_event_record(event_record, pipeline_name):
         return GrapheneLogMessageEvent(**construct_basic_params(event_record))
 
 
-def construct_basic_params(event_record):
+def construct_basic_params(event_record: EventLogEntry) -> Any:
     from ..schema.logs.log_level import GrapheneLogLevel
 
     check.inst_param(event_record, "event_record", EventLogEntry)
+    dagster_event = event_record.dagster_event
     return {
         "runId": event_record.run_id,
         "message": event_record.message,
         "timestamp": int(event_record.timestamp * 1000),
         "level": GrapheneLogLevel.from_level(event_record.level),
-        "eventType": event_record.dagster_event.event_type
-        if (event_record.dagster_event and event_record.dagster_event.event_type)
+        "eventType": dagster_event.event_type
+        if (dagster_event and dagster_event.event_type)
         else None,
         "stepKey": event_record.step_key,
-        "solidHandleID": event_record.dagster_event.solid_handle.to_string()
-        if event_record.is_dagster_event and event_record.dagster_event.solid_handle
+        "solidHandleID": event_record.dagster_event.solid_handle.to_string()  # type: ignore
+        if dagster_event and dagster_event.solid_handle
         else None,
     }

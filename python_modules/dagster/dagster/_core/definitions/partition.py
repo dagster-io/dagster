@@ -40,6 +40,7 @@ from ..errors import (
     user_code_error_boundary,
 )
 from ..storage.pipeline_run import PipelineRun
+from .config import ConfigMapping
 from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
 from .schedule_definition import (
@@ -248,7 +249,7 @@ class StaticPartitionsDefinition(
     PartitionsDefinition[str],
 ):  # pylint: disable=unsubscriptable-object
     def __init__(self, partition_keys: Sequence[str]):
-        check.list_param(partition_keys, "partition_keys", of_type=str)
+        check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
         # Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
         # "..." is an invalid substring in partition keys
@@ -649,7 +650,7 @@ class PartitionSetDefinition(Generic[T]):
         check.str_param(schedule_name, "schedule_name")
         check.str_param(cron_schedule, "cron_schedule")
         check.opt_callable_param(should_execute, "should_execute")
-        check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
+        check.opt_mapping_param(environment_vars, "environment_vars", key_type=str, value_type=str)
         check.callable_param(partition_selector, "partition_selector")
         check.opt_str_param(execution_timezone, "execution_timezone")
         check.opt_str_param(description, "description")
@@ -869,6 +870,28 @@ class PartitionedConfig(Generic[T]):
             raise DagsterInvalidInvocationError(f"No partition for partition key {partition_key}.")
         return self.run_config_for_partition_fn(partition[0])
 
+    @classmethod
+    def from_flexible_config(
+        cls,
+        config: Optional[Union[ConfigMapping, Mapping[str, object], "PartitionedConfig"]],
+        partitions_def: PartitionsDefinition,
+    ) -> "PartitionedConfig":
+        check.invariant(
+            not isinstance(config, ConfigMapping),
+            "Can't supply a ConfigMapping for 'config' when 'partitions_def' is supplied.",
+        )
+
+        if isinstance(config, PartitionedConfig):
+            check.invariant(
+                config.partitions_def == partitions_def,
+                "Can't supply a PartitionedConfig for 'config' with a different "
+                "PartitionsDefinition than supplied for 'partitions_def'.",
+            )
+            return config
+        else:
+            hardcoded_config = config if config else {}
+            return cls(partitions_def, lambda _: cast(Mapping, hardcoded_config))
+
     def __call__(self, *args, **kwargs):
         if self._decorated_fn is None:
             raise DagsterInvalidInvocationError(
@@ -903,7 +926,7 @@ def static_partitioned_config(
     Returns:
         PartitionedConfig
     """
-    check.list_param(partition_keys, "partition_keys", str)
+    check.sequence_param(partition_keys, "partition_keys", str)
 
     def inner(fn: Callable[[str], Mapping[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")

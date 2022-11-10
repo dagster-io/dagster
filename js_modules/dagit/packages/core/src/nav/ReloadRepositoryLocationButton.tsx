@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
-import {useFeatureFlags} from '../app/Flags';
 import {RepositoryLocationErrorDialog} from '../workspace/RepositoryLocationErrorDialog';
 
 import {buildReloadFnForLocation, useRepositoryLocationReload} from './useRepositoryLocationReload';
@@ -21,7 +20,6 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
   const [shown, setShown] = React.useState(false);
 
   const {basePath} = React.useContext(AppContext);
-  const {flagNewWorkspace} = useFeatureFlags();
 
   const reloadFn = React.useMemo(() => buildReloadFnForLocation(location), [location]);
   const {reloading, error, tryReload} = useRepositoryLocationReload({
@@ -45,9 +43,7 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
           // is presented to the user, and so that if the user was previously viewing
           // an object in a failed repo location, they aren't staring at a blank page.
           setShown(false);
-          window.location.href = flagNewWorkspace
-            ? `${basePath}/instance/code-locations`
-            : `${basePath}/workspace`;
+          window.location.href = `${basePath}/instance/code-locations`;
         }}
       />
     </>

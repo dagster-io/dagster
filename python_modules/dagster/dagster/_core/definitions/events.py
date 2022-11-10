@@ -6,7 +6,6 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    Dict,
     Generic,
     List,
     Mapping,
@@ -21,6 +20,7 @@ from typing import (
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
@@ -42,12 +42,12 @@ ASSET_KEY_DELIMITER = "/"
 ASSET_KEY_LEGACY_DELIMITER = "."
 
 
-def parse_asset_key_string(s: str) -> List[str]:
+def parse_asset_key_string(s: str) -> Sequence[str]:
     return list(filter(lambda x: x, re.split(ASSET_KEY_SPLIT_REGEX, s)))
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
+class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -103,7 +103,12 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
     def __eq__(self, other):
         if not isinstance(other, AssetKey):
             return False
-        return self.to_string() == other.to_string()
+        if len(self.path) != len(other.path):
+            return False
+        for i in range(0, len(self.path)):
+            if self.path[i] != other.path[i]:
+                return False
+        return True
 
     def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
         """
@@ -120,6 +125,17 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
         E.g. "first_component/second_component"
         """
         return ASSET_KEY_DELIMITER.join(self.path)
+
+    def to_python_identifier(self, suffix: Optional[str] = None) -> str:
+        """Build a valid Python identifier based on the asset key that can be used for
+        operation names or I/O manager keys.
+        """
+        path = list(self.path)
+
+        if suffix is not None:
+            path.append(suffix)
+
+        return "__".join(path).replace("-", "_")
 
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
@@ -140,14 +156,14 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
         return AssetKey(path)
 
     @staticmethod
-    def get_db_prefix(path: List[str], legacy: Optional[bool] = False):
-        check.list_param(path, "path", of_type=str)
+    def get_db_prefix(path: Sequence[str], legacy: Optional[bool] = False):
+        check.sequence_param(path, "path", of_type=str)
         if legacy:
             return ASSET_KEY_LEGACY_DELIMITER.join(path)
         return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
-    def from_graphql_input(asset_key: Mapping[str, List[str]]) -> Optional["AssetKey"]:
+    def from_graphql_input(asset_key: Mapping[str, Sequence[str]]) -> Optional["AssetKey"]:
         if asset_key and asset_key.get("path"):
             return AssetKey(asset_key["path"])
         return None
@@ -164,6 +180,16 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
         else:
             check.tuple_param(arg, "arg", of_type=str)
             return AssetKey(arg)
+
+
+class AssetKeyPartitionKey(NamedTuple):
+    """
+    An AssetKey with an (optional) partition key. Refers either to a non-partitioned asset or a
+    partition of a partitioned asset.
+    """
+
+    asset_key: AssetKey
+    partition_key: Optional[str] = None
 
 
 CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
@@ -203,7 +229,7 @@ class Output(Generic[T]):
             "result")
         metadata_entries (Optional[Union[MetadataEntry, PartitionMetadataEntry]]):
             (Experimental) A set of metadata entries to attach to events related to this Output.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, MetadataValue]]]):
+        metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
@@ -214,11 +240,11 @@ class Output(Generic[T]):
         value: T,
         output_name: Optional[str] = DEFAULT_OUTPUT,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
 
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_list_param(
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_sequence_param(
             metadata_entries,
             "metadata_entries",
             of_type=(MetadataEntry, PartitionMetadataEntry),
@@ -271,7 +297,7 @@ class DynamicOutput(Generic[T]):
             (default: "result")
         metadata_entries (Optional[Union[MetadataEntry, PartitionMetadataEntry]]):
             (Experimental) A set of metadata entries to attach to events related to this output.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, MetadataValue]]]):
+        metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
@@ -282,12 +308,12 @@ class DynamicOutput(Generic[T]):
         value: T,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[List[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata_entries: Optional[Sequence[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
 
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_list_param(
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         self._mapping_key = check_valid_name(check.str_param(mapping_key, "mapping_key"))
@@ -331,7 +357,7 @@ class AssetObservation(
         [
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
             ("partition", PublicAttr[Optional[str]]),
         ],
     )
@@ -343,7 +369,7 @@ class AssetObservation(
         metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the asset.
         partition (Optional[str]): The name of a partition of the asset that the metadata
             corresponds to.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, MetadataValue]]]):
+        metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
@@ -351,11 +377,11 @@ class AssetObservation(
 
     def __new__(
         cls,
-        asset_key: Union[List[str], AssetKey, str],
+        asset_key: Union[Sequence[str], AssetKey, str],
         description: Optional[str] = None,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         partition: Optional[str] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -368,8 +394,8 @@ class AssetObservation(
             check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_list_param(
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
@@ -397,6 +423,7 @@ class AssetMaterialization(
             ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("partition", PublicAttr[Optional[str]]),
+            ("tags", Optional[Mapping[str, str]]),
         ],
     )
 ):
@@ -412,12 +439,15 @@ class AssetMaterialization(
     computations, enabling tooling like the Assets dashboard in Dagit.
 
     Args:
-        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across job
-            runs
+        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across
+            job runs
         description (Optional[str]): A longer human-readable description of the materialized value.
-        metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary metadata about the
-            materialized value.
-        partition (Optional[str]): The name of the partition that was materialized.
+        metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary
+            metadata about the materialized value.
+        partition (Optional[str]): The name of the partition
+            that was materialized.
+        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
+            materialization. Users should not pass values into this argument.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -430,8 +460,11 @@ class AssetMaterialization(
         description: Optional[str] = None,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
+        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
@@ -443,17 +476,38 @@ class AssetMaterialization(
             check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
+        check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
+        if any([not tag.startswith(SYSTEM_TAG_PREFIX) for tag in tags or {}]):
+            check.failed(
+                "Users should not pass values into the tags argument for AssetMaterializations. "
+                "The tags argument is reserved for system-populated tags."
+            )
+
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
         )
+
+        partition = check.opt_str_param(partition, "partition")
+
+        if not isinstance(partition, MultiPartitionKey):
+            # When event log records are unpacked from storage, cast the partition key as a
+            # MultiPartitionKey if multi-dimensional partition tags exist
+            multi_dimensional_partitions = {
+                dimension[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]: partition_key
+                for dimension, partition_key in (tags or {}).items()
+                if dimension.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+            }
+            if multi_dimensional_partitions:
+                partition = MultiPartitionKey(multi_dimensional_partitions)
 
         return super(AssetMaterialization, cls).__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
             metadata_entries=normalize_metadata(metadata, metadata_entries),
-            partition=check.opt_str_param(partition, "partition"),
+            tags=tags,
+            partition=partition,
         )
 
     @property
@@ -465,7 +519,7 @@ class AssetMaterialization(
     def file(
         path: str,
         description: Optional[str] = None,
-        asset_key: Optional[Union[str, List[str], AssetKey]] = None,
+        asset_key: Optional[Union[str, Sequence[str], AssetKey]] = None,
     ) -> "AssetMaterialization":
         """Static constructor for standard materializations corresponding to files on disk.
 
@@ -504,7 +558,7 @@ class Materialization(
         [
             ("label", str),
             ("description", Optional[str]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
             ("asset_key", AssetKey),
             ("partition", Optional[str]),
         ],
@@ -534,7 +588,7 @@ class Materialization(
         cls,
         label: Optional[str] = None,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         asset_key: Optional[Union[str, AssetKey]] = None,
         partition: Optional[str] = None,
         skip_deprecation_warning: Optional[bool] = False,
@@ -556,7 +610,7 @@ class Materialization(
         if not skip_deprecation_warning:
             warnings.warn("`Materialization` is deprecated; use `AssetMaterialization` instead.")
 
-        metadata_entries = check.opt_list_param(
+        metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
@@ -564,7 +618,7 @@ class Materialization(
             cls,
             label=check.str_param(label, "label"),
             description=check.opt_str_param(description, "description"),
-            metadata_entries=check.opt_list_param(
+            metadata_entries=check.opt_sequence_param(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             asset_key=asset_key,
@@ -599,7 +653,7 @@ class ExpectationResult(
             ("success", PublicAttr[bool]),
             ("label", PublicAttr[Optional[str]]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
         ],
     )
 ):
@@ -626,13 +680,13 @@ class ExpectationResult(
         success: bool,
         label: Optional[str] = None,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata_entries = check.opt_list_param(
+        metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
 
         return super(ExpectationResult, cls).__new__(
             cls,
@@ -652,7 +706,7 @@ class TypeCheck(
         [
             ("success", PublicAttr[bool]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", PublicAttr[List[MetadataEntry]]),
+            ("metadata_entries", PublicAttr[Sequence[MetadataEntry]]),
         ],
     )
 ):
@@ -680,14 +734,14 @@ class TypeCheck(
         cls,
         success: bool,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
 
-        metadata_entries = check.opt_list_param(
+        metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
 
         return super(TypeCheck, cls).__new__(
             cls,
@@ -722,14 +776,14 @@ class Failure(Exception):
     def __init__(
         self,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         allow_retries: Optional[bool] = None,
     ):
-        metadata_entries = check.opt_list_param(
+        metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
 
         super(Failure, self).__init__(description)
         self.description = check.opt_str_param(description, "description")

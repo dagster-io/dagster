@@ -30,8 +30,17 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
-    To use Postgres for schedule storage, you can add a block such as the following to your
-    ``dagster.yaml``:
+    To use Postgres for all of the components of your instance storage, you can add the following
+    block to your ``dagster.yaml``:
+
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+       :caption: dagster.yaml
+       :lines: 1-8
+       :language: YAML
+
+    If you are configuring the different storage components separately and are specifically
+    configuring your schedule storage to use Postgres, you can add a block such as the following
+    to your ``dagster.yaml``:
 
     .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg-legacy.yaml
        :caption: dagster.yaml
@@ -74,13 +83,14 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self.migrate()
         self.optimize()
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout, pool_recycle):
         # When running in dagit, hold an open connection and set statement_timeout
         self._engine = create_engine(
             self.postgres_url,
             isolation_level="AUTOCOMMIT",
             pool_size=1,
             connect_args={"options": pg_statement_timeout(statement_timeout)},
+            pool_recycle=pool_recycle,
         )
 
     @property

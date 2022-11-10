@@ -2,13 +2,13 @@ from typing import Tuple
 
 import pytest
 
-from dagster import DagsterTypeCheckDidNotPass
+from dagster import DagsterTypeCheckDidNotPass, In, Out, op
 from dagster._core.types.python_tuple import create_typed_tuple
-from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, lambda_solid
+from dagster._legacy import execute_solid
 
 
 def test_vanilla_tuple_output():
-    @lambda_solid(output_def=OutputDefinition(tuple))
+    @op(out=Out(tuple))
     def emit_tuple():
         return (1, 2)
 
@@ -16,7 +16,7 @@ def test_vanilla_tuple_output():
 
 
 def test_vanilla_tuple_output_fail():
-    @lambda_solid(output_def=OutputDefinition(tuple))
+    @op(out=Out(tuple))
     def emit_tuple():
         return "foo"
 
@@ -25,7 +25,7 @@ def test_vanilla_tuple_output_fail():
 
 
 def test_vanilla_tuple_input():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=tuple)])
+    @op(ins={"tt": In(dagster_type=tuple)})
     def take_tuple(tt):
         return tt
 
@@ -36,7 +36,7 @@ def test_vanilla_tuple_input():
 
 
 def test_vanilla_tuple_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=tuple)])
+    @op(ins={"tt": In(dagster_type=tuple)})
     def take_tuple(tt):
         return tt
 
@@ -45,7 +45,7 @@ def test_vanilla_tuple_input_fail():
 
 
 def test_open_typing_tuple_output():
-    @lambda_solid(output_def=OutputDefinition(Tuple))
+    @op(out=Out(Tuple))
     def emit_tuple():
         return (1, 2)
 
@@ -53,7 +53,7 @@ def test_open_typing_tuple_output():
 
 
 def test_open_typing_tuple_output_fail():
-    @lambda_solid(output_def=OutputDefinition(Tuple))
+    @op(out=Out(Tuple))
     def emit_tuple():
         return "foo"
 
@@ -62,7 +62,7 @@ def test_open_typing_tuple_output_fail():
 
 
 def test_open_typing_tuple_input():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=Tuple)])
+    @op(ins={"tt": In(dagster_type=Tuple)})
     def take_tuple(tt):
         return tt
 
@@ -73,7 +73,7 @@ def test_open_typing_tuple_input():
 
 
 def test_open_typing_tuple_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=Tuple)])
+    @op(ins={"tt": In(dagster_type=Tuple)})
     def take_tuple(tt):
         return tt
 
@@ -117,7 +117,7 @@ def test_nested_python_tuple_directly():
 
 
 def test_closed_typing_tuple_output():
-    @lambda_solid(output_def=OutputDefinition(Tuple[int, int]))
+    @op(out=Out(Tuple[int, int]))
     def emit_tuple():
         return (1, 2)
 
@@ -125,7 +125,7 @@ def test_closed_typing_tuple_output():
 
 
 def test_closed_typing_tuple_output_fail():
-    @lambda_solid(output_def=OutputDefinition(Tuple[int, int]))
+    @op(out=Out(Tuple[int, int]))
     def emit_tuple():
         return "foo"
 
@@ -134,7 +134,7 @@ def test_closed_typing_tuple_output_fail():
 
 
 def test_closed_typing_tuple_output_fail_wrong_member_types():
-    @lambda_solid(output_def=OutputDefinition(Tuple[int, int]))
+    @op(out=Out(Tuple[int, int]))
     def emit_tuple():
         return (1, "nope")
 
@@ -143,7 +143,7 @@ def test_closed_typing_tuple_output_fail_wrong_member_types():
 
 
 def test_closed_typing_tuple_output_fail_wrong_length():
-    @lambda_solid(output_def=OutputDefinition(Tuple[int, int]))
+    @op(out=Out(Tuple[int, int]))
     def emit_tuple():
         return (1,)
 
@@ -152,7 +152,7 @@ def test_closed_typing_tuple_output_fail_wrong_length():
 
 
 def test_closed_typing_tuple_input():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=Tuple[int, int])])
+    @op(ins={"tt": In(dagster_type=Tuple[int, int])})
     def take_tuple(tt):
         return tt
 
@@ -163,7 +163,7 @@ def test_closed_typing_tuple_input():
 
 
 def test_closed_typing_tuple_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=Tuple[int, int])])
+    @op(ins={"tt": In(dagster_type=Tuple[int, int])})
     def take_tuple(tt):
         return tt
 

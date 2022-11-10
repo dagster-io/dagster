@@ -55,8 +55,14 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
   }
   return (
     <>
-      <FailedRunsSinceMaterializationBanner liveData={liveData} />
-      <CurrentRunsBanner liveData={liveData} />
+      <FailedRunsSinceMaterializationBanner
+        liveData={liveData}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+      />
+      <CurrentRunsBanner
+        liveData={liveData}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+      />
       <SidebarSection title="Materialization in Last Run">
         {materializations[0] ? (
           <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>

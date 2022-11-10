@@ -215,7 +215,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent message={node.message} />;
     case 'LogsCapturedEvent':
       const currentQuery = qs.parse(location.search, {ignoreQueryPrefix: true});
-      const updatedQuery = {...currentQuery, logType: 'stdout', logKey: node.stepKey};
+      const updatedQuery = {...currentQuery, logType: 'stdout', logFileKey: node.stepKey};
       const rawLogsUrl = `${location.pathname}?${qs.stringify(updatedQuery)}`;
       const rawLogsLink = (
         <Link to={rawLogsUrl} style={{color: 'inherit'}}>
@@ -440,6 +440,7 @@ const AssetMetadataContent: React.FC<{
     <DefaultContent message={message} eventType={eventType}>
       <>
         <LogRowStructuredContentTable
+          styles={metadataEntries?.length ? {paddingBottom: 0} : {}}
           rows={[
             {
               label: 'asset_key',
@@ -451,7 +452,6 @@ const AssetMetadataContent: React.FC<{
               ),
             },
           ]}
-          styles={{paddingBottom: 0}}
         />
         <MetadataEntries entries={metadataEntries} />
       </>

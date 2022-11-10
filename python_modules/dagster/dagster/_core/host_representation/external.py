@@ -1,8 +1,23 @@
+from __future__ import annotations
+
+from datetime import datetime
 from threading import RLock
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+)
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.sensor_definition import (
@@ -10,8 +25,15 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
 )
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.host_representation.origin import (
+    ExternalInstigatorOrigin,
+    ExternalPartitionSetOrigin,
+    ExternalPipelineOrigin,
+    ExternalRepositoryOrigin,
+)
+from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
+from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
 from dagster._utils.schedules import schedule_execution_time_iterator
@@ -21,9 +43,12 @@ from .external_data import (
     ExternalJobRef,
     ExternalPartitionSetData,
     ExternalPipelineData,
+    ExternalPresetData,
     ExternalRepositoryData,
     ExternalScheduleData,
     ExternalSensorData,
+    ExternalSensorMetadata,
+    ExternalTargetData,
 )
 from .handle import InstigatorHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
@@ -55,7 +80,7 @@ class ExternalRepository:
             self._job_map: Dict[str, Union[ExternalPipelineData, ExternalJobRef]] = {
                 d.name: d for d in external_repository_data.external_pipeline_datas
             }
-            self._deferred_snapshots = False
+            self._deferred_snapshots: bool = False
             self._ref_to_data_fn = None
         elif external_repository_data.external_job_refs is not None:
             self._job_map = {r.name: r for r in external_repository_data.external_job_refs}
@@ -76,10 +101,10 @@ class ExternalRepository:
             *external_repository_data.external_schedule_datas,  # type: ignore
             *external_repository_data.external_sensor_datas,  # type: ignore
         ]
-        self._instigation_map = {
+        self._instigation_map: Mapping[str, Union[ExternalScheduleData, ExternalSensorData]] = {
             instigation_data.name: instigation_data for instigation_data in instigation_list
         }
-        self._partition_set_map = {
+        self._partition_set_map: Mapping[str, ExternalPartitionSetData] = {
             external_partition_set_data.name: external_partition_set_data
             for external_partition_set_data in external_repository_data.external_partition_set_datas
         }
@@ -93,60 +118,60 @@ class ExternalRepository:
                     self._asset_jobs[job_name].append(asset_node)
 
         # memoize job instances to share instances
-        self._memo_lock = RLock()
+        self._memo_lock: RLock = RLock()
         self._cached_jobs: Dict[str, ExternalPipeline] = {}
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.external_repository_data.name
 
-    def has_external_schedule(self, schedule_name):
+    def has_external_schedule(self, schedule_name: str) -> bool:
         return isinstance(self._instigation_map.get(schedule_name), ExternalScheduleData)
 
-    def get_external_schedule(self, schedule_name):
+    def get_external_schedule(self, schedule_name: str) -> ExternalSchedule:
         return ExternalSchedule(
             self.external_repository_data.get_external_schedule_data(schedule_name), self._handle
         )
 
-    def get_external_schedules(self):
+    def get_external_schedules(self) -> Sequence[ExternalSchedule]:
         return [
             ExternalSchedule(external_schedule_data, self._handle)
             for external_schedule_data in self.external_repository_data.external_schedule_datas
         ]
 
-    def has_external_sensor(self, sensor_name):
+    def has_external_sensor(self, sensor_name) -> bool:
         return isinstance(self._instigation_map.get(sensor_name), ExternalSensorData)
 
-    def get_external_sensor(self, sensor_name):
+    def get_external_sensor(self, sensor_name) -> ExternalSensor:
         return ExternalSensor(
             self.external_repository_data.get_external_sensor_data(sensor_name), self._handle
         )
 
-    def get_external_sensors(self):
+    def get_external_sensors(self) -> Sequence[ExternalSensor]:
         return [
             ExternalSensor(external_sensor_data, self._handle)
             for external_sensor_data in self.external_repository_data.external_sensor_datas
         ]
 
-    def has_external_partition_set(self, partition_set_name):
+    def has_external_partition_set(self, partition_set_name: str) -> bool:
         return partition_set_name in self._partition_set_map
 
-    def get_external_partition_set(self, partition_set_name):
+    def get_external_partition_set(self, partition_set_name: str) -> ExternalPartitionSet:
         return ExternalPartitionSet(
             self.external_repository_data.get_external_partition_set_data(partition_set_name),
             self._handle,
         )
 
-    def get_external_partition_sets(self):
+    def get_external_partition_sets(self) -> Sequence[ExternalPartitionSet]:
         return [
             ExternalPartitionSet(external_partition_set_data, self._handle)
             for external_partition_set_data in self.external_repository_data.external_partition_set_datas
         ]
 
-    def has_external_job(self, job_name):
+    def has_external_job(self, job_name: str) -> bool:
         return job_name in self._job_map
 
-    def get_full_external_job(self, job_name: str) -> "ExternalPipeline":
+    def get_full_external_job(self, job_name: str) -> ExternalPipeline:
         check.str_param(job_name, "job_name")
         check.invariant(
             self.has_external_job(job_name), f'No external job named "{job_name}" found'
@@ -174,26 +199,26 @@ class ExternalRepository:
 
             return self._cached_jobs[job_name]
 
-    def get_all_external_jobs(self):
+    def get_all_external_jobs(self) -> Sequence[ExternalPipeline]:
         return [self.get_full_external_job(pn) for pn in self._job_map]
 
     @property
-    def handle(self):
+    def handle(self) -> RepositoryHandle:
         return self._handle
 
     @property
-    def selector_id(self):
+    def selector_id(self) -> str:
         return create_snapshot_id(
             RepositorySelector(self._handle.location_name, self._handle.repository_name)
         )
 
-    def get_external_origin(self):
+    def get_external_origin(self) -> ExternalRepositoryOrigin:
         return self.handle.get_external_origin()
 
-    def get_python_origin(self):
+    def get_python_origin(self) -> RepositoryPythonOrigin:
         return self.handle.get_python_origin()
 
-    def get_external_origin_id(self):
+    def get_external_origin_id(self) -> str:
         """
         A means of identifying the repository this ExternalRepository represents based on
         where it came from.
@@ -215,7 +240,7 @@ class ExternalRepository:
         ]
         return matching[0] if matching else None
 
-    def get_display_metadata(self):
+    def get_display_metadata(self) -> Mapping[str, str]:
         return self.handle.display_metadata
 
 
@@ -239,7 +264,7 @@ class ExternalPipeline(RepresentedPipeline):
         self._repository_handle = repository_handle
 
         self._memo_lock = RLock()
-        self._index = None
+        self._index: Optional[PipelineIndex] = None
 
         self._data = external_pipeline_data
         self._ref = external_job_ref
@@ -264,17 +289,17 @@ class ExternalPipeline(RepresentedPipeline):
         self._handle = PipelineHandle(self._name, repository_handle)
 
     @property
-    def _pipeline_index(self):
+    def _pipeline_index(self) -> PipelineIndex:
         with self._memo_lock:
             if self._index is None:
                 self._index = PipelineIndex(
                     self.external_pipeline_data.pipeline_snapshot,
                     self.external_pipeline_data.parent_pipeline_snapshot,
                 )
-            return self._index
+            return self._index  # type: ignore
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
@@ -296,11 +321,11 @@ class ExternalPipeline(RepresentedPipeline):
             return self._data
 
     @property
-    def repository_handle(self):
+    def repository_handle(self) -> RepositoryHandle:
         return self._repository_handle
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> Optional[Sequence[str]]:
         return (
             self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
@@ -308,7 +333,7 @@ class ExternalPipeline(RepresentedPipeline):
         )
 
     @property
-    def solids_to_execute(self):
+    def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         return (
             self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
@@ -316,7 +341,7 @@ class ExternalPipeline(RepresentedPipeline):
         )
 
     @property
-    def asset_selection(self):
+    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return (
             self._pipeline_index.pipeline_snapshot.lineage_snapshot.asset_selection
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
@@ -324,34 +349,34 @@ class ExternalPipeline(RepresentedPipeline):
         )
 
     @property
-    def active_presets(self):
+    def active_presets(self) -> Sequence[ExternalPresetData]:
         return list(self._active_preset_dict.values())
 
     @property
-    def solid_names(self):
+    def solid_names(self) -> Sequence[str]:
         return self._pipeline_index.pipeline_snapshot.solid_names
 
-    def has_solid_invocation(self, solid_name):
+    def has_solid_invocation(self, solid_name: str):
         check.str_param(solid_name, "solid_name")
         return self._pipeline_index.has_solid_invocation(solid_name)
 
-    def has_preset(self, preset_name):
+    def has_preset(self, preset_name: str) -> bool:
         check.str_param(preset_name, "preset_name")
         return preset_name in self._active_preset_dict
 
-    def get_preset(self, preset_name):
+    def get_preset(self, preset_name: str) -> ExternalPresetData:
         check.str_param(preset_name, "preset_name")
         return self._active_preset_dict[preset_name]
 
     @property
-    def available_modes(self):
+    def available_modes(self) -> Sequence[str]:
         return self._pipeline_index.available_modes
 
-    def has_mode(self, mode_name):
+    def has_mode(self, mode_name: str) -> bool:
         check.str_param(mode_name, "mode_name")
         return self._pipeline_index.has_mode_def(mode_name)
 
-    def root_config_key_for_mode(self, mode_name):
+    def root_config_key_for_mode(self, mode_name: Optional[str]) -> Optional[str]:
         check.opt_str_param(mode_name, "mode_name")
         return self.get_mode_def_snap(
             mode_name if mode_name else self.get_default_mode_name()
@@ -361,37 +386,37 @@ class ExternalPipeline(RepresentedPipeline):
         return self._pipeline_index.get_default_mode_name()
 
     @property
-    def tags(self):
+    def tags(self) -> Mapping[str, object]:
         return self._pipeline_index.pipeline_snapshot.tags
 
     @property
-    def metadata(self):
+    def metadata(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
         return self._pipeline_index.pipeline_snapshot.metadata
 
     @property
-    def computed_pipeline_snapshot_id(self):
+    def computed_pipeline_snapshot_id(self) -> str:
         return self._snapshot_id
 
     @property
-    def identifying_pipeline_snapshot_id(self):
+    def identifying_pipeline_snapshot_id(self) -> str:
         return self._snapshot_id
 
     @property
-    def handle(self):
+    def handle(self) -> PipelineHandle:
         return self._handle
 
-    def get_python_origin(self):
+    def get_python_origin(self) -> PipelinePythonOrigin:
         repository_python_origin = self.repository_handle.get_python_origin()
         return PipelinePythonOrigin(self.name, repository_python_origin)
 
-    def get_external_origin(self):
+    def get_external_origin(self) -> ExternalPipelineOrigin:
         return self.handle.get_external_origin()
 
-    def get_external_origin_id(self):
+    def get_external_origin_id(self) -> str:
         return self.get_external_origin().get_id()
 
     @property
-    def is_job(self):
+    def is_job(self) -> bool:
         return self._is_job
 
 
@@ -401,14 +426,16 @@ class ExternalExecutionPlan:
     was compiled in another process or persisted in an instance.
     """
 
-    def __init__(self, execution_plan_snapshot):
+    def __init__(self, execution_plan_snapshot: ExecutionPlanSnapshot):
         self.execution_plan_snapshot = check.inst_param(
             execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
         )
 
-        self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
+        self._step_index: Mapping[str, ExecutionStepSnap] = {
+            step.key: step for step in self.execution_plan_snapshot.steps
+        }
 
-        self._step_keys_in_plan = (
+        self._step_keys_in_plan: AbstractSet[str] = (
             set(execution_plan_snapshot.step_keys_to_execute)
             if execution_plan_snapshot.step_keys_to_execute
             else set(self._step_index.keys())
@@ -419,24 +446,24 @@ class ExternalExecutionPlan:
         self._topological_step_levels = None
 
     @property
-    def step_keys_in_plan(self):
+    def step_keys_in_plan(self) -> Sequence[str]:
         return list(self._step_keys_in_plan)
 
-    def has_step(self, key):
+    def has_step(self, key: str) -> bool:
         check.str_param(key, "key")
         handle = StepHandle.parse_from_key(key)
         if isinstance(handle, ResolvedFromDynamicStepHandle):
             return handle.unresolved_form.to_key() in self._step_index
         return key in self._step_index
 
-    def get_step_by_key(self, key):
+    def get_step_by_key(self, key: str):
         check.str_param(key, "key")
         return self._step_index[key]
 
     def get_steps_in_plan(self):
         return [self._step_index[sk] for sk in self._step_keys_in_plan]
 
-    def key_in_plan(self, key):
+    def key_in_plan(self, key: str):
         return key in self._step_keys_in_plan
 
     # Everything below this line is a near-copy of the equivalent methods on
@@ -482,7 +509,7 @@ class ExternalExecutionPlan:
 
 
 class ExternalSchedule:
-    def __init__(self, external_schedule_data, handle):
+    def __init__(self, external_schedule_data: ExternalScheduleData, handle: RepositoryHandle):
         self._external_schedule_data = check.inst_param(
             external_schedule_data, "external_schedule_data", ExternalScheduleData
         )
@@ -491,53 +518,53 @@ class ExternalSchedule:
         )
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._external_schedule_data.name
 
     @property
-    def cron_schedule(self):
+    def cron_schedule(self) -> Union[str, Sequence[str]]:
         return self._external_schedule_data.cron_schedule
 
     @property
-    def execution_timezone(self):
+    def execution_timezone(self) -> Optional[str]:
         return self._external_schedule_data.execution_timezone
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> Optional[Sequence[str]]:
         return self._external_schedule_data.solid_selection
 
     @property
-    def pipeline_name(self):
+    def pipeline_name(self) -> str:
         return self._external_schedule_data.pipeline_name
 
     @property
-    def mode(self):
+    def mode(self) -> Optional[str]:
         return self._external_schedule_data.mode
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._external_schedule_data.description
 
     @property
-    def partition_set_name(self):
+    def partition_set_name(self) -> Optional[str]:
         return self._external_schedule_data.partition_set_name
 
     @property
-    def environment_vars(self):
+    def environment_vars(self) -> Optional[Mapping[str, str]]:
         return self._external_schedule_data.environment_vars
 
     @property
-    def handle(self):
+    def handle(self) -> InstigatorHandle:
         return self._handle
 
-    def get_external_origin(self):
+    def get_external_origin(self) -> ExternalInstigatorOrigin:
         return self.handle.get_external_origin()
 
-    def get_external_origin_id(self):
+    def get_external_origin_id(self) -> str:
         return self.get_external_origin().get_id()
 
     @property
-    def selector_id(self):
+    def selector_id(self) -> str:
         return create_snapshot_id(
             InstigatorSelector(
                 self.handle.location_name,
@@ -554,7 +581,9 @@ class ExternalSchedule:
             else DefaultScheduleStatus.STOPPED
         )
 
-    def get_current_instigator_state(self, stored_state: Optional["InstigatorState"]):
+    def get_current_instigator_state(
+        self, stored_state: Optional["InstigatorState"]
+    ) -> InstigatorState:
         from dagster._core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
@@ -586,14 +615,14 @@ class ExternalSchedule:
                 ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
             )
 
-    def execution_time_iterator(self, start_timestamp):
+    def execution_time_iterator(self, start_timestamp: float) -> Iterator[datetime]:
         return schedule_execution_time_iterator(
             start_timestamp, self.cron_schedule, self.execution_timezone
         )
 
 
 class ExternalSensor:
-    def __init__(self, external_sensor_data, handle):
+    def __init__(self, external_sensor_data: ExternalSensorData, handle: RepositoryHandle):
         self._external_sensor_data = check.inst_param(
             external_sensor_data, "external_sensor_data", ExternalSensorData
         )
@@ -602,49 +631,49 @@ class ExternalSensor:
         )
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._external_sensor_data.name
 
     @property
-    def handle(self):
+    def handle(self) -> InstigatorHandle:
         return self._handle
 
     @property
-    def pipeline_name(self):
+    def pipeline_name(self) -> Optional[str]:
         target = self._get_single_target()
         return target.pipeline_name if target else None
 
     @property
-    def mode(self):
+    def mode(self) -> Optional[str]:
         target = self._get_single_target()
         return target.mode if target else None
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> Optional[Sequence[str]]:
         target = self._get_single_target()
         return target.solid_selection if target else None
 
-    def _get_single_target(self):
+    def _get_single_target(self) -> Optional[ExternalTargetData]:
         if self._external_sensor_data.target_dict:
             return list(self._external_sensor_data.target_dict.values())[0]
         else:
             return None
 
-    def get_target_data(self, pipeline_name: Optional[str] = None):
+    def get_target_data(self, pipeline_name: Optional[str] = None) -> Optional[ExternalTargetData]:
         if pipeline_name:
             return self._external_sensor_data.target_dict[pipeline_name]
         else:
             return self._get_single_target()
 
-    def get_external_targets(self):
-        return self._external_sensor_data.target_dict.values()
+    def get_external_targets(self) -> Sequence[ExternalTargetData]:
+        return list(self._external_sensor_data.target_dict.values())
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._external_sensor_data.description
 
     @property
-    def min_interval_seconds(self):
+    def min_interval_seconds(self) -> int:
         if (
             isinstance(self._external_sensor_data, ExternalSensorData)
             and self._external_sensor_data.min_interval
@@ -652,14 +681,14 @@ class ExternalSensor:
             return self._external_sensor_data.min_interval
         return DEFAULT_SENSOR_DAEMON_INTERVAL
 
-    def get_external_origin(self):
+    def get_external_origin(self) -> ExternalInstigatorOrigin:
         return self._handle.get_external_origin()
 
-    def get_external_origin_id(self):
+    def get_external_origin_id(self) -> str:
         return self.get_external_origin().get_id()
 
     @property
-    def selector_id(self):
+    def selector_id(self) -> str:
         return create_snapshot_id(
             InstigatorSelector(
                 self.handle.location_name,
@@ -668,7 +697,9 @@ class ExternalSensor:
             )
         )
 
-    def get_current_instigator_state(self, stored_state: Optional["InstigatorState"]):
+    def get_current_instigator_state(
+        self, stored_state: Optional["InstigatorState"]
+    ) -> InstigatorState:
         from dagster._core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
@@ -701,11 +732,11 @@ class ExternalSensor:
             )
 
     @property
-    def metadata(self):
+    def metadata(self) -> Optional[ExternalSensorMetadata]:
         return self._external_sensor_data.metadata
 
     @property
-    def default_status(self) -> DefaultSensorStatus:
+    def default_status(self) -> Optional[DefaultSensorStatus]:
         return (
             self._external_sensor_data.default_status
             if self._external_sensor_data
@@ -714,7 +745,9 @@ class ExternalSensor:
 
 
 class ExternalPartitionSet:
-    def __init__(self, external_partition_set_data, handle):
+    def __init__(
+        self, external_partition_set_data: ExternalPartitionSetData, handle: RepositoryHandle
+    ):
         self._external_partition_set_data = check.inst_param(
             external_partition_set_data, "external_partition_set_data", ExternalPartitionSetData
         )
@@ -723,40 +756,40 @@ class ExternalPartitionSet:
         )
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._external_partition_set_data.name
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> Optional[Sequence[str]]:
         return self._external_partition_set_data.solid_selection
 
     @property
-    def mode(self):
+    def mode(self) -> Optional[str]:
         return self._external_partition_set_data.mode
 
     @property
-    def pipeline_name(self):
+    def pipeline_name(self) -> str:
         return self._external_partition_set_data.pipeline_name
 
     @property
-    def repository_handle(self):
+    def repository_handle(self) -> RepositoryHandle:
         return self._handle.repository_handle
 
-    def get_external_origin(self):
+    def get_external_origin(self) -> ExternalPartitionSetOrigin:
         return self._handle.get_external_origin()
 
-    def get_external_origin_id(self):
+    def get_external_origin_id(self) -> str:
         return self.get_external_origin().get_id()
 
-    def has_partition_name_data(self):
+    def has_partition_name_data(self) -> bool:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to compute the partition
         # names
         return self._external_partition_set_data.external_partitions_data != None
 
-    def get_partition_names(self):
+    def get_partition_names(self) -> Sequence[str]:
         check.invariant(self.has_partition_name_data())
         partitions = (
-            self._external_partition_set_data.external_partitions_data.get_partitions_definition()
+            self._external_partition_set_data.external_partitions_data.get_partitions_definition()  # type: ignore
         )
         return partitions.get_partition_keys()

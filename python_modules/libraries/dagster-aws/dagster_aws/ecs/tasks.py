@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
 
 import requests
 
@@ -23,6 +23,8 @@ class DagsterEcsTaskDefinitionConfig(
             ("task_role_arn", Optional[str]),
             ("sidecars", List[Dict[str, Any]]),
             ("requires_compatibilities", List[str]),
+            ("cpu", str),
+            ("memory", str),
         ],
     )
 ):
@@ -34,14 +36,16 @@ class DagsterEcsTaskDefinitionConfig(
         family: str,
         image: str,
         container_name: str,
-        command: Optional[List[str]],
-        log_configuration: Optional[Dict[str, Any]],
-        secrets: Optional[List[Dict[str, str]]],
-        environment: Optional[List[Dict[str, str]]],
+        command: Optional[Sequence[str]],
+        log_configuration: Optional[Mapping[str, Any]],
+        secrets: Optional[Sequence[Mapping[str, str]]],
+        environment: Optional[Sequence[Mapping[str, str]]],
         execution_role_arn: Optional[str],
         task_role_arn: Optional[str],
-        sidecars: Optional[List[Dict[str, Any]]],
-        requires_compatibilities: Optional[List[str]],
+        sidecars: Optional[Sequence[Mapping[str, Any]]],
+        requires_compatibilities: Optional[Sequence[str]],
+        cpu: Optional[str] = None,
+        memory: Optional[str] = None,
     ):
         return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
             cls,
@@ -56,6 +60,8 @@ class DagsterEcsTaskDefinitionConfig(
             check.opt_str_param(task_role_arn, "task_role_arn"),
             check.opt_list_param(sidecars, "sidecars"),
             check.opt_list_param(requires_compatibilities, "requires_compatibilities"),
+            check.opt_str_param(cpu, "cpu", default="256"),
+            check.opt_str_param(memory, "memory", default="512"),
         )
 
     def task_definition_dict(self):
@@ -80,9 +86,8 @@ class DagsterEcsTaskDefinitionConfig(
                 ),
                 *self.sidecars,
             ],
-            # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-            cpu="256",
-            memory="512",
+            cpu=self.cpu,
+            memory=self.memory,
         )
 
         if self.execution_role_arn:
@@ -125,6 +130,8 @@ class DagsterEcsTaskDefinitionConfig(
             task_role_arn=task_definition_dict.get("taskRoleArn"),
             sidecars=sidecars,
             requires_compatibilities=task_definition_dict.get("requiresCompatibilities"),
+            cpu=task_definition_dict.get("cpu"),
+            memory=task_definition_dict.get("memory"),
         )
 
 

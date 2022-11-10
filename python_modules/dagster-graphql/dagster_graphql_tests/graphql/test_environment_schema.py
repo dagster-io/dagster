@@ -1,7 +1,7 @@
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
-from .setup import csv_hello_world_solids_config
+from .repo import csv_hello_world_solids_config
 
 RUN_CONFIG_SCHEMA_QUERY = """
 query($selector: PipelineSelector! $mode: String!)

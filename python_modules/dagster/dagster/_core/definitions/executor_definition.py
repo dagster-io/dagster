@@ -1,17 +1,6 @@
 from enum import Enum as PyEnum
 from functools import update_wrapper
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Sequence, Union, overload
 
 from typing_extensions import TypeAlias
 
@@ -58,7 +47,7 @@ class ExecutorRequirement(PyEnum):
     PERSISTENT_OUTPUTS = "PERSISTENT_OUTPUTS"
 
 
-def multiple_process_executor_requirements() -> List[ExecutorRequirement]:
+def multiple_process_executor_requirements() -> Sequence[ExecutorRequirement]:
     return [
         ExecutorRequirement.RECONSTRUCTABLE_JOB,
         ExecutorRequirement.NON_EPHEMERAL_INSTANCE,
@@ -92,7 +81,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         name: str,
         config_schema: Optional[UserConfigSchema] = None,
         requirements: Union[
-            ExecutorRequirementsFunction, Optional[List[ExecutorRequirement]]
+            ExecutorRequirementsFunction, Optional[Sequence[ExecutorRequirement]]
         ] = None,
         executor_creation_fn: Optional[ExecutorCreationFunction] = None,
         description: Optional[str] = None,
@@ -154,7 +143,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         self,
         config_or_config_fn: Any,
         name: Optional[str] = None,
-        config_schema: Optional[Dict[str, Any]] = None,
+        config_schema: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
     ):
         """
@@ -203,7 +192,9 @@ def executor(name: ExecutorCreationFunction) -> ExecutorDefinition:
 def executor(
     name: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = ...,
-    requirements: Optional[Union[ExecutorRequirementsFunction, List[ExecutorRequirement]]] = ...,
+    requirements: Optional[
+        Union[ExecutorRequirementsFunction, Sequence[ExecutorRequirement]]
+    ] = ...,
 ) -> "_ExecutorDecoratorCallable":
     ...
 
@@ -211,7 +202,9 @@ def executor(
 def executor(
     name: Union[ExecutorCreationFunction, Optional[str]] = None,
     config_schema: Optional[UserConfigSchema] = None,
-    requirements: Optional[Union[ExecutorRequirementsFunction, List[ExecutorRequirement]]] = None,
+    requirements: Optional[
+        Union[ExecutorRequirementsFunction, Sequence[ExecutorRequirement]]
+    ] = None,
 ) -> Union[ExecutorDefinition, "_ExecutorDecoratorCallable"]:
     """Define an executor.
 
@@ -468,7 +461,7 @@ def _check_non_ephemeral_instance(instance: "DagsterInstance") -> None:
 
 def _get_default_executor_requirements(
     executor_config: ExecutorConfig,
-) -> List[ExecutorRequirement]:
+) -> Sequence[ExecutorRequirement]:
     return multiple_process_executor_requirements() if "multiprocess" in executor_config else []
 
 

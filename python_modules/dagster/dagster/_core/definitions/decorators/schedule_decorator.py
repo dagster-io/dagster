@@ -2,7 +2,18 @@ import copy
 import datetime
 import warnings
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._core.definitions.partition import (
@@ -51,10 +62,10 @@ def schedule(
     *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
-    tags: Optional[Dict[str, str]] = None,
-    tags_fn: Optional[Callable[[ScheduleEvaluationContext], Optional[Dict[str, str]]]] = None,
+    tags: Optional[Mapping[str, str]] = None,
+    tags_fn: Optional[Callable[[ScheduleEvaluationContext], Optional[Mapping[str, str]]]] = None,
     should_execute: Optional[Callable[[ScheduleEvaluationContext], bool]] = None,
-    environment_vars: Optional[Dict[str, str]] = None,
+    environment_vars: Optional[Mapping[str, str]] = None,
     execution_timezone: Optional[str] = None,
     description: Optional[str] = None,
     job: Optional[ExecutableDefinition] = None,
@@ -195,17 +206,17 @@ def monthly_schedule(
     name: Optional[str] = None,
     execution_day_of_month: int = 1,
     execution_time: datetime.time = datetime.time(0, 0),
-    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
-    solid_selection: Optional[List[str]] = None,
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Mapping[str, str]]]] = None,
+    solid_selection: Optional[Sequence[str]] = None,
     mode: Optional[str] = "default",
     should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
-    environment_vars: Optional[Dict[str, str]] = None,
+    environment_vars: Optional[Mapping[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_months_offset: Optional[int] = 1,
     description: Optional[str] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
+) -> Callable[[Callable[[datetime.datetime], Mapping[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs monthly.
 
     The decorated function should accept a datetime object as its only argument. The datetime
@@ -253,10 +264,10 @@ def monthly_schedule(
     check.inst_param(start_date, "start_date", datetime.datetime)
     check.opt_inst_param(end_date, "end_date", datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, "tags_fn_for_date")
-    check.opt_nullable_list_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_nullable_sequence_param(solid_selection, "solid_selection", of_type=str)
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
-    check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
+    check.opt_mapping_param(environment_vars, "environment_vars", key_type=str, value_type=str)
     check.opt_str_param(pipeline_name, "pipeline_name")
     check.int_param(execution_day_of_month, "execution_day")
     check.inst_param(execution_time, "execution_time", datetime.time)
@@ -293,7 +304,7 @@ def my_schedule_definition(_):
             "between 1 and 31".format(execution_day_of_month)
         )
 
-    def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
+    def inner(fn: Callable[[datetime.datetime], Mapping[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -357,17 +368,17 @@ def weekly_schedule(
     name: Optional[str] = None,
     execution_day_of_week: int = 0,
     execution_time: datetime.time = datetime.time(0, 0),
-    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
-    solid_selection: Optional[List[str]] = None,
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Mapping[str, str]]]] = None,
+    solid_selection: Optional[Sequence[str]] = None,
     mode: Optional[str] = "default",
     should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
-    environment_vars: Optional[Dict[str, str]] = None,
+    environment_vars: Optional[Mapping[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_weeks_offset: Optional[int] = 1,
     description: Optional[str] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
+) -> Callable[[Callable[[datetime.datetime], Mapping[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs daily.
 
     The decorated function should accept a datetime object as its only argument. The datetime
@@ -415,10 +426,10 @@ def weekly_schedule(
     check.inst_param(start_date, "start_date", datetime.datetime)
     check.opt_inst_param(end_date, "end_date", datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, "tags_fn_for_date")
-    check.opt_nullable_list_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_nullable_sequence_param(solid_selection, "solid_selection", of_type=str)
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
-    check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
+    check.opt_mapping_param(environment_vars, "environment_vars", key_type=str, value_type=str)
     check.opt_str_param(pipeline_name, "pipeline_name")
     check.int_param(execution_day_of_week, "execution_day_of_week")
     check.inst_param(execution_time, "execution_time", datetime.time)
@@ -450,7 +461,7 @@ def my_schedule_definition(_):
             "between 0 [Sunday] and 6 [Saturday]".format(execution_day_of_week)
         )
 
-    def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
+    def inner(fn: Callable[[datetime.datetime], Mapping[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -513,17 +524,17 @@ def daily_schedule(
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),
-    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
-    solid_selection: Optional[List[str]] = None,
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Mapping[str, str]]]] = None,
+    solid_selection: Optional[Sequence[str]] = None,
     mode: Optional[str] = "default",
     should_execute: Optional[Callable[[ScheduleEvaluationContext], bool]] = None,
-    environment_vars: Optional[Dict[str, str]] = None,
+    environment_vars: Optional[Mapping[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_days_offset: Optional[int] = 1,
     description: Optional[str] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
+) -> Callable[[Callable[[datetime.datetime], Mapping[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs daily.
 
     The decorated function should accept a datetime object as its only argument. The datetime
@@ -571,10 +582,10 @@ def daily_schedule(
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_inst_param(end_date, "end_date", datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, "tags_fn_for_date")
-    check.opt_nullable_list_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_nullable_sequence_param(solid_selection, "solid_selection", of_type=str)
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
-    check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
+    check.opt_mapping_param(environment_vars, "environment_vars", key_type=str, value_type=str)
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_days_offset, "partition_days_offset")
     check.opt_str_param(description, "description")
@@ -598,7 +609,7 @@ def my_schedule_definition(_):
 
     fmt = DEFAULT_DATE_FORMAT
 
-    def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
+    def inner(fn: Callable[[datetime.datetime], Mapping[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -657,17 +668,17 @@ def hourly_schedule(
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),
-    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
-    solid_selection: Optional[List[str]] = None,
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Mapping[str, str]]]] = None,
+    solid_selection: Optional[Sequence[str]] = None,
     mode: Optional[str] = "default",
     should_execute: Optional[Callable[[ScheduleEvaluationContext], bool]] = None,
-    environment_vars: Optional[Dict[str, str]] = None,
+    environment_vars: Optional[Mapping[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_hours_offset: Optional[int] = 1,
     description: Optional[str] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
+) -> Callable[[Callable[[datetime.datetime], Mapping[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs hourly.
 
     The decorated function should accept a datetime object as its only argument. The datetime
@@ -715,10 +726,10 @@ def hourly_schedule(
     check.inst_param(start_date, "start_date", datetime.datetime)
     check.opt_inst_param(end_date, "end_date", datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, "tags_fn_for_date")
-    check.opt_nullable_list_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_nullable_sequence_param(solid_selection, "solid_selection", of_type=str)
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
-    check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
+    check.opt_mapping_param(environment_vars, "environment_vars", key_type=str, value_type=str)
     check.opt_str_param(pipeline_name, "pipeline_name")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
@@ -752,7 +763,7 @@ def my_schedule_definition(_):
             "datetime.time(minute={minute}, ...) to fix this warning."
         )
 
-    def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
+    def inner(fn: Callable[[datetime.datetime], Mapping[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__

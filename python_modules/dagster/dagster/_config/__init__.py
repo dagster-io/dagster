@@ -65,7 +65,6 @@ from .errors import (
     SelectorTypeErrorData,
 )
 from .evaluate_value_result import EvaluateValueResult
-from .iterate_types import config_schema_snapshot_from_config_type, iterate_config_types
 from .source import (
     BoolSource,
     BoolSourceType,

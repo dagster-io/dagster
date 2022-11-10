@@ -88,7 +88,7 @@ export const AssetNodeDefinition: React.FC<{
                 padding={{top: 16, horizontal: 24, bottom: 24}}
                 flex={{direction: 'column', gap: 16}}
               >
-                <p>{assetNode.partitionDefinition}</p>
+                <p>{assetNode.partitionDefinition.description}</p>
                 <PartitionHealthSummary assetKey={assetNode.assetKey} data={partitionHealthData} />
               </Box>
             </>
@@ -174,7 +174,10 @@ export const AssetNodeDefinition: React.FC<{
                 <Subheading>Metadata</Subheading>
               </Box>
               <Box style={{flex: 1}}>
-                <AssetMetadataTable assetMetadata={assetMetadata} />
+                <AssetMetadataTable
+                  assetMetadata={assetMetadata}
+                  repoLocation={repoAddress?.location}
+                />
               </Box>
             </>
           )}
@@ -261,7 +264,9 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     graphName
     opNames
     jobNames
-    partitionDefinition
+    partitionDefinition {
+      description
+    }
     repository {
       id
       name

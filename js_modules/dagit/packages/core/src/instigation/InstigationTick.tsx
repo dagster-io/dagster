@@ -110,8 +110,8 @@ export const TickTag: React.FC<{
                 Failure
               </Tag>
             </LinkButton>
-            <ButtonLink onClick={showError} style={{marginLeft: 8, fontSize: 14}}>
-              View error
+            <ButtonLink onClick={showError} style={{marginLeft: 8, fontSize: 12}}>
+              View
             </ButtonLink>
           </>
         );

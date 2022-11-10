@@ -1,10 +1,12 @@
+from typing import cast
+
 from graphene import ResolveInfo
 
 import dagster._check as check
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
 
 from ..external import get_external_pipeline_or_raise
 from ..utils import ExecutionMetadata, ExecutionParams, capture_error
@@ -69,12 +71,13 @@ def launch_reexecution_from_parent_run(graphene_info, parent_run_id: str, strate
     check.str_param(strategy, "strategy")
 
     instance: DagsterInstance = graphene_info.context.instance
-    parent_run = instance.get_run_by_id(parent_run_id)
-    check.invariant(parent_run, "Could not find parent run with id: %s" % parent_run_id)
-
+    parent_run = check.not_none(
+        instance.get_run_by_id(parent_run_id), f"Could not find parent run with id: {parent_run_id}"
+    )
+    origin = check.not_none(parent_run.external_pipeline_origin)
     selector = PipelineSelector(
-        location_name=parent_run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name,
-        repository_name=parent_run.external_pipeline_origin.external_repository_origin.repository_name,
+        location_name=origin.external_repository_origin.repository_location_origin.location_name,
+        repository_name=origin.external_repository_origin.repository_name,
         pipeline_name=parent_run.pipeline_name,
         solid_selection=None,
     )
@@ -83,7 +86,7 @@ def launch_reexecution_from_parent_run(graphene_info, parent_run_id: str, strate
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
 
     run = instance.create_reexecuted_run(
-        parent_run,
+        cast(DagsterRun, parent_run),
         repo_location,
         external_pipeline,
         ReexecutionStrategy[strategy],

@@ -102,6 +102,11 @@ spec:
             - name: dagster-workspace-yaml
               mountPath: "/dagster-workspace/"
             {{- end }}
+            {{- if .Values.dagsterDaemon.volumeMounts }}
+            {{- range $volumeMount := .Values.dagsterDaemon.volumeMounts }}
+            - {{- $volumeMount | toYaml | nindent 14 }}
+            {{- end }}
+            {{- end }}
           resources:
             {{- toYaml .Values.dagsterDaemon.resources | nindent 12 }}
           {{- if .Values.dagsterDaemon.livenessProbe }}
@@ -127,6 +132,11 @@ spec:
         - name: dagster-workspace-yaml
           configMap:
             name: {{ include "dagit.workspace.configmapName" . }}
+        {{- end }}
+        {{- if .Values.dagsterDaemon.volumes }}
+        {{- range $volume := .Values.dagsterDaemon.volumes }}
+        - {{- $volume | toYaml | nindent 10 }}
+        {{- end }}
         {{- end }}
       affinity:
         {{- toYaml .Values.dagsterDaemon.affinity | nindent 8 }}

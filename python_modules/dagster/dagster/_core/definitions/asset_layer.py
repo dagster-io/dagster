@@ -6,7 +6,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    FrozenSet,
     Iterable,
     List,
     Mapping,
@@ -191,7 +190,9 @@ def _build_graph_dependencies(
 def _get_dependency_node_output_handles(
     non_asset_inputs_by_node_handle: Mapping[NodeHandle, Sequence[NodeOutputHandle]],
     outputs_by_graph_handle: Mapping[NodeHandle, Mapping[str, NodeOutputHandle]],
-    dep_node_output_handles_by_node_output_handle: Dict[NodeOutputHandle, List[NodeOutputHandle]],
+    dep_node_output_handles_by_node_output_handle: Dict[
+        NodeOutputHandle, Sequence[NodeOutputHandle]
+    ],
     node_output_handle: NodeOutputHandle,
 ) -> Sequence[NodeOutputHandle]:
     """
@@ -312,7 +313,7 @@ def asset_key_to_dep_node_handles(
 
     for node_handle, assets_defs in assets_defs_by_node_handle.items():
         dep_node_output_handles_by_node: Dict[
-            NodeOutputHandle, List[NodeOutputHandle]
+            NodeOutputHandle, Sequence[NodeOutputHandle]
         ] = (
             {}
         )  # memoized map of node output handles to all node output handle dependencies that are from ops
@@ -485,7 +486,7 @@ class AssetLayer:
     ):
         from dagster._core.definitions import SourceAsset
 
-        self._asset_keys_by_node_input_handle = check.opt_dict_param(
+        self._asset_keys_by_node_input_handle = check.opt_mapping_param(
             asset_keys_by_node_input_handle,
             "asset_keys_by_node_input_handle",
             key_type=NodeInputHandle,
@@ -497,10 +498,10 @@ class AssetLayer:
             key_type=NodeOutputHandle,
             value_type=AssetOutputInfo,
         )
-        self._asset_deps = check.opt_dict_param(
+        self._asset_deps = check.opt_mapping_param(
             asset_deps, "asset_deps", key_type=AssetKey, value_type=set
         )
-        self._dependency_node_handles_by_asset_key = check.opt_dict_param(
+        self._dependency_node_handles_by_asset_key = check.opt_mapping_param(
             dependency_node_handles_by_asset_key,
             "dependency_node_handles_by_asset_key",
             key_type=AssetKey,
@@ -508,13 +509,13 @@ class AssetLayer:
         )
         self._source_assets_by_key = {
             source_asset.key: source_asset
-            for source_asset in check.opt_list_param(
+            for source_asset in check.opt_sequence_param(
                 source_asset_defs, "source_assets_defs", of_type=SourceAsset
             )
         }
         self._assets_defs_by_key = {
             key: assets_def
-            for assets_def in check.opt_list_param(assets_defs, "assets_defs")
+            for assets_def in check.opt_sequence_param(assets_defs, "assets_defs")
             for key in assets_def.keys
         }
 
@@ -524,7 +525,7 @@ class AssetLayer:
             for node_handle in node_handles:
                 self._assets_defs_by_node_handle[node_handle] = self._assets_defs_by_key[asset_key]
 
-        self._io_manager_keys_by_asset_key = check.opt_dict_param(
+        self._io_manager_keys_by_asset_key = check.opt_mapping_param(
             io_manager_keys_by_asset_key,
             "io_manager_keys_by_asset_key",
             key_type=AssetKey,
@@ -572,7 +573,7 @@ class AssetLayer:
                 a NodeHandle pointing to the node in the graph where the AssetsDefinition ended up.
         """
         check.inst_param(graph_def, "graph_def", GraphDefinition)
-        check.dict_param(
+        check.mapping_param(
             assets_defs_by_node_handle, "assets_defs_by_node_handle", key_type=NodeHandle
         )
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
@@ -613,10 +614,22 @@ class AssetLayer:
                 node_output_handle = NodeOutputHandle(
                     check.not_none(inner_node_handle), inner_output_def.name
                 )
-                partition_fn = lambda context: {context.partition_key}
+
+                def partitions_fn(context: "OutputContext") -> AbstractSet[str]:
+                    from dagster._core.definitions.partition import PartitionsDefinition
+
+                    if context.has_partition_key:
+                        return {context.partition_key}
+
+                    return set(
+                        cast(
+                            PartitionsDefinition, context.asset_partitions_def
+                        ).get_partition_keys_in_range(context.asset_partition_key_range)
+                    )
+
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
                     asset_key,
-                    partitions_fn=partition_fn if assets_def.partitions_def else None,
+                    partitions_fn=partitions_fn if assets_def.partitions_def else None,
                     partitions_def=assets_def.partitions_def,
                     is_required=asset_key in assets_def.keys,
                 )
@@ -788,7 +801,7 @@ def build_asset_selection_job(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
-    asset_selection: Optional[FrozenSet[AssetKey]] = None,
+    asset_selection: Optional[AbstractSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> "JobDefinition":
     from dagster._core.definitions import build_assets_job

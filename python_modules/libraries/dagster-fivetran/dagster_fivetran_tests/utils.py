@@ -121,8 +121,7 @@ def get_complex_sample_connector_schema_config():
                             "enabled": True,
                             "enabled_patch_settings": {"allowed": True},
                             "columns": {
-                                "name_in_destination": "column_1",
-                                "column_1": {"enabled": False},
+                                "column_1": {"name_in_destination": "column_1", "enabled": False},
                             },
                         },
                         "table_2": {
@@ -182,3 +181,25 @@ def get_sample_sync_response():
 
 def get_sample_resync_response():
     return {"code": "Success", "message": "Re-sync has been triggered successfully"}
+
+
+def get_sample_groups_response():
+    return {
+        "items": [
+            {
+                "id": "some_group",
+            }
+        ]
+    }
+
+
+def get_sample_connectors_response():
+    return {
+        "items": [
+            {
+                "id": DEFAULT_CONNECTOR_ID,
+                "service": "some_service",
+                "schema": "some_service.some_name",
+            }
+        ]
+    }

@@ -16,8 +16,10 @@ from dagster import (
     StaticPartitionsDefinition,
     daily_partitioned_config,
     define_asset_job,
+    hourly_partitioned_config,
     materialize,
 )
+from dagster._check import CheckError
 from dagster._core.definitions import asset, build_assets_job, multi_asset
 from dagster._core.definitions.asset_partitions import (
     get_downstream_partitions_for_partition_range,
@@ -26,6 +28,10 @@ from dagster._core.definitions.asset_partitions import (
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -447,3 +453,59 @@ def test_job_partitioned_config_with_asset_partitions():
     the_job = define_asset_job("job", config=myconfig).resolve([asset1], [])
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
+
+
+def test_mismatched_job_partitioned_config_with_asset_partitions():
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @asset(config_schema={"day_of_month": int}, partitions_def=daily_partitions_def)
+    def asset1(context):
+        assert context.op_config["day_of_month"] == 1
+        assert context.partition_key == "2020-01-01"
+
+    @hourly_partitioned_config(start_date="2020-01-01-00:00")
+    def myconfig(start, _end):
+        return {"ops": {"asset1": {"config": {"day_of_month": start.day}}}}
+
+    with pytest.raises(
+        CheckError,
+        match="Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition than supplied for 'partitions_def'.",
+    ):
+        define_asset_job("job", config=myconfig).resolve([asset1], [])
+
+
+def test_partition_range_single_run():
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @asset(partitions_def=partitions_def)
+    def upstream_asset(context) -> None:
+        assert context.asset_partition_key_range_for_output() == PartitionKeyRange(
+            start="2020-01-01", end="2020-01-03"
+        )
+
+    @asset(partitions_def=partitions_def, non_argument_deps={"upstream_asset"})
+    def downstream_asset(context) -> None:
+        assert context.asset_partition_key_range_for_input("upstream_asset") == PartitionKeyRange(
+            start="2020-01-01", end="2020-01-03"
+        )
+        assert context.asset_partition_key_range_for_output() == PartitionKeyRange(
+            start="2020-01-01", end="2020-01-03"
+        )
+
+    the_job = define_asset_job("job").resolve([upstream_asset, downstream_asset], [])
+
+    result = the_job.execute_in_process(
+        tags={
+            ASSET_PARTITION_RANGE_START_TAG: "2020-01-01",
+            ASSET_PARTITION_RANGE_END_TAG: "2020-01-03",
+        }
+    )
+
+    assert {
+        materialization.partition
+        for materialization in result.asset_materializations_for_node("upstream_asset")
+    } == {"2020-01-01", "2020-01-02", "2020-01-03"}
+    assert {
+        materialization.partition
+        for materialization in result.asset_materializations_for_node("downstream_asset")
+    } == {"2020-01-01", "2020-01-02", "2020-01-03"}

@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Mapping
 
 
 class Card:
@@ -15,10 +15,10 @@ class Card:
     def attachments(self):
         return self.payload["attachments"]
 
-    def _create_attachment(self, text_message: str) -> Dict:
+    def _create_attachment(self, text_message: str) -> Mapping:
         content = {
             "title": "Dagster Pipeline Alert",
-            "subtitle": text_message,
+            "text": text_message,
         }
         content_type = "application/vnd.microsoft.card.hero"
         return {"contentType": content_type, "content": content}

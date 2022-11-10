@@ -15,6 +15,18 @@ BACKFILL_ID_TAG = "{prefix}backfill".format(prefix=SYSTEM_TAG_PREFIX)
 
 PARTITION_NAME_TAG = "{prefix}partition".format(prefix=SYSTEM_TAG_PREFIX)
 
+MULTIDIMENSIONAL_PARTITION_PREFIX = f"{PARTITION_NAME_TAG}/"
+get_multidimensional_partition_tag = (
+    lambda dimension_name: f"{MULTIDIMENSIONAL_PARTITION_PREFIX}{dimension_name}"
+)
+get_dimension_from_partition_tag = lambda tag: tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
+
+ASSET_PARTITION_RANGE_START_TAG = "{prefix}asset_partition_range_start".format(
+    prefix=SYSTEM_TAG_PREFIX
+)
+
+ASSET_PARTITION_RANGE_END_TAG = "{prefix}asset_partition_range_end".format(prefix=SYSTEM_TAG_PREFIX)
+
 PARTITION_SET_TAG = "{prefix}partition_set".format(prefix=SYSTEM_TAG_PREFIX)
 
 PARENT_RUN_ID_TAG = "{prefix}parent_run_id".format(prefix=SYSTEM_TAG_PREFIX)

@@ -1,5 +1,5 @@
 import sys
-from typing import Dict, List, Optional
+from typing import Mapping, Optional, Sequence
 
 import kubernetes
 
@@ -127,7 +127,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._image_pull_policy
 
     @property
-    def image_pull_secrets(self) -> List[Dict]:
+    def image_pull_secrets(self) -> Sequence[Mapping]:
         return self._image_pull_secrets
 
     @property
@@ -135,23 +135,23 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._service_account_name
 
     @property
-    def env_config_maps(self) -> List[str]:
+    def env_config_maps(self) -> Sequence[str]:
         return self._env_config_maps
 
     @property
-    def env_secrets(self) -> List[str]:
+    def env_secrets(self) -> Sequence[str]:
         return self._env_secrets
 
     @property
-    def volume_mounts(self) -> List:
+    def volume_mounts(self) -> Sequence:
         return self._volume_mounts
 
     @property
-    def volumes(self) -> List:
+    def volumes(self) -> Sequence:
         return self._volumes
 
     @property
-    def resources(self) -> Dict:
+    def resources(self) -> Mapping:
         return self._resources
 
     @property
@@ -159,11 +159,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._scheduler_name
 
     @property
-    def env_vars(self) -> List[str]:
+    def env_vars(self) -> Sequence[str]:
         return self._env_vars
 
     @property
-    def labels(self) -> Dict[str, str]:
+    def labels(self) -> Mapping[str, str]:
         return self._labels
 
     @property

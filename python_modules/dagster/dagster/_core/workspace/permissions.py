@@ -1,5 +1,5 @@
 from enum import Enum, unique
-from typing import TYPE_CHECKING, Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Dict, Mapping, NamedTuple, Optional
 
 if TYPE_CHECKING:
     from .context import WorkspaceProcessContext
@@ -68,7 +68,7 @@ def _get_disabled_reason(enabled: bool):
     return None if enabled else "Disabled by your administrator"
 
 
-def get_user_permissions(read_only: bool) -> Dict[str, PermissionResult]:
+def get_user_permissions(read_only: bool) -> Mapping[str, PermissionResult]:
     if read_only:
         perm_map = VIEWER_PERMISSIONS
     else:

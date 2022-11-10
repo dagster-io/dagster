@@ -1,5 +1,6 @@
 from dagster._core.utils import check_dagster_package_version
 
+from .asset_factory import define_dagstermill_asset
 from .context import DagstermillExecutionContext
 from .errors import DagstermillError
 from .factory import define_dagstermill_op

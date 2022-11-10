@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Mapping, Optional
 
 from dagster import Array, Bool
 from dagster import _check as check
@@ -40,7 +40,7 @@ def dagster_instance_config(
             f"If this is the desired behavior, create an empty {config_filename} file in {base_dir}."
         )
 
-    dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path), overrides)
+    dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path) or {}, overrides)
 
     if "instance_class" in dagster_config_dict:
         custom_instance_class_data = dagster_config_dict["instance_class"]
@@ -146,7 +146,7 @@ DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 180
 
 def get_default_tick_retention_settings(
     instigator_type: "InstigatorType",
-) -> Dict["TickStatus", int]:
+) -> Mapping["TickStatus", int]:
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.scheduler.instigation import TickStatus
 
@@ -194,9 +194,9 @@ def retention_config_schema():
 
 
 def get_tick_retention_settings(
-    settings: Optional[Dict],
-    default_retention_settings: Dict["TickStatus", int],
-) -> Dict["TickStatus", int]:
+    settings: Optional[Mapping],
+    default_retention_settings: Mapping["TickStatus", int],
+) -> Mapping["TickStatus", int]:
     if not settings or not settings.get("purge_after_days"):
         return default_retention_settings
 
@@ -235,6 +235,19 @@ def schedules_daemon_config():
     )
 
 
+def secrets_loader_config_schema():
+    return Field(
+        Selector(
+            {
+                # Space to add additional built-in secrets loaders in the future, for now
+                # only custom
+                "custom": Field(configurable_class_schema()),
+            }
+        ),
+        is_required=False,
+    )
+
+
 def dagster_instance_config_schema():
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
@@ -247,10 +260,7 @@ def dagster_instance_config_schema():
         "run_coordinator": config_field_for_configurable_class(),
         "run_launcher": config_field_for_configurable_class(),
         "telemetry": Field(
-            {
-                "enabled": Field(Bool, is_required=False),
-                "experimental_dagit": Field(Bool, is_required=False, default_value=False),
-            },
+            {"enabled": Field(Bool, is_required=False)},
         ),
         "instance_class": config_field_for_configurable_class(),
         "python_logs": python_logs_config_schema(),
@@ -272,6 +282,7 @@ def dagster_instance_config_schema():
         "code_servers": Field(
             {"local_startup_timeout": Field(int, is_required=False)}, is_required=False
         ),
+        "secrets": secrets_loader_config_schema(),
         "retention": retention_config_schema(),
         "sensors": sensors_daemon_config(),
         "schedules": schedules_daemon_config(),

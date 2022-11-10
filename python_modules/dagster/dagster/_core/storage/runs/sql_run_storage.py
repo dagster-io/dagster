@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 import pendulum
 import sqlalchemy as db
@@ -195,7 +195,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         # overriden with an old value.
         return run.with_status(status)
 
-    def _rows_to_runs(self, rows: Iterable[Tuple]) -> List[PipelineRun]:
+    def _rows_to_runs(self, rows: Iterable[Tuple]) -> Sequence[PipelineRun]:
         return list(map(self._row_to_run, rows))
 
     def _add_cursor_limit_to_query(
@@ -270,7 +270,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        columns: Optional[List[str]] = None,
+        columns: Optional[Sequence[str]] = None,
         order_by: Optional[str] = None,
         ascending: bool = False,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
@@ -278,7 +278,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_str_param(cursor, "cursor")
         check.opt_int_param(limit, "limit")
-        check.opt_list_param(columns, "columns")
+        check.opt_sequence_param(columns, "columns")
         check.opt_str_param(order_by, "order_by")
         check.opt_bool_param(ascending, "ascending")
 
@@ -316,7 +316,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         self,
         bucket_by: Union[JobBucket, TagBucket],
         filters: RunsFilter,
-        columns: List[str],
+        columns: Sequence[str],
         order_by: Optional[str] = None,
         ascending: bool = False,
     ):
@@ -375,7 +375,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> List[PipelineRun]:
+    ) -> Sequence[PipelineRun]:
         query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
@@ -417,7 +417,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         ascending: bool = False,
         cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> List[RunRecord]:
+    ) -> Sequence[RunRecord]:
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_int_param(limit, "limit")
 
@@ -451,7 +451,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             for row in rows
         ]
 
-    def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
+    def get_run_tags(self) -> Sequence[Tuple[str, Set[str]]]:
         result = defaultdict(set)
         query = db.select([RunTagsTable.c.key, RunTagsTable.c.value]).distinct(
             RunTagsTable.c.key, RunTagsTable.c.value
@@ -461,9 +461,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             result[r[0]].add(r[1])
         return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])
 
-    def add_run_tags(self, run_id: str, new_tags: Dict[str, str]):
+    def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]):
         check.str_param(run_id, "run_id")
-        check.dict_param(new_tags, "new_tags", key_type=str, value_type=str)
+        check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
 
         run = self.get_run_by_id(run_id)
         if not run:
@@ -555,14 +555,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             res = conn.execute(run_group_query)
             run_group = self._rows_to_runs(res)
 
-        return (root_run_id, [root_run] + run_group)
+        return (root_run_id, [root_run, *run_group])
 
     def get_run_groups(
         self,
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
+    ) -> Mapping[str, Mapping[str, Union[Iterable[PipelineRun], int]]]:
         # The runs that would be returned by calling RunStorage.get_runs with the same arguments
         runs = self._runs_query(
             filters=filters, cursor=cursor, limit=limit, columns=["run_body", "status", "run_id"]
@@ -802,7 +802,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
 
-    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
             query = self._runs_query(
                 filters=runs_filter,
@@ -847,7 +847,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def _get_partition_runs(
         self, partition_set_name: str, partition_name: str
-    ) -> List[PipelineRun]:
+    ) -> Sequence[PipelineRun]:
         # utility method to help test reads off of the partition column
         if not self.has_built_index(RUN_PARTITIONS):
             # query by tags
@@ -961,7 +961,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     )
                 )
 
-    def get_daemon_heartbeats(self) -> Dict[str, DaemonHeartbeat]:
+    def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
 
         with self.connect() as conn:
             rows = conn.execute(db.select(DaemonHeartbeatsTable.columns))
@@ -990,7 +990,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         status: Optional[BulkActionStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> List[PartitionBackfill]:
+    ) -> Sequence[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db.select([BulkActionsTable.c.body])
         if status:
@@ -1050,7 +1050,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def supports_kvs(self):
         return True
 
-    def kvs_get(self, keys: Set[str]) -> Dict[str, str]:
+    def kvs_get(self, keys: Set[str]) -> Mapping[str, str]:
         check.set_param(keys, "keys", of_type=str)
 
         with self.connect() as conn:
@@ -1059,8 +1059,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             )
             return {row.key: row.value for row in rows}
 
-    def kvs_set(self, pairs: Dict[str, str]) -> None:
-        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
+    def kvs_set(self, pairs: Mapping[str, str]) -> None:
+        check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
         db_values = [{"key": k, "value": v} for k, v in pairs.items()]
 
         with self.connect() as conn:

@@ -114,7 +114,6 @@ describe('JobMetadata', () => {
         renderWithMocks(mocks);
 
         await waitFor(() => {
-          expect(screen.getByText(/schedule:/i)).toBeVisible();
           expect(screen.getByRole('link', {name: /every 5 minutes/i})).toBeVisible();
         });
       });
@@ -130,7 +129,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 2 schedules/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /2 schedules/i})).toBeVisible();
         });
       });
 
@@ -145,7 +144,6 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByText(/sensor:/i)).toBeVisible();
           expect(screen.getByRole('link', {name: /cool_sensor/i})).toBeVisible();
         });
       });
@@ -161,7 +159,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 2 sensors/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /2 sensors/i})).toBeVisible();
         });
       });
 
@@ -176,7 +174,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 4 schedules\/sensors/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /4 schedules\/sensors/i})).toBeVisible();
         });
       });
     });
@@ -223,7 +221,6 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.queryByText(/schedule:/i)).toBeNull();
           expect(screen.queryByRole('link', {name: /every 5 minutes/i})).toBeNull();
         });
       });
@@ -239,7 +236,6 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByText(/schedule:/i)).toBeVisible();
           expect(screen.getByRole('link', {name: /every 5 minutes/i})).toBeVisible();
         });
       });
@@ -255,7 +251,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 2 schedules/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /2 schedules/i})).toBeVisible();
         });
       });
 
@@ -270,7 +266,6 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByText(/sensor:/i)).toBeVisible();
           expect(screen.getByRole('link', {name: /cool_sensor/i})).toBeVisible();
         });
       });
@@ -286,7 +281,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 2 sensors/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /2 sensors/i})).toBeVisible();
         });
       });
 
@@ -301,7 +296,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          expect(screen.getByRole('button', {name: /view 4 schedules\/sensors/i})).toBeVisible();
+          expect(screen.getByRole('button', {name: /4 schedules\/sensors/i})).toBeVisible();
         });
       });
     });

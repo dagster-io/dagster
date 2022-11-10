@@ -31,9 +31,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "dagster-buildkite = automation.buildkite.cli:main",
             "dagster-image = automation.docker.cli:main",
-            "dagster-scaffold = automation.scaffold.cli:main",
             "dagster-graphql-client = automation.graphql.python_client.cli:main",
         ]
     },

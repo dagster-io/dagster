@@ -8,7 +8,7 @@ import pytest
 
 from dagster import DagsterInvalidConfigError
 from dagster import _check as check
-from dagster import resource
+from dagster import execute_job, job, op, reconstructable, resource
 from dagster._core.definitions import NodeHandle
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.logger import InitLoggerContext
@@ -24,7 +24,7 @@ from dagster._legacy import (
     pipeline,
     solid,
 )
-from dagster._loggers import colored_console_logger, json_console_logger
+from dagster._loggers import colored_console_logger, default_system_loggers, json_console_logger
 from dagster._utils.error import SerializableErrorInfo
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
@@ -484,3 +484,43 @@ def test_python_log_level_context_logging():
 
     assert len(logs_critical) > 0  # DagsterEvents should still be logged
     assert len(logs_default) == len(logs_critical) + 1
+
+
+def test_system_logging():
+    with instance_for_test(overrides={"python_logs": {"python_log_level": "CRITICAL"}}) as instance:
+        assert default_system_loggers(instance) == [
+            (colored_console_logger, {"name": "dagster", "log_level": "CRITICAL"})
+        ]
+
+    assert default_system_loggers(None) == [
+        (colored_console_logger, {"name": "dagster", "log_level": "DEBUG"})
+    ]
+
+
+@op
+def logger_op():
+    pass
+
+
+@job
+def logger_job():
+    logger_op()
+
+
+def test_system_logger_output(capfd):
+
+    with instance_for_test() as instance:
+        execute_job(reconstructable(logger_job), instance)
+
+    captured = capfd.readouterr()
+
+    # System logs in stderr at default log level
+    assert "STEP_WORKER_STARTING" in captured.err
+
+    with instance_for_test(overrides={"python_logs": {"python_log_level": "INFO"}}) as instance:
+        execute_job(reconstructable(logger_job), instance)
+
+    captured = capfd.readouterr()
+
+    # but not at raised log level above DEBUG
+    assert "STEP_WORKER_STARTING" not in captured.err

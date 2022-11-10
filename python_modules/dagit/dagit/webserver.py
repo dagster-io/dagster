@@ -27,6 +27,7 @@ import dagster._check as check
 from dagster import __version__ as dagster_version
 from dagster._core.debug import DebugRunPayload
 from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._seven import json
 from dagster._utils import Counter, traced_counter
@@ -161,7 +162,7 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         )
 
         if not path.exists(file):
-            raise HTTPException(404)
+            raise HTTPException(404, detail="No log files available for download")
 
         return FileResponse(
             context.instance.compute_log_manager.get_local_path(
@@ -172,11 +173,32 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             filename=f"{run_id}_{step_key}.{file_type}",
         )
 
-    def index_html_endpoint(self, _request: Request):
+    async def download_captured_logs_endpoint(self, request: Request):
+        [*log_key, file_extension] = request.path_params["path"].split("/")
+        context = self.make_request_context(request)
+
+        if not isinstance(context.instance.compute_log_manager, LocalComputeLogManager):
+            raise HTTPException(
+                404, detail="Compute log manager is not compatible for local downloads"
+            )
+
+        location = context.instance.compute_log_manager.get_captured_local_path(
+            log_key, file_extension
+        )
+
+        if not location or not path.exists(location):
+            raise HTTPException(404, detail="No log files available for download")
+
+        filebase = "__".join(log_key)
+        return FileResponse(location, filename=f"{filebase}.{file_extension}")
+
+    def index_html_endpoint(self, request: Request):
         """
         Serves root html
         """
         index_path = self.relative_path("webapp/build/index.html")
+
+        context = self.make_request_context(request)
 
         try:
             with open(index_path, encoding="utf8") as f:
@@ -190,6 +212,7 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     rendered_template.replace('href="/', f'href="{self._app_path_prefix}/')
                     .replace('src="/', f'src="{self._app_path_prefix}/')
                     .replace("__PATH_PREFIX__", self._app_path_prefix)
+                    .replace("__TELEMETRY_ENABLED__", str(context.instance.telemetry_enabled))
                     .replace("NONCE-PLACEHOLDER", nonce),
                     headers=headers,
                 )
@@ -259,6 +282,10 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 Route(
                     "/download/{run_id:str}/{step_key:str}/{file_type:str}",
                     self.download_compute_logs_endpoint,
+                ),
+                Route(
+                    "/logs/{path:path}",
+                    self.download_captured_logs_endpoint,
                 ),
                 Route(
                     "/dagit/notebook",

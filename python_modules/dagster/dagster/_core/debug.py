@@ -1,4 +1,4 @@
-from typing import List, NamedTuple
+from typing import NamedTuple, Sequence
 
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry
@@ -14,7 +14,7 @@ class DebugRunPayload(
         [
             ("version", str),
             ("pipeline_run", PipelineRun),
-            ("event_list", List[EventLogEntry]),
+            ("event_list", Sequence[EventLogEntry]),
             ("pipeline_snapshot", PipelineSnapshot),
             ("execution_plan_snapshot", ExecutionPlanSnapshot),
         ],
@@ -24,7 +24,7 @@ class DebugRunPayload(
         cls,
         version: str,
         pipeline_run: PipelineRun,
-        event_list: List[EventLogEntry],
+        event_list: Sequence[EventLogEntry],
         pipeline_snapshot: PipelineSnapshot,
         execution_plan_snapshot: ExecutionPlanSnapshot,
     ):
@@ -32,7 +32,7 @@ class DebugRunPayload(
             cls,
             version=check.str_param(version, "version"),
             pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
-            event_list=check.list_param(event_list, "event_list", EventLogEntry),
+            event_list=check.sequence_param(event_list, "event_list", EventLogEntry),
             pipeline_snapshot=check.inst_param(
                 pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
             ),

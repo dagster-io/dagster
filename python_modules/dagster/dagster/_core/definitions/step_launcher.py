@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
@@ -7,7 +7,6 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.pipeline_run import PipelineRun
 
 if TYPE_CHECKING:
-    from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.plan.state import KnownExecutionState
 
 
@@ -15,7 +14,7 @@ class StepRunRef(
     NamedTuple(
         "_StepRunRef",
         [
-            ("run_config", Dict[str, object]),
+            ("run_config", Mapping[str, object]),
             ("pipeline_run", PipelineRun),
             ("run_id", str),
             ("retry_mode", RetryMode),
@@ -46,7 +45,7 @@ class StepRunRef(
 
         return super(StepRunRef, cls).__new__(
             cls,
-            check.dict_param(run_config, "run_config", key_type=str),
+            check.mapping_param(run_config, "run_config", key_type=str),
             check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
             check.str_param(run_id, "run_id"),
             check.inst_param(retry_mode, "retry_mode", RetryMode),

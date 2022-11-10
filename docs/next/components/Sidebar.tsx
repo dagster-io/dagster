@@ -43,19 +43,22 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
       <>
         <div className="flex justify-start content-box w-full">
           {item.icon && (
-            <svg
+            <div
               className={cx('mr-2 h-6 w-6 text-gray-500 transition align-items-center', {
                 'text-blurple': match,
                 'group-hover:text-gray-700': !match,
               })}
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              stroke="none"
-              aria-hidden="true"
             >
-              {Icons[item.icon]}
-            </svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+                stroke="none"
+                aria-hidden="true"
+              >
+                {Icons[item.icon]}
+              </svg>
+            </div>
           )}
           <span className="font-normal">{item.title}</span>
         </div>

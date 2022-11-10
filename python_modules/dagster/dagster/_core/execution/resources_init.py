@@ -73,7 +73,7 @@ def resource_initialization_manager(
 
 def resolve_resource_dependencies(
     resource_defs: Mapping[str, ResourceDefinition]
-) -> Dict[str, AbstractSet[str]]:
+) -> Mapping[str, AbstractSet[str]]:
     """Generates a dictionary that maps resource key to resource keys it requires for initialization"""
     resource_dependencies = {
         key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()

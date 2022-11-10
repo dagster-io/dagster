@@ -55,7 +55,10 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             <div>Workspace loaded with errors</div>
-            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
+            <ViewButton
+              onClick={() => history.push('/instance/code-locations')}
+              color={Colors.White}
+            >
               View
             </ViewButton>
           </Box>

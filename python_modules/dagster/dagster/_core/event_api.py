@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import List, NamedTuple, Optional, Union
+from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
@@ -29,6 +30,30 @@ class EventLogRecord(NamedTuple):
     storage_id: PublicAttr[int]
     event_log_entry: PublicAttr[EventLogEntry]
 
+    @property
+    def run_id(self) -> str:
+        return self.event_log_entry.run_id
+
+    @property
+    def timestamp(self) -> float:
+        return self.event_log_entry.timestamp
+
+    @property
+    def asset_key(self) -> Optional[AssetKey]:
+        dagster_event = self.event_log_entry.dagster_event
+        if dagster_event:
+            return dagster_event.asset_key
+
+        return None
+
+    @property
+    def partition_key(self) -> Optional[str]:
+        dagster_event = self.event_log_entry.dagster_event
+        if dagster_event:
+            return dagster_event.partition
+
+        return None
+
 
 @whitelist_for_serdes
 class EventRecordsFilter(
@@ -37,12 +62,13 @@ class EventRecordsFilter(
         [
             ("event_type", DagsterEventType),
             ("asset_key", Optional[AssetKey]),
-            ("asset_partitions", Optional[List[str]]),
+            ("asset_partitions", Optional[Sequence[str]]),
             ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
             ("before_cursor", Optional[Union[int, RunShardedEventsCursor]]),
             ("after_timestamp", Optional[float]),
             ("before_timestamp", Optional[float]),
-            ("storage_ids", Optional[List[int]]),
+            ("storage_ids", Optional[Sequence[int]]),
+            ("tags", Optional[Mapping[str, Union[str, Sequence[str]]]]),
         ],
     )
 ):
@@ -73,15 +99,22 @@ class EventRecordsFilter(
         cls,
         event_type: DagsterEventType,
         asset_key: Optional[AssetKey] = None,
-        asset_partitions: Optional[List[str]] = None,
+        asset_partitions: Optional[Sequence[str]] = None,
         after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
         before_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
-        storage_ids: Optional[List[int]] = None,
+        storage_ids: Optional[Sequence[int]] = None,
+        tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
     ):
         check.opt_list_param(asset_partitions, "asset_partitions", of_type=str)
         check.inst_param(event_type, "event_type", DagsterEventType)
+
+        tags = check.opt_mapping_param(tags, "tags", key_type=str)
+        if tags and event_type is not DagsterEventType.ASSET_MATERIALIZATION:
+            raise DagsterInvalidInvocationError(
+                "Can only filter by tags for asset materialization events"
+            )
 
         # type-ignores work around mypy type inference bug
         return super(EventRecordsFilter, cls).__new__(
@@ -98,4 +131,5 @@ class EventRecordsFilter(
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
             storage_ids=check.opt_list_param(storage_ids, "storage_ids", of_type=int),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str),
         )

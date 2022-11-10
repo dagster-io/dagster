@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import List, Optional
+from typing import Optional, Sequence
 
 import dagster._check as check
 from dagster._config import Field, process_config
@@ -46,7 +46,7 @@ def _get_host_mode_executor(recon_pipeline, run_config, executor_defs, instance)
             execution_config,
         )
 
-    execution_config_value = config_evr.value
+    execution_config_value = check.not_none(config_evr.value)
 
     executor_name, executor_config = ensure_single_item(execution_config_value)
 
@@ -88,7 +88,7 @@ def host_mode_execution_context_event_generator(
 
     loggers = []
 
-    for (logger_def, logger_config) in default_system_loggers():
+    for (logger_def, logger_config) in default_system_loggers(instance):
         loggers.append(
             logger_def.logger_fn(
                 InitLoggerContext(
@@ -158,13 +158,13 @@ def execute_run_host_mode(
     pipeline: ReconstructablePipeline,
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
-    executor_defs: Optional[List[ExecutorDefinition]] = None,
+    executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
     raise_on_error: bool = False,
 ):
     check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
-    check.opt_list_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
+    check.opt_sequence_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
     executor_defs = executor_defs if executor_defs != None else default_executors
 
     if pipeline_run.status == PipelineRunStatus.CANCELED:
@@ -191,7 +191,7 @@ def execute_run_host_mode(
     )
 
     execution_plan_snapshot = instance.get_execution_plan_snapshot(
-        pipeline_run.execution_plan_snapshot_id
+        check.not_none(pipeline_run.execution_plan_snapshot_id)
     )
     execution_plan = ExecutionPlan.rebuild_from_snapshot(
         pipeline_run.pipeline_name,

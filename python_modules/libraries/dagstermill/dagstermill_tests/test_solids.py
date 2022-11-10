@@ -8,12 +8,13 @@ import nbformat
 import pytest
 from dagstermill import DagstermillError
 from dagstermill.compat import ExecutionError
+from dagstermill.examples.repository import custom_io_mgr_key_job
 from dagstermill.factory import define_dagstermill_solid
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 
 from dagster._check import CheckError
-from dagster._core.definitions.metadata import PathMetadataValue
+from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline, pipeline
@@ -28,7 +29,7 @@ def get_path(materialization_event):
     for (
         metadata_entry
     ) in materialization_event.event_specific_data.materialization.metadata_entries:
-        if isinstance(metadata_entry.entry_data, PathMetadataValue):
+        if isinstance(metadata_entry.entry_data, (PathMetadataValue, NotebookMetadataValue)):
             return metadata_entry.entry_data.path
 
 
@@ -542,3 +543,9 @@ def test_hello_world_graph():
         finally:
             if result:
                 cleanup_result_notebook(result)
+
+
+@pytest.mark.notebook_test
+def test_custom_io_manager_key():
+    assert "my_custom_io_manager" in custom_io_mgr_key_job.resource_defs.keys()
+    assert "output_notebook_io_manager" not in custom_io_mgr_key_job.resource_defs.keys()

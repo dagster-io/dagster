@@ -1,5 +1,5 @@
 import os
-from typing import Dict, NamedTuple, Optional, Sequence
+from typing import Mapping, NamedTuple, Optional, Sequence
 
 import yaml
 
@@ -39,6 +39,15 @@ def configurable_class_data_or_default(config_value, field_name, default):
         if config_value.get(field_name)
         else default
     )
+
+
+def configurable_secrets_loader_data(config_field, default) -> Optional[ConfigurableClassData]:
+    if not config_field:
+        return default
+    elif "custom" in config_field:
+        return configurable_class_data(config_field["custom"])
+    else:
+        return None
 
 
 def configurable_storage_data(config_field, defaults) -> Sequence[ConfigurableClassData]:
@@ -151,7 +160,7 @@ class InstanceRef(
             ("scheduler_data", Optional[ConfigurableClassData]),
             ("run_coordinator_data", Optional[ConfigurableClassData]),
             ("run_launcher_data", Optional[ConfigurableClassData]),
-            ("settings", Dict[str, object]),
+            ("settings", Mapping[str, object]),
             # Required for backwards compatibility, but going forward will be unused by new versions
             # of DagsterInstance, which instead will instead grab the constituent storages from the
             # unified `storage_data`, if it is populated.
@@ -161,6 +170,7 @@ class InstanceRef(
             ("custom_instance_class_data", Optional[ConfigurableClassData]),
             # unified storage field
             ("storage_data", Optional[ConfigurableClassData]),
+            ("secrets_loader_data", Optional[ConfigurableClassData]),
         ],
     )
 ):
@@ -176,12 +186,13 @@ class InstanceRef(
         scheduler_data: Optional[ConfigurableClassData],
         run_coordinator_data: Optional[ConfigurableClassData],
         run_launcher_data: Optional[ConfigurableClassData],
-        settings: Dict[str, object],
+        settings: Mapping[str, object],
         run_storage_data: ConfigurableClassData,
         event_storage_data: ConfigurableClassData,
         schedule_storage_data: ConfigurableClassData,
         custom_instance_class_data: Optional[ConfigurableClassData] = None,
         storage_data: Optional[ConfigurableClassData] = None,
+        secrets_loader_data: Optional[ConfigurableClassData] = None,
     ):
         return super(cls, InstanceRef).__new__(
             cls,
@@ -200,7 +211,7 @@ class InstanceRef(
             run_launcher_data=check.opt_inst_param(
                 run_launcher_data, "run_launcher_data", ConfigurableClassData
             ),
-            settings=check.opt_dict_param(settings, "settings", key_type=str),
+            settings=check.opt_mapping_param(settings, "settings", key_type=str),
             run_storage_data=check.inst_param(
                 run_storage_data, "run_storage_data", ConfigurableClassData
             ),
@@ -216,6 +227,9 @@ class InstanceRef(
                 ConfigurableClassData,
             ),
             storage_data=check.opt_inst_param(storage_data, "storage_data", ConfigurableClassData),
+            secrets_loader_data=check.opt_inst_param(
+                secrets_loader_data, "secrets_loader_data", ConfigurableClassData
+            ),
         )
 
     @staticmethod
@@ -265,6 +279,7 @@ class InstanceRef(
                 "DefaultRunLauncher",
                 yaml.dump({}),
             ),
+            "secrets": None,
             # LEGACY DEFAULTS
             "run_storage": default_run_storage_data,
             "event_log_storage": default_event_log_storage_data,
@@ -368,6 +383,10 @@ class InstanceRef(
             defaults["run_launcher"],
         )
 
+        secrets_loader_data = configurable_secrets_loader_data(
+            config_value.get("secrets"), defaults["secrets"]
+        )
+
         settings_keys = {
             "telemetry",
             "python_logs",
@@ -376,6 +395,7 @@ class InstanceRef(
             "code_servers",
             "retention",
             "sensors",
+            "schedules",
         }
         settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 
@@ -391,6 +411,7 @@ class InstanceRef(
             settings=settings,
             custom_instance_class_data=custom_instance_class_data,
             storage_data=storage_data,
+            secrets_loader_data=secrets_loader_data,
         )
 
     @staticmethod
@@ -439,6 +460,10 @@ class InstanceRef(
     @property
     def run_launcher(self):
         return self.run_launcher_data.rehydrate() if self.run_launcher_data else None
+
+    @property
+    def secrets_loader(self):
+        return self.secrets_loader_data.rehydrate() if self.secrets_loader_data else None
 
     @property
     def custom_instance_class(self):

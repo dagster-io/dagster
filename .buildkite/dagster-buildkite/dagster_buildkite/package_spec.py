@@ -1,21 +1,17 @@
+import logging
 import os
-from distutils import core as distutils_core  # pylint: disable=deprecated-module
-from importlib import reload
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, List, Mapping, NamedTuple, Optional, Union
+from typing import Callable, List, Mapping, Optional, Union
 
 import pkg_resources
+from dagster_buildkite.git import ChangedFiles
+from dagster_buildkite.python_packages import PythonPackages
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
 from .steps.tox import build_tox_step
-from .utils import (
-    BuildkiteLeafStep,
-    GroupStep,
-    changed_python_package_names,
-    get_changed_files,
-    is_feature_branch,
-)
+from .utils import BuildkiteLeafStep, GroupStep, is_feature_branch
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -60,29 +56,8 @@ PytestExtraCommandsFunction = Callable[[AvailablePythonVersion, Optional[str]], 
 PytestDependenciesFunction = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
 
 
-class PackageSpec(
-    NamedTuple(
-        "_PackageSpec",
-        [
-            ("directory", str),
-            ("name", str),
-            ("package_type", str),
-            ("unsupported_python_versions", List[AvailablePythonVersion]),
-            ("pytest_extra_cmds", Optional[Union[List[str], PytestExtraCommandsFunction]]),
-            ("pytest_step_dependencies", Optional[Union[List[str], PytestDependenciesFunction]]),
-            ("pytest_tox_factors", Optional[List[str]]),
-            ("env_vars", List[str]),
-            ("tox_file", Optional[str]),
-            ("retries", Optional[int]),
-            ("upload_coverage", bool),
-            ("timeout_in_minutes", Optional[int]),
-            ("queue", Optional[BuildkiteQueue]),
-            ("run_pytest", bool),
-            ("run_mypy", bool),
-            ("run_pylint", bool),
-        ],
-    )
-):
+@dataclass
+class PackageSpec:
     """Main spec for testing Dagster Python packages using tox.
 
     Args:
@@ -129,45 +104,36 @@ class PackageSpec(
             Python version. Enabled by default.
     """
 
-    def __new__(
-        cls,
-        directory: str,
-        name: Optional[str] = None,
-        package_type: Optional[str] = None,
-        unsupported_python_versions: Optional[List[AvailablePythonVersion]] = None,
-        pytest_extra_cmds: Optional[Union[List[str], PytestExtraCommandsFunction]] = None,
-        pytest_step_dependencies: Optional[Union[List[str], PytestDependenciesFunction]] = None,
-        pytest_tox_factors: Optional[List[str]] = None,
-        env_vars: Optional[List[str]] = None,
-        tox_file: Optional[str] = None,
-        retries: Optional[int] = None,
-        upload_coverage: Optional[bool] = None,
-        timeout_in_minutes: Optional[int] = None,
-        queue: Optional[BuildkiteQueue] = None,
-        run_pytest: bool = True,
-        run_mypy: bool = True,
-        run_pylint: bool = True,
-    ):
-        package_type = package_type or _infer_package_type(directory)
-        return super(PackageSpec, cls).__new__(
-            cls,
-            directory,
-            name or os.path.basename(directory),
-            package_type,
-            unsupported_python_versions or [],
-            pytest_extra_cmds,
-            pytest_step_dependencies,
-            pytest_tox_factors,
-            env_vars or [],
-            tox_file,
-            retries,
-            upload_coverage if upload_coverage is not None else package_type in ("core", "library"),
-            timeout_in_minutes,
-            queue,
-            run_pytest,
-            run_mypy,
-            run_pylint,
-        )
+    directory: str
+    name: Optional[str] = None
+    package_type: Optional[str] = None
+    unsupported_python_versions: List[AvailablePythonVersion] = field(default_factory=lambda: [])
+    pytest_extra_cmds: Optional[Union[List[str], PytestExtraCommandsFunction]] = None
+    pytest_step_dependencies: Optional[Union[List[str], PytestDependenciesFunction]] = None
+    pytest_tox_factors: Optional[List[str]] = None
+    env_vars: Optional[List[str]] = None
+    tox_file: Optional[str] = None
+    retries: Optional[int] = None
+    upload_coverage: Optional[bool] = None
+    timeout_in_minutes: Optional[int] = None
+    queue: Optional[BuildkiteQueue] = None
+    run_pytest: bool = True
+    run_mypy: bool = True
+    run_pylint: bool = True
+
+    def __post_init__(self):
+        if not self.name:
+            self.name = os.path.basename(self.directory)
+
+        if not self.package_type:
+            self.package_type = _infer_package_type(self.directory)
+
+        if not self.upload_coverage:
+            if self.package_type in ("core", "library"):
+                self.upload_coverage = True
+
+        self._should_skip = None
+        self._skip_reason = None
 
     def build_steps(self) -> List[GroupStep]:
         base_name = self.name or os.path.basename(self.directory)
@@ -219,12 +185,12 @@ class PackageSpec(
                     else:
                         extra_commands_post = []
 
-                    if isinstance(self.pytest_step_dependencies, list):
-                        dependencies = self.pytest_step_dependencies
-                    elif callable(self.pytest_step_dependencies):
-                        dependencies = self.pytest_step_dependencies(py_version, other_factor)
-                    else:
-                        dependencies = []
+                    dependencies = []
+                    if not self.skip_reason:
+                        if isinstance(self.pytest_step_dependencies, list):
+                            dependencies = self.pytest_step_dependencies
+                        elif callable(self.pytest_step_dependencies):
+                            dependencies = self.pytest_step_dependencies(py_version, other_factor)
 
                     steps.append(
                         build_tox_step(
@@ -269,7 +235,7 @@ class PackageSpec(
                 )
             )
 
-        emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]
+        emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]  # type: ignore[index]
         return [
             GroupStep(
                 group=f"{emoji} {base_name}",
@@ -279,54 +245,59 @@ class PackageSpec(
         ]
 
     @property
-    def distribution(self):
-        # run_setup stores state in a global variable. Reload the module
-        # each time we use it - otherwise we'll get the previous invocation's
-        # distribution if our setup.py doesn't implement setup() correctly
-        reload(distutils_core)
-
-        setup = Path(self.directory) / "setup.py"
-        if setup.exists():
-            return distutils_core.run_setup(setup)
-
-    @property
     def requirements(self):
-        # First try to infer requirements from the distribution
-        if self.distribution:
-            extras = [
-                requirement
-                for requirements in self.distribution.extras_require.values()
-                for requirement in requirements
-            ]
-            install = self.distribution.install_requires
-            return extras + install
+        # First try to infer requirements from the python package
+        package = PythonPackages.get(self.name)
+        if package:
+            return set.union(package.install_requires, *package.extras_require.values())
 
         # If we don't have a distribution (like many of our integration test suites)
         # we can use a requirements.txt file to capture requirements
         requirements_txt = Path(self.directory) / "requirements.txt"
         if requirements_txt.exists():
             parsed = pkg_resources.parse_requirements(requirements_txt.read_text())
-            return [requirement.name for requirement in parsed]
+            return [requirement for requirement in parsed]
 
         # Otherwise return nothing
         return []
 
     @property
     def skip_reason(self) -> Optional[str]:
-        if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
+        # Memoize so we don't log twice
+        if self._should_skip == False:
             return None
 
-        for change in get_changed_files():
+        if self._skip_reason:
+            return self._skip_reason
+
+        if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
+            logging.info(f"Building {self.name} we're not on a feature branch")
+            self._should_skip = False
+            return None
+
+        for change in ChangedFiles.all:
             if (
                 # Our change is in this package's directory
                 (Path(self.directory) in change.parents)
                 # The file can alter behavior - exclude things like README changes
-                and (change.suffix in [".py", ".cfg", ".toml"] or change.name == "requirements.txt")
+                # which we tend to include in .md files
+                and change.suffix in [".py", ".cfg", ".toml", ".ini", ".txt"]
             ):
+                logging.info(f"Building {self.name} because it has changed")
+                self._should_skip = False
                 return None
 
-        # TODO: Walk the dependency tree
-        if any(requirement in changed_python_package_names() for requirement in self.requirements):
-            return None
+        # Consider anything required by install or an extra to be in scope.
+        # We might one day narrow this down to specific extras.
+        for requirement in self.requirements:
+            in_scope_changes = PythonPackages.with_changes.intersection(
+                PythonPackages.walk_dependencies(requirement)
+            )
+            if in_scope_changes:
+                logging.info(f"Building {self.name} because of changes to {in_scope_changes}")
+                self._should_skip = False
+                return None
 
-        return "Package unaffected by these changes"
+        self._skip_reason = "Package unaffected by these changes"
+        self._should_skip = True
+        return self._skip_reason

@@ -5,10 +5,13 @@ import pytest
 from dagster import (
     AssetKey,
     IOManager,
+    IOManagerDefinition,
     ResourceDefinition,
     build_op_context,
+    execute_job,
     io_manager,
     mem_io_manager,
+    reconstructable,
     resource,
 )
 from dagster._core.definitions import AssetsDefinition, SourceAsset, asset, build_assets_job
@@ -19,9 +22,17 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.execution.with_resources import with_resources
+from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
+from dagster._core.test_utils import environ, instance_for_test
 
 # pylint: disable=comparison-with-callable,unbalanced-tuple-unpacking
+
+
+@pytest.fixture
+def instance():
+    with instance_for_test() as instance:
+        yield instance
 
 
 def test_assets_direct():
@@ -553,3 +564,43 @@ def test_with_resources_no_exp_warnings():
             [blah, my_source_asset],
             {"foo": ResourceDefinition.hardcoded_resource("something"), "the_manager": the_manager},
         )
+
+
+class FooIoManager(PickledObjectFilesystemIOManager):
+    def __init__(self):
+        super().__init__(base_dir="/tmp/dagster/foo-io-manager")
+
+
+io_manager_resource_fn = lambda _: FooIoManager()
+foo_io_manager_def = IOManagerDefinition(
+    resource_fn=io_manager_resource_fn,
+    config_schema={},
+)
+
+
+def create_asset_job():
+    # io_manager_test_asset = SourceAsset(key=AssetKey("my_source_asset"))
+
+    @asset
+    def my_derived_asset():
+        return 4
+
+    return build_assets_job("the_job", with_resources([my_derived_asset], {}))
+
+
+def test_source_asset_default_io_manager(instance):
+    with environ(
+        {
+            "DAGSTER_DEFAULT_IO_MANAGER_MODULE": "dagster_tests.core_tests.resource_tests.test_with_resources",
+            "DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE": "foo_io_manager_def",
+        }
+    ):
+        assert execute_job(reconstructable(create_asset_job), instance).success
+
+    with environ(
+        {
+            "DAGSTER_DEFAULT_IO_MANAGER_MODULE": "dagster_tests.core_tests.resource_tests.fake_file",
+            "DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE": "foo_io_manager_def",
+        }
+    ):
+        assert not execute_job(reconstructable(create_asset_job), instance).success

@@ -1,3 +1,4 @@
+import warnings
 from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
@@ -5,10 +6,10 @@ from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils import merge_dicts
+from dagster._utils.backcompat import ExperimentalWarning
 
 from .asset_layer import AssetLayer
 from .assets import AssetsDefinition
@@ -24,6 +25,62 @@ from .resource_definition import ResourceDefinition
 from .resource_requirement import ensure_requirements_satisfied
 from .source_asset import SourceAsset
 from .utils import DEFAULT_IO_MANAGER_KEY
+
+# Prefix for auto created jobs that are used to materialize assets
+ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
+
+
+def is_base_asset_job_name(name) -> bool:
+    return name.startswith(ASSET_BASE_JOB_PREFIX)
+
+
+def get_base_asset_jobs(
+    assets: Sequence[AssetsDefinition],
+    source_assets: Sequence[SourceAsset],
+    resource_defs: Optional[Mapping[str, ResourceDefinition]],
+    executor_def: Optional[ExecutorDefinition],
+) -> Sequence[JobDefinition]:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+        assets_by_partitions_def: Dict[
+            Optional[PartitionsDefinition], List[AssetsDefinition]
+        ] = defaultdict(list)
+        for assets_def in assets:
+            assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
+
+        if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {None}:
+            return [
+                build_assets_job(
+                    name=ASSET_BASE_JOB_PREFIX,
+                    assets=assets,
+                    source_assets=source_assets,
+                    executor_def=executor_def,
+                    resource_defs=resource_defs,
+                )
+            ]
+        else:
+            unpartitioned_assets = assets_by_partitions_def.get(None, [])
+            partitioned_assets_by_partitions_def = {
+                k: v for k, v in assets_by_partitions_def.items() if k is not None
+            }
+            jobs = []
+
+            # sort to ensure some stability in the ordering
+            for i, (_, assets_with_partitions) in enumerate(
+                sorted(partitioned_assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
+            ):
+                jobs.append(
+                    build_assets_job(
+                        f"{ASSET_BASE_JOB_PREFIX}_{i}",
+                        assets=assets_with_partitions + unpartitioned_assets,
+                        source_assets=[*source_assets, *assets],
+                        resource_defs=resource_defs,
+                        executor_def=executor_def,
+                    )
+                )
+
+            return jobs
 
 
 @experimental
@@ -175,7 +232,7 @@ def build_node_deps(
     assets_defs: Iterable[AssetsDefinition],
     resolved_asset_deps: ResolvedAssetDependencies,
 ) -> Tuple[
-    Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
+    Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]],
     Mapping[NodeHandle, AssetsDefinition],
 ]:
     # sort so that nodes get a consistent name
@@ -228,7 +285,9 @@ def build_node_deps(
     return deps, assets_defs_by_node_handle
 
 
-def _has_cycles(deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]) -> bool:
+def _has_cycles(
+    deps: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+) -> bool:
     """Detect if there are cycles in a dependency dictionary."""
     try:
         node_deps: Dict[str, Set[str]] = {}
@@ -277,33 +336,33 @@ def _attempt_resolve_cycles(
     asset_deps = generate_asset_dep_graph(assets_defs, source_assets)
 
     # index AssetsDefinitions by their asset names
-    assets_defs_by_asset_name = {}
+    assets_defs_by_asset_key: Dict[AssetKey, AssetsDefinition] = {}
     for assets_def in assets_defs:
         for asset_key in assets_def.keys:
-            assets_defs_by_asset_name[asset_key.to_user_string()] = assets_def
+            assets_defs_by_asset_key[asset_key] = assets_def
 
     # color for each asset
     colors = {}
 
     # recursively color an asset and all of its downstream assets
-    def _dfs(name, cur_color):
-        colors[name] = cur_color
-        if name in assets_defs_by_asset_name:
-            cur_node_asset_keys = assets_defs_by_asset_name[name].keys
+    def _dfs(key, cur_color):
+        colors[key] = cur_color
+        if key in assets_defs_by_asset_key:
+            cur_node_asset_keys = assets_defs_by_asset_key[key].keys
         else:
             # in a SourceAsset, treat all downstream as if they're in the same node
-            cur_node_asset_keys = asset_deps["downstream"][name]
+            cur_node_asset_keys = asset_deps["downstream"][key]
 
-        for downstream_name in asset_deps["downstream"][name]:
+        for downstream_key in asset_deps["downstream"][key]:
             # if the downstream asset is in the current node,keep the same color
-            if AssetKey.from_user_string(downstream_name) in cur_node_asset_keys:
+            if downstream_key in cur_node_asset_keys:
                 new_color = cur_color
             else:
                 new_color = cur_color + 1
 
             # if current color of the downstream asset is less than the new color, re-do dfs
-            if colors.get(downstream_name, -1) < new_color:
-                _dfs(downstream_name, new_color)
+            if colors.get(downstream_key, -1) < new_color:
+                _dfs(downstream_key, new_color)
 
     # validate that there are no cycles in the overall asset graph
     toposorted = list(toposort(asset_deps["upstream"]))
@@ -315,14 +374,11 @@ def _attempt_resolve_cycles(
     color_mapping_by_assets_defs: Dict[AssetsDefinition, Any] = defaultdict(
         lambda: defaultdict(set)
     )
-    for name, color in colors.items():
-        asset_key = AssetKey.from_user_string(name)
+    for key, color in colors.items():
         # ignore source assets
-        if name not in assets_defs_by_asset_name:
+        if key not in assets_defs_by_asset_key:
             continue
-        color_mapping_by_assets_defs[assets_defs_by_asset_name[name]][color].add(
-            AssetKey.from_user_string(name)
-        )
+        color_mapping_by_assets_defs[assets_defs_by_asset_key[key]][color].add(key)
 
     ret = []
     for assets_def, color_mapping in color_mapping_by_assets_defs.items():
@@ -391,7 +447,7 @@ def get_all_resource_defs(
     assets: Iterable[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
-) -> Dict[str, ResourceDefinition]:
+) -> Mapping[str, ResourceDefinition]:
 
     # Ensures that no resource keys conflict, and each asset has its resource requirements satisfied.
     check_resources_satisfy_requirements(assets, source_assets, resource_defs)

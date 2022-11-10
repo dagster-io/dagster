@@ -84,9 +84,9 @@ def build_resources(
 
     """
 
-    resources = check.dict_param(resources, "resource_defs", key_type=str)
+    resources = check.mapping_param(resources, "resource_defs", key_type=str)
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
-    resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
+    resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)
     log_manager = check.opt_inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_defs = wrap_resources_for_execution(resources)
     mapped_resource_config = get_mapped_resource_config(resource_defs, resource_config)
@@ -116,7 +116,7 @@ def build_resources(
 
 def wrap_resources_for_execution(
     resources: Optional[Mapping[str, Any]] = None
-) -> Dict[str, ResourceDefinition]:
+) -> Mapping[str, ResourceDefinition]:
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     resource_defs = {}
     # Wrap instantiated resource values in a resource definition.

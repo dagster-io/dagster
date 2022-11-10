@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Set, cast
+from typing import Any, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
 
 import dagster._check as check
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
@@ -24,12 +24,14 @@ def get_recursive_type_keys(
 
 @whitelist_for_serdes
 class ConfigSchemaSnapshot(
-    NamedTuple("_ConfigSchemaSnapshot", [("all_config_snaps_by_key", Dict[str, "ConfigTypeSnap"])])
+    NamedTuple(
+        "_ConfigSchemaSnapshot", [("all_config_snaps_by_key", Mapping[str, "ConfigTypeSnap"])]
+    )
 ):
-    def __new__(cls, all_config_snaps_by_key: Dict[str, "ConfigTypeSnap"]):
+    def __new__(cls, all_config_snaps_by_key: Mapping[str, "ConfigTypeSnap"]):
         return super(ConfigSchemaSnapshot, cls).__new__(
             cls,
-            all_config_snaps_by_key=check.dict_param(
+            all_config_snaps_by_key=check.mapping_param(
                 all_config_snaps_by_key,
                 "all_config_snaps_by_key",
                 key_type=str,
@@ -38,7 +40,7 @@ class ConfigSchemaSnapshot(
         )
 
     @property
-    def all_config_keys(self) -> List[str]:
+    def all_config_keys(self) -> Sequence[str]:
         return list(self.all_config_snaps_by_key.keys())
 
     def get_config_snap(self, key: str) -> "ConfigTypeSnap":
@@ -65,11 +67,11 @@ class ConfigTypeSnap(
             ("key", str),
             ("given_name", Optional[str]),
             ("description", Optional[str]),
-            ("type_param_keys", Optional[List[str]]),  # only valid for closed generics
-            ("enum_values", Optional[List["ConfigEnumValueSnap"]]),  # only valid for enums
-            ("fields", Optional[List["ConfigFieldSnap"]]),  # only valid for dicts and selectors
+            ("type_param_keys", Optional[Sequence[str]]),  # only valid for closed generics
+            ("enum_values", Optional[Sequence["ConfigEnumValueSnap"]]),  # only valid for enums
+            ("fields", Optional[Sequence["ConfigFieldSnap"]]),  # only valid for dicts and selectors
             ("scalar_kind", Optional[ConfigScalarKind]),  # only valid for scalars
-            ("field_aliases", Optional[Dict[str, str]]),  # only valid for strict shapes
+            ("field_aliases", Optional[Mapping[str, str]]),  # only valid for strict shapes
         ],
     )
 ):
@@ -171,11 +173,11 @@ class ConfigTypeSnap(
         return bool(self._get_field(name))
 
     @property
-    def field_names(self) -> List[str]:
+    def field_names(self) -> Sequence[str]:
         fields = check.is_list(self.fields, of_type=ConfigFieldSnap)
         return [fs.name for fs in fields]
 
-    def get_child_type_keys(self) -> List[str]:
+    def get_child_type_keys(self) -> Sequence[str]:
         if ConfigTypeKind.is_closed_generic(self.kind):
             # all closed generics have type params
             return cast(List[str], self.type_param_keys)
@@ -236,9 +238,7 @@ class ConfigFieldSnap(
         )
 
 
-def snap_from_field(name, field):
-    check.str_param(name, "name")
-    check.inst_param(field, "field", Field)
+def snap_from_field(name: str, field: Field):
     return ConfigFieldSnap(
         name=name,
         type_key=field.config_type.key,
@@ -253,7 +253,6 @@ def snap_from_field(name, field):
 
 # type-ignores here are temporary until config type system overhauled
 def snap_from_config_type(config_type: ConfigType) -> ConfigTypeSnap:
-    check.inst_param(config_type, "config_type", ConfigType)
     return ConfigTypeSnap(
         key=config_type.key,
         given_name=config_type.given_name,

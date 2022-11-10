@@ -5,11 +5,11 @@ import {Box} from './Box';
 import {Colors} from './Colors';
 import {Table, TableProps} from './Table';
 
-type Row = {key: string; value: React.ReactNode};
+export type MetadataTableRow = {key: string; label?: React.ReactNode; value: React.ReactNode};
 
 interface Props {
   dark?: boolean;
-  rows: (Row | null | undefined)[];
+  rows: (MetadataTableRow | null | undefined)[];
   spacing: 0 | 2 | 4;
 }
 
@@ -19,16 +19,16 @@ export const MetadataTable = (props: Props) => {
   return (
     <StyledTable>
       <tbody>
-        {rows.map((pair: Row | null | undefined) => {
+        {rows.map((pair: MetadataTableRow | null | undefined) => {
           if (!pair) {
             return null;
           }
-          const {key, value} = pair;
+          const {key, label, value} = pair;
           return (
             <tr key={key}>
               <td>
                 <Box padding={{vertical: spacing, right: 32}}>
-                  <MetadataKey $dark={dark}>{key}</MetadataKey>
+                  <MetadataKey $dark={dark}>{label ?? key}</MetadataKey>
                 </Box>
               </td>
               <td>

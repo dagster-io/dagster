@@ -145,6 +145,10 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
 
         return os.path.join(self.base_dir, *path)
 
+    def _get_path_for_partition(self, asset_key: AssetKey, partition_key: str) -> str:
+        """Construct filepath for a particular partition_key"""
+        return os.path.join(self.base_dir, *asset_key.path, partition_key)
+
     def has_output(self, context):
         filepath = self._get_path(context)
 
@@ -158,8 +162,6 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         """
         check.inst_param(context, "context", OutputContext)
 
-        filepath = self._get_path(context)
-
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
@@ -167,6 +169,8 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                 f"that was not None and was of type {type(obj)}.",
             )
             return None
+
+        filepath = self._get_path(context)
 
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
@@ -204,9 +208,30 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         if context.dagster_type.typing_type == type(None):
             return None
 
-        filepath = self._get_path(context)
-        context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
+        def has_multiple_partitions(context):
+            key_range = context.asset_partition_key_range
+            return key_range.start != key_range.end
 
+        if (
+            context.has_input_name
+            and context.has_asset_partitions
+            and has_multiple_partitions(context)
+        ):
+            # Multiple partition load
+            partition_keys = context.asset_partition_keys
+            paths = [
+                self._get_path_for_partition(context.asset_key, partition_key)
+                for partition_key in partition_keys
+            ]
+            return {key: self._load_pickle(path) for (key, path) in zip(partition_keys, paths)}
+        else:
+            # Non-partitioned or single partition load
+            filepath = self._get_path(context)
+            context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
+            return self._load_pickle(filepath)
+
+    def _load_pickle(self, filepath: str):
+        """Unpickle the file and Load it to a data object."""
         with open(filepath, self.read_mode) as read_obj:
             return pickle.load(read_obj)
 

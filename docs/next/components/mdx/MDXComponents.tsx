@@ -12,7 +12,7 @@ import cx from 'classnames';
 import {PersistentTabContext} from 'components/PersistentTabContext';
 import NextImage from 'next/image';
 import NextLink from 'next/link';
-import React, {ReactElement, useContext, useRef, useState} from 'react';
+import React, {ReactElement, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
 import {useVersion} from '../../util/useVersion';
@@ -28,6 +28,31 @@ import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx'
 import DbtModelAssetExplanation from './includes/dagster/integrations/DbtModelAssetExplanation.mdx';
 
 export const SearchIndexContext = React.createContext(null);
+
+// https://www.30secondsofcode.org/react/s/use-hash
+// Modified to check for window existence (for nextjs) before accessing
+const useHash = (): string => {
+  const [hash, setHash] = React.useState(() => {
+    return typeof window === 'undefined' ? '' : window.location.hash;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handler = () => {
+      setHash(window.location.hash);
+    };
+
+    window.addEventListener('hashchange', handler);
+    return () => {
+      window.removeEventListener('hashchange', handler);
+    };
+  }, []);
+
+  return hash;
+};
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -211,11 +236,11 @@ const ADMONITION_STYLES = {
       borderIcon: 'primary-500',
       text: 'gray-900',
     },
-    icon: Icons.InfoCircle,
+    icon: Icons.About,
   },
   warning: {
     colors: {bg: 'yellow-50', borderIcon: 'yellow-400', text: 'yellow-700'},
-    icon: Icons.Warning,
+    icon: Icons.About,
   },
 };
 
@@ -232,7 +257,7 @@ const Admonition = ({style, children}) => {
             fill="currentColor"
             aria-hidden="true"
           >
-            {icon}
+            {icon && icon}
           </svg>
         </div>
         <div className="ml-3">
@@ -537,6 +562,42 @@ function classNames(...classes) {
 }
 
 const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, persistentKey}) => {
+  const [selectedTab, setSelectedTab] = useState(0);
+  const anchor = useHash();
+
+  const [anchorsInChildren, setAnchorsInChildren] = useState<{[anchor: string]: number}>({});
+  const handleTabs = useCallback((node: HTMLElement) => {
+    if (!node) {
+      return;
+    }
+    const out = {};
+
+    // Once the tabs render, get the list of element IDs and the map to the
+    // tab index they are in
+    const tabs = node.querySelectorAll("[role='tabpanel']");
+    for (let i = 0; i < tabs.length; i++) {
+      const tab = tabs[i] as HTMLElement;
+      for (const element of tab.querySelectorAll('[id]')) {
+        out[element.id] = i;
+      }
+    }
+    setAnchorsInChildren(out);
+  }, []);
+
+  useEffect(() => {
+    const anchorWithoutHash = anchor.substring(1);
+    if (anchorWithoutHash in anchorsInChildren) {
+      const tabIdx = anchorsInChildren[anchorWithoutHash];
+
+      // Scroll page to the hash after re-render
+      setSelectedTab(tabIdx);
+      setTimeout(() => {
+        const elem = document.getElementById(anchorWithoutHash);
+        elem?.scrollIntoView();
+      }, 10);
+    }
+  }, [anchor, anchorsInChildren]);
+
   const contents = (
     <>
       <Tab.List className="flex space-x-2 m-2">
@@ -559,10 +620,12 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
           );
         })}
       </Tab.List>
-      <Tab.Panels>
+      <Tab.Panels ref={handleTabs}>
         {React.Children.map(children, (child, idx) => {
+          // Set unmount={false} to ensure all tabs render (some are hidden)
+          // this way we can gather all the ids in the tab group
           return (
-            <Tab.Panel key={idx} className={classNames('p-3')}>
+            <Tab.Panel key={idx} className={classNames('p-3')} unmount={false}>
               {child.props.children}
             </Tab.Panel>
           );
@@ -585,7 +648,9 @@ const TabGroup: React.FC<{children: any; persistentKey?: string}> = ({children, 
           )}
         </PersistentTabContext.Consumer>
       ) : (
-        <Tab.Group>{contents}</Tab.Group>
+        <Tab.Group selectedIndex={selectedTab} onChange={(idx) => setSelectedTab(idx)}>
+          {contents}
+        </Tab.Group>
       )}
     </div>
   );

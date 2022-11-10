@@ -17,6 +17,7 @@ import {
   Table,
   Subheading,
   StyledReadOnlyCodeMirror,
+  ExternalAnchorButton,
 } from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
@@ -61,11 +62,14 @@ export const SchedulesNextTicks: React.FC<{
 }> = React.memo(({repos}) => {
   const nextTicks: ScheduleTick[] = [];
   let anyPipelines = false;
+  let anySchedules = false;
 
   const {options} = useRepositoryOptions();
 
   repos.forEach((repo) => {
     const {schedules} = repo;
+    anySchedules = anySchedules || schedules.length > 0;
+
     const repoAddress = {
       name: repo.name,
       location: repo.location.name,
@@ -105,7 +109,29 @@ export const SchedulesNextTicks: React.FC<{
         <NonIdealState
           icon="error"
           title="No scheduled ticks"
-          description="There are no running schedules. Start a schedule to see scheduled ticks."
+          description={
+            anySchedules ? (
+              <>
+                There are no running schedules.{' '}
+                <Link to="/overview/schedules">Start a schedule</Link> to see scheduled ticks.
+              </>
+            ) : (
+              <>
+                There are no schedules in this workspace. Create a running schedule to view its
+                scheduled ticks.
+              </>
+            )
+          }
+          action={
+            anySchedules ? null : (
+              <ExternalAnchorButton
+                icon={<Icon name="open_in_new" />}
+                href="https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules"
+              >
+                View documentation
+              </ExternalAnchorButton>
+            )
+          }
         />
       </Box>
     );

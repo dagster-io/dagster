@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, NamedTuple, Optional
+from typing import Iterable, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
@@ -52,14 +52,14 @@ class PartitionBackfill(
             ("backfill_id", str),
             ("partition_set_origin", ExternalPartitionSetOrigin),
             ("status", BulkActionStatus),
-            ("partition_names", List[str]),
+            ("partition_names", Sequence[str]),
             ("from_failure", bool),
-            ("reexecution_steps", List[str]),
-            ("tags", Dict[str, str]),
+            ("reexecution_steps", Sequence[str]),
+            ("tags", Mapping[str, str]),
             ("backfill_timestamp", float),
             ("last_submitted_partition_name", Optional[str]),
             ("error", Optional[SerializableErrorInfo]),
-            ("asset_selection", Optional[List[AssetKey]]),
+            ("asset_selection", Optional[Sequence[AssetKey]]),
         ],
     ),
 ):
@@ -68,14 +68,14 @@ class PartitionBackfill(
         backfill_id: str,
         partition_set_origin: ExternalPartitionSetOrigin,
         status: BulkActionStatus,
-        partition_names: List[str],
+        partition_names: Sequence[str],
         from_failure: bool,
-        reexecution_steps: List[str],
-        tags: Dict[str, str],
+        reexecution_steps: Sequence[str],
+        tags: Mapping[str, str],
         backfill_timestamp: float,
         last_submitted_partition_name: Optional[str] = None,
         error: Optional[SerializableErrorInfo] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
         check.invariant(
             not (asset_selection and reexecution_steps),
@@ -88,10 +88,10 @@ class PartitionBackfill(
                 partition_set_origin, "partition_set_origin", ExternalPartitionSetOrigin
             ),
             check.inst_param(status, "status", BulkActionStatus),
-            check.list_param(partition_names, "partition_names", of_type=str),
+            check.sequence_param(partition_names, "partition_names", of_type=str),
             check.bool_param(from_failure, "from_failure"),
-            check.opt_list_param(reexecution_steps, "reexecution_steps", of_type=str),
-            check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
+            check.opt_sequence_param(reexecution_steps, "reexecution_steps", of_type=str),
+            check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
             check.float_param(backfill_timestamp, "backfill_timestamp"),
             check.opt_str_param(last_submitted_partition_name, "last_submitted_partition_name"),
             check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -151,11 +151,14 @@ class PartitionBackfill(
         )
 
 
-def submit_backfill_runs(instance, workspace, repo_location, backfill_job, partition_names=None):
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(workspace, "workspace", IWorkspace)
-    check.inst_param(repo_location, "repo_location", RepositoryLocation)
-    check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
+def submit_backfill_runs(
+    instance: DagsterInstance,
+    workspace: IWorkspace,
+    repo_location: RepositoryLocation,
+    backfill_job: PartitionBackfill,
+    partition_names: Optional[Sequence[str]] = None,
+) -> Iterable[Optional[str]]:
+    """Returns the run IDs of the submitted runs"""
 
     repository_origin = backfill_job.partition_set_origin.external_repository_origin
     repo_name = repository_origin.repository_name
@@ -211,16 +214,14 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
 
 
 def create_backfill_run(
-    instance, repo_location, external_pipeline, external_partition_set, backfill_job, partition_data
-):
+    instance: DagsterInstance,
+    repo_location: RepositoryLocation,
+    external_pipeline: ExternalPipeline,
+    external_partition_set: ExternalPartitionSet,
+    backfill_job: PartitionBackfill,
+    partition_data: ExternalPartitionExecutionParamData,
+) -> Optional[PipelineRun]:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
-
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(repo_location, "repo_location", RepositoryLocation)
-    check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-    check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
-    check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
-    check.inst_param(partition_data, "partition_data", ExternalPartitionExecutionParamData)
 
     log_action(
         instance,
@@ -289,7 +290,7 @@ def create_backfill_run(
     external_execution_plan = repo_location.get_external_execution_plan(
         external_pipeline,
         partition_data.run_config,
-        external_partition_set.mode,
+        check.not_none(external_partition_set.mode),
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
         instance=instance,

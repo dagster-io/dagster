@@ -2,14 +2,14 @@ import typing
 
 import pytest
 
-from dagster import DagsterTypeCheckDidNotPass, Optional
+from dagster import DagsterTypeCheckDidNotPass, In, Optional, Out, op
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.types.python_set import create_typed_runtime_set
-from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, lambda_solid
+from dagster._legacy import execute_solid
 
 
 def test_vanilla_set_output():
-    @lambda_solid(output_def=OutputDefinition(set))
+    @op(out=Out(set))
     def emit_set():
         return {1, 2}
 
@@ -17,7 +17,7 @@ def test_vanilla_set_output():
 
 
 def test_vanilla_set_output_fail():
-    @lambda_solid(output_def=OutputDefinition(set))
+    @op(out=Out(set))
     def emit_set():
         return "foo"
 
@@ -26,7 +26,7 @@ def test_vanilla_set_output_fail():
 
 
 def test_vanilla_set_input():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=set)])
+    @op(ins={"tt": In(dagster_type=set)})
     def take_set(tt):
         return tt
 
@@ -34,7 +34,7 @@ def test_vanilla_set_input():
 
 
 def test_vanilla_set_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=set)])
+    @op(ins={"tt": In(dagster_type=set)})
     def take_set(tt):
         return tt
 
@@ -43,7 +43,7 @@ def test_vanilla_set_input_fail():
 
 
 def test_open_typing_set_output():
-    @lambda_solid(output_def=OutputDefinition(typing.Set))
+    @op(out=Out(typing.Set))
     def emit_set():
         return {1, 2}
 
@@ -51,7 +51,7 @@ def test_open_typing_set_output():
 
 
 def test_open_typing_set_output_fail():
-    @lambda_solid(output_def=OutputDefinition(typing.Set))
+    @op(out=Out(typing.Set))
     def emit_set():
         return "foo"
 
@@ -60,7 +60,7 @@ def test_open_typing_set_output_fail():
 
 
 def test_open_typing_set_input():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set)])
+    @op(ins={"tt": In(dagster_type=typing.Set)})
     def take_set(tt):
         return tt
 
@@ -68,7 +68,7 @@ def test_open_typing_set_input():
 
 
 def test_open_typing_set_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set)])
+    @op(ins={"tt": In(dagster_type=typing.Set)})
     def take_set(tt):
         return tt
 
@@ -107,7 +107,7 @@ def test_runtime_optional_set():
 
 
 def test_closed_typing_set_input():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
+    @op(ins={"tt": In(dagster_type=typing.Set[int])})
     def take_set(tt):
         return tt
 
@@ -115,7 +115,7 @@ def test_closed_typing_set_input():
 
 
 def test_closed_typing_set_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
+    @op(ins={"tt": In(dagster_type=typing.Set[int])})
     def take_set(tt):
         return tt
 
@@ -127,7 +127,7 @@ def test_closed_typing_set_input_fail():
 
 
 def test_typed_set_type_loader():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
+    @op(ins={"tt": In(dagster_type=typing.Set[int])})
     def take_set(tt):
         return tt
 

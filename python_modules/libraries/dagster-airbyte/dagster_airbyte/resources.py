@@ -1,13 +1,16 @@
+import hashlib
+import json
 import logging
 import sys
 import time
-from typing import Any, Dict, List, Optional, cast
+from contextlib import contextmanager
+from typing import Any, Dict, List, Mapping, Optional, cast
 
 import requests
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 
-from dagster import Failure, Field, StringSource, __version__
+from dagster import Failure, Field, StringSource
 from dagster import _check as check
 from dagster import get_dagster_logger, resource
 from dagster._config.field_utils import Permissive
@@ -39,9 +42,11 @@ class AirbyteResource:
         request_max_retries: int = 3,
         request_retry_delay: float = 0.25,
         request_timeout: int = 15,
-        request_additional_params: Optional[Dict[str, Any]] = None,
+        request_additional_params: Optional[Mapping[str, Any]] = None,
         log: logging.Logger = get_dagster_logger(),
         forward_logs: bool = True,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         self._host = host
         self._port = port
@@ -54,6 +59,12 @@ class AirbyteResource:
         self._log = log
 
         self._forward_logs = forward_logs
+        self._request_cache: Dict[str, Optional[Mapping[str, object]]] = {}
+        # Int in case we nest contexts
+        self._cache_enabled = 0
+
+        self._username = username
+        self._password = password
 
     @property
     def api_base_url(self) -> str:
@@ -63,9 +74,39 @@ class AirbyteResource:
             + "/api/v1"
         )
 
+    @contextmanager
+    def cache_requests(self):
+        """
+        Context manager that enables caching certain requests to the Airbyte API,
+        cleared when the context is exited.
+        """
+        self.clear_request_cache()
+        self._cache_enabled += 1
+        try:
+            yield
+        finally:
+            self.clear_request_cache()
+            self._cache_enabled -= 1
+
+    def clear_request_cache(self):
+        self._request_cache = {}
+
+    def make_request_cached(self, endpoint: str, data: Optional[Mapping[str, object]]):
+        if not self._cache_enabled > 0:
+            return self.make_request(endpoint, data)
+        data_json = json.dumps(data, sort_keys=True)
+        sha = hashlib.sha1()
+        sha.update(endpoint.encode("utf-8"))
+        sha.update(data_json.encode("utf-8"))
+        digest = sha.hexdigest()
+
+        if digest not in self._request_cache:
+            self._request_cache[digest] = self.make_request(endpoint, data)
+        return self._request_cache[digest]
+
     def make_request(
-        self, endpoint: str, data: Optional[Dict[str, object]]
-    ) -> Optional[Dict[str, object]]:
+        self, endpoint: str, data: Optional[Mapping[str, object]]
+    ) -> Optional[Mapping[str, object]]:
         """
         Creates and sends a request to the desired Airbyte REST API endpoint.
 
@@ -90,6 +131,9 @@ class AirbyteResource:
                             headers=headers,
                             json=data,
                             timeout=self._request_timeout,
+                            auth=(self._username, self._password)
+                            if self._username and self._password
+                            else None,
                         ),
                         self._additional_request_params,
                     ),
@@ -110,7 +154,84 @@ class AirbyteResource:
     def cancel_job(self, job_id: int):
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})
 
-    def get_job_status(self, connection_id: str, job_id: int) -> dict:
+    def get_default_workspace(self):
+        workspaces = cast(
+            List[Dict[str, Any]],
+            check.not_none(self.make_request_cached(endpoint="/workspaces/list", data={})).get(
+                "workspaces", []
+            ),
+        )
+        return workspaces[0].get("workspaceId")
+
+    def get_source_definition_by_name(self, name: str, workspace_id: str) -> Optional[str]:
+        name_lower = name.lower()
+        definitions = self.make_request_cached(
+            endpoint="/source_definitions/list_for_workspace", data={"workspaceId": workspace_id}
+        )
+
+        return next(
+            (
+                definition["sourceDefinitionId"]
+                for definition in definitions["sourceDefinitions"]
+                if definition["name"].lower() == name_lower
+            ),
+            None,
+        )
+
+    def get_destination_definition_by_name(self, name: str, workspace_id: str):
+        name_lower = name.lower()
+        definitions = cast(
+            Dict[str, List[Dict[str, str]]],
+            check.not_none(
+                self.make_request_cached(
+                    endpoint="/destination_definitions/list_for_workspace",
+                    data={"workspaceId": workspace_id},
+                )
+            ),
+        )
+        return next(
+            (
+                definition["destinationDefinitionId"]
+                for definition in definitions["destinationDefinitions"]
+                if definition["name"].lower() == name_lower
+            ),
+            None,
+        )
+
+    def get_source_catalog_id(self, source_id: str):
+        result = cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
+            ),
+        )
+        return result["catalogId"]
+
+    def get_source_schema(self, source_id: str) -> Mapping[str, Any]:
+        return cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
+            ),
+        )
+
+    def does_dest_support_normalization(
+        self, destination_definition_id: str, workspace_id: str
+    ) -> Dict[str, Any]:
+        return cast(
+            Dict[str, Any],
+            check.not_none(
+                self.make_request_cached(
+                    endpoint="/destination_definition_specifications/get",
+                    data={
+                        "destinationDefinitionId": destination_definition_id,
+                        "workspaceId": workspace_id,
+                    },
+                )
+            ),
+        ).get("supportsNormalization", False)
+
+    def get_job_status(self, connection_id: str, job_id: int) -> Mapping[str, object]:
         if self._forward_logs:
             return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
         else:
@@ -131,12 +252,12 @@ class AirbyteResource:
 
             return check.not_none(job)
 
-    def start_sync(self, connection_id: str) -> Dict[str, object]:
+    def start_sync(self, connection_id: str) -> Mapping[str, object]:
         return check.not_none(
             self.make_request(endpoint="/connections/sync", data={"connectionId": connection_id})
         )
 
-    def get_connection_details(self, connection_id: str) -> Dict[str, object]:
+    def get_connection_details(self, connection_id: str) -> Mapping[str, object]:
         return check.not_none(
             self.make_request(endpoint="/connections/get", data={"connectionId": connection_id})
         )
@@ -231,6 +352,16 @@ class AirbyteResource:
             is_required=True,
             description="Port for the Airbyte Server.",
         ),
+        "username": Field(
+            StringSource,
+            description="Username if using basic auth.",
+            is_required=False,
+        ),
+        "password": Field(
+            StringSource,
+            description="Password if using basic auth.",
+            is_required=False,
+        ),
         "use_https": Field(
             bool,
             default_value=False,
@@ -287,6 +418,9 @@ def airbyte_resource(context) -> AirbyteResource:
             {
                 "host": {"env": "AIRBYTE_HOST"},
                 "port": {"env": "AIRBYTE_PORT"},
+                # If using basic auth
+                "username": {"env": "AIRBYTE_USERNAME"},
+                "password": {"env": "AIRBYTE_PASSWORD"},
             }
         )
 
@@ -305,4 +439,6 @@ def airbyte_resource(context) -> AirbyteResource:
         request_additional_params=context.resource_config["request_additional_params"],
         log=context.log,
         forward_logs=context.resource_config["forward_logs"],
+        username=context.resource_config.get("username"),
+        password=context.resource_config.get("password"),
     )

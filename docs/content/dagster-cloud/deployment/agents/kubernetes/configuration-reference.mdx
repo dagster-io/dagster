@@ -83,7 +83,7 @@ locations:
 
 ### Environment variables and secrets
 
-Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets`properties, you can specify environment variables and secrets for a specific code location. For example:
+Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets` properties, you can specify environment variables and secrets for a specific code location. For example:
 
 ```yaml
 ## dagster_cloud.yaml
@@ -162,7 +162,7 @@ We plan to make this user the default in a future release.
 You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/). For example, you might do this to [configure an S3 IO Manager](/deployment/guides/aws#using-s3-for-io-management).
 
 1. [Create an IAM OIDC provider for your EKS cluster](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
-2. [Create an IAM role and and attach IAM policies](https://docs.aws.amazon.com/eks/latest/userguide/create-service-account-iam-policy-and-role.html)
+2. [Create an IAM role and and attach IAM policies](https://docs.aws.amazon.com/eks/latest/userguide/associate-service-account-role.html)
 3. Update the [ Helm chart](#viewing-the-helm-chart) to associate the IAM role with a service account:
 
    ```bash

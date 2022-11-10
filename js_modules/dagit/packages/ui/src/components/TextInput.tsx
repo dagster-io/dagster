@@ -32,6 +32,7 @@ export const TextInput = React.forwardRef(
           disabled={disabled}
           ref={ref}
           $hasIcon={!!icon}
+          $hasRightElement={!!rightElement}
           type={type}
         />
         {rightElement ? <RightContainer>{rightElement}</RightContainer> : null}
@@ -112,10 +113,20 @@ export const TextInputStyles = css`
 interface StyledInputProps {
   $hasIcon: boolean;
   $strokeColor: string;
+  $hasRightElement: boolean;
 }
 
 const StyledInput = styled.input<StyledInputProps>`
   ${TextInputStyles}
+
+  ${({$hasRightElement}) =>
+    $hasRightElement
+      ? css`
+          & {
+            padding-right: 28px;
+          }
+        `
+      : null}
 
   box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
     ${Colors.KeylineGray} inset 2px 2px 1.5px;
@@ -129,10 +140,19 @@ const StyledInput = styled.input<StyledInputProps>`
 
 interface TextAreaProps {
   $resize: React.CSSProperties['resize'];
+  $strokeColor?: string;
 }
 
 export const TextArea = styled.textarea<TextAreaProps>`
   ${TextInputStyles}
+
+  box-shadow: ${({$strokeColor}) => $strokeColor || Colors.Gray300} inset 0px 0px 0px 1px,
+    ${Colors.KeylineGray} inset 2px 2px 1.5px;
+
+  :focus {
+    box-shadow: ${({$strokeColor}) => $strokeColor || Colors.Gray300} inset 0px 0px 0px 1px,
+      ${Colors.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
+  }
 
   ${({$resize}) => ($resize ? `resize: ${$resize};` : null)}
 `;

@@ -21,7 +21,7 @@ import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {PartitionStatus} from '../partitions/PartitionStatus';
+import {PartitionStatus, runStatusToPartitionState} from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../runs/AssetKeyTagCollection';
 import {inProgressStatuses} from '../runs/RunStatuses';
@@ -183,7 +183,9 @@ const BackfillRow = ({
   return (
     <tr>
       <td style={{width: 120}}>
-        <Mono style={{fontSize: '16px', lineHeight: '18px'}}>{backfill.backfillId}</Mono>
+        <Mono style={{fontSize: '16px', lineHeight: '18px'}}>
+          <Link to={runsUrl}>{backfill.backfillId}</Link>
+        </Mono>
       </td>
       <td style={{width: 240}}>
         {backfill.timestamp ? <TimestampDisplay timestamp={backfill.timestamp} /> : '-'}
@@ -342,7 +344,7 @@ const BackfillRunStatus = ({
   const partitionData = {};
   const partitionRun = {};
   backfill.partitionStatuses.results.forEach((s) => {
-    partitionData[s.partitionName] = s.runStatus;
+    partitionData[s.partitionName] = runStatusToPartitionState(s.runStatus);
     partitionRun[s.partitionName] = s.runId;
   });
 

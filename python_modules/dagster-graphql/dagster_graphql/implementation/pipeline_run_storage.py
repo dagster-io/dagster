@@ -33,16 +33,24 @@ class PipelineRunObservableSubscribe:
     def __call__(self, observer):
         self.observer = observer
         check.invariant(self.state is State.NULL, f"unexpected state {self.state}")
-        chunk_size = get_chunk_size()
-        connection = self.instance.get_records_for_run(self.run_id, self.cursor, limit=chunk_size)
-        events = [record.event_log_entry for record in connection.records]
-        self.observer.on_next((events, connection.has_more, connection.cursor))
-        self.cursor = connection.cursor
 
-        if connection.has_more:
-            self.load_events()
-        else:
+        if self.cursor == "HEAD":
+            connection = self.instance.get_records_for_run(self.run_id)
+            self.cursor = connection.cursor
             self.watch_events()
+        else:
+            chunk_size = get_chunk_size()
+            connection = self.instance.get_records_for_run(
+                self.run_id, self.cursor, limit=chunk_size
+            )
+            events = [record.event_log_entry for record in connection.records]
+            self.observer.on_next((events, connection.has_more, connection.cursor))
+            self.cursor = connection.cursor
+
+            if connection.has_more:
+                self.load_events()
+            else:
+                self.watch_events()
 
         return self
 

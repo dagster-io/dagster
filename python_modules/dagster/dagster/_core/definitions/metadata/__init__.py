@@ -72,7 +72,7 @@ def normalize_metadata(
             additional_warn_txt="Use argument `metadata` instead. The `MetadataEntry` `description` attribute is also deprecated-- argument `metadata` takes a label: value dictionary.",
             stacklevel=4,  # to get the caller of `normalize_metadata`
         )
-        return check.list_param(
+        return check.sequence_param(
             metadata_entries, "metadata_entries", (MetadataEntry, PartitionMetadataEntry)
         )
 
@@ -102,7 +102,7 @@ def normalize_metadata(
 
     return [
         package_metadata_value(k, v)
-        for k, v in check.opt_dict_param(metadata, "metadata", key_type=str).items()
+        for k, v in check.opt_mapping_param(metadata, "metadata", key_type=str).items()
     ]
 
 
@@ -251,7 +251,29 @@ class MetadataValue(ABC):
 
     @public
     @staticmethod
-    def json(data: Dict[str, Any]) -> "JsonMetadataValue":
+    def notebook(path: Union[str, os.PathLike]) -> "NotebookMetadataValue":
+        """Static constructor for a metadata value wrapping a notebook path as
+        :py:class:`NotebookMetadataValue`. For example:
+
+        .. code-block:: python
+
+            @op
+            def emit_metadata(context):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "notebook_path": MetadataValue.notebook("path/to/notebook.ipynb"),
+                    }
+                )
+
+        Args:
+            path (str): The path to a notebook for a metadata entry.
+        """
+        return NotebookMetadataValue(path)
+
+    @public
+    @staticmethod
+    def json(data: Mapping[str, Any]) -> "JsonMetadataValue":
         """Static constructor for a metadata value wrapping a path as
         :py:class:`JsonMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
@@ -435,7 +457,7 @@ class MetadataValue(ABC):
     @staticmethod
     @experimental
     def table(
-        records: List[TableRecord], schema: Optional[TableSchema] = None
+        records: Sequence[TableRecord], schema: Optional[TableSchema] = None
     ) -> "TableMetadataValue":
         """Static constructor for a metadata value wrapping arbitrary tabular data as
         :py:class:`TableMetadataValue`. Can be used as the value type for the `metadata`
@@ -585,12 +607,33 @@ class PathMetadataValue(  # type: ignore
         return self.path
 
 
+@whitelist_for_serdes(storage_name="NotebookMetadataEntryData")
+class NotebookMetadataValue(  # type: ignore
+    NamedTuple("_NotebookMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue
+):
+    """Container class for notebook metadata entry data.
+
+    Args:
+        path (Optional[str]): The path to the notebook as a string or conforming to os.PathLike.
+    """
+
+    def __new__(cls, path: Optional[Union[str, os.PathLike]]):
+        return super(NotebookMetadataValue, cls).__new__(
+            cls, check.opt_path_param(path, "path", default="")
+        )
+
+    @public  # type: ignore
+    @property
+    def value(self) -> Optional[str]:
+        return self.path
+
+
 @whitelist_for_serdes(storage_name="JsonMetadataEntryData")
 class JsonMetadataValue(
     NamedTuple(
         "_JsonMetadataValue",
         [
-            ("data", PublicAttr[Dict[str, Any]]),
+            ("data", PublicAttr[Mapping[str, Any]]),
         ],
     ),
     MetadataValue,
@@ -601,8 +644,8 @@ class JsonMetadataValue(
         data (Dict[str, Any]): The JSON data.
     """
 
-    def __new__(cls, data: Optional[Dict[str, Any]]):
-        data = check.opt_dict_param(data, "data", key_type=str)
+    def __new__(cls, data: Optional[Mapping[str, Any]]):
+        data = check.opt_mapping_param(data, "data", key_type=str)
         try:
             # check that the value is JSON serializable
             seven.dumps(data)
@@ -612,7 +655,7 @@ class JsonMetadataValue(
 
     @public  # type: ignore
     @property
-    def value(self) -> Dict[str, Any]:
+    def value(self) -> Mapping[str, Any]:
         return self.data
 
 
@@ -779,7 +822,7 @@ class TableMetadataValue(
     NamedTuple(
         "_TableMetadataValue",
         [
-            ("records", PublicAttr[List[TableRecord]]),
+            ("records", PublicAttr[Sequence[TableRecord]]),
             ("schema", PublicAttr[TableSchema]),
         ],
     ),
@@ -804,9 +847,9 @@ class TableMetadataValue(
         else:
             return "string"
 
-    def __new__(cls, records: List[TableRecord], schema: Optional[TableSchema]):
+    def __new__(cls, records: Sequence[TableRecord], schema: Optional[TableSchema]):
 
-        check.list_param(records, "records", of_type=TableRecord)
+        check.sequence_param(records, "records", of_type=TableRecord)
         check.opt_inst_param(schema, "schema", TableSchema)
 
         if len(records) == 0:
@@ -1059,7 +1102,7 @@ class MetadataEntry(
     @staticmethod
     @deprecated_metadata_entry_constructor
     def json(
-        data: Optional[Dict[str, Any]],
+        data: Optional[Mapping[str, Any]],
         label: str,
         description: Optional[str] = None,
     ) -> "MetadataEntry":
@@ -1209,7 +1252,7 @@ class MetadataEntry(
     @deprecated_metadata_entry_constructor
     @experimental
     def table(
-        records: List[TableRecord],
+        records: Sequence[TableRecord],
         label: str,
         description: Optional[str] = None,
         schema: Optional[TableSchema] = None,

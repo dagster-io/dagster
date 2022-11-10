@@ -8,7 +8,6 @@ from dagster._config import (
     Permissive,
     Selector,
     Shape,
-    iterate_config_types,
 )
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
@@ -531,7 +530,7 @@ def define_solid_dictionary_cls(
     asset_layer: AssetLayer,
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
-    ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Node)
+    ignored_solids = check.opt_sequence_param(ignored_solids, "ignored_solids", of_type=Node)
 
     fields = {}
     for solid in solids:
@@ -568,7 +567,7 @@ def define_solid_dictionary_cls(
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:
     if isinstance(node_def, SolidDefinition):
         if node_def.has_config_field:
-            yield from iterate_config_types(node_def.get_config_field().config_type)
+            yield from node_def.get_config_field().config_type.type_iterator()
     elif isinstance(node_def, GraphDefinition):
         for solid in node_def.solids:
             yield from iterate_node_def_config_types(solid.definition)
@@ -581,9 +580,9 @@ def _gather_all_schemas(node_defs: Sequence[NodeDefinition]) -> Iterator[ConfigT
     dagster_types = construct_dagster_type_dictionary(node_defs)
     for dagster_type in list(dagster_types.values()) + list(ALL_RUNTIME_BUILTINS):
         if dagster_type.loader:
-            yield from iterate_config_types(dagster_type.loader.schema_type)
+            yield from dagster_type.loader.schema_type.type_iterator()
         if dagster_type.materializer:
-            yield from iterate_config_types(dagster_type.materializer.schema_type)
+            yield from dagster_type.materializer.schema_type.type_iterator()
 
 
 def _gather_all_config_types(
@@ -592,7 +591,7 @@ def _gather_all_config_types(
     for node_def in node_defs:
         yield from iterate_node_def_config_types(node_def)
 
-    yield from iterate_config_types(run_config_schema_type)
+    yield from run_config_schema_type.type_iterator()
 
 
 def construct_config_type_dictionary(

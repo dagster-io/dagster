@@ -1,7 +1,19 @@
 import inspect
 import warnings
 from collections import defaultdict
-from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -20,6 +32,10 @@ from dagster._core.definitions.metadata import (
     MetadataEntry,
     PartitionMetadataEntry,
     normalize_metadata,
+)
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionKey,
+    get_tags_from_multi_partition_key,
 )
 from dagster._core.errors import (
     DagsterExecutionHandleOutputError,
@@ -388,12 +404,12 @@ def core_dagster_event_sequence_for_step(
 def _type_check_and_store_output(
     step_context: StepExecutionContext,
     output: Union[DynamicOutput, Output],
-    input_lineage: List[AssetLineageInfo],
+    input_lineage: Sequence[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
 
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
-    check.list_param(input_lineage, "input_lineage", AssetLineageInfo)
+    check.sequence_param(input_lineage, "input_lineage", AssetLineageInfo)
 
     mapping_key = output.mapping_key if isinstance(output, DynamicOutput) else None
 
@@ -434,12 +450,9 @@ def _asset_key_and_partitions_for_output(
 ) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
-
-    pipeline_def = output_context.step_context.pipeline_def
     node_handle = output_context.step_context.solid_handle
-    output_asset_info = pipeline_def.asset_layer.asset_info_for_output(
-        node_handle=output_context.step_context.solid_handle, output_name=output_def.name
-    )
+    output_asset_info = output_context.asset_info
+
     if output_asset_info:
         if manager_asset_key is not None:
             raise DagsterInvariantViolationError(
@@ -463,7 +476,7 @@ def _asset_key_and_partitions_for_output(
     return None, set()
 
 
-def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLineageInfo]:
+def _dedup_asset_lineage(asset_lineage: Sequence[AssetLineageInfo]) -> Sequence[AssetLineageInfo]:
     """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
     information. Duplicates can occur naturally when calculating transitive dependencies from solids
     with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will
@@ -487,16 +500,19 @@ def _get_output_asset_materializations(
     asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
-    io_manager_metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]],
+    io_manager_metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]],
 ) -> Iterator[AssetMaterialization]:
 
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
-
     if asset_partitions:
-        metadata_mapping: Dict[str, List[Union[MetadataEntry, PartitionMetadataEntry]]] = {
-            partition: [] for partition in asset_partitions
-        }
+        metadata_mapping: Dict[
+            str,
+            List[Union[MetadataEntry, PartitionMetadataEntry]],
+        ] = {partition: [] for partition in asset_partitions}
+
         for entry in all_metadata:
+            # TODO: Allow users to specify a multi-dimensional partition key in a PartitionMetadataEntry
+
             # if you target a given entry at a partition, only apply it to the requested partition
             # otherwise, apply it to all partitions
             if isinstance(entry, PartitionMetadataEntry):
@@ -514,10 +530,17 @@ def _get_output_asset_materializations(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
 
+                tags = (
+                    get_tags_from_multi_partition_key(partition)
+                    if isinstance(partition, MultiPartitionKey)
+                    else None
+                )
+
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     partition=partition,
                     metadata_entries=metadata_mapping[partition],
+                    tags=tags,
                 )
     else:
         for entry in all_metadata:
@@ -536,7 +559,7 @@ def _store_output(
     step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
     output: Union[Output, DynamicOutput],
-    input_lineage: List[AssetLineageInfo],
+    input_lineage: Sequence[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
 
     output_def = step_context.solid_def.output_def_named(step_output_handle.output_name)

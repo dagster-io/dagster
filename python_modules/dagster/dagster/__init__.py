@@ -98,6 +98,7 @@ from dagster._config.source import (
     IntSource as IntSource,
     StringSource as StringSource,
 )
+
 from dagster._core.definitions.asset_in import (
     AssetIn as AssetIn,
 )
@@ -106,6 +107,9 @@ from dagster._core.definitions.asset_out import (
 )
 from dagster._core.definitions.asset_selection import (
     AssetSelection as AssetSelection,
+)
+from dagster._core.definitions.asset_sensor_definition import (
+    AssetSensorDefinition as AssetSensorDefinition,
 )
 from dagster._core.definitions.assets import (
     AssetsDefinition as AssetsDefinition,
@@ -149,6 +153,9 @@ from dagster._core.definitions.decorators.sensor_decorator import (
     asset_sensor as asset_sensor,
     sensor as sensor,
     multi_asset_sensor as multi_asset_sensor,
+)
+from dagster._core.definitions.decorators.source_asset_decorator import (
+    observable_source_asset as observable_source_asset,
 )
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
@@ -214,6 +221,7 @@ from dagster._core.definitions.metadata import (
     MarkdownMetadataValue as MarkdownMetadataValue,
     MetadataEntry as MetadataEntry,
     MetadataValue as MetadataValue,
+    NotebookMetadataValue as NotebookMetadataValue,
     PathMetadataValue as PathMetadataValue,
     PythonArtifactMetadataValue as PythonArtifactMetadataValue,
     TableMetadataValue as TableMetadataValue,
@@ -227,6 +235,11 @@ from dagster._core.definitions.metadata.table import (
     TableConstraints as TableConstraints,
     TableRecord as TableRecord,
     TableSchema as TableSchema,
+)
+from dagster._core.definitions.multi_asset_sensor_definition import (
+    MultiAssetSensorDefinition as MultiAssetSensorDefinition,
+    MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
+    build_multi_asset_sensor_context as build_multi_asset_sensor_context,
 )
 from dagster._core.definitions.op_definition import (
     OpDefinition as OpDefinition,
@@ -296,14 +309,10 @@ from dagster._core.definitions.schedule_definition import (
     build_schedule_context as build_schedule_context,
 )
 from dagster._core.definitions.sensor_definition import (
-    AssetSensorDefinition as AssetSensorDefinition,
     DefaultSensorStatus as DefaultSensorStatus,
-    MultiAssetSensorDefinition as MultiAssetSensorDefinition,
-    MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
     build_sensor_context as build_sensor_context,
-    build_multi_asset_sensor_context as build_multi_asset_sensor_context,
 )
 from dagster._core.definitions.source_asset import (
     SourceAsset as SourceAsset,
@@ -563,7 +572,7 @@ from dagster.version import __version__
 import importlib
 from typing import TYPE_CHECKING
 from typing import Any as TypingAny
-from typing import Callable, Mapping
+from typing import Callable, Mapping, Sequence
 from typing import Tuple as TypingTuple
 
 from typing_extensions import Final
@@ -621,5 +630,5 @@ def __getattr__(name: str) -> TypingAny:
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
 
 
-def __dir__(_self):
+def __dir__(_self) -> Sequence:
     return [*globals(), *_DEPRECATED.keys(), *_DEPRECATED_RENAMED.keys()]

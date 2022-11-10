@@ -96,6 +96,9 @@ def _select_unique_ids_from_manifest_json(
         metrics={
             unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
         },
+        exposures={
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+        },
     )
 
     # create a parsed selection from the select string
@@ -142,12 +145,13 @@ def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
     return fqn[1]
 
 
-def _get_node_description(node_info):
+def _get_node_description(node_info, display_raw_sql):
     code_block = textwrap.indent(node_info.get("raw_sql") or node_info.get("raw_code", ""), "    ")
     description_sections = [
         node_info["description"] or f"dbt {node_info['resource_type']} {node_info['name']}",
-        f"#### Raw SQL:\n```\n{code_block}\n```",
     ]
+    if display_raw_sql:
+        description_sections.append(f"#### Raw SQL:\n```\n{code_block}\n```")
     return "\n\n".join(filter(None, description_sections))
 
 
@@ -226,12 +230,12 @@ def _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types):
 
 def _get_dbt_op(
     op_name: str,
-    ins: Dict[str, In],
-    outs: Dict[str, Out],
+    ins: Mapping[str, In],
+    outs: Mapping[str, Out],
     select: str,
     exclude: str,
     use_build_command: bool,
-    fqns_by_output_name: Dict[str, str],
+    fqns_by_output_name: Mapping[str, str],
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
     runtime_metadata_fn: Optional[
@@ -313,7 +317,8 @@ def _dbt_nodes_to_assets(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    display_raw_sql: bool = True,
 ) -> AssetsDefinition:
 
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
@@ -347,7 +352,7 @@ def _dbt_nodes_to_assets(
             output_name,
             Out(
                 io_manager_key=io_manager_key,
-                description=_get_node_description(node_info),
+                description=_get_node_description(node_info, display_raw_sql),
                 metadata=_get_node_metadata(node_info),
                 is_required=False,
                 dagster_type=Nothing,
@@ -418,7 +423,8 @@ def load_assets_from_dbt_project(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    display_raw_sql: Optional[bool] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models from a dbt project into Dagster assets.
@@ -459,6 +465,9 @@ def load_assets_from_dbt_project(
             invocation (e.g. {"run_date": "2022-01-01"})
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
+        display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
+            with each model should be included in the asset description. For large projects, setting
+            this flag to False is advised to reduce the size of the resulting snapshot.
 
     """
     project_dir = check.str_param(project_dir, "project_dir")
@@ -489,6 +498,7 @@ def load_assets_from_dbt_project(
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
+        display_raw_sql=display_raw_sql,
     )
 
 
@@ -507,7 +517,8 @@ def load_assets_from_dbt_manifest(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    display_raw_sql: Optional[bool] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -546,8 +557,11 @@ def load_assets_from_dbt_manifest(
             invocation (e.g. {"run_date": "2022-01-01"})
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
+        display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
+            with each model should be included in the asset description. For large projects, setting
+            this flag to False is advised to reduce the size of the resulting snapshot.
     """
-    check.dict_param(manifest_json, "manifest_json", key_type=str)
+    check.mapping_param(manifest_json, "manifest_json", key_type=str)
     if partitions_def:
         experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
     if partition_key_to_vars_fn:
@@ -556,6 +570,9 @@ def load_assets_from_dbt_manifest(
             partitions_def is not None,
             "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",
         )
+    if display_raw_sql is not None:
+        experimental_arg_warning("display_raw_sql", "load_assets_from_dbt_manifest")
+    display_raw_sql = check.opt_bool_param(display_raw_sql, "display_raw_sql", default=True)
 
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"], **manifest_json["metrics"]}
 
@@ -585,13 +602,15 @@ def load_assets_from_dbt_manifest(
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
+        display_raw_sql=display_raw_sql,
     )
+    dbt_assets: Sequence[AssetsDefinition]
     if source_key_prefix:
         if isinstance(source_key_prefix, str):
             source_key_prefix = [source_key_prefix]
         source_key_prefix = check.list_param(source_key_prefix, "source_key_prefix", of_type=str)
         input_key_replacements = {
-            input_key: AssetKey(source_key_prefix + input_key.path)
+            input_key: AssetKey([*source_key_prefix, *input_key.path])
             for input_key in dbt_assets_def.keys_by_input_name.values()
         }
         dbt_assets = [

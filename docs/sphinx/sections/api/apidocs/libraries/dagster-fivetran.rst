@@ -23,4 +23,6 @@ Resources
 Assets
 ======
 
+.. autofunction:: load_assets_from_fivetran_instance
+
 .. autofunction:: build_fivetran_assets

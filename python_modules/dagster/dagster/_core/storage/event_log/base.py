@@ -164,7 +164,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """Get a summary of events that have ocurred in a run."""
         return build_run_stats_from_events(run_id, self.get_logs_for_run(run_id))
 
-    def get_step_stats_for_run(self, run_id: str, step_keys=None) -> List[RunStepKeyStatsSnapshot]:
+    def get_step_stats_for_run(
+        self, run_id: str, step_keys=None
+    ) -> Sequence[RunStepKeyStatsSnapshot]:
         """Get per-step stats for a pipeline run."""
         logs = self.get_logs_for_run(run_id)
         if step_keys:
@@ -222,7 +224,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def dispose(self):
         """Explicit lifecycle management."""
 
-    def optimize_for_dagit(self, statement_timeout: int):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
 
     @abstractmethod
@@ -266,7 +268,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     def get_asset_keys(
         self,
-        prefix: Optional[List[str]] = None,
+        prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> Iterable[AssetKey]:
@@ -290,6 +292,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def get_latest_materialization_events(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
+        pass
+
+    @abstractmethod
+    def get_event_tags_for_asset(
+        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
+    ) -> Sequence[Mapping[str, str]]:
         pass
 
     @abstractmethod

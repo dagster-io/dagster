@@ -1,341 +1,464 @@
 # pylint: disable=anomalous-backslash-in-string
-import json
-from collections import defaultdict
-from datetime import datetime
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Set, Tuple, cast
 
-import pendulum
-import toposort
+import functools
+import itertools
+import json
+from heapq import heapify, heappop, heappush
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Dict,
+    Iterable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    cast,
+)
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._utils.cached_method import cached_method
 
-from .asset_selection import AssetSelection
-from .events import AssetKey
+from .asset_selection import AssetGraph, AssetSelection
+from .repository_definition import RepositoryDefinition
 from .run_request import RunRequest
-from .sensor_definition import DefaultSensorStatus, MultiAssetSensorDefinition
+from .sensor_definition import DefaultSensorStatus, SensorDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import AssetsDefinition, SourceAsset
+    from dagster._core.instance import DagsterInstance
     from dagster._core.storage.event_log.base import EventLogRecord
 
 
-def _get_upstream_mapping(
-    selection,
-    assets,
-    source_assets,
-) -> Mapping[AssetKey, Set[AssetKey]]:
-    """Computes a mapping of assets in self._selection to their parents in the asset graph"""
-    upstream = defaultdict(set)
-    selection_resolved = list(selection.resolve([*assets, *source_assets]))
-    for a in selection_resolved:
-        a_parents = list(
-            AssetSelection.keys(a).upstream(depth=1).resolve([*assets, *source_assets])
-        )
-        # filter out a because upstream() includes the assets in the original AssetSelection
-        upstream[a] = {p for p in a_parents if p != a}
-    return upstream
-
-
-def _get_parent_updates(
-    context,
-    current_asset: AssetKey,
-    parent_assets: Set[AssetKey],
-    cursor_tuple: Tuple[float, int],
-    will_materialize_set: Set[AssetKey],
-    wait_for_in_progress_runs: bool,
-    planned_materialization_cache: Dict[AssetKey, "EventLogRecord"],
-) -> Tuple[Mapping[AssetKey, Tuple[bool, Tuple[float, int]]], Dict[AssetKey, "EventLogRecord"],]:
-    """The bulk of the logic in the sensor is in this function. At the end of the function we return a
-    dictionary that maps each asset to a Tuple. The Tuple contains a boolean, indicating if the asset
-    has materialized or will materialize, and a tuple(float, int) representing the timestamp and storage id
-    the parent asset would update the cursor to if it is the most recent materialization of a parent asset.
-    In some cases we set the tuple to (0.0, 0) so that the tuples of other parent materializations will take precedent.
-
-    Args:
-        current_asset: We want to determine if this asset should materialize, so we gather information about
-            if its parents have materialized.
-        parent_assets: the parents of current_asset.
-        cursor_tuple: In the cursor for the sensor we store the timestamp and storage id of the most recent materialization
-            of current_asset's parents. This allows us to see if any of the parents have been materialized
-            more recently.
-        will_materialize_set: A set of all of the assets the sensor has already determined it will materialize.
-            We check if the parent assets are in this list when determining their materialization status
-        wait_for_in_progress_runs: If the user wants the sensor to wait for in progress runs of parent
-            assets to complete before materializing current_asset.
-
-    Here's how we get there:
-
-    We want to get the materialization information for all of the parents of an asset to determine
-    if we want to materialize the asset in this sensor tick. We also need determine the new cursor
-    value for the asset so that we don't process the same materialization events for the parent
-    assets again.
-
-    We iterate through each parent of the asset and determine its materialization info. The parent
-    asset's materialization status can be one of three options:
-    1. The parent has materialized since the last time the child was materialized.
-    2. The parent is slated to be materialized (i.e. included in will_materialize_set)
-    3. The parent has not been materialized and will not be materialized by the sensor.
-
-    In cases 1 and 2 we indicate that the parent has been updated by setting its value in
-    parent_asset_event_records to True. For case 3 we set its value to False.
-
-    If wait_for_in_progress_runs=True, there is another condition we want to check for.
-    If any of the parents is currently being materialized we want to wait to materialize current_asset
-    until the parent materialization is complete so that the asset can have the most up to date data.
-    So, for each parent asset we check if it has a planned asset materialization event in a run that
-    is currently in progress. If this is the case, we don't want current_asset to materialize, so we
-    set parent_asset_event_records to False for all parents (so that if the sensor is set to
-    materialize if any of the parents are updated, the sensor will still choose to not materialize
-    the asset) and immediately return.
+class AssetReconciliationCursor(NamedTuple):
     """
-    from dagster._core.event_api import RunShardedEventsCursor
-    from dagster._core.events import DagsterEventType
-    from dagster._core.storage.event_log.base import EventRecordsFilter
+    Attributes:
+        latest_storage_id: The latest observed storage ID across all assets. Useful for
+            finding out what has happened since the last tick.
+        materialized_or_requested_root_asset_keys: Every entry is an asset with no
+            parents that has been requested by this sensor or has been materialized (even if not by
+            this sensor).
+    """
 
-    parent_asset_event_records: Dict[AssetKey, Tuple[bool, Tuple[float, int]]] = {}
+    latest_storage_id: Optional[int]
+    materialized_or_requested_root_asset_keys: AbstractSet[AssetKey]
 
-    for p in parent_assets:
-        if p in will_materialize_set:
-            # if p will be materialized by this sensor, then we can also materialize current_asset
-            # we don't know what time asset p will be materialized so we set the cursor val to (0.0, 0)
-            parent_asset_event_records[p] = (
-                True,
-                (0.0, 0),
+    def was_previously_materialized_or_requested(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.materialized_or_requested_root_asset_keys
+
+    def with_updates(
+        self,
+        latest_storage_id: Optional[int],
+        run_requests: Sequence[RunRequest],
+        newly_materialized_root_asset_keys: AbstractSet[AssetKey],
+        asset_graph: AssetGraph,
+    ) -> "AssetReconciliationCursor":
+        """
+        Returns a cursor that represents this cursor plus the updates that have happened within the
+        tick.
+        """
+        requested_root_assets: Set[AssetKey] = set()
+
+        for run_request in run_requests:
+            for asset_key in cast(Iterable[AssetKey], run_request.asset_selection):
+                if len(asset_graph.get_parents(asset_key)) == 0:
+                    requested_root_assets.add(asset_key)
+
+        result_materialized_or_requested_root_asset_keys = (
+            self.materialized_or_requested_root_asset_keys
+            | newly_materialized_root_asset_keys
+            | requested_root_assets
+        )
+
+        return AssetReconciliationCursor(
+            latest_storage_id=latest_storage_id,
+            materialized_or_requested_root_asset_keys=result_materialized_or_requested_root_asset_keys,
+        )
+
+    @classmethod
+    def empty(cls) -> "AssetReconciliationCursor":
+        return AssetReconciliationCursor(
+            latest_storage_id=None,
+            materialized_or_requested_root_asset_keys=set(),
+        )
+
+    @classmethod
+    def from_serialized(cls, cursor: str) -> "AssetReconciliationCursor":
+        (
+            latest_storage_id,
+            serialized_materialized_or_requested_root_asset_keys,
+        ) = json.loads(cursor)
+        return cls(
+            latest_storage_id=latest_storage_id,
+            materialized_or_requested_root_asset_keys={
+                AssetKey.from_user_string(key_str)
+                for key_str in serialized_materialized_or_requested_root_asset_keys
+            },
+        )
+
+    def serialize(self) -> str:
+        serialized = json.dumps(
+            (
+                self.latest_storage_id,
+                [key.to_user_string() for key in self.materialized_or_requested_root_asset_keys],
             )
-        # TODO - when source asset versioning lands, add a check here that will see if the version has
-        # updated if p is a source asset
+        )
+        return serialized
+
+
+class TickInstanceQueryer:
+    """Allows caching queries to the instance within a tick."""
+
+    def __init__(self, instance: "DagsterInstance"):
+        self._instance = instance
+
+        self._latest_materialization_record_cache: Dict[AssetKey, "EventLogRecord"] = {}
+        # if we try to fetch the latest materialization record after a given cursor and don't find
+        # anything, we can keep track of that fact, so that the next time try to fetch the latest
+        # materialization record for a >= cursor, we don't need to query the instance
+        self._no_materializations_after_cursor_cache: Dict[AssetKey, int] = {}
+
+    def is_asset_in_run(self, run_id: str, asset_key: AssetKey) -> bool:
+        run = self._get_run_by_id(run_id=run_id)
+        if not run:
+            check.failed("")
+
+        if run.asset_selection:
+            return asset_key in run.asset_selection
         else:
-            if wait_for_in_progress_runs:
-                # if p is currently being materialized, then we don't want to materialize current_asset
+            return asset_key in self._get_planned_materializations_for_run(run_id=run_id)
 
-                # get the most recent planned materialization
-                if p in planned_materialization_cache.keys():
-                    # put it in a list so the indexing later works
-                    materialization_planned_event_records = [planned_materialization_cache[p]]
-                else:
-                    materialization_planned_event_records = context.instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                            asset_key=p,
-                        ),
-                        ascending=False,
-                        limit=1,
-                    )
+    @cached_method
+    def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
+        return self._instance.get_run_by_id(run_id)
 
-                if materialization_planned_event_records:
-                    # add it to the cache
-                    planned_materialization_cache[p] = materialization_planned_event_records[0]
-                    # see if the most recent planned materialization is part of an in progress run
-                    in_progress = context.instance.get_runs(
-                        filters=RunsFilter(
-                            run_ids=[
-                                materialization_planned_event_records[0].event_log_entry.run_id
-                            ],
-                            statuses=IN_PROGRESS_RUN_STATUSES,
-                        )
-                    )
-                    if in_progress:
-                        # we don't want to materialize current_asset because p is
-                        # being materialized. We'll materialize the asset on the next tick when the
-                        # materialization of p is complete
-                        parent_asset_event_records = {pp: (False, (0.0, 0)) for pp in parent_assets}
+    @cached_method
+    def _get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+        from dagster._core.events import DagsterEventType
 
-                        return (
-                            parent_asset_event_records,
-                            planned_materialization_cache,
-                        )
-            # check if there is a completed materialization for p
+        materializations_planned = self._instance.get_records_for_run(
+            run_id=run_id,
+            of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+        ).records
+        return set(cast(AssetKey, record.asset_key) for record in materializations_planned)
 
-            event_records = context.instance.get_event_records(
+    def get_latest_materialization_record(
+        self, asset_key: AssetKey, after_cursor: Optional[int]
+    ) -> Optional["EventLogRecord"]:
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import EventRecordsFilter
+
+        if asset_key in self._latest_materialization_record_cache:
+            cached_record = self._latest_materialization_record_cache[asset_key]
+            if after_cursor is None or after_cursor < cached_record.storage_id:
+                return cached_record
+            else:
+                return None
+        elif asset_key in self._no_materializations_after_cursor_cache:
+            if (
+                after_cursor is not None
+                and after_cursor >= self._no_materializations_after_cursor_cache[asset_key]
+            ):
+                return None
+
+        materialization_records = list(
+            self._instance.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=p,
-                    after_cursor=RunShardedEventsCursor(
-                        run_updated_after=cast(
-                            datetime,
-                            pendulum.parse(
-                                utc_datetime_from_timestamp(cursor_tuple[0]).isoformat()
-                            ),
-                        ),
-                        id=cursor_tuple[1],
-                    ),
+                    asset_key=asset_key,
+                    after_cursor=after_cursor,
                 ),
                 ascending=False,
                 limit=1,
             )
+        )
 
-            if event_records:
-                # if the run for the materialization of p also materialized current_asset, we
-                # don't consider p "updated" when determining if current_asset should materialize
-                other_materialized_asset_records = context.instance.get_records_for_run(
-                    run_id=event_records[0].event_log_entry.run_id,
-                    of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                ).records
-                other_materialized_assets = [
-                    event.event_log_entry.dagster_event.event_specific_data.asset_key
-                    for event in other_materialized_asset_records
-                ]
-                if current_asset in other_materialized_assets:
-                    # we still update the cursor for p so this materialization isn't considered
-                    # on the next sensor tick
-                    parent_asset_event_records[p] = (
-                        False,
-                        (event_records[0].event_log_entry.timestamp, event_records[0].storage_id),
-                    )
-                else:
-                    # current_asset was not updated along with p, so we consider p updated
-                    parent_asset_event_records[p] = (
-                        True,
-                        (event_records[0].event_log_entry.timestamp, event_records[0].storage_id),
-                    )
+        if materialization_records:
+            record = next(iter(materialization_records))
+            self._latest_materialization_record_cache[asset_key] = record
+            return record
+        else:
+            if after_cursor is not None:
+                self._no_materializations_after_cursor_cache[asset_key] = min(
+                    after_cursor,
+                    self._no_materializations_after_cursor_cache.get(asset_key, after_cursor),
+                )
+            return None
+
+    def get_latest_materialization_records_by_key(
+        self, asset_keys: Iterable[AssetKey], cursor: Optional[int]
+    ) -> Mapping[AssetKey, "EventLogRecord"]:
+        """
+        Only returns entries for assets that have been materialized since the cursor.
+        """
+        result: Dict[AssetKey, "EventLogRecord"] = {}
+
+        for asset_key in asset_keys:
+            latest_record = self.get_latest_materialization_record(asset_key, cursor)
+            if latest_record is not None:
+                result[asset_key] = latest_record
+
+        return result
+
+    @cached_method
+    def is_reconciled(self, asset_key: AssetKey, asset_graph: AssetGraph) -> bool:
+        """
+        An asset is considered unreconciled if any of:
+        - It has never been materialized
+        - One of its parents has been updated more recently than it has
+        - One of its parents is unreconciled
+        """
+        latest_materialization_record = self.get_latest_materialization_record(asset_key, None)
+
+        if latest_materialization_record is None:
+            return False
+
+        for parent in asset_graph.get_parents(asset_key):
+            if (
+                self.get_latest_materialization_record(
+                    parent, after_cursor=latest_materialization_record.storage_id
+                )
+                is not None
+            ):
+                return False
+
+            if not self.is_reconciled(asset_key=parent, asset_graph=asset_graph):
+                return False
+
+        return True
+
+
+class ToposortedPriorityQueue:
+    """Queue that returns parents before their children"""
+
+    @functools.total_ordering
+    class QueueItem(NamedTuple):
+        level: int
+        asset_key: AssetKey
+
+        def __eq__(self, other):
+            return self.level == other.level
+
+        def __lt__(self, other):
+            return self.level < other.level
+
+    def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKey]):
+        toposorted_asset_keys = asset_graph.toposort_asset_keys()
+        self._toposort_level_by_asset_key = {
+            asset_key: i
+            for i, asset_keys in enumerate(toposorted_asset_keys)
+            for asset_key in asset_keys
+        }
+        self._heap = [
+            ToposortedPriorityQueue.QueueItem(
+                self._toposort_level_by_asset_key[asset_key], asset_key
+            )
+            for asset_key in items
+        ]
+        heapify(self._heap)
+
+    def enqueue(self, asset_key: AssetKey) -> None:
+        priority = self._toposort_level_by_asset_key[asset_key]
+        heappush(self._heap, ToposortedPriorityQueue.QueueItem(priority, asset_key))
+
+    def dequeue(self) -> AssetKey:
+        return heappop(self._heap).asset_key
+
+    def __len__(self) -> int:
+        return len(self._heap)
+
+
+def find_stale_candidates(
+    instance_queryer: TickInstanceQueryer,
+    cursor: AssetReconciliationCursor,
+    target_asset_selection: AssetSelection,
+    asset_graph: AssetGraph,
+) -> Tuple[AbstractSet[AssetKey], Optional[int]]:
+    """
+    Cheaply identifies a set of reconciliation candidates, which can then be vetted with more
+    heavyweight logic after.
+
+    The contract of this function is:
+    - Every asset that requires reconciliation must either be one of the returned
+        candidates or a descendant of one of the returned candidates.
+    - Not every returned candidate must require reconciliation.
+
+    Returns:
+        - A set of reconciliation candidates.
+        - The latest observed storage_id across all relevant assets. Can be used to avoid scanning
+            the same events the next time this function is called.
+    """
+
+    stale_candidates: Set[AssetKey] = set()
+    latest_storage_id = None
+
+    target_asset_keys = target_asset_selection.resolve(asset_graph)
+
+    for asset_key, record in instance_queryer.get_latest_materialization_records_by_key(
+        target_asset_selection.upstream(depth=1).resolve(asset_graph),
+        cursor.latest_storage_id,
+    ).items():
+        # The children of updated assets might now be unreconciled:
+        for child in asset_graph.get_children(asset_key):
+            if child in target_asset_keys and not instance_queryer.is_asset_in_run(
+                record.run_id, child
+            ):
+                stale_candidates.add(child)
+
+        if latest_storage_id is None or record.storage_id > latest_storage_id:
+            latest_storage_id = record.storage_id
+
+    return (stale_candidates, latest_storage_id)
+
+
+def find_never_materialized_or_requested_root_assets(
+    instance_queryer: TickInstanceQueryer,
+    cursor: AssetReconciliationCursor,
+    target_asset_selection: AssetSelection,
+    asset_graph: AssetGraph,
+) -> Tuple[Iterable[AssetKey], AbstractSet[AssetKey]]:
+    """Finds assets that have never been materialized or requested and that have no
+    parents.
+
+    Returns:
+    - Assets that have never been materialized or requested.
+    - Assets that had never been materialized or requested up to the previous cursor
+        but are now materialized.
+    """
+    never_materialized_or_requested = set()
+    newly_materialized_root_asset_keys = set()
+
+    for asset_key in (target_asset_selection & AssetSelection.all().sources()).resolve(asset_graph):
+        if not cursor.was_previously_materialized_or_requested(asset_key):
+            if instance_queryer.get_latest_materialization_record(asset_key, None):
+                newly_materialized_root_asset_keys.add(asset_key)
             else:
-                # p has not been materialized and will not be materialized by the sensor
-                parent_asset_event_records[p] = (False, (0.0, 0))
+                never_materialized_or_requested.add(asset_key)
 
     return (
-        parent_asset_event_records,
-        planned_materialization_cache,
+        never_materialized_or_requested,
+        newly_materialized_root_asset_keys,
     )
 
 
-def _make_sensor(
-    selection: AssetSelection,
-    name: str,
-    wait_for_all_upstream: bool,
-    wait_for_in_progress_runs: bool,
-    minimum_interval_seconds: Optional[int],
-    description: Optional[str],
-    default_status: DefaultSensorStatus,
-    run_tags: Optional[Mapping[str, str]],
-) -> MultiAssetSensorDefinition:
-    """Creates the sensor that will monitor the parents of all provided assets and determine
-    which assets should be materialized (ie their parents have been updated).
+def determine_assets_to_reconcile(
+    instance_queryer: TickInstanceQueryer,
+    cursor: AssetReconciliationCursor,
+    target_asset_selection: AssetSelection,
+    asset_graph: AssetGraph,
+) -> Tuple[AbstractSet[AssetKey], AbstractSet[AssetKey], Optional[int],]:
+    (
+        never_materialized_or_requested_roots,
+        newly_materialized_root_asset_keys,
+    ) = find_never_materialized_or_requested_root_assets(
+        instance_queryer=instance_queryer,
+        cursor=cursor,
+        target_asset_selection=target_asset_selection,
+        asset_graph=asset_graph,
+    )
 
-    The cursor for this sensor is a dictionary mapping stringified AssetKeys to a tuple of timestamp and storage_id (float, int). For each
-    asset we keep track of the timestamps and storage_id of the most recent materialization of a parent asset. For example
-    if asset X has parents A, B, and C where A was materialized at 5:00 w/ storage_id 1, B at 5: 15  w/ storage_id 2 and
-    C at 5:16 w/ storage_id 3. When the sensor runs, the cursor for X will be set to (5:16, 3). This way, the next time
-    the sensor runs, we can ignore the materializations prior to time 5:16 and storage_id 3. If asset A materialized
-    again at 5:20 w/ storage_id 4, we would know that this materialization has not been incorporated into the child asset yet.
+    stale_candidates, latest_storage_id = find_stale_candidates(
+        instance_queryer=instance_queryer,
+        cursor=cursor,
+        target_asset_selection=target_asset_selection,
+        asset_graph=asset_graph,
+    )
+    target_asset_keys = target_asset_selection.resolve(asset_graph)
 
-    We keep track of timestamp and storage id so that we can support sharded event log storages (SqliteEventLogStorage).
-    """
+    to_reconcile: Set[AssetKey] = set()
+    all_candidates = set(itertools.chain(never_materialized_or_requested_roots, stale_candidates))
 
-    def sensor_fn(context):
-        asset_defs_by_key = (
-            context._repository_def._assets_defs_by_key  # pylint: disable=protected-access
-        )
-        source_asset_defs_by_key = (
-            context._repository_def.source_assets_by_key  # pylint: disable=protected-access
-        )
-        upstream: Mapping[AssetKey, Set[AssetKey]] = _get_upstream_mapping(
-            selection=selection,
-            assets=asset_defs_by_key.values(),
-            source_assets=source_asset_defs_by_key.values(),
-        )
+    # invariant: we never consider a candidate before considering its ancestors
+    candidates_queue = ToposortedPriorityQueue(asset_graph, all_candidates)
 
-        cursor_dict: Dict[str, int] = json.loads(context.cursor) if context.cursor else {}
-        should_materialize: Set[AssetKey] = set()
-        cursor_update_dict: Dict[str, int] = {}
-        # keep track of the in planned materializations for each parent so we don't repeat
-        # calls to the db
-        planned_materialization_cache: Dict[AssetKey, "EventLogRecord"] = {}
+    while len(candidates_queue) > 0:
+        candidate = candidates_queue.dequeue()
 
-        # sort the assets topologically so that we process them in order
-        toposort_assets = list(toposort.toposort(upstream))
-        # unpack the list of sets into a list and only keep the ones we are monitoring
-        toposort_assets = [
-            asset for layer in toposort_assets for asset in layer if asset in upstream.keys()
-        ]
-
-        # if the event storage is sharded we want to compare timestamps, otherwise we compare
-        # storage ids. In the cursor, timestamp is index 0 and storage_id is 1
-        cursor_compare_idx = 0 if context.instance.event_log_storage.is_run_sharded else 1
-
-        # determine which assets should materialize based on the materialization status of their
-        # parents
-        for a in toposort_assets:
-            a_cursor = cursor_dict.get(str(a), (0.0, 0))
-            cursor_update_dict[str(a)] = a_cursor
-            (parent_update_records, planned_materialization_cache,) = _get_parent_updates(
-                context,
-                current_asset=a,
-                parent_assets=upstream[a],
-                cursor_tuple=a_cursor,
-                will_materialize_set=should_materialize,
-                wait_for_in_progress_runs=wait_for_in_progress_runs,
-                planned_materialization_cache=planned_materialization_cache,
-            )
-
-            condition = all if wait_for_all_upstream else any
-            if condition(
-                [
-                    materialization_status
-                    for materialization_status, _ in parent_update_records.values()
-                ]
-            ):
-                should_materialize.add(a)
-
-                # get the cursor value by selecting the max of all the cadidates. If we're using a
-                # sharded event log storage, compare timestamps, otherwise compare storage ids. See
-                # cursor_compare_idx for how this is determined
-                cursor_update_dict[str(a)] = max(
-                    [cursor_val for _, cursor_val in parent_update_records.values()] + [a_cursor],
-                    key=lambda cursor: cursor[cursor_compare_idx],
+        if (
+            # all of its parents reconciled first
+            all(
+                (
+                    (parent in to_reconcile)
+                    or (instance_queryer.is_reconciled(asset_key=parent, asset_graph=asset_graph))
                 )
-
-        if len(should_materialize) > 0:
-            context.update_cursor(json.dumps(cursor_update_dict))
-            context._cursor_has_been_updated = True  # pylint: disable=protected-access
-            return RunRequest(
-                run_key=f"{context.cursor}", asset_selection=list(should_materialize), tags=run_tags
+                for parent in asset_graph.get_parents(candidate)
             )
+            and not instance_queryer.is_reconciled(asset_key=candidate, asset_graph=asset_graph)
+        ):
+            to_reconcile.add(candidate)
+            for child in asset_graph.get_children(candidate):
+                if child in target_asset_keys and child not in all_candidates:
+                    candidates_queue.enqueue(child)
+                    all_candidates.add(child)
 
-    return MultiAssetSensorDefinition(
-        asset_selection=selection,
-        asset_keys=None,
-        asset_materialization_fn=sensor_fn,
-        name=name,
-        job_name="__ASSET_JOB",
-        minimum_interval_seconds=minimum_interval_seconds,
-        description=description,
-        default_status=default_status,
+    return (
+        to_reconcile,
+        newly_materialized_root_asset_keys,
+        latest_storage_id,
+    )
+
+
+def reconcile(
+    repository_def: RepositoryDefinition,
+    asset_selection: AssetSelection,
+    instance: "DagsterInstance",
+    cursor: AssetReconciliationCursor,
+    run_tags: Optional[Mapping[str, str]],
+):
+    instance_queryer = TickInstanceQueryer(instance=instance)
+    asset_graph = repository_def.asset_graph
+
+    (
+        assets_to_reconcile,
+        newly_materialized_root_asset_keys,
+        latest_storage_id,
+    ) = determine_assets_to_reconcile(
+        instance_queryer=instance_queryer,
+        asset_graph=asset_graph,
+        cursor=cursor,
+        target_asset_selection=asset_selection,
+    )
+
+    if assets_to_reconcile:
+        run_requests = [RunRequest(asset_selection=list(assets_to_reconcile), tags=run_tags)]
+    else:
+        run_requests = []
+
+    return run_requests, cursor.with_updates(
+        latest_storage_id=latest_storage_id,
+        run_requests=run_requests,
+        asset_graph=repository_def.asset_graph,
+        newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
     )
 
 
 @experimental
 def build_asset_reconciliation_sensor(
     asset_selection: AssetSelection,
-    name: str,
-    wait_for_all_upstream: bool = False,
-    wait_for_in_progress_runs: bool = True,
+    name: str = "asset_reconciliation_sensor",
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     run_tags: Optional[Mapping[str, str]] = None,
-) -> MultiAssetSensorDefinition:
-    """Constructs a sensor that will monitor the parents of the provided assets and materialize an asset
-    based on the materialization of its parents. This will keep the monitored assets up to date with the
-    latest data available to them. The sensor defaults to materializing an asset when all of
-    its parents have materialized, but it can be set to materialize an asset when any of its
-    parents have materialized.
+) -> SensorDefinition:
+    """Constructs a sensor that will monitor the provided assets and launch materializations to
+    "reconcile" them.
 
-    **Note:** Currently, this sensor only works for non-partitioned assets.
+    An asset is considered "unreconciled" if any of:
+    - This sensor has never tried to materialize it and it has never been materialized.
+    - Any of its parents have been materialized more recently than it has.
+    - Any of its parents are unreconciled.
+
+    The sensor won't try to reconcile any assets before their parents are reconciled.
 
     Args:
         asset_selection (AssetSelection): The group of assets you want to keep up-to-date
         name (str): The name to give the sensor.
-        wait_for_all_upstream (bool): If True, the sensor will only materialize an asset when
-            all of its parents have materialized. If False, the sensor will materialize an asset when
-            any of its parents have materialized. Defaults to False.
-        wait_for_in_progress_runs (bool): If True, the sensor will not materialize an
-            asset if there is an in-progress run that will materialize any of the asset's parents.
-            Defaults to True.
         minimum_interval_seconds (Optional[int]): The minimum amount of time that should elapse between sensor invocations.
         description (Optional[str]): A description for the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
@@ -343,8 +466,7 @@ def build_asset_reconciliation_sensor(
         run_tags (Optional[Mapping[str, str]): Dictionary of tags to pass to the RunRequests launched by this sensor
 
     Returns:
-        A MultiAssetSensorDefinition that will monitor the parents of the provided assets to determine when
-        the provided assets should be materialized
+        SensorDefinition
 
     Example:
         If you have the following asset graph:
@@ -364,71 +486,43 @@ def build_asset_reconciliation_sensor(
             build_asset_reconciliation_sensor(
                 AssetSelection.assets(d, e, f),
                 name="my_reconciliation_sensor",
-                wait_for_all_upstream=True,
-                wait_for_in_progress_runs=True
             )
 
         You will observe the following behavior:
             * If ``a``, ``b``, and ``c`` are all materialized, then on the next sensor tick, the sensor will see that ``d`` and ``e`` can
               be materialized. Since ``d`` and ``e`` will be materialized, ``f`` can also be materialized. The sensor will kick off a
               run that will materialize ``d``, ``e``, and ``f``.
-            * If on the next sensor tick, ``a``, ``b``, and ``c`` have not been materialized again the sensor will not launch a run.
-            * If before the next sensor tick, just asset ``a`` and ``b`` have been materialized, the sensor will launch a run to
-              materialize ``d``.
-            * If asset ``c`` is materialized by the next sensor tick, the sensor will see that ``e`` can be materialized (since ``b`` and
-              ``c`` have both been materialized since the last materialization of ``e``). The sensor will also see that ``f`` can be materialized
-              since ``d`` was updated in the previous sensor tick and ``e`` will be materialized by the sensor. The sensor will launch a run
-              the materialize ``e`` and ``f``.
-            * If by the next sensor tick, only asset ``b`` has been materialized. The sensor will not launch a run since ``d`` and ``e`` both have
-              a parent that has not been updated.
-            * If during the next sensor tick, there is a materialization of ``a`` in progress, the sensor will not launch a run to
-              materialize ``d``. Once ``a`` has completed materialization, the next sensor tick will launch a run to materialize ``d``.
-
-        **Other considerations:**
-            If an asset has a SourceAsset as a parent, and that source asset points to an external data source (ie the
-            source asset does not point to an asset in another repository), the sensor will not know when to consider
-            the source asset "materialized". If you have the asset graph:
-
-            .. code-block:: python
-
-                x   external_data_source
-                 \       /
-                     y
-
-            and create the sensor:
-
-            .. code-block:: python
-
-                build_asset_reconciliation_sensor(
-                    AssetSelection.assets(y),
-                    name="my_reconciliation_sensor",
-                    wait_for_all_upstream=True,
-                    wait_for_in_progress_runs=True
-                )
-
-            ``y`` will never be updated because ``external_data_source`` is never considered "materialized. In this case you should create the
-            sensor
-
-            .. code-block:: python
-
-                build_asset_reconciliation_sensor(
-                    AssetSelection.assets(y),
-                    name="my_reconciliation_sensor",
-                    wait_for_all_upstream=False,
-                    wait_for_in_progress_runs=True
-                )
-
-            which will cause ``y`` to be materialized when ``x`` is materialized.
+            * If, on the next sensor tick, none of ``a``, ``b``, and ``c`` have been materialized again, the sensor will not launch a run.
+            * If, before the next sensor tick, just asset ``a`` and ``b`` have been materialized, the sensor will launch a run to
+              materialize ``d``, ``e``, and ``f``, because they're downstream of ``a`` and ``b``.
+              Even though ``c`` hasn't been materialized, the downstream assets can still be
+              updated, because ``c`` is still considered "reconciled".
     """
     check_valid_name(name)
     check.opt_dict_param(run_tags, "run_tags", key_type=str, value_type=str)
-    return _make_sensor(
-        selection=asset_selection,
+
+    def sensor_fn(context):
+        cursor = (
+            AssetReconciliationCursor.from_serialized(context.cursor)
+            if context.cursor
+            else AssetReconciliationCursor.empty()
+        )
+        run_requests, updated_cursor = reconcile(
+            repository_def=context.repository_def,
+            asset_selection=asset_selection,
+            instance=context.instance,
+            cursor=cursor,
+            run_tags=run_tags,
+        )
+
+        context.update_cursor(updated_cursor.serialize())
+        return run_requests
+
+    return SensorDefinition(
+        evaluation_fn=sensor_fn,
         name=name,
-        wait_for_all_upstream=wait_for_all_upstream,
-        wait_for_in_progress_runs=wait_for_in_progress_runs,
+        asset_selection=asset_selection,
         minimum_interval_seconds=minimum_interval_seconds,
         description=description,
         default_status=default_status,
-        run_tags=run_tags,
     )

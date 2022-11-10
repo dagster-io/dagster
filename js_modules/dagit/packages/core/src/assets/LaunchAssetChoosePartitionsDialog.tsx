@@ -9,12 +9,14 @@ import {
   ButtonLink,
   DialogFooter,
   Alert,
+  Tooltip,
 } from '@dagster-io/ui';
 import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
@@ -42,13 +44,18 @@ import {
   AssetJobPartitionSetsQuery,
   AssetJobPartitionSetsQueryVariables,
 } from './types/AssetJobPartitionSetsQuery';
+import {LaunchAssetExecutionAssetNodeFragment_partitionDefinition} from './types/LaunchAssetExecutionAssetNodeFragment';
 
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
   assetJobName: string;
-  assets: {assetKey: AssetKey; opNames: string[]; partitionDefinition: string | null}[];
+  assets: {
+    assetKey: AssetKey;
+    opNames: string[];
+    partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
+  }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
 }
 
@@ -90,6 +97,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
   const data = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const upstreamData = usePartitionHealthData(upstreamAssetKeys);
+  const {canLaunchPartitionBackfill} = usePermissions();
 
   const allKeys = React.useMemo(() => (data[0] ? data[0].keys : []), [data]);
   const mostRecentKey = allKeys[allKeys.length - 1];
@@ -323,18 +331,24 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
         </Button>
-        <Button
-          intent="primary"
-          onClick={onLaunch}
-          disabled={selected.length === 0}
-          loading={launching}
-        >
-          {launching
-            ? 'Launching...'
-            : selected.length !== 1
-            ? `Launch ${selected.length}-Run Backfill`
-            : `Launch 1 Run`}
-        </Button>
+        {selected.length !== 1 && !canLaunchPartitionBackfill.enabled ? (
+          <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
+            <Button disabled>{`Launch ${selected.length}-Run Backfill`}</Button>
+          </Tooltip>
+        ) : (
+          <Button
+            intent="primary"
+            onClick={onLaunch}
+            disabled={selected.length === 0}
+            loading={launching}
+          >
+            {launching
+              ? 'Launching...'
+              : selected.length !== 1
+              ? `Launch ${selected.length}-Run Backfill`
+              : `Launch 1 Run`}
+          </Button>
+        )}
       </DialogFooter>
     </>
   );
