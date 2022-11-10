@@ -334,6 +334,19 @@ class PlanExecutionContext(IPlanContext):
     def log(self) -> DagsterLogManager:
         return self._log_manager
 
+    def _get_multipartition_key_from_tags(self) -> str:
+        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+
+        tags = self._plan_data.pipeline_run.tags
+
+        partitions_by_dimension: Dict[str, str] = {}
+        for tag in tags:
+            if tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX):
+                dimension = tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
+                partitions_by_dimension[dimension] = tags[tag]
+
+        return MultiPartitionKey(partitions_by_dimension)
+
     @property
     def partition_key(self) -> str:
         from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
@@ -349,19 +362,17 @@ class PlanExecutionContext(IPlanContext):
         if PARTITION_NAME_TAG in tags:
             return tags[PARTITION_NAME_TAG]
 
-        partitions_by_dimension: Dict[str, str] = {}
-        for tag in tags:
-            if tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX):
-                dimension = tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
-                partitions_by_dimension[dimension] = tags[tag]
-
-        return MultiPartitionKey(partitions_by_dimension)
+        return self._get_multipartition_key_from_tags()
 
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
         tags = self._plan_data.pipeline_run.tags
         partition_key = tags.get(PARTITION_NAME_TAG)
         if partition_key is not None:
+            return PartitionKeyRange(partition_key, partition_key)
+
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            partition_key = self._get_multipartition_key_from_tags()
             return PartitionKeyRange(partition_key, partition_key)
 
         partition_key_range_start = tags.get(ASSET_PARTITION_RANGE_START_TAG)
