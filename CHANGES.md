@@ -34,7 +34,7 @@
 ### Documentation
 
 - Added documentation outlining [environment variable declaration and usage in Dagster code](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets), including how to pass secrets.
-- Fixed a type on Dagster Instance page. Thanks **[@domsj](https://github.com/domsj)**!
+- Fixed a typo on Dagster Instance page. Thanks **[@domsj](https://github.com/domsj)**!
 
 # 1.0.16 (core) / 0.16.16 (libraries)
 
