@@ -13,7 +13,7 @@ from .parameters import (
     construct_ssm_client,
     get_parameters_by_name,
     get_parameters_by_paths,
-    get_tagged_parameters,
+    get_parameters_by_tags,
 )
 
 
@@ -82,11 +82,11 @@ def ssm_resource(context):
 
 tag_shape = Shape(
     {
-        "tag": Field(
+        "key": Field(
             str, is_required=True, description="Name or prefix of tag to retrieve parameters for"
         ),
-        "option": Field(
-            Enum("SearchOption", enum_values=[EnumValue("Equals"), EnumValue("BeginsWith")])
+        "values": Field(
+            [str], is_required=True, description="List of tag values to match on"
         ),
     }
 )
@@ -109,7 +109,7 @@ tag_shape = Shape(
                 description="AWS SSM Parameter store parameters with this tag will be fetched and made available.",
             ),
             "parameter_paths": Field(
-                str,
+                [str],
                 is_required=False,
                 default_value=[],
                 description="List of path prefixes to pull parameters from.",
@@ -220,7 +220,7 @@ def parameter_store_resource(context):
 
     parameter_values = merge_dicts(
         (
-            get_tagged_parameters(ssm_manager, parameter_tags, with_decryption)
+            get_parameters_by_tags(ssm_manager, parameter_tags, with_decryption)
             if parameter_tags
             else {}
         ),

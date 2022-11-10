@@ -23,7 +23,7 @@ def construct_ssm_client(
     return ssm_client
 
 
-def get_tagged_parameters(
+def get_parameters_by_tags(
     ssm_manager, parameter_tags: Sequence[dict], with_decryption: bool
 ) -> Dict[str, str]:
     """
@@ -35,17 +35,20 @@ def get_tagged_parameters(
     paginator = ssm_manager.get_paginator("describe_parameters")
     for parameter_tag in parameter_tags:
         filter_spec = {
-            "Key": "tag",
-            "Values": [parameter_tag["key"]],
-            "Option": [parameter_tag.get("option", "Equals")],
+            "Key": f"tag:{parameter_tag['key']}",
         }
+        if parameter_tag.get("values"):
+            filter_spec.update(Values=parameter_tag["values"])
+
         for page in paginator.paginate(
             ParameterFilters=[filter_spec],
         ):
             for param in page["Parameters"]:
                 parameter_names.append(param["Name"])
-
-    return get_parameters_by_name(ssm_manager, parameter_names, with_decryption)
+    if not parameter_names:
+        return {}
+    else:
+        return get_parameters_by_name(ssm_manager, parameter_names, with_decryption)
 
 
 def get_parameters_by_name(
@@ -64,7 +67,7 @@ def get_parameters_by_name(
 
 
 def get_parameters_by_paths(
-    ssm_manager, parameter_paths: List[str], with_decryption: bool, recursive: bool
+    ssm_manager, parameter_paths: List[Dict[str, str]], with_decryption: bool, recursive: bool
 ) -> Dict[str, str]:
     """
     Returns a dictionary of AWS Parameter Store parameter names and their values that match a list of paths. If
@@ -72,9 +75,9 @@ def get_parameters_by_paths(
     """
     parameter_values = {}
     for path in parameter_paths:
-        paginator = ssm_manager.get_paginator("describe_parameters")
+        paginator = ssm_manager.get_paginator("get_parameters_by_path")
         for page in paginator.paginate(
-            Path=path, Recursive=recursive, with_decryption=with_decryption
+            Path=path, Recursive=recursive, WithDecryption=with_decryption
         ):
             for parameter in page["Parameters"]:
                 parameter_values[parameter["Name"]] = parameter["Value"]
