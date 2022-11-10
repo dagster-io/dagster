@@ -55,9 +55,6 @@ def scope_airbyte_project_config():
         {
             "host": "localhost",
             "port": "8000",
-            # If using basic auth, include username and password:
-            "username": "airbyte",
-            "password": {"env": "AIRBYTE_PASSWORD"},
         }
     )
     # start_airbyte_project_config
@@ -91,9 +88,6 @@ def scope_airbyte_manual_config():
         {
             "host": "localhost",
             "port": "8000",
-            # If using basic auth, include username and password:
-            "username": "airbyte",
-            "password": {"env": "AIRBYTE_PASSWORD"},
         }
     )
     # start_airbyte_manual_config
@@ -112,16 +106,55 @@ def scope_airbyte_manual_config():
     # end_airbyte_manual_config
 
 
+def scope_add_downstream_assets():
+    from dagster_airbyte import airbyte_resource
+
+    airbyte_instance = airbyte_resource.configured(
+        {
+            "host": "localhost",
+            "port": "8000",
+        }
+    )
+    snowflake_io_manager = ...
+
+    # start_add_downstream_assets
+    import json
+    from dagster import asset, repository, with_resources
+    from dagster_airbyte import load_assets_from_airbyte_instance
+
+    airbyte_assets = load_assets_from_airbyte_instance(
+        airbyte_instance,
+        io_manager_key="snowflake_io_manager",
+    )
+
+    @asset
+    def stargazers_file(stargazers):
+        with open("stargazers.json", "w", encoding="utf8") as f:
+            f.write(json.dumps(stargazers, indent=2))
+
+    @repository
+    def my_repo():
+        return [
+            with_resources(
+                [airbyte_assets, stargazers_file],
+                {"snowflake_io_manager": snowflake_io_manager},
+            )
+        ]
+
+    # end_add_downstream_assets
+
+
 def scope_schedule_assets():
     airbyte_assets = []
     # start_schedule_assets
     from dagster import ScheduleDefinition, define_asset_job, repository, AssetSelection
 
+    # materialize all assets in the repository
     run_everything_job = define_asset_job("run_everything", selection="*")
 
-    # only my_airbyte_connection
-    run_specific_connection_job = define_asset_job(
-        "run_specific_connection", AssetSelection.groups("my_airbyte_connection")
+    # only run my_airbyte_connection and downstream assets
+    my_etl_job = define_asset_job(
+        "my_etl_job", AssetSelection.groups("my_airbyte_connection").downstream()
     )
 
     @repository
@@ -129,7 +162,7 @@ def scope_schedule_assets():
         return [
             airbyte_assets,
             ScheduleDefinition(
-                job=run_specific_connection_job,
+                job=my_etl_job,
                 cron_schedule="@daily",
             ),
             ScheduleDefinition(
