@@ -1,4 +1,4 @@
-from typing import Dict, List, Mapping, Optional, Sequence, Set, TypeVar, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, TypeVar, cast
 
 import dagster._check as check
 from dagster._utils import ensure_single_item, frozendict
@@ -80,7 +80,7 @@ def validate_config_from_snap(
     )
 
 
-def _validate_config(context: ValidationContext, config_value: object) -> EvaluateValueResult:
+def _validate_config(context: ValidationContext, config_value: object) -> EvaluateValueResult[Any]:
     check.inst_param(context, "context", ValidationContext)
 
     kind = context.config_type_snap.kind
@@ -139,7 +139,7 @@ def _validate_scalar_union_config(
         )
 
 
-def _validate_empty_selector_config(context: ValidationContext) -> EvaluateValueResult[Mapping]:
+def _validate_empty_selector_config(context: ValidationContext) -> EvaluateValueResult[Mapping[str, object]]:
     fields = check.not_none(context.config_type_snap.fields)
     if len(fields) > 1:
         return EvaluateValueResult.for_error(
@@ -151,7 +151,7 @@ def _validate_empty_selector_config(context: ValidationContext) -> EvaluateValue
     if defined_field_snap.is_required:
         return EvaluateValueResult.for_error(create_selector_unspecified_value_error(context))
 
-    return EvaluateValueResult.for_value({})
+    return EvaluateValueResult.for_value(cast(Mapping[str, object], {}))
 
 
 def validate_selector_config(
@@ -361,7 +361,7 @@ def _compute_missing_fields_error(
     incoming_fields: Set[str],
     field_aliases: Mapping[str, str],
 ) -> Optional[EvaluationError]:
-    missing_fields = []
+    missing_fields: List[str] = []
 
     for field_snap in field_snaps:
 
@@ -390,16 +390,16 @@ def validate_array_config(
 
     evaluation_results = [
         _validate_config(context.for_array(index), config_item)
-        for index, config_item in enumerate(config_value)
+        for index, config_item in enumerate(cast(List[object], config_value))
     ]
 
-    values = []
-    errors = []
+    values: List[object] = []
+    errors: List[EvaluationError] = []
     for result in evaluation_results:
         if result.success:
             values.append(result.value)
         else:
-            errors += cast(List, result.errors)
+            errors.extend(check.not_none(result.errors))
 
     return EvaluateValueResult(not bool(errors), values, errors)  # type: ignore
 
@@ -422,7 +422,7 @@ def validate_enum_config(
 
 def process_config(
     config_type: object, config_dict: Mapping[str, object]
-) -> EvaluateValueResult[Mapping]:
+) -> EvaluateValueResult[Mapping[str, object]]:
     config_type = resolve_to_config_type(config_type)
     config_type = check.inst(cast(ConfigType, config_type), ConfigType)
     validate_evr = validate_config(config_type, config_dict)

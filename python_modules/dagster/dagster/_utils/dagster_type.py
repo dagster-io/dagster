@@ -1,3 +1,4 @@
+from typing import Any
 from dagster._core.definitions.events import Failure, TypeCheck
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
@@ -10,7 +11,7 @@ from dagster._core.types.dagster_type import resolve_dagster_type
 from .typing_api import is_typing_type
 
 
-def check_dagster_type(dagster_type, value):
+def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     """Test a custom Dagster type.
 
     Args:

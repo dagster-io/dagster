@@ -179,7 +179,7 @@ def create_field_substitution_collision_error(
     )
 
 
-def create_fields_not_defined_error(context, undefined_fields):
+def create_fields_not_defined_error(context: ContextData, undefined_fields: Sequence[str]) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
     check_config_type_in_context_has_fields(context, "context")
     check.list_param(undefined_fields, "undefined_fields", of_type=str)
@@ -254,7 +254,7 @@ def create_field_not_defined_error(context: ContextData, received_field: str) ->
     )
 
 
-def create_array_error(context, config_value):
+def create_array_error(context: ContextData, config_value: object) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
     check.param_invariant(context.config_type_snap.kind == ConfigTypeKind.ARRAY, "config_type")
 
@@ -271,7 +271,7 @@ def create_array_error(context, config_value):
     )
 
 
-def create_map_error(context, config_value):
+def create_map_error(context: ContextData, config_value: object) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
     check.param_invariant(context.config_type_snap.kind == ConfigTypeKind.MAP, "config_type")
 

@@ -98,6 +98,7 @@ if TYPE_CHECKING:
         HistoricalPipeline,
         RepositoryLocation,
     )
+    from dagster._core.host_representation.origin import ExternalPipelineOrigin
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler
@@ -108,6 +109,7 @@ if TYPE_CHECKING:
         TickStatus,
     )
     from dagster._core.secrets import SecretsLoader
+    from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster._core.storage.captured_log_manager import CapturedLogManager
     from dagster._core.storage.compute_log_manager import ComputeLogManager
@@ -167,7 +169,7 @@ class _EventListenerLogHandler(logging.Handler):
                 name=record.name,
                 message=record.msg,
                 level=record.levelno,
-                meta=record.dagster_meta,
+                meta=record.dagster_meta,  # type: ignore
                 record=record,
             )
         )
@@ -833,18 +835,18 @@ class DagsterInstance:
 
     def create_run_for_pipeline(
         self,
-        pipeline_def,
-        execution_plan=None,
-        run_id=None,
-        run_config=None,
-        mode=None,
-        solids_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        solid_selection=None,
-        asset_selection=None,
+        pipeline_def: PipelineDefinition,
+        execution_plan: Optional["ExecutionPlan"]=None,
+        run_id: Optional[str]=None,
+        run_config: Optional[Mapping[str, object]]=None,
+        mode: Optional[str]=None,
+        solids_to_execute: Optional[AbstractSet[str]]=None,
+        status: Optional[str]=None,
+        tags: Optional[Mapping[str, str]]=None,
+        root_run_id: Optional[str]=None,
+        parent_run_id: Optional[str]=None,
+        solid_selection: Optional[Sequence[str]]=None,
+        asset_selection: Optional[FrozenSet[AssetKey]]=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
         repository_load_data=None,
@@ -1385,8 +1387,8 @@ class DagsterInstance:
     @traced
     def logs_after(
         self,
-        run_id,
-        cursor,
+        run_id: str,
+        cursor: Optional[int] = None,
         of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
     ):
@@ -1504,7 +1506,7 @@ class DagsterInstance:
 
     @public
     @traced
-    def wipe_assets(self, asset_keys):
+    def wipe_assets(self, asset_keys: Sequence[AssetKey]):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
@@ -1712,7 +1714,7 @@ class DagsterInstance:
 
     # directories
 
-    def file_manager_directory(self, run_id):
+    def file_manager_directory(self, run_id: str):
         return self._local_artifact_storage.file_manager_dir(run_id)
 
     def storage_directory(self):

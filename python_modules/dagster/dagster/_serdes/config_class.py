@@ -1,8 +1,9 @@
 import importlib
 from abc import ABC, abstractmethod
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, Mapping, NamedTuple, Type
 
 import dagster._check as check
+from dagster._config.config_type import ConfigType
 from dagster._utils import convert_dagster_submodule_name
 from dagster._utils.yaml_utils import load_run_config_yaml
 
@@ -42,7 +43,7 @@ class ConfigurableClassData(
     :py:class:`dagster.serdes.ConfigurableClass` mixin.
     """
 
-    def __new__(cls, module_name, class_name, config_yaml):
+    def __new__(cls, module_name: str, class_name: str, config_yaml: str):
         return super(ConfigurableClassData, cls).__new__(
             cls,
             convert_dagster_submodule_name(check.str_param(module_name, "module_name"), "private"),
@@ -51,17 +52,17 @@ class ConfigurableClassData(
         )
 
     @property
-    def config_dict(self):
-        return load_run_config_yaml(self.config_yaml)
+    def config_dict(self) -> Mapping[str, Any]:
+        return check.is_dict(load_run_config_yaml(self.config_yaml), key_type=str)
 
-    def info_dict(self):
+    def info_dict(self) -> Mapping[str, object]:
         return {
             "module": self.module_name,
             "class": self.class_name,
             "config": self.config_dict,
         }
 
-    def rehydrate(self):
+    def rehydrate(self) -> object:
         from dagster._config import process_config, resolve_to_config_type
         from dagster._core.errors import DagsterInvalidConfigError
 
@@ -95,7 +96,7 @@ class ConfigurableClassData(
                 result.errors,
                 config_dict,
             )
-        return klass.from_config_value(self, result.value)
+        return klass.from_config_value(self, check.not_none(result.value))
 
 
 class ConfigurableClass(ABC):
@@ -130,7 +131,7 @@ class ConfigurableClass(ABC):
 
     @property
     @abstractmethod
-    def inst_data(self):
+    def inst_data(self) -> Any:
         """
         Subclass must be able to return the inst_data as a property if it has been constructed
         through the from_config_value code path.
@@ -138,7 +139,7 @@ class ConfigurableClass(ABC):
 
     @classmethod
     @abstractmethod
-    def config_type(cls):
+    def config_type(cls) -> ConfigType:
         """dagster.ConfigType: The config type against which to validate a config yaml fragment
         serialized in an instance of ``ConfigurableClassData``.
         """
@@ -146,7 +147,7 @@ class ConfigurableClass(ABC):
 
     @staticmethod
     @abstractmethod
-    def from_config_value(inst_data, config_value):
+    def from_config_value(inst_data: Any, config_value: Mapping[str, object]) -> object:
         """New up an instance of the ConfigurableClass from a validated config value.
 
         Called by ConfigurableClassData.rehydrate.
@@ -172,7 +173,7 @@ class ConfigurableClass(ABC):
         )
 
 
-def class_from_code_pointer(module_name, class_name):
+def class_from_code_pointer(module_name: str, class_name: str) -> Type[Any]:
     try:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError:
