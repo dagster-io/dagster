@@ -54,11 +54,11 @@ DagsterRunConfigYamlDumper.remove_implicit_resolver(YAML_TIMESTAMP_TAG)
 DagsterRunConfigYamlDumper.add_representer(str, _octal_string_representer)
 
 
-def load_yaml_from_globs(*globs: str, loader=DagsterRunConfigYamlLoader) -> object:
+def load_yaml_from_globs(*globs: str, loader=DagsterRunConfigYamlLoader) -> Mapping[str, Any]:
     return load_yaml_from_glob_list(list(globs), loader=loader)
 
 
-def load_yaml_from_glob_list(glob_list: Sequence[str], loader=DagsterRunConfigYamlLoader) -> object:
+def load_yaml_from_glob_list(glob_list: Sequence[str], loader=DagsterRunConfigYamlLoader) -> Mapping[str, Any]:
     check.sequence_param(glob_list, "glob_list", of_type=str)
 
     all_files_list = []

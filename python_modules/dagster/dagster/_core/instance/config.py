@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import TYPE_CHECKING, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Type
 
 from dagster import Array, Bool
 from dagster import _check as check
@@ -12,21 +12,22 @@ from dagster._utils import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_globs
 
 if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.scheduler.instigation import TickStatus
 
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
 
 
-def is_dagster_home_set():
+def is_dagster_home_set() -> bool:
     return bool(os.getenv("DAGSTER_HOME"))
 
 
 def dagster_instance_config(
-    base_dir,
-    config_filename=DAGSTER_CONFIG_YAML_FILENAME,
-    overrides=None,
-):
+    base_dir: str,
+    config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
+    overrides: Optional[Mapping[str, object]] = None,
+) -> Tuple[Mapping[str, object], Type["DagsterInstance"]]:
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
     overrides = check.opt_dict_param(overrides, "overrides")
@@ -102,11 +103,11 @@ def dagster_instance_config(
     return (dagster_config.value, custom_instance_class)
 
 
-def config_field_for_configurable_class():
+def config_field_for_configurable_class() -> Field:
     return Field(configurable_class_schema(), is_required=False)
 
 
-def storage_config_schema():
+def storage_config_schema() -> Field:
     return Field(
         Selector(
             {
@@ -120,11 +121,11 @@ def storage_config_schema():
     )
 
 
-def configurable_class_schema():
+def configurable_class_schema() -> Mapping[str, Any]:
     return {"module": str, "class": str, "config": Field(Permissive())}
 
 
-def python_logs_config_schema():
+def python_logs_config_schema() -> Field:
     return Field(
         {
             "managed_python_loggers": Field(Array(str), is_required=False),
@@ -166,7 +167,7 @@ def get_default_tick_retention_settings(
     }
 
 
-def _tick_retention_config_schema():
+def _tick_retention_config_schema() -> Field:
     return Field(
         {
             "purge_after_days": ScalarUnion(
@@ -183,7 +184,7 @@ def _tick_retention_config_schema():
     )
 
 
-def retention_config_schema():
+def retention_config_schema() -> Field:
     return Field(
         {
             "schedule": _tick_retention_config_schema(),
@@ -215,7 +216,7 @@ def get_tick_retention_settings(
         return default_retention_settings
 
 
-def sensors_daemon_config():
+def sensors_daemon_config() -> Field:
     return Field(
         {
             "use_threads": Field(Bool, is_required=False, default_value=False),
@@ -225,7 +226,7 @@ def sensors_daemon_config():
     )
 
 
-def schedules_daemon_config():
+def schedules_daemon_config() -> Field:
     return Field(
         {
             "use_threads": Field(Bool, is_required=False, default_value=False),
@@ -235,7 +236,7 @@ def schedules_daemon_config():
     )
 
 
-def secrets_loader_config_schema():
+def secrets_loader_config_schema() -> Field:
     return Field(
         Selector(
             {
@@ -248,7 +249,7 @@ def secrets_loader_config_schema():
     )
 
 
-def dagster_instance_config_schema():
+def dagster_instance_config_schema() -> Mapping[str, Field]:
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
         "compute_logs": config_field_for_configurable_class(),

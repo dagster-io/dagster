@@ -33,7 +33,9 @@ def configurable_class_data(config_field: Mapping[str, Any]) -> ConfigurableClas
     )
 
 
-def configurable_class_data_or_default(config_value: Mapping[str, Any], field_name: str, default: Any) -> Any:
+def configurable_class_data_or_default(
+    config_value: Mapping[str, Any], field_name: str, default: Optional[ConfigurableClassData]
+) -> Optional[ConfigurableClassData]:
     return (
         configurable_class_data(config_value[field_name])
         if config_value.get(field_name)
@@ -41,7 +43,9 @@ def configurable_class_data_or_default(config_value: Mapping[str, Any], field_na
     )
 
 
-def configurable_secrets_loader_data(config_field, default) -> Optional[ConfigurableClassData]:
+def configurable_secrets_loader_data(
+    config_field: Mapping[str, Any], default: Optional[ConfigurableClassData]
+) -> Optional[ConfigurableClassData]:
     if not config_field:
         return default
     elif "custom" in config_field:
@@ -50,12 +54,14 @@ def configurable_secrets_loader_data(config_field, default) -> Optional[Configur
         return None
 
 
-def configurable_storage_data(config_field, defaults) -> Sequence[ConfigurableClassData]:
+def configurable_storage_data(
+    config_field: Mapping[str, Any], defaults: Mapping[str, Optional[ConfigurableClassData]]
+) -> Sequence[ConfigurableClassData]:
     if not config_field:
-        storage_data = defaults.get("storage")
-        run_storage_data = defaults.get("run_storage")
-        event_storage_data = defaults.get("event_log_storage")
-        schedule_storage_data = defaults.get("schedule_storage")
+        storage_data = check.not_none(defaults.get("storage"))
+        run_storage_data = check.not_none(defaults.get("run_storage"))
+        event_storage_data = check.not_none(defaults.get("event_log_storage"))
+        schedule_storage_data = check.not_none(defaults.get("schedule_storage"))
     elif "postgres" in config_field:
         config_yaml = yaml.dump(config_field["postgres"], default_flow_style=False)
         storage_data = ConfigurableClassData(
