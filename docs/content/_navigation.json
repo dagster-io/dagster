@@ -580,6 +580,10 @@
         "path": "/integrations/dbt-cloud"
       },
       {
+        "title": "Fivetran",
+        "path": "/integrations/fivetran"
+      },
+      {
         "title": "Great Expectations",
         "path": "/integrations/great-expectations"
       },
