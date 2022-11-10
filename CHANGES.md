@@ -1,5 +1,39 @@
 # Changelog
 
+# 1.0.17 (core) / 0.16.17 (libraries)
+### New
+
+- With the new `asset_selection` parameter on `@sensor` and `SensorDefinition`, you can now define a sensor that directly targets a selection of assets, instead of targeting a job.
+- `materialize` and `materialize_to_memory` now accept a `raise_on_error` argument, which allows you to determine whether to raise an Error if the run hits an error or just return as failed.
+- (experimental) Dagster now supports multi-dimensional asset partitions, through a new `MultiPartitionsDefinition` object. An optional schema migration enables support for this feature (run via `dagster instance migrate`). Users who are not using this feature do not need to run the migration.
+- [dagit] Asset and op graphs in Dagit now show integration logos, making it easier to identify assets backed by notebooks, DBT, Airbyte, and more.
+- [dagit] a `-db-pool-recycle` cli flag (and dbPoolRecycle helm option) have been added to control how long the pooled connection dagit uses persists before recycle. The default of 1 hour is now respected by postgres (mysql previously already had a hard coded 1hr setting). Thanks **[@adam-bloom](https://github.com/adam-bloom)**!
+- [dagster-airbyte] Introduced the ability to specify output IO managers when using `load_assets_from_airbyte_instance` and `load_assets_from_airbyte_project`.
+- [dagster-dbt] the `dbt_cloud_resource` resource configuration `account_id` can now be sourced from the environment. Thanks **[@sowusu-ba](https://github.com/sowusu-ba)**!
+- [dagster-duckdb] The DuckDB integration improvements: PySpark DataFrames are now fully supported, “schema” can be specified via IO Manager config, and API documentation has been improved to include more examples
+- [dagster-fivetran] Introduced experimental `load_assets_from_fivetran_instance` helper which automatically pulls assets from a Fivetran instance.
+- [dagster-k8s] Fixed an issue where setting the `securityContext` configuration of the Dagit pod in the Helm chart didn’t apply to one of its containers. Thanks **[@jblawatt](https://github.com/jblawatt)**!
+
+### Bugfixes
+
+- Fixed a bug that caused the `asset_selection` parameter of `RunRequest` to not be respected when used inside a schedule.
+- Fixed a bug with health checks during delayed Op retries with the k8s_executor and docker_executor.
+- [dagit] The asset graph now live-updates when assets fail to materialize due to op failures.
+- [dagit] The "Materialize" button now respects the backfill permission for multi-run materializations.
+- [dagit] Materializations without metadata are padded correctly in the run logs.
+- [dagster-aws] Fixed an issue where setting the value of `task_definition` field in the `EcsRunLauncher` to an environment variable stopped working.
+- [dagster-dbt] Add exposures in `load_assets_from_dbt_manifest`. This fixed then error when `load_assets_from_dbt_manifest` failed to load from dbt manifest with exposures. Thanks **[@sowusu-ba](https://github.com/sowusu-ba)**!
+- [dagster-duckdb] In some examples, the duckdb config was incorrectly specified. This has been fixed.
+
+### Breaking Changes
+
+- The behavior of the experimental asset reconciliation sensor, which is accessible via `build_asset_reconciliation_sensor` has changed to be more focused on reconciliation. It now materializes assets that have never been materialized before and avoids materializing assets that are “Upstream changed”. The `build_asset_reconciliation_sensor` API no longer accepts `wait_for_in_progress_runs` and `wait_for_all_upstream` arguments.
+
+### Documentation
+
+- Added documentation outlining [environment variable declaration and usage in Dagster code](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets), including how to pass secrets.
+- Fixed a type on Dagster Instance page. Thanks **[@domsj](https://github.com/domsj)**!
+
 # 1.0.16 (core) / 0.16.16 (libraries)
 
 ### New
