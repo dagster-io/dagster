@@ -54,10 +54,10 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
           icon="error"
           title="Partitions"
           description={
-            <p>
+            <div>
               There are no partition sets defined for {isJob ? 'job' : 'pipeline'}{' '}
               <code>{pipelineName}</code>.
-            </p>
+            </div>
           }
         />
       </Box>

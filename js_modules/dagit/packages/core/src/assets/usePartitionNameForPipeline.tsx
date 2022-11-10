@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {RepoAddress} from '../workspace/types';
@@ -20,17 +21,20 @@ export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineNa
     },
   });
 
-  return {
-    partitionSet:
-      partitionSetsData?.partitionSetsOrError.__typename === 'PartitionSets'
-        ? partitionSetsData.partitionSetsOrError.results[0]
-        : undefined,
-    partitionSetError:
-      partitionSetsData?.partitionSetsOrError.__typename === 'PipelineNotFoundError' ||
-      partitionSetsData?.partitionSetsOrError.__typename === 'PythonError'
-        ? partitionSetsData.partitionSetsOrError
-        : undefined,
-  };
+  return React.useMemo(
+    () => ({
+      partitionSet:
+        partitionSetsData?.partitionSetsOrError.__typename === 'PartitionSets'
+          ? partitionSetsData.partitionSetsOrError.results[0]
+          : undefined,
+      partitionSetError:
+        partitionSetsData?.partitionSetsOrError.__typename === 'PipelineNotFoundError' ||
+        partitionSetsData?.partitionSetsOrError.__typename === 'PythonError'
+          ? partitionSetsData.partitionSetsOrError
+          : undefined,
+    }),
+    [partitionSetsData],
+  );
 }
 
 const ASSET_JOB_PARTITION_SETS_QUERY = gql`
