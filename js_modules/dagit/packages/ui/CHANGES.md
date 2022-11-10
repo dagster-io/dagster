@@ -1,3 +1,8 @@
+## 1.0.7 (October 31, 2022)
+
+- Added partition icon
+- ConfigEditorHelp now highlights types and their descriptions as you hover over them. This makes it easier to discern which comment description belongs to which type.
+
 ## 1.0.6 (October 25, 2022)
 
 - Allow overriding colored SVGs with a custom color

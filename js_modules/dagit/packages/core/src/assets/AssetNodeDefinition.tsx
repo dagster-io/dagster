@@ -174,7 +174,10 @@ export const AssetNodeDefinition: React.FC<{
                 <Subheading>Metadata</Subheading>
               </Box>
               <Box style={{flex: 1}}>
-                <AssetMetadataTable assetMetadata={assetMetadata} />
+                <AssetMetadataTable
+                  assetMetadata={assetMetadata}
+                  repoLocation={repoAddress?.location}
+                />
               </Box>
             </>
           )}

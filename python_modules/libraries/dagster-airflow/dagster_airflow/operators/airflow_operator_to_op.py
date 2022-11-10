@@ -1,7 +1,7 @@
 import logging
 import os
 from contextlib import contextmanager
-from typing import List, Optional
+from typing import Optional, Sequence
 
 from airflow.models import Connection
 from airflow.models.baseoperator import BaseOperator
@@ -23,7 +23,7 @@ def replace_airflow_logger_handlers(handler):
 
 def airflow_operator_to_op(
     airflow_op: BaseOperator,
-    connections: Optional[List[Connection]] = None,
+    connections: Optional[Sequence[Connection]] = None,
     capture_python_logs=True,
     return_output=False,
 ) -> OpDefinition:
@@ -67,7 +67,7 @@ def airflow_operator_to_op(
 
     """
     airflow_op = check.inst_param(airflow_op, "airflow_op", BaseOperator)
-    connections = check.opt_list_param(connections, "connections", Connection)
+    connections = check.opt_sequence_param(connections, "connections", Connection)
 
     @op(
         name=airflow_op.task_id,

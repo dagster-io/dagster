@@ -1,6 +1,6 @@
 import enum
 from abc import ABC, abstractmethod
-from typing import Any, List, NamedTuple, Optional, OrderedDict, Tuple, Union
+from typing import Any, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import click
 
@@ -11,7 +11,16 @@ class ManagedElementError(enum.Enum):
     CANNOT_CONNECT = "cannot_connect"
 
 
-SANITIZE_KEY_KEYWORDS = ["password", "token", "secret"]
+SANITIZE_KEY_KEYWORDS = ["password", "token", "secret", "ssh_key"]
+
+SECRET_MASK_VALUE = "**********"
+
+
+def is_key_secret(key: str):
+    """
+    Rudamentary check to see if a config key is a secret value.
+    """
+    return any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS)
 
 
 def _sanitize(key: str, value: str):
@@ -19,8 +28,8 @@ def _sanitize(key: str, value: str):
     Rudamentary sanitization of values so we can avoid printing passwords
     to the console.
     """
-    if any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS):
-        return "**********"
+    if is_key_secret(key):
+        return SECRET_MASK_VALUE
     return value
 
 
@@ -67,9 +76,9 @@ class ManagedElementDiff(
 
     def __new__(
         cls,
-        additions: Optional[List[DiffData]] = None,
-        deletions: Optional[List[DiffData]] = None,
-        modifications: Optional[List[ModifiedDiffData]] = None,
+        additions: Optional[Sequence[DiffData]] = None,
+        deletions: Optional[Sequence[DiffData]] = None,
+        modifications: Optional[Sequence[ModifiedDiffData]] = None,
     ):
         additions = check.opt_list_param(additions, "additions", of_type=DiffData)
         deletions = check.opt_list_param(deletions, "deletions", of_type=DiffData)
@@ -166,7 +175,9 @@ class ManagedElementDiff(
             == sorted(list(other.nested.items()), key=lambda x: x[0])
         )
 
-    def get_diff_display_entries(self, indent: int = 0) -> Tuple[List[str], List[str], List[str]]:
+    def get_diff_display_entries(
+        self, indent: int = 0
+    ) -> Tuple[Sequence[str], Sequence[str], Sequence[str]]:
         """
         Returns a tuple of additions, deletions, and modification entries associated with this diff object.
         """
@@ -205,21 +216,23 @@ class ManagedElementDiff(
             elif len(nested_deletions) == 0 and len(nested_modifications) == 0:
                 # If there are only additions, display the nested entry as an addition
                 my_additions += [
-                    click.style(f"{' ' * indent}+ {key}:", fg="green")
-                ] + nested_additions
+                    click.style(f"{' ' * indent}+ {key}:", fg="green"),
+                    *nested_additions,
+                ]
             elif len(nested_additions) == 0 and len(nested_modifications) == 0:
                 # If there are only deletions, display the nested entry as a deletion
                 my_deletions += [
-                    click.style(f"{' ' * indent}- {key}:", fg="red")
-                ] + nested_deletions
+                    click.style(f"{' ' * indent}- {key}:", fg="red"),
+                    *nested_deletions,
+                ]
             else:
                 # Otherwise, display the nested entry as a modification
-                my_modifications += (
-                    [click.style(f"{' ' * indent}~ {key}:", fg="yellow")]
-                    + nested_additions
-                    + nested_deletions
-                    + nested_modifications
-                )
+                my_modifications += [
+                    click.style(f"{' ' * indent}~ {key}:", fg="yellow"),
+                    *nested_additions,
+                    *nested_deletions,
+                    *nested_modifications,
+                ]
 
         return (my_additions, my_deletions, my_modifications)
 
@@ -241,15 +254,19 @@ class ManagedElementReconciler(ABC):
     """
 
     @abstractmethod
-    def check(self) -> ManagedElementCheckResult:
+    def check(self, **kwargs) -> ManagedElementCheckResult:
         """
         Returns whether the user provided config for the managed element is in sync with the external resource.
+
+        kwargs contains any optional user-specified arguments to the check command.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def apply(self) -> ManagedElementCheckResult:
+    def apply(self, **kwargs) -> ManagedElementCheckResult:
         """
         Reconciles the managed element with the external resource, returning the applied diff.
+
+        kwargs contains any optional user-specified arguments to the apply command.
         """
         raise NotImplementedError()

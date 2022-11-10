@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Optional, Sequence
 
 import dagster._check as check
 from dagster._config import Field
@@ -13,10 +13,12 @@ from dagster._utils import mkdir_p
 
 
 class OutputNotebookIOManager(IOManager):
-    def __init__(self, asset_key_prefix: Optional[List[str]] = None):
+    def __init__(self, asset_key_prefix: Optional[Sequence[str]] = None):
         self.asset_key_prefix = asset_key_prefix if asset_key_prefix else []
 
     def get_output_asset_key(self, context: OutputContext):
+        if context.has_asset_key:
+            return None
         return AssetKey([*self.asset_key_prefix, f"{context.step_key}_output_notebook"])
 
     def handle_output(self, context: OutputContext, obj: bytes):
@@ -29,7 +31,7 @@ class OutputNotebookIOManager(IOManager):
 class LocalOutputNotebookIOManager(OutputNotebookIOManager):
     """Built-in IO Manager for handling output notebook."""
 
-    def __init__(self, base_dir: str, asset_key_prefix: Optional[List[str]] = None):
+    def __init__(self, base_dir: str, asset_key_prefix: Optional[Sequence[str]] = None):
         super(LocalOutputNotebookIOManager, self).__init__(asset_key_prefix=asset_key_prefix)
         self.base_dir = base_dir
         self.write_mode = "wb"
@@ -37,7 +39,10 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
 
     def _get_path(self, context: OutputContext) -> str:
         """Automatically construct filepath."""
-        keys = context.get_run_scoped_output_identifier()
+        if context.has_asset_key:
+            keys = context.get_asset_identifier()
+        else:
+            keys = context.get_run_scoped_output_identifier()
         return str(Path(self.base_dir, *keys).with_suffix(".ipynb"))
 
     def handle_output(self, context: OutputContext, obj: bytes):
@@ -49,7 +54,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         mkdir_p(os.path.dirname(output_notebook_path))
         with open(output_notebook_path, self.write_mode) as dest_file_obj:
             dest_file_obj.write(obj)
-        yield MetadataEntry("path", value=MetadataValue.path(output_notebook_path))
+        yield MetadataEntry("notebook", value=MetadataValue.notebook(output_notebook_path))
 
     def load_input(self, context) -> bytes:
         check.inst_param(context, "context", InputContext)

@@ -106,6 +106,13 @@ def sync_get_external_partition_set_execution_param_data_grpc(
     partition_set_name: str,
     partition_names: Sequence[str],
 ) -> ExternalPartitionSetExecutionParamData:
+    from dagster._grpc.client import DagsterGrpcClient
+
+    check.inst_param(api_client, "api_client", DagsterGrpcClient)
+    check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+    check.str_param(partition_set_name, "partition_set_name")
+    check.sequence_param(partition_names, "partition_names", of_type=str)
+
     repository_origin = repository_handle.get_external_origin()
 
     result = deserialize_as(

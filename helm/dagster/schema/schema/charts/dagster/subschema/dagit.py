@@ -41,8 +41,11 @@ class Dagit(BaseModel):
     annotations: kubernetes.Annotations
     enableReadOnly: bool
     dbStatementTimeout: Optional[int]
+    dbPoolRecycle: Optional[int]
     logLevel: Optional[str]
     schedulerName: Optional[str]
+    volumeMounts: Optional[List[kubernetes.VolumeMount]]
+    volumes: Optional[List[kubernetes.Volume]]
 
     class Config:
         extra = Extra.forbid

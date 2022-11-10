@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import Dict, List, Optional, cast
+from typing import Dict, Optional, Sequence, cast
 
 import pendulum
 
@@ -61,7 +61,7 @@ class StepDelegatingExecutor(Executor):
     def retries(self):
         return self._retries
 
-    def _pop_events(self, instance, run_id) -> List[DagsterEvent]:
+    def _pop_events(self, instance, run_id) -> Sequence[DagsterEvent]:
         events = instance.logs_after(run_id, self._event_cursor, of_type=set(DagsterEventType))
         self._event_cursor += len(events)
         dagster_events = [event.dagster_event for event in events]

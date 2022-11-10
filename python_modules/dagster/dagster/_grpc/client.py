@@ -3,7 +3,7 @@ import subprocess
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, Optional, Sequence, Tuple
 
 import grpc
 from grpc_health.v1 import health_pb2
@@ -59,7 +59,7 @@ class DagsterGrpcClient:
         socket=None,
         host="localhost",
         use_ssl=False,
-        metadata: Optional[List[Tuple[str, str]]] = None,
+        metadata: Optional[Sequence[Tuple[str, str]]] = None,
     ):
         self.port = check.opt_int_param(port, "port")
         self.socket = check.opt_str_param(socket, "socket")
@@ -89,7 +89,7 @@ class DagsterGrpcClient:
             self._server_address = "unix:" + os.path.abspath(socket)
 
     @property
-    def metadata(self) -> List[Tuple[str, str]]:
+    def metadata(self) -> Sequence[Tuple[str, str]]:
         return self._metadata
 
     @property

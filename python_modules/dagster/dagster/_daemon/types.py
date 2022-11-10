@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, NamedTuple, Optional, cast
+from typing import NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._serdes import DefaultNamedTupleSerializer, unpack_inner_value, whitelist_for_serdes
@@ -58,7 +58,7 @@ class DaemonHeartbeat(
             ("timestamp", float),
             ("daemon_type", str),
             ("daemon_id", Optional[str]),
-            ("errors", Optional[List[SerializableErrorInfo]]),
+            ("errors", Optional[Sequence[SerializableErrorInfo]]),
         ],
     ),
 ):
@@ -67,9 +67,9 @@ class DaemonHeartbeat(
         timestamp: float,
         daemon_type: str,
         daemon_id: str,
-        errors: Optional[List[SerializableErrorInfo]] = None,
+        errors: Optional[Sequence[SerializableErrorInfo]] = None,
     ):
-        errors = check.opt_list_param(errors, "errors", of_type=SerializableErrorInfo)
+        errors = check.opt_sequence_param(errors, "errors", of_type=SerializableErrorInfo)
 
         return super(DaemonHeartbeat, cls).__new__(
             cls,

@@ -9,10 +9,10 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
-    List,
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Type,
     Union,
     cast,
@@ -46,6 +46,7 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
+from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._serdes import (
     DefaultNamedTupleSerializer,
@@ -83,7 +84,7 @@ EventSpecificData = Union[
 ]
 
 
-class DagsterEventType(Enum):
+class DagsterEventType(str, Enum):
     """The types of events that may be yielded by solid and pipeline execution."""
 
     STEP_OUTPUT = "STEP_OUTPUT"
@@ -242,15 +243,15 @@ ASSET_EVENTS = {
 
 def _assert_type(
     method: str,
-    expected_type: Union[DagsterEventType, List[DagsterEventType]],
+    expected_type: Union[DagsterEventType, Sequence[DagsterEventType]],
     actual_type: DagsterEventType,
 ) -> None:
-    if not isinstance(expected_type, list):
-        expected_type = [expected_type]
-
+    _expected_type = (
+        [expected_type] if isinstance(expected_type, DagsterEventType) else expected_type
+    )
     check.invariant(
-        actual_type in expected_type,
-        f"{method} only callable when event_type is {','.join([t.value for t in expected_type])}, called on {actual_type}",
+        actual_type in _expected_type,
+        f"{method} only callable when event_type is {','.join([t.value for t in _expected_type])}, called on {actual_type}",
     )
 
 
@@ -370,7 +371,7 @@ class DagsterEvent(
             ("step_handle", Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]]),
             ("solid_handle", Optional[NodeHandle]),
             ("step_kind_value", Optional[str]),
-            ("logging_tags", Optional[Dict[str, str]]),
+            ("logging_tags", Optional[Mapping[str, str]]),
             ("event_specific_data", Optional["EventSpecificData"]),
             ("message", Optional[str]),
             ("pid", Optional[int]),
@@ -473,7 +474,7 @@ class DagsterEvent(
         step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
         solid_handle: Optional[NodeHandle] = None,
         step_kind_value: Optional[str] = None,
-        logging_tags: Optional[Dict[str, str]] = None,
+        logging_tags: Optional[Mapping[str, str]] = None,
         event_specific_data: Optional["EventSpecificData"] = None,
         message: Optional[str] = None,
         pid: Optional[int] = None,
@@ -498,7 +499,7 @@ class DagsterEvent(
             ),
             check.opt_inst_param(solid_handle, "solid_handle", NodeHandle),
             check.opt_str_param(step_kind_value, "step_kind_value"),
-            check.opt_dict_param(logging_tags, "logging_tags"),
+            check.opt_mapping_param(logging_tags, "logging_tags"),
             _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
             check.opt_str_param(message, "message"),
             check.opt_int_param(pid, "pid"),
@@ -584,6 +585,10 @@ class DagsterEvent(
 
     @property
     def is_pipeline_failure(self) -> bool:
+        return self.event_type == DagsterEventType.RUN_FAILURE
+
+    @property
+    def is_run_failure(self) -> bool:
         return self.event_type == DagsterEventType.RUN_FAILURE
 
     @public  # type: ignore
@@ -887,7 +892,7 @@ class DagsterEvent(
     def asset_materialization(
         step_context: IStepContext,
         materialization: Union[AssetMaterialization, Materialization],
-        asset_lineage: Optional[List[AssetLineageInfo]] = None,
+        asset_lineage: Optional[Sequence[AssetLineageInfo]] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -1004,7 +1009,7 @@ class DagsterEvent(
     def step_worker_starting(
         step_context: IStepContext,
         message: str,
-        metadata_entries: List[MetadataEntry],
+        metadata_entries: Sequence[MetadataEntry],
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             DagsterEventType.STEP_WORKER_STARTING,
@@ -1020,7 +1025,7 @@ class DagsterEvent(
         log_manager: DagsterLogManager,
         pipeline_name: str,
         message: str,
-        metadata_entries: List[MetadataEntry],
+        metadata_entries: Sequence[MetadataEntry],
         step_key: Optional[str],
     ) -> "DagsterEvent":
         event = DagsterEvent(
@@ -1064,8 +1069,8 @@ class DagsterEvent(
         pipeline_name: str,
         execution_plan: "ExecutionPlan",
         log_manager: DagsterLogManager,
-        resource_instances: Dict[str, Any],
-        resource_init_times: Dict[str, str],
+        resource_instances: Mapping[str, Any],
+        resource_init_times: Mapping[str, str],
     ) -> "DagsterEvent":
 
         metadata_entries = []
@@ -1245,7 +1250,7 @@ class DagsterEvent(
         output_name: str,
         manager_key: str,
         message_override: Optional[str] = None,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ) -> "DagsterEvent":
         message = f'Handled output "{output_name}" using IO manager "{manager_key}"'
         return DagsterEvent.from_step(
@@ -1267,7 +1272,7 @@ class DagsterEvent(
         upstream_output_name: Optional[str] = None,
         upstream_step_key: Optional[str] = None,
         message_override: Optional[str] = None,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ) -> "DagsterEvent":
 
         message = f'Loaded input "{input_name}" using input manager "{manager_key}"'
@@ -1362,39 +1367,40 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    def capture_logs(pipeline_context: IPlanContext, log_key: str, steps: List["ExecutionStep"]):
-        step_keys = [step.key for step in steps]
-        if len(step_keys) == 1:
-            message = f"Started capturing logs for step: {step_keys[0]}."
-        else:
-            message = f"Started capturing logs in process (pid: {os.getpid()})."
+    def legacy_compute_log_step_event(step_context: StepExecutionContext):
+        step_key = step_context.step.key
+        return DagsterEvent.from_step(
+            DagsterEventType.LOGS_CAPTURED,
+            step_context,
+            message=f"Started capturing logs for step: {step_key}.",
+            event_specific_data=ComputeLogsCaptureData(
+                step_keys=[step_key],
+                file_key=step_key,
+            ),
+        )
 
-        if isinstance(pipeline_context, StepExecutionContext):
-            return DagsterEvent.from_step(
-                DagsterEventType.LOGS_CAPTURED,
-                pipeline_context,
-                message=message,
-                event_specific_data=ComputeLogsCaptureData(
-                    step_keys=step_keys,
-                    file_key=log_key,
-                ),
-            )
-
+    @staticmethod
+    def capture_logs(
+        pipeline_context: IPlanContext,
+        step_keys: Sequence[str],
+        log_key: Sequence[str],
+        log_context: CapturedLogContext,
+    ):
+        file_key = log_key[-1]
         return DagsterEvent.from_pipeline(
             DagsterEventType.LOGS_CAPTURED,
             pipeline_context,
-            message=message,
+            message=f"Started capturing logs in process (pid: {os.getpid()}).",
             event_specific_data=ComputeLogsCaptureData(
-                step_keys=step_keys,
-                file_key=log_key,
+                step_keys=step_keys, file_key=file_key, external_url=log_context.external_url
             ),
         )
 
 
 def get_step_output_event(
-    events: List[DagsterEvent], step_key: str, output_name: Optional[str] = "result"
+    events: Sequence[DagsterEvent], step_key: str, output_name: Optional[str] = "result"
 ) -> Optional["DagsterEvent"]:
-    check.list_param(events, "events", of_type=DagsterEvent)
+    check.sequence_param(events, "events", of_type=DagsterEvent)
     check.str_param(step_key, "step_key")
     check.str_param(output_name, "output_name")
     for event in events:
@@ -1426,21 +1432,21 @@ class StepMaterializationData(
         "_StepMaterializationData",
         [
             ("materialization", Union[Materialization, AssetMaterialization]),
-            ("asset_lineage", List[AssetLineageInfo]),
+            ("asset_lineage", Sequence[AssetLineageInfo]),
         ],
     )
 ):
     def __new__(
         cls,
         materialization: Union[Materialization, AssetMaterialization],
-        asset_lineage: Optional[List[AssetLineageInfo]] = None,
+        asset_lineage: Optional[Sequence[AssetLineageInfo]] = None,
     ):
         return super(StepMaterializationData, cls).__new__(
             cls,
             materialization=check.inst_param(
                 materialization, "materialization", (Materialization, AssetMaterialization)
             ),
-            asset_lineage=check.opt_list_param(
+            asset_lineage=check.opt_sequence_param(
                 asset_lineage, "asset_lineage", of_type=AssetLineageInfo
             ),
         )
@@ -1481,7 +1487,7 @@ class ObjectStoreOperationResultData(
         [
             ("op", ObjectStoreOperationType),
             ("value_name", Optional[str]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
             ("address", Optional[str]),
             ("version", Optional[str]),
             ("mapping_key", Optional[str]),
@@ -1492,7 +1498,7 @@ class ObjectStoreOperationResultData(
         cls,
         op: ObjectStoreOperationType,
         value_name: Optional[str] = None,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         address: Optional[str] = None,
         version: Optional[str] = None,
         mapping_key: Optional[str] = None,
@@ -1501,7 +1507,7 @@ class ObjectStoreOperationResultData(
             cls,
             op=cast(ObjectStoreOperationType, check.str_param(op, "op")),
             value_name=check.opt_str_param(value_name, "value_name"),
-            metadata_entries=check.opt_list_param(
+            metadata_entries=check.opt_sequence_param(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             address=check.opt_str_param(address, "address"),
@@ -1515,7 +1521,7 @@ class EngineEventData(
     NamedTuple(
         "_EngineEventData",
         [
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
             ("error", Optional[SerializableErrorInfo]),
             ("marker_start", Optional[str]),
             ("marker_end", Optional[str]),
@@ -1528,14 +1534,14 @@ class EngineEventData(
     #
     def __new__(
         cls,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         error: Optional[SerializableErrorInfo] = None,
         marker_start: Optional[str] = None,
         marker_end: Optional[str] = None,
     ):
         return super(EngineEventData, cls).__new__(
             cls,
-            metadata_entries=check.opt_list_param(
+            metadata_entries=check.opt_sequence_param(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -1544,7 +1550,9 @@ class EngineEventData(
         )
 
     @staticmethod
-    def in_process(pid: int, step_keys_to_execute: Optional[List[str]] = None) -> "EngineEventData":
+    def in_process(
+        pid: int, step_keys_to_execute: Optional[Sequence[str]] = None
+    ) -> "EngineEventData":
         return EngineEventData(
             metadata_entries=[MetadataEntry("pid", value=str(pid))]
             + (
@@ -1556,7 +1564,7 @@ class EngineEventData(
 
     @staticmethod
     def multiprocess(
-        pid: int, step_keys_to_execute: Optional[List[str]] = None
+        pid: int, step_keys_to_execute: Optional[Sequence[str]] = None
     ) -> "EngineEventData":
         return EngineEventData(
             metadata_entries=[MetadataEntry("pid", value=str(pid))]
@@ -1568,7 +1576,7 @@ class EngineEventData(
         )
 
     @staticmethod
-    def interrupted(steps_interrupted: List[str]) -> "EngineEventData":
+    def interrupted(steps_interrupted: Sequence[str]) -> "EngineEventData":
         return EngineEventData(
             metadata_entries=[MetadataEntry("steps_interrupted", value=str(steps_interrupted))]
         )
@@ -1630,7 +1638,7 @@ class HandledOutputData(
         [
             ("output_name", str),
             ("manager_key", str),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
         ],
     )
 ):
@@ -1638,13 +1646,13 @@ class HandledOutputData(
         cls,
         output_name: str,
         manager_key: str,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ):
         return super(HandledOutputData, cls).__new__(
             cls,
             output_name=check.str_param(output_name, "output_name"),
             manager_key=check.str_param(manager_key, "manager_key"),
-            metadata_entries=check.opt_list_param(
+            metadata_entries=check.opt_sequence_param(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
         )
@@ -1659,7 +1667,7 @@ class LoadedInputData(
             ("manager_key", str),
             ("upstream_output_name", Optional[str]),
             ("upstream_step_key", Optional[str]),
-            ("metadata_entries", Optional[List[MetadataEntry]]),
+            ("metadata_entries", Optional[Sequence[MetadataEntry]]),
         ],
     )
 ):
@@ -1669,7 +1677,7 @@ class LoadedInputData(
         manager_key: str,
         upstream_output_name: Optional[str] = None,
         upstream_step_key: Optional[str] = None,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ):
         return super(LoadedInputData, cls).__new__(
             cls,
@@ -1677,7 +1685,7 @@ class LoadedInputData(
             manager_key=check.str_param(manager_key, "manager_key"),
             upstream_output_name=check.opt_str_param(upstream_output_name, "upstream_output_name"),
             upstream_step_key=check.opt_str_param(upstream_step_key, "upstream_step_key"),
-            metadata_entries=check.opt_list_param(
+            metadata_entries=check.opt_sequence_param(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
         )
@@ -1698,23 +1706,45 @@ class ComputeLogsDataSerializer(DefaultNamedTupleSerializer):
             storage_dict, klass, args_for_class, whitelist_map, descent_path
         )
 
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # For backcompat, we store:
+        # file_key as log_key
+        return replace_storage_keys(
+            storage,
+            {
+                "file_key": "log_key",
+            },
+        )
+
 
 @whitelist_for_serdes(serializer=ComputeLogsDataSerializer)
 class ComputeLogsCaptureData(
     NamedTuple(
         "_ComputeLogsCaptureData",
         [
-            ("file_key", List[str]),  # renamed log_key => file_key to avoid confusion
-            ("step_keys", List[str]),
-            # ("log_key", str),
+            ("file_key", Sequence[str]),  # renamed log_key => file_key to avoid confusion
+            ("step_keys", Sequence[str]),
+            ("external_url", Optional[str]),
         ],
     )
 ):
-    def __new__(cls, file_key, step_keys):
+    def __new__(cls, file_key, step_keys, external_url=None):
         return super(ComputeLogsCaptureData, cls).__new__(
             cls,
             file_key=check.str_param(file_key, "file_key"),
             step_keys=check.opt_list_param(step_keys, "step_keys", of_type=str),
+            external_url=check.opt_str_param(external_url, "external_url"),
         )
 
 

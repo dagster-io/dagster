@@ -334,3 +334,12 @@ def test_conditional_materialize():
             assert len(result.asset_materializations_for_node("downstream")) == 0
             with open(os.path.join(temp_dir, "storage", "downstream"), "rb") as f:
                 assert pickle.load(f) == 6
+
+
+def test_raise_on_error():
+    @asset
+    def asset1():
+        raise ValueError()
+
+    with instance_for_test() as instance:
+        assert not materialize([asset1], raise_on_error=False, instance=instance).success

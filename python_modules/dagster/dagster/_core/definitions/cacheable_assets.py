@@ -1,7 +1,7 @@
 import hashlib
 import inspect
 import json
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
@@ -92,20 +92,25 @@ class AssetsDefinitionCacheableData(
         )
 
 
-class CacheableAssetsDefinition(ResourceAddable):
+class CacheableAssetsDefinition(ResourceAddable, ABC):
     def __init__(self, unique_id: str):
         self._unique_id = unique_id
 
     @property
     def unique_id(self) -> str:
+        """
+        A unique identifier, which can be used to index the cacheable data.
+        """
         return self._unique_id
 
+    @abstractmethod
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
         """Returns an object representing cacheable information about assets which are not defined
         in Python code.
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:

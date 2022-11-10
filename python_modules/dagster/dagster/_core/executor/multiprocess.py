@@ -1,7 +1,7 @@
 import multiprocessing
 import os
 import sys
-from typing import List, Optional
+from typing import Optional, Sequence
 
 from dagster import MetadataEntry
 from dagster import _check as check
@@ -98,7 +98,7 @@ class MultiprocessExecutor(Executor):
         retries: RetryMode,
         max_concurrent: int,
         start_method: Optional[str] = None,
-        explicit_forkserver_preload: Optional[List[str]] = None,
+        explicit_forkserver_preload: Optional[Sequence[str]] = None,
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()

@@ -1,7 +1,7 @@
 import copy
 import os
 import subprocess
-from typing import Dict, Optional
+from typing import Mapping, Optional
 
 import click
 import nbformat
@@ -54,8 +54,8 @@ def get_kernelspec(kernel: Optional[str] = None):
     }
 
 
-def get_notebook_scaffolding(kernelspec: Dict[str, str]):
-    check.dict_param(kernelspec, "kernelspec", key_type=str, value_type=str)
+def get_notebook_scaffolding(kernelspec: Mapping[str, str]):
+    check.mapping_param(kernelspec, "kernelspec", key_type=str, value_type=str)
 
     notebook = nbformat.v4.new_notebook()
 

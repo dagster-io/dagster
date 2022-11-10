@@ -50,7 +50,7 @@ interface ILogsToolbarProps {
   onSetFilter: (filter: LogFilter) => void;
   logType: LogType;
   onSetLogType: (logType: LogType) => void;
-  computeLogKey?: string;
+  computeLogFileKey?: string;
   onSetComputeLogKey: (key: string) => void;
   computeLogUrl: string | null;
 }
@@ -67,7 +67,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     onSetFilter,
     logType,
     onSetLogType,
-    computeLogKey,
+    computeLogFileKey,
     onSetComputeLogKey,
     computeLogUrl,
   } = props;
@@ -101,7 +101,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
           metadata={metadata}
           logType={logType}
           onSetLogType={onSetLogType}
-          computeLogKey={computeLogKey}
+          computeLogFileKey={computeLogFileKey}
           onSetComputeLogKey={onSetComputeLogKey}
           computeLogUrl={computeLogUrl}
         />
@@ -131,7 +131,7 @@ const resolveState = (metadata: IRunMetadataDict, logCapture: ILogCaptureInfo) =
 const ComputeLogToolbar = ({
   steps,
   metadata,
-  computeLogKey,
+  computeLogFileKey,
   onSetComputeLogKey,
   logType,
   onSetLogType,
@@ -139,7 +139,7 @@ const ComputeLogToolbar = ({
 }: {
   steps: string[];
   metadata: IRunMetadataDict;
-  computeLogKey?: string;
+  computeLogFileKey?: string;
   onSetComputeLogKey: (step: string) => void;
   logType: LogType;
   onSetLogType: (type: LogType) => void;
@@ -147,7 +147,7 @@ const ComputeLogToolbar = ({
 }) => {
   const logCaptureSteps =
     metadata.logCaptureSteps || extractLogCaptureStepsFromLegacySteps(Object.keys(metadata.steps));
-  const isValidStepSelection = computeLogKey && logCaptureSteps[computeLogKey];
+  const isValidStepSelection = computeLogFileKey && logCaptureSteps[computeLogFileKey];
 
   const fileKeyText = (fileKey?: string) => {
     if (!fileKey || !logCaptureSteps[fileKey]) {
@@ -156,6 +156,9 @@ const ComputeLogToolbar = ({
     const captureInfo = logCaptureSteps[fileKey];
     if (captureInfo.stepKeys.length === 1 && fileKey === captureInfo.stepKeys[0]) {
       return fileKey;
+    }
+    if (captureInfo.pid && captureInfo.stepKeys.length === 1) {
+      return captureInfo.stepKeys[0];
     }
     if (captureInfo.pid) {
       return `pid: ${captureInfo.pid} (${captureInfo.stepKeys.length} steps)`;
@@ -183,13 +186,13 @@ const ComputeLogToolbar = ({
               active={options.modifiers.active}
             />
           )}
-          activeItem={computeLogKey}
+          activeItem={computeLogFileKey}
           onItemSelect={(fileKey) => {
             onSetComputeLogKey(fileKey);
           }}
         >
           <Button disabled={!steps.length} rightIcon={<Icon name="expand_more" />}>
-            {fileKeyText(computeLogKey) || 'Select a step...'}
+            {fileKeyText(computeLogFileKey) || 'Select a step...'}
           </Button>
         </Select>
         {isValidStepSelection ? (
@@ -201,19 +204,21 @@ const ComputeLogToolbar = ({
       </Group>
       {isValidStepSelection ? (
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          {computeLogKey && logCaptureSteps[computeLogKey] ? (
-            resolveState(metadata, logCaptureSteps[computeLogKey]) === IStepState.RUNNING ? (
+          {computeLogFileKey && logCaptureSteps[computeLogFileKey] ? (
+            resolveState(metadata, logCaptureSteps[computeLogFileKey]) === IStepState.RUNNING ? (
               <Spinner purpose="body-text" />
             ) : (
-              <ExecutionStateDot state={resolveState(metadata, logCaptureSteps[computeLogKey])} />
+              <ExecutionStateDot
+                state={resolveState(metadata, logCaptureSteps[computeLogFileKey])}
+              />
             )
           ) : null}
           {computeLogUrl ? (
             <Tooltip
               placement="top-end"
               content={
-                computeLogKey && logCaptureSteps[computeLogKey]?.stepKeys.length === 1
-                  ? `Download ${logCaptureSteps[computeLogKey]?.stepKeys[0]} compute logs`
+                computeLogFileKey && logCaptureSteps[computeLogFileKey]?.stepKeys.length === 1
+                  ? `Download ${logCaptureSteps[computeLogFileKey]?.stepKeys[0]} compute logs`
                   : `Download compute logs`
               }
             >

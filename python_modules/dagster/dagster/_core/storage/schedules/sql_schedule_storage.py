@@ -246,9 +246,9 @@ class SqlScheduleStorage(ScheduleStorage):
         limit: Optional[int] = None,
         statuses: Optional[Sequence[TickStatus]] = None,
     ) -> Mapping[str, Iterable[InstigatorTick]]:
-        check.list_param(selector_ids, "selector_ids", of_type=str)
+        check.sequence_param(selector_ids, "selector_ids", of_type=str)
         check.opt_int_param(limit, "limit")
-        check.opt_list_param(statuses, "statuses", of_type=TickStatus)
+        check.opt_sequence_param(statuses, "statuses", of_type=TickStatus)
 
         bucket_rank_column = (
             db.func.rank()

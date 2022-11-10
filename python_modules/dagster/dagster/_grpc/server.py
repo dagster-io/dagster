@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from multiprocessing.synchronize import Event as MPEvent
 from threading import Event as ThreadingEventType
 from time import sleep
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -27,7 +27,7 @@ from dagster._core.host_representation.external_data import (
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import deserialize_as, serialize_dagster_namedtuple, whitelist_for_serdes
@@ -87,7 +87,7 @@ class LoadedRepositories:
     def __init__(
         self,
         loadable_target_origin: Optional[LoadableTargetOrigin],
-        entry_point: List[str],
+        entry_point: Sequence[str],
         container_image: Optional[str] = None,
     ):
         self._loadable_target_origin = loadable_target_origin
@@ -141,11 +141,11 @@ class LoadedRepositories:
         return self._code_pointers_by_repo_name
 
     @property
-    def definitions_by_name(self) -> Dict[str, RepositoryDefinition]:
+    def definitions_by_name(self) -> Mapping[str, RepositoryDefinition]:
         return self._repo_defs_by_name
 
     @property
-    def reconstructables_by_name(self) -> Dict[str, ReconstructableRepository]:
+    def reconstructables_by_name(self) -> Mapping[str, ReconstructableRepository]:
         return self._recon_repos_by_name
 
 
@@ -182,9 +182,12 @@ class DagsterApiServer(DagsterApiServicer):
         heartbeat_timeout: int = 30,
         lazy_load_user_code: bool = False,
         fixed_server_id: Optional[str] = None,
-        entry_point: Optional[List[str]] = None,
+        entry_point: Optional[Sequence[str]] = None,
         container_image: Optional[str] = None,
         container_context: Optional[dict] = None,
+        inject_env_vars_from_instance: Optional[bool] = False,
+        instance_ref: Optional[InstanceRef] = None,
+        location_name: Optional[str] = None,
     ):
         super(DagsterApiServer, self).__init__()
 
@@ -227,6 +230,14 @@ class DagsterApiServer(DagsterApiServicer):
         self._container_context = check.opt_dict_param(container_context, "container_context")
 
         try:
+            if inject_env_vars_from_instance:
+                # If arguments indicate it wants to load env vars, use the passed-in instance
+                # ref (or the dagster.yaml on the filesystem if no instance ref is provided)
+                with DagsterInstance.from_ref(
+                    instance_ref
+                ) if instance_ref else DagsterInstance.get() as instance:
+                    instance.inject_env_vars(location_name)
+
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
                 self._entry_point,
@@ -811,6 +822,9 @@ class DagsterGrpcServer:
         entry_point=None,
         container_image=None,
         container_context=None,
+        inject_env_vars_from_instance=False,
+        instance_ref=None,
+        location_name=None,
     ):
         check.opt_str_param(host, "host")
         check.opt_int_param(port, "port")
@@ -841,6 +855,10 @@ class DagsterGrpcServer:
             "If set to None, the server will use the gRPC default.",
         )
 
+        check.opt_bool_param(inject_env_vars_from_instance, "inject_env_vars_from_instance")
+        check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+        check.opt_str_param(location_name, "location_name")
+
         self.server = grpc.server(
             ThreadPoolExecutor(max_workers=max_workers),
             compression=grpc.Compression.Gzip,
@@ -862,6 +880,9 @@ class DagsterGrpcServer:
                 entry_point=entry_point,
                 container_image=container_image,
                 container_context=container_context,
+                inject_env_vars_from_instance=inject_env_vars_from_instance,
+                instance_ref=instance_ref,
+                location_name=location_name,
             )
         except Exception:
             if self._ipc_output_file:

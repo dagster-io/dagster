@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.dependency import Node, NodeHandle
@@ -543,7 +545,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
                 return ("dog", 5)
 
         """
-        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        metadata = check.mapping_param(metadata, "metadata", key_type=str)
         output_name = check.opt_str_param(output_name, "output_name")
         mapping_key = check.opt_str_param(mapping_key, "mapping_key")
 
@@ -609,3 +611,6 @@ class OpExecutionContext(SolidExecutionContext):
             context.log.info("Hello, world!")
 
     """
+
+
+SourceAssetObserveContext: TypeAlias = OpExecutionContext

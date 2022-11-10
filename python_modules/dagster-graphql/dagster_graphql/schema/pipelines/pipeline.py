@@ -25,7 +25,7 @@ from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
-from ..logs.compute_logs import GrapheneComputeLogs
+from ..logs.compute_logs import GrapheneCapturedLogs, GrapheneComputeLogs, from_captured_log_data
 from ..logs.events import (
     GrapheneDagsterRunEvent,
     GrapheneMaterializationEvent,
@@ -213,6 +213,13 @@ class GraphenePipelineRun(graphene.Interface):
         Compute logs are the stdout/stderr logs for a given solid step computation
         """,
     )
+    capturedLogs = graphene.Field(
+        graphene.NonNull(GrapheneCapturedLogs),
+        fileKey=graphene.Argument(graphene.NonNull(graphene.String)),
+        description="""
+        Captured logs are the stdout/stderr logs for a given file key within the run
+        """,
+    )
     executionPlan = graphene.Field(GrapheneExecutionPlan)
     stepKeysToExecute = graphene.List(graphene.NonNull(graphene.String))
     runConfigYaml = graphene.NonNull(graphene.String)
@@ -330,6 +337,13 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_computeLogs(self, _graphene_info, stepKey):
         return GrapheneComputeLogs(runId=self.run_id, stepKey=stepKey)
+
+    def resolve_capturedLogs(self, graphene_info, fileKey):
+        log_key = graphene_info.context.instance.compute_log_manager.build_log_key_for_run(
+            self.run_id, fileKey
+        )
+        log_data = graphene_info.context.instance.compute_log_manager.get_log_data(log_key)
+        return from_captured_log_data(graphene_info, log_data)
 
     def resolve_executionPlan(self, graphene_info):
         if not (

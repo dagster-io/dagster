@@ -213,7 +213,7 @@ class ExternalPipelineData(
             parent_pipeline_snapshot=check.opt_inst_param(
                 parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot
             ),
-            active_presets=check.list_param(
+            active_presets=check.sequence_param(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
             is_job=check.bool_param(is_job, "is_job"),
@@ -282,7 +282,7 @@ class ExternalPresetData(
                 solid_selection, "solid_selection", of_type=str
             ),
             mode=check.str_param(mode, "mode"),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
 
@@ -449,7 +449,9 @@ class ExternalSensorData(
             mode=check.opt_str_param(mode, "mode"),  # keep legacy field populated
             min_interval=check.opt_int_param(min_interval, "min_interval"),
             description=check.opt_str_param(description, "description"),
-            target_dict=check.opt_dict_param(target_dict, "target_dict", str, ExternalTargetData),
+            target_dict=check.opt_mapping_param(
+                target_dict, "target_dict", str, ExternalTargetData
+            ),
             metadata=check.opt_inst_param(metadata, "metadata", ExternalSensorMetadata),
             default_status=DefaultSensorStatus.RUNNING
             if default_status == DefaultSensorStatus.RUNNING
@@ -592,7 +594,7 @@ class ExternalStaticPartitionsDefinitionData(
 ):
     def __new__(cls, partition_keys: Sequence[str]):
         return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
-            cls, partition_keys=check.list_param(partition_keys, "partition_keys", str)
+            cls, partition_keys=check.sequence_param(partition_keys, "partition_keys", str)
         )
 
     def get_partitions_definition(self):
@@ -643,7 +645,7 @@ class ExternalPartitionNamesData(
     def __new__(cls, partition_names: Optional[Sequence[str]] = None):
         return super(ExternalPartitionNamesData, cls).__new__(
             cls,
-            partition_names=check.opt_list_param(partition_names, "partition_names", str),
+            partition_names=check.opt_sequence_param(partition_names, "partition_names", str),
         )
 
 
@@ -699,7 +701,7 @@ class ExternalPartitionSetExecutionParamData(
     def __new__(cls, partition_data: Sequence[ExternalPartitionExecutionParamData]):
         return super(ExternalPartitionSetExecutionParamData, cls).__new__(
             cls,
-            partition_data=check.list_param(
+            partition_data=check.sequence_param(
                 partition_data, "partition_data", of_type=ExternalPartitionExecutionParamData
             ),
         )
@@ -838,7 +840,7 @@ class ExternalAssetNode(
             ),
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             op_name=check.opt_str_param(op_name, "op_name"),
-            op_names=check.opt_list_param(op_names, "op_names"),
+            op_names=check.opt_sequence_param(op_names, "op_names"),
             node_definition_name=check.opt_str_param(node_definition_name, "node_definition_name"),
             graph_name=check.opt_str_param(graph_name, "graph_name"),
             op_description=check.opt_str_param(
@@ -888,7 +890,10 @@ def external_repository_data_from_def(
             key=lambda psd: psd.name,
         ),
         external_sensor_datas=sorted(
-            list(map(external_sensor_data_from_def, repository_def.sensor_defs)),
+            [
+                external_sensor_data_from_def(sensor_def, repository_def)
+                for sensor_def in repository_def.sensor_defs
+            ],
             key=lambda sd: sd.name,
         ),
         external_asset_graph_data=external_asset_graph_from_defs(
@@ -1156,26 +1161,38 @@ def external_partition_set_data_from_def(
     )
 
 
-def external_sensor_data_from_def(sensor_def: SensorDefinition) -> ExternalSensorData:
+def external_sensor_data_from_def(
+    sensor_def: SensorDefinition, repository_def: RepositoryDefinition
+) -> ExternalSensorData:
     first_target = sensor_def.targets[0] if sensor_def.targets else None
 
     asset_keys = None
     if isinstance(sensor_def, AssetSensorDefinition):
         asset_keys = [sensor_def.asset_key]
 
-    return ExternalSensorData(
-        name=sensor_def.name,
-        pipeline_name=first_target.pipeline_name if first_target else None,
-        mode=first_target.mode if first_target else None,
-        solid_selection=first_target.solid_selection if first_target else None,
-        target_dict={
+    if sensor_def.asset_selection is not None:
+        target_dict = {
+            base_asset_job_name: ExternalTargetData(
+                pipeline_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, solid_selection=None
+            )
+            for base_asset_job_name in repository_def.get_base_asset_job_names()
+        }
+    else:
+        target_dict = {
             target.pipeline_name: ExternalTargetData(
                 pipeline_name=target.pipeline_name,
                 mode=target.mode,
                 solid_selection=target.solid_selection,
             )
             for target in sensor_def.targets
-        },
+        }
+
+    return ExternalSensorData(
+        name=sensor_def.name,
+        pipeline_name=first_target.pipeline_name if first_target else None,
+        mode=first_target.mode if first_target else None,
+        solid_selection=first_target.solid_selection if first_target else None,
+        target_dict=target_dict,
         min_interval=sensor_def.minimum_interval_seconds,
         description=sensor_def.description,
         metadata=ExternalSensorMetadata(asset_keys=asset_keys),

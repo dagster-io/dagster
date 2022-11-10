@@ -1,7 +1,7 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, Generator, Iterable, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Generator, Iterable, List, Mapping, Optional, Tuple, Union, cast
 
 import click
 from click import UsageError
@@ -47,12 +47,12 @@ def _cli_load_invariant(condition: object, msg=None) -> None:
         raise UsageError(msg)
 
 
-def _check_cli_arguments_none(kwargs: Dict[str, str], *keys: str) -> None:
+def _check_cli_arguments_none(kwargs: Mapping[str, str], *keys: str) -> None:
     for key in keys:
         _cli_load_invariant(not kwargs.get(key))
 
 
-def are_all_keys_empty(kwargs: Dict[str, str], keys: Iterable[str]) -> bool:
+def are_all_keys_empty(kwargs: Mapping[str, str], keys: Iterable[str]) -> bool:
     for key in keys:
         if kwargs.get(key):
             return False
@@ -74,8 +74,8 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def get_workspace_load_target(kwargs: Dict[str, str]):
-    check.dict_param(kwargs, "kwargs")
+def get_workspace_load_target(kwargs: Mapping[str, str]):
+    check.mapping_param(kwargs, "kwargs")
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
@@ -173,7 +173,7 @@ def get_workspace_load_target(kwargs: Dict[str, str]):
 
 
 def get_workspace_process_context_from_kwargs(
-    instance: DagsterInstance, version: str, read_only: bool, kwargs: Dict[str, str]
+    instance: DagsterInstance, version: str, read_only: bool, kwargs: Mapping[str, str]
 ) -> "WorkspaceProcessContext":
     from dagster._core.workspace.context import WorkspaceProcessContext
 
@@ -184,7 +184,7 @@ def get_workspace_process_context_from_kwargs(
 
 @contextmanager
 def get_workspace_from_kwargs(
-    instance: DagsterInstance, version: str, kwargs: Dict[str, str]
+    instance: DagsterInstance, version: str, kwargs: Mapping[str, str]
 ) -> Generator[WorkspaceRequestContext, None, None]:
     with get_workspace_process_context_from_kwargs(
         instance, version, read_only=False, kwargs=kwargs
@@ -431,7 +431,7 @@ def get_job_python_origin_from_kwargs(kwargs):
     return PipelinePythonOrigin(pipeline_name, repository_origin=repository_origin)
 
 
-def _get_code_pointer_dict_from_kwargs(kwargs: Dict[str, str]) -> Dict[str, CodePointer]:
+def _get_code_pointer_dict_from_kwargs(kwargs: Mapping[str, str]) -> Mapping[str, CodePointer]:
     python_file = kwargs.get("python_file")
     module_name = kwargs.get("module_name")
     package_name = kwargs.get("package_name")
@@ -480,11 +480,11 @@ def _get_code_pointer_dict_from_kwargs(kwargs: Dict[str, str]) -> Dict[str, Code
         check.failed("Must specify a Python file or module name")
 
 
-def get_working_directory_from_kwargs(kwargs: Dict[str, str]) -> Optional[str]:
+def get_working_directory_from_kwargs(kwargs: Mapping[str, str]) -> Optional[str]:
     return check.opt_str_elem(kwargs, "working_directory") or os.getcwd()
 
 
-def get_repository_python_origin_from_kwargs(kwargs: Dict[str, str]) -> RepositoryPythonOrigin:
+def get_repository_python_origin_from_kwargs(kwargs: Mapping[str, str]) -> RepositoryPythonOrigin:
     provided_repo_name = cast(str, kwargs.get("repository"))
 
     if not (kwargs.get("python_file") or kwargs.get("module_name") or kwargs.get("package_name")):

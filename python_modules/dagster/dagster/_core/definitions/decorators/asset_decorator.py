@@ -36,6 +36,7 @@ from ..events import AssetKey, CoercibleToAssetKeyPrefix
 from ..input import In
 from ..output import Out
 from ..partition import PartitionsDefinition
+from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
 
@@ -64,10 +65,12 @@ def asset(
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
     partitions_def: Optional[PartitionsDefinition] = ...,
-    op_tags: Optional[Dict[str, Any]] = ...,
+    op_tags: Optional[Mapping[str, Any]] = ...,
     group_name: Optional[str] = ...,
     output_required: bool = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
+    retry_policy: Optional[RetryPolicy] = ...,
+    op_version: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -89,10 +92,12 @@ def asset(
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    op_tags: Optional[Dict[str, Any]] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
     output_required: bool = True,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    retry_policy: Optional[RetryPolicy] = None,
+    op_version: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -149,6 +154,9 @@ def asset(
             storage and will halt execution of downstream assets.
         freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
             with respect to its root data.
+        retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
+        op_version (Optional[str]): (Experimental) Version string passed to the op underlying the
+            asset.
 
     Examples:
 
@@ -190,6 +198,8 @@ def asset(
             group_name=group_name,
             output_required=output_required,
             freshness_policy=freshness_policy,
+            retry_policy=retry_policy,
+            op_version=op_version,
         )(fn)
 
     return inner
@@ -211,10 +221,12 @@ class _Asset:
         compute_kind: Optional[str] = None,
         dagster_type: Optional[DagsterType] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        op_tags: Optional[Dict[str, Any]] = None,
+        op_tags: Optional[Mapping[str, Any]] = None,
         group_name: Optional[str] = None,
         output_required: bool = True,
         freshness_policy: Optional[FreshnessPolicy] = None,
+        retry_policy: Optional[RetryPolicy] = None,
+        op_version: Optional[str] = None,
     ):
         self.name = name
 
@@ -238,6 +250,8 @@ class _Asset:
         self.group_name = group_name
         self.output_required = output_required
         self.freshness_policy = freshness_policy
+        self.retry_policy = retry_policy
+        self.op_version = op_version
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -282,6 +296,8 @@ class _Asset:
                     **(self.op_tags or {}),
                 },
                 config_schema=self.config_schema,
+                retry_policy=self.retry_policy,
+                version=self.op_version,
             )(fn)
 
         keys_by_input_name = {
@@ -319,10 +335,11 @@ def multi_asset(
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    op_tags: Optional[Dict[str, Any]] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     group_name: Optional[str] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -362,11 +379,12 @@ def multi_asset(
             context within the body of the function.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
+        retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
     """
     if resource_defs is not None:
         experimental_arg_warning("resource_defs", "multi_asset")
 
-    asset_deps = check.opt_dict_param(
+    asset_deps = check.opt_mapping_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
     )
     required_resource_keys = check.opt_set_param(
@@ -428,6 +446,7 @@ def multi_asset(
                     **(op_tags or {}),
                 },
                 config_schema=config_schema,
+                retry_policy=retry_policy,
             )(fn)
 
         keys_by_input_name = {

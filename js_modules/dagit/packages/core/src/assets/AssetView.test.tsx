@@ -11,18 +11,16 @@ import {AssetView} from './AssetView';
 jest.mock('../graph/asyncGraphLayout', () => ({}));
 
 describe('AssetView', () => {
-  const defaultMocks = {
+  const mocks = {
     AssetNode: () => ({
       partitionKeys: () => [...new Array(0)],
     }),
     Asset: () => ({
-      assetMaterializations: () => [...new Array(2)],
+      assetMaterializations: () => [...new Array(1)],
+      assetObservations: () => [...new Array(0)],
     }),
     MaterializationEvent: () => ({
-      timestamp: () => `${Math.random() * 100}`,
-    }),
-    ObservationEvent: () => ({
-      timestamp: () => `${Math.random() * 100}`,
+      timestamp: () => '100',
     }),
     MetadataEntry: () => ({
       __typename: 'TextMetadataEntry',
@@ -32,7 +30,7 @@ describe('AssetView', () => {
 
   const Test = ({path}: {path: string}) => {
     return (
-      <TestProvider apolloProps={{mocks: defaultMocks}}>
+      <TestProvider apolloProps={{mocks}}>
         <MemoryRouter initialEntries={[path]}>
           <AssetView assetKey={{path: ['foo']}} />
         </MemoryRouter>

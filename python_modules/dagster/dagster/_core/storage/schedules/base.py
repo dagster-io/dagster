@@ -1,5 +1,5 @@
 import abc
-from typing import Callable, Iterable, List, Mapping, Optional, Sequence
+from typing import Callable, Iterable, Mapping, Optional, Sequence
 
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref
@@ -87,7 +87,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         before: Optional[float] = None,
         after: Optional[float] = None,
         limit: Optional[int] = None,
-        statuses: Optional[List[TickStatus]] = None,
+        statuses: Optional[Sequence[TickStatus]] = None,
     ) -> Iterable[InstigatorTick]:
         """Get the ticks for a given instigator.
 
@@ -118,7 +118,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         origin_id: str,
         selector_id: str,
         before: float,
-        tick_statuses: Optional[List[TickStatus]] = None,
+        tick_statuses: Optional[Sequence[TickStatus]] = None,
     ):
         """Wipe ticks for an instigator for a certain status and timestamp.
 
@@ -139,7 +139,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
     def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         """Call this method to run any optional data migrations for optimized reads"""
 
-    def optimize_for_dagit(self, statement_timeout: int):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
 
     def alembic_version(self):

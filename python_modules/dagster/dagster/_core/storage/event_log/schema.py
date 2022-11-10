@@ -1,4 +1,5 @@
 import sqlalchemy as db
+from sqlalchemy.dialects import sqlite
 
 from ..sql import MySQLCompatabilityTypes, get_current_timestamp
 
@@ -52,6 +53,22 @@ AssetKeyTable = db.Table(
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
+AssetEventTagsTable = db.Table(
+    "asset_event_tags",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("event_id", db.Integer, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
+    db.Column("asset_key", db.Text, nullable=False),
+    db.Column("key", db.Text, nullable=False),
+    db.Column("value", db.Text),
+    db.Column("event_timestamp", db.types.TIMESTAMP),
+)
+
 db.Index(
     "idx_step_key",
     SqlEventLogStorageTable.c.step_key,
@@ -62,6 +79,17 @@ db.Index(
     SqlEventLogStorageTable.c.dagster_event_type,
     SqlEventLogStorageTable.c.id,
     mysql_length={"dagster_event_type": 64},
+)
+db.Index(
+    "idx_asset_event_tags",
+    AssetEventTagsTable.c.asset_key,
+    AssetEventTagsTable.c.key,
+    AssetEventTagsTable.c.value,
+    mysql_length={"asset_key": 64, "key": 64, "value": 64},
+)
+db.Index(
+    "idx_asset_event_tags_event_id",
+    AssetEventTagsTable.c.event_id,
 )
 db.Index(
     "idx_events_by_run_id",

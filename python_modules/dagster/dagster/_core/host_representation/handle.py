@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, NamedTuple
+from typing import TYPE_CHECKING, Mapping, NamedTuple
 
 import dagster._check as check
 from dagster._core.host_representation.origin import (
@@ -19,7 +19,7 @@ class RepositoryHandle(
             ("repository_name", str),
             ("repository_location_origin", RepositoryLocationOrigin),
             ("repository_python_origin", RepositoryPythonOrigin),
-            ("display_metadata", Dict[str, str]),
+            ("display_metadata", Mapping[str, str]),
         ],
     )
 ):

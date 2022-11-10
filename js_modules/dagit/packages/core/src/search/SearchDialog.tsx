@@ -141,7 +141,11 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
         onShortcut={openSearch}
         shortcutLabel="/"
         shortcutFilter={(e) =>
-          e.key === '/' && !e.altKey && !e.metaKey && !e.shiftKey && !e.ctrlKey
+          (e.key === '/' || (e.code === 'KeyK' && e.metaKey)) &&
+          !(e.key === '/' && e.metaKey) &&
+          !e.altKey &&
+          !e.shiftKey &&
+          !e.ctrlKey
         }
       >
         <SearchTrigger onClick={openSearch}>

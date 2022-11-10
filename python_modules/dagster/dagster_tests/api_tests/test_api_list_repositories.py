@@ -1,17 +1,11 @@
 import sys
 
 import pytest
-from dagster_test.dagster_core_docker_buildkite import get_test_project_docker_image
 
-from dagster import _seven
-from dagster._api.list_repositories import (
-    sync_list_repositories_ephemeral_grpc,
-    sync_list_repositories_grpc,
-)
+from dagster._api.list_repositories import sync_list_repositories_ephemeral_grpc
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer, PackageCodePointer
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._grpc.types import LoadableRepositorySymbol
-from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._utils import file_relative_path
 
 
@@ -221,36 +215,6 @@ def test_sync_list_python_package_attribute_grpc():
     assert (
         repository_code_pointer_dict["hello_world_repository"].attribute == "hello_world_repository"
     )
-
-
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Depends on Docker, so skip running in Windows")
-def test_sync_list_container_grpc(docker_grpc_client):
-    response = sync_list_repositories_grpc(docker_grpc_client)
-
-    loadable_repo_symbols = response.repository_symbols
-
-    assert (
-        deserialize_json_to_dagster_namedtuple(docker_grpc_client.get_current_image()).current_image
-        == get_test_project_docker_image()
-    )
-
-    assert isinstance(loadable_repo_symbols, list)
-    assert len(loadable_repo_symbols) == 1
-    assert isinstance(loadable_repo_symbols[0], LoadableRepositorySymbol)
-
-    symbol = loadable_repo_symbols[0]
-
-    assert symbol.repository_name == "bar_repo"
-    assert symbol.attribute == "bar_repo"
-
-    executable_path = response.executable_path
-    assert executable_path
-
-    repository_code_pointer_dict = response.repository_code_pointer_dict
-    assert "bar_repo" in repository_code_pointer_dict
-    assert isinstance(repository_code_pointer_dict["bar_repo"], FileCodePointer)
-    assert repository_code_pointer_dict["bar_repo"].python_file.endswith("repo.py")
-    assert repository_code_pointer_dict["bar_repo"].fn_name == "bar_repo"
 
 
 def test_sync_list_python_file_grpc_with_error():

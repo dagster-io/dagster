@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level
@@ -20,7 +20,7 @@ def _create_command_list(
     warn_error: bool,
     json_log_format: bool,
     command: str,
-    flags_dict: Dict[str, Any],
+    flags_dict: Mapping[str, Any],
 ) -> Sequence[str]:
 
     prefix = [executable]
@@ -52,7 +52,7 @@ def _create_command_list(
 def execute_cli(
     executable: str,
     command: str,
-    flags_dict: Dict[str, Any],
+    flags_dict: Mapping[str, Any],
     log: Any,
     warn_error: bool,
     ignore_handled_error: bool,
@@ -71,7 +71,7 @@ def execute_cli(
 
     check.str_param(executable, "executable")
     check.str_param(command, "command")
-    check.dict_param(flags_dict, "flags_dict", key_type=str)
+    check.mapping_param(flags_dict, "flags_dict", key_type=str)
     check.bool_param(warn_error, "warn_error")
     check.bool_param(ignore_handled_error, "ignore_handled_error")
     check.bool_param(capture_logs, "capture_logs")
@@ -157,7 +157,7 @@ def execute_cli(
     )
 
 
-def parse_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Dict[str, Any]:
+def parse_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Mapping[str, Any]:
     """Parses the `target/run_results.json` artifact that is produced by a dbt process."""
     run_results_path = os.path.join(path, target_path, "run_results.json")
     try:
@@ -174,7 +174,7 @@ def remove_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH):
         os.remove(run_results_path)
 
 
-def parse_manifest(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Dict[str, Any]:
+def parse_manifest(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Mapping[str, Any]:
     """Parses the `target/manifest.json` artifact that is produced by a dbt process."""
     manifest_path = os.path.join(path, target_path, "manifest.json")
     try:

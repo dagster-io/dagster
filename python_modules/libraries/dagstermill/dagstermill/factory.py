@@ -4,7 +4,7 @@ import pickle
 import sys
 import tempfile
 import uuid
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Union, cast
+from typing import Any, Mapping, Optional, Sequence, Set, Union, cast
 
 import nbformat
 import papermill
@@ -51,7 +51,7 @@ def _find_first_tagged_cell_index(nb, tag):
 # Typically, papermill injects the injected-parameters cell *below* the parameters cell
 # but we want to *replace* the parameters cell, which is what this function does.
 def replace_parameters(context, nb, parameters):
-    """Assigned parameters into the appropiate place in the input notebook
+    """Assigned parameters into the appropriate place in the input notebook
 
     Args:
         nb (NotebookNode): Executable notebook object
@@ -116,6 +116,11 @@ def get_papermill_parameters(step_context, inputs, output_log_path, compute_desc
         if compute_descriptor == "solid":
             raise DagstermillError(
                 "Can't execute a dagstermill solid from a pipeline that is not reconstructable. "
+                "Use the reconstructable() function if executing from python"
+            )
+        elif compute_descriptor == "asset":
+            raise DagstermillError(
+                "Can't execute a dagstermill asset that is not reconstructable. "
                 "Use the reconstructable() function if executing from python"
             )
         else:
@@ -317,13 +322,13 @@ def define_dagstermill_solid(
     notebook_path: str,
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_defs: Optional[Sequence[OutputDefinition]] = None,
-    config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
+    config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     output_notebook: Optional[str] = None,
     output_notebook_name: Optional[str] = None,
-    asset_key_prefix: Optional[Union[List[str], str]] = None,
+    asset_key_prefix: Optional[Union[Sequence[str], str]] = None,
     description: Optional[str] = None,
-    tags: Optional[Dict[str, Any]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
 ):
     """Wrap a Jupyter notebook in a solid.
 
@@ -358,8 +363,8 @@ def define_dagstermill_solid(
     """
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
-    input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
-    output_defs = check.opt_list_param(output_defs, "output_defs", of_type=OutputDefinition)
+    input_defs = check.opt_sequence_param(input_defs, "input_defs", of_type=InputDefinition)
+    output_defs = check.opt_sequence_param(output_defs, "output_defs", of_type=OutputDefinition)
     required_resource_keys = set(
         check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
     )
@@ -411,7 +416,7 @@ def define_dagstermill_solid(
             asset_key_prefix=asset_key_prefix,
             output_notebook=output_notebook,  # backcompact
         ),
-        output_defs=output_defs + extra_output_defs,
+        output_defs=[*output_defs, *extra_output_defs],
         config_schema=config_schema,
         required_resource_keys=required_resource_keys,
         description=description,
@@ -424,12 +429,12 @@ def define_dagstermill_op(
     notebook_path: str,
     ins: Optional[Mapping[str, In]] = None,
     outs: Optional[Mapping[str, Out]] = None,
-    config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
+    config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     output_notebook_name: Optional[str] = None,
-    asset_key_prefix: Optional[Union[List[str], str]] = None,
+    asset_key_prefix: Optional[Union[Sequence[str], str]] = None,
     description: Optional[str] = None,
-    tags: Optional[Dict[str, Any]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
 ):
     """Wrap a Jupyter notebook in a op.
 

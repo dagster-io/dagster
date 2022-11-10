@@ -3,11 +3,10 @@ from importlib import import_module
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
-    Dict,
     FrozenSet,
     Iterable,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -145,9 +144,9 @@ class AssetGroup:
     def build_job(
         self,
         name: str,
-        selection: Optional[Union[str, List[str]]] = None,
+        selection: Optional[Union[str, Sequence[str]]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,
     ) -> JobDefinition:
@@ -193,7 +192,7 @@ class AssetGroup:
         check.str_param(name, "name")
         check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
 
-        selected_asset_keys: FrozenSet[AssetKey] = frozenset()
+        selected_asset_keys: AbstractSet[AssetKey] = frozenset()
         if isinstance(selection, str):
             selected_asset_keys = parse_asset_selection(
                 self.assets, self.source_assets, [selection]
@@ -209,7 +208,7 @@ class AssetGroup:
             executor_def, "executor_def", ExecutorDefinition, self.executor_def
         )
         description = check.opt_str_param(description, "description", "")
-        tags = check.opt_dict_param(tags, "tags", key_type=str)
+        tags = check.opt_mapping_param(tags, "tags", key_type=str)
 
         return build_asset_selection_job(
             name=name,
@@ -360,7 +359,9 @@ class AssetGroup:
         )
 
     def materialize(
-        self, selection: Optional[Union[str, List[str]]] = None, run_config: Optional[Any] = None
+        self,
+        selection: Optional[Union[str, Sequence[str]]] = None,
+        run_config: Optional[Any] = None,
     ) -> "ExecuteInProcessResult":
         """
         Executes an in-process run that materializes all assets in the group.

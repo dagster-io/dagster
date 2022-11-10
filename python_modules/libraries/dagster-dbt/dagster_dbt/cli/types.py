@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Mapping, Optional, Sequence
 
 import dagster._check as check
 
@@ -28,14 +28,14 @@ class DbtCliOutput(DbtOutput):
         command: str,
         return_code: int,
         raw_output: str,
-        logs: List[Dict[str, Any]],
-        result: Dict[str, Any],
+        logs: Sequence[Mapping[str, Any]],
+        result: Mapping[str, Any],
         docs_url: Optional[str] = None,
     ):
         self._command = check.str_param(command, "command")
         self._return_code = check.int_param(return_code, "return_code")
         self._raw_output = check.str_param(raw_output, "raw_output")
-        self._logs = check.list_param(logs, "logs", of_type=dict)
+        self._logs = check.sequence_param(logs, "logs", of_type=dict)
         self._docs_url = check.opt_str_param(docs_url, "docs_url")
         super().__init__(result)
 
@@ -52,7 +52,7 @@ class DbtCliOutput(DbtOutput):
         return self._raw_output
 
     @property
-    def logs(self) -> List[Dict[str, Any]]:
+    def logs(self) -> Sequence[Mapping[str, Any]]:
         return self._logs
 
     @property

@@ -20,7 +20,7 @@ import sys
 import uuid
 from functools import wraps
 from logging.handlers import RotatingFileHandler
-from typing import Dict, NamedTuple, Optional
+from typing import Mapping, NamedTuple, Optional
 
 import click
 import yaml
@@ -136,7 +136,7 @@ class TelemetryEntry(
             ("event_id", str),
             ("elapsed_time", str),
             ("instance_id", str),
-            ("metadata", Dict[str, str]),
+            ("metadata", Mapping[str, str]),
             ("python_version", str),
             ("dagster_version", str),
             ("os_desc", str),
@@ -174,7 +174,7 @@ class TelemetryEntry(
         client_time: str,
         event_id: str,
         instance_id: str,
-        metadata: Optional[Dict[str, str]] = None,
+        metadata: Optional[Mapping[str, str]] = None,
         elapsed_time: Optional[str] = None,
         run_storage_id: Optional[str] = None,
     ):
@@ -183,7 +183,7 @@ class TelemetryEntry(
         elapsed_time = check.opt_str_param(elapsed_time, "elapsed_time", "")
         event_id = check.str_param(event_id, "event_id")
         instance_id = check.str_param(instance_id, "instance_id")
-        metadata = check.opt_dict_param(metadata, "metadata")
+        metadata = check.opt_mapping_param(metadata, "metadata")
         run_storage_id = check.opt_str_param(run_storage_id, "run_storage_id", default="")
 
         return super(TelemetryEntry, cls).__new__(
