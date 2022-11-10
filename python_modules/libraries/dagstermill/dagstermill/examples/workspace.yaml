@@ -3,6 +3,3 @@ load_from:
       module_name: dagstermill.examples.repository
       attribute: notebook_repo
 
-  - python_module:
-      module_name: dagstermill.examples.repository
-      attribute: notebook_assets_repo
