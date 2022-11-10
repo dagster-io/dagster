@@ -1,4 +1,4 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
+import {useApolloClient} from '@apollo/client';
 import {
   Dialog,
   DialogHeader,
@@ -17,7 +17,7 @@ import {useHistory} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
@@ -40,11 +40,8 @@ import {RepoAddress} from '../workspace/types';
 
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {
-  AssetJobPartitionSetsQuery,
-  AssetJobPartitionSetsQueryVariables,
-} from './types/AssetJobPartitionSetsQuery';
 import {LaunchAssetExecutionAssetNodeFragment_partitionDefinition} from './types/LaunchAssetExecutionAssetNodeFragment';
+import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
 
 interface Props {
   open: boolean;
@@ -116,35 +113,16 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   // Find the partition set name. This seems like a bit of a hack, unclear
   // how it would work if there were two different partition spaces in the asset job
-  const {data: partitionSetsData} = useQuery<
-    AssetJobPartitionSetsQuery,
-    AssetJobPartitionSetsQueryVariables
-  >(ASSET_JOB_PARTITION_SETS_QUERY, {
-    variables: {
-      repositoryLocationName: repoAddress.location,
-      repositoryName: repoAddress.name,
-      pipelineName: assetJobName,
-    },
-  });
-
-  const partitionSet =
-    partitionSetsData?.partitionSetsOrError.__typename === 'PartitionSets'
-      ? partitionSetsData.partitionSetsOrError.results[0]
-      : undefined;
+  const {partitionSet, partitionSetError} = usePartitionNameForPipeline(repoAddress, assetJobName);
 
   const onLaunch = async () => {
     setLaunching(true);
 
     if (!partitionSet) {
-      const error =
-        partitionSetsData?.partitionSetsOrError.__typename === 'PythonError'
-          ? partitionSetsData.partitionSetsOrError
-          : {message: 'No details provided.'};
-
       setLaunching(false);
       showCustomAlert({
         title: `Unable to find partition set on ${assetJobName}`,
-        body: <PythonErrorInfo error={error} />,
+        body: partitionSetError ? <PythonErrorInfo error={partitionSetError} /> : <span />,
       });
       return;
     }
@@ -353,33 +331,3 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     </>
   );
 };
-
-const ASSET_JOB_PARTITION_SETS_QUERY = gql`
-  query AssetJobPartitionSetsQuery(
-    $pipelineName: String!
-    $repositoryName: String!
-    $repositoryLocationName: String!
-  ) {
-    partitionSetsOrError(
-      pipelineName: $pipelineName
-      repositorySelector: {
-        repositoryName: $repositoryName
-        repositoryLocationName: $repositoryLocationName
-      }
-    ) {
-      __typename
-      ...PythonErrorFragment
-      ... on PartitionSets {
-        __typename
-        results {
-          id
-          name
-          mode
-          solidSelection
-        }
-      }
-    }
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
