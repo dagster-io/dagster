@@ -109,7 +109,7 @@ setup(
             "grpcio-tools>=1.32.0,<1.44.0",  # related to above grpcio pins
             "mock==3.0.5",
             "objgraph",
-            "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
+            "protobuf==3.20.3",  # without this, pip will install the most up-to-date protobuf
             "pytest-cov==2.10.1",
             "pytest-dependency==0.5.1",
             "pytest-mock==3.3.1",
