@@ -1,6 +1,5 @@
 import boto3
 import pytest
-from _pytest.fixtures import fixture
 from moto import mock_s3, mock_secretsmanager, mock_ssm
 
 
@@ -28,7 +27,7 @@ def mock_secretsmanager_resource():
         yield boto3.client("secretsmanager")
 
 
-@fixture
+@pytest.fixture
 def mock_ssm_client():
     with mock_ssm():
         yield boto3.client("ssm")
