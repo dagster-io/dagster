@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union, cast, overload
+from typing import Any, Optional, Union, overload
 
 import dagster._check as check
 from dagster._annotations import public
@@ -13,165 +13,7 @@ from dagster._utils.typing_api import is_closed_python_optional_type, is_typing_
 from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 
-
-def _is_config_type_class(obj) -> bool:
-    return isinstance(obj, type) and is_subclass(obj, ConfigType)
-
-
-def helpful_list_error_string() -> str:
-    return "Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead."
-
-
-VALID_CONFIG_DESC = """
-1. A Python primitive type that resolve to dagster config
-   types: int, float, bool, str.
-
-2. A dagster config type: Int, Float, Bool, String, StringSource, Path, Any,
-   Array, Noneable, Selector, Shape, Permissive, etc.
-
-3. A bare python dictionary, which is wrapped in Shape. Any
-   values in the dictionary get resolved by the same rules, recursively.
-
-4. A bare python list of length one which itself is config type.
-   Becomes Array with list element as an argument.
-"""
-
-
-def resolve_to_config_type(obj: object) -> ConfigType:
-    from .field_utils import convert_fields_to_dict_type
-
-    # Short circuit if it's already a Config Type
-    if isinstance(obj, ConfigType):
-        return obj
-
-    if isinstance(obj, dict):
-        # Dicts of the special form {type: value} are treated as Maps
-        # mapping from the key type to value type, otherwise treat as dict type
-        if len(obj) == 1:
-            key = list(obj.keys())[0]
-            if not isinstance(key, str):
-                try:
-                    key_type = resolve_to_config_type(key)
-                except DagsterInvalidConfigError:
-                    raise DagsterInvalidDefinitionError(
-                        f"Invalid key in map specification: {repr(key)} in map {obj}"
-                    )
-
-                if not key_type.kind == ConfigTypeKind.SCALAR:
-                    raise DagsterInvalidDefinitionError(
-                        f"Non-scalar key in map specification: {repr(key)} in map {obj}"
-                    )
-
-                try:
-                    inner_type = resolve_to_config_type(obj[key])
-                except DagsterInvalidDefinitionError:
-                    raise DagsterInvalidDefinitionError(
-                        f"Invalid value in map specification: {repr(obj[str])} in map {obj}"
-                    )
-
-                return Map(key_type, inner_type)
-        return convert_fields_to_dict_type(obj)
-
-    if isinstance(obj, list):
-        if len(obj) != 1:
-            raise DagsterInvalidDefinitionError("Array specifications must only be of length 1")
-
-        try:
-            inner_type = resolve_to_config_type(obj[0])
-        except DagsterInvalidDefinitionError:
-            raise DagsterInvalidDefinitionError(
-                f"Invalid member of array specification: {repr(obj[0])} in list {obj}"
-            )
-        return Array(inner_type)
-
-    if BuiltinEnum.contains(obj):
-        return ConfigType.from_builtin_enum(obj)
-
-    from .primitive_mapping import (
-        is_supported_config_python_builtin,
-        remap_python_builtin_for_config,
-    )
-
-    if is_supported_config_python_builtin(obj):
-        return remap_python_builtin_for_config(obj)
-
-    if obj is None:
-        return ConfigAnyInstance
-
-    # Special error messages for passing a DagsterType
-    from dagster._core.types.dagster_type import DagsterType, List, ListType
-    from dagster._core.types.python_set import Set, _TypedPythonSet
-    from dagster._core.types.python_tuple import Tuple, _TypedPythonTuple
-
-    if _is_config_type_class(obj):
-        check.param_invariant(
-            False,
-            "dagster_type",
-            f"Cannot pass config type class {obj} to resolve_to_config_type. "
-            "This error usually occurs when you pass a dagster config type class instead of a class instance into "
-            'another dagster config type. E.g. "Noneable(Permissive)" should instead be "Noneable(Permissive())".',
-        )
-
-    if isinstance(obj, type) and is_subclass(obj, DagsterType):
-        raise DagsterInvalidDefinitionError(
-            "You have passed a DagsterType class {dagster_type} to the config system. "
-            "The DagsterType and config schema systems are separate. "
-            "Valid config values are:\n{desc}".format(
-                dagster_type=repr(obj),
-                desc=VALID_CONFIG_DESC,
-            )
-        )
-
-    if is_closed_python_optional_type(obj):
-        raise DagsterInvalidDefinitionError(
-            "Cannot use typing.Optional as a config type. If you want this field to be "
-            "optional, please use Field(<type>, is_required=False), and if you want this field to "
-            "be required, but accept a value of None, use dagster.Noneable(<type>)."
-        )
-
-    if is_typing_type(obj):
-        raise DagsterInvalidDefinitionError(
-            (
-                "You have passed in {dagster_type} to the config system. Types from "
-                "the typing module in python are not allowed in the config system. "
-                "You must use types that are imported from dagster or primitive types "
-                "such as bool, int, etc."
-            ).format(dagster_type=obj)
-        )
-
-    if obj is List or isinstance(obj, ListType):
-        raise DagsterInvalidDefinitionError(
-            "Cannot use List in the context of config. " + helpful_list_error_string()
-        )
-
-    if obj is Set or isinstance(obj, _TypedPythonSet):
-        raise DagsterInvalidDefinitionError(
-            "Cannot use Set in the context of a config field. " + helpful_list_error_string()
-        )
-
-    if obj is Tuple or isinstance(obj, _TypedPythonTuple):
-        raise DagsterInvalidDefinitionError(
-            "Cannot use Tuple in the context of a config field. " + helpful_list_error_string()
-        )
-
-    if isinstance(obj, DagsterType):
-        raise DagsterInvalidDefinitionError(
-            (
-                "You have passed an instance of DagsterType {type_name} to the config "
-                "system (Repr of type: {dagster_type}). "
-                "The DagsterType and config schema systems are separate. "
-                "Valid config values are:\n{desc}"
-            ).format(
-                type_name=obj.display_name,
-                dagster_type=repr(obj),
-                desc=VALID_CONFIG_DESC,
-            ),
-        )
-
-    raise DagsterInvalidDefinitionError(f"Invalid value in config type specification: {obj}")
-
-
-def has_implicit_default(config_type):
+def _has_implicit_default(config_type):
     if config_type.kind == ConfigTypeKind.NONEABLE:
         return True
 
@@ -254,7 +96,7 @@ class Field:
         if isinstance(config, ConfigType):
             return config
 
-        config_type = resolve_to_config_type(config)
+        config_type = normalize_config_type(config)
         if not config_type:
             raise DagsterInvalidDefinitionError(
                 (
@@ -317,7 +159,7 @@ class Field:
                 )
 
         if is_required is None:
-            is_optional = has_implicit_default(self.config_type) or self.default_provided
+            is_optional = _has_implicit_default(self.config_type) or self.default_provided
             is_required = not is_optional
 
             # on implicitly optional - set the default value
@@ -364,7 +206,7 @@ class Field:
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return serialize_value(self.default_value)
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return ("Field({config_type}, default={default}, is_required={is_required})").format(
             config_type=self.config_type,
             default="@"
@@ -374,5 +216,5 @@ class Field:
         )
 
 
-def check_opt_field_param(obj: object, param_name: str) -> Optional[Field]:
-    return check.opt_inst_param(cast(Optional[Field], obj), param_name, Field)
+def check_opt_field_param(obj, param_name):
+    return check.opt_inst_param(obj, param_name, Field)

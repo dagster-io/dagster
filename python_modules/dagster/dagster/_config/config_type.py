@@ -1,16 +1,54 @@
+from __future__ import annotations
+
 import typing
 from enum import Enum as PythonEnum
-from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Type, Union, cast
+
+from typing_extensions import Final, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
 from dagster._config import UserConfigSchema
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+)
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.typing_api import is_closed_python_optional_type, is_typing_type
 
 if TYPE_CHECKING:
     from .snap import ConfigSchemaSnapshot, ConfigTypeSnap
 
+VALID_CONFIG_DESC: Final[str] = """
+1. A dagster config type: Int, Float, Bool, String, StringSource, Path, Any,
+   Array, Noneable, Selector, Shape, Permissive, etc.
+
+2. A Python primitive type. These resolve to their corresponding dagster config
+   type: int -> Int, float -> Float, bool -> Bool, str -> String.
+
+3. A bare python dictionary, which is wrapped in Shape. Any
+   values in the dictionary get resolved by the same rules, recursively.
+
+4. A bare python list of length one which itself is config type.
+   Becomes Array with list element as an argument.
+
+5. None. Becomes Any.
+"""
+
+RawConfigType: TypeAlias = Union[
+    "ConfigType",
+    Type[Type[typing.Any]],
+    Type[int],
+    Type[float],
+    Type[bool],
+    Type[str],
+    Type[list],
+    Type[dict],
+    Dict[object, object],
+    List[object],
+    None,
+]
 
 @whitelist_for_serdes
 class ConfigTypeKind(PythonEnum):
@@ -54,6 +92,139 @@ class ConfigTypeKind(PythonEnum):
         check.inst_param(kind, "kind", ConfigTypeKind)
         return kind == ConfigTypeKind.SELECTOR
 
+HELPFUL_LIST_ERROR_STRING: Final[str] = "Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead."
+
+def get_scalar_config_type_by_name(type_name: str) -> ConfigType:
+    if type_name not in _NAME_TO_CONFIG_TYPE_MAP:
+        check.failed("Scalar {} is not supported".format(type_name))
+    return _NAME_TO_CONFIG_TYPE_MAP[type_name]
+
+def normalize_config_type(obj: object) -> ConfigType:
+
+    from .field_utils import convert_fields_to_dict_type
+
+    # Short circuit if it's already a Config Type
+    if isinstance(obj, ConfigType):
+        return obj
+
+    # This also includes all "builtins" from `dagster._builtins`, which are just aliases for
+    # Python types
+    if obj in _PYTHON_TYPE_TO_CONFIG_TYPE_MAP:
+        return _PYTHON_TYPE_TO_CONFIG_TYPE_MAP[obj]
+
+    if obj is None:
+        return ConfigAnyInstance
+
+    if isinstance(obj, dict):
+        # Dicts of the special form {type: value} are treated as Maps
+        # mapping from the key type to value type, otherwise treat as dict type
+        if len(obj) == 1:
+            key = list(obj.keys())[0]
+            if not isinstance(key, str):
+                try:
+                    key_type = normalize_config_type(cast(RawConfigType, key))
+                except DagsterInvalidConfigError:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid key in map specification: {repr(key)} in map {obj}"
+                    )
+
+                if not key_type.kind == ConfigTypeKind.SCALAR:
+                    raise DagsterInvalidDefinitionError(
+                        f"Non-scalar key in map specification: {repr(key)} in map {obj}"
+                    )
+
+                try:
+                    inner_type = normalize_config_type(obj[key])
+                except DagsterInvalidDefinitionError:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid value in map specification: {repr(obj[str])} in map {obj}"
+                    )
+
+                return Map(key_type, inner_type)
+
+        elif all(isinstance(key, str) for key in obj.keys()):
+            return convert_fields_to_dict_type(cast(Mapping[str, object], obj))
+
+    if isinstance(obj, list):
+        if len(obj) != 1:
+            raise DagsterInvalidDefinitionError("Array specifications must only be of length 1")
+
+        try:
+            inner_type = normalize_config_type(cast(RawConfigType, obj[0]))
+        except DagsterInvalidDefinitionError:
+            raise DagsterInvalidDefinitionError(
+                f"Invalid member of array specification: {repr(obj[0])} in list {obj}"
+            )
+        return Array(inner_type)
+
+    # Special error messages for passing a DagsterType
+    from dagster._core.types.dagster_type import DagsterType, List, ListType
+    from dagster._core.types.python_set import Set, _TypedPythonSet
+    from dagster._core.types.python_tuple import Tuple, _TypedPythonTuple
+
+    if isinstance(obj, type) and issubclass(obj, ConfigType):
+        check.param_invariant(
+            False,
+            "dagster_type",
+            f"Cannot pass config type class {obj} to normalize_config_type. "
+            "This error usually occurs when you pass a dagster config type class instead of a class instance into "
+            'another dagster config type. E.g. "Noneable(Permissive)" should instead be "Noneable(Permissive())".',
+        )
+
+    if isinstance(obj, type) and issubclass(obj, DagsterType):
+        raise DagsterInvalidDefinitionError(
+            f"You have passed a DagsterType class {repr(obj)} to the config system. "
+            "The DagsterType and config schema systems are separate. "
+            f"Valid config values are:\n{VALID_CONFIG_DESC}"
+        )
+
+    if is_closed_python_optional_type(obj):
+        raise DagsterInvalidDefinitionError(
+            "Cannot use typing.Optional as a config type. If you want this field to be "
+            "optional, please use Field(<type>, is_required=False), and if you want this field to "
+            "be required, but accept a value of None, use dagster.Noneable(<type>)."
+        )
+
+    if is_typing_type(obj):
+        raise DagsterInvalidDefinitionError(
+            (
+                f"You have passed in {obj} to the config system. Most types from "
+                "the typing module in python are not allowed in the config system. "
+                "You must use types that are imported from dagster or primitive types "
+                "such as bool, int, etc."
+            )
+        )
+
+    if obj is List or isinstance(obj, ListType):
+        raise DagsterInvalidDefinitionError(
+            "Cannot use List in the context of config. " + HELPFUL_LIST_ERROR_STRING
+        )
+
+    if obj is Set or isinstance(obj, _TypedPythonSet):
+        raise DagsterInvalidDefinitionError(
+            "Cannot use Set in the context of a config field. " + HELPFUL_LIST_ERROR_STRING
+        )
+
+    if obj is Tuple or isinstance(obj, _TypedPythonTuple):
+        raise DagsterInvalidDefinitionError(
+            "Cannot use Tuple in the context of a config field. " + HELPFUL_LIST_ERROR_STRING
+        )
+
+    if isinstance(obj, DagsterType):
+        raise DagsterInvalidDefinitionError(
+            (
+                "You have passed an instance of DagsterType {type_name} to the config "
+                "system (Repr of type: {dagster_type}). "
+                "The DagsterType and config schema systems are separate. "
+                "Valid config values are:\n{desc}"
+            ).format(
+                type_name=obj.display_name,
+                dagster_type=repr(obj),
+                desc=VALID_CONFIG_DESC,
+            ),
+        )
+
+    raise DagsterInvalidDefinitionError(f"Invalid value in config type specification: {obj}")
 
 class ConfigType:
     """
@@ -86,14 +257,9 @@ class ConfigType:
     def description(self) -> Optional[str]:
         return self._description
 
-    @staticmethod
-    def from_builtin_enum(builtin_enum: typing.Any) -> "ConfigType":
-        check.invariant(BuiltinEnum.contains(builtin_enum), "param must be member of BuiltinEnum")
-        return _CONFIG_MAP[builtin_enum]
-
-    def post_process(self, value):
+    def post_process(self, value: Any) -> Any:
         """
-        Implement this in order to take a value provided by the user
+        Override this in order to take a value provided by the user
         and perform computation on it. This can be done to coerce data types,
         fetch things from the environment (e.g. environment variables), or
         to do custom validation. If the value is not valid, throw a
@@ -200,9 +366,8 @@ class Noneable(ConfigType):
     """
 
     def __init__(self, inner_type: object):
-        from .field import resolve_to_config_type
 
-        self.inner_type = resolve_to_config_type(inner_type)
+        self.inner_type = normalize_config_type(inner_type)
         super(Noneable, self).__init__(
             key=f"Noneable.{self.inner_type.key}",
             kind=ConfigTypeKind.NONEABLE,
@@ -223,9 +388,8 @@ class Array(ConfigType):
     """
 
     def __init__(self, inner_type: object):
-        from .field import resolve_to_config_type
 
-        self.inner_type = resolve_to_config_type(inner_type)
+        self.inner_type = normalize_config_type(inner_type)
         super(Array, self).__init__(
             key="Array.{inner_type}".format(inner_type=self.inner_type.key),
             type_params=[self.inner_type],
@@ -405,10 +569,9 @@ class ScalarUnion(ConfigType):
         non_scalar_schema: UserConfigSchema,
         _key: Optional[str] = None,
     ):
-        from .field import resolve_to_config_type
 
-        self.scalar_type = resolve_to_config_type(scalar_type)
-        self.non_scalar_type = resolve_to_config_type(non_scalar_schema)
+        self.scalar_type = normalize_config_type(scalar_type)
+        self.non_scalar_type = normalize_config_type(non_scalar_schema)
 
         check.param_invariant(self.scalar_type.kind == ConfigTypeKind.SCALAR, "scalar_type")
         check.param_invariant(
@@ -433,6 +596,229 @@ class ScalarUnion(ConfigType):
         yield from self.non_scalar_type.type_iterator()
         yield from super().type_iterator()
 
+class _ConfigHasFields(ConfigType):
+    def __init__(self, fields, **kwargs):
+        self.fields = expand_fields_dict(fields)
+        super(_ConfigHasFields, self).__init__(**kwargs)
+
+    def type_iterator(self) -> Iterator["ConfigType"]:
+        for field in self.fields.values():
+            yield from field.config_type.type_iterator()
+        yield from super().type_iterator()
+
+class Shape(_ConfigHasFields):
+    """Schema for configuration data with string keys and typed values via :py:class:`Field`.
+
+    Unlike :py:class:`Permissive`, unspecified fields are not allowed and will throw a
+    :py:class:`~dagster.DagsterInvalidConfigError`.
+
+    Args:
+        fields (Dict[str, Field]):
+            The specification of the config dict.
+        field_aliases (Dict[str, str]):
+            Maps a string key to an alias that can be used instead of the original key. For example,
+            an entry {"solids": "ops"} means that someone could use "ops" instead of "solids" as a
+            top level string key.
+    """
+
+    def __new__(
+        cls,
+        fields,
+        description=None,
+        field_aliases=None,
+    ):
+        return _memoize_inst_in_field_cache(
+            cls,
+            Shape,
+            _define_shape_key_hash(expand_fields_dict(fields), description, field_aliases),
+        )
+
+    def __init__(
+        self,
+        fields,
+        description=None,
+        field_aliases=None,
+    ):
+        # if we hit in the field cache - skip double init
+        if self._initialized:  # pylint: disable=access-member-before-definition
+            return
+
+        fields = expand_fields_dict(fields)
+        super(Shape, self).__init__(
+            kind=ConfigTypeKind.STRICT_SHAPE,
+            key=_define_shape_key_hash(fields, description, field_aliases),
+            description=description,
+            fields=fields,
+        )
+        self.field_aliases = check.opt_dict_param(
+            field_aliases, "field_aliases", key_type=str, value_type=str
+        )
+        self._initialized = True
+
+class Permissive(_ConfigHasFields):
+    """Defines a config dict with a partially specified schema.
+
+    A permissive dict allows partial specification of the config schema. Any fields with a
+    specified schema will be type checked. Other fields will be allowed, but will be ignored by
+    the type checker.
+
+    Args:
+        fields (Dict[str, Field]): The partial specification of the config dict.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        @op(config_schema=Field(Permissive({'required': Field(String)})))
+        def map_config_op(context) -> List:
+            return sorted(list(context.op_config.items()))
+    """
+
+    def __new__(cls, fields=None, description=None):
+        return _memoize_inst_in_field_cache(
+            cls,
+            Permissive,
+            _define_permissive_dict_key(
+                expand_fields_dict(fields) if fields else None, description
+            ),
+        )
+
+    def __init__(self, fields=None, description=None):
+        # if we hit in field cache avoid double init
+        if self._initialized:  # pylint: disable=access-member-before-definition
+            return
+
+        fields = expand_fields_dict(fields) if fields else None
+        super(Permissive, self).__init__(
+            key=_define_permissive_dict_key(fields, description),
+            kind=ConfigTypeKind.PERMISSIVE_SHAPE,
+            fields=fields or dict(),
+            description=description,
+        )
+        self._initialized = True
+
+
+
+class Map(ConfigType):
+    """Defines a config dict with arbitrary scalar keys and typed values.
+
+    A map can contrain arbitrary keys of the specified scalar type, each of which has
+    type checked values. Unlike :py:class:`Shape` and :py:class:`Permissive`, scalar
+    keys other than strings can be used, and unlike :py:class:`Permissive`, all
+    values are type checked.
+    Args:
+        key_type (type):
+            The type of keys this map can contain. Must be a scalar type.
+        inner_type (type):
+            The type of the values that this map type can contain.
+        key_label_name (string):
+            Optional name which describes the role of keys in the map.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        @op(config_schema=Field(Map({str: int})))
+        def partially_specified_config(context) -> List:
+            return sorted(list(context.op_config.items()))
+    """
+
+    def __init__(self, key_type, inner_type, key_label_name=None):
+
+        self.key_type = normalize_config_type(key_type)
+        self.inner_type = normalize_config_type(inner_type)
+        self.given_name = key_label_name
+
+        check.param_invariant(
+            self.key_type.kind == ConfigTypeKind.SCALAR, "key_type", "Key type must be a scalar"
+        )
+        check.opt_str_param(self.given_name, "name")
+
+        super(Map, self).__init__(
+            key="Map.{key_type}.{inner_type}{name_key}".format(
+                key_type=self.key_type.key,
+                inner_type=self.inner_type.key,
+                name_key=f":name: {key_label_name}" if key_label_name else "",
+            ),
+            # We use the given name field to store the key label name
+            # this is used elsewhere to give custom types names
+            given_name=key_label_name,
+            type_params=[self.key_type, self.inner_type],
+            kind=ConfigTypeKind.MAP,
+        )
+
+    @public  # type: ignore
+    @property
+    def key_label_name(self):
+        return self.given_name
+
+    def type_iterator(self) -> Iterator["ConfigType"]:
+        yield from self.key_type.type_iterator()
+        yield from self.inner_type.type_iterator()
+        yield from super().type_iterator()
+
+class Selector(_ConfigHasFields):
+    """Define a config field requiring the user to select one option.
+
+    Selectors are used when you want to be able to present several different options in config but
+    allow only one to be selected. For example, a single input might be read in from either a csv
+    file or a parquet file, but not both at once.
+
+    Note that in some other type systems this might be called an 'input union'.
+
+    Functionally, a selector is like a :py:class:`Dict`, except that only one key from the dict can
+    be specified in valid config.
+
+    Args:
+        fields (Dict[str, Field]): The fields from which the user must select.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        @op(
+            config_schema=Field(
+                Selector(
+                    {
+                        'haw': {'whom': Field(String, default_value='honua', is_required=False)},
+                        'cn': {'whom': Field(String, default_value='世界', is_required=False)},
+                        'en': {'whom': Field(String, default_value='world', is_required=False)},
+                    }
+                ),
+                is_required=False,
+                default_value={'en': {'whom': 'world'}},
+            )
+        )
+        def hello_world_with_default(context):
+            if 'haw' in context.op_config:
+                return 'Aloha {whom}!'.format(whom=context.op_config['haw']['whom'])
+            if 'cn' in context.op_config:
+                return '你好，{whom}!'.format(whom=context.op_config['cn']['whom'])
+            if 'en' in context.op_config:
+                return 'Hello, {whom}!'.format(whom=context.op_config['en']['whom'])
+    """
+
+    def __new__(cls, fields, description=None):
+        return _memoize_inst_in_field_cache(
+            cls,
+            Selector,
+            _define_selector_key(expand_fields_dict(fields), description),
+        )
+
+    def __init__(self, fields, description=None):
+        # if we hit in field cache avoid double init
+        if self._initialized:  # pylint: disable=access-member-before-definition
+            return
+
+        fields = expand_fields_dict(fields)
+        super(Selector, self).__init__(
+            key=_define_selector_key(fields, description),
+            kind=ConfigTypeKind.SELECTOR,
+            fields=fields,
+            description=description,
+        )
+        self._initialized = True
+
 
 ConfigAnyInstance: Any = Any()
 ConfigBoolInstance: Bool = Bool()
@@ -440,16 +826,18 @@ ConfigFloatInstance: Float = Float()
 ConfigIntInstance: Int = Int()
 ConfigStringInstance: String = String()
 
-_CONFIG_MAP: Dict[check.TypeOrTupleOfTypes, ConfigType] = {
-    BuiltinEnum.ANY: ConfigAnyInstance,
-    BuiltinEnum.BOOL: ConfigBoolInstance,
-    BuiltinEnum.FLOAT: ConfigFloatInstance,
-    BuiltinEnum.INT: ConfigIntInstance,
-    BuiltinEnum.STRING: ConfigStringInstance,
+_PYTHON_TYPE_TO_CONFIG_TYPE_MAP: Final[Dict[Type[object], ConfigType]] = {
+    typing.Any: ConfigAnyInstance,
+    bool: ConfigBoolInstance,
+    float: ConfigFloatInstance,
+    int: ConfigIntInstance,
+    str: ConfigStringInstance,
+    list: Array(ConfigAnyInstance),
+    dict: Permissive(),
 }
 
 
-_CONFIG_MAP_BY_NAME: Dict[str, ConfigType] = {
+_NAME_TO_CONFIG_TYPE_MAP: Dict[str, ConfigType] = {
     "Any": ConfigAnyInstance,
     "Bool": ConfigBoolInstance,
     "Float": ConfigFloatInstance,
@@ -458,9 +846,3 @@ _CONFIG_MAP_BY_NAME: Dict[str, ConfigType] = {
 }
 
 ALL_CONFIG_BUILTINS = set(_CONFIG_MAP.values())
-
-
-def get_builtin_scalar_by_name(type_name: str):
-    if type_name not in _CONFIG_MAP_BY_NAME:
-        check.failed("Scalar {} is not supported".format(type_name))
-    return _CONFIG_MAP_BY_NAME[type_name]

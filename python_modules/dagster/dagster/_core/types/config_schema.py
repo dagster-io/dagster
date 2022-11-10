@@ -219,12 +219,16 @@ def dagster_type_loader(
         def load_dict(_context, value):
             return value
     """
-    from dagster._config import resolve_to_config_type
+    from dagster._config import normalize_config_type
 
+<<<<<<< HEAD
     config_type = resolve_to_config_type(config_schema)
     assert isinstance(
         config_type, ConfigType
     ), f"{config_schema} could not be resolved to config type"
+=======
+    config_type = normalize_config_type(config_schema)
+>>>>>>> 330d29f69c (update)
     EXPECTED_POSITIONALS = ["context", "*"]
 
     def wrapper(func: DagsterTypeLoaderFn) -> DagsterTypeLoaderFromDecorator:
@@ -307,9 +311,9 @@ def dagster_type_materializer(
             return AssetMaterialization.file(path)
 
     """
-    from dagster._config import resolve_to_config_type
+    from dagster._config import normalize_config_type
 
-    config_type = resolve_to_config_type(config_schema)
+    config_type = normalize_config_type(config_schema)
     return lambda func: _create_output_materializer_for_decorator(
         config_type, func, required_resource_keys  # type: ignore
     )

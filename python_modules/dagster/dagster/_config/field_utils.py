@@ -180,10 +180,10 @@ class Map(ConfigType):
     """
 
     def __init__(self, key_type, inner_type, key_label_name=None):
-        from .field import resolve_to_config_type
+        from .field import normalize_config_type
 
-        self.key_type = resolve_to_config_type(key_type)
-        self.inner_type = resolve_to_config_type(inner_type)
+        self.key_type = normalize_config_type(key_type)
+        self.inner_type = normalize_config_type(inner_type)
         self.given_name = key_label_name
 
         check.inst_param(self.key_type, "key_type", ConfigType)
@@ -339,10 +339,10 @@ class Selector(_ConfigHasFields):
 
 
 def is_potential_field(potential_field: object) -> bool:
-    from .field import Field, resolve_to_config_type
+    from .field import Field, normalize_config_type
 
     return isinstance(potential_field, (Field, dict, list)) or bool(
-        resolve_to_config_type(potential_field)
+        normalize_config_type(potential_field)
     )
 
 
@@ -427,7 +427,7 @@ def convert_potential_field(potential_field: object) -> "Field":
 
 
 def _convert_potential_type(original_root: object, potential_type, stack: List[str]) -> ConfigType:
-    from .field import resolve_to_config_type
+    from .field import normalize_config_type
 
     if isinstance(potential_type, Mapping):
         # A dictionary, containing a single key which is a type (int, str, etc) is interpreted as a Map
@@ -442,7 +442,7 @@ def _convert_potential_type(original_root: object, potential_type, stack: List[s
     if isinstance(potential_type, list):
         return expand_list(original_root, potential_type, stack)
 
-    return resolve_to_config_type(potential_type)
+    return normalize_config_type(potential_type)
 
 
 def _convert_potential_field(

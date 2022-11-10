@@ -115,7 +115,7 @@ def test_bad_config():
     def test_config():
         bq_op_for_queries(["SELECT 1"]).alias("test")()
 
-    env_type = create_run_config_schema(test_config).config_type
+    env_type = create_run_config_schema(test_config).root_config_type
     for config_fragment, error_message in configs_and_expected_errors:
         config = {"ops": {"test": {"config": {"query_job_config": config_fragment}}}}
         result = validate_config(env_type, config)

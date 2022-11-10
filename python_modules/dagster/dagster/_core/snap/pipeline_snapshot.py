@@ -19,7 +19,7 @@ from dagster._config import (
     ScalarUnion,
     Selector,
     Shape,
-    get_builtin_scalar_by_name,
+    get_scalar_config_type_by_name,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
@@ -230,7 +230,7 @@ class PipelineSnapshot(
                 pipeline_def.graph
             ),
             mode_def_snaps=[
-                build_mode_def_snap(md, pipeline_def.get_run_config_schema(md.name).config_type.key)
+                build_mode_def_snap(md, pipeline_def.get_run_config_schema(md.name).root_config_type.key)
                 for md in pipeline_def.mode_definitions
             ],
             lineage_snapshot=lineage,
@@ -426,7 +426,7 @@ def construct_config_type_from_snap(
     check.mapping_param(config_snap_map, "config_snap_map", key_type=str, value_type=ConfigTypeSnap)
 
     if config_type_snap.kind in (ConfigTypeKind.SCALAR, ConfigTypeKind.ANY):
-        return get_builtin_scalar_by_name(config_type_snap.key)
+        return get_scalar_config_type_by_name(config_type_snap.key)
     elif config_type_snap.kind == ConfigTypeKind.ENUM:
         return _construct_enum_from_snap(config_type_snap)
     elif config_type_snap.kind == ConfigTypeKind.SELECTOR:

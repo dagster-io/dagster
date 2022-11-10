@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, KeysView, List, Mapping, Sequence, cast
+from dagster._config.evaluate_value_result import EvaluateValueResult
 
 from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from graphene import ResolveInfo
@@ -23,16 +24,16 @@ if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
 
 
-def is_config_valid(pipeline_def, run_config, mode):
+def is_config_valid(pipeline_def: PipelineDefinition, run_config: Mapping[str, object], mode: str):
     check.str_param(mode, "mode")
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
     run_config_schema = create_run_config_schema(pipeline_def, mode)
-    validated_config = validate_config(run_config_schema.config_type, run_config)
+    validated_config = validate_config(run_config_schema.root_config_type, run_config)
     return validated_config.success
 
 
-def get_validated_config(pipeline_def, run_config, mode):
+def get_validated_config(pipeline_def: PipelineDefinition, run_config: Mapping[str, object], mode: str) -> EvaluateValueResult[Mapping[str, object]]:
     from ..schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
     check.str_param(mode, "mode")
@@ -40,7 +41,7 @@ def get_validated_config(pipeline_def, run_config, mode):
 
     run_config_schema = create_run_config_schema(pipeline_def, mode)
 
-    validated_config = validate_config(run_config_schema.config_type, run_config)
+    validated_config = validate_config(run_config_schema.root_config_type, run_config)
 
     if not validated_config.success:
         raise UserFacingGraphQLError(

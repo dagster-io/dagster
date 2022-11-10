@@ -64,8 +64,8 @@ class ConfigurableClassData(
             "config": self.config_dict,
         }
 
-    def rehydrate(self) -> object:
-        from dagster._config import process_config, resolve_to_config_type
+    def rehydrate(self):
+        from dagster._config import process_config, normalize_config_type
         from dagster._core.errors import DagsterInvalidConfigError
 
         try:
@@ -91,7 +91,7 @@ class ConfigurableClassData(
             )
 
         config_dict = self.config_dict
-        result = process_config(resolve_to_config_type(klass.config_type()), config_dict)
+        result = process_config(normalize_config_type(klass.config_type()), config_dict)
         if not result.success:
             raise DagsterInvalidConfigError(
                 f"Errors whilst loading configuration for {klass.config_type()}.",

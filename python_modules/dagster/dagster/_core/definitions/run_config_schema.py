@@ -29,7 +29,7 @@ class RunConfigSchema(NamedTuple):
         return self.config_type_dict_by_key.values()
 
     @property
-    def config_type(self) -> ConfigType:
+    def root_config_type(self) -> ConfigType:
         if self.config_mapping:
             mapped_type = self.config_mapping.config_schema.config_type
             if mapped_type is None:

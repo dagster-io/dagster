@@ -31,7 +31,7 @@ def test_basic_solids_config(snapshot):
         ],
     )
 
-    env_config_type = create_run_config_schema(pipeline_def).config_type
+    env_config_type = create_run_config_schema(pipeline_def).root_config_type
 
     assert env_config_type.fields["solids"].is_required
     solids_config_type = env_config_type.fields["solids"].config_type

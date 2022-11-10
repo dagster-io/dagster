@@ -2,7 +2,7 @@ import dagster._check as check
 from dagster._utils.indenting_printer import IndentingPrinter
 
 from .config_type import ConfigType, ConfigTypeKind
-from .field import resolve_to_config_type
+from .field import normalize_config_type
 from .snap import ConfigSchemaSnapshot
 
 
@@ -109,7 +109,7 @@ def print_config_type_to_string(config_type, with_lines=True):
     def _push(text):
         prints.append(text)
 
-    _print_type_from_config_type(resolve_to_config_type(config_type), _push, with_lines=with_lines)
+    _print_type_from_config_type(normalize_config_type(config_type), _push, with_lines=with_lines)
 
     if with_lines:
         return "\n".join(prints)

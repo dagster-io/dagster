@@ -19,9 +19,9 @@ from .config_type import (
     Noneable,
     ScalarUnion,
     String,
-    get_builtin_scalar_by_name,
+    get_scalar_config_type_by_name,
 )
-from .field import Field, resolve_to_config_type
+from .field import Field, normalize_config_type
 from .field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
     Map,
