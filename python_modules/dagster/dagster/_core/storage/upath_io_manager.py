@@ -97,7 +97,8 @@ class UPathIOManager(MemoizableIOManager):
         }
 
     def _load_single_input(self, path: UPath, context: InputContext) -> Any:
-        context.log.debug(f"Loading from {path} using {self.__class__.__name__}")
+        context.log.debug(f"Loading file from: {path}")
+
         obj = self.load_from_path(context=context, path=path)
 
         metadata = {"path": MetadataValue.path(path)}
@@ -226,7 +227,7 @@ class UPathIOManager(MemoizableIOManager):
         else:
             path = self._get_path(context)
         path.parent.mkdir(parents=True, exist_ok=True)
-        context.log.debug(f"Saving to {path} using {self.__class__.__name__}")
+        context.log.debug(f"Writing file at: {path}")
         self.dump_to_path(context=context, obj=obj, path=path)
 
         metadata = {"path": MetadataValue.path(path)}

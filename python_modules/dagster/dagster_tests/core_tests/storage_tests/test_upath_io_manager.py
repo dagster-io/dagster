@@ -342,6 +342,8 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
     )
     handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
 
-    assert handled_output_events[0].event_specific_data.metadata_entries[
+    assert handled_output_events[0].event_specific_data.metadata_entries[  # type: ignore[index,union-attr]
         1
-    ].entry_data.value == get_length(json_data)
+    ].entry_data.value == get_length(
+        json_data
+    )

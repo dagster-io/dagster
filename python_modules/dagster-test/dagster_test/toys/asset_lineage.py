@@ -9,6 +9,7 @@ from dagster import (
     Array,
     AssetKey,
     Field,
+    IOManager,
     MetadataEntry,
     MetadataValue,
     Out,
@@ -17,7 +18,6 @@ from dagster import (
     graph,
     op,
 )
-from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.storage.io_manager import io_manager
 from dagster._legacy import PartitionSetDefinition
 
@@ -66,14 +66,8 @@ def metadata_for_actions(df):
     }
 
 
-class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
-    def _get_path(self, context):
-        keys = context.get_identifier()
-
-        return os.path.join("/tmp", *keys)
-
+class MyDatabaseIOManager(IOManager):
     def handle_output(self, context, obj):
-        super().handle_output(context, obj)
         # can pretend this actually came from a library call
         yield MetadataEntry(
             label="num rows written to db",
