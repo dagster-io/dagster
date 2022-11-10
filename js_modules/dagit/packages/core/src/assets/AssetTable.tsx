@@ -353,7 +353,9 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {
     id
     groupName
-    partitionDefinition
+    partitionDefinition {
+      description
+    }
     description
     repository {
       id

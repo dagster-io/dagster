@@ -275,6 +275,14 @@ class GrapheneInstigationSelector(graphene.InputObjectType):
     name = graphene.NonNull(graphene.String)
 
 
+class GrapheneInputTag(graphene.InputObjectType):
+    name = graphene.NonNull(graphene.String)
+    value = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "InputTag"
+
+
 types = [
     GrapheneAssetKeyInput,
     GrapheneExecutionMetadata,
@@ -292,4 +300,5 @@ types = [
     GrapheneSensorSelector,
     GrapheneStepExecution,
     GrapheneStepOutputHandle,
+    GrapheneInputTag,
 ]

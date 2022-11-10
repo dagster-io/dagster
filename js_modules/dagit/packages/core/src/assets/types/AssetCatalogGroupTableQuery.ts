@@ -14,6 +14,11 @@ export interface AssetCatalogGroupTableQuery_assetNodes_assetKey {
   path: string[];
 }
 
+export interface AssetCatalogGroupTableQuery_assetNodes_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
 export interface AssetCatalogGroupTableQuery_assetNodes_repository_location {
   __typename: "RepositoryLocation";
   id: string;
@@ -32,7 +37,7 @@ export interface AssetCatalogGroupTableQuery_assetNodes {
   id: string;
   assetKey: AssetCatalogGroupTableQuery_assetNodes_assetKey;
   groupName: string | null;
-  partitionDefinition: string | null;
+  partitionDefinition: AssetCatalogGroupTableQuery_assetNodes_partitionDefinition | null;
   description: string | null;
   repository: AssetCatalogGroupTableQuery_assetNodes_repository;
 }

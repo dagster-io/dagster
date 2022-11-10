@@ -25,6 +25,7 @@ from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
+from ..inputs import GrapheneInputTag
 from ..logs.compute_logs import GrapheneCapturedLogs, GrapheneComputeLogs, from_captured_log_data
 from ..logs.events import (
     GrapheneDagsterRunEvent,
@@ -86,12 +87,35 @@ def parse_time_range_args(args):
     return before_timestamp, after_timestamp
 
 
-class GrapheneMaterializationCount(graphene.ObjectType):
+class GraphenePartitionMaterializationCount(graphene.ObjectType):
     partition = graphene.NonNull(graphene.String)
     materializationCount = graphene.NonNull(graphene.Int)
 
     class Meta:
+        name = "PartitionMaterializationCount"
+
+
+class GrapheneMaterializationCountByPartition(graphene.ObjectType):
+    partitionsCounts = non_null_list(GraphenePartitionMaterializationCount)
+
+    class Meta:
         name = "MaterializationCountByPartition"
+
+
+class GrapheneMaterializationCountGroupedByDimension(graphene.ObjectType):
+    materializationCounts = graphene.NonNull(graphene.List(non_null_list(graphene.Int)))
+
+    class Meta:
+        name = "MaterializationCountGroupedByDimension"
+
+
+class GraphenePartitionMaterializationCounts(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneMaterializationCountByPartition,
+            GrapheneMaterializationCountGroupedByDimension,
+        )
+        name = "PartitionMaterializationCounts"
 
 
 class GrapheneAsset(graphene.ObjectType):
@@ -104,6 +128,7 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
+        tags=graphene.Argument(graphene.List(graphene.NonNull(GrapheneInputTag))),
     )
     assetObservations = graphene.Field(
         non_null_list(GrapheneObservationEvent),
@@ -142,6 +167,7 @@ class GrapheneAsset(graphene.ObjectType):
         partitionInLast = kwargs.get("partitionInLast")
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
+        tags = kwargs.get("tags")
 
         events = get_asset_materializations(
             graphene_info,
@@ -149,6 +175,7 @@ class GrapheneAsset(graphene.ObjectType):
             partitions=partitions,
             before_timestamp=before_timestamp,
             after_timestamp=after_timestamp,
+            tags={tag["name"]: tag["value"] for tag in tags} if tags else None,
             limit=limit,
         )
         run_ids = [event.run_id for event in events]

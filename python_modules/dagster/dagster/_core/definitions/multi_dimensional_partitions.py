@@ -87,6 +87,13 @@ class PartitionDimensionDefinition(
             partitions_def=check.inst_param(partitions_def, "partitions_def", PartitionsDefinition),
         )
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, PartitionDimensionDefinition)
+            and self.name == other.name
+            and self.partitions_def == other.partitions_def
+        )
+
 
 @experimental
 class MultiPartitionsDefinition(PartitionsDefinition):
@@ -184,7 +191,24 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         )
 
     def __hash__(self):
-        return hash(tuple(self.partitions_defs))
+        return hash(
+            tuple(
+                [
+                    (partitions_def.name, partitions_def.__repr__())
+                    for partitions_def in self.partitions_defs
+                ]
+            )
+        )
+
+    def __str__(self) -> str:
+        dimension_1 = self._partitions_defs[0]
+        dimension_2 = self._partitions_defs[1]
+        partition_str = (
+            "Multi-partitioned, with dimensions: \n"
+            f"{dimension_1.name.capitalize()}: {str(dimension_1.partitions_def)} \n"
+            f"{dimension_2.name.capitalize()}: {str(dimension_2.partitions_def)}"
+        )
+        return partition_str
 
 
 def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:

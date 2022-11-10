@@ -412,13 +412,14 @@ type AssetNode {
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
-  materializationCountByPartition: [MaterializationCountByPartition!]!
+  partitionMaterializationCounts(primaryDimension: String): PartitionMaterializationCounts
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
   opNames: [String!]!
+  partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
-  partitionDefinition: String
+  partitionKeysByDimension: [DimensionPartitionKeys!]!
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   type: DagsterType
@@ -846,6 +847,7 @@ type Asset {
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
+    tags: [InputTag!]
   ): [MaterializationEvent!]!
   assetObservations(
     partitions: [String]
@@ -855,6 +857,11 @@ type Asset {
     limit: Int
   ): [ObservationEvent!]!
   definition: AssetNode
+}
+
+input InputTag {
+  name: String!
+  value: String!
 }
 
 type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
@@ -1427,9 +1434,37 @@ type AssetDependency {
   inputName: String!
 }
 
+union PartitionMaterializationCounts =
+    MaterializationCountByPartition
+  | MaterializationCountGroupedByDimension
+
 type MaterializationCountByPartition {
+  partitionsCounts: [PartitionMaterializationCount!]!
+}
+
+type PartitionMaterializationCount {
   partition: String!
   materializationCount: Int!
+}
+
+type MaterializationCountGroupedByDimension {
+  materializationCounts: [[Int!]!]!
+}
+
+type PartitionDefinition {
+  description: String!
+  type: PartitionDefinitionType!
+}
+
+enum PartitionDefinitionType {
+  TIME_WINDOW
+  STATIC
+  MULTIPARTITIONED
+}
+
+type DimensionPartitionKeys {
+  name: String!
+  partitionKeys: [String!]!
 }
 
 type ResourceRequirement {

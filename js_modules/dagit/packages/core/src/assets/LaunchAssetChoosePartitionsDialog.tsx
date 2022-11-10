@@ -44,13 +44,18 @@ import {
   AssetJobPartitionSetsQuery,
   AssetJobPartitionSetsQueryVariables,
 } from './types/AssetJobPartitionSetsQuery';
+import {LaunchAssetExecutionAssetNodeFragment_partitionDefinition} from './types/LaunchAssetExecutionAssetNodeFragment';
 
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
   assetJobName: string;
-  assets: {assetKey: AssetKey; opNames: string[]; partitionDefinition: string | null}[];
+  assets: {
+    assetKey: AssetKey;
+    opNames: string[];
+    partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
+  }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
 }
 
