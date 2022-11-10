@@ -11,6 +11,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Type,
     Union,
 )
@@ -321,11 +322,11 @@ class PipelineRun(
             ("run_config", Mapping[str, object]),
             ("mode", Optional[str]),
             ("asset_selection", Optional[FrozenSet[AssetKey]]),
-            ("solid_selection", Optional[List[str]]),
+            ("solid_selection", Optional[Sequence[str]]),
             ("solids_to_execute", Optional[FrozenSet[str]]),
-            ("step_keys_to_execute", Optional[List[str]]),
+            ("step_keys_to_execute", Optional[Sequence[str]]),
             ("status", PipelineRunStatus),
-            ("tags", Dict[str, str]),
+            ("tags", Mapping[str, str]),
             ("root_run_id", Optional[str]),
             ("parent_run_id", Optional[str]),
             ("pipeline_snapshot_id", Optional[str]),
@@ -347,11 +348,11 @@ class PipelineRun(
         run_config: Optional[Mapping[str, object]] = None,
         mode: Optional[str] = None,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
-        solid_selection: Optional[List[str]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         solids_to_execute: Optional[FrozenSet[str]] = None,
-        step_keys_to_execute: Optional[List[str]] = None,
+        step_keys_to_execute: Optional[Sequence[str]] = None,
         status: Optional[PipelineRunStatus] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
         pipeline_snapshot_id: Optional[str] = None,
@@ -374,10 +375,10 @@ class PipelineRun(
         )
         # a list of solid queries provided by the user
         # possible to be None when only solids_to_execute is set by the user directly
-        solid_selection = check.opt_nullable_list_param(
+        solid_selection = check.opt_nullable_sequence_param(
             solid_selection, "solid_selection", of_type=str
         )
-        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         asset_selection = check.opt_nullable_set_param(
             asset_selection, "asset_selection", of_type=AssetKey
@@ -411,7 +412,7 @@ class PipelineRun(
             status=check.opt_inst_param(
                 status, "status", PipelineRunStatus, PipelineRunStatus.NOT_STARTED
             ),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
             root_run_id=check.opt_str_param(root_run_id, "root_run_id"),
             parent_run_id=check.opt_str_param(parent_run_id, "parent_run_id"),
             pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
@@ -592,10 +593,10 @@ class RunsFilter(
     NamedTuple(
         "_RunsFilter",
         [
-            ("run_ids", List[str]),
+            ("run_ids", Sequence[str]),
             ("job_name", Optional[str]),
-            ("statuses", List[DagsterRunStatus]),
-            ("tags", Dict[str, Union[str, List[str]]]),
+            ("statuses", Sequence[DagsterRunStatus]),
+            ("tags", Mapping[str, Union[str, Sequence[str]]]),
             ("snapshot_id", Optional[str]),
             ("updated_after", Optional[datetime]),
             ("mode", Optional[str]),
@@ -628,10 +629,10 @@ class RunsFilter(
 
     def __new__(
         cls,
-        run_ids: Optional[List[str]] = None,
+        run_ids: Optional[Sequence[str]] = None,
         job_name: Optional[str] = None,
-        statuses: Optional[List[DagsterRunStatus]] = None,
-        tags: Optional[Dict[str, Union[str, List[str]]]] = None,
+        statuses: Optional[Sequence[DagsterRunStatus]] = None,
+        tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
         mode: Optional[str] = None,
@@ -644,10 +645,10 @@ class RunsFilter(
 
         return super(RunsFilter, cls).__new__(
             cls,
-            run_ids=check.opt_list_param(run_ids, "run_ids", of_type=str),
+            run_ids=check.opt_sequence_param(run_ids, "run_ids", of_type=str),
             job_name=check.opt_str_param(job_name, "job_name"),
-            statuses=check.opt_list_param(statuses, "statuses", of_type=PipelineRunStatus),
-            tags=check.opt_dict_param(tags, "tags", key_type=str),
+            statuses=check.opt_sequence_param(statuses, "statuses", of_type=PipelineRunStatus),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
             mode=check.opt_str_param(mode, "mode"),
@@ -780,17 +781,17 @@ class RunPartitionData(
 
 @whitelist_for_serdes
 class ExecutionSelector(
-    NamedTuple("_ExecutionSelector", [("name", str), ("solid_subset", Optional[List[str]])])
+    NamedTuple("_ExecutionSelector", [("name", str), ("solid_subset", Optional[Sequence[str]])])
 ):
     """
     Kept here to maintain loading of PipelineRuns from when it was still alive.
     """
 
-    def __new__(cls, name: str, solid_subset: Optional[List[str]] = None):
+    def __new__(cls, name: str, solid_subset: Optional[Sequence[str]] = None):
         return super(ExecutionSelector, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             solid_subset=None
             if solid_subset is None
-            else check.list_param(solid_subset, "solid_subset", of_type=str),
+            else check.sequence_param(solid_subset, "solid_subset", of_type=str),
         )

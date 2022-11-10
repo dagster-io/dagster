@@ -29,9 +29,9 @@ class UnresolvedAssetJobDefinition(
         [
             ("name", str),
             ("selection", "AssetSelection"),
-            ("config", Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]]),
+            ("config", Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]]),
             ("description", Optional[str]),
-            ("tags", Optional[Dict[str, Any]]),
+            ("tags", Optional[Mapping[str, Any]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("executor_def", Optional["ExecutorDefinition"]),
         ],
@@ -41,9 +41,9 @@ class UnresolvedAssetJobDefinition(
         cls,
         name: str,
         selection: "AssetSelection",
-        config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
         description: Optional[str] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
     ):
@@ -59,7 +59,7 @@ class UnresolvedAssetJobDefinition(
             selection=check.inst_param(selection, "selection", AssetSelection),
             config=config,
             description=check.opt_str_param(description, "description"),
-            tags=check.opt_dict_param(tags, "tags"),
+            tags=check.opt_mapping_param(tags, "tags"),
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
@@ -98,7 +98,7 @@ class UnresolvedAssetJobDefinition(
         self,
         partition_key: str,
         run_key: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
     ) -> RunRequest:
@@ -184,9 +184,9 @@ def _selection_from_string(string: str) -> "AssetSelection":
 def define_asset_job(
     name: str,
     selection: Optional[Union[str, Sequence[str], "AssetSelection"]] = None,
-    config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
     description: Optional[str] = None,
-    tags: Optional[Dict[str, Any]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:

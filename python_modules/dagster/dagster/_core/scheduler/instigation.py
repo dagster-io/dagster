@@ -1,6 +1,6 @@
 from enum import Enum
 from inspect import Parameter
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Type, Union
+from typing import Any, Dict, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
@@ -460,12 +460,12 @@ class TickData(
             ("instigator_type", InstigatorType),
             ("status", TickStatus),
             ("timestamp", float),
-            ("run_ids", List[str]),
-            ("run_keys", List[str]),
+            ("run_ids", Sequence[str]),
+            ("run_keys", Sequence[str]),
             ("error", Optional[SerializableErrorInfo]),
             ("skip_reason", Optional[str]),
             ("cursor", Optional[str]),
-            ("origin_run_ids", List[str]),
+            ("origin_run_ids", Sequence[str]),
             ("failure_count", int),
             ("selector_id", Optional[str]),
         ],
@@ -498,12 +498,12 @@ class TickData(
         instigator_type: InstigatorType,
         status: TickStatus,
         timestamp: float,
-        run_ids: Optional[List[str]] = None,
-        run_keys: Optional[List[str]] = None,
+        run_ids: Optional[Sequence[str]] = None,
+        run_keys: Optional[Sequence[str]] = None,
         error: Optional[SerializableErrorInfo] = None,
         skip_reason: Optional[str] = None,
         cursor: Optional[str] = None,
-        origin_run_ids: Optional[List[str]] = None,
+        origin_run_ids: Optional[Sequence[str]] = None,
         failure_count: Optional[int] = None,
         selector_id: Optional[str] = None,
     ):
@@ -515,12 +515,12 @@ class TickData(
             check.inst_param(instigator_type, "instigator_type", InstigatorType),
             check.inst_param(status, "status", TickStatus),
             check.float_param(timestamp, "timestamp"),
-            check.opt_list_param(run_ids, "run_ids", of_type=str),
-            check.opt_list_param(run_keys, "run_keys", of_type=str),
+            check.opt_sequence_param(run_ids, "run_ids", of_type=str),
+            check.opt_sequence_param(run_keys, "run_keys", of_type=str),
             error,  # validated in _validate_tick_args
             skip_reason,  # validated in _validate_tick_args
             cursor=check.opt_str_param(cursor, "cursor"),
-            origin_run_ids=check.opt_list_param(origin_run_ids, "origin_run_ids", of_type=str),
+            origin_run_ids=check.opt_sequence_param(origin_run_ids, "origin_run_ids", of_type=str),
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
             selector_id=check.opt_str_param(selector_id, "selector_id"),
         )

@@ -481,7 +481,7 @@ class JobDefinition(PipelineDefinition):
         if not op_selection:
             return self
 
-        op_selection = check.opt_list_param(op_selection, "op_selection", str)
+        op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
 
         resolved_op_selection_dict = parse_op_selection(self, op_selection)
 
@@ -903,7 +903,7 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
 
 def _config_mapping_with_default_value(
     inner_schema: ConfigType,
-    default_config: Dict[str, Any],
+    default_config: Mapping[str, Any],
     job_name: str,
 ) -> ConfigMapping:
     if not isinstance(inner_schema, Shape):

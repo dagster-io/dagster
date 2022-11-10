@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataEntry
@@ -19,7 +19,7 @@ class TypeCheckData(
             ("success", bool),
             ("label", str),
             ("description", Optional[str]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
         ],
     )
 ):
@@ -42,7 +42,7 @@ class UserFailureData(
         [
             ("label", str),
             ("description", Optional[str]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
         ],
     )
 ):

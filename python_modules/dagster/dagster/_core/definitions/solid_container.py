@@ -121,8 +121,8 @@ def create_execution_structure(
     from .graph_definition import GraphDefinition
     from .solid_definition import NodeDefinition
 
-    check.list_param(solid_defs, "solid_defs", of_type=NodeDefinition)
-    check.dict_param(
+    check.sequence_param(solid_defs, "solid_defs", of_type=NodeDefinition)
+    check.mapping_param(
         dependencies_dict,
         "dependencies_dict",
         key_type=(str, NodeInvocation),

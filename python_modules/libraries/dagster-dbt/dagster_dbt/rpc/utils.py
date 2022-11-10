@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import Dict, List
+from typing import Mapping, Sequence
 
 from requests import Response
 from requests.exceptions import RequestException
@@ -10,7 +10,7 @@ from dagster import Failure, RetryRequested
 from dagster._core.execution.context.compute import SolidExecutionContext
 
 
-def fmt_rpc_logs(logs: List[Dict[str, str]]) -> Dict[int, str]:
+def fmt_rpc_logs(logs: Sequence[Mapping[str, str]]) -> Mapping[int, str]:
     d = defaultdict(list)
     for log in logs:
         levelname = log["levelname"]
@@ -21,7 +21,7 @@ def fmt_rpc_logs(logs: List[Dict[str, str]]) -> Dict[int, str]:
     return {level: "\n".join(logs) for level, logs in d.items()}
 
 
-def log_rpc(context: SolidExecutionContext, logs: List[Dict]) -> None:
+def log_rpc(context: SolidExecutionContext, logs: Sequence[Mapping]) -> None:
     if len(logs) > 0:
         logs_fmt = fmt_rpc_logs(logs)
         for level, logs_str in logs_fmt.items():

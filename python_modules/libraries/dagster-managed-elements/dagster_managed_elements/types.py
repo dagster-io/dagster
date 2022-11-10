@@ -1,6 +1,6 @@
 import enum
 from abc import ABC, abstractmethod
-from typing import Any, List, NamedTuple, Optional, OrderedDict, Tuple, Union
+from typing import Any, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import click
 
@@ -76,9 +76,9 @@ class ManagedElementDiff(
 
     def __new__(
         cls,
-        additions: Optional[List[DiffData]] = None,
-        deletions: Optional[List[DiffData]] = None,
-        modifications: Optional[List[ModifiedDiffData]] = None,
+        additions: Optional[Sequence[DiffData]] = None,
+        deletions: Optional[Sequence[DiffData]] = None,
+        modifications: Optional[Sequence[ModifiedDiffData]] = None,
     ):
         additions = check.opt_list_param(additions, "additions", of_type=DiffData)
         deletions = check.opt_list_param(deletions, "deletions", of_type=DiffData)
@@ -175,7 +175,9 @@ class ManagedElementDiff(
             == sorted(list(other.nested.items()), key=lambda x: x[0])
         )
 
-    def get_diff_display_entries(self, indent: int = 0) -> Tuple[List[str], List[str], List[str]]:
+    def get_diff_display_entries(
+        self, indent: int = 0
+    ) -> Tuple[Sequence[str], Sequence[str], Sequence[str]]:
         """
         Returns a tuple of additions, deletions, and modification entries associated with this diff object.
         """
@@ -214,21 +216,23 @@ class ManagedElementDiff(
             elif len(nested_deletions) == 0 and len(nested_modifications) == 0:
                 # If there are only additions, display the nested entry as an addition
                 my_additions += [
-                    click.style(f"{' ' * indent}+ {key}:", fg="green")
-                ] + nested_additions
+                    click.style(f"{' ' * indent}+ {key}:", fg="green"),
+                    *nested_additions,
+                ]
             elif len(nested_additions) == 0 and len(nested_modifications) == 0:
                 # If there are only deletions, display the nested entry as a deletion
                 my_deletions += [
-                    click.style(f"{' ' * indent}- {key}:", fg="red")
-                ] + nested_deletions
+                    click.style(f"{' ' * indent}- {key}:", fg="red"),
+                    *nested_deletions,
+                ]
             else:
                 # Otherwise, display the nested entry as a modification
-                my_modifications += (
-                    [click.style(f"{' ' * indent}~ {key}:", fg="yellow")]
-                    + nested_additions
-                    + nested_deletions
-                    + nested_modifications
-                )
+                my_modifications += [
+                    click.style(f"{' ' * indent}~ {key}:", fg="yellow"),
+                    *nested_additions,
+                    *nested_deletions,
+                    *nested_modifications,
+                ]
 
         return (my_additions, my_deletions, my_modifications)
 

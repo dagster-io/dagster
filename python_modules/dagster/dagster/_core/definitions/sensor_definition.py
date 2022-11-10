@@ -416,9 +416,9 @@ class SensorDefinition:
         self.check_valid_run_requests(run_requests)
 
         if self._asset_selection:
-            run_requests = _run_requests_with_base_asset_jobs(
-                run_requests, context, self._asset_selection
-            )
+            run_requests = [
+                *_run_requests_with_base_asset_jobs(run_requests, context, self._asset_selection)
+            ]
 
         return SensorExecutionData(
             run_requests,
@@ -508,10 +508,12 @@ class SensorExecutionData(
         cursor: Optional[str] = None,
         pipeline_run_reactions: Optional[Sequence[PipelineRunReaction]] = None,
     ):
-        check.opt_list_param(run_requests, "run_requests", RunRequest)
+        check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
-        check.opt_list_param(pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction)
+        check.opt_sequence_param(
+            pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction
+        )
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -595,7 +597,7 @@ def build_sensor_context(
 
 def _run_requests_with_base_asset_jobs(
     run_requests, context, outer_asset_selection
-) -> List[RunRequest]:
+) -> Sequence[RunRequest]:
     """
     For sensors that target asset selections instead of jobs, finds the corresponding base asset
     for a selected set of assets.

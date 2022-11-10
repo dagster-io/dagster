@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -104,7 +104,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
+    ) -> Mapping[str, Mapping[str, Union[Iterable[PipelineRun], int]]]:
         """Return all of the run groups present in the storage that include rows matching the
         given filter.
 
@@ -157,7 +157,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         ascending: bool = False,
         cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> List[RunRecord]:
+    ) -> Sequence[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
         Args:
@@ -172,7 +172,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
+    def get_run_tags(self) -> Sequence[Tuple[str, Set[str]]]:
         """Get a list of tag keys and the values that have been associated with them.
 
         Returns:
@@ -180,7 +180,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def add_run_tags(self, run_id: str, new_tags: Dict[str, str]):
+    def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]):
         """Add additional tags for a pipeline run.
 
         Args:
@@ -324,7 +324,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         return True
 
     @abstractmethod
-    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
 
     def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
@@ -351,7 +351,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """Called on a regular interval by the daemon"""
 
     @abstractmethod
-    def get_daemon_heartbeats(self) -> Dict[str, DaemonHeartbeat]:
+    def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
         """Latest heartbeats of all daemon types"""
 
     @abstractmethod
@@ -365,7 +365,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         status: Optional[BulkActionStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> List[PartitionBackfill]:
+    ) -> Sequence[PartitionBackfill]:
         """Get a list of partition backfills"""
 
     @abstractmethod
@@ -392,9 +392,9 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         return True
 
     @abstractmethod
-    def kvs_get(self, keys: Set[str]) -> Dict[str, str]:
+    def kvs_get(self, keys: Set[str]) -> Mapping[str, str]:
         """Retrieve the value for a given key in the current deployment."""
 
     @abstractmethod
-    def kvs_set(self, pairs: Dict[str, str]) -> None:
+    def kvs_set(self, pairs: Mapping[str, str]) -> None:
         """Set the value for a given key in the current deployment."""

@@ -5,7 +5,7 @@ create an Airbyte Connection between the source database and destination databas
 """
 # pylint: disable=print-call
 import random
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 
 import numpy as np
 import pandas as pd
@@ -23,7 +23,7 @@ N_ORDERS = 10000
 
 def _safe_request(
     client: AirbyteResource, endpoint: str, data: Dict[str, object]
-) -> Dict[str, Any]:
+) -> Mapping[str, Any]:
     response = client.make_request(endpoint, data)
     assert response, "Request returned null response"
     return response

@@ -1,9 +1,11 @@
-from typing import List, NamedTuple, Tuple
+from typing import NamedTuple, Sequence, Tuple
 
 import dagster._check as check
 
 
-class EvaluationStack(NamedTuple("_EvaluationStack", [("entries", List["EvaluationStackEntry"])])):
+class EvaluationStack(
+    NamedTuple("_EvaluationStack", [("entries", Sequence["EvaluationStackEntry"])])
+):
     def __new__(cls, entries):
         return super(EvaluationStack, cls).__new__(
             cls,
@@ -11,7 +13,7 @@ class EvaluationStack(NamedTuple("_EvaluationStack", [("entries", List["Evaluati
         )
 
     @property
-    def levels(self) -> List[str]:
+    def levels(self) -> Sequence[str]:
         return [
             entry.field_name
             for entry in self.entries
@@ -19,16 +21,16 @@ class EvaluationStack(NamedTuple("_EvaluationStack", [("entries", List["Evaluati
         ]
 
     def for_field(self, field_name: str) -> "EvaluationStack":
-        return EvaluationStack(entries=self.entries + [EvaluationStackPathEntry(field_name)])
+        return EvaluationStack(entries=[*self.entries, EvaluationStackPathEntry(field_name)])
 
     def for_array_index(self, list_index: int) -> "EvaluationStack":
-        return EvaluationStack(entries=self.entries + [EvaluationStackListItemEntry(list_index)])
+        return EvaluationStack(entries=[*self.entries, EvaluationStackListItemEntry(list_index)])
 
     def for_map_key(self, map_key: object) -> "EvaluationStack":
-        return EvaluationStack(entries=self.entries + [EvaluationStackMapKeyEntry(map_key)])
+        return EvaluationStack(entries=[*self.entries, EvaluationStackMapKeyEntry(map_key)])
 
     def for_map_value(self, map_key: object) -> "EvaluationStack":
-        return EvaluationStack(entries=self.entries + [EvaluationStackMapValueEntry(map_key)])
+        return EvaluationStack(entries=[*self.entries, EvaluationStackMapValueEntry(map_key)])
 
 
 class EvaluationStackEntry:  # marker interface

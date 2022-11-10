@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Mapping
 
 
 class Card:
@@ -15,7 +15,7 @@ class Card:
     def attachments(self):
         return self.payload["attachments"]
 
-    def _create_attachment(self, text_message: str) -> Dict:
+    def _create_attachment(self, text_message: str) -> Mapping:
         content = {
             "title": "Dagster Pipeline Alert",
             "text": text_message,

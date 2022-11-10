@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Union, cast
+from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
 import dateutil
 
@@ -12,7 +12,7 @@ from .types import DbtOutput
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
 
 
-def default_node_info_to_asset_key(node_info: Dict[str, Any]) -> AssetKey:
+def default_node_info_to_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
     return AssetKey(node_info["unique_id"].split("."))
 
 
@@ -30,7 +30,7 @@ def _get_output_name(node_info: Mapping[str, Any]) -> str:
     return node_info["unique_id"].split(".")[-1]
 
 
-def _node_result_to_metadata(node_result: Dict[str, Any]) -> Mapping[str, RawMetadataValue]:
+def _node_result_to_metadata(node_result: Mapping[str, Any]) -> Mapping[str, RawMetadataValue]:
     return {
         "Materialization Strategy": node_result["config"]["materialized"],
         "Database": node_result["database"],
@@ -40,7 +40,7 @@ def _node_result_to_metadata(node_result: Dict[str, Any]) -> Mapping[str, RawMet
     }
 
 
-def _timing_to_metadata(timings: List[Dict[str, Any]]) -> Mapping[str, RawMetadataValue]:
+def _timing_to_metadata(timings: Sequence[Mapping[str, Any]]) -> Mapping[str, RawMetadataValue]:
     metadata: Dict[str, RawMetadataValue] = {}
     for timing in timings:
         if timing["name"] == "execute":
@@ -65,11 +65,11 @@ def _timing_to_metadata(timings: List[Dict[str, Any]]) -> Mapping[str, RawMetada
 
 
 def result_to_events(
-    result: Dict[str, Any],
+    result: Mapping[str, Any],
     docs_url: Optional[str] = None,
-    node_info_to_asset_key: Optional[Callable[[Dict[str, Any]], AssetKey]] = None,
-    manifest_json: Optional[Dict[str, Any]] = None,
-    extra_metadata: Optional[Dict[str, RawMetadataValue]] = None,
+    node_info_to_asset_key: Optional[Callable[[Mapping[str, Any]], AssetKey]] = None,
+    manifest_json: Optional[Mapping[str, Any]] = None,
+    extra_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     generate_asset_outputs: bool = False,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation, Output]]:
     """
@@ -156,8 +156,8 @@ def result_to_events(
 
 def generate_events(
     dbt_output: DbtOutput,
-    node_info_to_asset_key: Optional[Callable[[Dict[str, Any]], AssetKey]] = None,
-    manifest_json: Optional[Dict[str, Any]] = None,
+    node_info_to_asset_key: Optional[Callable[[Mapping[str, Any]], AssetKey]] = None,
+    manifest_json: Optional[Mapping[str, Any]] = None,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
 
     """
@@ -182,7 +182,7 @@ def generate_events(
 
 def generate_materializations(
     dbt_output: DbtOutput,
-    asset_key_prefix: Optional[List[str]] = None,
+    asset_key_prefix: Optional[Sequence[str]] = None,
 ) -> Iterator[AssetMaterialization]:
     """
     This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
@@ -218,7 +218,7 @@ def generate_materializations(
         def my_dbt_rpc_job():
             my_custom_dbt_run()
     """
-    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+    asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     for event in generate_events(
         dbt_output,

@@ -571,7 +571,7 @@ class OutputContext:
     def get_asset_identifier(self) -> Sequence[str]:
         if self.asset_key is not None:
             if self.has_asset_partitions:
-                return self.asset_key.path + [self.asset_partition_key]
+                return [*self.asset_key.path, self.asset_partition_key]
             else:
                 return self.asset_key.path
         else:
@@ -848,13 +848,13 @@ def build_output_context(
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")
-    metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+    metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
     run_id = check.opt_str_param(run_id, "run_id", default=RUN_ID_PLACEHOLDER)
     mapping_key = check.opt_str_param(mapping_key, "mapping_key")
     dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
     version = check.opt_str_param(version, "version")
-    resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
-    resources = check.opt_dict_param(resources, "resources", key_type=str)
+    resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)
+    resources = check.opt_mapping_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
