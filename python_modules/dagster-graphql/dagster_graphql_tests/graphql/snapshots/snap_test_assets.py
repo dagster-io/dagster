@@ -1131,6 +1131,418 @@ snapshots['TestAssetAwareEventLog.test_asset_op[sqlite_with_default_run_launcher
     }
 }
 
+snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
+    'assetNodes': [
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["dummy_source_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["a"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["b"]'
+        },
+        {
+            'freshnessInfo': {
+                'currentMinutesLate': 0.09703786666666667,
+                'latestMaterializationMinutesLate': 0.08950873333333333
+            },
+            'freshnessPolicy': {
+                'cronSchedule': None,
+                'maximumLagMinutes': 0.0
+            },
+            'id': 'test.test_repo.["fresh_diamond_bottom"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["fresh_diamond_left"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["fresh_diamond_right"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["fresh_diamond_top"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["int_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["str_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["multipartitions_1"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["multipartitions_2"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["typed_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["untyped_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_1"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_2"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_3"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["bar"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["baz"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["foo"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["foo_bar"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["unconnected"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["downstream_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["hanging_graph"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["first_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["hanging_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["never_runs_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["grouped_asset_1"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["grouped_asset_2"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["grouped_asset_4"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["ungrouped_asset_3"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["ungrouped_asset_5"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_yields_observation"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["yield_partition_materialization"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["downstream_static_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["upstream_static_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["downstream_time_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["upstream_time_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_one"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_two"]'
+        }
+    ]
+}
+
+snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
+    'assetNodes': [
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["dummy_source_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["a"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["b"]'
+        },
+        {
+            'freshnessInfo': {
+                'currentMinutesLate': 0.09945488333333333,
+                'latestMaterializationMinutesLate': 0.09076318333333333
+            },
+            'freshnessPolicy': {
+                'cronSchedule': None,
+                'maximumLagMinutes': 0.0
+            },
+            'id': 'test.test_repo.["fresh_diamond_bottom"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["fresh_diamond_left"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["fresh_diamond_right"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["fresh_diamond_top"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["int_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["str_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["multipartitions_1"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["multipartitions_2"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["typed_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["untyped_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_1"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_2"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_3"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["bar"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["baz"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["foo"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["foo_bar"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["unconnected"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["downstream_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["hanging_graph"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["first_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["hanging_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["never_runs_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["grouped_asset_1"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["grouped_asset_2"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["grouped_asset_4"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["ungrouped_asset_3"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["ungrouped_asset_5"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_yields_observation"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["yield_partition_materialization"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["downstream_static_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["upstream_static_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["downstream_time_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["upstream_time_partitioned_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_one"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["asset_two"]'
+        }
+    ]
+}
+
 snapshots['TestAssetAwareEventLog.test_get_asset_key_lineage[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = {
     'assetOrError': {
         'assetMaterializations': [

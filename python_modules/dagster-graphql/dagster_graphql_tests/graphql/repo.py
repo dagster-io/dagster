@@ -76,6 +76,7 @@ from dagster import (
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructableRepository
@@ -87,7 +88,6 @@ from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._legacy import (
     AssetGroup,
     DynamicOutputDefinition,
@@ -1739,18 +1739,18 @@ def fresh_diamond_top():
 
 
 @asset
-def fresh_diamond_left(diamond_top):
-    return diamond_top + 1
+def fresh_diamond_left(fresh_diamond_top):
+    return fresh_diamond_top + 1
 
 
 @asset
-def fresh_diamond_right(diamond_top):
-    return diamond_top + 1
+def fresh_diamond_right(fresh_diamond_top):
+    return fresh_diamond_top + 1
 
 
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=0))
-def fresh_diamond_bottom(diamond_left, diamond_right):
-    return diamond_left + diamond_right
+def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
+    return fresh_diamond_left + fresh_diamond_right
 
 
 multipartitions_def = MultiPartitionsDefinition(

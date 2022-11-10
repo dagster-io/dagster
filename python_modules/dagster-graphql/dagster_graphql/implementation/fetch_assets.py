@@ -1,15 +1,16 @@
+import datetime
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence
 
 from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 
 import dagster._seven as seven
-from dagster import AssetKey, DagsterEventType, EventRecordsFilter, DagsterInstance
+from dagster import AssetKey, DagsterEventType, EventRecordsFilter
 from dagster import _check as check
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
 
 from .utils import capture_error
 
@@ -348,6 +349,11 @@ def get_freshness_info(
     current_time = datetime.datetime.now(tz=datetime.timezone.utc)
 
     latest_record = data_time_queryer.get_most_recent_materialization_record(asset_key=asset_key)
+    latest_materialization_time = datetime.datetime.fromtimestamp(
+        latest_record.event_log_entry.timestamp,
+        tz=datetime.timezone.utc,
+    )
+
     used_data_times = data_time_queryer.get_used_data_times_for_record(record=latest_record)
 
     # in the future, if you have upstream source assets with versioning policies, available data
@@ -362,13 +368,9 @@ def get_freshness_info(
         },
     )
 
-    latest_materialization_time = datetime.datetime.fromtimestamp(
-        latest_record.event_log_entry.timestamp,
-        tz=datetime.timezone.utc,
-    )
     latest_materialization_minutes_late = freshness_policy.minutes_late(
         evaluation_time=latest_materialization_time,
-        used_upstream_materialization_times=used_data_times,
+        used_data_times=used_data_times,
         available_data_times={key: latest_materialization_time for key in used_data_times.keys()},
     )
 

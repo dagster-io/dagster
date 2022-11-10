@@ -241,8 +241,7 @@ class GroupsAssetSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return {
             asset_key
-            for assets_def in asset_graph.assets_defs
-            for asset_key, group in assets_def.group_names_by_key.items()
+            for asset_key, group in asset_graph.group_names_by_key.items()
             if group in self._groups
         }
 

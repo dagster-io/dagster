@@ -22,11 +22,11 @@ from dagster._core.definitions import (
     ScheduleDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -901,7 +901,7 @@ class ExternalAssetNode(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             group_name=check.opt_str_param(group_name, "group_name"),
-            freshness_policy=check.opt_inst_pram(
+            freshness_policy=check.opt_inst_param(
                 freshness_policy, "freshness_policy", FreshnessPolicy
             ),
         )

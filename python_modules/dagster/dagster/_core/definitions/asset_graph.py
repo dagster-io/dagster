@@ -1,28 +1,29 @@
 import warnings
 from collections import deque
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
+    Dict,
     Iterator,
+    Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
     Union,
-    NamedTuple,
-    TYPE_CHECKING,
-    Mapping,
 )
 
 import toposort
 
 import dagster._check as check
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
 
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
 from .partition import PartitionsDefinition
-from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .partition_key_range import PartitionKeyRange
+from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .source_asset import SourceAsset
 from .time_window_partitions import TimeWindowPartitionsDefinition
 
@@ -36,7 +37,7 @@ class AssetGraph(
         [
             ("asset_dep_graph", DependencyGraph),
             ("source_asset_keys", AbstractSet[AssetKey]),
-            ("partitions_defs_by_key", Optional[Mapping[AssetKey, Optional[PartitionsDefinition]]]),
+            ("partitions_defs_by_key", Mapping[AssetKey, Optional[PartitionsDefinition]]),
             (
                 "partition_mappings_by_key",
                 Optional[Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]]],

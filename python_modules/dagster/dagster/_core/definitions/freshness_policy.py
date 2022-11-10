@@ -6,11 +6,13 @@ from croniter import croniter
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._serdes import whitelist_for_serdes
 
 from .events import AssetKey
 
 
 @experimental
+@whitelist_for_serdes
 class FreshnessPolicy(
     NamedTuple(
         "_FreshnessPolicy",
