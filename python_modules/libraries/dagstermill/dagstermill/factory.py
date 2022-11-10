@@ -436,7 +436,6 @@ def define_dagstermill_op(
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
     io_manager_key: Optional[str] = None,
-
 ):
     """Wrap a Jupyter notebook in a op.
 
