@@ -30,22 +30,22 @@ def ssm_resource(context):
         .. code-block:: python
 
             from dagster import build_op_context, job, op
-            from dagster_aws.ssm import parameter_store_resource
+            from dagster_aws.ssm import ssm_resource
 
-            @op(required_resource_keys={'parameter_store'})
-            def example_parameter_store_op(context):
-                return context.resources.parameter_store.get_secret_value(
-                    SecretId='arn:aws:parameter_store:region:aws_account_id:secret:appauthexample-AbCdEf'
+            @op(required_resource_keys={'ssm'})
+            def example_ssm_op(context):
+                return context.resources.ssm.get_parameter(
+                    Name="a_parameter"
                 )
 
-            @job(resource_defs={'parameter_store': parameter_store_resource})
+            @job(resource_defs={'ssm': ssm_resource})
             def example_job():
-                example_parameter_store_op()
+                example_ssm_op)
 
             example_job.execute_in_process(
                 run_config={
                     'resources': {
-                        'parameter_store': {
+                        'ssm': {
                             'config': {
                                 'region_name': 'us-west-1',
                             }
@@ -53,10 +53,6 @@ def ssm_resource(context):
                     }
                 }
             )
-
-    Note that your ops must also declare that they require this resource with
-    `required_resource_keys`, or it will not be initialized for the execution of their compute
-    functions.
 
     You may configure this resource as follows:
 
