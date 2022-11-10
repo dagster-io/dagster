@@ -1748,7 +1748,7 @@ def fresh_diamond_right(fresh_diamond_top):
     return fresh_diamond_top + 1
 
 
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=0))
+@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
 def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
     return fresh_diamond_left + fresh_diamond_right
 

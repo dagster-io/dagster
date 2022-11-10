@@ -1150,12 +1150,12 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
         },
         {
             'freshnessInfo': {
-                'currentMinutesLate': 0.09703786666666667,
-                'latestMaterializationMinutesLate': 0.08950873333333333
+                'currentMinutesLate': 0.0,
+                'latestMaterializationMinutesLate': 0.0
             },
             'freshnessPolicy': {
                 'cronSchedule': None,
-                'maximumLagMinutes': 0.0
+                'maximumLagMinutes': 30.0
             },
             'id': 'test.test_repo.["fresh_diamond_bottom"]'
         },
@@ -1356,12 +1356,12 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
         },
         {
             'freshnessInfo': {
-                'currentMinutesLate': 0.09945488333333333,
-                'latestMaterializationMinutesLate': 0.09076318333333333
+                'currentMinutesLate': 0.0,
+                'latestMaterializationMinutesLate': 0.0
             },
             'freshnessPolicy': {
                 'cronSchedule': None,
-                'maximumLagMinutes': 0.0
+                'maximumLagMinutes': 30.0
             },
             'id': 'test.test_repo.["fresh_diamond_bottom"]'
         },
