@@ -1,23 +1,16 @@
 # start_marker
-import json
-from typing import Any
-
 import pandas as pd
 from upath import UPath
 
-from dagster import InputContext, OutputContext, UPathIOManager
-
-
-class JSONIOManager(UPathIOManager):
-    extension: str = ".json"
-
-    def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
-        with path.open("w") as file:
-            json.dump(obj, file)
-
-    def load_from_path(self, context: InputContext, path: UPath) -> Any:
-        with path.open("r") as file:
-            return json.load(file)
+from dagster import (
+    Field,
+    InitResourceContext,
+    InputContext,
+    OutputContext,
+    StringSource,
+    UPathIOManager,
+    io_manager,
+)
 
 
 class PandasParquetIOManager(UPathIOManager):
@@ -30,6 +23,39 @@ class PandasParquetIOManager(UPathIOManager):
     def load_from_path(self, context: InputContext, path: UPath) -> pd.DataFrame:
         with path.open("rb") as file:
             return pd.read_parquet(file)
+
+
+# end_class_marker
+
+# the IO Manager can be used with any filesystem (see https://github.com/fsspec/universal_pathlib)
+
+# start_def_marker
+@io_manager(config_schema={"base_path": Field(str, is_required=False)})
+def local_pandas_parquet_io_manager(
+    init_context: InitResourceContext,
+) -> PandasParquetIOManager:
+    assert init_context.instance is not None  # to please mypy
+    base_path = UPath(
+        init_context.resource_config.get(
+            "base_path", init_context.instance.storage_directory()
+        )
+    )
+    return PandasParquetIOManager(base_path=base_path)
+
+
+@io_manager(
+    config_schema={
+        "base_path": Field(str, is_required=True),
+        "AWS_ACCESS_KEY_ID": StringSource,
+        "AWS_SECRET_ACCESS_KEY": StringSource,
+    }
+)
+def s3_parquet_io_manager(init_context: InitResourceContext) -> PandasParquetIOManager:
+    base_path = UPath(
+        init_context.resource_config.get("base_path")
+    )  # `UPath` will read boto env vars
+    assert str(base_path).startswith("s3://"), base_path
+    return PandasParquetIOManager(base_path=base_path)
 
 
 # end_marker
