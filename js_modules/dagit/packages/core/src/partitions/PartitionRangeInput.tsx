@@ -1,7 +1,8 @@
-import {TextInput} from '@dagster-io/ui';
+import {Icon, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {ClearButton} from '../ui/ClearButton';
 
 export const PartitionRangeInput: React.FC<{
   value: string[];
@@ -43,6 +44,14 @@ export const PartitionRangeInput: React.FC<{
       onChange={(e) => setValueString(e.currentTarget.value)}
       onKeyDown={onKeyDown}
       onBlur={tryCommit}
+      rightElement={
+        <ClearButton
+          style={{display: valueString.length ? 'initial' : 'none'}}
+          onClick={() => onChange([])}
+        >
+          <Icon name="cancel" />
+        </ClearButton>
+      }
     />
   );
 };

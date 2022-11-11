@@ -350,7 +350,7 @@ export const PartitionStatus: React.FC<{
         <Box
           flex={{justifyContent: 'space-between'}}
           margin={{top: 4}}
-          style={{fontSize: '0.8rem', color: Colors.Gray500}}
+          style={{fontSize: '0.8rem', color: Colors.Gray500, minHeight: 17}}
         >
           <span>{partitionNames[0]}</span>
           <span>{partitionNames[partitionNames.length - 1]}</span>

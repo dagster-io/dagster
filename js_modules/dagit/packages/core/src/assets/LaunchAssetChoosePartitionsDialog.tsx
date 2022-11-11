@@ -4,12 +4,12 @@ import {
   DialogHeader,
   DialogBody,
   Box,
-  Subheading,
   Button,
   ButtonLink,
   DialogFooter,
   Alert,
   Tooltip,
+  Colors,
 } from '@dagster-io/ui';
 import reject from 'lodash/reject';
 import React from 'react';
@@ -33,7 +33,7 @@ import {
   ConfigPartitionSelectionQueryVariables,
 } from '../launchpad/types/ConfigPartitionSelectionQuery';
 import {assembleIntoSpans, stringForSpan} from '../partitions/PartitionRangeInput';
-import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
+import {PartitionRangeWizard, PartitionStateCheckboxes} from '../partitions/PartitionRangeWizard';
 import {PartitionState} from '../partitions/PartitionStatus';
 import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/PartitionsBackfill';
 import {RepoAddress} from '../workspace/types';
@@ -92,20 +92,37 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   upstreamAssetKeys,
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
-  const data = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
-  const upstreamData = usePartitionHealthData(upstreamAssetKeys);
+  const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
+  const upstreamAssetHealth = usePartitionHealthData(upstreamAssetKeys);
+
+  const partitionStatusData = React.useMemo(() => assetHealthToPartitionStatus(assetHealth), [
+    assetHealth,
+  ]);
+  const partitionKeys = React.useMemo(() => (assetHealth[0] ? assetHealth[0].keys : []), [
+    assetHealth,
+  ]);
+
   const {canLaunchPartitionBackfill} = usePermissions();
 
-  const allKeys = React.useMemo(() => (data[0] ? data[0].keys : []), [data]);
-  const mostRecentKey = allKeys[allKeys.length - 1];
+  const mostRecentKey = partitionKeys[partitionKeys.length - 1];
 
-  const [selected, setSelected] = React.useState<string[]>([]);
+  const [range, setRange] = React.useState<string[]>([]);
+  const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
+    PartitionState.MISSING,
+    PartitionState.FAILURE,
+    PartitionState.SUCCESS,
+  ]);
+
   const [previewCount, setPreviewCount] = React.useState(0);
   const [launching, setLaunching] = React.useState(false);
 
   React.useEffect(() => {
-    setSelected([mostRecentKey]);
+    setRange([mostRecentKey]);
   }, [mostRecentKey]);
+
+  const selected = React.useMemo(() => {
+    return range.filter((r) => stateFilters.includes(partitionStatusData[r]));
+  }, [range, stateFilters, partitionStatusData]);
 
   const client = useApolloClient();
   const history = useHistory();
@@ -225,40 +242,38 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   };
 
   const upstreamUnavailable = (key: string) =>
-    upstreamData.length > 0 &&
-    upstreamData.some((a) => a.keys.includes(key) && !a.statusByPartition[key]);
+    upstreamAssetHealth.length > 0 &&
+    upstreamAssetHealth.some((a) => a.keys.includes(key) && !a.statusByPartition[key]);
 
   const upstreamUnavailableSpans = assembleIntoSpans(selected, upstreamUnavailable).filter(
     (s) => s.status === true,
   );
   const onRemoveUpstreamUnavailable = () => {
-    setSelected(reject(selected, upstreamUnavailable));
+    setRange(reject(selected, upstreamUnavailable));
   };
-
-  const partitionData = React.useMemo(() => {
-    const result: {[partitionName: string]: PartitionState} = {};
-    allKeys.forEach((partitionName) => {
-      const success = data.every((d) => d.statusByPartition[partitionName]);
-      result[partitionName] = success ? PartitionState.SUCCESS : PartitionState.MISSING;
-    });
-    return result;
-  }, [allKeys, data]);
 
   return (
     <>
       <DialogBody>
         <Box flex={{direction: 'column', gap: 8}}>
-          <Subheading style={{flex: 1}}>Partition Keys</Subheading>
+          <Box>Select the set of partitions to materialze. View the selection syntax guide</Box>
 
           <PartitionRangeWizard
-            all={allKeys}
-            selected={selected}
-            setSelected={setSelected}
-            partitionData={partitionData}
+            all={partitionKeys}
+            selected={range}
+            setSelected={setRange}
+            partitionData={partitionStatusData}
+          />
+          <PartitionStateCheckboxes
+            partitionData={partitionStatusData}
+            partitionKeysForCounts={range}
+            value={stateFilters}
+            onChange={setStateFilters}
           />
         </Box>
         <Box
           flex={{direction: 'column', gap: 8}}
+          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
           style={{marginTop: 16, overflowY: 'auto', overflowX: 'visible', maxHeight: '50vh'}}
         >
           {partitionedAssets.slice(0, previewCount).map((a) => (
@@ -266,7 +281,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               assetKey={a.assetKey}
               showAssetKey
               key={displayNameForAssetKey(a.assetKey)}
-              data={data}
+              data={assetHealth}
               selected={selected}
             />
           ))}

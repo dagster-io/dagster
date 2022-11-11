@@ -161,6 +161,8 @@ export const BackfillPartitionSelector: React.FC<{
       <DialogBody>
         <Box flex={{direction: 'column', gap: 32}}>
           <Section title="Partitions">
+            <Box>Select the set of partitions to materialze. View the selection syntax guide</Box>
+
             <PartitionRangeWizard
               selected={selected}
               setSelected={setSelected}
