@@ -8,7 +8,7 @@ import dagster._check as check
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRun, PipelineRun, RunsFilter
 
 from ..external import get_external_pipeline_or_raise
 from ..utils import ExecutionMetadata, ExecutionParams, capture_error
@@ -56,7 +56,6 @@ def _launch_pipeline_execution(
     graphene_info, execution_params: ExecutionParams, is_reexecuted: bool = False
 ) -> GrapheneLaunchRunSuccess:
     from ...schema.pipelines.pipeline import GrapheneRun
-    from ...schema.runs import GrapheneLaunchRunSuccess
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(execution_params, "execution_params", ExecutionParams)
@@ -76,7 +75,6 @@ def launch_reexecution_from_parent_run(
     Launch a re-execution by referencing the parent run id
     """
     from ...schema.pipelines.pipeline import GrapheneRun
-    from ...schema.runs import GrapheneLaunchRunSuccess
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(parent_run_id, "parent_run_id")
