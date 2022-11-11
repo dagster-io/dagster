@@ -22,9 +22,9 @@ from dagster._core.definitions import (
     ScheduleDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
+from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy

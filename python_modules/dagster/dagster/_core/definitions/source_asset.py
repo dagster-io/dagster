@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dagster._core.definitions.logical_version import LogicalVersion
 import warnings
 from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
