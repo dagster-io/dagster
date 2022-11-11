@@ -55,6 +55,18 @@ class DbtCloudResourceV2:
     def api_base_url(self) -> str:
         return urljoin(self._dbt_cloud_host, DBT_ACCOUNTS_PATH)
 
+    def build_url_for_job(self, project_id: int, job_id: int) -> str:
+        return urljoin(
+            self._dbt_cloud_host,
+            f"next/deploy/{self._account_id}/projects/{project_id}/jobs/{job_id}/",
+        )
+
+    def build_url_for_cloud_docs(self, job_id: int, resource_type: str, unique_id: str) -> str:
+        return urljoin(
+            self._dbt_cloud_host,
+            f"/accounts/{self._account_id}/jobs/{job_id}/docs/#!/{resource_type}/{unique_id}",
+        )
+
     def make_request(
         self,
         method: str,

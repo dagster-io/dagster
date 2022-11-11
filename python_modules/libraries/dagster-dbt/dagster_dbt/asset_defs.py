@@ -256,18 +256,27 @@ def _get_asset_deps(
     Dict[AssetKey, Tuple[str, Out]],
     Dict[AssetKey, str],
     Dict[str, str],
+    Dict[str, Dict[str, Any]],
 ]:
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
     asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
     asset_outs: Dict[AssetKey, Tuple[str, Out]] = {}
+
+    # These dicts could be refactored as a single dict, mapping from output name to arbitrary
+    # metadata that we need to store for reference.
     group_names_by_key: Dict[AssetKey, str] = {}
     fqns_by_output_name: Dict[str, str] = {}
+    metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
 
     for unique_id, parent_unique_ids in deps.items():
         node_info = dbt_nodes[unique_id]
 
         output_name = _get_output_name(node_info)
         fqns_by_output_name[output_name] = node_info["fqn"]
+
+        metadata_by_output_name[output_name] = {
+            key: node_info[key] for key in ["unique_id", "resource_type"]
+        }
 
         asset_key = node_info_to_asset_key(node_info)
 
@@ -299,7 +308,14 @@ def _get_asset_deps(
                 input_name = _get_input_name(parent_node_info)
                 asset_ins[parent_asset_key] = (input_name, In(Nothing))
 
-    return asset_deps, asset_ins, asset_outs, group_names_by_key, fqns_by_output_name
+    return (
+        asset_deps,
+        asset_ins,
+        asset_outs,
+        group_names_by_key,
+        fqns_by_output_name,
+        metadata_by_output_name,
+    )
 
 
 def _get_dbt_op(
@@ -403,7 +419,7 @@ def _dbt_nodes_to_assets(
     else:
         deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
 
-    asset_deps, asset_ins, asset_outs, group_names_by_key, fqns_by_output_name = _get_asset_deps(
+    asset_deps, asset_ins, asset_outs, group_names_by_key, fqns_by_output_name, _ = _get_asset_deps(
         dbt_nodes=dbt_nodes,
         deps=deps,
         node_info_to_asset_key=node_info_to_asset_key,
