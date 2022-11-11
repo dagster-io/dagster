@@ -723,9 +723,11 @@ def opt_inst(
         raise _type_mismatch_error(obj, ttype, additional_message)
     return default if obj is None else obj
 
+
 # ########################
 # ##### ITERATOR
 # ########################
+
 
 @overload
 def iterator_param(
@@ -735,6 +737,7 @@ def iterator_param(
 ) -> Iterator[T]:
     ...
 
+
 @overload
 def iterator_param(
     obj: object,
@@ -742,6 +745,7 @@ def iterator_param(
     additional_message: Optional[str] = ...,
 ) -> Iterator[Any]:
     ...
+
 
 def iterator_param(
     obj: Any,
@@ -933,6 +937,7 @@ def is_list(
 # ########################
 
 
+@overload
 def mapping_param(
     obj: Mapping[T, U],
     param_name: str,
@@ -940,6 +945,27 @@ def mapping_param(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Mapping[T, U]:
+    ...
+
+
+@overload
+def mapping_param(
+    obj: object,
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+) -> Mapping[object, object]:
+    ...
+
+
+def mapping_param(
+    obj: object,
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Mapping[Any, Any]:
     if not isinstance(obj, collections.abc.Mapping):
         raise _param_type_mismatch_exception(
             obj, (collections.abc.Mapping,), param_name, additional_message=additional_message
@@ -951,13 +977,35 @@ def mapping_param(
     return _check_mapping_entries(obj, key_type, value_type, mapping_type=collections.abc.Mapping)
 
 
+@overload
 def opt_mapping_param(
     obj: Optional[Mapping[T, U]],
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+) -> Mapping[T, U]:
+    ...
+
+
+@overload
+def opt_mapping_param(
+    obj: object,
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+) -> Mapping[object, object]:
+    ...
+
+
+def opt_mapping_param(
+    obj: Optional[object],
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Mapping[T, U]:
+) -> Mapping[Any, Any]:
     if obj is None:
         return dict()
     else:
@@ -1410,14 +1458,35 @@ def tuple_param(
     return _check_tuple_items(obj, of_type, of_shape)
 
 
+@overload
 def opt_tuple_param(
     obj: Optional[Tuple[T, ...]],
     param_name: str,
-    default: Optional[Tuple[T]] = None,
+    of_type: Optional[TypeOrTupleOfTypes] = ...,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+    additional_message: Optional[str] = ...,
+) -> Tuple[T, ...]:
+    ...
+
+
+@overload
+def opt_tuple_param(
+    obj: object,
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = ...,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+    additional_message: Optional[str] = ...,
+) -> Tuple[object, ...]:
+    ...
+
+
+def opt_tuple_param(
+    obj: object,
+    param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
     additional_message: Optional[str] = None,
-) -> Tuple[T, ...]:
+) -> Tuple[Any, ...]:
     """Ensures argument obj is a tuple or None; in the latter case, instantiates an empty tuple
     and returns it."""
 
@@ -1425,7 +1494,7 @@ def opt_tuple_param(
         raise _param_type_mismatch_exception(obj, tuple, param_name, additional_message)
 
     if obj is None:
-        return tuple() if default is None else default
+        return tuple()
 
     if of_type is None and of_shape is None:
         return obj

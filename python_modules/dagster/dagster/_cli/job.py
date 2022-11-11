@@ -245,7 +245,9 @@ def job_list_versions_command(**kwargs):
 def execute_list_versions_command(instance: DagsterInstance, kwargs: Mapping[str, object]):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config = list(check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str))
+    config = list(
+        check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
+    )
 
     job_origin = get_job_python_origin_from_kwargs(kwargs)
     job = recon_pipeline_from_origin(job_origin)
@@ -262,9 +264,9 @@ def execute_list_versions_command(instance: DagsterInstance, kwargs: Mapping[str
     add_step_to_table(memoized_plan)
 
 
-def get_run_config_from_file_list(file_list: Optional[Sequence[str]]):
+def get_run_config_from_file_list(file_list: Optional[Sequence[str]]) -> Mapping[str, object]:
     check.opt_sequence_param(file_list, "file_list", of_type=str)
-    return load_yaml_from_glob_list(file_list) if file_list else {}
+    return cast(Mapping[str, object], load_yaml_from_glob_list(file_list) if file_list else {})
 
 
 def add_step_to_table(memoized_plan):
@@ -312,7 +314,9 @@ def execute_execute_command(
 ):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config = list(check.opt_tuple_param(kwargs.get("config"), "config", of_type=str))
+    config = list(
+        check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
+    )
     preset = cast(Optional[str], kwargs.get("preset"))
     mode = cast(Optional[str], kwargs.get("mode"))
 
@@ -348,7 +352,7 @@ def get_tags_from_args(kwargs):
 
 def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
 
-    config = kwargs.get("config")  # files
+    config = cast(Tuple[str, ...], kwargs.get("config"))  # files
     config_json = kwargs.get("config_json")
 
     if not config and not config_json:

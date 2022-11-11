@@ -114,7 +114,7 @@ class ReconstructableRepository(
     ) -> "ReconstructableRepository":
         return self._replace(repository_load_data=metadata)
 
-    def get_definition(self) -> RepositoryDefinition:
+    def get_definition(self) -> "RepositoryDefinition":
         return repository_def_from_pointer(self.pointer, self.repository_load_data)
 
     def get_reconstructable_pipeline(self, name: str) -> ReconstructablePipeline:
@@ -173,8 +173,8 @@ class ReconstructablePipeline(
             ("repository", ReconstructableRepository),
             ("pipeline_name", str),
             ("solid_selection_str", Optional[str]),
-            ("solids_to_execute", Optional[FrozenSet[str]]),
-            ("asset_selection", Optional[FrozenSet[AssetKey]]),
+            ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     ),
     IPipeline,
@@ -200,8 +200,8 @@ class ReconstructablePipeline(
         repository: ReconstructableRepository,
         pipeline_name: str,
         solid_selection_str: Optional[str] = None,
-        solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", AssetKey)
@@ -226,7 +226,7 @@ class ReconstructablePipeline(
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)  # type: ignore
-    def get_definition(self) -> Union[JobDefinition, PipelineDefinition]:
+    def get_definition(self) -> Union[JobDefinition, "PipelineDefinition"]:
         return self.repository.get_definition().get_maybe_subset_job_def(
             self.pipeline_name,
             self.solid_selection,
@@ -241,7 +241,7 @@ class ReconstructablePipeline(
         self,
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
-        asset_selection: Optional[FrozenSet[AssetKey]],
+        asset_selection: Optional[AbstractSet[AssetKey]],
     ) -> "ReconstructablePipeline":
         # no selection
         if solid_selection is None and solids_to_execute is None and asset_selection is None:
@@ -289,7 +289,7 @@ class ReconstructablePipeline(
     def subset_for_execution(
         self,
         solid_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "ReconstructablePipeline":
         # take a list of unresolved selection queries
         check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
@@ -306,8 +306,8 @@ class ReconstructablePipeline(
 
     def subset_for_execution_from_existing_pipeline(
         self,
-        solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> ReconstructablePipeline:
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
@@ -613,11 +613,11 @@ def bootstrap_standalone_recon_pipeline(pointer: CodePointer) -> Reconstructable
 
 
 LoadableDefinition: TypeAlias = Union[
-    PipelineDefinition,
-    RepositoryDefinition,
-    PendingRepositoryDefinition,
-    GraphDefinition,
-    AssetGroup,
+    "PipelineDefinition",
+    "RepositoryDefinition",
+    "PendingRepositoryDefinition",
+    "GraphDefinition",
+    "AssetGroup",
 ]
 
 T_LoadableDefinition = TypeVar("T_LoadableDefinition", bound=LoadableDefinition)

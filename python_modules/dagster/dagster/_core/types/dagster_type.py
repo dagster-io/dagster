@@ -162,8 +162,7 @@ class DagsterType(RequiresResources):
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         self._metadata_entries = normalize_metadata(
-            check.opt_mapping_param(metadata, "metadata", key_type=str),
-            metadata_entries
+            check.opt_mapping_param(metadata, "metadata", key_type=str), metadata_entries
         )
 
     @public  # type: ignore

@@ -59,7 +59,7 @@ def load_yaml_from_globs(*globs: str, loader: Type[yaml.SafeLoader]=DagsterRunCo
 
 
 def load_yaml_from_glob_list(
-        glob_list: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader
+    glob_list: Sequence[str], loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
 ) -> Mapping[str, Any]:
     check.sequence_param(glob_list, "glob_list", of_type=str)
 
@@ -71,7 +71,9 @@ def load_yaml_from_glob_list(
     return merge_yamls(all_files_list, loader=loader)
 
 
-def merge_yamls(file_list: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> Dict[object, object]:
+def merge_yamls(
+    file_list: Sequence[str], loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> Dict[object, object]:
     """Combine a list of YAML files into a dictionary.
 
     Args:
@@ -102,7 +104,9 @@ def merge_yamls(file_list: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterR
     return merged
 
 
-def merge_yaml_strings(yaml_strs: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> Dict[object, object]:
+def merge_yaml_strings(
+    yaml_strs: Sequence[str], loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> Dict[object, object]:
     """Combine a list of YAML strings into a dictionary.  Right-most overrides left-most.
 
     Args:
@@ -128,7 +132,9 @@ def merge_yaml_strings(yaml_strs: Sequence[str], loader: Type[yaml.SafeLoader]=D
     return functools.reduce(deep_merge_dicts, yaml_dicts, {})
 
 
-def load_yaml_from_path(path: str, loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> object:
+def load_yaml_from_path(
+    path: str, loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> object:
     check.str_param(path, "path")
     with open(path, "r", encoding="utf8") as ff:
         return yaml.load(ff, Loader=loader)

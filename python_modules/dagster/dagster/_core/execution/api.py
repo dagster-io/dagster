@@ -1,9 +1,9 @@
 import sys
 from contextlib import contextmanager
 from typing import (
+    AbstractSet,
     Any,
     Dict,
-    FrozenSet,
     Iterator,
     Mapping,
     NamedTuple,
@@ -1213,7 +1213,7 @@ def _check_execute_pipeline_args(
     Optional[Mapping],
     Optional[str],
     Mapping[str, str],
-    Optional[FrozenSet[str]],
+    Optional[AbstractSet[str]],
     Optional[Sequence[str]],
 ]:
     pipeline = _check_pipeline(pipeline)

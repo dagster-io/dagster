@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Generator, Mapping, Optional, Sequence, Tuple, TypeVar
+from typing import Callable, Generator, Mapping, Optional, Sequence, Tuple, Type, TypeVar
 
 T = TypeVar("T")
 
@@ -18,7 +18,7 @@ BACKOFF_MAX_RETRIES = 4
 
 def backoff(
     fn: Callable[..., T],
-    retry_on: Tuple[object, ...],
+    retry_on: Tuple[Type[BaseException], ...],
     args: Optional[Sequence[object]] = None,
     kwargs: Optional[Mapping[str, object]] = None,
     max_retries: int = BACKOFF_MAX_RETRIES,

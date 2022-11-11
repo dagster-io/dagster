@@ -7,7 +7,6 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
-    FrozenSet,
     List,
     Mapping,
     Optional,

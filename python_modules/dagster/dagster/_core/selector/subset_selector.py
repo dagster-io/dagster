@@ -1,7 +1,6 @@
 import re
 import sys
 from collections import defaultdict, deque
-from functools import reduce
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -94,7 +93,7 @@ class AssetSelectionData(
             pipeline snapshot lineage.
     """
 
-    def __new__(cls, asset_selection: FrozenSet[AssetKey], parent_job_def: "JobDefinition"):
+    def __new__(cls, asset_selection: AbstractSet[AssetKey], parent_job_def: "JobDefinition"):
         from dagster._core.definitions.job_definition import JobDefinition
 
         return super(AssetSelectionData, cls).__new__(
