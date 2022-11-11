@@ -112,8 +112,8 @@ def get_external_execution_plan_or_raise(
     external_pipeline: ExternalPipeline,
     mode: Optional[str],
     run_config: Mapping[str, object],
-    step_keys_to_execute: Sequence[str],
-    known_state: KnownExecutionState,
+    step_keys_to_execute: Optional[Sequence[str]],
+    known_state: Optional[KnownExecutionState],
 ) -> ExternalExecutionPlan:
 
     return graphene_info.context.get_external_execution_plan(

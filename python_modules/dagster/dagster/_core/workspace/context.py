@@ -197,8 +197,8 @@ class BaseWorkspaceRequestContext(IWorkspace):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: Sequence[str],
-        known_state: KnownExecutionState,
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
     ) -> ExternalExecutionPlan:
         return self.get_repository_location(
             external_pipeline.handle.location_name

@@ -7,6 +7,7 @@ import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
@@ -31,7 +32,7 @@ def compute_step_keys_to_execute(
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(execution_params, "execution_params", ExecutionParams)
 
-    instance: DagsterInstance = graphene_info.context.instance
+    instance = graphene_info.context.instance
 
     if not execution_params.step_keys and is_resume_retry(execution_params):
         # Get step keys from parent_run_id if it's a resume/retry
@@ -58,7 +59,12 @@ def is_resume_retry(execution_params):
     return execution_params.execution_metadata.tags.get(RESUME_RETRY_TAG) == "true"
 
 
-def create_valid_pipeline_run(graphene_info: HasContext, external_pipeline, execution_params):
+def create_valid_pipeline_run(
+    graphene_info: HasContext,
+    external_pipeline: ExternalPipeline,
+    execution_params: ExecutionParams,
+):
+    mode: Optional[str]
     if execution_params.mode is None and len(external_pipeline.available_modes) > 1:
         raise UserFacingGraphQLError(
             GrapheneNoModeProvidedError(external_pipeline.name, external_pipeline.available_modes)
