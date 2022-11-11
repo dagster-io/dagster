@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Mapping, TypeVar, Union
+from typing import Dict, Mapping, TypeVar, Union, cast
 
 import dagster._check as check
 
@@ -13,19 +13,19 @@ def _deep_merge_dicts(
 ) -> Dict[Union[K, K2], Union[V, V2]]:
     check.mapping_param(from_dict, "from_dict")
     check.dict_param(onto_dict, "onto_dict")
-
+    _onto_dict = cast(Dict[Union[K, K2], Union[V, V2]], onto_dict)
     for from_key, from_value in from_dict.items():
         if from_key not in onto_dict:
-            onto_dict[from_key] = from_value
+            _onto_dict[from_key] = from_value
         else:
-            onto_value = onto_dict[from_key]
+            onto_value = _onto_dict[from_key]
 
             if isinstance(from_value, dict) and isinstance(onto_value, dict):
-                onto_dict[from_key] = _deep_merge_dicts(onto_value, from_value)
+                _onto_dict[from_key] = _deep_merge_dicts(onto_value, from_value)
             else:
-                onto_dict[from_key] = from_value  # smash
+                _onto_dict[from_key] = from_value  # smash
 
-    return onto_dict
+    return _onto_dict
 
 
 def deep_merge_dicts(onto_dict: Dict, from_dict: Mapping[object, object]) -> Dict:
