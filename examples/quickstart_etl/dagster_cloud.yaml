@@ -1,4 +1,0 @@
-locations:
-  - location_name: example_location
-    code_source:
-      package_name: quickstart_etl
