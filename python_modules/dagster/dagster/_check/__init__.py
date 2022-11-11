@@ -1357,12 +1357,12 @@ def opt_str_elem(
 
 
 def tuple_param(
-    obj: Tuple[T],
+    obj: Tuple[T, ...],
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
     additional_message: Optional[str] = None,
-) -> Tuple[T]:
+) -> Tuple[T, ...]:
     """Ensure param is a tuple and is of a specified type. `of_type` defines a variadic tuple type--
     `obj` may be of any length, but each element must match the `of_type` argmument. `of_shape`
     defines a fixed-length tuple type-- each element must match the corresponding element in
@@ -1419,12 +1419,12 @@ def opt_nullable_tuple_param(
 
 @overload
 def opt_nullable_tuple_param(
-    obj: Tuple[T],
+    obj: Tuple[T, ...],
     param_name: str,
     of_type: TypeOrTupleOfTypes = ...,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
     additional_message: Optional[str] = None,
-) -> Tuple[T]:
+) -> Tuple[T, ...]:
     ...
 
 
@@ -1434,7 +1434,7 @@ def opt_nullable_tuple_param(
     of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
     additional_message: Optional[str] = None,
-) -> Optional[Tuple[T]]:
+) -> Optional[Tuple[T, ...]]:
     """Ensure optional param is a tuple and is of a specified type. `default` is returned if `obj`
     is None. `of_type` defines a variadic tuple type-- `obj` may be of any length, but each element
     must match the `of_type` argmument. `of_shape` defines a fixed-length tuple type-- each element
@@ -1480,10 +1480,10 @@ def is_tuple(
 
 
 def _check_tuple_items(
-    obj_tuple: Tuple[T],
+    obj_tuple: Tuple[T, ...],
     of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
-) -> Tuple[T]:
+) -> Tuple[T, ...]:
     if of_shape is not None:
         len_tuple = len(obj_tuple)
         len_type = len(of_shape)
