@@ -69,6 +69,23 @@ class LogicalVersionProvenance(
         )
 
 
+    @staticmethod
+    def from_tags(
+        tags: Mapping[str, str]
+    ) -> Optional[LogicalVersionProvenance]:
+        from dagster._core.definitions.events import AssetKey
+        code_version = tags.get(CODE_VERSION_TAG_KEY)
+        if code_version is None:
+            return None
+        start_index = len(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX)
+        input_logical_versions = {
+            AssetKey.from_user_string(k[start_index:]): LogicalVersion(tags[k])
+            for k, v in tags.items()
+            if k.startswith(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX)
+        }
+        return LogicalVersionProvenance(code_version, input_logical_versions)
+
+
 # ########################
 # ##### TAG KEYS
 # ########################
@@ -110,7 +127,7 @@ def compute_logical_version(
     if isinstance(code_version, UnknownValue) or UNKNOWN_LOGICAL_VERSION in input_logical_versions:
         return UNKNOWN_LOGICAL_VERSION
 
-    all_inputs = [code_version, *(v.value for v in input_logical_versions)]
+    all_inputs = (code_version, *(v.value for v in input_logical_versions))
 
     hash_sig = sha256()
     hash_sig.update(bytearray("".join(all_inputs), "utf8"))
@@ -158,21 +175,5 @@ def extract_logical_version_from_event_log_entry(
         return (None, None) if include_provenance else None
     else:
         logical_version = LogicalVersion(value)
-        provenance = _extract_provenance_from_event_tags(tags)
+        provenance = LogicalVersionProvenance.from_tags(tags)
         return (logical_version, provenance)
-
-
-def _extract_provenance_from_event_tags(
-    tags: Mapping[str, str]
-) -> Optional[LogicalVersionProvenance]:
-    from dagster._core.definitions.events import AssetKey
-    code_version = tags.get(CODE_VERSION_TAG_KEY)
-    if code_version is None:
-        return None
-    start_index = len(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX)
-    input_logical_versions = {
-        AssetKey.from_user_string(k[start_index:]): LogicalVersion(tags[k])
-        for k, v in tags.items()
-        if k.startswith(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX)
-    }
-    return LogicalVersionProvenance(code_version, input_logical_versions)

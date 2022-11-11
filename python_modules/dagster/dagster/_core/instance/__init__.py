@@ -2230,7 +2230,7 @@ class DagsterInstance:
 
         check.invariant(not (is_source and include_provenance), "Provenance is not supported for source assets")
 
-        event = event or self.get_most_recent_logical_version_event(key, is_source)
+        event = event or self.get_latest_logical_version_record(key, is_source)
         if event is None and not is_source:
             raise DagsterUndefinedLogicalVersionError(
                 f"No logical version defined for asset {key}; no materialization events found.",
@@ -2245,7 +2245,7 @@ class DagsterInstance:
             return logical_version or DEFAULT_LOGICAL_VERSION
                 
 
-    def get_most_recent_logical_version_event(
+    def get_latest_logical_version_record(
         self,
         key: AssetKey,
         is_source: bool,
