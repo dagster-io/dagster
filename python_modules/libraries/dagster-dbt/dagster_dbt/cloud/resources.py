@@ -542,11 +542,11 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
         my_dbt_cloud_resource = dbt_cloud_resource.configured(
             {
                 "auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"},
-                "account_id": 30000,
+                "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
             }
         )
 
-        @job(resource_defs={"dbt_cloud":my_dbt_cloud_resource})
+        @job(resource_defs={"dbt_cloud": my_dbt_cloud_resource})
         def my_dbt_cloud_job():
             ...
     """
