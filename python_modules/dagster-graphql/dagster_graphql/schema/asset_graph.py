@@ -493,11 +493,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             return get_freshness_info(
                 asset_key=self._external_asset_node.asset_key,
                 freshness_policy=self._external_asset_node.freshness_policy,
+                asset_graph=asset_graph,
                 # in the future, we can share this same DataTimeInstanceQueryer across all
                 # GrapheneAssetNodes which share an external repository for improved performance
-                data_time_queryer=DataTimeInstanceQueryer(
-                    instance=graphene_info.context.instance, asset_graph=asset_graph
-                ),
+                data_time_queryer=DataTimeInstanceQueryer(instance=graphene_info.context.instance),
             )
         return None
 

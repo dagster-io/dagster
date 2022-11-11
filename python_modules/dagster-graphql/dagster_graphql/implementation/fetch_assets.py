@@ -8,6 +8,7 @@ import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter
 from dagster import _check as check
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
@@ -343,6 +344,7 @@ def get_freshness_info(
     asset_key: AssetKey,
     freshness_policy: FreshnessPolicy,
     data_time_queryer: DataTimeInstanceQueryer,
+    asset_graph: AssetGraph,
 ) -> "GrapheneAssetFreshnessInfo":
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
 
@@ -354,7 +356,9 @@ def get_freshness_info(
         tz=datetime.timezone.utc,
     )
 
-    used_data_times = data_time_queryer.get_used_data_times_for_record(record=latest_record)
+    used_data_times = data_time_queryer.get_used_data_times_for_record(
+        asset_graph=asset_graph, record=latest_record
+    )
 
     # in the future, if you have upstream source assets with versioning policies, available data
     # times will be based off of the timestamp of the most recent materializations.

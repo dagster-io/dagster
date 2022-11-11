@@ -165,7 +165,7 @@ def test_calculate_data_time(relative_to, runs_to_expected_data_times_index):
             assert result.success
 
             # rebuild the data time queryer after each run
-            data_time_queryer = DataTimeInstanceQueryer(instance, asset_graph)
+            data_time_queryer = DataTimeInstanceQueryer(instance)
 
             # build mapping of expected timestamps
             for entry in instance.all_logs(
@@ -178,8 +178,8 @@ def test_calculate_data_time(relative_to, runs_to_expected_data_times_index):
 
             for asset_keys, expected_data_times in expected_index_mapping.items():
                 for ak in asset_keys:
-                    latest_asset_record = data_time_queryer.get_most_recent_materialization_record(
-                        asset_key=AssetKey(ak)
+                    latest_asset_record = data_time_queryer.get_latest_materialization_record(
+                        AssetKey(ak)
                     )
                     if relative_to == "ROOTS":
                         relevant_upstream_keys = None
@@ -188,6 +188,7 @@ def test_calculate_data_time(relative_to, runs_to_expected_data_times_index):
                     else:
                         relevant_upstream_keys = {AssetKey(u) for u in relative_to}
                     upstream_data_times = data_time_queryer.get_used_data_times_for_record(
+                        asset_graph=asset_graph,
                         record=latest_asset_record,
                         upstream_keys=relevant_upstream_keys,
                     )
