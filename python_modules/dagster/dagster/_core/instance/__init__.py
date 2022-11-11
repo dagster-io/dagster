@@ -39,6 +39,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.logical_version import (
     DEFAULT_LOGICAL_VERSION,
     LogicalVersion,
+    compute_logical_version,
     extract_logical_version_from_event_log_entry,
 )
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
@@ -2170,7 +2171,7 @@ class DagsterInstance:
     def get_logical_version_from_inputs(
         self,
         dependency_keys: AbstractSet[AssetKey],
-        op_version: str,
+        code_version: str,
         key_to_is_source_map: Mapping[AssetKey, bool],
         logical_version_overrides: Optional[Mapping[AssetKey, LogicalVersion]] = None,
     ) -> LogicalVersion:
@@ -2184,10 +2185,7 @@ class DagsterInstance:
             else self.get_current_logical_version(k, key_to_is_source_map[k])
             for k in ordered_dependency_keys
         ]
-        all_inputs = [op_version, *(v.value for v in dependency_logical_versions)]
-        hash_sig = sha256()
-        hash_sig.update(bytearray("".join(all_inputs), "utf8"))
-        return LogicalVersion(hash_sig.hexdigest())
+        return compute_logical_version(code_version, dependency_logical_versions)
 
     def get_current_logical_version(
         self,

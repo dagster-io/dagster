@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from hashlib import sha256
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from typing_extensions import Final
 
@@ -38,9 +39,31 @@ class LogicalVersion:
             return False
         return self.value == other.value
 
+UNKNOWN_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("UNKNOWN")
 
 DEFAULT_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("INITIAL")
 
+def compute_logical_version(code_version: str, input_logical_versions: Sequence[LogicalVersion]):
+    """Compute a logical version from inputs.
+
+    Args:
+        code_version (LogicalVersion): The code version of the computation.
+        input_logical_versions (Sequence[LogicalVersion]): The logical versions of the inputs.
+
+    Returns:
+        LogicalVersion: The computed logical version.
+    """
+    check.inst_param(code_version, "code_version", LogicalVersion)
+    check.sequence_param(input_versions, "input_versions", of_type=LogicalVersion)
+
+    all_inputs = [code_version.value, *(v.value for v in input_logical_versions)]
+
+    hash_sig = sha256()
+    hash_sig.update(bytearray("".join(all_inputs), "utf8"))
+    return LogicalVersion(hash_sig.hexdigest())
+
+
+    return f"{code_version}/{','.join(sorted(input_versions.items()))}"
 
 def extract_logical_version_from_event_log_entry(event: EventLogEntry) -> Optional[LogicalVersion]:
     from dagster._core.definitions.events import AssetMaterialization, AssetObservation
