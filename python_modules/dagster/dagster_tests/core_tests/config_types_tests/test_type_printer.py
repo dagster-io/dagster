@@ -1,7 +1,7 @@
 from dagster import Field, Int, Map, Noneable, ScalarUnion, String
 from dagster._config import (
     get_recursive_type_keys,
-    print_config_type_to_string,
+    config_type_to_string,
     resolve_to_config_type,
     snap_from_config_type,
 )
@@ -22,38 +22,38 @@ def assert_inner_types(parent_type, *dagster_types):
 
 
 def test_basic_type_print():
-    assert print_config_type_to_string(Int) == "Int"
+    assert config_type_to_string(Int) == "Int"
     assert_inner_types(Int)
 
 
 def test_basic_list_type_print():
-    assert print_config_type_to_string([int]) == "[Int]"
+    assert config_type_to_string([int]) == "[Int]"
     assert_inner_types([int], Int)
 
 
 def test_double_list_type_print():
-    assert print_config_type_to_string([[int]]) == "[[Int]]"
+    assert config_type_to_string([[int]]) == "[[Int]]"
     int_list = [int]
     list_int_list = [int_list]
     assert_inner_types(list_int_list, Int, int_list)
 
 
 def test_basic_nullable_type_print():
-    assert print_config_type_to_string(Noneable(int)) == "Int?"
+    assert config_type_to_string(Noneable(int)) == "Int?"
     nullable_int = Noneable(int)
     assert_inner_types(nullable_int, Int)
 
 
 def test_nullable_list_combos():
-    assert print_config_type_to_string([int]) == "[Int]"
-    assert print_config_type_to_string(Noneable([int])) == "[Int]?"
-    assert print_config_type_to_string([Noneable(int)]) == "[Int?]"
-    assert print_config_type_to_string(Noneable([Noneable(int)])) == "[Int?]?"
+    assert config_type_to_string([int]) == "[Int]"
+    assert config_type_to_string(Noneable([int])) == "[Int]?"
+    assert config_type_to_string([Noneable(int)]) == "[Int?]"
+    assert config_type_to_string(Noneable([Noneable(int)])) == "[Int?]?"
 
 
 def test_basic_map_type_print():
     assert (
-        print_config_type_to_string({str: int})
+        config_type_to_string({str: int})
         == """{
   [String]: Int
 }"""
@@ -61,7 +61,7 @@ def test_basic_map_type_print():
     assert_inner_types({str: int}, int, str)
 
     assert (
-        print_config_type_to_string({int: int})
+        config_type_to_string({int: int})
         == """{
   [Int]: Int
 }"""
@@ -71,14 +71,14 @@ def test_basic_map_type_print():
 
 def test_map_name_print():
     assert (
-        print_config_type_to_string(Map(str, int, key_label_name="name"))
+        config_type_to_string(Map(str, int, key_label_name="name"))
         == """{
   [name: String]: Int
 }"""
     )
 
     assert (
-        print_config_type_to_string(Map(int, float, key_label_name="title"))
+        config_type_to_string(Map(int, float, key_label_name="title"))
         == """{
   [title: Int]: Float
 }"""
@@ -87,7 +87,7 @@ def test_map_name_print():
 
 def test_double_map_type_print():
     assert (
-        print_config_type_to_string({str: {str: int}})
+        config_type_to_string({str: {str: int}})
         == """{
   [String]: {
     [String]: Int
@@ -101,31 +101,31 @@ def test_double_map_type_print():
 
 def test_list_map_nullable_combos():
     # Don't care about newlines here for brevity's sake, those are tested elsewhere
-    assert print_config_type_to_string({str: [int]}, with_lines=False) == "{ [String]: [Int] }"
+    assert config_type_to_string({str: [int]}, with_lines=False) == "{ [String]: [Int] }"
     assert (
-        print_config_type_to_string(Noneable({str: [int]}), with_lines=False)
+        config_type_to_string(Noneable({str: [int]}), with_lines=False)
         == "{ [String]: [Int] }?"
     )
     assert (
-        print_config_type_to_string({str: Noneable([int])}, with_lines=False)
+        config_type_to_string({str: Noneable([int])}, with_lines=False)
         == "{ [String]: [Int]? }"
     )
     assert (
-        print_config_type_to_string({str: [Noneable(int)]}, with_lines=False)
+        config_type_to_string({str: [Noneable(int)]}, with_lines=False)
         == "{ [String]: [Int?] }"
     )
     assert (
-        print_config_type_to_string(Noneable({str: [Noneable(int)]}), with_lines=False)
+        config_type_to_string(Noneable({str: [Noneable(int)]}), with_lines=False)
         == "{ [String]: [Int?] }?"
     )
     assert (
-        print_config_type_to_string(Noneable({str: Noneable([Noneable(int)])}), with_lines=False)
+        config_type_to_string(Noneable({str: Noneable([Noneable(int)])}), with_lines=False)
         == "{ [String]: [Int?]? }?"
     )
 
 
 def test_basic_dict():
-    output = print_config_type_to_string({"int_field": int})
+    output = config_type_to_string({"int_field": int})
 
     expected = """{
   int_field: Int
@@ -138,7 +138,7 @@ def test_two_field_dicts():
     two_field_dict = {"int_field": int, "string_field": str}
     assert_inner_types(two_field_dict, Int, String)
 
-    output = print_config_type_to_string(two_field_dict)
+    output = config_type_to_string(two_field_dict)
 
     expected = """{
   int_field: Int
@@ -152,7 +152,7 @@ def test_two_field_dicts_same_type():
     two_field_dict = {"int_field1": int, "int_field2": int}
     assert_inner_types(two_field_dict, Int)
 
-    output = print_config_type_to_string(two_field_dict)
+    output = config_type_to_string(two_field_dict)
 
     expected = """{
   int_field1: Int
@@ -163,7 +163,7 @@ def test_two_field_dicts_same_type():
 
 
 def test_optional_field():
-    output = print_config_type_to_string({"int_field": Field(int, is_required=False)})
+    output = config_type_to_string({"int_field": Field(int, is_required=False)})
 
     expected = """{
   int_field?: Int
@@ -173,7 +173,7 @@ def test_optional_field():
 
 
 def test_single_level_dict_lists_maps_and_nullable():
-    output = print_config_type_to_string(
+    output = config_type_to_string(
         {
             "nullable_int_field": Noneable(int),
             "optional_int_field": Field(int, is_required=False),
@@ -195,7 +195,7 @@ def test_single_level_dict_lists_maps_and_nullable():
 
 
 def test_nested_dicts_and_maps():
-    output = print_config_type_to_string({"field_one": {str: {"field_two": {str: int}}}})
+    output = config_type_to_string({"field_one": {str: {"field_two": {str: int}}}})
     expected = """{
   field_one: {
     [String]: {
@@ -211,7 +211,7 @@ def test_nested_dicts_and_maps():
 def test_nested_dict():
     nested_type = {"int_field": int}
     outer_type = {"nested": nested_type}
-    output = print_config_type_to_string(outer_type)
+    output = config_type_to_string(outer_type)
 
     assert_inner_types(outer_type, Int, nested_type)
 

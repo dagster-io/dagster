@@ -8,7 +8,7 @@ from .config_type import ConfigTypeKind
 from .snap import ConfigFieldSnap, ConfigTypeSnap, minimal_config_for_type_snap
 from .stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
 from .traversal_context import ContextData
-from .type_printer import print_config_type_key_to_string
+from .type_printer import config_type_to_string
 
 
 class DagsterEvaluationErrorReason(Enum):
@@ -156,8 +156,10 @@ def create_dict_type_mismatch_error(context: ContextData, config_value: object) 
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value {path_msg} must be dict. Expected: "{type_name}".'.format(
             path_msg=path_msg,
-            type_name=print_config_type_key_to_string(
-                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            type_name=config_type_to_string(
+                config_schema_snapshot=context.config_schema_snapshot,
+                config_type_key=context.config_type_key,
+                with_lines=False,
             ),
         ),
         error_data=RuntimeMismatchErrorData(
@@ -247,8 +249,10 @@ def create_field_not_defined_error(context: ContextData, received_field: str) ->
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
         message='Received unexpected config entry "{received}" {path_msg}. Expected: "{type_name}".'.format(
             path_msg=get_friendly_path_msg(context.stack),
-            type_name=print_config_type_key_to_string(
-                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            type_name=config_type_to_string(
+                config_schema_snapshot=context.config_schema_snapshot,
+                config_type_key=context.config_type_key,
+                with_lines=False,
             ),
             received=received_field,
         ),
@@ -265,8 +269,10 @@ def create_array_error(context: ContextData, config_value: object) -> Evaluation
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value {path_msg} must be list. Expected: "{type_name}"'.format(
             path_msg=get_friendly_path_msg(context.stack),
-            type_name=print_config_type_key_to_string(
-                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            type_name=config_type_to_string(
+                config_schema_snapshot=context.config_schema_snapshot,
+                config_type_key=context.config_type_key,
+                with_lines=False,
             ),
         ),
         error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
@@ -282,8 +288,10 @@ def create_map_error(context: ContextData, config_value: object) -> EvaluationEr
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value {path_msg} must be dict. Expected: "{type_name}"'.format(
             path_msg=get_friendly_path_msg(context.stack),
-            type_name=print_config_type_key_to_string(
-                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            type_name=config_type_to_string(
+                config_schema_snapshot=context.config_schema_snapshot,
+                config_type_key=context.config_type_key,
+                with_lines=False,
             ),
         ),
         error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
@@ -451,8 +459,10 @@ def create_none_not_allowed_error(context: ContextData) -> EvaluationError:
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value {path_msg} must not be None. Expected "{type_name}"'.format(
             path_msg=get_friendly_path_msg(context.stack),
-            type_name=print_config_type_key_to_string(
-                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            type_name=config_type_to_string(
+                config_schema_snapshot=context.config_schema_snapshot,
+                config_type_key=context.config_type_key,
+                with_lines=False,
             ),
         ),
         error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(None)),

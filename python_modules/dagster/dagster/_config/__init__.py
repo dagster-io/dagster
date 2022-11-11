@@ -47,7 +47,7 @@ from .stack import (
     EvaluationStackMapValueEntry,
     EvaluationStackPathEntry,
 )
-from .type_printer import print_config_type_to_string
+from .type_printer import config_type_to_string
 from .validate import process_config, validate_config, validate_config_from_snap
 
 # necessary to prevent circular import
