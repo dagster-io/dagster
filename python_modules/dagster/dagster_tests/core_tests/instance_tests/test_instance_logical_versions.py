@@ -1,9 +1,8 @@
 from hashlib import sha256
 
 from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.logical_version import DEFAULT_LOGICAL_VERSION
-from dagster._core.definitions.materialize import materialize, materialize_to_memory
+from dagster._core.definitions.materialize import materialize,
 from dagster._core.test_utils import instance_for_test
 
 
@@ -27,9 +26,9 @@ def test_get_most_recent_logical_version():
         pass
 
     with instance_for_test() as instance:
-        assert instance.get_most_recent_logical_version(delta.key, False) == DEFAULT_LOGICAL_VERSION
+        assert instance.get_current_logical_version(delta.key, False) == DEFAULT_LOGICAL_VERSION
         materialize([delta, beta, alpha], instance=instance)
-        assert instance.get_most_recent_logical_version(delta.key, False) != DEFAULT_LOGICAL_VERSION
+        assert instance.get_current_logical_version(delta.key, False) != DEFAULT_LOGICAL_VERSION
 
 
 def test_get_logical_version_from_inputs():
