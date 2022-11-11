@@ -11,13 +11,26 @@ from dagster import _seven
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
+    ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
+    RegisteredRepositoryLocationOrigin,
 )
-from dagster._core.test_utils import environ, instance_for_test, new_cwd
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.test_utils import (
+    create_run_for_test,
+    environ,
+    instance_for_test,
+    new_cwd,
+    poll_for_finished_run,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.server import open_server_process, wait_for_grpc_server
+from dagster._grpc.server import (
+    ExecuteExternalPipelineArgs,
+    open_server_process,
+    wait_for_grpc_server,
+)
 from dagster._grpc.types import ListRepositoriesResponse, SensorExecutionArgs
 from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster._seven import get_system_temp_directory
@@ -566,7 +579,12 @@ def test_load_with_secrets_manager():
                     "custom": {
                         "module": "dagster._core.test_utils",
                         "class": "TestSecretsLoader",
-                        "config": {"env_vars": {"FOO": "BAR"}},
+                        "config": {
+                            "env_vars": {
+                                "FOO": "BAR",
+                                "FOO_INSIDE_OP": "BAR_INSIDE_OP",
+                            }
+                        },
                     }
                 },
             },
@@ -587,11 +605,46 @@ def test_load_with_secrets_manager():
                 wait_for_grpc_server(
                     process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
                 )
+
+                client = DagsterGrpcClient(port=port)
+
                 list_repositories_response = deserialize_json_to_dagster_namedtuple(
-                    DagsterGrpcClient(port=port).list_repositories()
+                    client.list_repositories()
                 )
 
                 assert isinstance(list_repositories_response, ListRepositoriesResponse)
+
+                # Launch a run and verify that it finishes
+
+                run = create_run_for_test(
+                    instance, pipeline_name="needs_env_var_job", mode="default"
+                )
+                run_id = run.run_id
+
+                pipeline_origin = ExternalPipelineOrigin(
+                    pipeline_name="needs_env_var_job",
+                    external_repository_origin=ExternalRepositoryOrigin(
+                        repository_name="needs_env_var_repo",
+                        repository_location_origin=RegisteredRepositoryLocationOrigin("not_used"),
+                    ),
+                )
+
+                res = deserialize_json_to_dagster_namedtuple(
+                    client.start_run(
+                        ExecuteExternalPipelineArgs(
+                            pipeline_origin=pipeline_origin,
+                            pipeline_run_id=run.run_id,
+                            instance_ref=instance.get_ref(),
+                        )
+                    )
+                )
+
+                assert res.success
+                finished_pipeline_run = poll_for_finished_run(instance, run_id)
+
+                assert finished_pipeline_run
+                assert finished_pipeline_run.run_id == run_id
+                assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
             finally:
                 process.terminate()
