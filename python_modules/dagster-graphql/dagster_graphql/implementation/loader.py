@@ -502,8 +502,8 @@ class ProjectedLogicalVersionLoader:
                     materialization, include_provenance=True
                 )
                 if (
-                    logical_version is None
-                    or provenance is None
+                    logical_version is None  # old materialization event before logical versions
+                    or provenance is None  # should never happen
                     or self._is_provenance_changed(node, provenance)
                 ):
                     version = self._compute_newly_materialized_version(node)
@@ -541,7 +541,7 @@ class ProjectedLogicalVersionLoader:
             self._fetch_all_nodes()
             return self._fetch_node(key)
 
-    def _fetch_all_nodes(self):
+    def _fetch_all_nodes(self) -> None:
         self._key_to_node_map = {}
         for repository in self._repositories:
             for node in repository.get_external_asset_nodes():
