@@ -232,7 +232,7 @@ const AssetRow = (props: JobRowProps) => {
         </RowCell>
         <RowCell>
           {liveData ? (
-            <AssetLatestRunWithNotices liveData={liveData} />
+            <AssetLatestRunWithNotices liveData={liveData} includeFreshness />
           ) : (
             <LoadingOrNone queryResult={queryResult} />
           )}
