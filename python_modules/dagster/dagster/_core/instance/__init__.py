@@ -2209,7 +2209,7 @@ class DagsterInstance:
         is_source: bool,
         *,
         event: Optional[EventLogRecord] = ...,
-        include_provenance: Literal[True] = ...,
+        include_provenance: Literal[True],
     ) -> Tuple[LogicalVersion, Optional[LogicalVersionProvenance]]:
         ...
 
