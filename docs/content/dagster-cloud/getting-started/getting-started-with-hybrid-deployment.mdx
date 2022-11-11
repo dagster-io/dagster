@@ -64,19 +64,28 @@ Continue to the next step when finished.
 
 For most Hybrid deployments, with the exception of those using a local agent, you will need to create a Docker image containing your code. Then you will add a code location to Dagster Cloud that references the image. Typically, this build and deploy is done through CI/CD, but it is also possible to deploy a code location manually.
 
-- For continunous integration using GitHub actions:
+<TabGroup>
+  <TabItem name="GitHub Actions">
 
-1. Begin by copying the GitHub action deploy workflow in [this repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart). 
+For continunous integration using GitHub actions:
+
+1. Begin by copying the GitHub action deploy workflow in [this repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart).
 2. Uncomment the step that is relevant to your Docker container registry.
-2. Set the necessary GitHub action secrets, including your Dagster Cloud API Token and Organization ID. 
+3. Set the necessary GitHub action secrets, including your Dagster Cloud API Token and Organization ID.
 
-- For continuous integration using a different CI/CD provider, your system should:
+</TabItem>
+<TabItem name="Other CI/CD provider">
 
- 1. Build a Docker image containing your dagster code.  
- 2. Push the image to a registry accessible by your agent.
- 3. Deploy the update to Dagster Cloud using the `dagster-cloud` CLI. Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations) for more info.
+For continuous integration using a different CI/CD provider, your system should:
 
-- For manual code deployments, you will follow these steps:
+1. Build a Docker image containing your dagster code.
+2. Push the image to a registry accessible by your agent.
+3. Deploy the update to Dagster Cloud using the `dagster-cloud` CLI. Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations) for more info.
+
+</TabItem>
+<TabItem name="Manual deployment">
+
+For manual code deployments:
 
 1. In Dagster Cloud, click **Workspace**.
 
@@ -93,7 +102,10 @@ For most Hybrid deployments, with the exception of those using a local agent, yo
 
 4. Verify that the configuration is correct, then click **Add code location** to save the config.
 
-The agent will attempt to load the your code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
+The agent will attempt to load your code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
+
+</TabItem>
+</TabGroup>
 
 ---
 
