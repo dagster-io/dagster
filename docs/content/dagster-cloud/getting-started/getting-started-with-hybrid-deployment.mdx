@@ -33,6 +33,8 @@ To complete the steps in this guide, you'll need:
 
   Dagster Cloud supports a handful of agents, each with its own prerequisites for setup. Refer to the [Agent documentation](/dagster-cloud/deployment/agents) for more info.
 
+- For all but the local agent, you will need **access to a container registry** to store Docker images containing your Dagster code.
+
 ---
 
 ## Step 1: Create a Dagster Cloud account and organization
@@ -60,17 +62,30 @@ Continue to the next step when finished.
 
 ## Step 3: Deploy your code
 
-Now that you've set up your deployment, you'll need to tell it the location of your Dagster code.
+For most Hybrid deployments, with the exception of those using a local agent, you will need to create a Docker image containing your code. Then you will add a code location to Dagster Cloud that references the image. Typically, this build and deploy is done through CI/CD, but it is also possible to deploy a code location manually.
 
-A code location specifies a single Python package or file that defines your Dagster code. Each Dagster Cloud deployment can include code from one or more code locations. Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations) for more info.
+<TabGroup>
+  <TabItem name="GitHub Actions">
 
-To complete this step, you can use your own Dagster code or a [project scaffold](/getting-started/create-new-project). Our examples use the scaffold. Scaffold a new project by running:
+For continunous integration using GitHub actions:
 
-```shell
-dagster project from-example \
-  --name <PROJECT_NAME> \
-  --example <EXAMPLE_PROJECT_NAME>
-```
+1. Begin by copying the GitHub action deploy workflow in [this repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart).
+2. Uncomment the step that is relevant to your Docker container registry.
+3. Set the necessary GitHub action secrets, including your Dagster Cloud API Token and Organization ID.
+
+</TabItem>
+<TabItem name="Other CI/CD provider">
+
+For continuous integration using a CI/CD provider other than GitHub, your system should:
+
+1. Build a Docker image containing your dagster code.
+2. Push the image to a registry accessible by your agent.
+3. Deploy the update to Dagster Cloud using the `dagster-cloud` CLI. Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations) for more info.
+
+</TabItem>
+<TabItem name="Manual deployment">
+
+For manual code deployments:
 
 1. In Dagster Cloud, click **Workspace**.
 
@@ -87,7 +102,10 @@ dagster project from-example \
 
 4. Verify that the configuration is correct, then click **Add code location** to save the config.
 
-The agent will attempt to load the your code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
+The agent will attempt to load your code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
+
+</TabItem>
+</TabGroup>
 
 ---
 
