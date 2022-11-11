@@ -10,7 +10,7 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.retries import RetryMode, RetryState
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._utils.interrupts import pop_captured_interrupt
 
@@ -463,10 +463,10 @@ class ActiveExecution:
         )
 
     @property
-    def retry_state(self):
+    def retry_state(self) -> RetryState:
         return self._retry_state
 
-    def get_known_state(self):
+    def get_known_state(self) -> KnownExecutionState:
         return KnownExecutionState(
             previous_retry_attempts=self._retry_state.snapshot_attempts(),
             dynamic_mappings=dict(self._successful_dynamic_outputs),
@@ -481,7 +481,7 @@ class ActiveExecution:
         if dyn_outputs:
             self._gathering_dynamic_outputs[step.key] = {out.name: [] for out in dyn_outputs}
 
-    def _resolve_any_dynamic_outputs(self, step_key: str):
+    def _resolve_any_dynamic_outputs(self, step_key: str) -> None:
         if step_key in self._gathering_dynamic_outputs:
             self._successful_dynamic_outputs[step_key] = self._gathering_dynamic_outputs[step_key]
             self._new_dynamic_mappings = True

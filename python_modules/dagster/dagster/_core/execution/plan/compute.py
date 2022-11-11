@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 from typing import Any, AsyncGenerator, Callable, Iterator, List, Mapping, Sequence, Set, Union
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -14,6 +15,7 @@ from dagster._core.definitions import (
     Output,
 )
 from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.compute import SolidExecutionContext
@@ -24,9 +26,9 @@ from dagster._utils import iterate_with_context
 from .outputs import StepOutput, StepOutputProperties
 from .utils import solid_execution_error_boundary
 
-SolidOutputUnion = Union[
-    DynamicOutput,
-    Output,
+SolidOutputUnion: TypeAlias = Union[
+    DynamicOutput[Any],
+    Output[Any],
     AssetMaterialization,
     Materialization,
     ExpectationResult,
@@ -159,7 +161,7 @@ def _yield_compute_results(
 
 
 def execute_core_compute(
-    step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn
+    step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: OpComputeFunction
 ) -> Iterator[SolidOutputUnion]:
     """
     Execute the user-specified compute for the solid. Wrap in an error boundary and do

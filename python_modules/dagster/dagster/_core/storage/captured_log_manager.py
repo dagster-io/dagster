@@ -1,5 +1,7 @@
 # pylint: disable=unused-argument
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import IO, Generator, NamedTuple, Optional, Sequence
@@ -87,7 +89,7 @@ class CapturedLogMetadata(
 
 
 class CapturedLogSubscription:
-    def __init__(self, manager, log_key, cursor):
+    def __init__(self, manager: CapturedLogManager, log_key: Sequence[str], cursor: Optional[str]):
         self._manager = manager
         self._log_key = log_key
         self._cursor = cursor
@@ -133,7 +135,7 @@ class CapturedLogSubscription:
         self._observer.on_completed()
 
 
-def _has_max_data(chunk):
+def _has_max_data(chunk) -> bool:
     return chunk and len(chunk) >= MAX_BYTES_CHUNK_READ
 
 
@@ -236,6 +238,6 @@ class CapturedLogManager(ABC):
                 back data to the subscriber
         """
 
-    def build_log_key_for_run(self, run_id, step_key):
+    def build_log_key_for_run(self, run_id: str, step_key: str) -> Sequence[str]:
         """Legacy adapter to translate run_id/key to captured log manager-based log_key"""
         return [run_id, "compute_logs", step_key]

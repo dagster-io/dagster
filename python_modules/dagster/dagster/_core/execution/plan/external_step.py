@@ -3,7 +3,7 @@ import pickle
 import shutil
 import subprocess
 import sys
-from typing import TYPE_CHECKING, Iterator, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, cast
 
 import dagster._check as check
 from dagster._config import Field, StringSource
@@ -13,6 +13,7 @@ from dagster._core.definitions.resource_definition import resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.events import DagsterEvent
+from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
@@ -161,7 +162,7 @@ def step_context_to_step_run_ref(
 
 
 def external_instance_from_step_run_ref(
-    step_run_ref: StepRunRef, event_listener_fn=None
+    step_run_ref: StepRunRef, event_listener_fn: Optional[Callable[[EventLogEntry], Any]] = None
 ) -> DagsterInstance:
     """
     Create an ephemeral DagsterInstance that is suitable for executing steps that are specified
