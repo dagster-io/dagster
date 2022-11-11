@@ -350,7 +350,7 @@ def get_freshness_info(
 
     current_time = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    latest_record = data_time_queryer.get_most_recent_materialization_record(asset_key=asset_key)
+    latest_record = data_time_queryer.get_latest_materialization_record(asset_key)
     latest_materialization_time = datetime.datetime.fromtimestamp(
         latest_record.event_log_entry.timestamp,
         tz=datetime.timezone.utc,
