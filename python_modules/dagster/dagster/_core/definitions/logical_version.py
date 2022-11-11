@@ -39,6 +39,9 @@ class LogicalVersion:
             return False
         return self.value == other.value
 
+    def __hash__(self) -> str:
+        return self.value
+
 UNKNOWN_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("UNKNOWN")
 
 DEFAULT_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("INITIAL")
@@ -54,9 +57,12 @@ def compute_logical_version(code_version: str, input_logical_versions: Sequence[
         LogicalVersion: The computed logical version.
     """
     check.inst_param(code_version, "code_version", LogicalVersion)
-    check.sequence_param(input_versions, "input_versions", of_type=LogicalVersion)
+    check.sequence_param(input_logical_versions, "input_versions", of_type=LogicalVersion)
 
-    all_inputs = [code_version.value, *(v.value for v in input_logical_versions)]
+    if UNKNOWN_LOGICAL_VERSION in input_logical_versions:
+        return UNKNOWN_LOGICAL_VERSION
+
+    all_inputs = [code_version, *(v.value for v in input_logical_versions)]
 
     hash_sig = sha256()
     hash_sig.update(bytearray("".join(all_inputs), "utf8"))
