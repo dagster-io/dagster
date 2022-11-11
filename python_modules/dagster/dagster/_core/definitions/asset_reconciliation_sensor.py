@@ -544,11 +544,13 @@ def reconcile(
 
     data_time_queryer = DataTimeInstanceQueryer(instance, asset_graph)
 
-    assets_to_reconcile = assets_to_reconcile_for_freshness(
+    (
+        asset_partitions_to_reconcile_for_freshness,
+        eventual_asset_partitions_to_reconcile_for_freshness,
+    ) = determine_asset_partitions_to_reconcile_for_freshness(
         data_time_queryer, asset_graph, repository_def._assets_defs_by_key
     )
 
-    """
     (
         asset_partitions_to_reconcile,
         newly_materialized_root_asset_keys,
@@ -560,13 +562,17 @@ def reconcile(
         cursor=cursor,
         target_asset_selection=asset_selection,
     )
-    """
 
     assets_to_reconcile_by_partitions_def_partition_key: Mapping[
         Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]
     ] = defaultdict(set)
 
-    for asset_partition in asset_partitions_to_reconcile:
+    for asset_partition in (
+        asset_partitions_to_reconcile | asset_partitions_to_reconcile_for_freshness
+    ):
+        # defer materializing the asset now if it will be materialized later
+        if asset_partition in eventual_asset_partitions_to_reconcile_for_freshness:
+            continue
         assets_to_reconcile_by_partitions_def_partition_key[
             asset_graph.get_partitions_def(asset_partition.asset_key), asset_partition.partition_key
         ].add(asset_partition.asset_key)
@@ -588,7 +594,6 @@ def reconcile(
             )
         )
 
-    """
     return run_requests, cursor.with_updates(
         latest_storage_id=latest_storage_id,
         run_requests=run_requests,
@@ -596,8 +601,6 @@ def reconcile(
         newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
         newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
     )
-    """
-    return run_requests, cursor
 
 
 @experimental
@@ -693,14 +696,14 @@ def build_asset_reconciliation_sensor(
     )
 
 
-def assets_to_reconcile_for_freshness(
+def determine_asset_partitions_to_reconcile_for_freshness(
     data_time_queryer: "DataTimeInstanceQueryer", asset_graph: AssetGraph, assets_defs_by_key
-) -> Set[AssetKey]:
+) -> Tuple[Set[AssetKey], Set[AssetKeyPartitionKey]]:
     """Returns a set of AssetKeys to materialize in order to abide by the given FreshnessPolicies.
     Attempts to minimize the total number of asset executions.
     """
     # look within a 12-hour time window to combine future runs together
-    current_time = pendulum.now()
+    current_time = pendulum.now(tz=pendulum.UTC)
     plan_window_start = current_time
     plan_window_end = plan_window_start + pendulum.duration(hours=12)
 
@@ -709,14 +712,12 @@ def assets_to_reconcile_for_freshness(
     constraints_by_key = defaultdict(set)
 
     # for each asset with a FreshnessPolicy, get all unsolved constraints for the given time window
-    for asset_key, assets_def in assets_defs_by_key.items():
-        freshness_policy = assets_def.freshness_policies_by_key.get(asset_key)
+    for key, assets_def in assets_defs_by_key.items():
+        freshness_policy = assets_def.freshness_policies_by_key.get(key)
         if freshness_policy is None:
             continue
-        upstream_keys = asset_graph.get_roots(asset_key)
-        latest_record = data_time_queryer.get_most_recent_materialization_record(
-            asset_key=asset_key
-        )
+        upstream_keys = asset_graph.get_roots(key)
+        latest_record = data_time_queryer.get_most_recent_materialization_record(asset_key=key)
         used_data_times = (
             data_time_queryer.get_used_data_times_for_record(
                 record=latest_record, upstream_keys=upstream_keys
@@ -724,8 +725,8 @@ def assets_to_reconcile_for_freshness(
             if latest_record is not None
             else {}
         )
-        available_data_times = {asset_key: current_time for asset_key in upstream_keys}
-        constraints_by_key[asset_key] = freshness_policy.constraints_for_time_window(
+        available_data_times = {upstream_key: plan_window_start for upstream_key in upstream_keys}
+        constraints_by_key[key] = freshness_policy.constraints_for_time_window(
             window_start=plan_window_start,
             window_end=plan_window_end,
             used_data_times=used_data_times,
@@ -746,7 +747,8 @@ def assets_to_reconcile_for_freshness(
                 constraints_by_key[upstream_key] |= constraints_by_key[key]
 
     # now we have a full set of constraints, we can find solutions for them as we move back down
-    will_materialize: Set[AssetKey] = set()
+    to_materialize: Set[AssetKeyPartitionKey] = set()
+    eventually_materialize: Set[AssetKeyPartitionKey] = set()
     expected_data_times_by_key: Dict[Dict[AssetKey, float]] = defaultdict(dict)
     for level in toposorted_assets:
         for key in level:
@@ -780,9 +782,8 @@ def assets_to_reconcile_for_freshness(
             # calculate the data time for this record in relation to the upstream keys which are
             # set to be updated this tick and are involved in some constraint
             # the current data time is based off of the most recent materialization
-            latest_record = data_time_queryer.get_most_recent_materialization_record(
-                asset_key=asset_key
-            )
+            latest_record = data_time_queryer.get_most_recent_materialization_record(asset_key=key)
+            print("latest_record", latest_record)
             current_data_times = (
                 data_time_queryer.get_used_data_times_for_record(
                     upstream_keys=relevant_upstream_keys,
@@ -791,20 +792,18 @@ def assets_to_reconcile_for_freshness(
                 if latest_record is not None
                 else {}
             )
+            print("CURRENT DATA TIMES", current_data_times)
 
             # figure out a range of times that you could kick off an execution to solve the most
             # pressing constraint, alongside a maximum number of additional constraints
-            sorted_constraints = sorted(constraints_by_key[key], key=lambda c: c.required_by_time)
-
-            # must have some run between the required data time and the time it's required
-            execution_window_start = (
-                sorted_constraints[0].required_data_time if sorted_constraints else None
-            )
-            execution_window_end = (
-                sorted_constraints[0].required_by_time if sorted_constraints else None
-            )
-            for constraint in sorted_constraints:
+            execution_window_start = None
+            execution_window_end = None
+            print("WINDOW", execution_window_start, execution_window_end)
+            if execution_window_start and execution_window_end:
+                print("HUH", execution_window_start > execution_window_end)
+            for constraint in sorted(constraints_by_key[key], key=lambda c: c.required_by_time):
                 current_data_time = current_data_times.get(constraint.asset_key)
+                print(current_data_time, constraint.required_data_time)
 
                 if not (
                     # this constraint is irrelevant, as it is satisfied by the current data time
@@ -814,15 +813,19 @@ def assets_to_reconcile_for_freshness(
                     )
                     # this constraint is irrelevant, as a currently-executing run will satisfy it
                     # TODO TODO TODO
-                    or (
-                        constraint.asset_key in currently_materializing
-                        and current_run_data_time > required_data_time
-                    )
+                    # or (
+                    #    constraint.asset_key in currently_materializing
+                    #    and current_run_data_time > required_data_time
+                    # )
                     # this constraint is irrelevant, as it does not correspond to an asset which is
                     # directly upstream of this asset, nor to an asset which is transitively
                     # upstream of this asset and will be materialized this tick
                     or constraint.asset_key not in expected_data_times
                 ):
+                    if execution_window_start is None:
+                        execution_window_start = constraint.required_data_time
+                    if execution_window_end is None:
+                        execution_window_end = constraint.required_by_time
 
                     # you can solve this constraint within the existing execution window
                     if constraint.required_data_time < execution_window_end:
@@ -839,11 +842,14 @@ def assets_to_reconcile_for_freshness(
             # constraints at once, kick off a run at the beginning of that time window to give it
             # maximum time to complete
             if execution_window_start is not None and execution_window_start <= current_time:
-                will_materialize.add(key)
+                to_materialize.add(AssetKeyPartitionKey(key, None))
                 # only propogate these expected data times if you plan on kicking off a run
                 expected_data_times_by_key[key] = expected_data_times
             else:
+                # this key is planned to be updated within the plan window
+                if execution_window_start is not None:
+                    eventually_materialize.add(AssetKeyPartitionKey(key, None))
                 # otherwise, the expected data time will be the current one
                 expected_data_times_by_key[key] = current_data_times
 
-    return will_materialize
+    return to_materialize, eventually_materialize

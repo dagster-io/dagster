@@ -81,9 +81,8 @@ class FreshnessPolicy(
             constraint_ticks = period.range("minutes", (self.maximum_lag_minutes / 10.0) + 0.1)
 
         # iterate over each schedule tick in the provided time window
-        n_ticks = 0
-        evaluation_tick = next(constraint_ticks)
-        while evaluation_tick < window_end:
+        evaluation_tick = next(constraint_ticks, None)
+        while evaluation_tick is not None and evaluation_tick < window_end:
             for asset_key, available_data_time in available_data_times.items():
                 # assume updated data is always available
                 if available_data_time == window_start:
@@ -106,10 +105,9 @@ class FreshnessPolicy(
                         )
                     )
 
-            evaluation_tick = next(constraint_ticks)
+            evaluation_tick = next(constraint_ticks, None)
             # fallback if the user selects a very small maximum_lag_minutes value
-            n_ticks += 1
-            if n_ticks > 100:
+            if len(constraints) > 100:
                 break
         return constraints
 
