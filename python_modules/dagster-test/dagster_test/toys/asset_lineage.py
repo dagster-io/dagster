@@ -1,7 +1,7 @@
 import datetime
-import os
 import random
 import string
+from typing import Any
 
 import pandas as pd
 
@@ -10,6 +10,7 @@ from dagster import (
     AssetKey,
     Field,
     IOManager,
+    InputContext,
     MetadataEntry,
     MetadataValue,
     Out,
@@ -67,6 +68,10 @@ def metadata_for_actions(df):
 
 
 class MyDatabaseIOManager(IOManager):
+    def load_input(self, context: InputContext) -> Any:
+        # loading code here
+        return
+
     def handle_output(self, context, obj):
         # can pretend this actually came from a library call
         yield MetadataEntry(
