@@ -29,6 +29,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster._core.definitions.logical_version import (
+    CODE_VERSION_TAG_KEY,
     LogicalVersion,
     get_input_event_pointer_tag_key,
     get_input_logical_version_tag_key,
@@ -516,11 +517,12 @@ def _get_output_asset_materializations(
     # logical version computation
     asset_layer = step_context.pipeline_def.asset_layer
     dep_keys = asset_layer.upstream_assets_for_asset(asset_key)
-    op_version = check.not_none(asset_layer.op_version_for_asset(asset_key))
+    code_version = asset_layer.op_version_for_asset(asset_key) or step_context.pipeline_run.run_id
     dep_key_to_is_source_map = {key: asset_layer.is_source_for_asset(key) for key in dep_keys}
     input_event_records = check.not_none(step_context.input_event_records)
     input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
     tags: Dict[str, str] = {}
+    tags[CODE_VERSION_TAG_KEY] = code_version
     for key, event in input_event_records.items():
         is_source = asset_layer.is_source_for_asset(key)
         logical_version = step_context.instance.get_current_logical_version(
@@ -531,7 +533,7 @@ def _get_output_asset_materializations(
         tags[get_input_event_pointer_tag_key(key)] = str(event.storage_id) if event else "NULL"
 
     logical_version = step_context.instance.get_logical_version_from_inputs(
-        dep_keys, op_version, dep_key_to_is_source_map, input_logical_versions
+        dep_keys, code_version, dep_key_to_is_source_map, input_logical_versions
     )
     tags["dagster/logical_version"] = logical_version.value
 
@@ -683,7 +685,6 @@ def _store_output(
         output_context, output_def, output_manager
     )
     if asset_key:
-        input_keys = step_context.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
         for materialization in _get_output_asset_materializations(
             asset_key,
             partitions,
