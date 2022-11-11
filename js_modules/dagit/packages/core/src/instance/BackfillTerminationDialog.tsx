@@ -29,7 +29,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
         partition.runStatus && partition.runId && cancelableStatuses.has(partition.runStatus),
     );
     return (
-      unfinishedPartitions?.reduce(
+      unfinishedPartitions.reduce(
         (accum, partition) =>
           partition && partition.runId ? {...accum, [partition.runId]: true} : accum,
         {},
