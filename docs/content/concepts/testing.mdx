@@ -7,16 +7,6 @@ description: Dagster enables you to build testable and maintainable data applica
 
 Dagster enables you to build testable and maintainable data applications. It provides ways to allow you unit-test your data applications, separate business logic from environments, and set explicit expectations on uncontrollable inputs.
 
-## Relevant APIs
-
-| Name                                                               | Description                                                                                                          |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.          |
-| <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op or asset for testing. |
-| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                     |
-
-## Overview
-
 In data applications, testing computations and jobs is notoriously challenging. Because of this, they often go relatively untested before hitting production. If there is testing in place, these tests are often slow, not run during common developer workflows, and have limited value because of the inability to simulate conditions in the production environment.
 
 We believe the underlying fact is that data applications encode much of their business logic in heavy, external systems. Examples include processing systems like Spark and data warehouses such as Snowflake and Redshift. It is difficult to structure software to isolate these dependencies or nearly impossible to run them in a lightweight manner.
@@ -26,11 +16,24 @@ This page demonstrates how Dagster addresses these challenges:
 - It provides convenient ways to write [Unit Tests in Data Applications](#unit-tests-in-data-applications).
 - It allows you to [Separate Business Logic from Environments](#separating-business-logic-from-environments) and, therefore, write lightweight tests.
 
-## Unit Tests in Data Applications
+---
 
-Principal: Errors that can be caught by unit tests should be caught by unit tests.
+## Relevant APIs
 
-Corollary: Do not attempt to unit test for errors that unit tests cannot catch.
+| Name                                                               | Description                                                                                                          |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.          |
+| <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op or asset for testing. |
+| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                     |
+
+---
+
+## Unit tests in data applications
+
+Consider the following:
+
+- Principal: Errors that can be caught by unit tests should be caught by unit tests.
+- Corollary: Do not attempt to unit test for errors that unit tests cannot catch.
 
 Using unit tests without keeping these principles in mind is why the data community frequently treats unit tests with skepticism. It is too often interpreted as simulating an external system such as Spark or data warehouse in a granular manner. Those are very complex systems that are impossible to emulate faithfully. Do not try to do so.
 
@@ -38,7 +41,7 @@ Unit tests are not acceptance tests. They should not be the judge of whether a c
 
 So, unit tests should be viewed primarily as productivity and code quality tools, leading to more correct calculations. Here we will demonstrate how Dagster conveniently enables unit tests.
 
-### Testing a Job Execution
+### Testing a job execution
 
 The workhorse function for unit-testing a job is the <PyObject object="JobDefinition" method="execute_in_process"/> function. Using this function you can execute a job in process and then test execution properties using the <PyObject object="ExecuteInProcessResult" /> object that it returns.
 
@@ -57,15 +60,17 @@ def test_job():
 
 You can find more unit test examples in the [Examples](#examples) section below.
 
-## Separating Business Logic from Environments
+---
+
+## Separating business logic from environments
 
 As noted above, data applications often rely on and encode their business logic in code that is executed by heavy, external dependencies. It means that it is easy and natural to couple your application to a single operating environment. However, then, if you do this, any testing requires your production environment.
 
 To make local testing possible, you may structure your software to, as much as possible, cleanly separate this business logic from your operating environment. This is one of the reasons why Dagster flows through a context object throughout its entire computation.
 
-Attached to the context is a set of user-defined [resources](/concepts/resources). Examples of resources include APIs to data warehouses, Spark clusters, s3 sessions, or some other external dependency or service. Each job contains a set of resources, and multiple jobs can be defined for a given dagster graph for each set of resources (production, local, testing, etc).
+Attached to the context is a set of user-defined [resources](/concepts/resources). Examples of resources include APIs to data warehouses, Spark clusters, s3 sessions, or some other external dependency or service. Each job contains a set of resources, and multiple jobs can be defined for a given Dagster graph for each set of resources (production, local, testing, etc).
 
-For example, in order to skip external dependencies in tests, you may find yourself needing to constantly comment and uncomment like:
+For example, to skip external dependencies in tests, you may find yourself needing to constantly comment and uncomment like:
 
 ```python file=/concepts/resources/tests.py startafter=start_test_before_marker endbefore=end_test_before_marker
 from dagster import op
@@ -126,13 +131,24 @@ def run_in_prod():
     download_job.execute_in_process()
 ```
 
-For more information, you can check out the [Resources](/concepts/resources) sections.
+For more information, check out the [Resources](/concepts/resources) sections.
+
+---
 
 ## Examples
 
+Check out the following test examples:
+
+- [Ops](#testing-ops)
+- [Software-defined assets](#testing-software-defined-assets)
+- [Multiple software-defined assets defined together](#testing-multiple-software-defined-assets-together)
+- [Job execution with config](#testing-job-execution-with-config)
+- [Event stream](#testing-event-stream)
+- [Jobs with top-level inputs](#testing-jobs-with-top-level-inputs)
+
 ### Testing ops
 
-While using the `@op` decorator on a function does change its signature, the invocation mirrors closely the underlying decorated function.
+While using the <PyObject object="op" decorator /> decorator on a function does change its signature, the invocation mirrors closely the underlying decorated function.
 
 Consider the following op.
 
