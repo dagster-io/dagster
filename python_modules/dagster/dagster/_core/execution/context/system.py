@@ -792,7 +792,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return solid_config.config if solid_config else None
 
     @property
-    def is_asset_materialization(self) -> bool:
+    def step_materializes_assets(self) -> bool:
         step_outputs = self.step.step_outputs
         if len(step_outputs) != 1:
             return False
@@ -803,7 +803,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             return asset_info is not None
 
     @property
-    def input_event_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
+    def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
         return self._input_event_records
 
     def fetch_input_event_records(self) -> None:

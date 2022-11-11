@@ -513,33 +513,7 @@ def _get_output_asset_materializations(
 ) -> Iterator[AssetMaterialization]:
 
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
-
-    # logical version computation
-    asset_layer = step_context.pipeline_def.asset_layer
-    dep_keys = asset_layer.upstream_assets_for_asset(asset_key)
-    code_version = asset_layer.op_version_for_asset(asset_key) or step_context.pipeline_run.run_id
-    dep_key_to_is_source_map = {key: asset_layer.is_source_for_asset(key) for key in dep_keys}
-    input_event_records = check.not_none(step_context.input_event_records)
-    input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
-    tags: Dict[str, str] = {}
-    tags[CODE_VERSION_TAG_KEY] = code_version
-    for key, event in input_event_records.items():
-        is_source = asset_layer.is_source_for_asset(key)
-        logical_version = step_context.instance.get_current_logical_version(
-            key, is_source, event=event
-        )
-        input_logical_versions[key] = logical_version
-        tags[get_input_logical_version_tag_key(key)] = logical_version.value
-        tags[get_input_event_pointer_tag_key(key)] = str(event.storage_id) if event else "NULL"
-
-    logical_version = step_context.instance.get_logical_version_from_inputs(
-        dep_keys, code_version, dep_key_to_is_source_map, input_logical_versions
-    )
-    tags["dagster/logical_version"] = logical_version.value
-
-    # all_metadata.append(
-    #     MetadataEntry(label="logical_version", value=MetadataValue.logical_version(version))
-    # )
+    tags = _extract_logical_version_tags(asset_key, step_context)
 
     if asset_partitions:
         metadata_mapping: Dict[
@@ -590,6 +564,31 @@ def _get_output_asset_materializations(
             warnings.simplefilter("ignore", category=DeprecationWarning)
 
             yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
+
+def _extract_logical_version_tags(asset_key: AssetKey, step_context: StepExecutionContext) -> Dict[str, str]:
+    asset_layer = step_context.pipeline_def.asset_layer
+    dep_keys = asset_layer.upstream_assets_for_asset(asset_key)
+    code_version = asset_layer.op_version_for_asset(asset_key) or step_context.pipeline_run.run_id
+    dep_key_to_is_source_map = {key: asset_layer.is_source_for_asset(key) for key in dep_keys}
+    input_event_records = check.not_none(step_context.input_asset_records)
+    input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
+    tags: Dict[str, str] = {}
+    tags[CODE_VERSION_TAG_KEY] = code_version
+    for key, event in input_event_records.items():
+        is_source = asset_layer.is_source_for_asset(key)
+        logical_version = step_context.instance.get_current_logical_version(
+            key, is_source, event=event
+        )
+        input_logical_versions[key] = logical_version
+        tags[get_input_logical_version_tag_key(key)] = logical_version.value
+        tags[get_input_event_pointer_tag_key(key)] = str(event.storage_id) if event else "NULL"
+
+    logical_version = step_context.instance.get_logical_version_from_inputs(
+        dep_keys, code_version, dep_key_to_is_source_map, input_logical_versions
+    )
+    tags["dagster/logical_version"] = logical_version.value
+    return tags
+
 
 
 def _store_output(
