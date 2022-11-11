@@ -18,6 +18,7 @@ from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
 
 from ..asset_defs import _get_asset_deps, _get_deps, _get_node_asset_key, _get_node_group_name
+from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
 from .resources import DbtCloudResourceV2
 
@@ -66,6 +67,24 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         job = self._dbt_cloud.get_job(job_id=self._job_id)
         self._project_id = job["project_id"]
         self._has_generate_docs = job["generate_docs"]
+
+        # Initially, we'll constraint the kinds of dbt Cloud jobs that we support running.
+        # A simple constraint to is that we only support jobs that run a single command,
+        # as defined in the dbt Cloud job's execution settings.
+        #
+        # For the moment, we'll support either `dbt run` or `dbt build`. In the future, we can
+        # adjust this to support multiple commands.
+        #
+        # To note `dbt deps` is automatically run before the job's configured commands. And
+        # `dbt docs generate` and `dbt source freshness` can automatically run after the job's
+        # configured commands, if the settings are enabled. These commands will be supported, and
+        # do not count towards the single command constraint.
+        commands = job["execute_steps"]
+        if len(commands) != 1 or not commands[0].lower().startswith(("dbt run", "dbt build")):
+            raise DagsterDbtCloudJobInvariantViolationError(
+                f"The dbt Cloud job '{job['name']}' ({job['id']}) must have a single command. "
+                "It must one of `dbt run` or `dbt build`. Received commands: {commands}."
+            )
 
         # We need to retrieve the dependency structure for the assets in the dbt Cloud project.
         # However, we can't just use the dependency structure from the latest run, because
