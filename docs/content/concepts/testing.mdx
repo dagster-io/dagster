@@ -420,3 +420,20 @@ job_result = the_job.execute_in_process(
     input_values={"x": 6}
 )  # Overrides existing input value
 ```
+
+### Testing repositories can load all code definitions
+
+You can verify that your code definitions in a <PyObject object="repository" decorator /> are well formed before they are executed.
+
+```python file=/concepts/repositories_workspaces/unit_tests.py startafter=start_repository_loads_all_definitions endbefore=end_repository_loads_all_definitions
+from .hello_world_repository import hello_world_repository
+
+
+def test_repository_loads_all_definitions():
+    """
+    Asserts that the repository can load all definitions (jobs, assets, schedules, etc)
+    without errors.
+    """
+
+    hello_world_repository.load_all_definitions()
+```
