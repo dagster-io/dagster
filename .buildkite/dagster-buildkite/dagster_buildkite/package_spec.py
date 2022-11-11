@@ -281,7 +281,7 @@ class PackageSpec:
                 (Path(self.directory) in change.parents)
                 # The file can alter behavior - exclude things like README changes
                 # which we tend to include in .md files
-                and change.suffix in [".py", ".cfg", ".toml", ".ini", ".txt"]
+                and change.suffix in [".py", ".cfg", ".toml", ".ini", ".txt", ".yaml", ".yml"]
             ):
                 logging.info(f"Building {self.name} because it has changed")
                 self._should_skip = False
