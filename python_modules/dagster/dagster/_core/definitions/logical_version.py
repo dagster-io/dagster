@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
 
 LOGICAL_VERSION_TAG_KEY: Final[str] = "dagster/logical_version"
+CODE_VERSION_TAG_KEY: Final[str] = "dagster/code_version"
 INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX: Final[str] = "dagster/input_logical_version"
 INPUT_EVENT_POINTER_TAG_KEY_PREFIX: Final[str] = "dagster/input_event_pointer"
 
@@ -21,7 +22,6 @@ def get_input_logical_version_tag_key(input_key: AssetKey) -> str:
 
 def get_input_event_pointer_tag_key(input_key: AssetKey) -> str:
     return f"{INPUT_EVENT_POINTER_TAG_KEY_PREFIX}/{input_key.to_user_string()}"
-
 
 class LogicalVersion:
     """Class that represents a logical version for an asset.
