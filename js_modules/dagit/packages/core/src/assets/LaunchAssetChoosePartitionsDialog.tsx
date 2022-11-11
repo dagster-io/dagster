@@ -4,12 +4,12 @@ import {
   DialogHeader,
   DialogBody,
   Box,
-  Subheading,
   Button,
   ButtonLink,
   DialogFooter,
   Alert,
   Tooltip,
+  Colors,
 } from '@dagster-io/ui';
 import reject from 'lodash/reject';
 import React from 'react';
@@ -19,7 +19,11 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
+import {
+  PartitionHealthData,
+  PartitionHealthSummary,
+  usePartitionHealthData,
+} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
@@ -34,6 +38,7 @@ import {
 } from '../launchpad/types/ConfigPartitionSelectionQuery';
 import {assembleIntoSpans, stringForSpan} from '../partitions/PartitionRangeInput';
 import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
+import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
 import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/PartitionsBackfill';
 import {RepoAddress} from '../workspace/types';
@@ -77,6 +82,16 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
   );
 };
 
+export function assetHealthToPartitionStatus(assetHealth: PartitionHealthData[]) {
+  const partitionNames = assetHealth[0] ? assetHealth[0].keys : [];
+  const result: {[partitionName: string]: PartitionState} = {};
+  partitionNames.forEach((partitionName) => {
+    const success = assetHealth.every((d) => d.statusByPartition[partitionName]);
+    result[partitionName] = success ? PartitionState.SUCCESS : PartitionState.MISSING;
+  });
+  return result;
+}
+
 // Note: This dialog loads a lot of data - the body is broken into a separate
 // component so we can be *sure* the hooks won't load data until it's opened.
 // (<Dialog> does not render it's children until open=true)
@@ -92,20 +107,35 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   upstreamAssetKeys,
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
-  const data = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
-  const upstreamData = usePartitionHealthData(upstreamAssetKeys);
+  const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
+  const upstreamAssetHealth = usePartitionHealthData(upstreamAssetKeys);
+
+  const partitionStatusData = React.useMemo(() => assetHealthToPartitionStatus(assetHealth), [
+    assetHealth,
+  ]);
+  const partitionKeys = React.useMemo(() => (assetHealth[0] ? assetHealth[0].keys : []), [
+    assetHealth,
+  ]);
+
   const {canLaunchPartitionBackfill} = usePermissions();
 
-  const allKeys = React.useMemo(() => (data[0] ? data[0].keys : []), [data]);
-  const mostRecentKey = allKeys[allKeys.length - 1];
+  const mostRecentKey = partitionKeys[partitionKeys.length - 1];
 
-  const [selected, setSelected] = React.useState<string[]>([]);
+  const [range, setRange] = React.useState<string[]>([]);
+  const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
+    PartitionState.MISSING,
+  ]);
+
   const [previewCount, setPreviewCount] = React.useState(0);
   const [launching, setLaunching] = React.useState(false);
 
   React.useEffect(() => {
-    setSelected([mostRecentKey]);
+    setRange([mostRecentKey]);
   }, [mostRecentKey]);
+
+  const selected = React.useMemo(() => {
+    return range.filter((r) => stateFilters.includes(partitionStatusData[r]));
+  }, [range, stateFilters, partitionStatusData]);
 
   const client = useApolloClient();
   const history = useHistory();
@@ -225,40 +255,41 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   };
 
   const upstreamUnavailable = (key: string) =>
-    upstreamData.length > 0 &&
-    upstreamData.some((a) => a.keys.includes(key) && !a.statusByPartition[key]);
+    upstreamAssetHealth.length > 0 &&
+    upstreamAssetHealth.some((a) => a.keys.includes(key) && !a.statusByPartition[key]);
 
   const upstreamUnavailableSpans = assembleIntoSpans(selected, upstreamUnavailable).filter(
     (s) => s.status === true,
   );
   const onRemoveUpstreamUnavailable = () => {
-    setSelected(reject(selected, upstreamUnavailable));
+    setRange(reject(selected, upstreamUnavailable));
   };
-
-  const partitionData = React.useMemo(() => {
-    const result: {[partitionName: string]: PartitionState} = {};
-    allKeys.forEach((partitionName) => {
-      const success = data.every((d) => d.statusByPartition[partitionName]);
-      result[partitionName] = success ? PartitionState.SUCCESS : PartitionState.MISSING;
-    });
-    return result;
-  }, [allKeys, data]);
 
   return (
     <>
       <DialogBody>
         <Box flex={{direction: 'column', gap: 8}}>
-          <Subheading style={{flex: 1}}>Partition Keys</Subheading>
+          <Box>
+            Select partitions to materialize. Click and drag to select a range on the timeline.
+          </Box>
 
           <PartitionRangeWizard
-            all={allKeys}
-            selected={selected}
-            setSelected={setSelected}
-            partitionData={partitionData}
+            all={partitionKeys}
+            selected={range}
+            setSelected={setRange}
+            partitionData={partitionStatusData}
+          />
+          <PartitionStateCheckboxes
+            allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
+            partitionData={partitionStatusData}
+            partitionKeysForCounts={range}
+            value={stateFilters}
+            onChange={setStateFilters}
           />
         </Box>
         <Box
           flex={{direction: 'column', gap: 8}}
+          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
           style={{marginTop: 16, overflowY: 'auto', overflowX: 'visible', maxHeight: '50vh'}}
         >
           {partitionedAssets.slice(0, previewCount).map((a) => (
@@ -266,11 +297,13 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               assetKey={a.assetKey}
               showAssetKey
               key={displayNameForAssetKey(a.assetKey)}
-              data={data}
+              data={assetHealth}
               selected={selected}
             />
           ))}
-          {previewCount === 0 ? (
+          {partitionedAssets.length === 1 ? (
+            <span />
+          ) : previewCount === 0 ? (
             <Box margin={{vertical: 8}}>
               <ButtonLink onClick={() => setPreviewCount(5)}>
                 Show per-asset partition health

@@ -79,6 +79,70 @@ export function useRecentAssetEvents(
   }, [data, loading, refetch, loadUsingPartitionKeys, xAxis]);
 }
 
+export const ASSET_MATERIALIZATION_FRAGMENT = gql`
+  fragment AssetMaterializationFragment on MaterializationEvent {
+    partition
+    runOrError {
+      ... on PipelineRun {
+        id
+        runId
+        mode
+        repositoryOrigin {
+          id
+          repositoryName
+          repositoryLocationName
+        }
+        status
+        pipelineName
+        pipelineSnapshotId
+      }
+    }
+    runId
+    timestamp
+    stepKey
+    label
+    description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
+    assetLineage {
+      ...AssetLineageFragment
+    }
+  }
+  ${METADATA_ENTRY_FRAGMENT}
+  ${ASSET_LINEAGE_FRAGMENT}
+`;
+
+export const ASSET_OBSERVATION_FRAGMENT = gql`
+  fragment AssetObservationFragment on ObservationEvent {
+    partition
+    runOrError {
+      ... on PipelineRun {
+        id
+        runId
+        mode
+        repositoryOrigin {
+          id
+          repositoryName
+          repositoryLocationName
+        }
+        status
+        pipelineName
+        pipelineSnapshotId
+      }
+    }
+    runId
+    timestamp
+    stepKey
+    label
+    description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
+  }
+  ${METADATA_ENTRY_FRAGMENT}
+`;
+
 const ASSET_EVENTS_QUERY = gql`
   query AssetEventsQuery(
     $assetKey: AssetKeyInput!
@@ -114,61 +178,6 @@ const ASSET_EVENTS_QUERY = gql`
       }
     }
   }
-  fragment AssetMaterializationFragment on MaterializationEvent {
-    partition
-    runOrError {
-      ... on PipelineRun {
-        id
-        runId
-        mode
-        repositoryOrigin {
-          id
-          repositoryName
-          repositoryLocationName
-        }
-        status
-        pipelineName
-        pipelineSnapshotId
-      }
-    }
-    runId
-    timestamp
-    stepKey
-    label
-    description
-    metadataEntries {
-      ...MetadataEntryFragment
-    }
-    assetLineage {
-      ...AssetLineageFragment
-    }
-  }
-  fragment AssetObservationFragment on ObservationEvent {
-    partition
-    runOrError {
-      ... on PipelineRun {
-        id
-        runId
-        mode
-        repositoryOrigin {
-          id
-          repositoryName
-          repositoryLocationName
-        }
-        status
-        pipelineName
-        pipelineSnapshotId
-      }
-    }
-    runId
-    timestamp
-    stepKey
-    label
-    description
-    metadataEntries {
-      ...MetadataEntryFragment
-    }
-  }
-  ${METADATA_ENTRY_FRAGMENT}
-  ${ASSET_LINEAGE_FRAGMENT}
+  ${ASSET_OBSERVATION_FRAGMENT}
+  ${ASSET_MATERIALIZATION_FRAGMENT}
 `;
