@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Mapping, NamedTuple, Optional
+from typing import Mapping, NamedTuple, Optional, AbstractSet
 
 import pendulum
 from croniter import croniter
@@ -9,6 +9,19 @@ from dagster._annotations import experimental
 from dagster._serdes import whitelist_for_serdes
 
 from .events import AssetKey
+
+
+class FreshnessConstraint(
+    NamedTuple(
+        "_FreshnessConstraint",
+        [
+            ("asset_key", AssetKey),
+            ("required_data_time", datetime),
+            ("required_by_time", datetime),
+        ],
+    )
+):
+    pass
 
 
 @experimental
@@ -45,14 +58,67 @@ class FreshnessPolicy(
             cron_schedule=check.opt_str_param(cron_schedule, "cron_schedule"),
         )
 
+    @property
+    def maximum_lag_duration(self) -> pendulum.Duration:
+        return pendulum.duration(minutes=self.maximum_lag_minutes)
+
+    def constraints_for_time_window(
+        self,
+        window_start: datetime,
+        window_end: datetime,
+        used_data_times: Mapping[AssetKey, Optional[datetime]],
+        available_data_times: Mapping[AssetKey, Optional[datetime]],
+    ) -> AbstractSet[FreshnessConstraint]:
+        constraints = set()
+
+        # get an iterator of times to evaluate these constraints at
+        if self.cron_schedule:
+            constraint_ticks = croniter(self.cron_schedule, window_start, ret_type=datetime)
+        else:
+            # this constraint must be satisfied at all points in time, so generate a series of
+            # many constraints (10 per maximum lag window)
+            period = pendulum.period(window_start, window_end)
+            constraint_ticks = period.range("minutes", (self.maximum_lag_minutes / 10.0) + 0.1)
+
+        # iterate over each schedule tick in the provided time window
+        n_ticks = 0
+        evaluation_tick = next(constraint_ticks)
+        while evaluation_tick < window_end:
+            for asset_key, available_data_time in available_data_times.items():
+                # assume updated data is always available
+                if available_data_time == window_start:
+                    required_data_time = evaluation_tick - self.maximum_lag_duration
+                    required_by_time = evaluation_tick
+                # assume updated data not always available, just require the latest
+                # available data
+                else:
+                    required_data_time = available_data_time
+                    required_by_time = available_data_time + self.maximum_lag_duration
+
+                # only add constraints if they are not currently satisfied
+                used_data_time = used_data_times.get(asset_key)
+                if used_data_time is None or used_data_time < required_data_time:
+                    constraints.add(
+                        FreshnessConstraint(
+                            asset_key=asset_key,
+                            required_data_time=required_data_time,
+                            required_by_time=required_by_time,
+                        )
+                    )
+
+            evaluation_tick = next(constraint_ticks)
+            # fallback if the user selects a very small maximum_lag_minutes value
+            n_ticks += 1
+            if n_ticks > 100:
+                break
+        return constraints
+
     def minutes_late(
         self,
         evaluation_time: Optional[datetime],
         used_data_times: Mapping[AssetKey, Optional[datetime]],
         available_data_times: Mapping[AssetKey, Optional[datetime]],
     ) -> Optional[float]:
-        maximum_lag_duration = pendulum.duration(minutes=self.maximum_lag_minutes)
-
         if self.cron_schedule:
             # most recent cron schedule tick
             schedule_ticks = croniter(
@@ -78,13 +144,13 @@ class FreshnessPolicy(
             # than maximum_lag_duration after your upstream asset updated
             if (
                 evaluation_time != available_data_time
-                and evaluation_tick < available_data_time + maximum_lag_duration
+                and evaluation_tick < available_data_time + self.maximum_lag_duration
             ):
                 continue
 
             # require either the most recent available data time, or data from maximum_lag_duration
             # before the most recent evaluation tick, whichever is less strict
-            required_time = min(available_data_time, evaluation_tick - maximum_lag_duration)
+            required_time = min(available_data_time, evaluation_tick - self.maximum_lag_duration)
 
             if used_data_time < required_time:
                 minutes_late = max(
