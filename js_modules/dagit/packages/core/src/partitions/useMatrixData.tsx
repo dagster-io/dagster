@@ -55,6 +55,8 @@ export interface MatrixStep {
   unix: number;
 }
 
+const MISSING_STEP_STATUSES = new Set([StepEventStatus.IN_PROGRESS, StepEventStatus.SKIPPED]);
+
 function getStartTime(a: PartitionMatrixStepRunFragment) {
   return a.startTime || 0;
 }
@@ -107,14 +109,37 @@ function buildMatrixData(
         isStepKeyForNode(node.name, stats.stepKey),
       )?.status;
 
-      if (!lastRunStepStatus || lastRunStepStatus === StepEventStatus.IN_PROGRESS) {
+      let previousRunStatus;
+      if (
+        partition.runs.length > 1 &&
+        (!lastRunStepStatus || MISSING_STEP_STATUSES.has(lastRunStepStatus))
+      ) {
+        let idx = partition.runs.length - 2;
+        while (idx >= 0 && !previousRunStatus) {
+          const currRun = partition.runs[idx];
+          const currRunStatus = currRun.stepStats.find((stats) =>
+            isStepKeyForNode(node.name, stats.stepKey),
+          )?.status;
+          if (currRunStatus && !MISSING_STEP_STATUSES.has(currRunStatus)) {
+            previousRunStatus = currRunStatus;
+            break;
+          }
+          idx--;
+        }
+      }
+
+      if (!lastRunStepStatus && !previousRunStatus) {
         return blankState;
       }
 
+      const color: StatusSquareColor =
+        !lastRunStepStatus || MISSING_STEP_STATUSES.has(lastRunStepStatus)
+          ? (`${previousRunStatus}-SKIPPED` as StatusSquareColor)
+          : (lastRunStepStatus as StatusSquareColor);
       return {
         name: node.name,
         unix: getStartTime(lastRun),
-        color: lastRunStepStatus,
+        color,
       };
     });
     return {

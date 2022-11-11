@@ -22,6 +22,7 @@ import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
+import {RunStatus} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -45,7 +46,6 @@ import {
   PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
   MatrixStep,
   PartitionRuns,
-  StatusSquareFinalColor,
   useMatrixData,
   MatrixData,
 } from './useMatrixData';
@@ -422,11 +422,12 @@ const PartitionSquare: React.FC<{
   if (!runsLoaded) {
     squareStatus = 'loading';
   } else if (step) {
-    squareStatus = (StatusSquareFinalColor[step.color] || step.color).toLowerCase();
+    squareStatus = step.color.toLowerCase();
   } else if (runs.length === 0) {
     squareStatus = 'empty';
   } else {
-    squareStatus = runs[runs.length - 1].status.toLowerCase();
+    const runStatus = runs[runs.length - 1].status;
+    squareStatus = runStatus === RunStatus.CANCELED ? 'failure' : runStatus.toLowerCase();
   }
 
   const content = (

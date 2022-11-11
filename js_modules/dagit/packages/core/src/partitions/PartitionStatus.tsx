@@ -16,7 +16,9 @@ const MIN_SPAN_WIDTH = 8;
 export enum PartitionState {
   MISSING = 'missing',
   SUCCESS = 'success',
+  SUCCESS_MISSING = 'success_missing', // states where the run succeeded in the past for a given step, but is missing for the last run
   FAILURE = 'failure',
+  FAILURE_MISSING = 'failure_missing', // states where the run failed in the past for a given step, but is missing for the last run
   QUEUED = 'queued',
   STARTED = 'started',
 }
