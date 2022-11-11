@@ -27,7 +27,7 @@ from dagster_managed_elements.types import (
     ManagedElementReconciler,
     is_key_secret,
 )
-from dagster_managed_elements.utils import diff_dicts
+from dagster_managed_elements.utils import diff_dicts, UNSET
 
 import dagster._check as check
 from dagster import ResourceDefinition
@@ -48,7 +48,7 @@ def gen_configured_stream_json(
     config = user_stream_config[source_stream["stream"]["name"]]
     return deep_merge_dicts(
         source_stream,
-        {"config": {"syncMode": config.value[0], "destinationSyncMode": config.value[1]}},
+        {"config": config.to_json()},
     )
 
 
@@ -115,7 +115,7 @@ def conn_dict(conn: Optional[AirbyteConnection]) -> Mapping[str, Any]:
         "source": conn.source.name if conn.source else "Unknown",
         "destination": conn.destination.name if conn.destination else "Unknown",
         "normalize data": conn.normalize_data,
-        "streams": {k: v.name for k, v in conn.stream_config.items()},
+        "streams": {k: v.to_json() for k, v in conn.stream_config.items()},
         "destination namespace": conn.destination_namespace.name
         if isinstance(conn.destination_namespace, AirbyteDestinationNamespace)
         else conn.destination_namespace,
@@ -128,7 +128,13 @@ def diff_connections(
     """
     Utility to diff two AirbyteConnection objects.
     """
-    diff = diff_dicts(conn_dict(config_conn), conn_dict(curr_conn))
+    diff = diff_dicts(
+        conn_dict(config_conn),
+        conn_dict(curr_conn),
+        custom_compare_fn=lambda k, cv, _dv: True
+        if k in ("cursorField", "primaryKey") and cv == UNSET
+        else None,
+    )
     if not diff.is_empty():
         name = config_conn.name if config_conn else curr_conn.name if curr_conn else "Unknown"
         return ManagedElementDiff().with_nested(name, diff)

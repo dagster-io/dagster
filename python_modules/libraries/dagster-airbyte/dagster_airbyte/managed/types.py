@@ -1,20 +1,112 @@
 import json
-from enum import Enum
-from typing import Any, Dict, Mapping, Optional, Union
+from abc import ABC
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
+from enum import Enum
 
 
-class AirbyteSyncMode(Enum):
+class AirbyteSyncMode(ABC):
     """
     Represents the sync mode for a given Airbyte stream.
     """
 
-    FULL_REFRESH_APPEND = ("full_refresh", "append")
-    FULL_REFRESH_OVERWRITE = ("full_refresh", "overwrite")
-    INCREMENTAL_APPEND = ("incremental", "append")
-    INCREMENTAL_OVERWRITE = ("incremental", "overwrite")
-    INCREMENTAL_APPEND_DEDUP = ("incremental", "append_dedup")
+    def to_json(self) -> Dict[str, Any]:
+        raise NotImplementedError()
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, AirbyteSyncMode) and self.to_json() == other.to_json()
+
+    @classmethod
+    def full_refresh_append(cls) -> "AirbyteSyncMode":
+        return _FullRefreshAppend()
+
+    @classmethod
+    def full_refresh_overwrite(cls) -> "AirbyteSyncMode":
+        return _FullRefreshOverwrite()
+
+    @classmethod
+    def incremental_append(
+        cls,
+        cursor_field: Optional[str] = None,
+    ) -> "AirbyteSyncMode":
+        return _IncrementalAppend(cursor_field)
+
+    @classmethod
+    def incremental_append_dedup(
+        cls,
+        cursor_field: Optional[str] = None,
+        primary_key: Optional[Union[str, List[str]]] = None,
+    ) -> "AirbyteSyncMode":
+        return _IncrementalAppendDedup(cursor_field=cursor_field, primary_key=primary_key)
+
+
+class _LoadedSyncMode(AirbyteSyncMode):
+    def __init__(self, dict: Dict[str, Any]):
+        self.dict = {
+            k: v
+            for k, v in dict.items()
+            if k in ("syncMode", "destinationSyncMode", "cursorField", "primaryKey")
+        }
+
+    def to_json(self) -> Dict[str, Any]:
+        return self.dict
+
+
+class _BasicSyncMode(AirbyteSyncMode):
+    def __init__(self, sync_mode: str, destination_sync_mode: str):
+        self.sync_mode = check.str_param(sync_mode, "sync_mode")
+        self.destination_sync_mode = check.str_param(destination_sync_mode, "destination_sync_mode")
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "syncMode": self.sync_mode,
+            "destinationSyncMode": self.destination_sync_mode,
+        }
+
+
+class _FullRefreshAppend(_BasicSyncMode):
+    def __init__(self):
+        super().__init__("full_refresh", "append")
+
+
+class _FullRefreshOverwrite(_BasicSyncMode):
+    def __init__(self):
+        super().__init__("full_refresh", "overwrite")
+
+
+class _IncrementalAppend(_BasicSyncMode):
+    def __init__(self, cursor_field: Optional[str] = None):
+        super().__init__("incremental", "append")
+        self.cursor_field = check.opt_str_param(cursor_field, "cursor_field")
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            **super().to_json(),
+            **({"cursorField": self.cursor_field} if self.cursor_field else {}),
+        }
+
+
+class _IncrementalAppendDedup(_BasicSyncMode):
+    def __init__(
+        self,
+        cursor_field: Optional[str] = None,
+        primary_key: Optional[Union[str, List[str]]] = None,
+    ):
+        super().__init__("incremental", "append_dedup")
+        self.cursor_field = [check.opt_str_param(cursor_field, "cursor_field")]
+        if isinstance(primary_key, str):
+            primary_key = [primary_key]
+        self.primary_key = [
+            [x] for x in check.opt_list_param(primary_key, "primary_key", of_type=str)
+        ]
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            **super().to_json(),
+            **({"cursorField": self.cursor_field} if self.cursor_field else {}),
+            **({"primaryKey": self.primary_key} if self.primary_key else {}),
+        }
 
 
 class AirbyteSource:
@@ -30,7 +122,8 @@ class AirbyteSource:
         )
 
     def must_be_recreated(self, other: "AirbyteSource") -> bool:
-        return self.name != other.name or self.source_configuration != other.source_configuration
+        return False
+        # return self.name != other.name or self.source_configuration != other.source_configuration
 
 
 class InitializedAirbyteSource:
@@ -71,10 +164,11 @@ class AirbyteDestination:
         )
 
     def must_be_recreated(self, other: "AirbyteDestination") -> bool:
-        return (
-            self.name != other.name
-            or self.destination_configuration != other.destination_configuration
-        )
+        return False
+        # return (
+        #     self.name != other.name
+        #     or self.destination_configuration != other.destination_configuration
+        # )
 
 
 class InitializedAirbyteDestination:
@@ -193,12 +287,7 @@ class InitializedAirbyteConnection:
         )
 
         streams = {
-            stream["stream"]["name"]: AirbyteSyncMode(
-                (
-                    stream["config"]["syncMode"],
-                    stream["config"]["destinationSyncMode"],
-                )
-            )
+            stream["stream"]["name"]: _LoadedSyncMode(stream["config"])
             for stream in api_dict["syncCatalog"]["streams"]
         }
         return cls(
