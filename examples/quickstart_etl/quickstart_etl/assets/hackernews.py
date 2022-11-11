@@ -6,7 +6,7 @@ from wordcloud import STOPWORDS, WordCloud
 from dagster import Field, MetadataValue, OpExecutionContext, asset, file_relative_path
 
 
-@asset(compute_kind="HackerNews API")
+@asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstory_ids() -> list:
     """
     Get up to 500 top stories
@@ -18,7 +18,11 @@ def hackernews_topstory_ids() -> list:
     return top_500_newstories
 
 
-@asset(compute_kind="HackerNews API", config_schema={"sample_size": Field(int, is_required=False)})
+@asset(
+    group_name="hackernews",
+    compute_kind="HackerNews API",
+    config_schema={"sample_size": Field(int, is_required=False)},
+)
 def hackernews_topstories(context: OpExecutionContext, hackernews_topstory_ids) -> pd.DataFrame:
     """
     Get items based on story ids. Default to fetching all (up to 500 items) which may take longer.
@@ -44,7 +48,7 @@ def hackernews_topstories(context: OpExecutionContext, hackernews_topstory_ids) 
     return df
 
 
-@asset(compute_kind="Plot")
+@asset(group_name="hackernews", compute_kind="Plot")
 def hackernews_topstories_word_cloud(context: OpExecutionContext, hackernews_topstories):
     """
     Exploratory analysis: Generate a word cloud from the current top 500 HN top stories.
@@ -67,6 +71,7 @@ def hackernews_topstories_word_cloud(context: OpExecutionContext, hackernews_top
 
 
 @asset(
+    group_name="hackernews",
     compute_kind="Pandas",
     config_schema={"keyword": Field(str, description="by default. no keyword", is_required=False)},
 )

@@ -52,7 +52,7 @@ dagit
 
 Open http://localhost:3000 with your browser to see the project.
 
-You can start writing assets in `quickstart_basic_etl/assets/`. The assets are automatically loaded into the Dagster repository as you define them.
+You can start writing assets in `quickstart_etl/assets/`. The assets are automatically loaded into the Dagster repository as you define them.
 
 <!-- ### Option 3: Running it in Gitpod
 Open source friendly
@@ -180,10 +180,10 @@ You can specify new Python dependencies in `setup.py`.
 
 <details><summary>Expand to view</summary>
 
-Tests are in the `quickstart_basic_etl_tests` directory and you can run tests using `pytest`:
+Tests are in the `quickstart_etl_tests` directory and you can run tests using `pytest`:
 
 ```bash
-pytest quickstart_basic_etl_tests
+pytest quickstart_etl_tests
 ```
 
 </details>

@@ -5,6 +5,7 @@ from dagster import Field, MetadataValue, StringSource, asset
 
 
 @asset(
+    group_name="github",
     config_schema={
         "github_token": Field(StringSource, default_value={"env": "MY_GITHUB_TOKEN"}),
         "repo": Field(str, default_value="dagster-io/dagster"),
@@ -39,7 +40,7 @@ def github_stargazers(context) -> pd.DataFrame:
     return df
 
 
-@asset(compute_kind="Pandas")
+@asset(group_name="github", compute_kind="Pandas")
 def github_stars_by_date(context, github_stargazers):
     """
     Aggregate stars by date.
