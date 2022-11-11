@@ -137,8 +137,6 @@ def build_assets_job(
     check.opt_str_param(description, "description")
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
 
-    print("BUILD ASSETS JOB", source_assets, assets)
-
     # figure out what partitions (if any) exist for this job
     partitions_def = partitions_def or build_job_partitions_from_assets(assets)
 
