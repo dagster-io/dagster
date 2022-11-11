@@ -32,7 +32,7 @@ communicated between user repositories and host processes such as dagit.
 from dagster._config import (
     ConfigEnumValueSnap,
     ConfigFieldSnap,
-    ConfigSchemaSnapshot,
+    ConfigSchemaSnap,
     ConfigTypeSnap,
     snap_from_config_type,
     snap_from_field,

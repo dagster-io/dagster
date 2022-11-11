@@ -26,7 +26,7 @@ def to_config_type(
     check.inst_param(config_schema_snap, "config_schema_snapshot", ConfigSchemaSnap)
     check.str_param(config_type_key, "config_type_key")
 
-    config_type_snap = config_schema_snap.get_config_snap(config_type_key)
+    config_type_snap = config_schema_snap.get_config_type_snap(config_type_key)
     kind = config_type_snap.kind
 
     if kind == ConfigTypeKind.ENUM:

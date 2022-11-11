@@ -2,7 +2,7 @@ from threading import Lock
 from typing import Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._config import ConfigSchemaSnapshot
+from dagster._config import ConfigSchemaSnap
 from dagster._core.snap import (
     DependencyStructureIndex,
     PipelineSnapshot,
@@ -132,5 +132,5 @@ class PipelineIndex:
         check.failed("Mode {mode} not found".format(mode=name))
 
     @property
-    def config_schema_snapshot(self) -> ConfigSchemaSnapshot:
+    def config_schema_snapshot(self) -> ConfigSchemaSnap:
         return self.pipeline_snapshot.config_schema_snapshot

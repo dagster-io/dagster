@@ -35,7 +35,7 @@ from .primitive_mapping import is_supported_config_python_builtin
 from .snap import (
     ConfigEnumValueSnap,
     ConfigFieldSnap,
-    ConfigSchemaSnapshot,
+    ConfigSchemaSnap,
     ConfigTypeSnap,
     get_recursive_type_keys,
     snap_from_config_type,

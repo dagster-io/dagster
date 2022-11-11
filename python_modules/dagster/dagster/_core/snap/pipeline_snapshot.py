@@ -6,7 +6,7 @@ from dagster._config import (
     Array,
     ConfigEnumValueSnap,
     ConfigFieldSnap,
-    ConfigSchemaSnapshot,
+    ConfigSchemaSnap,
     ConfigType,
     ConfigTypeKind,
     ConfigTypeSnap,
@@ -84,7 +84,7 @@ def _pipeline_snapshot_from_storage(
     name: str,
     description: Optional[str],
     tags: Optional[Mapping[str, Any]],
-    config_schema_snapshot: ConfigSchemaSnapshot,
+    config_schema_snapshot: ConfigSchemaSnap,
     dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
     solid_definitions_snapshot: SolidDefinitionsSnapshot,
     dep_structure_snapshot: DependencyStructureSnapshot,
@@ -136,7 +136,7 @@ class PipelineSnapshot(
             ("name", str),
             ("description", Optional[str]),
             ("tags", Mapping[str, Any]),
-            ("config_schema_snapshot", ConfigSchemaSnapshot),
+            ("config_schema_snapshot", ConfigSchemaSnap),
             ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
             ("solid_definitions_snapshot", SolidDefinitionsSnapshot),
             ("dep_structure_snapshot", DependencyStructureSnapshot),
@@ -152,7 +152,7 @@ class PipelineSnapshot(
         name: str,
         description: Optional[str],
         tags: Optional[Mapping[str, Any]],
-        config_schema_snapshot: ConfigSchemaSnapshot,
+        config_schema_snapshot: ConfigSchemaSnap,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
         solid_definitions_snapshot: SolidDefinitionsSnapshot,
         dep_structure_snapshot: DependencyStructureSnapshot,
@@ -167,7 +167,7 @@ class PipelineSnapshot(
             description=check.opt_str_param(description, "description"),
             tags=check.opt_mapping_param(tags, "tags"),
             config_schema_snapshot=check.inst_param(
-                config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
+                config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnap
             ),
             dagster_type_namespace_snapshot=check.inst_param(
                 dagster_type_namespace_snapshot,
@@ -263,9 +263,9 @@ class PipelineSnapshot(
         check.inst_param(solid_def_snap, "solid_def_snap", (SolidDefSnap, CompositeSolidDefSnap))
         if solid_def_snap.config_field_snap:
             config_type_key = solid_def_snap.config_field_snap.type_key
-            if self.config_schema_snapshot.has_config_snap(config_type_key):
+            if self.config_schema_snapshot.has_config_type_snap(config_type_key):
                 return construct_config_type_from_snap(
-                    self.config_schema_snapshot.get_config_snap(config_type_key),
+                    self.config_schema_snapshot.get_config_type_snap(config_type_key),
                     self.config_schema_snapshot.all_config_snaps_by_key,
                 )
         return None

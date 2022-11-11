@@ -567,7 +567,7 @@ def define_solid_dictionary_cls(
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:
     if isinstance(node_def, SolidDefinition):
         if node_def.has_config_field:
-            yield from node_def.get_config_field().config_type.type_iterator()
+            yield from node_def.get_config_field().config_type.descendant_type_iterator()
     elif isinstance(node_def, GraphDefinition):
         for solid in node_def.solids:
             yield from iterate_node_def_config_types(solid.definition)
@@ -580,9 +580,9 @@ def _gather_all_schemas(node_defs: Sequence[NodeDefinition]) -> Iterator[ConfigT
     dagster_types = construct_dagster_type_dictionary(node_defs)
     for dagster_type in list(dagster_types.values()) + list(ALL_RUNTIME_BUILTINS):
         if dagster_type.loader:
-            yield from dagster_type.loader.schema_type.type_iterator()
+            yield from dagster_type.loader.schema_type.descendant_type_iterator()
         if dagster_type.materializer:
-            yield from dagster_type.materializer.schema_type.type_iterator()
+            yield from dagster_type.materializer.schema_type.descendant_type_iterator()
 
 
 def _gather_all_config_types(
@@ -591,7 +591,7 @@ def _gather_all_config_types(
     for node_def in node_defs:
         yield from iterate_node_def_config_types(node_def)
 
-    yield from run_config_schema_type.type_iterator()
+    yield from run_config_schema_type.descendant_type_iterator()
 
 
 def construct_config_type_dictionary(

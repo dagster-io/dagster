@@ -16,7 +16,7 @@ def get_recursive_type_keys(
     for type_key in config_type_snap.get_child_type_keys():
         result_keys.add(type_key)
         for recurse_key in get_recursive_type_keys(
-            config_schema_snap.get_config_snap(type_key), config_schema_snap
+            config_schema_snap.get_config_type_snap(type_key), config_schema_snap
         ):
             result_keys.add(recurse_key)
     return result_keys
@@ -40,14 +40,14 @@ class ConfigSchemaSnap(
         )
 
     @property
-    def all_config_keys(self) -> Sequence[str]:
+    def all_config_type_keys(self) -> Sequence[str]:
         return list(self.all_config_snaps_by_key.keys())
 
-    def get_config_snap(self, key: str) -> "ConfigTypeSnap":
+    def get_config_type_snap(self, key: str) -> "ConfigTypeSnap":
         check.str_param(key, "key")
         return self.all_config_snaps_by_key[key]
 
-    def has_config_snap(self, key: str) -> bool:
+    def has_config_type_snap(self, key: str) -> bool:
         check.str_param(key, "key")
         return key in self.all_config_snaps_by_key
 
@@ -294,7 +294,7 @@ def minimal_config_for_type_snap(
                 continue
 
             default_dict[field.name] = minimal_config_for_type_snap(
-                config_schema_snap, config_schema_snap.get_config_snap(field.type_key)
+                config_schema_snap, config_schema_snap.get_config_type_snap(field.type_key)
             )
         return default_dict
     elif config_type_snap.kind == ConfigTypeKind.ANY:
@@ -315,7 +315,7 @@ def minimal_config_for_type_snap(
     elif config_type_snap.kind == ConfigTypeKind.SCALAR_UNION:
         return minimal_config_for_type_snap(
             config_schema_snap,
-            config_schema_snap.get_config_snap(config_type_snap.type_param_keys[0]),  # type: ignore
+            config_schema_snap.get_config_type_snap(config_type_snap.type_param_keys[0]),  # type: ignore
         )
     else:
         return "<unknown>"

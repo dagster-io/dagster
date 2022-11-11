@@ -53,7 +53,7 @@ from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster._core.host_representation import PipelineIndex
-    from dagster._core.snap import ConfigSchemaSnapshot, PipelineSnapshot
+    from dagster._core.snap import ConfigSchemaSnap, PipelineSnapshot
 
     from .run_config_schema import RunConfigSchema
 
@@ -523,7 +523,7 @@ class PipelineDefinition:
             PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
         )
 
-    def get_config_schema_snapshot(self) -> "ConfigSchemaSnapshot":
+    def get_config_schema_snapshot(self) -> "ConfigSchemaSnap":
         return self.get_pipeline_snapshot().config_schema_snapshot
 
     @property

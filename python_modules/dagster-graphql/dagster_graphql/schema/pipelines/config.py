@@ -4,7 +4,7 @@ import graphene
 from graphene.types.generic import GenericScalar
 
 import dagster._check as check
-from dagster._config import ConfigSchemaSnapshot
+from dagster._config import ConfigSchemaSnap
 from dagster._config import EvaluationError as DagsterEvaluationError
 from dagster._config import (
     EvaluationStackListItemEntry,
@@ -113,7 +113,7 @@ class GrapheneEvaluationStack(graphene.ObjectType):
 
     def __init__(self, config_schema_snapshot, stack):
         self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
+            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnap
         )
         self._stack = stack
         super().__init__()
@@ -145,7 +145,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
 
     @staticmethod
     def from_dagster_error(config_schema_snapshot, error):
-        check.inst_param(config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot)
+        check.inst_param(config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnap)
         check.inst_param(error, "error", DagsterEvaluationError)
 
         if isinstance(error.error_data, RuntimeMismatchErrorData):
@@ -163,7 +163,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
                 reason=error.reason.value,
                 field=GrapheneConfigTypeField(
-                    config_schema_snapshot=config_schema_snapshot,
+                    config_schema_snap=config_schema_snapshot,
                     field_snap=error.error_data.field_snap,
                 ),
             )
@@ -175,7 +175,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 reason=error.reason.value,
                 fields=[
                     GrapheneConfigTypeField(
-                        config_schema_snapshot=config_schema_snapshot,
+                        config_schema_snap=config_schema_snapshot,
                         field_snap=field_snap,
                     )
                     for field_snap in error.error_data.field_snaps

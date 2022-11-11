@@ -398,7 +398,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         node_def_snap = self.get_node_definition_snap()
         return (
             GrapheneConfigTypeField(
-                config_schema_snapshot=external_pipeline.config_schema_snapshot,
+                config_schema_snap=external_pipeline.config_schema_snapshot,
                 field_snap=node_def_snap.config_field_snap,
             )
             if node_def_snap.config_field_snap

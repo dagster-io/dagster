@@ -25,7 +25,7 @@ from .errors import (
 )
 from .evaluate_value_result import EvaluateValueResult
 from .post_process import post_process_config
-from .snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from .snap import ConfigFieldSnap, ConfigSchemaSnap, ConfigTypeSnap
 from .stack import EvaluationStack
 from .traversal_context import ValidationContext
 
@@ -64,14 +64,14 @@ def validate_config(config_schema: object, config_value: T) -> EvaluateValueResu
 
 
 def validate_config_from_snap(
-    config_schema_snapshot: ConfigSchemaSnapshot, config_type_key: str, config_value: T
+    config_schema_snapshot: ConfigSchemaSnap, config_type_key: str, config_value: T
 ) -> EvaluateValueResult[T]:
-    check.inst_param(config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot)
+    check.inst_param(config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnap)
     check.str_param(config_type_key, "config_type_key")
     return _validate_config(
         ValidationContext(
             config_schema_snapshot=config_schema_snapshot,
-            config_type_snap=config_schema_snapshot.get_config_snap(config_type_key),
+            config_type_snap=config_schema_snapshot.get_config_type_snap(config_type_key),
             stack=EvaluationStack(entries=[]),
         ),
         config_value,
@@ -200,7 +200,7 @@ def validate_selector_config(
         {}
         if field_value is None
         and ConfigTypeKind.has_fields(
-            context.config_schema_snapshot.get_config_snap(field_snap.type_key).kind
+            context.config_schema_snapshot.get_config_type_snap(field_snap.type_key).kind
         )
         else field_value,
     )

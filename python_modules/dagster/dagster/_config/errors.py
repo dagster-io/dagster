@@ -296,7 +296,7 @@ def create_missing_required_field_error(
     check.inst_param(context, "context", ContextData)
     check_config_type_in_context_has_fields(context, "context")
 
-    missing_field_type = context.config_schema_snapshot.get_config_snap(
+    missing_field_type = context.config_schema_snapshot.get_config_type_snap(
         context.config_type_snap.get_field(expected_field).type_key
     )
 
@@ -338,7 +338,7 @@ def create_missing_required_fields_error(
             minimal_config={
                 field_snap.name: minimal_config_for_type_snap(
                     context.config_schema_snapshot,
-                    context.config_schema_snapshot.get_config_snap(field_snap.type_key),
+                    context.config_schema_snapshot.get_config_type_snap(field_snap.type_key),
                 )
                 for field_snap in missing_field_snaps
             },

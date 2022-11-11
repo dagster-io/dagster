@@ -4,7 +4,7 @@ import dagster._check as check
 
 from .config_type import ConfigType
 from .field import Field
-from .snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from .snap import ConfigFieldSnap, ConfigSchemaSnap, ConfigTypeSnap
 from .stack import EvaluationStack
 
 
@@ -17,18 +17,18 @@ class TraversalType(Enum):
 class ContextData:
     __slots__ = ["_config_schema_snapshot", "_config_type_snap", "_stack"]
 
-    _config_schema_snapshot: ConfigSchemaSnapshot
+    _config_schema_snapshot: ConfigSchemaSnap
     _config_type_snap: ConfigTypeSnap
     _stack: EvaluationStack
 
     def __init__(
         self,
-        config_schema_snapshot: ConfigSchemaSnapshot,
+        config_schema_snapshot: ConfigSchemaSnap,
         config_type_snap: ConfigTypeSnap,
         stack: EvaluationStack,
     ):
         self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
+            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnap
         )
 
         self._config_type_snap = check.inst_param(
@@ -38,7 +38,7 @@ class ContextData:
         self._stack = check.inst_param(stack, "stack", EvaluationStack)
 
     @property
-    def config_schema_snapshot(self) -> ConfigSchemaSnapshot:
+    def config_schema_snapshot(self) -> ConfigSchemaSnap:
         return self._config_schema_snapshot
 
     @property
@@ -60,7 +60,7 @@ class ValidationContext(ContextData):
         field_snap_name = check.not_none(field_snap.name)
         return ValidationContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(field_snap.type_key),
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(field_snap.type_key),
             stack=self.stack.for_field(field_snap_name),
         )
 
@@ -68,7 +68,7 @@ class ValidationContext(ContextData):
         check.int_param(index, "index")
         return ValidationContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
                 self.config_type_snap.inner_type_key
             ),
             stack=self.stack.for_array_index(index),
@@ -77,7 +77,7 @@ class ValidationContext(ContextData):
     def for_map_key(self, key: object) -> "ValidationContext":
         return ValidationContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
                 self.config_type_snap.key_type_key
             ),
             stack=self.stack.for_map_key(key),
@@ -86,7 +86,7 @@ class ValidationContext(ContextData):
     def for_map_value(self, key: object) -> "ValidationContext":
         return ValidationContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
                 self.config_type_snap.inner_type_key
             ),
             stack=self.stack.for_map_value(key),
@@ -96,14 +96,14 @@ class ValidationContext(ContextData):
         check.str_param(config_type_key, "config_type_key")
         return ValidationContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(config_type_key),
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(config_type_key),
             stack=self.stack,
         )
 
     def for_nullable_inner_type(self) -> "ValidationContext":
         return ValidationContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
                 self.config_type_snap.inner_type_key
             ),
             stack=self.stack,
@@ -115,7 +115,7 @@ class TraversalContext(ContextData):
 
     def __init__(
         self,
-        config_schema_snapshot: ConfigSchemaSnapshot,
+        config_schema_snapshot: ConfigSchemaSnap,
         config_type_snap: ConfigTypeSnap,
         config_type: ConfigType,
         stack: EvaluationStack,
@@ -159,7 +159,7 @@ class TraversalContext(ContextData):
         check.int_param(index, "index")
         return TraversalContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
                 self.config_type_snap.inner_type_key
             ),
             config_type=self.config_type.inner_type,  # type: ignore
@@ -170,7 +170,7 @@ class TraversalContext(ContextData):
     def for_map(self, key: object) -> "TraversalContext":
         return TraversalContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
                 self.config_type_snap.inner_type_key
             ),
             config_type=self.config_type.inner_type,  # type: ignore
@@ -183,7 +183,7 @@ class TraversalContext(ContextData):
         check.str_param(field_name, "field_name")
         return TraversalContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(field_def.config_type.key),
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(field_def.config_type.key),
             config_type=field_def.config_type,
             stack=self.stack.for_field(field_name),
             traversal_type=self.traversal_type,
@@ -192,7 +192,7 @@ class TraversalContext(ContextData):
     def for_nullable_inner_type(self) -> "TraversalContext":
         return TraversalContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
                 self.config_type_snap.inner_type_key
             ),
             config_type=self.config_type.inner_type,  # type: ignore
@@ -203,7 +203,7 @@ class TraversalContext(ContextData):
     def for_new_config_type(self, config_type: ConfigType) -> "TraversalContext":
         return TraversalContext(
             config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_snap(config_type.key),
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(config_type.key),
             config_type=config_type,
             stack=self.stack,
             traversal_type=self.traversal_type,

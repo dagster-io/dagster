@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import AbstractSet, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._config import ConfigSchemaSnapshot
+from dagster._config import ConfigSchemaSnap
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.dep_snapshot import DependencyStructureIndex
 from dagster._core.snap.mode import ModeDefSnap
@@ -73,7 +73,7 @@ class RepresentedPipeline(ABC):
     # Config
 
     @property
-    def config_schema_snapshot(self) -> ConfigSchemaSnapshot:
+    def config_schema_snapshot(self) -> ConfigSchemaSnap:
         return self._pipeline_index.config_schema_snapshot
 
     # DagsterTypes

@@ -1,7 +1,7 @@
 import graphene
 
 import dagster._check as check
-from dagster._core.snap import ConfigSchemaSnapshot, ResourceDefSnap
+from dagster._core.snap import ConfigSchemaSnap, ResourceDefSnap
 
 from ..config_types import GrapheneConfigTypeField
 
@@ -17,7 +17,7 @@ class GrapheneResource(graphene.ObjectType):
     def __init__(self, config_schema_snapshot, resource_def_snap):
         super().__init__()
         self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
+            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnap
         )
         self._resource_def_snap = check.inst_param(
             resource_def_snap, "resource_def_snap", ResourceDefSnap
@@ -34,7 +34,7 @@ class GrapheneResource(graphene.ObjectType):
             )
         ):
             return GrapheneConfigTypeField(
-                config_schema_snapshot=self._config_schema_snapshot,
+                config_schema_snap=self._config_schema_snapshot,
                 field_snap=self._resource_def_snap.config_field_snap,
             )
 

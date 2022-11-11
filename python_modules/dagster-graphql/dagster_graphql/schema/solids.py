@@ -438,7 +438,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
     def resolve_config_field(self, _graphene_info):
         return (
             GrapheneConfigTypeField(
-                config_schema_snapshot=self._represented_pipeline.config_schema_snapshot,
+                config_schema_snap=self._represented_pipeline.config_schema_snapshot,
                 field_snap=self._solid_def_snap.config_field_snap,
             )
             if self._solid_def_snap.config_field_snap

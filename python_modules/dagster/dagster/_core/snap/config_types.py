@@ -1,5 +1,5 @@
 import dagster._check as check
-from dagster._config import ConfigSchemaSnapshot, snap_from_config_type
+from dagster._config import ConfigSchemaSnap, snap_from_config_type
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._utils import merge_dicts
 
@@ -14,4 +14,4 @@ def build_config_schema_snapshot(pipeline_def):
             {ct.key: snap_from_config_type(ct) for ct in run_config_schema.all_config_types()},
         )
 
-    return ConfigSchemaSnapshot(all_config_snaps_by_key)
+    return ConfigSchemaSnap(all_config_snaps_by_key)

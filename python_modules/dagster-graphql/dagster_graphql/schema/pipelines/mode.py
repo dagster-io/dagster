@@ -1,7 +1,7 @@
 import graphene
 
 import dagster._check as check
-from dagster._core.snap import ConfigSchemaSnapshot, ModeDefSnap
+from dagster._core.snap import ConfigSchemaSnap, ModeDefSnap
 
 from ..util import non_null_list
 from .logger import GrapheneLogger
@@ -22,7 +22,7 @@ class GrapheneMode(graphene.ObjectType):
         super().__init__()
         self._mode_def_snap = check.inst_param(mode_def_snap, "mode_def_snap", ModeDefSnap)
         self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
+            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnap
         )
         self._pipeline_snapshot_id = pipeline_snapshot_id
 
