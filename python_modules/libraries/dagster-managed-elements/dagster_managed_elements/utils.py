@@ -2,11 +2,13 @@ from typing import Any, Callable, Mapping, Optional
 
 from .types import ManagedElementDiff
 
+UNSET = object()
+
 
 def diff_dicts(
     config_dict: Optional[Mapping[str, Any]],
     dst_dict: Optional[Mapping[str, Any]],
-    custom_compare_fn: Optional[Callable[[str, Any, Any], bool]] = None,
+    custom_compare_fn: Optional[Callable[[str, Any, Any], Optional[bool]]] = None,
 ) -> ManagedElementDiff:
     """
     Utility function which builds a ManagedElementDiff given two dictionaries.
@@ -15,8 +17,10 @@ def diff_dicts(
         config_dict (Optional[Dict[str, Any]]): The dictionary from the user config.
         dst_dict (Optional[Dict[str, Any]]): The dictionary from the destination.
         custom_compare_fn (Optional[Callable[[Any, Any], bool]]): A custom comparison function to
-            use for comparing values in the dictionaries. Return True if the two values are the same.
-            Only used for non-None, non-dict values.
+            use for comparing values in the dictionaries. Passed both values, either of which might be
+            the sentinel "UNSET" value. Return True if the two values are the same.
+            Return False if the two values are different. Return None if the function should not
+            handle the comparison.
     """
     diff = ManagedElementDiff()
 
@@ -45,12 +49,21 @@ def diff_dicts(
             if not nested_diff.is_empty():
                 diff = diff.with_nested(key, nested_diff)
         # Handle non-dict values
-        elif key not in config_dict:
-            diff = diff.delete(key, dst_dict[key])
-        elif key not in dst_dict:
-            diff = diff.add(key, config_dict[key])
-        elif config_dict[key] != dst_dict[key] and (
-            not custom_compare_fn or not custom_compare_fn(key, config_dict[key], dst_dict[key])
-        ):
-            diff = diff.modify(key, dst_dict[key], config_dict[key])
+        else:
+            custom_compare_result = (
+                custom_compare_fn(key, config_dict.get(key, UNSET), dst_dict.get(key, UNSET))
+                if custom_compare_fn
+                else None
+            )
+            if custom_compare_result is False:
+                diff = diff.modify(key, dst_dict[key], config_dict[key])
+            elif custom_compare_result is True:
+                pass
+            else:
+                if key not in config_dict:
+                    diff = diff.delete(key, dst_dict[key])
+                elif key not in dst_dict:
+                    diff = diff.add(key, config_dict[key])
+                elif config_dict[key] != dst_dict[key]:
+                    diff = diff.modify(key, dst_dict[key], config_dict[key])
     return diff

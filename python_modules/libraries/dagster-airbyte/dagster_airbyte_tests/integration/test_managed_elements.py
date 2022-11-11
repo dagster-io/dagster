@@ -142,7 +142,7 @@ def test_basic_integration(empty_airbyte_instance, airbyte_source_files, filenam
             "destination": "local-json-output",
             "normalize data": False,
             "streams": {
-                "my_data_stream": "FULL_REFRESH_APPEND",
+                "my_data_stream": {"syncMode": "full_refresh", "destinationSyncMode": "append"}
             },
             "destination namespace": "SAME_AS_SOURCE",
         },

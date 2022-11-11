@@ -1,20 +1,77 @@
 import json
+from abc import ABC
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
 
 
-class AirbyteSyncMode(Enum):
+class AirbyteSyncMode(ABC):
     """
     Represents the sync mode for a given Airbyte stream.
     """
 
-    FULL_REFRESH_APPEND = ("full_refresh", "append")
-    FULL_REFRESH_OVERWRITE = ("full_refresh", "overwrite")
-    INCREMENTAL_APPEND = ("incremental", "append")
-    INCREMENTAL_OVERWRITE = ("incremental", "overwrite")
-    INCREMENTAL_APPEND_DEDUP = ("incremental", "append_dedup")
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, AirbyteSyncMode) and self.to_json() == other.to_json()
+
+    def __init__(self, json_repr: Dict[str, Any]):
+        self.json_repr = json_repr
+
+    def to_json(self) -> Dict[str, Any]:
+        return self.json_repr
+
+    @classmethod
+    def from_json(cls, json_repr: Dict[str, Any]) -> "AirbyteSyncMode":
+        return cls(
+            {
+                k: v
+                for k, v in json_repr.items()
+                if k in ("syncMode", "destinationSyncMode", "cursorField", "primaryKey")
+            }
+        )
+
+    @classmethod
+    def full_refresh_append(cls) -> "AirbyteSyncMode":
+        return cls({"syncMode": "full_refresh", "destinationSyncMode": "append"})
+
+    @classmethod
+    def full_refresh_overwrite(cls) -> "AirbyteSyncMode":
+        return cls({"syncMode": "full_refresh", "destinationSyncMode": "overwrite"})
+
+    @classmethod
+    def incremental_append(
+        cls,
+        cursor_field: Optional[str] = None,
+    ) -> "AirbyteSyncMode":
+        cursor_field = check.opt_str_param(cursor_field, "cursor_field")
+
+        return cls(
+            {
+                "syncMode": "incremental",
+                "destinationSyncMode": "append",
+                **({"cursorField": [cursor_field]} if cursor_field else {}),
+            }
+        )
+
+    @classmethod
+    def incremental_append_dedup(
+        cls,
+        cursor_field: Optional[str] = None,
+        primary_key: Optional[Union[str, List[str]]] = None,
+    ) -> "AirbyteSyncMode":
+        cursor_field = check.opt_str_param(cursor_field, "cursor_field")
+        if isinstance(primary_key, str):
+            primary_key = [primary_key]
+        primary_key = check.opt_list_param(primary_key, "primary_key", of_type=str)
+
+        return cls(
+            {
+                "syncMode": "incremental",
+                "destinationSyncMode": "append_dedup",
+                **({"cursorField": [cursor_field]} if cursor_field else {}),
+                **({"primaryKey": [[x] for x in primary_key]} if primary_key else {}),
+            }
+        )
 
 
 class AirbyteSource:
@@ -30,7 +87,8 @@ class AirbyteSource:
         )
 
     def must_be_recreated(self, other: "AirbyteSource") -> bool:
-        return self.name != other.name or self.source_configuration != other.source_configuration
+        return False
+        # return self.name != other.name or self.source_configuration != other.source_configuration
 
 
 class InitializedAirbyteSource:
@@ -71,10 +129,11 @@ class AirbyteDestination:
         )
 
     def must_be_recreated(self, other: "AirbyteDestination") -> bool:
-        return (
-            self.name != other.name
-            or self.destination_configuration != other.destination_configuration
-        )
+        return False
+        # return (
+        #     self.name != other.name
+        #     or self.destination_configuration != other.destination_configuration
+        # )
 
 
 class InitializedAirbyteDestination:
@@ -193,12 +252,7 @@ class InitializedAirbyteConnection:
         )
 
         streams = {
-            stream["stream"]["name"]: AirbyteSyncMode(
-                (
-                    stream["config"]["syncMode"],
-                    stream["config"]["destinationSyncMode"],
-                )
-            )
+            stream["stream"]["name"]: AirbyteSyncMode.from_json(stream["config"])
             for stream in api_dict["syncCatalog"]["streams"]
         }
         return cls(
