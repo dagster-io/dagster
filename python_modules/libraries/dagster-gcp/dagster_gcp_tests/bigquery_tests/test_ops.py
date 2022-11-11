@@ -1,6 +1,7 @@
 # pylint: disable=no-value-for-parameter
-
 import datetime
+import logging
+import os
 import sys
 import uuid
 from unittest import mock
@@ -24,6 +25,8 @@ from dagster import DagsterExecutionStepExecutionError, List, Nothing, job, op
 from dagster._config import process_config, validate_config
 from dagster._core.definitions import create_run_config_schema
 from dagster._legacy import InputDefinition, OutputDefinition
+
+logging.info(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 
 
 def dataset_exists(name):
