@@ -25,7 +25,7 @@ from dagster._builtins import BuiltinEnum
 from dagster._config import UserConfigSchema
 from dagster._config.errors import PostProcessingError
 from dagster._config.field import Field
-from dagster._config.field_utils import memoize_composite_type
+from dagster._config.memoize import memoize_composite_type
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
@@ -69,6 +69,9 @@ RawConfigType: TypeAlias = Union[
     None,
 ]
 
+# ########################
+# ##### CONFIG TYPE KIND
+# ########################
 
 @whitelist_for_serdes
 class ConfigTypeKind(PythonEnum):
@@ -295,12 +298,12 @@ def normalize_config_type(
     )
 
 # ########################
-# ##### CONFIG TYPE
+# ##### BASE CONFIG TYPE
 # ########################
 
 class ConfigType:
     """
-    The class backing DagsterTypes as they are used processing configuration data.
+    The class backing Dagster configuration types.
     """
 
     def __init__(
@@ -384,7 +387,7 @@ class ConfigScalar(ConfigType):
 
 
 class BuiltinConfigScalar(ConfigScalar):
-    def __init__(self, scalar_kind, description=None):
+    def __init__(self, scalar_kind: ConfigScalarKind, description: Optional[str]=None):
         super(BuiltinConfigScalar, self).__init__(
             key=type(self).__name__,
             given_name=type(self).__name__,

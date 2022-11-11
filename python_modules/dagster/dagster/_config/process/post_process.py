@@ -16,7 +16,7 @@ def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateV
     ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, "config_type", ConfigType),
         stack=EvaluationStack(entries=[]),
-        traversal_type=TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS,
+        traversal_type=TraversalType.RESOLVE_DEFAULTS_AND_CALL_POSTPROCESS_HOOKS,
     )
     return _recursively_process_config(ctx, config_value)
 

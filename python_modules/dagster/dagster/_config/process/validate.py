@@ -3,7 +3,7 @@ from typing import Dict, List, Mapping, Optional, Sequence, Set, TypeVar, cast
 import dagster._check as check
 from dagster._utils import ensure_single_item, frozendict
 
-from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
+from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind, normalize_config_type
 from .errors import (
     EvaluationError,
     create_array_error,
@@ -418,12 +418,3 @@ def validate_enum_config(
     return EvaluateValueResult.for_value(config_value)
 
 
-def process_config(
-    config_type: object, config_dict: Mapping[str, object]
-) -> EvaluateValueResult[Mapping]:
-    config_type = normalize_config_type(config_type)
-    validate_evr = validate_config(config_type, config_dict)
-    if not validate_evr.success:
-        return validate_evr
-
-    return post_process_config(config_type, validate_evr.value)
