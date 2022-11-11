@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing
 from enum import Enum as PythonEnum
 from typing import (
@@ -10,17 +11,19 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
     cast,
 )
 
-from typing_extensions import Final, TypeAlias, TypeGuard
+from typing_extensions import Final, TypeAlias, TypeGuard, final
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
 from dagster._config import UserConfigSchema
+from dagster._config.errors import PostProcessingError
 from dagster._config.field import Field
 from dagster._config.field_utils import memoize_composite_type
 from dagster._core.errors import (
@@ -291,6 +294,9 @@ def normalize_config_type(
         root, obj, stack, f"Invalid value in config type specification: {obj}"
     )
 
+# ########################
+# ##### CONFIG TYPE
+# ########################
 
 class ConfigType:
     """
@@ -354,6 +360,10 @@ class ConfigType:
     def has_implicit_default(self) -> bool:
         return False
 
+# ########################
+# ##### SCALAR CONFIG TYPES
+# ########################
+
 
 @whitelist_for_serdes
 class ConfigScalarKind(PythonEnum):
@@ -361,9 +371,6 @@ class ConfigScalarKind(PythonEnum):
     STRING = "STRING"
     FLOAT = "FLOAT"
     BOOL = "BOOL"
-
-
-# Scalars, Composites, Selectors, Lists, Optional, Any
 
 
 class ConfigScalar(ConfigType):
@@ -452,6 +459,9 @@ class Noneable(ConfigType):
     def has_implicit_default(self) -> bool:
         return True
 
+# ########################
+# ##### COLLECTION CONFIG TYPES
+# ########################
 
 class Array(ConfigType):
     """Defines an array (list) configuration type that contains values of type ``inner_type``.
@@ -594,6 +604,9 @@ class Enum(ConfigType):
             name = enum.__name__
         return cls(name, [EnumValue(v.name, python_value=v) for v in enum])
 
+# ########################
+# ##### SCALAR UNION CONFIG TYPES
+# ########################
 
 class ScalarUnion(ConfigType):
     """Defines a configuration type that accepts a scalar value OR a non-scalar value like a
@@ -669,6 +682,100 @@ class ScalarUnion(ConfigType):
         yield from self.scalar_type.descendant_type_iterator()
         yield from self.non_scalar_type.descendant_type_iterator()
         yield from super().descendant_type_iterator()
+
+_VALID_STRING_SOURCE_TYPES: Final[Tuple[Type[typing.Any], ...]] = (str, dict)
+
+def _fetch_env_variable(var: str) -> str:
+    check.str_param(var, "var")
+    value = os.getenv(var)
+    if value is None:
+        raise PostProcessingError(
+            (
+                'You have attempted to fetch the environment variable "{var}" '
+                "which is not set. In order for this execution to succeed it "
+                "must be set in this environment."
+            ).format(var=var)
+        )
+    return value
+
+class StringSourceType(ScalarUnion):
+    def __init__(self):
+        super(StringSourceType, self).__init__(
+            scalar_type=str,
+            non_scalar_schema=Selector({"env": str}),
+            _key="StringSourceType",
+        )
+
+    def post_process(self, value):
+        check.param_invariant(isinstance(value, _VALID_STRING_SOURCE_TYPES), "value")
+
+        if not isinstance(value, dict):
+            return value
+
+        key, cfg = list(value.items())[0]
+        check.invariant(key == "env", "Only valid key is env")
+        return str(_fetch_env_variable(cfg))
+
+
+class IntSourceType(ScalarUnion):
+    def __init__(self):
+        super(IntSourceType, self).__init__(
+            scalar_type=int,
+            non_scalar_schema=Selector({"env": str}),
+            _key="IntSourceType",
+        )
+
+    def post_process(self, value):
+        check.param_invariant(isinstance(value, (dict, int)), "value", "Should be pre-validated")
+
+        if not isinstance(value, dict):
+            return value
+
+        check.invariant(len(value) == 1, "Selector should have one entry")
+
+        key, cfg = list(value.items())[0]
+        check.invariant(key == "env", "Only valid key is env")
+        value = _fetch_env_variable(cfg)
+        try:
+            return int(value)
+        except ValueError as e:
+            raise PostProcessingError(
+                (
+                    'Value "{value}" stored in env variable "{var}" cannot be '
+                    "coerced into an int."
+                ).format(value=value, var=cfg)
+            ) from e
+
+
+class BoolSourceType(ScalarUnion):
+    def __init__(self):
+        super(BoolSourceType, self).__init__(
+            scalar_type=bool,
+            non_scalar_schema=Selector({"env": str}),
+            _key="BoolSourceType",
+        )
+
+    def post_process(self, value):
+        check.param_invariant(isinstance(value, (dict, bool)), "value", "Should be pre-validated")
+
+        if not isinstance(value, dict):
+            return value
+
+        check.invariant(len(value) == 1, "Selector should have one entry")
+
+        key, cfg = list(value.items())[0]
+        check.invariant(key == "env", "Only valid key is env")
+        value = _fetch_env_variable(cfg)
+        try:
+            return bool(value)
+        except ValueError as e:
+            raise PostProcessingError(
+                (
+                    'Value "{value}" stored in env variable "{var}" cannot be '
+                    "coerced into an bool."
+                ).format(value=value, var=cfg)
+            ) from e
+
 
 
 class Map(ConfigType):
@@ -923,6 +1030,10 @@ ConfigBoolInstance: Bool = Bool()
 ConfigFloatInstance: Float = Float()
 ConfigIntInstance: Int = Int()
 ConfigStringInstance: String = String()
+
+StringSource: StringSourceType = StringSourceType()
+IntSource: IntSourceType = IntSourceType()
+BoolSource: BoolSourceType = BoolSourceType()
 
 _PYTHON_TYPE_TO_CONFIG_TYPE_MAP: Final[Dict[Type[object], ConfigType]] = {
     typing.Any: ConfigAnyInstance,
