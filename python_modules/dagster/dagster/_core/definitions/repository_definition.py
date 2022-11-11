@@ -7,7 +7,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    FrozenSet,
     Generic,
     Iterable,
     List,

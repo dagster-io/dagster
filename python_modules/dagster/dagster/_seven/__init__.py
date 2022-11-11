@@ -12,10 +12,10 @@ from contextlib import contextmanager
 from datetime import timezone
 from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type, TypeVar, Union
-from typing_extensions import TypeGuard
 
 import pendulum
 from pendulum.datetime import DateTime
+from typing_extensions import TypeGuard
 
 from .compat.pendulum import PendulumDateTime
 from .json import JSONDecodeError, dump, dumps
@@ -142,16 +142,21 @@ def get_timestamp_from_utc_datetime(utc_datetime):
 
     return utc_datetime.timestamp()
 
+
 def is_lambda(target: object) -> TypeGuard[Callable[..., Any]]:
     return callable(target) and getattr(target, "__name__", None) == "<lambda>"
 
 
-def is_function_or_decorator_instance_of(target: object, kls: Type[Any]) -> TypeGuard[Callable[..., Any]]:
+def is_function_or_decorator_instance_of(
+    target: object, kls: Type[Any]
+) -> TypeGuard[Callable[..., Any]]:
     return inspect.isfunction(target) or (isinstance(target, kls) and hasattr(target, "__name__"))
 
 
 def qualname_differs(target: object) -> bool:
-    return hasattr(target, "__qualname__") and getattr(target, "__qualname__") != getattr(target, "__name__")
+    return hasattr(target, "__qualname__") and getattr(target, "__qualname__") != getattr(
+        target, "__name__"
+    )
 
 
 def xplat_shlex_split(s: str) -> List[str]:

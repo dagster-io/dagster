@@ -27,9 +27,16 @@ from typing import (
     Generic,
     Iterator,
     List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
 )
-from typing import Mapping
-from typing import Optional, Sequence, Tuple, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
 import packaging.version

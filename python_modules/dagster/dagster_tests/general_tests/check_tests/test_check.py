@@ -1305,12 +1305,14 @@ def test_opt_tuple_param():
     with pytest.raises(CheckError):
         check.opt_tuple_param((3, 4), "something", of_shape=(int, int), of_type=int)
 
+
 def test_opt_nullable_tuple_param():
     assert check.opt_nullable_tuple_param((1, 2), "something")
     assert check.opt_nullable_tuple_param(None, "something") is None
 
     with pytest.raises(CheckError):
         check.opt_nullable_tuple_param([3, 4], "something", of_shape=(int, int), of_type=int)
+
 
 def test_is_tuple():
     assert check.is_tuple(()) == ()

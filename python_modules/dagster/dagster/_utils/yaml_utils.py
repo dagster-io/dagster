@@ -54,11 +54,15 @@ DagsterRunConfigYamlDumper.remove_implicit_resolver(YAML_TIMESTAMP_TAG)
 DagsterRunConfigYamlDumper.add_representer(str, _octal_string_representer)
 
 
-def load_yaml_from_globs(*globs: str, loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> object:
+def load_yaml_from_globs(
+    *globs: str, loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> object:
     return load_yaml_from_glob_list(list(globs), loader=loader)
 
 
-def load_yaml_from_glob_list(glob_list: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> Dict[object, object]:
+def load_yaml_from_glob_list(
+    glob_list: Sequence[str], loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> Dict[object, object]:
     check.sequence_param(glob_list, "glob_list", of_type=str)
 
     all_files_list: List[str] = []
@@ -69,7 +73,9 @@ def load_yaml_from_glob_list(glob_list: Sequence[str], loader: Type[yaml.SafeLoa
     return merge_yamls(all_files_list, loader=loader)
 
 
-def merge_yamls(file_list: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> Dict[object, object]:
+def merge_yamls(
+    file_list: Sequence[str], loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> Dict[object, object]:
     """Combine a list of YAML files into a dictionary.
 
     Args:
@@ -100,7 +106,9 @@ def merge_yamls(file_list: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterR
     return merged
 
 
-def merge_yaml_strings(yaml_strs: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> Dict[object, object]:
+def merge_yaml_strings(
+    yaml_strs: Sequence[str], loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> Dict[object, object]:
     """Combine a list of YAML strings into a dictionary.  Right-most overrides left-most.
 
     Args:
@@ -126,7 +134,9 @@ def merge_yaml_strings(yaml_strs: Sequence[str], loader: Type[yaml.SafeLoader]=D
     return functools.reduce(deep_merge_dicts, yaml_dicts, {})
 
 
-def load_yaml_from_path(path: str, loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> object:
+def load_yaml_from_path(
+    path: str, loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> object:
     check.str_param(path, "path")
     with open(path, "r", encoding="utf8") as ff:
         return yaml.load(ff, Loader=loader)
