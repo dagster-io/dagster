@@ -21,7 +21,7 @@ from .config_type import (
     String,
     get_scalar_config_type_by_name,
 )
-from .field import Field, normalize_config_type
+from .field import Field, normalize_field
 from .field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
     Map,
@@ -29,7 +29,6 @@ from .field_utils import (
     Selector,
     Shape,
     compute_fields_hash,
-    convert_potential_field,
 )
 from .post_process import post_process_config, resolve_defaults
 from .primitive_mapping import is_supported_config_python_builtin

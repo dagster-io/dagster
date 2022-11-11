@@ -8,7 +8,7 @@ from dagster._config import (
     EvaluateValueResult,
     Field,
     UserConfigSchema,
-    convert_potential_field,
+    normalize_field,
     process_config,
 )
 from dagster._core.errors import DagsterConfigMappingFunctionError, user_code_error_boundary
@@ -31,7 +31,7 @@ def convert_user_facing_definition_config_schema(
     elif isinstance(potential_schema, IDefinitionConfigSchema):
         return potential_schema
     else:
-        return DefinitionConfigSchema(convert_potential_field(potential_schema))
+        return DefinitionConfigSchema(normalize_field(potential_schema))
 
 
 # This structure is used to represent the config schema attached to a definition

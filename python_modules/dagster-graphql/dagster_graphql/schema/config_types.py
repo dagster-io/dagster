@@ -1,10 +1,11 @@
+from inspect import cleandoc
 from typing import List, Optional, Union
 
 import graphene
 
 import dagster._check as check
 from dagster._config import ConfigTypeKind, get_recursive_type_keys
-from dagster._core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster._core.snap import ConfigFieldSnap, ConfigSchemaSnap, ConfigTypeSnap
 
 from .util import non_null_list
 
@@ -20,28 +21,28 @@ GrapheneConfigTypeUnion = Union[
 
 
 def to_config_type(
-    config_schema_snapshot: ConfigSchemaSnapshot, config_type_key: str
+    config_schema_snap: ConfigSchemaSnap, config_type_key: str
 ) -> GrapheneConfigTypeUnion:
-    check.inst_param(config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot)
+    check.inst_param(config_schema_snap, "config_schema_snapshot", ConfigSchemaSnap)
     check.str_param(config_type_key, "config_type_key")
 
-    config_type_snap = config_schema_snapshot.get_config_snap(config_type_key)
+    config_type_snap = config_schema_snap.get_config_snap(config_type_key)
     kind = config_type_snap.kind
 
     if kind == ConfigTypeKind.ENUM:
-        return GrapheneEnumConfigType(config_schema_snapshot, config_type_snap)
+        return GrapheneEnumConfigType(config_schema_snap, config_type_snap)
     elif ConfigTypeKind.has_fields(kind):
-        return GrapheneCompositeConfigType(config_schema_snapshot, config_type_snap)
+        return GrapheneCompositeConfigType(config_schema_snap, config_type_snap)
     elif kind == ConfigTypeKind.ARRAY:
-        return GrapheneArrayConfigType(config_schema_snapshot, config_type_snap)
+        return GrapheneArrayConfigType(config_schema_snap, config_type_snap)
     elif kind == ConfigTypeKind.MAP:
-        return GrapheneMapConfigType(config_schema_snapshot, config_type_snap)
+        return GrapheneMapConfigType(config_schema_snap, config_type_snap)
     elif kind == ConfigTypeKind.NONEABLE:
-        return GrapheneNullableConfigType(config_schema_snapshot, config_type_snap)
+        return GrapheneNullableConfigType(config_schema_snap, config_type_snap)
     elif kind == ConfigTypeKind.ANY or kind == ConfigTypeKind.SCALAR:
-        return GrapheneRegularConfigType(config_schema_snapshot, config_type_snap)
+        return GrapheneRegularConfigType(config_schema_snap, config_type_snap)
     elif kind == ConfigTypeKind.SCALAR_UNION:
-        return GrapheneScalarUnionConfigType(config_schema_snapshot, config_type_snap)
+        return GrapheneScalarUnionConfigType(config_schema_snap, config_type_snap)
     else:
         check.failed("Should never reach")
 
@@ -61,30 +62,31 @@ class GrapheneConfigType(graphene.Interface):
 
     recursive_config_types = graphene.Field(
         non_null_list(lambda: GrapheneConfigType),
-        description="""
-This is an odd and problematic field. It recursively goes down to
-get all the types contained within a type. The case where it is horrible
-are dictionaries and it recurses all the way down to the leaves. This means
-that in a case where one is fetching all the types and then all the inner
-types keys for those types, we are returning O(N^2) type keys, which
-can cause awful performance for large schemas. When you have access
-to *all* the types, you should instead only use the type_param_keys
-field for closed generic types and manually navigate down the to
-field types client-side.
+        description=cleandoc("""
+            This is an odd and problematic field. It recursively goes down to
+            get all the types contained within a type. The case where it is horrible
+            are dictionaries and it recurses all the way down to the leaves. This means
+            that in a case where one is fetching all the types and then all the inner
+            types keys for those types, we are returning O(N^2) type keys, which
+            can cause awful performance for large schemas. When you have access
+            to *all* the types, you should instead only use the type_param_keys
+            field for closed generic types and manually navigate down the to
+            field types client-side.
 
-Where it is useful is when you are fetching types independently and
-want to be able to render them, but without fetching the entire schema.
+            Where it is useful is when you are fetching types independently and
+            want to be able to render them, but without fetching the entire schema.
 
-We use this capability when rendering the sidebar.
-    """,
+            We use this capability when rendering the sidebar.
+        """)
     )
+
     type_param_keys = graphene.Field(
         non_null_list(graphene.String),
-        description="""
-This returns the keys for type parameters of any closed generic type,
-(e.g. List, Optional). This should be used for reconstructing and
-navigating the full schema client-side and not innerTypes.
-    """,
+        description=cleandoc("""
+            This returns the keys for type parameters of any closed generic type,
+            (e.g. List, Optional). This should be used for reconstructing and
+            navigating the full schema client-side and not innerTypes.
+        """),
     )
     is_selector = graphene.NonNull(graphene.Boolean)
 
@@ -101,21 +103,21 @@ class GrapheneRegularConfigType(graphene.ObjectType):
     given_name = graphene.NonNull(graphene.String)
 
     def __init__(
-        self, config_schema_snapshot: ConfigSchemaSnapshot, config_type_snap: ConfigTypeSnap
+        self, config_schema_snapshot: ConfigSchemaSnap, config_type_snap: ConfigTypeSnap
     ):
         self._config_type_snap = check.inst_param(
             config_type_snap, "config_type_snap", ConfigTypeSnap
         )
-        self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
+        self._config_schema_snap = check.inst_param(
+            config_schema_snap, "config_schema_snap", ConfigSchemaSnap
         )
         super().__init__(**_ctor_kwargs_for_snap(config_type_snap))
 
     def resolve_recursive_config_types(self, _graphene_info) -> List[GrapheneConfigTypeUnion]:
         return list(
             map(
-                lambda key: to_config_type(self._config_schema_snapshot, key),
-                get_recursive_type_keys(self._config_type_snap, self._config_schema_snapshot),
+                lambda key: to_config_type(self._config_schema_snap, key),
+                get_recursive_type_keys(self._config_type_snap, self._config_schema_snap),
             )
         )
 
@@ -154,13 +156,13 @@ class GrapheneMapConfigType(graphene.ObjectType):
 
     def resolve_key_type(self, _graphene_info) -> GrapheneConfigTypeUnion:
         return to_config_type(
-            self._config_schema_snapshot,
+            self._config_schema_snap,
             self._config_type_snap.key_type_key,
         )
 
     def resolve_value_type(self, _graphene_info) -> GrapheneConfigTypeUnion:
         return to_config_type(
-            self._config_schema_snapshot,
+            self._config_schema_snap,
             self._config_type_snap.inner_type_key,
         )
 
@@ -201,7 +203,7 @@ class GrapheneArrayConfigType(graphene.ObjectType):
 
     def resolve_of_type(self, _graphene_info) -> GrapheneConfigTypeUnion:
         return to_config_type(
-            self._config_schema_snapshot,
+            self._config_schema_snap,
             self._config_type_snap.inner_type_key,
         )
 
@@ -248,10 +250,10 @@ class GrapheneScalarUnionConfigType(graphene.ObjectType):
         return self.get_non_scalar_type_key()
 
     def resolve_scalar_type(self, _) -> GrapheneConfigTypeUnion:
-        return to_config_type(self._config_schema_snapshot, self.get_scalar_type_key())
+        return to_config_type(self._config_schema_snap, self.get_scalar_type_key())
 
     def resolve_non_scalar_type(self, _) -> GrapheneConfigTypeUnion:
-        return to_config_type(self._config_schema_snapshot, self.get_non_scalar_type_key())
+        return to_config_type(self._config_schema_snap, self.get_non_scalar_type_key())
 
 
 class GrapheneNullableConfigType(graphene.ObjectType):
@@ -279,7 +281,7 @@ class GrapheneNullableConfigType(graphene.ObjectType):
         )
 
     def resolve_of_type(self, _graphene_info) -> GrapheneConfigTypeUnion:
-        return to_config_type(self._config_schema_snapshot, self._config_type_snap.inner_type_key)
+        return to_config_type(self._config_schema_snap, self._config_type_snap.inner_type_key)
 
 
 class GrapheneEnumConfigValue(graphene.ObjectType):
@@ -341,9 +343,9 @@ class GrapheneConfigTypeField(graphene.ObjectType):
     def resolve_config_type_key(self, _) -> str:
         return self._field_snap.type_key
 
-    def __init__(self, config_schema_snapshot: ConfigSchemaSnapshot, field_snap: ConfigFieldSnap):
-        self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
+    def __init__(self, config_schema_snap: ConfigSchemaSnap, field_snap: ConfigFieldSnap):
+        self._config_schema_snap = check.inst_param(
+            config_schema_snap, "config_schema_snap", ConfigSchemaSnap
         )
         self._field_snap: ConfigFieldSnap = check.inst_param(
             field_snap, "field_snap", ConfigFieldSnap
@@ -355,7 +357,7 @@ class GrapheneConfigTypeField(graphene.ObjectType):
         )
 
     def resolve_config_type(self, _graphene_info) -> GrapheneConfigTypeUnion:
-        return to_config_type(self._config_schema_snapshot, self._field_snap.type_key)
+        return to_config_type(self._config_schema_snap, self._field_snap.type_key)
 
     def resolve_default_value_as_json(self, _graphene_info) -> Optional[str]:
         return self._field_snap.default_value_as_json_str
@@ -391,7 +393,7 @@ class GrapheneCompositeConfigType(graphene.ObjectType):
         return sorted(
             [
                 GrapheneConfigTypeField(
-                    config_schema_snapshot=self._config_schema_snapshot,
+                    config_schema_snap=self._config_schema_snap,
                     field_snap=field_snap,
                 )
                 for field_snap in (self._config_type_snap.fields or [])

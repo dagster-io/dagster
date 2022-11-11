@@ -77,7 +77,7 @@ This value can be a:
 
 
 class DagsterInvalidConfigDefinitionError(DagsterError):
-    """Indicates that you have attempted to construct a config with an invalid value
+    """Indicates that you have attempted to construct a config schema with an invalid type specification.
 
     Acceptable values for config types are any of:
         1. A Python primitive type that resolves to a Dagster config type

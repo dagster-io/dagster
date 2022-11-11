@@ -27,7 +27,7 @@ from dagster._config import (
     DagsterEvaluationErrorReason,
     Map,
     Shape,
-    convert_potential_field,
+    normalize_field,
     process_config,
     validate_config,
 )
@@ -47,12 +47,12 @@ def test_noop_config():
 
 
 def test_int_field():
-    config_field = convert_potential_field({"int_field": Int})
+    config_field = normalize_field({"int_field": Int})
     assert validate_config(config_field.config_type, {"int_field": 1}).value == {"int_field": 1}
 
 
 def test_float_field():
-    config_field = convert_potential_field({"float_field": Float})
+    config_field = normalize_field({"float_field": Float})
     assert validate_config(config_field.config_type, {"float_field": 1.0}).value == {
         "float_field": 1.0
     }
@@ -76,14 +76,14 @@ def assert_eval_failure(config_type, value):
 
 
 def test_int_fails():
-    config_field = convert_potential_field({"int_field": Int})
+    config_field = normalize_field({"int_field": Int})
 
     assert_eval_failure(config_field.config_type, {"int_field": "fjkdj"})
     assert_eval_failure(config_field.config_type, {"int_field": True})
 
 
 def test_default_arg():
-    config_field = convert_potential_field(
+    config_field = normalize_field(
         {"int_field": Field(Int, default_value=2, is_required=False)}
     )
 
@@ -91,13 +91,13 @@ def test_default_arg():
 
 
 def test_default_float_arg():
-    config_field = convert_potential_field(
+    config_field = normalize_field(
         {"float_field": Field(Float, default_value=2.0, is_required=False)}
     )
 
     assert_config_value_success(config_field.config_type, {}, {"float_field": 2.0})
 
-    config_field = convert_potential_field(
+    config_field = normalize_field(
         {"float_field": Field(Float, default_value=2, is_required=False)}
     )
 
@@ -105,30 +105,30 @@ def test_default_float_arg():
 
 
 def _single_required_enum_config_dict():
-    return convert_potential_field(
+    return normalize_field(
         {"enum_field": Enum("MyEnum", [EnumValue("OptionA"), EnumValue("OptionB")])}
     )
 
 
 def _single_required_string_config_dict():
-    return convert_potential_field({"string_field": String})
+    return normalize_field({"string_field": String})
 
 
 def _multiple_required_fields_config_dict():
-    return convert_potential_field({"field_one": String, "field_two": String})
+    return normalize_field({"field_one": String, "field_two": String})
 
 
 def _single_optional_string_config_dict():
-    return convert_potential_field({"optional_field": Field(String, is_required=False)})
+    return normalize_field({"optional_field": Field(String, is_required=False)})
 
 
 def _single_optional_string_field_config_dict_with_default():
     optional_field_def = Field(String, is_required=False, default_value="some_default")
-    return convert_potential_field({"optional_field": optional_field_def})
+    return normalize_field({"optional_field": optional_field_def})
 
 
 def _mixed_required_optional_string_config_dict_with_default():
-    return convert_potential_field(
+    return normalize_field(
         {
             "optional_arg": Field(String, is_required=False, default_value="some_default"),
             "required_arg": Field(String, is_required=True),
@@ -496,17 +496,17 @@ def test_mixed_args_passing():
 
 
 def _single_nested_config():
-    return convert_potential_field({"nested": {"int_field": Int}})
+    return normalize_field({"nested": {"int_field": Int}})
 
 
 def _nested_optional_config_with_default():
-    return convert_potential_field(
+    return normalize_field(
         {"nested": {"int_field": Field(Int, is_required=False, default_value=3)}}
     )
 
 
 def _nested_optional_config_with_no_default():
-    return convert_potential_field({"nested": {"int_field": Field(Int, is_required=False)}})
+    return normalize_field({"nested": {"int_field": Field(Int, is_required=False)}})
 
 
 def test_single_nested_config():
@@ -647,7 +647,7 @@ def test_config_with_and_without_config():
 
 
 def test_build_optionality():
-    optional_test_type = convert_potential_field(
+    optional_test_type = normalize_field(
         {
             "required": {"value": String},
             "optional": {"value": Field(String, is_required=False)},

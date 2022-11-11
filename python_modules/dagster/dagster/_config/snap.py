@@ -8,28 +8,28 @@ from .field import Field
 
 
 def get_recursive_type_keys(
-    config_type_snap: "ConfigTypeSnap", config_schema_snapshot: "ConfigSchemaSnapshot"
+    config_type_snap: "ConfigTypeSnap", config_schema_snap: "ConfigSchemaSnap"
 ) -> Set[str]:
     check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
-    check.inst_param(config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot)
+    check.inst_param(config_schema_snap, "config_schema_snap", ConfigSchemaSnap)
     result_keys = set()
     for type_key in config_type_snap.get_child_type_keys():
         result_keys.add(type_key)
         for recurse_key in get_recursive_type_keys(
-            config_schema_snapshot.get_config_snap(type_key), config_schema_snapshot
+            config_schema_snap.get_config_snap(type_key), config_schema_snap
         ):
             result_keys.add(recurse_key)
     return result_keys
 
 
 @whitelist_for_serdes
-class ConfigSchemaSnapshot(
+class ConfigSchemaSnap(
     NamedTuple(
         "_ConfigSchemaSnapshot", [("all_config_snaps_by_key", Mapping[str, "ConfigTypeSnap"])]
     )
 ):
     def __new__(cls, all_config_snaps_by_key: Mapping[str, "ConfigTypeSnap"]):
-        return super(ConfigSchemaSnapshot, cls).__new__(
+        return super(ConfigSchemaSnap, cls).__new__(
             cls,
             all_config_snaps_by_key=check.mapping_param(
                 all_config_snaps_by_key,
@@ -279,10 +279,10 @@ def snap_from_config_type(config_type: ConfigType) -> ConfigTypeSnap:
 
 
 def minimal_config_for_type_snap(
-    config_schema_snap: ConfigSchemaSnapshot, config_type_snap: ConfigTypeSnap
+    config_schema_snap: ConfigSchemaSnap, config_type_snap: ConfigTypeSnap
 ) -> Any:
 
-    check.inst_param(config_schema_snap, "config_schema_snap", ConfigSchemaSnapshot)
+    check.inst_param(config_schema_snap, "config_schema_snap", ConfigSchemaSnap)
     check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
 
     if ConfigTypeKind.has_fields(config_type_snap.kind):

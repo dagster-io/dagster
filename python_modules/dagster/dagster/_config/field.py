@@ -1,23 +1,56 @@
-from typing import Any, Optional, Union, overload
+from __future__ import annotations
+
+from typing import Any, List, Optional, Union
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._builtins import BuiltinEnum
-from dagster._config import UserConfigSchema
-from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster._core.errors import (
+    DagsterInvalidConfigDefinitionError,
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+)
 from dagster._serdes import serialize_value
-from dagster._seven import is_subclass
 from dagster._utils import is_enum_value
-from dagster._utils.typing_api import is_closed_python_optional_type, is_typing_type
 
-from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
-from .field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
+from .config_type import (
+    ConfigType,
+    ConfigTypeKind,
+    normalize_config_type,
+)
 
-def _has_implicit_default(config_type):
-    if config_type.kind == ConfigTypeKind.NONEABLE:
-        return True
+class __FieldValueSentinel:
+    pass
 
-    return all_optional_type(config_type)
+FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
+
+class __InferOptionalCompositeFieldSentinel:
+    pass
+
+
+INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
+
+RawField: TypeAlias = Union["Field", dict, list, ConfigType]
+
+
+def normalize_field(
+    obj: object,
+    root: Optional[object] = None,
+    stack: Optional[List[str]] = None,
+) -> "Field":
+    from .config_type import normalize_config_type
+    root = root if root is not None else obj
+    stack = stack if stack is not None else []
+
+    if isinstance(obj, Field):
+        return obj
+
+    elif obj is None:
+        raise DagsterInvalidConfigDefinitionError(root, obj, stack, reason="Fields cannot be None")
+
+    config_type = normalize_config_type(obj, root, stack)
+    return Field(config_type)
 
 
 class Field:
@@ -159,7 +192,7 @@ class Field:
                 )
 
         if is_required is None:
-            is_optional = _has_implicit_default(self.config_type) or self.default_provided
+            is_optional = self.config_type.has_implicit_default() or self.default_provided
             is_required = not is_optional
 
             # on implicitly optional - set the default value
@@ -214,7 +247,3 @@ class Field:
             else self._default_value,
             is_required=self.is_required,
         )
-
-
-def check_opt_field_param(obj, param_name):
-    return check.opt_inst_param(obj, param_name, Field)

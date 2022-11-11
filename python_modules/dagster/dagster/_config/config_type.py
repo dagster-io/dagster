@@ -2,15 +2,29 @@ from __future__ import annotations
 
 import typing
 from enum import Enum as PythonEnum
-from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 
-from typing_extensions import Final, TypeAlias
+from typing_extensions import Final, TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
 from dagster._config import UserConfigSchema
+from dagster._config.field import Field
+from dagster._config.field_utils import memoize_composite_type
 from dagster._core.errors import (
+    DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
@@ -18,9 +32,11 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._utils.typing_api import is_closed_python_optional_type, is_typing_type
 
 if TYPE_CHECKING:
-    from .snap import ConfigSchemaSnapshot, ConfigTypeSnap
+    from .snap import ConfigSchemaSnap, ConfigTypeSnap
 
-VALID_CONFIG_DESC: Final[str] = """
+VALID_CONFIG_DESC: Final[
+    str
+] = """
 1. A dagster config type: Int, Float, Bool, String, StringSource, Path, Any,
    Array, Noneable, Selector, Shape, Permissive, etc.
 
@@ -49,6 +65,7 @@ RawConfigType: TypeAlias = Union[
     List[object],
     None,
 ]
+
 
 @whitelist_for_serdes
 class ConfigTypeKind(PythonEnum):
@@ -92,18 +109,35 @@ class ConfigTypeKind(PythonEnum):
         check.inst_param(kind, "kind", ConfigTypeKind)
         return kind == ConfigTypeKind.SELECTOR
 
-HELPFUL_LIST_ERROR_STRING: Final[str] = "Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead."
+
+HELPFUL_LIST_ERROR_STRING: Final[
+    str
+] = "Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead."
+
 
 def get_scalar_config_type_by_name(type_name: str) -> ConfigType:
     if type_name not in _NAME_TO_CONFIG_TYPE_MAP:
         check.failed("Scalar {} is not supported".format(type_name))
     return _NAME_TO_CONFIG_TYPE_MAP[type_name]
 
-def normalize_config_type(obj: object) -> ConfigType:
 
-    from .field_utils import convert_fields_to_dict_type
+def is_valid_raw_config_type(obj: object) -> TypeGuard[RawConfigType]:
+    try:
+        normalize_config_type(obj)
+    except DagsterInvalidDefinitionError:
+        return False
+    return True
 
-    # Short circuit if it's already a Config Type
+
+def normalize_config_type(
+    obj: object, root: Optional[object] = None, stack: Optional[List[str]] = None
+) -> ConfigType:
+
+    from .field import normalize_field
+
+    root = root if root is not None else obj
+    stack = stack if stack is not None else []
+
     if isinstance(obj, ConfigType):
         return obj
 
@@ -115,47 +149,58 @@ def normalize_config_type(obj: object) -> ConfigType:
     if obj is None:
         return ConfigAnyInstance
 
+    # Length-1 dicts with a valid RawConfigType for a key are treated as Maps
+    # Otherwise, keys must be strings and it is a Shape
     if isinstance(obj, dict):
-        # Dicts of the special form {type: value} are treated as Maps
-        # mapping from the key type to value type, otherwise treat as dict type
-        if len(obj) == 1:
-            key = list(obj.keys())[0]
-            if not isinstance(key, str):
-                try:
-                    key_type = normalize_config_type(cast(RawConfigType, key))
-                except DagsterInvalidConfigError:
-                    raise DagsterInvalidDefinitionError(
-                        f"Invalid key in map specification: {repr(key)} in map {obj}"
-                    )
 
-                if not key_type.kind == ConfigTypeKind.SCALAR:
-                    raise DagsterInvalidDefinitionError(
-                        f"Non-scalar key in map specification: {repr(key)} in map {obj}"
-                    )
+        if all(isinstance(key, str) for key in obj.keys()):
+            Shape({key: normalize_field(value, root, stack) for key, value in obj.items()})
 
-                try:
-                    inner_type = normalize_config_type(obj[key])
-                except DagsterInvalidDefinitionError:
-                    raise DagsterInvalidDefinitionError(
-                        f"Invalid value in map specification: {repr(obj[str])} in map {obj}"
-                    )
+        elif len(obj) == 1:
+            key = next(iter(obj.keys()))
+            try:
+                key_type = normalize_config_type(key, root, stack)
+                assert key_type.kind == ConfigTypeKind.SCALAR
+            except (DagsterInvalidConfigDefinitionError, AssertionError):
+                raise DagsterInvalidConfigDefinitionError(
+                    root,
+                    obj,
+                    stack,
+                    f"Map specification dict must have length of 1, with a scalar type for the key and an arbitrary type for the value, e.g. {{str: int}}. Invalid key type: {repr(key)}.",
+                )
 
-                return Map(key_type, inner_type)
+            try:
+                value = obj[key]
+                value_type = normalize_config_type(value, root, stack)
+            except DagsterInvalidConfigDefinitionError:
+                raise DagsterInvalidConfigDefinitionError(
+                    root,
+                    obj,
+                    stack,
+                    f"Map specification dict must have length of 1, with a scalar type for the key and an arbitrary type for the value, e.g. {{str: int}}. Invalid value type: {repr(obj[key])}.",
+                )
 
-        elif all(isinstance(key, str) for key in obj.keys()):
-            return convert_fields_to_dict_type(cast(Mapping[str, object], obj))
+            return Map(key_type, value_type)
 
     if isinstance(obj, list):
         if len(obj) != 1:
-            raise DagsterInvalidDefinitionError("Array specifications must only be of length 1")
+            raise DagsterInvalidConfigDefinitionError(
+                root,
+                obj,
+                stack,
+                "Array specification list must have a single element that is an arbitrary type, e.g. [int]. Invalid list has multiple items.",
+            )
 
         try:
-            inner_type = normalize_config_type(cast(RawConfigType, obj[0]))
-        except DagsterInvalidDefinitionError:
-            raise DagsterInvalidDefinitionError(
-                f"Invalid member of array specification: {repr(obj[0])} in list {obj}"
+            element_type = normalize_config_type(obj[0], root, stack)
+        except DagsterInvalidConfigDefinitionError:
+            raise DagsterInvalidConfigDefinitionError(
+                root,
+                obj,
+                stack,
+                f"Array specification list must have a single element that is an arbitrary type, e.g. [int]. Invalid element_type: {repr(obj[0])}.",
             )
-        return Array(inner_type)
+        return Array(element_type)
 
     # Special error messages for passing a DagsterType
     from dagster._core.types.dagster_type import DagsterType, List, ListType
@@ -163,68 +208,89 @@ def normalize_config_type(obj: object) -> ConfigType:
     from dagster._core.types.python_tuple import Tuple, _TypedPythonTuple
 
     if isinstance(obj, type) and issubclass(obj, ConfigType):
-        check.param_invariant(
-            False,
-            "dagster_type",
+        raise DagsterInvalidConfigDefinitionError(
+            root,
+            obj,
+            stack,
             f"Cannot pass config type class {obj} to normalize_config_type. "
             "This error usually occurs when you pass a dagster config type class instead of a class instance into "
             'another dagster config type. E.g. "Noneable(Permissive)" should instead be "Noneable(Permissive())".',
         )
 
     if isinstance(obj, type) and issubclass(obj, DagsterType):
-        raise DagsterInvalidDefinitionError(
+        raise DagsterInvalidConfigDefinitionError(
+            root,
+            obj,
+            stack,
             f"You have passed a DagsterType class {repr(obj)} to the config system. "
             "The DagsterType and config schema systems are separate. "
-            f"Valid config values are:\n{VALID_CONFIG_DESC}"
+            f"Valid config values are:\n{VALID_CONFIG_DESC}",
         )
 
     if is_closed_python_optional_type(obj):
-        raise DagsterInvalidDefinitionError(
+        raise DagsterInvalidConfigDefinitionError(
+            root,
+            obj,
+            stack,
             "Cannot use typing.Optional as a config type. If you want this field to be "
             "optional, please use Field(<type>, is_required=False), and if you want this field to "
-            "be required, but accept a value of None, use dagster.Noneable(<type>)."
+            "be required, but accept a value of None, use dagster.Noneable(<type>).",
         )
 
     if is_typing_type(obj):
-        raise DagsterInvalidDefinitionError(
+        raise DagsterInvalidConfigDefinitionError(
+            root,
+            obj,
+            stack,
             (
                 f"You have passed in {obj} to the config system. Most types from "
                 "the typing module in python are not allowed in the config system. "
                 "You must use types that are imported from dagster or primitive types "
                 "such as bool, int, etc."
-            )
-        )
-
-    if obj is List or isinstance(obj, ListType):
-        raise DagsterInvalidDefinitionError(
-            "Cannot use List in the context of config. " + HELPFUL_LIST_ERROR_STRING
-        )
-
-    if obj is Set or isinstance(obj, _TypedPythonSet):
-        raise DagsterInvalidDefinitionError(
-            "Cannot use Set in the context of a config field. " + HELPFUL_LIST_ERROR_STRING
-        )
-
-    if obj is Tuple or isinstance(obj, _TypedPythonTuple):
-        raise DagsterInvalidDefinitionError(
-            "Cannot use Tuple in the context of a config field. " + HELPFUL_LIST_ERROR_STRING
-        )
-
-    if isinstance(obj, DagsterType):
-        raise DagsterInvalidDefinitionError(
-            (
-                "You have passed an instance of DagsterType {type_name} to the config "
-                "system (Repr of type: {dagster_type}). "
-                "The DagsterType and config schema systems are separate. "
-                "Valid config values are:\n{desc}"
-            ).format(
-                type_name=obj.display_name,
-                dagster_type=repr(obj),
-                desc=VALID_CONFIG_DESC,
             ),
         )
 
-    raise DagsterInvalidDefinitionError(f"Invalid value in config type specification: {obj}")
+    if obj is List or isinstance(obj, ListType):
+        raise DagsterInvalidConfigDefinitionError(
+            root,
+            obj,
+            stack,
+            "Cannot use List in the context of config. " + HELPFUL_LIST_ERROR_STRING,
+        )
+
+    if obj is Set or isinstance(obj, _TypedPythonSet):
+        raise DagsterInvalidConfigDefinitionError(
+            root,
+            obj,
+            stack,
+            "Cannot use Set in the context of a config field. " + HELPFUL_LIST_ERROR_STRING,
+        )
+
+    if obj is Tuple or isinstance(obj, _TypedPythonTuple):
+        raise DagsterInvalidConfigDefinitionError(
+            root,
+            obj,
+            stack,
+            "Cannot use Tuple in the context of a config field. " + HELPFUL_LIST_ERROR_STRING,
+        )
+
+    if isinstance(obj, DagsterType):
+        raise DagsterInvalidConfigDefinitionError(
+            root,
+            obj,
+            stack,
+            (
+                f"You have passed an instance of DagsterType {obj.display_name} to the config "
+                f"system (Repr of type: {repr(obj)}). "
+                "The DagsterType and config schema systems are separate. "
+                f"Valid config values are:\n{VALID_CONFIG_DESC}"
+            ),
+        )
+
+    raise DagsterInvalidConfigDefinitionError(
+        root, obj, stack, f"Invalid value in config type specification: {obj}"
+    )
+
 
 class ConfigType:
     """
@@ -275,13 +341,18 @@ class ConfigType:
 
         return self._snap
 
-    def type_iterator(self) -> Iterator["ConfigType"]:
+    def descendant_type_iterator(self) -> Iterator["ConfigType"]:
         yield self
 
-    def get_schema_snapshot(self) -> "ConfigSchemaSnapshot":
-        from .snap import ConfigSchemaSnapshot
+    def get_schema_snapshot(self) -> "ConfigSchemaSnap":
+        """Generate a ConfigSchemaSnapshot containing a flat map of all the types at each descendant node of the tree."""
+        from .snap import ConfigSchemaSnap
 
-        return ConfigSchemaSnapshot({ct.key: ct.get_snapshot() for ct in self.type_iterator()})
+        return ConfigSchemaSnap({ct.key: ct.get_snapshot() for ct in self.descendant_type_iterator()})
+
+    # override in subclasses that provide can provide an implicit default
+    def has_implicit_default(self) -> bool:
+        return False
 
 
 @whitelist_for_serdes
@@ -374,9 +445,12 @@ class Noneable(ConfigType):
             type_params=[self.inner_type],
         )
 
-    def type_iterator(self) -> Iterator["ConfigType"]:
-        yield from self.inner_type.type_iterator()
-        yield from super().type_iterator()
+    def descendant_type_iterator(self) -> Iterator["ConfigType"]:
+        yield from self.inner_type.descendant_type_iterator()
+        yield from super().descendant_type_iterator()
+
+    def has_implicit_default(self) -> bool:
+        return True
 
 
 class Array(ConfigType):
@@ -401,9 +475,9 @@ class Array(ConfigType):
     def description(self):
         return "List of {inner_type}".format(inner_type=self.key)
 
-    def type_iterator(self) -> Iterator["ConfigType"]:
-        yield from self.inner_type.type_iterator()
-        yield from super().type_iterator()
+    def descendant_type_iterator(self) -> Iterator["ConfigType"]:
+        yield from self.inner_type.descendant_type_iterator()
+        yield from super().descendant_type_iterator()
 
 
 class EnumValue:
@@ -591,112 +665,10 @@ class ScalarUnion(ConfigType):
             type_params=[self.scalar_type, self.non_scalar_type],
         )
 
-    def type_iterator(self) -> Iterator["ConfigType"]:
-        yield from self.scalar_type.type_iterator()
-        yield from self.non_scalar_type.type_iterator()
-        yield from super().type_iterator()
-
-class _ConfigHasFields(ConfigType):
-    def __init__(self, fields, **kwargs):
-        self.fields = expand_fields_dict(fields)
-        super(_ConfigHasFields, self).__init__(**kwargs)
-
-    def type_iterator(self) -> Iterator["ConfigType"]:
-        for field in self.fields.values():
-            yield from field.config_type.type_iterator()
-        yield from super().type_iterator()
-
-class Shape(_ConfigHasFields):
-    """Schema for configuration data with string keys and typed values via :py:class:`Field`.
-
-    Unlike :py:class:`Permissive`, unspecified fields are not allowed and will throw a
-    :py:class:`~dagster.DagsterInvalidConfigError`.
-
-    Args:
-        fields (Dict[str, Field]):
-            The specification of the config dict.
-        field_aliases (Dict[str, str]):
-            Maps a string key to an alias that can be used instead of the original key. For example,
-            an entry {"solids": "ops"} means that someone could use "ops" instead of "solids" as a
-            top level string key.
-    """
-
-    def __new__(
-        cls,
-        fields,
-        description=None,
-        field_aliases=None,
-    ):
-        return _memoize_inst_in_field_cache(
-            cls,
-            Shape,
-            _define_shape_key_hash(expand_fields_dict(fields), description, field_aliases),
-        )
-
-    def __init__(
-        self,
-        fields,
-        description=None,
-        field_aliases=None,
-    ):
-        # if we hit in the field cache - skip double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
-            return
-
-        fields = expand_fields_dict(fields)
-        super(Shape, self).__init__(
-            kind=ConfigTypeKind.STRICT_SHAPE,
-            key=_define_shape_key_hash(fields, description, field_aliases),
-            description=description,
-            fields=fields,
-        )
-        self.field_aliases = check.opt_dict_param(
-            field_aliases, "field_aliases", key_type=str, value_type=str
-        )
-        self._initialized = True
-
-class Permissive(_ConfigHasFields):
-    """Defines a config dict with a partially specified schema.
-
-    A permissive dict allows partial specification of the config schema. Any fields with a
-    specified schema will be type checked. Other fields will be allowed, but will be ignored by
-    the type checker.
-
-    Args:
-        fields (Dict[str, Field]): The partial specification of the config dict.
-
-    **Examples:**
-
-    .. code-block:: python
-
-        @op(config_schema=Field(Permissive({'required': Field(String)})))
-        def map_config_op(context) -> List:
-            return sorted(list(context.op_config.items()))
-    """
-
-    def __new__(cls, fields=None, description=None):
-        return _memoize_inst_in_field_cache(
-            cls,
-            Permissive,
-            _define_permissive_dict_key(
-                expand_fields_dict(fields) if fields else None, description
-            ),
-        )
-
-    def __init__(self, fields=None, description=None):
-        # if we hit in field cache avoid double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
-            return
-
-        fields = expand_fields_dict(fields) if fields else None
-        super(Permissive, self).__init__(
-            key=_define_permissive_dict_key(fields, description),
-            kind=ConfigTypeKind.PERMISSIVE_SHAPE,
-            fields=fields or dict(),
-            description=description,
-        )
-        self._initialized = True
-
+    def descendant_type_iterator(self) -> Iterator["ConfigType"]:
+        yield from self.scalar_type.descendant_type_iterator()
+        yield from self.non_scalar_type.descendant_type_iterator()
+        yield from super().descendant_type_iterator()
 
 
 class Map(ConfigType):
@@ -752,12 +724,130 @@ class Map(ConfigType):
     def key_label_name(self):
         return self.given_name
 
-    def type_iterator(self) -> Iterator["ConfigType"]:
-        yield from self.key_type.type_iterator()
-        yield from self.inner_type.type_iterator()
-        yield from super().type_iterator()
+    def descendant_type_iterator(self) -> Iterator["ConfigType"]:
+        yield from self.key_type.descendant_type_iterator()
+        yield from self.inner_type.descendant_type_iterator()
+        yield from super().descendant_type_iterator()
 
-class Selector(_ConfigHasFields):
+class KeyValueConfigType(ConfigType):
+    def __init__(self, fields: Mapping[str, object], **kwargs):
+        from .field import normalize_field
+        self.fields = {key: normalize_field(value) for key, value in fields.items()}
+        super(KeyValueConfigType, self).__init__(**kwargs)
+
+    def descendant_type_iterator(self) -> Iterator["ConfigType"]:
+        for field in self.fields.values():
+            yield from field.config_type.descendant_type_iterator()
+        yield from super().descendant_type_iterator()
+
+
+class Shape(KeyValueConfigType):
+    """Schema for configuration data with string keys and typed values via :py:class:`Field`.
+
+    Unlike :py:class:`Permissive`, unspecified fields are not allowed and will throw a
+    :py:class:`~dagster.DagsterInvalidConfigError`.
+
+    Args:
+        fields (Dict[str, Field]):
+            The specification of the config dict.
+        field_aliases (Dict[str, str]):
+            Maps a string key to an alias that can be used instead of the original key. For example,
+            an entry {"solids": "ops"} means that someone could use "ops" instead of "solids" as a
+            top level string key.
+    """
+
+    def __new__(
+        cls,
+        fields,
+        description=None,
+        field_aliases=None,
+    ):
+        return memoize_composite_type(
+            cls,
+            Shape,
+            fields,
+            description,
+            field_aliases,
+        )
+
+    def __init__(
+        self,
+        fields,
+        description=None,
+        field_aliases=None,
+    ):
+        # if we hit in the field cache - skip double init
+        if self._initialized:  # pylint: disable=access-member-before-definition
+            return
+
+        fields = expand_fields_dict(fields)
+        super(Shape, self).__init__(
+            kind=ConfigTypeKind.STRICT_SHAPE,
+            key=_define_shape_key_hash(fields, description, field_aliases),
+            description=description,
+            fields=fields,
+        )
+        self.field_aliases = check.opt_dict_param(
+            field_aliases, "field_aliases", key_type=str, value_type=str
+        )
+        self._initialized = True
+
+    def has_implicit_default(self) -> bool:
+        for field in self.fields.values():
+            if field.is_required:
+                return False
+        return True
+
+
+class Permissive(KeyValueConfigType):
+    """Defines a config dict with a partially specified schema.
+
+    A permissive dict allows partial specification of the config schema. Any fields with a
+    specified schema will be type checked. Other fields will be allowed, but will be ignored by
+    the type checker.
+
+    Args:
+        fields (Dict[str, Field]): The partial specification of the config dict.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        @op(config_schema=Field(Permissive({'required': Field(String)})))
+        def map_config_op(context) -> List:
+            return sorted(list(context.op_config.items()))
+    """
+
+    def __new__(cls, fields=None, description=None):
+        return memoize_composite_type(
+            cls,
+            Permissive,
+            fields,
+            description,
+        )
+
+    def __init__(self, fields=None, description=None):
+        # if we hit in field cache avoid double init
+        if self._initialized:  # pylint: disable=access-member-before-definition
+            return
+
+        fields = expand_fields_dict(fields) if fields else None
+        super(Permissive, self).__init__(
+            key=_define_permissive_dict_key(fields, description),
+            kind=ConfigTypeKind.PERMISSIVE_SHAPE,
+            fields=fields or dict(),
+            description=description,
+        )
+        self._initialized = True
+
+    def has_implicit_default(self) -> bool:
+        for field in self.fields.values():
+            if field.is_required:
+                return False
+        return True
+
+
+class Selector(KeyValueConfigType):
     """Define a config field requiring the user to select one option.
 
     Selectors are used when you want to be able to present several different options in config but
@@ -799,7 +889,7 @@ class Selector(_ConfigHasFields):
     """
 
     def __new__(cls, fields, description=None):
-        return _memoize_inst_in_field_cache(
+        return memoize_composite_type(
             cls,
             Selector,
             _define_selector_key(expand_fields_dict(fields), description),
@@ -819,6 +909,14 @@ class Selector(_ConfigHasFields):
         )
         self._initialized = True
 
+    def has_implicit_default(self) -> bool:
+        if len(config_type.fields) == 1:  # type: ignore
+            for field in config_type.fields.values():  # type: ignore
+                if field.is_required:
+                    return False
+            return True
+        else:
+            return False
 
 ConfigAnyInstance: Any = Any()
 ConfigBoolInstance: Bool = Bool()
