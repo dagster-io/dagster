@@ -359,6 +359,7 @@ class AssetObservation(
             ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", Sequence[MetadataEntry]),
             ("partition", PublicAttr[Optional[str]]),
+            ("tags", PublicAttr[Mapping[str, str]]),
         ],
     )
 ):
@@ -369,6 +370,8 @@ class AssetObservation(
         metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the asset.
         partition (Optional[str]): The name of a partition of the asset that the metadata
             corresponds to.
+        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
+            observation. Users should not pass values into this argument.
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -381,6 +384,7 @@ class AssetObservation(
         description: Optional[str] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         partition: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
@@ -394,6 +398,13 @@ class AssetObservation(
             check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
+        tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
+        if any([not tag.startswith(SYSTEM_TAG_PREFIX) for tag in tags or {}]):
+            check.failed(
+                "Users should not pass values into the tags argument for AssetMaterializations. "
+                "The tags argument is reserved for system-populated tags."
+            )
+
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
@@ -406,6 +417,7 @@ class AssetObservation(
             metadata_entries=cast(
                 List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
             ),
+            tags=tags,
             partition=check.opt_str_param(partition, "partition"),
         )
 
