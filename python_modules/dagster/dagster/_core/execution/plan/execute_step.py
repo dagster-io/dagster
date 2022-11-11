@@ -337,7 +337,7 @@ def core_dagster_event_sequence_for_step(
     for step_input in step_context.step.step_inputs:
         input_def = step_context.solid_def.input_def_named(step_input.name)
         dagster_type = input_def.dagster_type
-        if step_context.is_asset_materialization:
+        if step_context.step_materializes_assets:
             step_context.fetch_input_event_records()
 
         if dagster_type.is_nothing:
@@ -565,7 +565,10 @@ def _get_output_asset_materializations(
 
             yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
 
-def _extract_logical_version_tags(asset_key: AssetKey, step_context: StepExecutionContext) -> Dict[str, str]:
+
+def _extract_logical_version_tags(
+    asset_key: AssetKey, step_context: StepExecutionContext
+) -> Dict[str, str]:
     asset_layer = step_context.pipeline_def.asset_layer
     dep_keys = asset_layer.upstream_assets_for_asset(asset_key)
     code_version = asset_layer.op_version_for_asset(asset_key) or step_context.pipeline_run.run_id
@@ -588,7 +591,6 @@ def _extract_logical_version_tags(asset_key: AssetKey, step_context: StepExecuti
     )
     tags["dagster/logical_version"] = logical_version.value
     return tags
-
 
 
 def _store_output(
