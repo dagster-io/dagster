@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, 
 from dagster import DagsterInstance
 from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import LogicalVersion
+from dagster._core.definitions.logical_version import UNKNOWN_LOGICAL_VERSION, LogicalVersion, compute_logical_version, extract_logical_version_from_event_log_entry
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -471,7 +471,7 @@ class ProjectedLogicalVersionLoader:
 
     def get(self, asset_key: AssetKey) -> str:
         if not self._has_version(asset_key):
-            self._compute_version(asset_key)
+            self._compute_and_store_version(asset_key)
         return self._fetch_version(asset_key).value
 
     def _has_version(self, key: AssetKey) -> bool:
@@ -480,22 +480,38 @@ class ProjectedLogicalVersionLoader:
     def _fetch_version(self, key: AssetKey) -> LogicalVersion:
         return self._key_to_version_map[key]
 
-    def _compute_version(self, key: AssetKey) -> None:
+    def _compute_and_store_version(self, key: AssetKey) -> None:
         node = self._fetch_node(key)
         if node.is_source:
             version = self._instance.get_current_logical_version(key, True)
+        elif node.op_version is not None:
+            version = self._compute_newly_materialized_version(node)
         else:
-            dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
-            for dep_key in dep_keys:
-                if not self._has_version(dep_key):
-                    self._compute_version(dep_key)
-            version = self._instance.get_logical_version_from_inputs(
-                dep_keys,
-                check.not_none(node.op_version),
-                {key: node.is_source for key in dep_keys},
-                self._key_to_version_map,
-            )
+            materialization = self._instance.get_latest_materialization_event(key)
+            if materialization is None:  # never been materialized
+                version = self._compute_newly_materialized_version(node)
+            else:
+                logical_version, provenance = extract_logical_version_from_event_log_entry(materialization, include_provenance=True)
+                if logical_version is None or provenance is None or 
+
         self._key_to_version_map[key] = version
+
+    def _ensure_dep_versions_loaded(self, node: ExternalAssetNode) -> None:
+        dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
+        for dep_key in dep_keys:
+            if not self._has_version(dep_key):
+                self._compute_and_store_version(dep_key)
+
+    def _compute_newly_materialized_version(self, node: ExternalAssetNode) -> LogicalVersion:
+        self._ensure_dep_versions_loaded(node)
+        return compute_logical_version(
+            node.op_version or UNKNOWN_LOGICAL_VERSION,
+        )
+        return self._instance.get_logical_version_from_inputs(
+            dep_keys,
+            {key: node.is_source for key in dep_keys},
+            self._key_to_version_map,
+        )
 
     def _fetch_node(self, key: AssetKey) -> ExternalAssetNode:
         if key in self._key_to_node_map:
@@ -509,3 +525,4 @@ class ProjectedLogicalVersionLoader:
         for repository in self._repositories:
             for node in repository.get_external_asset_nodes():
                 self._key_to_node_map[node.asset_key] = node
+
