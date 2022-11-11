@@ -907,7 +907,6 @@ def _subset_assets_defs(
     selected_source_asset_keys = selected_asset_keys & {
         source_asset.key for source_asset in source_assets
     }
-    print("SELECTED SOURCE ASSET KEYS")
     for source_asset in set(source_assets):
         # ignore source asset selection if selection contains regular assets
         if (
