@@ -573,3 +573,8 @@ class DagsterUnknownPartitionError(DagsterError):
     """
     The user has tried to access run config for a partition name that does not exist.
     """
+
+class DagsterUndefinedLogicalVersionError(DagsterError):
+    """
+    The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
+    """
