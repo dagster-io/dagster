@@ -173,7 +173,10 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>
             )}
-            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
+            <ViewButton
+              onClick={() => history.push('/instance/code-locations')}
+              color={Colors.White}
+            >
               View
             </ViewButton>
           </Box>
