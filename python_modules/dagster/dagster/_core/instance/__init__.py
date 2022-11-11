@@ -32,9 +32,8 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Literal
-
 import yaml
+from typing_extensions import Literal
 
 import dagster._check as check
 from dagster._annotations import public
@@ -2228,7 +2227,9 @@ class DagsterInstance:
         include_provenance: bool = False,
     ) -> Union[LogicalVersion, Tuple[LogicalVersion, Optional[LogicalVersionProvenance]]]:
 
-        check.invariant(not (is_source and include_provenance), "Provenance is not supported for source assets")
+        check.invariant(
+            not (is_source and include_provenance), "Provenance is not supported for source assets"
+        )
 
         event = event or self.get_latest_logical_version_record(key, is_source)
         if event is None and not is_source:
@@ -2238,12 +2239,13 @@ class DagsterInstance:
         elif event is None:  # implies is_source=True
             return DEFAULT_LOGICAL_VERSION
         elif include_provenance:  # implies is_source=False
-            logical_version, provenance = extract_logical_version_from_event_log_entry(event.event_log_entry, include_provenance=True)
+            logical_version, provenance = extract_logical_version_from_event_log_entry(
+                event.event_log_entry, include_provenance=True
+            )
             return logical_version or DEFAULT_LOGICAL_VERSION, provenance
         else:
             logical_version = extract_logical_version_from_event_log_entry(event.event_log_entry)
             return logical_version or DEFAULT_LOGICAL_VERSION
-                
 
     def get_latest_logical_version_record(
         self,

@@ -877,8 +877,8 @@ def _subset_assets_defs(
 
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
-    included_source_assets: Set[SourceAsset] = set()
-    excluded_source_assets: Set[SourceAsset] = set()
+    included_source_assets: Set["SourceAsset"] = set()
+    excluded_source_assets: Set["SourceAsset"] = set()
 
     for asset in set(assets):
         # intersection

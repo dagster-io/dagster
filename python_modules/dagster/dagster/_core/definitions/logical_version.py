@@ -11,10 +11,13 @@ if TYPE_CHECKING:
     from dagster._core.definitions.events import AssetKey, Materialization
     from dagster._core.events.log import EventLogEntry
 
+
 class UnknownValue:
     pass
 
+
 UNKNOWN_VALUE: Final[UnknownValue] = UnknownValue()
+
 
 class LogicalVersion(
     NamedTuple(
@@ -57,6 +60,7 @@ class LogicalVersionProvenance(
         input_logical_versions: Mapping["AssetKey", LogicalVersion],
     ):
         from dagster._core.definitions.events import AssetKey
+
         return super(LogicalVersionProvenance, cls).__new__(
             cls,
             code_version=check.str_param(code_version, "code_version"),
@@ -68,12 +72,10 @@ class LogicalVersionProvenance(
             ),
         )
 
-
     @staticmethod
-    def from_tags(
-        tags: Mapping[str, str]
-    ) -> Optional[LogicalVersionProvenance]:
+    def from_tags(tags: Mapping[str, str]) -> Optional[LogicalVersionProvenance]:
         from dagster._core.definitions.events import AssetKey
+
         code_version = tags.get(CODE_VERSION_TAG_KEY)
         if code_version is None:
             return None

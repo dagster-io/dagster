@@ -811,7 +811,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         for lineage_info in self.get_input_lineage():
             key = lineage_info.asset_key
             is_source = self.pipeline_def.asset_layer.is_source_for_asset(key)
-            event = self.instance.get_most_recent_logical_version_event(key, is_source)
+            event = self.instance.get_latest_logical_version_record(key, is_source)
             self._input_event_records[key] = event
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:

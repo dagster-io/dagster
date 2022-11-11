@@ -22,7 +22,7 @@ def test_get_most_recent_logical_version():
         pass
 
     @asset
-    def delta(alpha, beta):
+    def delta(alpha, beta):  # pylint: disable=unused-argument
         pass
 
     with instance_for_test() as instance:
@@ -41,7 +41,7 @@ def test_get_logical_version_from_inputs():
         pass
 
     @asset
-    def delta(alpha, beta):
+    def delta(alpha, beta):  # pylint: disable=unused-argument
         pass
 
     op_version = "foo"
