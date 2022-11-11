@@ -105,7 +105,7 @@ def capture_error(fn: T_Callable) -> T_Callable:
             ErrorCapture.observer.get()(exc)
             return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
 
-    return _fn
+    return cast(T_Callable, _fn)
 
 
 class UserFacingGraphQLError(Exception):
@@ -125,7 +125,7 @@ def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> PipelineSelector:
         repository_name=data["repositoryName"],
         pipeline_name=data.get("pipelineName") or data.get("jobName"),  # type: ignore
         solid_selection=data.get("solidSelection"),
-        asset_selection=[
+        asset_selection=[  # type: ignore
             check.not_none(AssetKey.from_graphql_input(asset_key)) for asset_key in asset_selection
         ]
         if asset_selection
