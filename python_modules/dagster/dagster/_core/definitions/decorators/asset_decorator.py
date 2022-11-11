@@ -393,7 +393,7 @@ def multi_asset(
     resource_defs = check.opt_mapping_param(
         resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
     )
-    config_schema = check.opt_dict_param(
+    config_schema = check.opt_mapping_param(
         config_schema,
         "config_schema",
         additional_message="Only dicts are supported for asset config_schema.",

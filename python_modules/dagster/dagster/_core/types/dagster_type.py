@@ -161,8 +161,10 @@ class DagsterType(RequiresResources):
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self._metadata_entries = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+            metadata_entries
+        )
 
     @public  # type: ignore
     def type_check(self, context: "TypeCheckContext", value: object) -> TypeCheck:

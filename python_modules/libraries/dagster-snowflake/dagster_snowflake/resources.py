@@ -202,7 +202,7 @@ class SnowflakeConnection:
                     )
 
         """
-        check.list_param(sql_queries, "sql_queries", of_type=str)
+        check.sequence_param(sql_queries, "sql_queries", of_type=str)
         check.opt_dict_param(parameters, "parameters")
         check.bool_param(fetch_results, "fetch_results")
 

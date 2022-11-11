@@ -263,7 +263,7 @@ def execute_list_versions_command(instance: DagsterInstance, kwargs: Mapping[str
 
 
 def get_run_config_from_file_list(file_list: Optional[Sequence[str]]):
-    check.opt_list_param(file_list, "file_list", of_type=str)
+    check.opt_sequence_param(file_list, "file_list", of_type=str)
     return load_yaml_from_glob_list(file_list) if file_list else {}
 
 
@@ -396,7 +396,7 @@ def do_execute_command(
 ):
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(instance, "instance", DagsterInstance)
-    check.opt_list_param(config, "config", of_type=str)
+    check.opt_sequence_param(config, "config", of_type=str)
 
     return execute_pipeline(
         pipeline,
@@ -496,12 +496,12 @@ def _create_external_pipeline_run(
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-    check.opt_dict_param(run_config, "run_config", key_type=str)
+    check.opt_mapping_param(run_config, "run_config", key_type=str)
 
     check.opt_str_param(mode, "mode")
     check.opt_str_param(preset, "preset")
-    check.opt_dict_param(tags, "tags", key_type=str)
-    check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_mapping_param(tags, "tags", key_type=str)
+    check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
     check.opt_str_param(run_id, "run_id")
 
     run_config, mode, tags, solid_selection = _check_execute_external_pipeline_args(
@@ -574,7 +574,7 @@ def _check_execute_external_pipeline_args(
         ),
     )
 
-    tags = check.opt_dict_param(tags, "tags", key_type=str)
+    tags = check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
 
     if preset is not None:

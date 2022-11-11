@@ -838,7 +838,7 @@ def build_asset_reconciliation_sensor(
 
     """
     check_valid_name(name)
-    check.opt_dict_param(run_tags, "run_tags", key_type=str, value_type=str)
+    check.opt_mapping_param(run_tags, "run_tags", key_type=str, value_type=str)
 
     def sensor_fn(context):
         cursor = (

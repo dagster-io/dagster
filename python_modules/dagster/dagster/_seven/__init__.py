@@ -161,7 +161,7 @@ def xplat_shlex_split(s: str) -> List[str]:
     return shlex.split(s)
 
 
-def get_import_error_message(import_error: Exception) -> str:
+def get_import_error_message(import_error: ImportError) -> str:
     return import_error.msg
 
 

@@ -54,12 +54,12 @@ DagsterRunConfigYamlDumper.remove_implicit_resolver(YAML_TIMESTAMP_TAG)
 DagsterRunConfigYamlDumper.add_representer(str, _octal_string_representer)
 
 
-def load_yaml_from_globs(*globs: str, loader=DagsterRunConfigYamlLoader) -> Mapping[str, Any]:
+def load_yaml_from_globs(*globs: str, loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> Mapping[str, Any]:
     return load_yaml_from_glob_list(list(globs), loader=loader)
 
 
 def load_yaml_from_glob_list(
-    glob_list: Sequence[str], loader=DagsterRunConfigYamlLoader
+        glob_list: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader
 ) -> Mapping[str, Any]:
     check.sequence_param(glob_list, "glob_list", of_type=str)
 
@@ -85,7 +85,7 @@ def merge_yamls(file_list: Sequence[str], loader: Type[yaml.SafeLoader]=DagsterR
     """
     check.sequence_param(file_list, "file_list", of_type=str)
 
-    merged: Dict[str, Any] = {}
+    merged: Dict[object, object] = {}
 
     for yaml_file in file_list:
         yaml_dict = load_yaml_from_path(yaml_file, loader=loader) or {}
@@ -128,7 +128,7 @@ def merge_yaml_strings(yaml_strs: Sequence[str], loader: Type[yaml.SafeLoader]=D
     return functools.reduce(deep_merge_dicts, yaml_dicts, {})
 
 
-def load_yaml_from_path(path: str, loader=DagsterRunConfigYamlLoader) -> object:
+def load_yaml_from_path(path: str, loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> object:
     check.str_param(path, "path")
     with open(path, "r", encoding="utf8") as ff:
         return yaml.load(ff, Loader=loader)

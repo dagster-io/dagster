@@ -96,12 +96,12 @@ class ReconstructableRepository(
             executable_path=check.opt_str_param(executable_path, "executable_path"),
             entry_point=(
                 frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
-                if entry_point != None
+                if entry_point is not None
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
             container_context=(
                 make_readonly_value(check.mapping_param(container_context, "container_context"))
-                if container_context != None
+                if container_context is not None
                 else None
             ),
             repository_load_data=check.opt_inst_param(
@@ -241,7 +241,7 @@ class ReconstructablePipeline(
         self,
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
-        asset_selection: Optional[AbstractSet[AssetKey]],
+        asset_selection: Optional[FrozenSet[AssetKey]],
     ) -> "ReconstructablePipeline":
         # no selection
         if solid_selection is None and solids_to_execute is None and asset_selection is None:
@@ -648,7 +648,7 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
                 f"PipelineDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
             )
         )
-    return definition
+    return definition  # type: ignore
 
 
 def load_def_in_module(

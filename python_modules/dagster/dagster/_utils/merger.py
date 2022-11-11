@@ -14,8 +14,8 @@ def _deep_merge_dicts(
 ) -> Dict[Union[K, K2], Union[V, V2, Dict[object, object]]]:
     check.mapping_param(from_dict, "from_dict")
     check.dict_param(onto_dict, "onto_dict")
-    _onto_dict = cast(Dict[Union[K, K2], Union[V, V2, Dict[object, object]]], onto_dict)
 
+    _onto_dict = cast(Dict[Union[K, K2], Union[V, V2, Dict[object, object]]], onto_dict)
     for from_key, from_value in from_dict.items():
         if from_key not in onto_dict:
             _onto_dict[from_key] = from_value

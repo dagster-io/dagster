@@ -56,7 +56,7 @@ def _build_airbyte_asset_defn_metadata(
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
 ) -> AssetsDefinitionCacheableData:
 
-    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
+    asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
 
     # Generate a list of outputs, the set of destination tables plus any affiliated
     # normalization tables

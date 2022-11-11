@@ -166,7 +166,7 @@ class AssetsDefinition(ResourceAddable):
                 "FreshnessPolicies are currently unsupported for partitioned assets.",
             )
 
-        self._freshness_policies_by_key = check.opt_dict_param(
+        self._freshness_policies_by_key = check.opt_mapping_param(
             freshness_policies_by_key,
             "freshness_policies_by_key",
             key_type=AssetKey,

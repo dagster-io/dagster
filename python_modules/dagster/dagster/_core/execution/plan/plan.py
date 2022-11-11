@@ -784,10 +784,10 @@ class ExecutionPlan(
         step_keys_to_execute: Sequence[str],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
-        step_output_versions=None,
+        step_output_versions: Optional[Mapping[StepOutputHandle, str]]=None,
     ) -> "ExecutionPlan":
         check.sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-        step_output_versions = check.opt_dict_param(
+        step_output_versions = check.opt_mapping_param(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
 
