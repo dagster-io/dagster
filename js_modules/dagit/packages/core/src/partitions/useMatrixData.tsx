@@ -13,26 +13,7 @@ import {StepEventStatus} from '../types/globalTypes';
 import {PartitionMatrixSolidHandleFragment} from './types/PartitionMatrixSolidHandleFragment';
 import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
 
-type StatusSquareColor =
-  | 'SUCCESS'
-  | 'FAILURE'
-  | 'SKIPPED'
-  | 'MISSING'
-  | 'FAILURE-SUCCESS'
-  | 'FAILURE-SKIPPED'
-  | 'SUCCESS-FAILURE'
-  | 'SUCCESS-SKIPPED'
-  | 'SKIPPED-SUCCESS'
-  | 'SKIPPED-FAILURE';
-
-export const StatusSquareFinalColor: {[key: string]: StatusSquareColor} = {
-  'FAILURE-SUCCESS': 'SUCCESS',
-  'SKIPPED-SUCCESS': 'SUCCESS',
-  'SUCCESS-FAILURE': 'FAILURE',
-  'SKIPPED-FAILURE': 'FAILURE',
-  'FAILURE-SKIPPED': 'SKIPPED',
-  'SUCCESS-SKIPPED': 'SKIPPED',
-};
+type StatusSquareColor = 'SUCCESS' | 'FAILURE' | 'MISSING' | 'FAILURE-MISSING' | 'SUCCESS-MISSING';
 
 export interface PartitionRuns {
   name: string;
@@ -134,7 +115,7 @@ function buildMatrixData(
 
       const color: StatusSquareColor =
         !lastRunStepStatus || MISSING_STEP_STATUSES.has(lastRunStepStatus)
-          ? (`${previousRunStatus}-SKIPPED` as StatusSquareColor)
+          ? (`${previousRunStatus}-MISSING` as StatusSquareColor)
           : (lastRunStepStatus as StatusSquareColor);
       return {
         name: node.name,

@@ -125,27 +125,17 @@ export const GridColumn = styled.div<{
         background: ${STEP_STATUS_COLORS.SUCCESS};
       }
     }
-    &.success-skipped {
-      &:before {
-        background: ${STEP_STATUS_COLORS.SUCCESS_SKIPPED};
-      }
-    }
-    &.success-failure {
-      &:before {
-        background: ${STEP_STATUS_COLORS.FAILURE};
-      }
-    }
     &.failure {
       &:before {
         background: ${STEP_STATUS_COLORS.FAILURE};
       }
     }
-    &.failure-success {
+    &.success-missing {
       &:before {
-        background: ${STEP_STATUS_COLORS.SUCCESS};
+        background: ${STEP_STATUS_COLORS.SUCCESS_SKIPPED};
       }
     }
-    &.failure-skipped {
+    &.failure-missing {
       &:before {
         background: ${STEP_STATUS_COLORS.FAILURE_SKIPPED};
       }
@@ -158,16 +148,6 @@ export const GridColumn = styled.div<{
     &.skipped {
       &:before {
         background: ${STEP_STATUS_COLORS.SKIPPED};
-      }
-    }
-    &.skipped-success {
-      &:before {
-        background: ${STEP_STATUS_COLORS.SUCCESS};
-      }
-    }
-    &.skipped-failure {
-      &:before {
-        background: ${STEP_STATUS_COLORS.FAILURE};
       }
     }
   }
