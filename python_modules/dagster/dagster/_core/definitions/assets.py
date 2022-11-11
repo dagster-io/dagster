@@ -2,6 +2,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Dict,
     Iterable,
     Iterator,
@@ -17,8 +18,10 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
+from dagster._core.definitions.configurable import NamedConfigurableDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
@@ -30,6 +33,7 @@ from dagster._utils.backcompat import (
     experimental_arg_warning,
 )
 
+from .definition_config_schema import IDefinitionConfigSchema
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
@@ -52,7 +56,7 @@ if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
 
 
-class AssetsDefinition(ResourceAddable):
+class AssetsDefinition(ResourceAddable, NamedConfigurableDefinition):
     """
     Defines a set of assets that are produced by the same op or graph.
 
@@ -534,6 +538,10 @@ class AssetsDefinition(ResourceAddable):
     def metadata_by_key(self):
         return self._metadata_by_key
 
+    @property
+    def config_schema(self) -> Optional[IDefinitionConfigSchema]:
+        return self.node_def.config_schema
+
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         with warnings.catch_warnings():
@@ -854,6 +862,48 @@ class AssetsDefinition(ResourceAddable):
             group_names_by_key=self.group_names_by_key,
             freshness_policies_by_key=self.freshness_policies_by_key,
         )
+
+    def copy_for_configured(
+        self,
+        name: str,
+        description: Optional[str],
+        config_schema: IDefinitionConfigSchema,
+        config_or_config_fn: Any,
+    ) -> "AssetsDefinition":
+        if isinstance(self.node_def, GraphDefinition):
+            raise DagsterInvalidInvocationError(
+                "Cannot call `.configured` on a graph asset. Instead, call `AssetsDefinition.from_graph(your_graph.configured(...))`"
+            )
+        configured_asset = AssetsDefinition(
+            keys_by_input_name=self._keys_by_input_name,
+            keys_by_output_name=self._keys_by_output_name,
+            node_def=self.node_def.copy_for_configured(
+                name, description, config_schema, config_or_config_fn
+            ),
+            partitions_def=self._partitions_def,
+            partition_mappings=self._partition_mappings,
+            asset_deps=self._asset_deps,
+            selected_asset_keys=self._selected_asset_keys,
+            can_subset=self._can_subset,
+            resource_defs=self._resource_defs,
+            group_names_by_key=self.group_names_by_key,
+            metadata_by_key=self._metadata_by_key,
+            freshness_policies_by_key=self.freshness_policies_by_key,
+        )
+        if len(configured_asset.keys) == 1 and self.node_def.name.endswith(
+            configured_asset.key.path[-1]
+        ):
+            # If asset was created through @asset decorator, swap out the key
+            # for the new configured name
+            return configured_asset.with_prefix_or_group(
+                output_asset_key_replacements={
+                    configured_asset.key: AssetKey(
+                        list(configured_asset.key.path[:-1] or []) + [name]
+                    )
+                }
+            )
+        else:
+            return configured_asset
 
 
 def _infer_keys_by_input_names(
