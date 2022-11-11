@@ -86,7 +86,7 @@ def get_base_asset_jobs(
 @experimental
 def build_assets_job(
     name: str,
-    assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+    assets: Sequence[AssetsDefinition],
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,

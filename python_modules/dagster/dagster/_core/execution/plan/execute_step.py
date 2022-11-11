@@ -28,10 +28,13 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
-from dagster._core.definitions.logical_version import LogicalVersion
+from dagster._core.definitions.logical_version import (
+    LogicalVersion,
+    get_input_event_pointer_tag_key,
+    get_input_logical_version_tag_key,
+)
 from dagster._core.definitions.metadata import (
     MetadataEntry,
-    MetadataValue,
     PartitionMetadataEntry,
     normalize_metadata,
 )
@@ -46,17 +49,9 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
     DagsterTypeCheckError,
     DagsterTypeMaterializationError,
-    DagsterUndefinedLogicalVersionError,
     user_code_error_boundary,
 )
-from dagster._core.event_api import EventRecordsFilter
-from dagster._core.events import (
-    AssetObservationData,
-    DagsterEvent,
-    DagsterEventType,
-    StepMaterializationData,
-)
-from dagster._core.events.log import EventLogEntry
+from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.execution.plan.compute import execute_core_compute
@@ -64,7 +59,6 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
-from dagster._core.instance import DagsterInstance
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
@@ -528,18 +522,18 @@ def _get_output_asset_materializations(
     input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
     tags: Dict[str, str] = {}
     for key, event in input_event_records.items():
-        str_key = key.to_user_string()
         is_source = asset_layer.is_source_for_asset(key)
-        logical_version = step_context.instance.get_current_logical_version(key, is_source, event=event)
+        logical_version = step_context.instance.get_current_logical_version(
+            key, is_source, event=event
+        )
         input_logical_versions[key] = logical_version
-        tags[f"dagster/input_logical_version/{str_key}"] = logical_version.value
-        tags[f"dagster/input_most_recent_event/{str_key}"] = str(event.storage_id) if event else "NULL"
+        tags[get_input_logical_version_tag_key(key)] = logical_version.value
+        tags[get_input_event_pointer_tag_key(key)] = str(event.storage_id) if event else "NULL"
 
     logical_version = step_context.instance.get_logical_version_from_inputs(
         dep_keys, op_version, dep_key_to_is_source_map, input_logical_versions
     )
     tags["dagster/logical_version"] = logical_version.value
-
 
     # all_metadata.append(
     #     MetadataEntry(label="logical_version", value=MetadataValue.logical_version(version))

@@ -819,7 +819,6 @@ def build_asset_selection_job(
     asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> "JobDefinition":
     from dagster._core.definitions import build_assets_job
-    from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
 
     if asset_selection:
         (

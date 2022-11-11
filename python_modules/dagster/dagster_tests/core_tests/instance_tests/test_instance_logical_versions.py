@@ -11,9 +11,9 @@ def _make_hash(*inputs):
     hash_sig = sha256()
     hash_sig.update(bytearray("".join(inputs), "utf8"))
     return hash_sig.hexdigest()
-        
-def test_get_most_recent_logical_version():
 
+
+def test_get_most_recent_logical_version():
     @asset
     def alpha():
         pass
@@ -32,9 +32,7 @@ def test_get_most_recent_logical_version():
         assert instance.get_most_recent_logical_version(delta.key, False) != DEFAULT_LOGICAL_VERSION
 
 
-
 def test_get_logical_version_from_inputs():
-
     @asset
     def alpha():
         pass

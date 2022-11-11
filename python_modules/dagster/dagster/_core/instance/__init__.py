@@ -36,7 +36,11 @@ import yaml
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import DEFAULT_LOGICAL_VERSION, LogicalVersion, extract_logical_version_from_event, extract_logical_version_from_event_log_entry
+from dagster._core.definitions.logical_version import (
+    DEFAULT_LOGICAL_VERSION,
+    LogicalVersion,
+    extract_logical_version_from_event_log_entry,
+)
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
     PipelineDefinition,
@@ -2206,7 +2210,10 @@ class DagsterInstance:
                 f"No logical version defined for asset {key}; no materialization events found.",
             )
         else:
-            return extract_logical_version_from_event_log_entry(event.event_log_entry) or DEFAULT_LOGICAL_VERSION
+            return (
+                extract_logical_version_from_event_log_entry(event.event_log_entry)
+                or DEFAULT_LOGICAL_VERSION
+            )
 
     def get_most_recent_logical_version_event(
         self,
@@ -2234,4 +2241,3 @@ class DagsterInstance:
                 limit=1,
             )
             return next(iter(materializations), None)
-
