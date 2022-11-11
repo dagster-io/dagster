@@ -26,7 +26,6 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -478,13 +477,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
-        self._input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
-        for lineage_info in self.get_input_lineage():
-            key = lineage_info.asset_key
-            is_source = False
-            self._input_versions[key] = self.plan_data.instance.get_most_recent_logical_version(key, is_source)
-
-
     @property
     def step(self) -> ExecutionStep:
         return self._step
@@ -912,10 +904,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._input_lineage = _dedup_asset_lineage(self._input_lineage)
 
         return self._input_lineage
-
-    @property
-    def input_logical_version_map(self) -> Dict[AssetKey, LogicalVersion]:
-        return self._input_logical_version_map
 
     def get_type_materializer_context(self) -> "DagsterTypeMaterializerContext":
         return DagsterTypeMaterializerContext(

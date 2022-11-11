@@ -1,4 +1,5 @@
-from typing import cast, Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple, cast
+
 from dagster_graphql.schema.util import HasContext
 from graphene import ResolveInfo
 

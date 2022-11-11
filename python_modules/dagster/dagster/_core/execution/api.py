@@ -1164,7 +1164,12 @@ class ExecuteRunWithPlanIterable:
     cf. `dagster._utils.EventGenerationManager`.
     """
 
-    def __init__(self, execution_plan: ExecutionPlan, iterator: Callable[..., Iterator[DagsterEvent]], execution_context_manager: PlanOrchestrationContextManager):
+    def __init__(
+        self,
+        execution_plan: ExecutionPlan,
+        iterator: Callable[..., Iterator[DagsterEvent]],
+        execution_context_manager: ExecutionContextManager[Any],
+    ):
         self.execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         self.iterator = check.callable_param(iterator, "iterator")
         self.execution_context_manager = check.inst_param(

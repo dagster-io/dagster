@@ -1,11 +1,11 @@
 """Facilities for running arbitrary commands in child processes."""
 
 
-from multiprocessing import Queue
 import os
 import queue
 import sys
 from abc import ABC, abstractmethod
+from multiprocessing import Queue
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from typing import TYPE_CHECKING, Iterator, NamedTuple, Union
 
@@ -16,6 +16,7 @@ from dagster._utils.interrupts import capture_interrupts
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
+
 
 class ChildProcessEvent:
     pass
@@ -46,7 +47,7 @@ class ChildProcessCommand(ABC):  # pylint: disable=no-init
     The object must be picklable; instantiate it and pass it to _execute_command_in_child_process."""
 
     @abstractmethod
-    def execute(self) -> Iterator[Union[ChildProcessEvent, DagsterEvent]]:
+    def execute(self) -> Iterator[Union[ChildProcessEvent, "DagsterEvent"]]:
         """This method is invoked in the child process.
 
         Yields a sequence of events to be handled by _execute_command_in_child_process."""
@@ -114,7 +115,7 @@ def _poll_for_event(process, event_queue):
 
 def execute_child_process_command(
     multiprocessing_ctx: MultiprocessingBaseContext, command: ChildProcessCommand
-) -> Iterator[DagsterEvent]:
+) -> Iterator["DagsterEvent"]:
     """Execute a ChildProcessCommand in a new process.
 
     This function starts a new process whose execution target is a ChildProcessCommand wrapped by

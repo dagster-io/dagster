@@ -27,6 +27,7 @@ from dagster._utils.interrupts import raise_interrupts_as
 if TYPE_CHECKING:
     from dagster._core.log_manager import DagsterLogManager
 
+
 class DagsterExecutionInterruptedError(BaseException):
     """
     Pipeline execution was interrupted during the execution process.

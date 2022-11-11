@@ -1,9 +1,8 @@
 import multiprocessing
 import os
 import sys
-from multiprocessing import Event as MultiprocessingEvent
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
-from typing import Dict, Iterator, List, Optional, Sequence
+from typing import Any, Dict, Iterator, Optional, Sequence
 
 from dagster import MetadataEntry
 from dagster import _check as check
@@ -153,9 +152,9 @@ class MultiprocessExecutor(Executor):
             # we import this module first to avoid user code like
             # pyspark.serializers._hijack_namedtuple from breaking us
             if "dagster._core.executor.multiprocess" not in preload:
-                preload = ["dagster._core.executor.multiprocess"] + preload
+                preload = ["dagster._core.executor.multiprocess", *preload]
 
-            multiproc_ctx.set_forkserver_preload(preload)
+            multiproc_ctx.set_forkserver_preload(list(preload))
 
         limit = self._max_concurrent
 
@@ -174,10 +173,10 @@ class MultiprocessExecutor(Executor):
         # https://github.com/dagster-io/dagster/issues/811
         with time_execution_scope() as timer_result:
             with execution_plan.start(retry_mode=self.retries) as active_execution:
-                active_iters = {}
-                errors = {}
-                term_events = {}
-                stopping = False
+                active_iters: Dict[str, Iterator[DagsterEvent]] = {}
+                errors: Dict[int, SerializableErrorInfo] = {}
+                term_events: Dict[str, Any] = {}
+                stopping: bool = False
 
                 while (not stopping and not active_execution.is_complete) or active_iters:
                     if active_execution.check_for_interrupts():
@@ -313,11 +312,11 @@ def execute_step_out_of_process(
     step_context: IStepContext,
     step: ExecutionStep,
     errors: Dict[int, SerializableErrorInfo],
-    term_events: Dict[str, MultiprocessingEvent],
+    term_events: Dict[str, Any],
     retries: RetryMode,
     known_state: KnownExecutionState,
     repository_load_data: Optional[RepositoryLoadData],
-):
+) -> Iterator[DagsterEvent]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,
@@ -344,4 +343,3 @@ def execute_step_out_of_process(
                 errors[ret.pid] = ret.error_info
         else:
             check.failed("Unexpected return value from child process {}".format(type(ret)))
-
