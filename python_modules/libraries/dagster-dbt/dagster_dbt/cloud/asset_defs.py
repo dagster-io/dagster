@@ -1,8 +1,14 @@
 from typing import Any, Callable, Dict, FrozenSet, Mapping, Optional, Sequence, Set, Tuple, cast
 
-from dagster import AssetKey, AssetOut, AssetsDefinition, MetadataValue, ResourceDefinition
-from dagster import _check as check
-from dagster import multi_asset, with_resources
+from dagster import (
+    AssetKey,
+    AssetOut,
+    AssetsDefinition,
+    MetadataValue,
+    ResourceDefinition,
+    multi_asset,
+    with_resources,
+)
 from dagster._annotations import experimental
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -61,32 +67,30 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._project_id = job["project_id"]
         self._has_generate_docs = job["generate_docs"]
 
-        # Fetch the latest run for the job.
-        runs = self._dbt_cloud.get_runs(job_id=self._job_id, order_by="-id", limit=1)
-
-        # Assume that a run already exists for the job.
+        # We need to retrieve the dependency structure for the assets in the dbt Cloud project.
+        # However, we can't just use the dependency structure from the latest run, because
+        # this historical structure may not be up-to-date with the current state of the project.
         #
-        # In the future, we should be able to create a run for the job if one does not exist.
-        # This can be done by triggering the job to run and then specifying a step override to
-        # compile the dbt project.
-        check.invariant(
-            len(runs) == 1,
-            (
-                f"No runs found for the dbt Cloud job ({self._job_id}). "
-                "The job must be run at least once in order to generate its assets. "
-                "Run the job manually in dbt Cloud and try again."
-            ),
+        # By always doing a compile step, we can always get the latest dependency structure.
+        # This incurs some latency, but at least it doesn't run through the entire materialization
+        # process.
+        compile_run_dbt_output = self._dbt_cloud.run_job_and_poll(
+            job_id=self._job_id,
+            cause="Generating software-defined assets for Dagster.",
+            # In the future, we need to be able to pass the filters from the run/build step
+            # to this compile step.
+            steps_override=["dbt compile"],
         )
 
-        # Fetch the latest run's manifest and run results.
+        # Fetch the compilation run's manifest and run results.
         #
         # In the future, we should target the correct execution step, rather than assuming that
         # the last step is the one that we want.
-        last_run_id = cast(int, runs[0]["id"])
+        compile_run_id = compile_run_dbt_output.run_id
         step: Optional[int] = None
 
-        manifest_json = self._dbt_cloud.get_manifest(run_id=last_run_id, step=step)
-        run_results_json = self._dbt_cloud.get_run_results(run_id=last_run_id, step=step)
+        manifest_json = self._dbt_cloud.get_manifest(run_id=compile_run_id, step=step)
+        run_results_json = self._dbt_cloud.get_run_results(run_id=compile_run_id, step=step)
 
         # Filter the manifest to only include the nodes that were executed.
         dbt_nodes: Dict[str, Any] = {
@@ -98,6 +102,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             result["unique_id"] for result in run_results_json["results"]
         )
 
+        # Generate the dependency structure for the executed nodes.
         dbt_dependencies = _get_deps(
             dbt_nodes=dbt_nodes,
             selected_unique_ids=executed_node_ids,
