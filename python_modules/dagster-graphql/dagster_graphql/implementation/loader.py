@@ -483,7 +483,7 @@ class ProjectedLogicalVersionLoader:
     def _compute_version(self, key: AssetKey) -> None:
         node = self._fetch_node(key)
         if node.is_source:
-            version = self._instance.get_most_recent_logical_version(key, True)
+            version = self._instance.get_current_logical_version(key, True)
         else:
             dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
             for dep_key in dep_keys:

@@ -22,7 +22,6 @@ from dagster_graphql.schema.solids import (
 from dagster import AssetKey
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.logical_version import get_most_recent_logical_version
 from dagster._core.host_representation import ExternalRepository, RepositoryLocation
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (
@@ -58,7 +57,7 @@ from .pipelines.pipeline import (  # GraphenePartitionMaterializationS,
     GraphenePipeline,
     GrapheneRun,
 )
-from .util import non_null_list
+from .util import HasContext, non_null_list
 
 if TYPE_CHECKING:
     from .external import GrapheneRepository
@@ -452,11 +451,11 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_computeKind(self, _graphene_info) -> Optional[str]:
         return self._external_asset_node.compute_kind
 
-    def resolve_currentLogicalVersion(self, graphene_info) -> Optional[str]:
+    def resolve_currentLogicalVersion(self, graphene_info: HasContext) -> Optional[str]:
         if not self.external_asset_node.is_versioned:
             return None
         else:
-            return graphene_info.context.instance.get_most_recent_logical_version(
+            return graphene_info.context.instance.get_current_logical_version(
                 self._external_asset_node.asset_key,
                 self._external_asset_node.is_source,
             ).value
