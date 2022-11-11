@@ -279,6 +279,9 @@ class InstanceRef(
                 "DefaultRunLauncher",
                 yaml.dump({}),
             ),
+            # For back-compat, the default is actually set in the secrets_loader property above,
+            # so that old clients loading new config don't try to load a class that they
+            # don't recognize
             "secrets": None,
             # LEGACY DEFAULTS
             "run_storage": default_run_storage_data,
@@ -463,7 +466,18 @@ class InstanceRef(
 
     @property
     def secrets_loader(self):
-        return self.secrets_loader_data.rehydrate() if self.secrets_loader_data else None
+        # Defining a default here rather than in stored config to avoid
+        # back-compat issues when loading the config on older versions where
+        # EnvFileLoader was not defined
+        return (
+            self.secrets_loader_data.rehydrate()
+            if self.secrets_loader_data
+            else ConfigurableClassData(
+                "dagster._core.secrets.env_file",
+                "EnvFileLoader",
+                yaml.dump({}),
+            ).rehydrate()
+        )
 
     @property
     def custom_instance_class(self):

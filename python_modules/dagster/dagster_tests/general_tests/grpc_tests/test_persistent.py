@@ -572,7 +572,7 @@ def test_load_with_missing_env_var():
         process.communicate(timeout=30)
 
 
-def test_load_with_secrets_loader_no_instance_ref():
+def test_load_with_secrets_loader_instance_ref():
     # Now with secrets manager and correct args
     port = find_free_port()
     client = DagsterGrpcClient(port=port)
@@ -589,25 +589,10 @@ def test_load_with_secrets_loader_no_instance_ref():
         "--lazy-load-user-code",
     ]
 
-    with environ({"FOO": None}):
+    with environ({"FOO": None, "FOO_INSIDE_OP": None}):
         with instance_for_test(
-            overrides={
-                "secrets": {
-                    "custom": {
-                        "module": "dagster._core.test_utils",
-                        "class": "TestSecretsLoader",
-                        "config": {
-                            "env_vars": {
-                                "FOO": "BAR",
-                                "FOO_INSIDE_OP": "BAR_INSIDE_OP",
-                            }
-                        },
-                    }
-                },
-            },
             set_dagster_home=False,
         ) as instance:
-
             process = subprocess.Popen(
                 subprocess_args
                 + [
@@ -615,6 +600,7 @@ def test_load_with_secrets_loader_no_instance_ref():
                     "--instance-ref",
                     serialize_dagster_namedtuple(instance.get_ref()),
                 ],
+                cwd=os.path.dirname(__file__),
             )
             try:
                 wait_for_grpc_server(process, client, subprocess_args)
@@ -662,7 +648,7 @@ def test_load_with_secrets_loader_no_instance_ref():
                 process.communicate(timeout=30)
 
 
-def test_load_with_secrets_loader_instance_ref():
+def test_load_with_secrets_loader_no_instance_ref():
     port = find_free_port()
     client = DagsterGrpcClient(port=port)
     python_file = file_relative_path(__file__, "grpc_repo_with_env_vars.py")
@@ -680,20 +666,11 @@ def test_load_with_secrets_loader_instance_ref():
 
     with environ({"FOO": None}):
         with instance_for_test(
-            overrides={
-                "secrets": {
-                    "custom": {
-                        "module": "dagster._core.test_utils",
-                        "class": "TestSecretsLoader",
-                        "config": {"env_vars": {"FOO": "BAR"}},
-                    }
-                },
-            },
             set_dagster_home=True,
         ):
             process = subprocess.Popen(
                 subprocess_args + ["--inject-env-vars-from-instance"],
-                stdout=subprocess.PIPE,
+                cwd=os.path.dirname(__file__),
             )
 
             client = DagsterGrpcClient(port=port, host="localhost")
