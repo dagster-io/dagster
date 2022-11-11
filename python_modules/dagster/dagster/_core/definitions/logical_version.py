@@ -11,6 +11,10 @@ if TYPE_CHECKING:
     from dagster._core.definitions.events import AssetKey, Materialization
     from dagster._core.events.log import EventLogEntry
 
+class UnknownValue:
+    pass
+
+UNKNOWN_VALUE: Final[UnknownValue] = UnknownValue()
 
 class LogicalVersion(
     NamedTuple(
@@ -88,7 +92,7 @@ def get_input_event_pointer_tag_key(input_key: AssetKey) -> str:
 
 
 def compute_logical_version(
-    code_version: str, input_logical_versions: Sequence[LogicalVersion]
+    code_version: Union[str, UnknownValue], input_logical_versions: Sequence[LogicalVersion]
 ) -> LogicalVersion:
     """Compute a logical version from inputs.
 
@@ -99,10 +103,10 @@ def compute_logical_version(
     Returns:
         LogicalVersion: The computed logical version.
     """
-    check.inst_param(code_version, "code_version", LogicalVersion)
+    check.inst_param(code_version, "code_version", (str, UnknownValue))
     check.sequence_param(input_logical_versions, "input_versions", of_type=LogicalVersion)
 
-    if UNKNOWN_LOGICAL_VERSION in input_logical_versions:
+    if code_version == UNKNOWN_VALUE or UNKNOWN_LOGICAL_VERSION in input_logical_versions:
         return UNKNOWN_LOGICAL_VERSION
 
     all_inputs = [code_version, *(v.value for v in input_logical_versions)]
