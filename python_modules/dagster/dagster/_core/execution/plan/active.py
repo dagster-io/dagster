@@ -358,7 +358,7 @@ class ActiveExecution:
     def mark_interrupted(self) -> None:
         self._interrupted = True
 
-    def check_for_interrupts(self) -> None:
+    def check_for_interrupts(self) -> bool:
         return pop_captured_interrupt()
 
     def mark_up_for_retry(self, step_key: str, at_time: Optional[float] = None) -> None:

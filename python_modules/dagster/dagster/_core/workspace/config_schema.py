@@ -12,7 +12,7 @@ from dagster._config import (
     process_config,
 )
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 
 def process_workspace_config(

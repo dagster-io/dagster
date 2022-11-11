@@ -10,6 +10,7 @@ from typing import (
     Union,
     cast,
 )
+
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     from .decorators.solid_decorator import DecoratedSolidFunction
 
 OpComputeFunction: TypeAlias = Callable[..., Any]
+
 
 class OpDefinition(SolidDefinition):
     """

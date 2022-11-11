@@ -3,10 +3,13 @@ import sys
 import threading
 from contextlib import contextmanager
 from types import FrameType
-from typing import Iterator, Optional, Type
+from typing import Any, Iterator, Optional, Type
+
 from typing_extensions import TypeAlias
 
-SignalHandler: TypeAlias = signal._HANDLER  # type: ignore
+# This should be improved later-- signal._HANDLER unfortunately is not defined in all Python
+# versions.
+SignalHandler: TypeAlias = Any
 
 _received_interrupt = {"received": False}
 
