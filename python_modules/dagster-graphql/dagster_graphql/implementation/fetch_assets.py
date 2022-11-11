@@ -349,11 +349,15 @@ def get_freshness_info(
     current_time = datetime.datetime.now(tz=datetime.timezone.utc)
 
     latest_record = data_time_queryer.get_most_recent_materialization_record(asset_key=asset_key)
+    if latest_record is None:
+        return GrapheneAssetFreshnessInfo(
+            currentMinutesLate=None,
+            latestMaterializationMinutesLate=None,
+        )
     latest_materialization_time = datetime.datetime.fromtimestamp(
         latest_record.event_log_entry.timestamp,
         tz=datetime.timezone.utc,
     )
-
     used_data_times = data_time_queryer.get_used_data_times_for_record(record=latest_record)
 
     # in the future, if you have upstream source assets with versioning policies, available data
@@ -368,9 +372,21 @@ def get_freshness_info(
         },
     )
 
+    previous_latest_record = data_time_queryer.get_most_recent_materialization_record(
+        asset_key=asset_key, before_cursor=latest_record.storage_id
+    )
+    if previous_latest_record is None:
+        return GrapheneAssetFreshnessInfo(
+            currentMinutesLate=current_minutes_late,
+            latestMaterializationMinutesLate=None,
+        )
+    previous_used_data_times = data_time_queryer.get_used_data_times_for_record(
+        record=previous_latest_record
+    )
+
     latest_materialization_minutes_late = freshness_policy.minutes_late(
         evaluation_time=latest_materialization_time,
-        used_data_times=used_data_times,
+        used_data_times=previous_used_data_times,
         available_data_times={key: latest_materialization_time for key in used_data_times.keys()},
     )
 

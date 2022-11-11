@@ -1305,6 +1305,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
     def test_freshness_info(self, graphql_context, snapshot):
         _create_run(graphql_context, "fresh_diamond_assets")
+        _create_run(graphql_context, "fresh_diamond_assets")
         result = execute_dagster_graphql(graphql_context, GET_FRESHNESS_INFO)
 
         assert result.data
