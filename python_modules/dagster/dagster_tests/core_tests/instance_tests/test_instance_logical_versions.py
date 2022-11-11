@@ -2,7 +2,7 @@ from hashlib import sha256
 
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.logical_version import DEFAULT_LOGICAL_VERSION
-from dagster._core.definitions.materialize import materialize,
+from dagster._core.definitions.materialize import materialize
 from dagster._core.test_utils import instance_for_test
 
 

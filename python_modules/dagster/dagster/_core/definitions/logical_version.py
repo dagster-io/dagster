@@ -47,15 +47,16 @@ class LogicalVersionProvenance(
         "_LogicalVersionProvenance",
         [
             ("code_version", str),
-            ("input_logical_versions", Mapping[AssetKey, LogicalVersion]),
+            ("input_logical_versions", Mapping["AssetKey", LogicalVersion]),
         ],
     )
 ):
     def __new__(
         cls,
         code_version: str,
-        input_logical_versions: Mapping[AssetKey, LogicalVersion],
+        input_logical_versions: Mapping["AssetKey", LogicalVersion],
     ):
+        from dagster._core.definitions.events import AssetKey
         return super(LogicalVersionProvenance, cls).__new__(
             cls,
             code_version=check.str_param(code_version, "code_version"),
@@ -78,11 +79,11 @@ INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX: Final[str] = "dagster/input_logical_versio
 INPUT_EVENT_POINTER_TAG_KEY_PREFIX: Final[str] = "dagster/input_event_pointer"
 
 
-def get_input_logical_version_tag_key(input_key: AssetKey) -> str:
+def get_input_logical_version_tag_key(input_key: "AssetKey") -> str:
     return f"f{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/{input_key.to_user_string()}"
 
 
-def get_input_event_pointer_tag_key(input_key: AssetKey) -> str:
+def get_input_event_pointer_tag_key(input_key: "AssetKey") -> str:
     return f"{INPUT_EVENT_POINTER_TAG_KEY_PREFIX}/{input_key.to_user_string()}"
 
 
@@ -106,7 +107,7 @@ def compute_logical_version(
     check.inst_param(code_version, "code_version", (str, UnknownValue))
     check.sequence_param(input_logical_versions, "input_versions", of_type=LogicalVersion)
 
-    if code_version == UNKNOWN_VALUE or UNKNOWN_LOGICAL_VERSION in input_logical_versions:
+    if isinstance(code_version, UnknownValue) or UNKNOWN_LOGICAL_VERSION in input_logical_versions:
         return UNKNOWN_LOGICAL_VERSION
 
     all_inputs = [code_version, *(v.value for v in input_logical_versions)]
@@ -125,7 +126,7 @@ def extract_logical_version_from_event_log_entry(
 
 @overload
 def extract_logical_version_from_event_log_entry(
-    event: EventLogEntry, *, include_provenance: Literal[True] = ...
+    event: EventLogEntry, *, include_provenance: Literal[True]
 ) -> Tuple[Optional[LogicalVersion], Optional[LogicalVersionProvenance]]:
     ...
 
@@ -164,6 +165,7 @@ def extract_logical_version_from_event_log_entry(
 def _extract_provenance_from_event_tags(
     tags: Mapping[str, str]
 ) -> Optional[LogicalVersionProvenance]:
+    from dagster._core.definitions.events import AssetKey
     code_version = tags.get(CODE_VERSION_TAG_KEY)
     if code_version is None:
         return None
