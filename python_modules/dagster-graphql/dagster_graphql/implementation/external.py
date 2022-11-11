@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     )
     from dagster_graphql.schema.util import HasContext
 
+
 def get_external_pipeline_or_raise(
     graphene_info: HasContext, selector: PipelineSelector, ignore_subset: bool = False
 ) -> ExternalPipeline:

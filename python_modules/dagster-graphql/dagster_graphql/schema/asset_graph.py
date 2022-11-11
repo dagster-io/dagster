@@ -1,4 +1,3 @@
-from hashlib import sha256
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union, cast
 
 import graphene
@@ -591,7 +590,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_latestMaterializationByPartition(
         self, graphene_info, **kwargs
     ) -> Sequence[Optional[GrapheneMaterializationEvent]]:
-        from ..implementation.fetch_assets import get_asset_materializations
 
         get_partition = (
             lambda event: event.dagster_event.step_materialization_data.materialization.partition

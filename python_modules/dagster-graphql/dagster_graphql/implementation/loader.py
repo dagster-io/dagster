@@ -6,7 +6,14 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, 
 from dagster import DagsterInstance
 from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import UNKNOWN_LOGICAL_VERSION, UNKNOWN_VALUE, LogicalVersion, LogicalVersionProvenance, compute_logical_version, extract_logical_version_from_event_log_entry
+from dagster._core.definitions.logical_version import (
+    UNKNOWN_LOGICAL_VERSION,
+    UNKNOWN_VALUE,
+    LogicalVersion,
+    LogicalVersionProvenance,
+    compute_logical_version,
+    extract_logical_version_from_event_log_entry,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -491,14 +498,22 @@ class ProjectedLogicalVersionLoader:
             if materialization is None:  # never been materialized
                 version = self._compute_newly_materialized_version(node)
             else:
-                logical_version, provenance = extract_logical_version_from_event_log_entry(materialization, include_provenance=True)
-                if logical_version is None or provenance is None or self._is_provenance_changed(node, provenance):
+                logical_version, provenance = extract_logical_version_from_event_log_entry(
+                    materialization, include_provenance=True
+                )
+                if (
+                    logical_version is None
+                    or provenance is None
+                    or self._is_provenance_changed(node, provenance)
+                ):
                     version = self._compute_newly_materialized_version(node)
                 else:
                     version = self._instance.get_current_logical_version(key, True)
         self._key_to_version_map[key] = version
 
-    def _is_provenance_changed(self, node: ExternalAssetNode, provenance: LogicalVersionProvenance) -> bool:
+    def _is_provenance_changed(
+        self, node: ExternalAssetNode, provenance: LogicalVersionProvenance
+    ) -> bool:
         self._ensure_dep_versions_loaded(node)
         for k, v in provenance.input_logical_versions.items():
             if self._fetch_version(k) != v:
@@ -531,4 +546,3 @@ class ProjectedLogicalVersionLoader:
         for repository in self._repositories:
             for node in repository.get_external_asset_nodes():
                 self._key_to_node_map[node.asset_key] = node
-
