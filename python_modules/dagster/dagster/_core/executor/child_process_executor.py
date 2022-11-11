@@ -147,7 +147,7 @@ def execute_child_process_command(
 
     event_queue = multiprocessing_ctx.Queue()
     try:
-        process = multiprocessing_ctx.Process(
+        process = multiprocessing_ctx.Process(  # type: ignore
             target=_execute_command_in_child_process, args=(event_queue, command)
         )
         process.start()
