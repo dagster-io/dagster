@@ -705,7 +705,7 @@ def _store_output(
             manager_metadata_entries,
             step_context,
         ):
-            yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
+            yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage,)
 
     yield DagsterEvent.handled_output(
         step_context,

@@ -1,5 +1,6 @@
 from typing import cast
 
+from dagster_graphql.schema.runs import GrapheneLaunchRunSuccess
 from graphene import ResolveInfo
 
 import dagster._check as check
@@ -7,6 +8,7 @@ from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
+from dagster_graphql.schema.util import HasContext
 
 from ..external import get_external_pipeline_or_raise
 from ..utils import ExecutionMetadata, ExecutionParams, capture_error
@@ -14,16 +16,16 @@ from .run_lifecycle import create_valid_pipeline_run
 
 
 @capture_error
-def launch_pipeline_reexecution(graphene_info, execution_params):
+def launch_pipeline_reexecution(graphene_info: HasContext, execution_params: ExecutionParams) -> GrapheneLaunchRunSuccess:
     return _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=True)
 
 
 @capture_error
-def launch_pipeline_execution(graphene_info, execution_params):
+def launch_pipeline_execution(graphene_info: HasContext, execution_params: ExecutionParams) -> GrapheneLaunchRunSuccess:
     return _launch_pipeline_execution(graphene_info, execution_params)
 
 
-def do_launch(graphene_info, execution_params, is_reexecuted=False):
+def do_launch(graphene_info: HasContext, execution_params: ExecutionParams, is_reexecuted: bool = False) -> PipelineRun:
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(execution_params, "execution_params", ExecutionParams)
     check.bool_param(is_reexecuted, "is_reexecuted")
@@ -44,7 +46,9 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
     )
 
 
-def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=False):
+def _launch_pipeline_execution(
+    graphene_info, execution_params: ExecutionParams, is_reexecuted: bool = False
+) -> GrapheneLaunchRunSuccess:
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.runs import GrapheneLaunchRunSuccess
 
@@ -59,7 +63,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
 
 
 @capture_error
-def launch_reexecution_from_parent_run(graphene_info, parent_run_id: str, strategy):
+def launch_reexecution_from_parent_run(graphene_info: HasContext, parent_run_id: str, strategy: str) -> GrapheneLaunchRunSuccess:
     """
     Launch a re-execution by referencing the parent run id
     """

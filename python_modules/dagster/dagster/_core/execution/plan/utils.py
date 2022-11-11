@@ -1,6 +1,6 @@
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Type
 
 import dagster._check as check
 from dagster._core.definitions.events import Failure, RetryRequested
@@ -26,7 +26,7 @@ def build_resources_for_manager(
 
 
 @contextmanager
-def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
+def solid_execution_error_boundary(error_cls: Type[DagsterUserCodeExecutionError], msg_fn: Callable[[], str], step_context: StepExecutionContext, **kwargs: Any) -> Iterator[None]:
     """
     A specialization of user_code_error_boundary for the steps involved in executing a solid.
     This variant supports the control flow exceptions RetryRequested and Failure as well

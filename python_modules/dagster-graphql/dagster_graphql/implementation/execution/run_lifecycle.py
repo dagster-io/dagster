@@ -1,4 +1,5 @@
-from typing import cast
+from typing import cast, Optional, Sequence, Tuple
+from dagster_graphql.schema.util import HasContext
 
 from dagster_graphql.schema.util import HasContext
 from graphene import ResolveInfo
@@ -25,7 +26,9 @@ def _get_run(instance: DagsterInstance, run_id: str) -> DagsterRun:
     return cast(DagsterRun, run)
 
 
-def compute_step_keys_to_execute(graphene_info: HasContext, execution_params: ExecutionParams):
+def compute_step_keys_to_execute(
+    graphene_info: HasContext, execution_params: ExecutionParams
+) -> Tuple[Optional[Sequence[str]], Optional[KnownExecutionState]]:
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(execution_params, "execution_params", ExecutionParams)
 
@@ -33,9 +36,8 @@ def compute_step_keys_to_execute(graphene_info: HasContext, execution_params: Ex
 
     if not execution_params.step_keys and is_resume_retry(execution_params):
         # Get step keys from parent_run_id if it's a resume/retry
-        parent_run = _get_run(
-            instance, check.not_none(execution_params.execution_metadata.parent_run_id)
-        )
+        parent_run_id = check.not_none(execution_params.execution_metadata.parent_run_id)
+        parent_run = _get_run(instance, parent_run_id)
         return get_retry_steps_from_parent_run(
             instance,
             parent_run,
@@ -57,7 +59,7 @@ def is_resume_retry(execution_params):
     return execution_params.execution_metadata.tags.get(RESUME_RETRY_TAG) == "true"
 
 
-def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params):
+def create_valid_pipeline_run(graphene_info: HasContext, external_pipeline, execution_params):
     if execution_params.mode is None and len(external_pipeline.available_modes) > 1:
         raise UserFacingGraphQLError(
             GrapheneNoModeProvidedError(external_pipeline.name, external_pipeline.available_modes)

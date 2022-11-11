@@ -95,7 +95,7 @@ class ErrorCapture:
             ErrorCapture.observer.reset(token)
 
 
-def capture_error(fn):
+def capture_error(fn: T_Callable) -> T_Callable:
     def _fn(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
