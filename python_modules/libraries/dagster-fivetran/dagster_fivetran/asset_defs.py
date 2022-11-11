@@ -94,7 +94,7 @@ def build_fivetran_assets(
         table: AssetKey([*asset_key_prefix, *table.split(".")]) for table in destination_tables
     }
 
-    metadata_by_table_name = check.opt_dict_param(
+    metadata_by_table_name = check.opt_mapping_param(
         metadata_by_table_name, "metadata_by_table_name", key_type=str
     )
 

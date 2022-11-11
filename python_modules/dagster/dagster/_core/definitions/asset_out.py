@@ -80,7 +80,7 @@ class AssetOut(
             io_manager_key=check.opt_str_param(
                 io_manager_key, "io_manager_key", default=DEFAULT_IO_MANAGER_KEY
             ),
-            metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
+            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             group_name=check.opt_str_param(group_name, "group_name"),
         )
 

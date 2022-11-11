@@ -159,7 +159,7 @@ class AssetsDefinition(ResourceAddable):
                 node_def.resolve_output_to_origin(output_name, None)[0].metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
-        self._freshness_policies_by_key = check.opt_dict_param(
+        self._freshness_policies_by_key = check.opt_mapping_param(
             freshness_policies_by_key,
             "freshness_policies_by_key",
             key_type=AssetKey,

@@ -10,6 +10,7 @@ from typing import (
     Dict,
     FrozenSet,
     Iterable,
+    List,
     Mapping,
     MutableSet,
     NamedTuple,
@@ -185,7 +186,7 @@ class Traverser:
     def _fetch_items(self, item_name: T, depth: int, direction: Direction) -> AbstractSet[T]:
         dep_graph = self.graph[direction]
         stack = deque([item_name])
-        result: Set[str] = set()
+        result: Set[T] = set()
         curr_depth = 0
         while stack:
             # stop when reach the given depth
@@ -233,7 +234,7 @@ def fetch_sinks(graph: DependencyGraph, within_selection: AbstractSet[T]) -> Abs
     It can have other dependencies outside of the selection.
     """
     traverser = Traverser(graph)
-    sinks: Set[str] = set()
+    sinks: Set[T] = set()
     for item in within_selection:
         if len(traverser.fetch_downstream(item, depth=MAX_NUM) & within_selection) == 0:
             sinks.add(item)
@@ -332,7 +333,7 @@ def clause_to_subset(
     if item not in graph["upstream"]:
         return []
 
-    subset_list: List[str] = []
+    subset_list: List[T] = []
     traverser = Traverser(graph=graph)
     subset_list.append(item)
     # traverse graph to get up/downsteam items

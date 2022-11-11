@@ -111,7 +111,7 @@ class InputContext:
             self._resources = resources
         else:
             self._resources_cm = build_resources(
-                check.opt_dict_param(resources, "resources", key_type=str)
+                check.opt_mapping_param(resources, "resources", key_type=str)
             )
             self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)

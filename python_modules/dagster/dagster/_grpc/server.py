@@ -221,7 +221,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._serializable_load_error = None
 
         self._entry_point = (
-            frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
+            frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
             if entry_point != None
             else DEFAULT_DAGSTER_ENTRY_POINT
         )

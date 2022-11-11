@@ -951,7 +951,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         partitions_def: TimeWindowPartitionsDefinition,
         key_ranges: Sequence[PartitionKeyRange],
     ):
-        check.list_param(key_ranges, "key_ranges", of_type=PartitionKeyRange)
+        check.sequence_param(key_ranges, "key_ranges", of_type=PartitionKeyRange)
         self._partitions_def = partitions_def
         self._key_ranges = key_ranges
 

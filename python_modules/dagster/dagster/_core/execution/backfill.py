@@ -95,7 +95,7 @@ class PartitionBackfill(
             check.float_param(backfill_timestamp, "backfill_timestamp"),
             check.opt_str_param(last_submitted_partition_name, "last_submitted_partition_name"),
             check.opt_inst_param(error, "error", SerializableErrorInfo),
-            check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey),
+            check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey),
         )
 
     @property

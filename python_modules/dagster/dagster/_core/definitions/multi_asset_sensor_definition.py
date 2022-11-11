@@ -384,7 +384,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         if asset_keys is None:
             asset_keys = self._monitored_asset_keys
         else:
-            asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
+            asset_keys = check.opt_sequence_param(asset_keys, "asset_keys", of_type=AssetKey)
 
         asset_event_records = {}
         for a in asset_keys:
@@ -629,7 +629,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         if partitions is not None:
-            check.list_param(partitions, "partitions", of_type=str)
+            check.sequence_param(partitions, "partitions", of_type=str)
             if len(partitions) == 0:
                 raise DagsterInvalidInvocationError("Must provide at least one partition in list")
 
@@ -1002,7 +1002,7 @@ def build_multi_asset_sensor_context(
         asset_selection = check.inst_param(asset_selection, "asset_selection", AssetSelection)
         asset_keys = None
     else:  # asset keys provided
-        asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
+        asset_keys = check.opt_sequence_param(asset_keys, "asset_keys", of_type=AssetKey)
         check.invariant(len(asset_keys) > 0, "Must provide at least one asset key")
         asset_selection = None
 
@@ -1110,13 +1110,13 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
         check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
         self._monitored_asset_selection: Optional[AssetSelection] = None
-        self._monitored_asset_keys: Optional[List[AssetKey]] = None
+        self._monitored_asset_keys: Optional[Sequence[AssetKey]] = None
         if asset_selection:
             self._monitored_asset_selection = check.inst_param(
                 asset_selection, "asset_selection", AssetSelection
             )
         else:  # asset keys provided
-            asset_keys = check.opt_list_param(asset_keys, "asset_keys", of_type=AssetKey)
+            asset_keys = check.opt_sequence_param(asset_keys, "asset_keys", of_type=AssetKey)
             self._monitored_asset_keys = asset_keys
 
         def _wrap_asset_fn(materialization_fn):

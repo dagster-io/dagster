@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Generator,
     Iterable,
+    Iterator,
     List,
     Mapping,
     NoReturn,
@@ -722,6 +723,35 @@ def opt_inst(
         raise _type_mismatch_error(obj, ttype, additional_message)
     return default if obj is None else obj
 
+# ########################
+# ##### ITERATOR
+# ########################
+
+@overload
+def iterator_param(
+    obj: Iterator[T],
+    param_name: str,
+    additional_message: Optional[str] = ...,
+) -> Iterator[T]:
+    ...
+
+@overload
+def iterator_param(
+    obj: object,
+    param_name: str,
+    additional_message: Optional[str] = ...,
+) -> Iterator[Any]:
+    ...
+
+def iterator_param(
+    obj: Any,
+    param_name: str,
+    additional_message: Optional[str] = None,
+) -> Iterator[Any]:
+    if not isinstance(obj, Iterator):
+        raise _param_type_mismatch_exception(obj, Iterator, param_name, additional_message)
+    return obj
+
 
 # ########################
 # ##### LIST
@@ -1429,7 +1459,7 @@ def opt_nullable_tuple_param(
 
 
 def opt_nullable_tuple_param(
-    obj: Optional[Tuple[T]],
+    obj: Optional[Tuple[T, ...]],
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,

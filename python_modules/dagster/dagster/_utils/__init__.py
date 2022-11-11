@@ -260,12 +260,12 @@ class frozenlist(list):
 
 
 @overload
-def make_readonly_value(value: List[T]) -> Sequence[T]:
+def make_readonly_value(value: List[T]) -> Sequence[T]:  # type: ignore
     ...
 
 
 @overload
-def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:
+def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:  # type: ignore
     ...
 
 

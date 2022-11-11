@@ -80,9 +80,9 @@ class ManagedElementDiff(
         deletions: Optional[Sequence[DiffData]] = None,
         modifications: Optional[Sequence[ModifiedDiffData]] = None,
     ):
-        additions = check.opt_list_param(additions, "additions", of_type=DiffData)
-        deletions = check.opt_list_param(deletions, "deletions", of_type=DiffData)
-        modifications = check.opt_list_param(
+        additions = check.opt_sequence_param(additions, "additions", of_type=DiffData)
+        deletions = check.opt_sequence_param(deletions, "deletions", of_type=DiffData)
+        modifications = check.opt_sequence_param(
             modifications, "modifications", of_type=ModifiedDiffData
         )
 

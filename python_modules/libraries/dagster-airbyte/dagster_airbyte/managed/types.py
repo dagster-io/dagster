@@ -25,7 +25,7 @@ class AirbyteSource:
     def __init__(self, name: str, source_type: str, source_configuration: Mapping[str, Any]):
         self.name = check.str_param(name, "name")
         self.source_type = check.str_param(source_type, "source_type")
-        self.source_configuration = check.dict_param(
+        self.source_configuration = check.mapping_param(
             source_configuration, "source_configuration", key_type=str
         )
 
@@ -66,7 +66,7 @@ class AirbyteDestination:
     ):
         self.name = check.str_param(name, "name")
         self.destination_type = check.str_param(destination_type, "destination_type")
-        self.destination_configuration = check.dict_param(
+        self.destination_configuration = check.mapping_param(
             destination_configuration, "destination_configuration", key_type=str
         )
 
@@ -121,7 +121,7 @@ class AirbyteConnection:
         self.name = check.str_param(name, "name")
         self.source = check.inst_param(source, "source", AirbyteSource)
         self.destination = check.inst_param(destination, "destination", AirbyteDestination)
-        self.stream_config = check.dict_param(
+        self.stream_config = check.mapping_param(
             stream_config, "stream_config", key_type=str, value_type=AirbyteSyncMode
         )
         self.normalize_data = check.opt_bool_param(normalize_data, "normalize_data")
