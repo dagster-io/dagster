@@ -26,9 +26,9 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
-from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
+from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataValue,
@@ -46,6 +46,7 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
     DagsterTypeCheckError,
     DagsterTypeMaterializationError,
+    DagsterUndefinedLogicalVersionError,
     user_code_error_boundary,
 )
 from dagster._core.event_api import EventRecordsFilter
@@ -341,6 +342,8 @@ def core_dagster_event_sequence_for_step(
     for step_input in step_context.step.step_inputs:
         input_def = step_context.solid_def.input_def_named(step_input.name)
         dagster_type = input_def.dagster_type
+        if step_context.is_asset_materialization:
+            step_context.fetch_input_event_records()
 
         if dagster_type.is_nothing:
             continue
@@ -507,25 +510,40 @@ def _dedup_asset_lineage(asset_lineage: Sequence[AssetLineageInfo]) -> Sequence[
 
 def _get_output_asset_materializations(
     asset_key: AssetKey,
-    asset_layer: AssetLayer,
     asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]],
-    instance: DagsterInstance,
+    step_context: StepExecutionContext,
 ) -> Iterator[AssetMaterialization]:
 
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
-    if asset_layer.is_versioned_for_asset(asset_key):
-        dep_keys = asset_layer.upstream_assets_for_asset(asset_key)
-        op_version = check.not_none(asset_layer.op_version_for_asset(asset_key))
-        dep_key_to_is_source_map = {key: asset_layer.is_source_for_asset(key) for key in dep_keys}
-        version = instance.get_logical_version_from_inputs(
-            dep_keys, op_version, dep_key_to_is_source_map
-        )
-        all_metadata.append(
-            MetadataEntry(label="logical_version", value=MetadataValue.logical_version(version))
-        )
+
+    # logical version computation
+    asset_layer = step_context.pipeline_def.asset_layer
+    dep_keys = asset_layer.upstream_assets_for_asset(asset_key)
+    op_version = check.not_none(asset_layer.op_version_for_asset(asset_key))
+    dep_key_to_is_source_map = {key: asset_layer.is_source_for_asset(key) for key in dep_keys}
+    input_event_records = check.not_none(step_context.input_event_records)
+    input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
+    tags: Dict[str, str] = {}
+    for key, event in input_event_records.items():
+        str_key = key.to_user_string()
+        is_source = asset_layer.is_source_for_asset(key)
+        logical_version = step_context.instance.get_current_logical_version(key, is_source, event=event)
+        input_logical_versions[key] = logical_version
+        tags[f"dagster/input_logical_version/{str_key}"] = logical_version.value
+        tags[f"dagster/input_most_recent_event/{str_key}"] = str(event.storage_id) if event else "NULL"
+
+    logical_version = step_context.instance.get_logical_version_from_inputs(
+        dep_keys, op_version, dep_key_to_is_source_map, input_logical_versions
+    )
+    tags["dagster/logical_version"] = logical_version.value
+
+
+    # all_metadata.append(
+    #     MetadataEntry(label="logical_version", value=MetadataValue.logical_version(version))
+    # )
 
     if asset_partitions:
         metadata_mapping: Dict[
@@ -553,10 +571,10 @@ def _get_output_asset_materializations(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
 
-                tags = (
+                tags.update(
                     get_tags_from_multi_partition_key(partition)
                     if isinstance(partition, MultiPartitionKey)
-                    else None
+                    else {}
                 )
 
                 yield AssetMaterialization(
@@ -674,12 +692,11 @@ def _store_output(
         input_keys = step_context.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
         for materialization in _get_output_asset_materializations(
             asset_key,
-            step_context.pipeline_def.asset_layer,
             partitions,
             output,
             output_def,
             manager_metadata_entries,
-            step_context.instance,
+            step_context,
         ):
             yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 

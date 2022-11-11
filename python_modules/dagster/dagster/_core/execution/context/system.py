@@ -41,7 +41,8 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError, DagsterUndefinedLogicalVersionError
+from dagster._core.event_api import EventLogRecord
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ExecutionStep
@@ -477,6 +478,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
+        self._input_event_records: Optional[Dict[AssetKey, Optional[EventLogRecord]]] = None
+
     @property
     def step(self) -> ExecutionStep:
         return self._step
@@ -787,6 +790,30 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def op_config(self) -> Any:
         solid_config = self.resolved_run_config.solids.get(str(self.solid_handle))
         return solid_config.config if solid_config else None
+
+    @property
+    def is_asset_materialization(self) -> bool:
+        step_outputs = self.step.step_outputs
+        if len(step_outputs) != 1:
+            return False
+        else:
+            asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+                self.solid_handle, step_outputs[0].name
+            )
+            return asset_info is not None
+
+    @property
+    def input_event_records(self) -> Optional[Mapping[AssetKey, Optional[EventLogRecord]]]:
+        return self._input_event_records
+
+    def fetch_input_event_records(self) -> None:
+        self._input_event_records = {}
+        for lineage_info in self.get_input_lineage():
+            key = lineage_info.asset_key
+            is_source = self.pipeline_def.asset_layer.is_source_for_asset(key)
+            event = self.instance.get_most_recent_logical_version_event(key, is_source)
+            self._input_event_records[key] = event
+
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer
