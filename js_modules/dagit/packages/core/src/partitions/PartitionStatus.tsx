@@ -219,10 +219,12 @@ export const PartitionStatus: React.FC<{
                   tooltipMessage
                     ? tooltipMessage
                     : s.startIdx === s.endIdx
-                    ? `Partition ${partitionNames[s.startIdx]} is ${_statusToText(s.status)}`
+                    ? `Partition ${partitionNames[s.startIdx]} is ${partitionStatusToText(
+                        s.status,
+                      ).toLowerCase()}`
                     : `Partitions ${partitionNames[s.startIdx]} through ${
                         partitionNames[s.endIdx]
-                      } are ${_statusToText(s.status)}`
+                      } are ${partitionStatusToText(s.status).toLowerCase()}`
                 }
               >
                 <div
@@ -391,17 +393,17 @@ const _statusToColor = (status: PartitionState) => {
   }
 };
 
-const _statusToText = (status: PartitionState) => {
+export const partitionStatusToText = (status: PartitionState) => {
   switch (status) {
     case PartitionState.SUCCESS:
-      return 'complete';
+      return 'Completed';
     case PartitionState.FAILURE:
-      return 'failed';
+      return 'Failed';
     case PartitionState.STARTED:
-      return 'in progress';
+      return 'In progress';
     case PartitionState.QUEUED:
-      return 'queued';
+      return 'Queued';
     default:
-      return 'missing';
+      return 'Missing';
   }
 };

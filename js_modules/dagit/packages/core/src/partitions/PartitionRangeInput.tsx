@@ -79,6 +79,9 @@ export function stringForSpan(
 }
 
 function placeholderForPartitions(names: string[]) {
+  if (names.length === 0) {
+    return '';
+  }
   if (names.length < 4) {
     return `ex: ${names[0]}, ${names[1]}`;
   }

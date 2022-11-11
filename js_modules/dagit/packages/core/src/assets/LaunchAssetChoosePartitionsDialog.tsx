@@ -19,7 +19,11 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
+import {
+  PartitionHealthData,
+  PartitionHealthSummary,
+  usePartitionHealthData,
+} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
@@ -33,7 +37,8 @@ import {
   ConfigPartitionSelectionQueryVariables,
 } from '../launchpad/types/ConfigPartitionSelectionQuery';
 import {assembleIntoSpans, stringForSpan} from '../partitions/PartitionRangeInput';
-import {PartitionRangeWizard, PartitionStateCheckboxes} from '../partitions/PartitionRangeWizard';
+import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
+import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
 import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/PartitionsBackfill';
 import {RepoAddress} from '../workspace/types';
@@ -77,6 +82,16 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
   );
 };
 
+export function assetHealthToPartitionStatus(assetHealth: PartitionHealthData[]) {
+  const partitionNames = assetHealth[0] ? assetHealth[0].keys : [];
+  const result: {[partitionName: string]: PartitionState} = {};
+  partitionNames.forEach((partitionName) => {
+    const success = assetHealth.every((d) => d.statusByPartition[partitionName]);
+    result[partitionName] = success ? PartitionState.SUCCESS : PartitionState.MISSING;
+  });
+  return result;
+}
+
 // Note: This dialog loads a lot of data - the body is broken into a separate
 // component so we can be *sure* the hooks won't load data until it's opened.
 // (<Dialog> does not render it's children until open=true)
@@ -109,8 +124,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const [range, setRange] = React.useState<string[]>([]);
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
-    PartitionState.FAILURE,
-    PartitionState.SUCCESS,
   ]);
 
   const [previewCount, setPreviewCount] = React.useState(0);
@@ -256,7 +269,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     <>
       <DialogBody>
         <Box flex={{direction: 'column', gap: 8}}>
-          <Box>Select the set of partitions to materialze. View the selection syntax guide</Box>
+          <Box>
+            Select partitions to materialize. Click and drag to select a range on the timeline.
+          </Box>
 
           <PartitionRangeWizard
             all={partitionKeys}
@@ -265,6 +280,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             partitionData={partitionStatusData}
           />
           <PartitionStateCheckboxes
+            allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
             partitionData={partitionStatusData}
             partitionKeysForCounts={range}
             value={stateFilters}
@@ -285,7 +301,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               selected={selected}
             />
           ))}
-          {previewCount === 0 ? (
+          {partitionedAssets.length === 1 ? (
+            <span />
+          ) : previewCount === 0 ? (
             <Box margin={{vertical: 8}}>
               <ButtonLink onClick={() => setPreviewCount(5)}>
                 Show per-asset partition health
