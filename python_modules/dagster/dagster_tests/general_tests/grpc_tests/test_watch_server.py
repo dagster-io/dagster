@@ -4,6 +4,7 @@ import time
 
 import pytest
 
+from dagster._core.test_utils import instance_for_test
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process
 from dagster._grpc.server_watcher import create_grpc_watch_thread
@@ -42,7 +43,13 @@ def process_cleanup():
         process.wait()
 
 
-def test_grpc_watch_thread_server_update(process_cleanup):
+@pytest.fixture
+def instance():
+    with instance_for_test() as instance:
+        yield instance
+
+
+def test_grpc_watch_thread_server_update(instance, process_cleanup):
     port = find_free_port()
 
     called = {}
@@ -52,7 +59,7 @@ def test_grpc_watch_thread_server_update(process_cleanup):
         called["yup"] = True
 
     # Create initial server
-    server_process = open_server_process(port=port, socket=None)
+    server_process = open_server_process(instance.get_ref(), port=port, socket=None)
     process_cleanup.append(server_process)
 
     try:
@@ -73,7 +80,7 @@ def test_grpc_watch_thread_server_update(process_cleanup):
     assert not called
 
     # Create updated server
-    server_process = open_server_process(port=port, socket=None)
+    server_process = open_server_process(instance.get_ref(), port=port, socket=None)
     process_cleanup.append(server_process)
 
     try:
@@ -86,7 +93,7 @@ def test_grpc_watch_thread_server_update(process_cleanup):
     assert called
 
 
-def test_grpc_watch_thread_server_reconnect(process_cleanup):
+def test_grpc_watch_thread_server_reconnect(process_cleanup, instance):
     port = find_free_port()
     fixed_server_id = "fixed_id"
 
@@ -104,7 +111,9 @@ def test_grpc_watch_thread_server_reconnect(process_cleanup):
         raise Exception("This method should not be called")
 
     # Create initial server
-    server_process = open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
+    server_process = open_server_process(
+        instance.get_ref(), port=port, socket=None, fixed_server_id=fixed_server_id
+    )
     process_cleanup.append(server_process)
 
     # Start watch thread
@@ -126,7 +135,9 @@ def test_grpc_watch_thread_server_reconnect(process_cleanup):
     interrupt_ipc_subprocess_pid(server_process.pid)
     wait_for_condition(lambda: called.get("on_disconnect"), watch_interval)
 
-    server_process = open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
+    server_process = open_server_process(
+        instance.get_ref(), port=port, socket=None, fixed_server_id=fixed_server_id
+    )
     process_cleanup.append(server_process)
     wait_for_condition(lambda: called.get("on_reconnected"), watch_interval)
 
@@ -134,7 +145,7 @@ def test_grpc_watch_thread_server_reconnect(process_cleanup):
     watch_thread.join()
 
 
-def test_grpc_watch_thread_server_error(process_cleanup):
+def test_grpc_watch_thread_server_error(process_cleanup, instance):
     port = find_free_port()
     fixed_server_id = "fixed_id"
 
@@ -157,7 +168,9 @@ def test_grpc_watch_thread_server_error(process_cleanup):
         raise Exception("This method should not be called")
 
     # Create initial server
-    server_process = open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
+    server_process = open_server_process(
+        instance.get_ref(), port=port, socket=None, fixed_server_id=fixed_server_id
+    )
     process_cleanup.append(server_process)
 
     # Start watch thread
@@ -187,7 +200,9 @@ def test_grpc_watch_thread_server_error(process_cleanup):
     assert not called.get("on_updated")
 
     new_server_id = "new_server_id"
-    server_process = open_server_process(port=port, socket=None, fixed_server_id=new_server_id)
+    server_process = open_server_process(
+        instance.get_ref(), port=port, socket=None, fixed_server_id=new_server_id
+    )
     process_cleanup.append(server_process)
 
     wait_for_condition(lambda: called.get("on_updated"), watch_interval)

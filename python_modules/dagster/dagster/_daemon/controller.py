@@ -61,6 +61,7 @@ def create_daemons_from_instance(instance):
 
 def create_daemon_grpc_server_registry(instance):
     return ProcessGrpcServerRegistry(
+        instance=instance,
         reload_interval=DAEMON_GRPC_SERVER_RELOAD_INTERVAL,
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
         startup_timeout=instance.code_server_process_startup_timeout,
