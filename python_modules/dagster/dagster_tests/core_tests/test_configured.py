@@ -2,7 +2,6 @@ import pytest
 
 from dagster import (
     AssetKey,
-    AssetMaterialization,
     AssetOut,
     AssetsDefinition,
     ConfigMapping,
@@ -156,7 +155,7 @@ def test_configured_multi_asset():
     with pytest.raises(DagsterInvalidDefinitionError, match="Duplicate asset key"):
 
         @repository
-        def my_repo():
+        def invalid_repo():
             return [configured_multi_asset, my_multi_asset]
 
     @repository

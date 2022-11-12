@@ -21,7 +21,6 @@ from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_
 from dagster._core.definitions.configurable import NamedConfigurableDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
@@ -870,6 +869,8 @@ class AssetsDefinition(ResourceAddable, NamedConfigurableDefinition):
         config_schema: IDefinitionConfigSchema,
         config_or_config_fn: Any,
     ) -> "AssetsDefinition":
+        from dagster._core.definitions.graph_definition import GraphDefinition
+
         if isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
                 "Cannot call `.configured` on a graph asset. Instead, call `AssetsDefinition.from_graph(your_graph.configured(...))`"
