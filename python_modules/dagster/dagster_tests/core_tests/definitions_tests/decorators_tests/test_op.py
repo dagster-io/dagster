@@ -1,4 +1,4 @@
-# type: ignore[return-value]
+# mypy: disable-error-code=return-value
 import time
 from typing import Dict, Generator, List, Tuple
 
