@@ -11,7 +11,7 @@ import time
 from contextlib import contextmanager
 from datetime import timezone
 from types import ModuleType
-from typing import Any, Callable, List, Sequence, Type, TypeVar, Union
+from typing import Any, Callable, List, Sequence, Type
 
 import pendulum
 from typing_extensions import TypeGuard
