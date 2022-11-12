@@ -70,10 +70,7 @@ def _build_airbyte_asset_defn_metadata(
         )
     )
 
-    outputs = {
-        table: AssetKey(asset_key_prefix + list(table_to_asset_key_fn(table).path))
-        for table in tables
-    }
+    outputs = {table: AssetKey([*asset_key_prefix, *table_to_asset_key_fn(table).path]) for table in tables}
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
 
@@ -87,7 +84,7 @@ def _build_airbyte_asset_defn_metadata(
         for base_table, derived_tables in normalization_tables.items():
             for derived_table in derived_tables:
                 internal_deps[derived_table] = {
-                    AssetKey(asset_key_prefix + list(table_to_asset_key_fn(base_table).path))
+                    AssetKey([*asset_key_prefix, *table_to_asset_key_fn(base_table).path])
                 }
 
     # All non-normalization tables depend on any user-provided upstream assets

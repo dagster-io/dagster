@@ -131,11 +131,11 @@ class DagsterGraphQLClient:
         check.str_param(pipeline_name, "pipeline_name")
         check.opt_str_param(mode, "mode")
         check.opt_str_param(preset, "preset")
-        run_config = check.opt_dict_param(run_config, "run_config")
+        _run_config = check.opt_dict_param(run_config, "run_config")
 
         # The following invariant will never fail when a job is executed
         check.invariant(
-            (mode is not None and run_config is not None) or preset is not None,
+            (mode is not None and _run_config is not None) or preset is not None,
             "Either a mode and run_config or a preset must be specified in order to "
             f"submit the pipeline {pipeline_name} for execution",
         )
@@ -173,10 +173,10 @@ class DagsterGraphQLClient:
         }
         if preset is not None:
             variables["executionParams"]["preset"] = preset
-        if mode is not None and run_config is not None:
+        if mode is not None and _run_config is not None:
             variables["executionParams"] = {
                 **variables["executionParams"],
-                "runConfigData": run_config,
+                "runConfigData": _run_config,
                 "mode": mode,
                 "executionMetadata": {"tags": [{"key": k, "value": v} for k, v in tags.items()]}
                 if tags
