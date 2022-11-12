@@ -1,6 +1,6 @@
 # See: https://github.com/dagster-io/dagster/issues/4209
-# type: ignore[valid-type]
-# type: ignore[attr-defined]
+# mypy: disable-error-code=valid-type
+# mypy: disable-error-code=attr-defined
 
 import os
 import pickle
