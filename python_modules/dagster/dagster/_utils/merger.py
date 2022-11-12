@@ -29,7 +29,9 @@ def _deep_merge_dicts(
     return _onto_dict
 
 
-def deep_merge_dicts(onto_dict: Dict, from_dict: Mapping[object, object]) -> Dict:
+def deep_merge_dicts(
+    onto_dict: Mapping[K, V], from_dict: Mapping[K2, V2]
+) -> Dict[Union[K, K2], Union[V, V2, Dict[object, object]]]:
     """
     Returns a recursive union of two input dictionaries:
     * The returned dictionary has an entry for any key that's in either of the inputs.

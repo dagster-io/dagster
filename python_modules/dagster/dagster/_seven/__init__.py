@@ -14,7 +14,6 @@ from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type, TypeVar, Union
 
 import pendulum
-from pendulum.datetime import DateTime
 from typing_extensions import TypeGuard
 
 from .compat.pendulum import PendulumDateTime
@@ -128,7 +127,7 @@ def builtin_print() -> str:
     return "builtins.print"
 
 
-def get_current_datetime_in_utc() -> DateTime:
+def get_current_datetime_in_utc() -> Any:
     return pendulum.now("UTC")
 
 

@@ -70,4 +70,4 @@ def resource_repo():
 
 
 if __name__ == "__main__":
-    result = reconstructable(resource_job).execute_in_process()
+    result = reconstructable(resource_job).execute_in_process()  # type: ignore

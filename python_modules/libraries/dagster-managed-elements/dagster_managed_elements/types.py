@@ -62,9 +62,9 @@ class ManagedElementDiff(
     NamedTuple(
         "_ManagedElementDiff",
         [
-            ("additions", List[DiffData]),
-            ("deletions", List[DiffData]),
-            ("modifications", List[ModifiedDiffData]),
+            ("additions", Sequence[DiffData]),
+            ("deletions", Sequence[DiffData]),
+            ("modifications", Sequence[ModifiedDiffData]),
             ("nested", OrderedDict[str, "ManagedElementDiff"]),
         ],
     )
@@ -100,7 +100,7 @@ class ManagedElementDiff(
         """
         check.str_param(name, "name")
 
-        return self._replace(additions=self.additions + [DiffData(name, value)])
+        return self._replace(additions=[*self.additions, DiffData(name, value)])
 
     def delete(self, name: str, value: Any) -> "ManagedElementDiff":
         """
@@ -108,7 +108,7 @@ class ManagedElementDiff(
         """
         check.str_param(name, "name")
 
-        return self._replace(deletions=self.deletions + [DiffData(name, value)])
+        return self._replace(deletions=[*self.deletions, DiffData(name, value)])
 
     def modify(self, name: str, old_value: Any, new_value: Any) -> "ManagedElementDiff":
         """
@@ -117,7 +117,7 @@ class ManagedElementDiff(
         check.str_param(name, "name")
 
         return self._replace(
-            modifications=self.modifications + [ModifiedDiffData(name, old_value, new_value)]
+            modifications=[*self.modifications, ModifiedDiffData(name, old_value, new_value)]
         )
 
     def with_nested(self, name: str, nested: "ManagedElementDiff") -> "ManagedElementDiff":
@@ -136,9 +136,9 @@ class ManagedElementDiff(
         check.inst_param(other, "other", ManagedElementDiff)
 
         return self._replace(
-            additions=self.additions + other.additions,
-            deletions=self.deletions + other.deletions,
-            modifications=self.modifications + other.modifications,
+            additions=[*self.additions, *other.additions],
+            deletions=[*self.deletions, *other.deletions],
+            modifications=[*self.modifications, *other.modifications],
             nested=OrderedDict(list(self.nested.items()) + list(other.nested.items())),
         )
 
