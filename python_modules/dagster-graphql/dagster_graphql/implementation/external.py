@@ -40,10 +40,8 @@ def get_external_pipeline_or_raise(
     elif ignore_subset:
         external_pipeline = ctx.get_full_external_job(selector)
     else:
-        print("GETTING EXTERNAL PIPELINE")
         repository_location = ctx.get_repository_location(selector.location_name)
         try:
-            print("REPO TYPE", type(repository_location))
             external_pipeline = repository_location.get_external_pipeline(selector)
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())

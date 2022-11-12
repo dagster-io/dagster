@@ -28,7 +28,6 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
     check.inst_param(execution_params, "execution_params", ExecutionParams)
     check.bool_param(is_reexecuted, "is_reexecuted")
 
-    print("LAUNCHING WITH EXECUTION PARAMS", execution_params)
     if is_reexecuted:
         # required fields for re-execution
         execution_metadata = check.inst_param(
