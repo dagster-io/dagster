@@ -426,15 +426,11 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     opNames
     jobNames
     graphName
-<<<<<<< HEAD
     partitionDefinition {
       description
     }
-=======
-    partitionDefinition
     isVersioned
     isSource
->>>>>>> 67236d04f1 (updates)
     assetKey {
       path
     }
