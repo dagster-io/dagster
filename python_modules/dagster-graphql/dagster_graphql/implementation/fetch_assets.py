@@ -7,8 +7,8 @@ from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter
 from dagster import _check as check
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
@@ -351,6 +351,11 @@ def get_freshness_info(
     current_time = datetime.datetime.now(tz=datetime.timezone.utc)
 
     latest_record = data_time_queryer.get_latest_materialization_record(asset_key)
+    if latest_record is None:
+        return GrapheneAssetFreshnessInfo(
+            currentMinutesLate=None,
+            latestMaterializationMinutesLate=None,
+        )
     latest_materialization_time = datetime.datetime.fromtimestamp(
         latest_record.event_log_entry.timestamp,
         tz=datetime.timezone.utc,

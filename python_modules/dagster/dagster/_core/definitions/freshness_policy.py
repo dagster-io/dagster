@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Mapping, NamedTuple, Optional, AbstractSet
+from typing import AbstractSet, Mapping, NamedTuple, Optional
 
 import pendulum
 from croniter import croniter
@@ -77,7 +77,7 @@ class FreshnessPolicy(
         else:
             # this constraint must be satisfied at all points in time, so generate a series of
             # many constraints (10 per maximum lag window)
-            period = pendulum.period(window_start, window_end)
+            period = pendulum.period(pendulum.instance(window_start), pendulum.instance(window_end))
             constraint_ticks = period.range("minutes", (self.maximum_lag_minutes / 10.0) + 0.1)
 
         # iterate over each schedule tick in the provided time window

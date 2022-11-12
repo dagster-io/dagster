@@ -1,7 +1,8 @@
-import itertools
 import contextlib
+import itertools
 from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Union
 
+import pendulum
 import pytest
 
 from dagster import (
@@ -26,7 +27,6 @@ from dagster import (
     repository,
     with_resources,
 )
-import pendulum
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     reconcile,

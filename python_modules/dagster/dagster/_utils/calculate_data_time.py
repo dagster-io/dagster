@@ -1,17 +1,21 @@
 import datetime
 import json
-from typing import AbstractSet, Dict, Mapping, Optional, Tuple, TYPE_CHECKING, Union, Iterable, cast
+from typing import TYPE_CHECKING, AbstractSet, Dict, Iterable, Mapping, Optional, Tuple, Union, cast
 
-from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.storage.pipeline_run import DagsterRun, RunRecord, RunsFilter
-from dagster._core.storage.event_log import EventLogRecord
+import dagster._check as check
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.storage.event_log import EventLogRecord
+from dagster._core.storage.pipeline_run import (
+    IN_PROGRESS_RUN_STATUSES,
+    DagsterRun,
+    RunRecord,
+    RunsFilter,
+)
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES
 
 if TYPE_CHECKING:
     from dagster import DagsterInstance
@@ -33,7 +37,7 @@ class DataTimeInstanceQueryer:
         self, asset_key: AssetKey
     ) -> Tuple[Optional[datetime.datetime], AbstractSet[AssetKey]]:
         # the latest asset record is updated when the run is created
-        asset_records = self._instance.get_asset_records({asset_key})
+        asset_records = self._instance.get_asset_records([asset_key])
         asset_record = next(iter(asset_records), None)
         if asset_record is None or asset_record.asset_entry.last_run_id is None:
             return (None, set())
@@ -117,8 +121,6 @@ class DataTimeInstanceQueryer:
         after_cursor: Optional[int] = None,
         before_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
 
         if isinstance(asset, AssetKey):
             asset_partition = AssetKeyPartitionKey(asset_key=asset)

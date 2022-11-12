@@ -1,12 +1,11 @@
 # pylint: disable=anomalous-backslash-in-string
 
+import datetime
 import functools
 import itertools
 import json
 from collections import defaultdict
-import pendulum
 from heapq import heapify, heappop, heappush
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -21,14 +20,14 @@ from typing import (
     cast,
 )
 
+import pendulum
+
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.definitions.freshness_policy import FreshnessConstraint, FreshnessPolicy
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._utils.cached_method import cached_method
+from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
 
 from .asset_selection import AssetGraph, AssetSelection
 from .partition import PartitionsDefinition, PartitionsSubset
@@ -36,8 +35,6 @@ from .repository_definition import RepositoryDefinition
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
 from .utils import check_valid_name
-
-from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -400,7 +397,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     instance_queryer: DataTimeInstanceQueryer,
     asset_graph: AssetGraph,
     freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy],
-) -> Tuple[Set[AssetKey], Set[AssetKeyPartitionKey]]:
+) -> Tuple[Set[AssetKeyPartitionKey], Set[AssetKeyPartitionKey]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies, as well as a set of AssetKeyPartitionKeys which will be materialized at
     some point within the plan window.
@@ -419,7 +416,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
     # a dictionary mapping each asset to a set of constraints that must be satisfied about the data
     # times of its upstream assets
-    constraints_by_key = defaultdict(set)
+    constraints_by_key: Dict[AssetKey, AbstractSet[FreshnessConstraint]] = defaultdict(set)
 
     # for each asset with a FreshnessPolicy, get all unsolved constraints for the given time window
     for key, freshness_policy in freshness_policies_by_key.items():
@@ -456,7 +453,9 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     # now we have a full set of constraints, we can find solutions for them as we move back down
     to_materialize: Set[AssetKeyPartitionKey] = set()
     eventually_materialize: Set[AssetKeyPartitionKey] = set()
-    expected_data_times_by_key: Dict[Dict[AssetKey, float]] = defaultdict(dict)
+    expected_data_times_by_key: Dict[AssetKey, Dict[AssetKey, datetime.datetime]] = defaultdict(
+        dict
+    )
     for level in toposorted_assets:
         for key in level:
             # no need to evaluate this key, as it is not involved in any constraints
@@ -471,7 +470,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 currently_materializing,
             ) = instance_queryer.get_in_progress_run_time_and_planned_materializations(key)
 
-            expected_data_times = {key: current_time}
+            expected_data_times: Dict[AssetKey, datetime.datetime] = {key: current_time}
 
             # get the expected data time for each upstream asset key if you were to run this asset on
             # this tick
@@ -520,7 +519,8 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                     or (
                         constraint.asset_key in currently_materializing
                         # if the run hasn't started yet, assume it'll get data from the current time
-                        and (current_run_data_time or plan_window_start) > required_data_time
+                        and (current_run_data_time or plan_window_start)
+                        > constraint.required_data_time
                     )
                     # this constraint is irrelevant, as it does not correspond to an asset which is
                     # directly upstream of this asset, nor to an asset which is transitively
@@ -555,7 +555,9 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 if execution_window_start is not None:
                     eventually_materialize.add(AssetKeyPartitionKey(key, None))
                 # otherwise, the expected data time will be the current one
-                expected_data_times_by_key[key] = current_data_times
+                expected_data_times_by_key[key] = {
+                    key: time for key, time in current_data_times.items() if time is not None
+                }
 
     return to_materialize, eventually_materialize
 
@@ -567,8 +569,6 @@ def reconcile(
     cursor: AssetReconciliationCursor,
     run_tags: Optional[Mapping[str, str]],
 ):
-    from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
-
     instance_queryer = DataTimeInstanceQueryer(instance=instance)
     asset_graph = repository_def.asset_graph
 
@@ -580,7 +580,7 @@ def reconcile(
         asset_graph=asset_graph,
         freshness_policies_by_key={
             key: assets_def.freshness_policies_by_key[key]
-            for key, assets_def in repository_def._assets_defs_by_key.items()
+            for key, assets_def in repository_def._assets_defs_by_key.items()  # pylint:disable=protected-access
             if assets_def.freshness_policies_by_key.get(key) is not None
         },
     )
