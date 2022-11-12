@@ -16,7 +16,7 @@ from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 
 
 @io_manager(
-    config_schema={"base_dir": Field(StringSource, is_required=False)},
+    config_schema={"base_dir": Field(StringSource, is_required=False)},  # type: ignore  # mypy bug
     description="Built-in filesystem IO manager that stores and retrieves values using pickling.",
 )
 def fs_io_manager(init_context):
@@ -162,8 +162,6 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         """
         check.inst_param(context, "context", OutputContext)
 
-        filepath = self._get_path(context)
-
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
@@ -171,6 +169,8 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                 f"that was not None and was of type {type(obj)}.",
             )
             return None
+
+        filepath = self._get_path(context)
 
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
@@ -291,7 +291,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
             return pickle.load(read_obj)
 
 
-@io_manager(config_schema={"base_dir": Field(StringSource, is_required=True)})
+@io_manager(config_schema={"base_dir": Field(StringSource, is_required=True)})  # type: ignore  # (mypy bug)
 @experimental
 def custom_path_fs_io_manager(init_context):
     """Built-in IO manager that allows users to custom output file path per output definition.

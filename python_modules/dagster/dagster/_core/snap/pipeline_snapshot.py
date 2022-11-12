@@ -1,9 +1,7 @@
 from typing import (
     AbstractSet,
     Any,
-    Dict,
     FrozenSet,
-    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -96,15 +94,15 @@ class PipelineSnapshotSerializer(DefaultNamedTupleSerializer):
 def _pipeline_snapshot_from_storage(
     name: str,
     description: Optional[str],
-    tags: Optional[Dict[str, Any]],
+    tags: Optional[Mapping[str, Any]],
     config_schema_snapshot: ConfigSchemaSnapshot,
     dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
     solid_definitions_snapshot: SolidDefinitionsSnapshot,
     dep_structure_snapshot: DependencyStructureSnapshot,
-    mode_def_snaps: List[ModeDefSnap],
+    mode_def_snaps: Sequence[ModeDefSnap],
     lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     graph_def_name: Optional[str] = None,
-    metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+    metadata: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
     **kwargs,  # pylint: disable=unused-argument
 ) -> "PipelineSnapshot":
     """
@@ -284,11 +282,11 @@ class PipelineSnapshot(
         return None
 
     @property
-    def solid_names(self) -> List[str]:
+    def solid_names(self) -> Sequence[str]:
         return [ss.solid_name for ss in self.dep_structure_snapshot.solid_invocation_snaps]
 
     @property
-    def solid_names_in_topological_order(self) -> List[str]:
+    def solid_names_in_topological_order(self) -> Sequence[str]:
         upstream_outputs = {}
 
         for solid_invocation_snap in self.dep_structure_snapshot.solid_invocation_snaps:
@@ -316,8 +314,8 @@ def _construct_enum_from_snap(config_type_snap: ConfigTypeSnap):
 
 def _construct_fields(
     config_type_snap: ConfigTypeSnap,
-    config_snap_map: Dict[str, ConfigTypeSnap],
-) -> Dict[str, Field]:
+    config_snap_map: Mapping[str, ConfigTypeSnap],
+) -> Mapping[str, Field]:
     fields = check.not_none(config_type_snap.fields)
     return {
         cast(str, field.name): Field(
@@ -433,10 +431,10 @@ def _construct_noneable_from_snap(config_type_snap, config_snap_map):
 
 
 def construct_config_type_from_snap(
-    config_type_snap: ConfigTypeSnap, config_snap_map: Dict[str, ConfigTypeSnap]
+    config_type_snap: ConfigTypeSnap, config_snap_map: Mapping[str, ConfigTypeSnap]
 ) -> ConfigType:
     check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
-    check.dict_param(config_snap_map, "config_snap_map", key_type=str, value_type=ConfigTypeSnap)
+    check.mapping_param(config_snap_map, "config_snap_map", key_type=str, value_type=ConfigTypeSnap)
 
     if config_type_snap.kind in (ConfigTypeKind.SCALAR, ConfigTypeKind.ANY):
         return get_builtin_scalar_by_name(config_type_snap.key)
@@ -465,7 +463,7 @@ class PipelineSnapshotLineage(
         "_PipelineSnapshotLineage",
         [
             ("parent_snapshot_id", str),
-            ("solid_selection", Optional[List[str]]),
+            ("solid_selection", Optional[Sequence[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[FrozenSet[AssetKey]]),
         ],
@@ -474,7 +472,7 @@ class PipelineSnapshotLineage(
     def __new__(
         cls,
         parent_snapshot_id: str,
-        solid_selection: Optional[List[str]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):

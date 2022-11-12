@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import List
+from typing import Sequence
 
 import click
 
@@ -129,7 +129,7 @@ def from_example_list_command():
     click.echo(_styled_list_examples_prints(AVAILABLE_EXAMPLES))
 
 
-def _styled_list_examples_prints(examples: List[str]) -> str:
+def _styled_list_examples_prints(examples: Sequence[str]) -> str:
     return "\n".join([f"* {name}" for name in examples])
 
 

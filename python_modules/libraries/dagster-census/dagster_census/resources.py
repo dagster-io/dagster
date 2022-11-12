@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Mapping, Optional
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -47,7 +47,7 @@ class CensusResource:
     def api_base_url(self) -> str:
         return f"https://{CENSUS_API_BASE}/{CENSUS_VERSION}"
 
-    def make_request(self, method: str, endpoint: str, data: str = None) -> Dict[str, Any]:
+    def make_request(self, method: str, endpoint: str, data: str = None) -> Mapping[str, Any]:
         """
         Creates and sends a request to the desired Census API endpoint.
 
@@ -85,7 +85,7 @@ class CensusResource:
 
         raise Failure("Exceeded max number of retries.")
 
-    def get_sync(self, sync_id: int) -> Dict[str, Any]:
+    def get_sync(self, sync_id: int) -> Mapping[str, Any]:
         """
         Gets details about a given sync from the Census API.
 
@@ -97,7 +97,7 @@ class CensusResource:
         """
         return self.make_request(method="GET", endpoint=f"syncs/{sync_id}")
 
-    def get_source(self, source_id: int) -> Dict[str, Any]:
+    def get_source(self, source_id: int) -> Mapping[str, Any]:
         """
         Gets details about a given source from the Census API.
 
@@ -109,7 +109,7 @@ class CensusResource:
         """
         return self.make_request(method="GET", endpoint=f"sources/{source_id}")
 
-    def get_destination(self, destination_id: int) -> Dict[str, Any]:
+    def get_destination(self, destination_id: int) -> Mapping[str, Any]:
         """
         Gets details about a given destination from the Census API.
 
@@ -121,7 +121,7 @@ class CensusResource:
         """
         return self.make_request(method="GET", endpoint=f"destinations/{destination_id}")
 
-    def get_sync_run(self, sync_run_id: int) -> Dict[str, Any]:
+    def get_sync_run(self, sync_run_id: int) -> Mapping[str, Any]:
         """
         Gets details about a specific sync run from the Census API.
 
@@ -138,7 +138,7 @@ class CensusResource:
         sync_run_id: int,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
-    ) -> Dict[str, Any]:
+    ) -> Mapping[str, Any]:
         """
         Given a Census sync run, poll until the run is complete
 
@@ -186,7 +186,7 @@ class CensusResource:
 
         return response_dict
 
-    def trigger_sync(self, sync_id: int, force_full_sync: bool = False) -> Dict[str, Any]:
+    def trigger_sync(self, sync_id: int, force_full_sync: bool = False) -> Mapping[str, Any]:
         """
         Trigger an asynchronous run for a specific sync.
 

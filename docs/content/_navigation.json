@@ -344,6 +344,10 @@
               {
                 "title": "Hybrid Deployment",
                 "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment"
+              },
+              {
+                "title": "Environment variables and secrets",
+                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
               }
             ]
           },
@@ -411,15 +415,57 @@
             "children": [
               {
                 "title": "Amazon ECS",
-                "path": "/dagster-cloud/deployment/agents/amazon-ecs"
+                "path": "/dagster-cloud/deployment/agents/amazon-ecs",
+                "children": [
+                  {
+                    "title": "Setup in new VPC",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc"
+                  },
+                  {
+                    "title": "Setup in existing VPC",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc"
+                  },
+                  {
+                    "title": "Manual provision",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/manually-provisioning-ecs-agent"
+                  },
+                  {
+                    "title": "Configuration",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference"
+                  },
+                  {
+                    "title": "Upgrade CloudFormation",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template"
+                  }
+                ]
               },
               {
                 "title": "Docker",
-                "path": "/dagster-cloud/deployment/agents/docker"
+                "path": "/dagster-cloud/deployment/agents/docker",
+                "children": [
+                  {
+                    "title": "Setup",
+                    "path": "/dagster-cloud/deployment/agents/docker/configuring-running-docker-agent"
+                  },
+                  {
+                    "title": "Configuration",
+                    "path": "/dagster-cloud/deployment/agents/docker/configuration-reference"
+                  }
+                ]
               },
               {
                 "title": "Kubernetes",
-                "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+                "path": "/dagster-cloud/deployment/agents/kubernetes",
+                "children": [
+                  {
+                    "title": "Setup",
+                    "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+                  },
+                  {
+                    "title": "Configuration",
+                    "path": "/dagster-cloud/deployment/agents/kubernetes/configuration-reference"
+                  }
+                ]
               },
               {
                 "title": "Local",
@@ -439,6 +485,10 @@
             "title": "Developing and testing",
             "path": "/dagster-cloud/developing-testing",
             "children": [
+              {
+                "title": "Environment variables and secrets",
+                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
+              },
               {
                 "title": "dagster-cloud CLI",
                 "path": "/dagster-cloud/developing-testing/dagster-cloud-cli"
@@ -462,11 +512,17 @@
               },
               {
                 "title": "Branch deployments",
-                "path": "/dagster-cloud/developing-testing/branch-deployments"
-              },
-              {
-                "title": "Environment variables",
-                "path": "/dagster-cloud/developing-testing/environment-variables"
+                "path": "/dagster-cloud/developing-testing/branch-deployments",
+                "children": [
+                  {
+                    "title": "Using with GitHub",
+                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github"
+                  },
+                  {
+                    "title": "Using with dagster-cloud CLI",
+                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
+                  }
+                ]
               }
             ]
           }
@@ -585,6 +641,10 @@
         "title": "Best practices",
         "path": "/guides/best-practices",
         "children": [
+          {
+            "title": "Using environment variables and secrets",
+            "path": "/guides/dagster/using-environment-variables-and-secrets"
+          },
           {
             "title": "Exploring a Dagster project",
             "path": "/guides/dagster/example_project"

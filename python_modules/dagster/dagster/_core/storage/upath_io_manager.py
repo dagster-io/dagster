@@ -56,7 +56,7 @@ class UPathIOManager(MemoizableIOManager):
 
     def get_metadata(
         self, context: OutputContext, obj: Any  # pylint: disable=unused-argument
-    ) -> Dict[str, MetadataValue]:
+    ) -> Mapping[str, MetadataValue]:
         """
         Child classes should override this method to add custom metadata to the outputs.
 
@@ -136,7 +136,7 @@ class UPathIOManager(MemoizableIOManager):
 
         return paths
 
-    def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
+    def load_input(self, context: InputContext) -> Union[Any, Mapping[str, Any]]:
         if not context.has_asset_partitions or not self._has_multiple_partitions(context):
             # we are not dealing with multiple partitions
             if context.has_asset_partitions:

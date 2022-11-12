@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Optional
+from typing import Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.utils import config_from_files, config_from_yaml_strings
@@ -15,10 +15,10 @@ class PresetDefinition(
         "_PresetDefinition",
         [
             ("name", str),
-            ("run_config", Optional[Dict[str, object]]),
-            ("solid_selection", Optional[List[str]]),
+            ("run_config", Optional[Mapping[str, object]]),
+            ("solid_selection", Optional[Sequence[str]]),
             ("mode", str),
-            ("tags", Dict[str, str]),
+            ("tags", Mapping[str, str]),
         ],
     )
 ):
@@ -52,21 +52,21 @@ class PresetDefinition(
     def __new__(
         cls,
         name: str,
-        run_config: Optional[Dict[str, object]] = None,
-        solid_selection: Optional[List[str]] = None,
+        run_config: Optional[Mapping[str, object]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         mode: Optional[str] = None,
-        tags: Optional[Dict[str, object]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
 
         return super(PresetDefinition, cls).__new__(
             cls,
             name=check_valid_name(name),
             run_config=run_config,
-            solid_selection=check.opt_nullable_list_param(
+            solid_selection=check.opt_nullable_sequence_param(
                 solid_selection, "solid_selection", of_type=str
             ),
             mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
-            tags=check.opt_dict_param(tags, "tags", key_type=str),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str),
         )
 
     @staticmethod

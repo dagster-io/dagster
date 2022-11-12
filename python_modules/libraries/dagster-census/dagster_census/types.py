@@ -1,13 +1,13 @@
-from typing import Any, Dict, NamedTuple
+from typing import Any, Mapping, NamedTuple
 
 
 class CensusOutput(
     NamedTuple(
         "_CensusOutput",
         [
-            ("sync_run", Dict[str, Any]),
-            ("source", Dict[str, Any]),
-            ("destination", Dict[str, Any]),
+            ("sync_run", Mapping[str, Any]),
+            ("source", Mapping[str, Any]),
+            ("destination", Mapping[str, Any]),
         ],
     )
 ):

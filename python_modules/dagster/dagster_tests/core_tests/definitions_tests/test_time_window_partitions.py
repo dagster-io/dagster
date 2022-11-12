@@ -33,6 +33,16 @@ def test_daily_partitions():
 
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == DailyPartitionsDefinition(start_date="2021-05-05")
+    assert partitions_def.get_next_partition_key("2021-05-05") == "2021-05-06"
+    assert partitions_def.get_last_partition_key(pendulum.parse("2021-05-06")) == "2021-05-05"
+    assert (
+        partitions_def.get_last_partition_key(pendulum.parse("2021-05-06").add(minutes=1))
+        == "2021-05-05"
+    )
+    assert (
+        partitions_def.get_last_partition_key(pendulum.parse("2021-05-07").subtract(minutes=1))
+        == "2021-05-05"
+    )
     assert partitions_def.schedule_type == ScheduleType.DAILY
 
     assert [
@@ -347,3 +357,146 @@ def test_start_not_aligned():
         time_window("2021-05-05T07:00:00", "2021-05-06T07:00:00"),
         time_window("2021-05-06T07:00:00", "2021-05-07T07:00:00"),
     ]
+
+
+@pytest.mark.parametrize(
+    "case_str",
+    [
+        "+",
+        "+-",
+        "+--",
+        "-+",
+        "-+-",
+        "-++",
+        "-++-",
+        "-+++-",
+        "--++",
+        "-+-+-",
+        "--+++---+++--",
+    ],
+)
+def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
+    partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    full_set_keys = partitions_def.get_partition_keys(
+        current_time=datetime(year=2015, month=1, day=30)
+    )[: len(case_str)]
+    subset_keys = []
+    expected_keys_not_in_subset = []
+    for i, c in enumerate(case_str):
+        if c == "+":
+            subset_keys.append(full_set_keys[i])
+        else:
+            expected_keys_not_in_subset.append(full_set_keys[i])
+
+    subset = partitions_def.empty_subset().with_partition_keys(subset_keys)
+    assert (
+        subset.get_partition_keys_not_in_subset(
+            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+        )
+        == expected_keys_not_in_subset
+    )
+
+    expected_range_count = case_str.count("-+") + (1 if case_str[0] == "+" else 0)
+    assert len(subset.key_ranges) == expected_range_count, case_str
+
+
+@pytest.mark.parametrize(
+    "initial, added",
+    [
+        (
+            "-",
+            "+",
+        ),
+        (
+            "+",
+            "+",
+        ),
+        (
+            "+-",
+            "-+",
+        ),
+        (
+            "+-",
+            "++",
+        ),
+        (
+            "--",
+            "++",
+        ),
+        (
+            "+--",
+            "+--",
+        ),
+        (
+            "-+",
+            "-+",
+        ),
+        (
+            "-+-",
+            "-+-",
+        ),
+        (
+            "-++",
+            "-++",
+        ),
+        (
+            "-++-",
+            "-++-",
+        ),
+        (
+            "-+++-",
+            "-+++-",
+        ),
+        (
+            "--++",
+            "++--",
+        ),
+        (
+            "-+-+-",
+            "-+++-",
+        ),
+        (
+            "+-+-+",
+            "-+-+-",
+        ),
+        (
+            "--+++---+++--",
+            "++---+++---++",
+        ),
+    ],
+)
+def test_partition_subset_with_partition_keys(initial: str, added: str):
+    assert len(initial) == len(added)
+    partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    full_set_keys = partitions_def.get_partition_keys(
+        current_time=datetime(year=2015, month=1, day=30)
+    )[: len(initial)]
+    initial_subset_keys = []
+    added_subset_keys = []
+    expected_keys_not_in_updated_subset = []
+    for i in range(len(initial)):
+        if initial[i] == "+":
+            initial_subset_keys.append(full_set_keys[i])
+
+        if added[i] == "+":
+            added_subset_keys.append(full_set_keys[i])
+
+        if initial[i] != "+" and added[i] != "+":
+            expected_keys_not_in_updated_subset.append(full_set_keys[i])
+
+    subset = partitions_def.empty_subset().with_partition_keys(initial_subset_keys)
+    updated_subset = subset.with_partition_keys(added_subset_keys)
+    assert (
+        updated_subset.get_partition_keys_not_in_subset(
+            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+        )
+        == expected_keys_not_in_updated_subset
+    )
+
+    updated_subset_str = "".join(
+        ("+" if (a == "+" or b == "+") else "-") for a, b in zip(initial, added)
+    )
+    expected_range_count = updated_subset_str.count("-+") + (
+        1 if updated_subset_str[0] == "+" else 0
+    )
+    assert len(updated_subset.key_ranges) == expected_range_count, updated_subset_str

@@ -7,10 +7,6 @@
 // GraphQL query operation: AssetJobPartitionSetsQuery
 // ====================================================
 
-export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PipelineNotFoundError {
-  __typename: "PipelineNotFoundError";
-}
-
 export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
@@ -22,6 +18,11 @@ export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError {
   message: string;
   stack: string[];
   causes: AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_causes[];
+}
+
+export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError";
+  message: string;
 }
 
 export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PartitionSets_results {
@@ -37,7 +38,7 @@ export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PartitionSets {
   results: AssetJobPartitionSetsQuery_partitionSetsOrError_PartitionSets_results[];
 }
 
-export type AssetJobPartitionSetsQuery_partitionSetsOrError = AssetJobPartitionSetsQuery_partitionSetsOrError_PipelineNotFoundError | AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError | AssetJobPartitionSetsQuery_partitionSetsOrError_PartitionSets;
+export type AssetJobPartitionSetsQuery_partitionSetsOrError = AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError | AssetJobPartitionSetsQuery_partitionSetsOrError_PipelineNotFoundError | AssetJobPartitionSetsQuery_partitionSetsOrError_PartitionSets;
 
 export interface AssetJobPartitionSetsQuery {
   partitionSetsOrError: AssetJobPartitionSetsQuery_partitionSetsOrError;

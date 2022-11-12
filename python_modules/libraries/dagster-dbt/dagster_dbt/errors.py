@@ -16,7 +16,7 @@ class DagsterDbtCliUnexpectedOutputError(DagsterDbtError):
     invalid_line_nos: Sequence[int]
 
     def __init__(self, invalid_line_nos: Sequence[int]):
-        check.list_param(invalid_line_nos, "invalid_line_nos", int)
+        check.sequence_param(invalid_line_nos, "invalid_line_nos", int)
         line_nos_str = ", ".join(map(str, invalid_line_nos))
         description = f"dbt CLI emitted unexpected output on lines {line_nos_str}"
         metadata = {

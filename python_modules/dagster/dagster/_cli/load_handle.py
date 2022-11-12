@@ -1,5 +1,5 @@
 import os
-from typing import Dict, cast
+from typing import Mapping, cast
 
 from click import UsageError
 
@@ -17,11 +17,11 @@ def _cli_load_invariant(condition, msg=None):
         raise UsageError(msg)
 
 
-def recon_repo_for_cli_args(kwargs: Dict[str, str]):
+def recon_repo_for_cli_args(kwargs: Mapping[str, str]):
     """Builds a ReconstructableRepository for CLI arguments, which can be any of the combinations
     for repo loading above.
     """
-    check.dict_param(kwargs, "kwargs")
+    check.mapping_param(kwargs, "kwargs")
     _cli_load_invariant(kwargs.get("pipeline_name") is None)
 
     if kwargs.get("workspace"):

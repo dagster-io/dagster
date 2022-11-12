@@ -44,7 +44,7 @@ def run_command(**kwargs):
 
 
 @telemetry_wrapper(metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()})
-def _daemon_run_command(instance, kwargs):
+def _daemon_run_command(instance: DagsterInstance, kwargs):
     workspace_load_target = get_workspace_load_target(kwargs)
 
     with daemon_controller_from_instance(

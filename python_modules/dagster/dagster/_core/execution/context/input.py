@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -73,12 +73,12 @@ class InputContext:
         pipeline_name: Optional[str] = None,
         solid_def: Optional["SolidDefinition"] = None,
         config: Optional[Any] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
         upstream_output: Optional["OutputContext"] = None,
         dagster_type: Optional["DagsterType"] = None,
         log_manager: Optional["DagsterLogManager"] = None,
-        resource_config: Optional[Dict[str, Any]] = None,
-        resources: Optional[Union["Resources", Dict[str, Any]]] = None,
+        resource_config: Optional[Mapping[str, Any]] = None,
+        resources: Optional[Union["Resources", Mapping[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
         asset_key: Optional[AssetKey] = None,
@@ -192,7 +192,7 @@ class InputContext:
 
     @public  # type: ignore
     @property
-    def metadata(self) -> Optional[Dict[str, Any]]:
+    def metadata(self) -> Optional[Mapping[str, Any]]:
         return self._metadata
 
     @public  # type: ignore
@@ -224,7 +224,7 @@ class InputContext:
 
     @public  # type: ignore
     @property
-    def resource_config(self) -> Optional[Dict[str, Any]]:
+    def resource_config(self) -> Optional[Mapping[str, Any]]:
         return self._resource_config
 
     @public  # type: ignore
@@ -403,7 +403,7 @@ class InputContext:
     def get_asset_identifier(self) -> Sequence[str]:
         if self.asset_key is not None:
             if self.has_asset_partitions:
-                return self.asset_key.path + [self.asset_partition_key]
+                return [*self.asset_key.path, self.asset_partition_key]
             else:
                 return self.asset_key.path
         else:
@@ -421,7 +421,7 @@ class InputContext:
 
     def add_input_metadata(
         self,
-        metadata: Dict[str, Any],
+        metadata: Mapping[str, Any],
         description: Optional[str] = None,
     ) -> None:
         """Accepts a dictionary of metadata. Metadata entries will appear on the LOADED_INPUT event.
@@ -433,7 +433,7 @@ class InputContext:
         from dagster._core.definitions.metadata import normalize_metadata
         from dagster._core.events import DagsterEvent
 
-        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        metadata = check.mapping_param(metadata, "metadata", key_type=str)
         self._metadata_entries.extend(normalize_metadata(metadata, []))
         if self.has_asset_key:
             check.opt_str_param(description, "description")
@@ -450,7 +450,7 @@ class InputContext:
 
     def get_observations(
         self,
-    ) -> List[AssetObservation]:
+    ) -> Sequence[AssetObservation]:
         """Retrieve the list of user-generated asset observations that were observed via the context.
 
         User-generated events that were yielded will not appear in this list.
@@ -474,7 +474,7 @@ class InputContext:
         """
         return self._observations
 
-    def consume_metadata_entries(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+    def consume_metadata_entries(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
         result = self._metadata_entries
         self._metadata_entries = []
         return result
@@ -483,11 +483,11 @@ class InputContext:
 def build_input_context(
     name: Optional[str] = None,
     config: Optional[Any] = None,
-    metadata: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Mapping[str, Any]] = None,
     upstream_output: Optional["OutputContext"] = None,
     dagster_type: Optional["DagsterType"] = None,
-    resource_config: Optional[Dict[str, Any]] = None,
-    resources: Optional[Dict[str, Any]] = None,
+    resource_config: Optional[Mapping[str, Any]] = None,
+    resources: Optional[Mapping[str, Any]] = None,
     op_def: Optional["OpDefinition"] = None,
     step_context: Optional["StepExecutionContext"] = None,
     asset_key: Optional["AssetKey"] = None,
@@ -534,11 +534,11 @@ def build_input_context(
     from dagster._core.types.dagster_type import DagsterType
 
     name = check.opt_str_param(name, "name")
-    metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+    metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
     upstream_output = check.opt_inst_param(upstream_output, "upstream_output", OutputContext)
     dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
-    resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
-    resources = check.opt_dict_param(resources, "resources", key_type=str)
+    resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)
+    resources = check.opt_mapping_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
     asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)

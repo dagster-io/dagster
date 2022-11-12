@@ -14,8 +14,13 @@ if TYPE_CHECKING:
 
 
 def sync_get_external_sensor_execution_data_ephemeral_grpc(
-    instance, repository_handle, sensor_name, last_completion_time, last_run_key, cursor
-):
+    instance: "DagsterInstance",
+    repository_handle: RepositoryHandle,
+    sensor_name: str,
+    last_completion_time: Optional[float],
+    last_run_key: Optional[str],
+    cursor: Optional[str],
+) -> SensorExecutionData:
     from dagster._grpc.client import ephemeral_grpc_api_client
 
     origin = repository_handle.get_external_origin()

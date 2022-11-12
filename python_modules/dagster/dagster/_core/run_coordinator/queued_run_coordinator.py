@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 from dagster import DagsterEvent, DagsterEventType, IntSource, String
 from dagster import _check as check
@@ -14,7 +14,10 @@ from .base import RunCoordinator, SubmitRunContext
 class RunQueueConfig(
     NamedTuple(
         "_RunQueueConfig",
-        [("max_concurrent_runs", int), ("tag_concurrency_limits", Optional[List[Dict[str, Any]]])],
+        [
+            ("max_concurrent_runs", int),
+            ("tag_concurrency_limits", Optional[Sequence[Mapping[str, Any]]]),
+        ],
     )
 ):
     pass

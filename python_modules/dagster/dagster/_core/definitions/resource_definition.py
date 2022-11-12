@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Dict,
     Iterator,
+    Mapping,
     Optional,
     Union,
     cast,
@@ -255,7 +256,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
 class _ResourceDecoratorCallable:
     def __init__(
         self,
-        config_schema: Optional[Dict[str, Any]] = None,
+        config_schema: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,

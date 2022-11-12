@@ -7,7 +7,7 @@ import random
 import string
 import uuid
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any, Mapping
 from unittest.mock import MagicMock, patch
 
 import mlflow
@@ -28,7 +28,7 @@ def string_maker():
 
 
 @pytest.fixture
-def basic_run_config() -> Dict[str, Any]:
+def basic_run_config() -> Mapping[str, Any]:
     return {
         "resources": {"mlflow": {"config": {"experiment_name": "testing"}}},
         "solids": {},

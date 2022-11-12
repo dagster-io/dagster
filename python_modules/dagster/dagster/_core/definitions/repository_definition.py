@@ -113,7 +113,7 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
             str, Union[RepositoryLevelDefinition, Callable[[], RepositoryLevelDefinition]]
         ],
         validation_fn: Callable[[RepositoryLevelDefinition], RepositoryLevelDefinition],
-        lazy_definitions_fn: Optional[Callable[[], List[RepositoryLevelDefinition]]] = None,
+        lazy_definitions_fn: Optional[Callable[[], Sequence[RepositoryLevelDefinition]]] = None,
     ):
         """
         Args:
@@ -147,16 +147,16 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
             str, Union[RepositoryLevelDefinition, Callable[[], RepositoryLevelDefinition]]
         ] = definitions
         self._definition_cache: Dict[str, RepositoryLevelDefinition] = {}
-        self._definition_names: Optional[List[str]] = None
+        self._definition_names: Optional[Sequence[str]] = None
 
         self._lazy_definitions_fn: Callable[
-            [], List[RepositoryLevelDefinition]
+            [], Sequence[RepositoryLevelDefinition]
         ] = lazy_definitions_fn or (lambda: [])
-        self._lazy_definitions: Optional[List[RepositoryLevelDefinition]] = None
+        self._lazy_definitions: Optional[Sequence[RepositoryLevelDefinition]] = None
 
-        self._all_definitions: Optional[List[RepositoryLevelDefinition]] = None
+        self._all_definitions: Optional[Sequence[RepositoryLevelDefinition]] = None
 
-    def _get_lazy_definitions(self) -> List[RepositoryLevelDefinition]:
+    def _get_lazy_definitions(self) -> Sequence[RepositoryLevelDefinition]:
         if self._lazy_definitions is None:
             self._lazy_definitions = self._lazy_definitions_fn()
             for definition in self._lazy_definitions:
@@ -164,7 +164,7 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
 
         return self._lazy_definitions
 
-    def get_definition_names(self) -> List[str]:
+    def get_definition_names(self) -> Sequence[str]:
         if self._definition_names:
             return self._definition_names
 
@@ -187,7 +187,7 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
 
         return definition_name in self.get_definition_names()
 
-    def get_all_definitions(self) -> List[RepositoryLevelDefinition]:
+    def get_all_definitions(self) -> Sequence[RepositoryLevelDefinition]:
         if self._all_definitions is not None:
             return self._all_definitions
 
@@ -265,7 +265,7 @@ class RepositoryData(ABC):
     """
 
     @abstractmethod
-    def get_all_pipelines(self) -> List[PipelineDefinition]:
+    def get_all_pipelines(self) -> Sequence[PipelineDefinition]:
         """Return all pipelines/jobs in the repository as a list.
 
         Returns:
@@ -273,7 +273,7 @@ class RepositoryData(ABC):
         """
 
     @public
-    def get_all_jobs(self) -> List[JobDefinition]:
+    def get_all_jobs(self) -> Sequence[JobDefinition]:
         """Return all jobs in the repository as a list.
 
         Returns:
@@ -281,7 +281,7 @@ class RepositoryData(ABC):
         """
         return [job for job in self.get_all_pipelines() if isinstance(job, JobDefinition)]
 
-    def get_pipeline_names(self) -> List[str]:
+    def get_pipeline_names(self) -> Sequence[str]:
         """Get the names of all pipelines/jobs in the repository.
 
         Returns:
@@ -290,7 +290,7 @@ class RepositoryData(ABC):
         return [pipeline_def.name for pipeline_def in self.get_all_pipelines()]
 
     @public
-    def get_job_names(self) -> List[str]:
+    def get_job_names(self) -> Sequence[str]:
         """Get the names of all jobs in the repository.
 
         Returns:
@@ -373,7 +373,7 @@ class RepositoryData(ABC):
         """
         return partition_set_name in self.get_partition_set_names()
 
-    def get_all_partition_sets(self) -> List[PartitionSetDefinition]:
+    def get_all_partition_sets(self) -> Sequence[PartitionSetDefinition]:
         """Return all partition sets in the repository as a list.
 
         Returns:
@@ -402,7 +402,7 @@ class RepositoryData(ABC):
         return partition_sets_with_name[0]
 
     @public
-    def get_schedule_names(self) -> List[str]:
+    def get_schedule_names(self) -> Sequence[str]:
         """Get the names of all schedules in the repository.
 
         Returns:
@@ -411,7 +411,7 @@ class RepositoryData(ABC):
         return [schedule.name for schedule in self.get_all_schedules()]
 
     @public
-    def get_all_schedules(self) -> List[ScheduleDefinition]:
+    def get_all_schedules(self) -> Sequence[ScheduleDefinition]:
         """Return all schedules in the repository as a list.
 
         Returns:
@@ -442,11 +442,11 @@ class RepositoryData(ABC):
         return schedule_name in self.get_schedule_names()
 
     @public
-    def get_all_sensors(self) -> List[SensorDefinition]:
+    def get_all_sensors(self) -> Sequence[SensorDefinition]:
         return []
 
     @public
-    def get_sensor_names(self) -> List[str]:
+    def get_sensor_names(self) -> Sequence[str]:
         return [sensor.name for sensor in self.get_all_sensors()]
 
     @public
@@ -485,8 +485,8 @@ Resolvable = Callable[[], T]
 class CachingRepositoryData(RepositoryData):
     """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
 
-    _all_jobs: Optional[List[JobDefinition]]
-    _all_pipelines: Optional[List[PipelineDefinition]]
+    _all_jobs: Optional[Sequence[JobDefinition]]
+    _all_pipelines: Optional[Sequence[PipelineDefinition]]
 
     def __init__(
         self,
@@ -584,7 +584,7 @@ class CachingRepositoryData(RepositoryData):
         self._source_assets_by_key = source_assets_by_key
         self._assets_defs_by_key = assets_defs_by_key
 
-        def load_partition_sets_from_pipelines() -> List[PartitionSetDefinition]:
+        def load_partition_sets_from_pipelines() -> Sequence[PartitionSetDefinition]:
             job_partition_sets = []
             for pipeline in self.get_all_pipelines():
                 if isinstance(pipeline, JobDefinition):
@@ -883,15 +883,15 @@ class CachingRepositoryData(RepositoryData):
             assets_defs_by_key=assets_defs_by_key,
         )
 
-    def get_pipeline_names(self) -> List[str]:
+    def get_pipeline_names(self) -> Sequence[str]:
         """Get the names of all pipelines/jobs in the repository.
 
         Returns:
             List[str]
         """
-        return self._pipelines.get_definition_names() + self.get_job_names()
+        return [*self._pipelines.get_definition_names(), *self.get_job_names()]
 
-    def get_job_names(self) -> List[str]:
+    def get_job_names(self) -> Sequence[str]:
         """Get the names of all jobs in the repository.
 
         Returns:
@@ -926,7 +926,7 @@ class CachingRepositoryData(RepositoryData):
         check.str_param(job_name, "job_name")
         return self._jobs.has_definition(job_name)
 
-    def get_all_pipelines(self) -> List[PipelineDefinition]:
+    def get_all_pipelines(self) -> Sequence[PipelineDefinition]:
         """Return all pipelines/jobs in the repository as a list.
 
         Note that this will construct any pipeline/job that has not yet been constructed.
@@ -946,7 +946,7 @@ class CachingRepositoryData(RepositoryData):
         self._all_pipelines = pipelines
         return self._all_pipelines
 
-    def get_all_jobs(self) -> List[JobDefinition]:
+    def get_all_jobs(self) -> Sequence[JobDefinition]:
         """Return all jobs in the repository as a list.
 
         Note that this will construct any job that has not yet been constructed.
@@ -963,7 +963,7 @@ class CachingRepositoryData(RepositoryData):
         self.get_all_pipelines()
 
         # The `get_all_pipelines` call ensures _all_jobs is set.
-        return cast(List[JobDefinition], self._all_jobs)
+        return cast(Sequence[JobDefinition], self._all_jobs)
 
     def get_pipeline(self, pipeline_name: str) -> PipelineDefinition:
         """Get a pipeline/job by name.
@@ -1001,7 +1001,7 @@ class CachingRepositoryData(RepositoryData):
         check.str_param(job_name, "job_name")
         return self._jobs.get_definition(job_name)
 
-    def get_partition_set_names(self) -> List[str]:
+    def get_partition_set_names(self) -> Sequence[str]:
         """Get the names of all partition sets in the repository.
 
         Returns:
@@ -1021,7 +1021,7 @@ class CachingRepositoryData(RepositoryData):
         check.str_param(partition_set_name, "partition_set_name")
         return self._partition_sets.has_definition(partition_set_name)
 
-    def get_all_partition_sets(self) -> List[PartitionSetDefinition]:
+    def get_all_partition_sets(self) -> Sequence[PartitionSetDefinition]:
         """Return all partition sets in the repository as a list.
 
         Note that this will construct any partition set that has not yet been constructed.
@@ -1048,7 +1048,7 @@ class CachingRepositoryData(RepositoryData):
 
         return self._partition_sets.get_definition(partition_set_name)
 
-    def get_schedule_names(self) -> List[str]:
+    def get_schedule_names(self) -> Sequence[str]:
         """Get the names of all schedules in the repository.
 
         Returns:
@@ -1056,7 +1056,7 @@ class CachingRepositoryData(RepositoryData):
         """
         return self._schedules.get_definition_names()
 
-    def get_all_schedules(self) -> List[ScheduleDefinition]:
+    def get_all_schedules(self) -> Sequence[ScheduleDefinition]:
         """Return all schedules in the repository as a list.
 
         Note that this will construct any schedule that has not yet been constructed.
@@ -1088,10 +1088,10 @@ class CachingRepositoryData(RepositoryData):
 
         return self._schedules.has_definition(schedule_name)
 
-    def get_all_sensors(self) -> List[SensorDefinition]:
+    def get_all_sensors(self) -> Sequence[SensorDefinition]:
         return self._sensors.get_all_definitions()
 
-    def get_sensor_names(self) -> List[str]:
+    def get_sensor_names(self) -> Sequence[str]:
         return self._sensors.get_definition_names()
 
     def get_sensor(self, sensor_name: str) -> SensorDefinition:
@@ -1106,7 +1106,7 @@ class CachingRepositoryData(RepositoryData):
     def get_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_defs_by_key
 
-    def _check_solid_defs(self, pipelines: List[PipelineDefinition]) -> None:
+    def _check_solid_defs(self, pipelines: Sequence[PipelineDefinition]) -> None:
         solid_defs = {}
         solid_to_pipeline = {}
         for pipeline in pipelines:
@@ -1216,13 +1216,13 @@ class RepositoryDefinition:
         self._repository_data.load_all_definitions()
 
     @property
-    def pipeline_names(self) -> List[str]:
+    def pipeline_names(self) -> Sequence[str]:
         """List[str]: Names of all pipelines/jobs in the repository"""
         return self._repository_data.get_pipeline_names()
 
     @public  # type: ignore
     @property
-    def job_names(self) -> List[str]:
+    def job_names(self) -> Sequence[str]:
         """List[str]: Names of all jobs in the repository"""
         return self._repository_data.get_job_names()
 
@@ -1252,7 +1252,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.get_pipeline(name)
 
-    def get_all_pipelines(self) -> List[PipelineDefinition]:
+    def get_all_pipelines(self) -> Sequence[PipelineDefinition]:
         """Return all pipelines/jobs in the repository as a list.
 
         Note that this will construct any pipeline/job in the lazily evaluated dictionary that
@@ -1292,8 +1292,8 @@ class RepositoryDefinition:
         """
         return self._repository_data.get_job(name)
 
-    @public  # type: ignore
-    def get_all_jobs(self) -> List[JobDefinition]:
+    @public
+    def get_all_jobs(self) -> Sequence[JobDefinition]:
         """Return all jobs in the repository as a list.
 
         Note that this will construct any job in the lazily evaluated dictionary that has
@@ -1305,7 +1305,7 @@ class RepositoryDefinition:
         return self._repository_data.get_all_jobs()
 
     @property
-    def partition_set_defs(self) -> List[PartitionSetDefinition]:
+    def partition_set_defs(self) -> Sequence[PartitionSetDefinition]:
         return self._repository_data.get_all_partition_sets()
 
     def get_partition_set_def(self, name: str) -> PartitionSetDefinition:
@@ -1313,7 +1313,7 @@ class RepositoryDefinition:
 
     @public  # type: ignore
     @property
-    def schedule_defs(self) -> List[ScheduleDefinition]:
+    def schedule_defs(self) -> Sequence[ScheduleDefinition]:
         return self._repository_data.get_all_schedules()
 
     @public  # type: ignore
@@ -1326,7 +1326,7 @@ class RepositoryDefinition:
 
     @public  # type: ignore
     @property
-    def sensor_defs(self) -> List[SensorDefinition]:
+    def sensor_defs(self) -> Sequence[SensorDefinition]:
         return self._repository_data.get_all_sensors()
 
     @public  # type: ignore
@@ -1338,7 +1338,7 @@ class RepositoryDefinition:
         return self._repository_data.has_sensor(name)
 
     @property
-    def source_assets_by_key(self) -> Dict[AssetKey, SourceAsset]:
+    def source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
         return self._repository_data.get_source_assets_by_key()
 
     @property
@@ -1451,7 +1451,9 @@ class RepositoryDefinition:
 
     @property
     def asset_graph(self) -> AssetGraph:
-        return AssetGraph([*self._assets_defs_by_key.values(), *self.source_assets_by_key.values()])
+        return AssetGraph.from_assets(
+            [*self._assets_defs_by_key.values(), *self.source_assets_by_key.values()]
+        )
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.

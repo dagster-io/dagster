@@ -1,6 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, cast
+from typing import Any, Dict, Iterable, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions import ExpectationResult
@@ -87,7 +87,7 @@ class StepEventStatus(Enum):
 
 def build_run_step_stats_from_events(
     run_id: str, records: Iterable[EventLogEntry]
-) -> List["RunStepKeyStatsSnapshot"]:
+) -> Sequence["RunStepKeyStatsSnapshot"]:
     by_step_key: Dict[str, Dict[str, Any]] = defaultdict(dict)
     attempts = defaultdict(list)
     attempt_events = defaultdict(list)
@@ -211,11 +211,11 @@ class RunStepKeyStatsSnapshot(
             ("status", Optional[StepEventStatus]),
             ("start_time", Optional[float]),
             ("end_time", Optional[float]),
-            ("materialization_events", List[EventLogEntry]),
-            ("expectation_results", List[ExpectationResult]),
+            ("materialization_events", Sequence[EventLogEntry]),
+            ("expectation_results", Sequence[ExpectationResult]),
             ("attempts", Optional[int]),
-            ("attempts_list", List[RunStepMarker]),
-            ("markers", List[RunStepMarker]),
+            ("attempts_list", Sequence[RunStepMarker]),
+            ("markers", Sequence[RunStepMarker]),
         ],
     )
 ):
@@ -226,11 +226,11 @@ class RunStepKeyStatsSnapshot(
         status: Optional[StepEventStatus] = None,
         start_time: Optional[float] = None,
         end_time: Optional[float] = None,
-        materialization_events: Optional[List[EventLogEntry]] = None,
-        expectation_results: Optional[List[ExpectationResult]] = None,
+        materialization_events: Optional[Sequence[EventLogEntry]] = None,
+        expectation_results: Optional[Sequence[ExpectationResult]] = None,
         attempts: Optional[int] = None,
-        attempts_list: Optional[List[RunStepMarker]] = None,
-        markers: Optional[List[RunStepMarker]] = None,
+        attempts_list: Optional[Sequence[RunStepMarker]] = None,
+        markers: Optional[Sequence[RunStepMarker]] = None,
     ):
         return super(RunStepKeyStatsSnapshot, cls).__new__(
             cls,
@@ -239,15 +239,15 @@ class RunStepKeyStatsSnapshot(
             status=check.opt_inst_param(status, "status", StepEventStatus),
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
-            materialization_events=check.opt_list_param(
+            materialization_events=check.opt_sequence_param(
                 materialization_events,
                 "materialization_events",
                 EventLogEntry,
             ),
-            expectation_results=check.opt_list_param(
+            expectation_results=check.opt_sequence_param(
                 expectation_results, "expectation_results", ExpectationResult
             ),
             attempts=check.opt_int_param(attempts, "attempts"),
-            attempts_list=check.opt_list_param(attempts_list, "attempts_list", RunStepMarker),
-            markers=check.opt_list_param(markers, "markers", RunStepMarker),
+            attempts_list=check.opt_sequence_param(attempts_list, "attempts_list", RunStepMarker),
+            markers=check.opt_sequence_param(markers, "markers", RunStepMarker),
         )

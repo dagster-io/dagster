@@ -1,5 +1,5 @@
 import abc
-from typing import Callable, Iterable, List, Mapping, Optional, Sequence
+from typing import Callable, Iterable, Mapping, Optional, Sequence
 
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref
@@ -87,7 +87,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         before: Optional[float] = None,
         after: Optional[float] = None,
         limit: Optional[int] = None,
-        statuses: Optional[List[TickStatus]] = None,
+        statuses: Optional[Sequence[TickStatus]] = None,
     ) -> Iterable[InstigatorTick]:
         """Get the ticks for a given instigator.
 
@@ -118,7 +118,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         origin_id: str,
         selector_id: str,
         before: float,
-        tick_statuses: Optional[List[TickStatus]] = None,
+        tick_statuses: Optional[Sequence[TickStatus]] = None,
     ):
         """Wipe ticks for an instigator for a certain status and timestamp.
 

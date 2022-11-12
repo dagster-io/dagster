@@ -76,7 +76,9 @@ from dagster import (
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster._core.log_manager import coerce_valid_log_level
@@ -1731,6 +1733,44 @@ def untyped_asset(typed_asset):
     return typed_asset
 
 
+@asset
+def fresh_diamond_top():
+    return 1
+
+
+@asset
+def fresh_diamond_left(fresh_diamond_top):
+    return fresh_diamond_top + 1
+
+
+@asset
+def fresh_diamond_right(fresh_diamond_top):
+    return fresh_diamond_top + 1
+
+
+@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
+    return fresh_diamond_left + fresh_diamond_right
+
+
+multipartitions_def = MultiPartitionsDefinition(
+    {
+        "12": StaticPartitionsDefinition(["1", "2"]),
+        "ab": StaticPartitionsDefinition(["a", "b"]),
+    }
+)
+
+
+@asset(partitions_def=multipartitions_def)
+def multipartitions_1():
+    return 1
+
+
+@asset(partitions_def=multipartitions_def)
+def multipartitions_2(multipartitions_1):
+    return multipartitions_1
+
+
 # For now the only way to add assets to repositories is via AssetGroup
 # When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
 named_groups_job = AssetGroup(
@@ -1821,6 +1861,20 @@ def define_asset_jobs():
         define_asset_job(
             "typed_assets",
             AssetSelection.assets(typed_multi_asset, typed_asset, untyped_asset),
+        ),
+        multipartitions_1,
+        multipartitions_2,
+        define_asset_job(
+            "multipartitions_job",
+            AssetSelection.assets(multipartitions_1, multipartitions_2),
+            partitions_def=multipartitions_def,
+        ),
+        fresh_diamond_top,
+        fresh_diamond_left,
+        fresh_diamond_right,
+        fresh_diamond_bottom,
+        define_asset_job(
+            "fresh_diamond_assets", AssetSelection.assets(fresh_diamond_bottom).upstream()
         ),
     ]
 

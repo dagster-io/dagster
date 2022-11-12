@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from multiprocessing.synchronize import Event as MPEvent
 from threading import Event as ThreadingEventType
 from time import sleep
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -87,7 +87,7 @@ class LoadedRepositories:
     def __init__(
         self,
         loadable_target_origin: Optional[LoadableTargetOrigin],
-        entry_point: List[str],
+        entry_point: Sequence[str],
         container_image: Optional[str] = None,
     ):
         self._loadable_target_origin = loadable_target_origin
@@ -141,11 +141,11 @@ class LoadedRepositories:
         return self._code_pointers_by_repo_name
 
     @property
-    def definitions_by_name(self) -> Dict[str, RepositoryDefinition]:
+    def definitions_by_name(self) -> Mapping[str, RepositoryDefinition]:
         return self._repo_defs_by_name
 
     @property
-    def reconstructables_by_name(self) -> Dict[str, ReconstructableRepository]:
+    def reconstructables_by_name(self) -> Mapping[str, ReconstructableRepository]:
         return self._recon_repos_by_name
 
 
@@ -182,7 +182,7 @@ class DagsterApiServer(DagsterApiServicer):
         heartbeat_timeout: int = 30,
         lazy_load_user_code: bool = False,
         fixed_server_id: Optional[str] = None,
-        entry_point: Optional[List[str]] = None,
+        entry_point: Optional[Sequence[str]] = None,
         container_image: Optional[str] = None,
         container_context: Optional[dict] = None,
         inject_env_vars_from_instance: Optional[bool] = False,

@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Mapping, Optional
 
 from requests import codes, exceptions, post
 
@@ -28,7 +28,7 @@ class TeamsClient:
                 self._proxy["https"] = https_proxy
         self._headers = {"Content-Type": "application/json"}
 
-    def post_message(self, payload: Dict) -> bool:  # pragma: no cover
+    def post_message(self, payload: Mapping) -> bool:  # pragma: no cover
         response = post(
             self._hook_url,
             json=payload,

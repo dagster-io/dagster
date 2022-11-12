@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Dict, List, Optional, Set, Union, overload
+from typing import Any, Callable, Mapping, Optional, Sequence, Set, Union, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
@@ -21,27 +21,31 @@ class _Pipeline:
     def __init__(
         self,
         name: Optional[str] = None,
-        mode_defs: Optional[List[ModeDefinition]] = None,
-        preset_defs: Optional[List[PresetDefinition]] = None,
+        mode_defs: Optional[Sequence[ModeDefinition]] = None,
+        preset_defs: Optional[Sequence[PresetDefinition]] = None,
         description: Optional[str] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         hook_defs: Optional[Set[HookDefinition]] = None,
-        input_defs: Optional[List[InputDefinition]] = None,
-        output_defs: Optional[List[OutputDefinition]] = None,
+        input_defs: Optional[Sequence[InputDefinition]] = None,
+        output_defs: Optional[Sequence[OutputDefinition]] = None,
         config_schema: Optional[UserConfigSchema] = None,
-        config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+        config_fn: Optional[Callable[[Mapping[str, Any]], Mapping[str, Any]]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.mode_definitions = check.opt_list_param(mode_defs, "mode_defs", ModeDefinition)
-        self.preset_definitions = check.opt_list_param(preset_defs, "preset_defs", PresetDefinition)
+        self.mode_definitions = check.opt_sequence_param(mode_defs, "mode_defs", ModeDefinition)
+        self.preset_definitions = check.opt_sequence_param(
+            preset_defs, "preset_defs", PresetDefinition
+        )
         self.description = check.opt_str_param(description, "description")
-        self.tags = check.opt_dict_param(tags, "tags")
+        self.tags = check.opt_mapping_param(tags, "tags")
         self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
-        self.input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
+        self.input_defs = check.opt_sequence_param(
+            input_defs, "input_defs", of_type=InputDefinition
+        )
         self.did_pass_outputs = output_defs is not None
-        self.output_defs = check.opt_nullable_list_param(
+        self.output_defs = check.opt_nullable_sequence_param(
             output_defs, "output_defs", of_type=OutputDefinition
         )
         self.config_schema = config_schema
@@ -119,14 +123,14 @@ def pipeline(
 def pipeline(
     name: Optional[str] = ...,
     description: Optional[str] = ...,
-    mode_defs: Optional[List[ModeDefinition]] = ...,
-    preset_defs: Optional[List[PresetDefinition]] = ...,
-    tags: Optional[Dict[str, Any]] = ...,
+    mode_defs: Optional[Sequence[ModeDefinition]] = ...,
+    preset_defs: Optional[Sequence[PresetDefinition]] = ...,
+    tags: Optional[Mapping[str, Any]] = ...,
     hook_defs: Optional[Set[HookDefinition]] = ...,
-    input_defs: Optional[List[InputDefinition]] = ...,
-    output_defs: Optional[List[OutputDefinition]] = ...,
+    input_defs: Optional[Sequence[InputDefinition]] = ...,
+    output_defs: Optional[Sequence[OutputDefinition]] = ...,
     config_schema: Optional[UserConfigSchema] = ...,
-    config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = ...,
+    config_fn: Optional[Callable[[Mapping[str, Any]], Mapping[str, Any]]] = ...,
     solid_retry_policy: Optional[RetryPolicy] = ...,
     version_strategy: Optional[VersionStrategy] = ...,
 ) -> _Pipeline:
@@ -136,14 +140,14 @@ def pipeline(
 def pipeline(
     name: Optional[Union[Callable[..., Any], str]] = None,
     description: Optional[str] = None,
-    mode_defs: Optional[List[ModeDefinition]] = None,
-    preset_defs: Optional[List[PresetDefinition]] = None,
-    tags: Optional[Dict[str, Any]] = None,
+    mode_defs: Optional[Sequence[ModeDefinition]] = None,
+    preset_defs: Optional[Sequence[PresetDefinition]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
     hook_defs: Optional[Set[HookDefinition]] = None,
-    input_defs: Optional[List[InputDefinition]] = None,
-    output_defs: Optional[List[OutputDefinition]] = None,
+    input_defs: Optional[Sequence[InputDefinition]] = None,
+    output_defs: Optional[Sequence[OutputDefinition]] = None,
     config_schema: Optional[UserConfigSchema] = None,
-    config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+    config_fn: Optional[Callable[[Mapping[str, Any]], Mapping[str, Any]]] = None,
     solid_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
 ) -> Union[PipelineDefinition, _Pipeline]:

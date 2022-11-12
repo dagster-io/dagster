@@ -34,7 +34,7 @@ def sync_list_repositories_ephemeral_grpc(
     working_directory: Optional[str],
     attribute: Optional[str],
     package_name: Optional[str],
-):
+) -> ListRepositoriesResponse:
     from dagster._grpc.client import ephemeral_grpc_api_client
 
     check.str_param(executable_path, "executable_path")

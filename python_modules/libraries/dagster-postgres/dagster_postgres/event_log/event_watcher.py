@@ -1,7 +1,7 @@
 import logging
 import threading
 from collections import defaultdict
-from typing import Callable, List, MutableMapping, Optional
+from typing import Callable, List, MutableMapping, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry
@@ -15,11 +15,11 @@ POLLING_CADENCE = 0.25
 
 def watcher_thread(
     conn_string: str,
-    handlers_dict: MutableMapping[str, List[CallbackAfterCursor]],
+    handlers_dict: MutableMapping[str, Sequence[CallbackAfterCursor]],
     dict_lock: threading.Lock,
     watcher_thread_exit: threading.Event,
     watcher_thread_started: threading.Event,
-    channels: List[str],
+    channels: Sequence[str],
     gen_event_log_entry_from_cursor: Callable[[int], EventLogEntry],
 ):
     for notif in await_pg_notifications(
@@ -62,7 +62,7 @@ class PostgresEventWatcher:
     def __init__(
         self,
         conn_string: str,
-        channels: List[str],
+        channels: Sequence[str],
         gen_event_log_entry_from_cursor: Callable[[int], EventLogEntry],
     ):
         self._conn_string: str = check.str_param(conn_string, "conn_string")
@@ -71,7 +71,7 @@ class PostgresEventWatcher:
         self._watcher_thread_exit: Optional[threading.Event] = None
         self._watcher_thread_started: Optional[threading.Event] = None
         self._watcher_thread: Optional[threading.Thread] = None
-        self._channels: List[str] = check.list_param(channels, "channels")
+        self._channels: Sequence[str] = check.sequence_param(channels, "channels")
         self._gen_event_log_entry_from_cursor: Callable[
             [int], EventLogEntry
         ] = check.callable_param(gen_event_log_entry_from_cursor, "gen_event_log_entry_from_cursor")

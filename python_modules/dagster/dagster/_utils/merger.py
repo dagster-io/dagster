@@ -4,8 +4,8 @@ from typing import Dict, Mapping, TypeVar
 import dagster._check as check
 
 
-def _deep_merge_dicts(onto_dict: dict, from_dict: Mapping) -> dict:
-    check.dict_param(from_dict, "from_dict")
+def _deep_merge_dicts(onto_dict: Dict, from_dict: Mapping) -> Dict:
+    check.mapping_param(from_dict, "from_dict")
     check.dict_param(onto_dict, "onto_dict")
 
     for from_key, from_value in from_dict.items():
@@ -22,7 +22,7 @@ def _deep_merge_dicts(onto_dict: dict, from_dict: Mapping) -> dict:
     return onto_dict
 
 
-def deep_merge_dicts(onto_dict: dict, from_dict: Mapping) -> dict:
+def deep_merge_dicts(onto_dict: Mapping, from_dict: Mapping) -> Dict:
     """
     Returns a recursive union of two input dictionaries:
     * The returned dictionary has an entry for any key that's in either of the inputs.
@@ -32,7 +32,7 @@ def deep_merge_dicts(onto_dict: dict, from_dict: Mapping) -> dict:
     If from_dict and onto_dict have different values for the same key, and the values are not both
     dictionaries, the returned dictionary contains the value from from_dict.
     """
-    onto_dict = copy.deepcopy(onto_dict)
+    onto_dict = copy.deepcopy(onto_dict if isinstance(onto_dict, dict) else dict(onto_dict))
     return _deep_merge_dicts(onto_dict, from_dict)
 
 
