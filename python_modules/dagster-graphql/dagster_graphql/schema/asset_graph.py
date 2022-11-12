@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union, cast
+from dagster._core.errors import DagsterUndefinedLogicalVersionError
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -454,10 +455,13 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not self.external_asset_node.is_versioned:
             return None
         else:
-            return graphene_info.context.instance.get_current_logical_version(
-                self._external_asset_node.asset_key,
-                self._external_asset_node.is_source,
-            ).value
+            try:
+                return graphene_info.context.instance.get_current_logical_version(
+                    self._external_asset_node.asset_key,
+                    self._external_asset_node.is_source,
+                ).value
+            except DagsterUndefinedLogicalVersionError:
+                return None
 
     def resolve_projectedLogicalVersion(self, _graphene_info) -> Optional[str]:
         if self.external_asset_node.is_source or not self.external_asset_node.is_versioned:
