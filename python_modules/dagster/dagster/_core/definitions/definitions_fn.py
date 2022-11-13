@@ -1,6 +1,7 @@
 import inspect
 import sys
 from contextlib import contextmanager
+from types import ModuleType
 from typing import Any, List, Mapping, Union
 
 from dagster._core.execution.with_resources import with_resources
@@ -43,6 +44,11 @@ class DefinitionsAlreadyCalledError(Exception):
     pass
 
 
+def get_dagster_definitions_in_module(mod: ModuleType):
+    return mod.__dict__[MAGIC_REPO_GLOBAL_KEY]
+
+
+# TODO: Add a new Definitions class to wrap RepositoryDefinition?
 def definitions(
     *,
     assets: List[Union[AssetsDefinition, SourceAsset]] = None,
@@ -50,7 +56,7 @@ def definitions(
     sensors: List[SensorDefinition] = None,
     jobs: List[JobDefinition] = None,
     resources: Mapping[str, Any] = None,
-) -> None:
+) -> RepositoryDefinition:
 
     module_name = get_module_name_of_caller()
     mod = sys.modules[module_name]
@@ -81,6 +87,8 @@ def definitions(
         )
 
     mod.__dict__[MAGIC_REPO_GLOBAL_KEY] = global_repo
+
+    return global_repo
 
 
 def coerce_resources_to_defs(resources: Mapping[str, Any]) -> Mapping[str, ResourceDefinition]:
