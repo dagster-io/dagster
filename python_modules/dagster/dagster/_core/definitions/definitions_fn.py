@@ -56,21 +56,19 @@ def definitions(
     if MAGIC_REPO_GLOBAL_KEY in mod.__dict__:
         raise DefinitionsAlreadyCalledError()
 
-    # total hack job for now for test cases
-    # This is likely fairly fragile, but if the module
-    # name 
+    # This is likely fairly fragile, but this grabs
+    # the last component of a module name (typically the name
+    # of the file) and uses it for the repository name
     if "." in module_name:
         repo_name = module_name.split(".")[-1]
     else:
         repo_name = module_name
 
-    # TODO enforce global uniqueness
-
     resource_defs = coerce_resources_to_defs(resources or {})
 
     # in this case where this is invoked by the raw python interpreter
     # (rather than through dagster CLI or dagit)
-    # the name can be "__main__"
+    # the name can be "__main__".
     @repository(name=repo_name)
     def global_repo():
         return (
