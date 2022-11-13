@@ -42,7 +42,7 @@ Built-in IO Managers
 .. autodata:: fs_io_manager
   :annotation: IOManagerDefinition
 
-The :py::class::`UPathIOManager` can be used to easily define filesystem-based IO Managers.
+The ``UPathIOManager`` can be used to easily define filesystem-based IO Managers.
 
 .. autoclass:: UPathIOManager
 

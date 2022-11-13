@@ -16,10 +16,10 @@ class UPathIOManager(MemoizableIOManager):
     Abstract IOManager base class compatible with local and cloud storage via `universal-pathlib` and `fsspec`.
 
     Features:
-     - compatible with any filesystem supported by `fsspec`
-     - handling loading multiple upstream asset partitions
-       (returns a dictionary with mapping from partition_keys to partitions in this case)
-     - the `get_metadata` method can be customized to add additional metadata to the outputs
+     - handles partitioned assets
+     - handles loading a single upstream partition
+     - handles loading multiple upstream partitions (with respect to <PyObject object="PartitionMapping" />)
+     - the `get_metadata` method can be customized to add additional metadata to the output
      - the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions
        (the default behavior is to raise an error)
 
