@@ -152,7 +152,7 @@ class AssetSelection(ABC):
             asset_graph = all_assets
         else:
             check.sequence_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
-            asset_graph = AssetGraph(all_assets)
+            asset_graph = AssetGraph.from_assets(all_assets)
 
         return self.resolve_inner(asset_graph)
 
@@ -241,8 +241,7 @@ class GroupsAssetSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return {
             asset_key
-            for assets_def in asset_graph.assets_defs
-            for asset_key, group in assets_def.group_names_by_key.items()
+            for asset_key, group in asset_graph.group_names_by_key.items()
             if group in self._groups
         }
 

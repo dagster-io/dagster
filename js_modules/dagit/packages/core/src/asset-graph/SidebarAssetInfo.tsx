@@ -108,7 +108,7 @@ export const SidebarAssetInfo: React.FC<{
       {asset.partitionDefinition && (
         <SidebarSection title="Partitions">
           <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 16}}>
-            <p>{asset.partitionDefinition}</p>
+            <p>{asset.partitionDefinition.description}</p>
             <PartitionHealthSummary assetKey={asset.assetKey} data={partitionHealthData} />
           </Box>
         </SidebarSection>
@@ -172,7 +172,9 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
     metadataEntries {
       ...MetadataEntryFragment
     }
-    partitionDefinition
+    partitionDefinition {
+      description
+    }
     assetKey {
       path
     }

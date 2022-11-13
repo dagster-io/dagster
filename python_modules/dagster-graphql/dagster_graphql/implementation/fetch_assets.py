@@ -1,17 +1,22 @@
+import datetime
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Mapping
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence
 
 from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 
 import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter
 from dagster import _check as check
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.events import ASSET_EVENTS
+from dagster._core.storage.tags import get_dimension_from_partition_tag
+from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
 
 from .utils import capture_error
 
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
+    from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
 
 
 def _normalize_asset_cursor_str(cursor_string):
@@ -164,10 +169,13 @@ def get_asset_materializations(
     limit=None,
     before_timestamp=None,
     after_timestamp=None,
+    tags: Optional[Mapping[str, str]] = None,
 ):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
+    check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
+
     instance = graphene_info.context.instance
     event_records = instance.get_event_records(
         EventRecordsFilter(
@@ -176,6 +184,7 @@ def get_asset_materializations(
             asset_partitions=partitions,
             before_timestamp=before_timestamp,
             after_timestamp=after_timestamp,
+            tags=tags,
         ),
         limit=limit,
     )
@@ -242,4 +251,130 @@ def get_unique_asset_id(
         f"{repository_identifier}.{asset_key.to_string()}"
         if repository_identifier
         else f"{asset_key.to_string()}"
+    )
+
+
+def get_materialization_ct_in_tags(
+    graphene_info, asset_key: AssetKey, group_by_dimensions: Sequence[str]
+) -> Dict[str, Dict[str, int]]:
+    # This dict will by keyed by the primary dimension partition keys.
+    # The values are dicts keyed by the secondary dimension partition keys, mapped to
+    # the number of materializations.
+    materialization_ct: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+
+    primary_dimension, secondary_dimension = group_by_dimensions[0], group_by_dimensions[1]
+
+    for event_tags in graphene_info.context.instance.get_event_tags_for_asset(asset_key):
+        event_partition_keys_by_dimension = {
+            get_dimension_from_partition_tag(key): value for key, value in event_tags.items()
+        }
+
+        if all(
+            [
+                dimension_name in event_partition_keys_by_dimension.keys()
+                for dimension_name in group_by_dimensions
+            ]
+        ):
+            materialization_ct[event_partition_keys_by_dimension[primary_dimension]][
+                event_partition_keys_by_dimension[secondary_dimension]
+            ] += 1
+    return materialization_ct
+
+
+def get_materialization_cts_grouped_by_dimension(
+    graphene_info,
+    asset_key: AssetKey,
+    group_by_dimensions: Sequence[str],
+    partition_keys_by_dimension: Mapping[str, Sequence[str]],
+) -> List[List[int]]:
+    """
+    Get the number of materializations for each partition key.
+
+    The group_by_dimensions arg represents the dimension order that the counts should be grouped by.
+    With 2-dimensional partitions, the primary dimension is the first dimension in the list,
+    and the secondary dimension is the second dimension in the list.
+
+    If group_by_dimensions is provided, the result will be a 2D array, where each row
+    represents a partition key in the primary dimension, and each element in that row
+    represents the number of materializations for each partition key in the secondary dimension.
+
+    For example, with partition dimensions ab: [a, b] and xy: [x, y] grouped by dimensions [ab, xy]:
+    the result would be:
+    [
+        [a|x count, a|y count],
+        [b|x count, b|y count]
+    ]
+    """
+    primary_dimension, secondary_dimension = group_by_dimensions[0], group_by_dimensions[1]
+    db_materialization_counts = get_materialization_ct_in_tags(
+        graphene_info, asset_key, group_by_dimensions
+    )
+    materialization_counts_grouped_by_dimension: List[List[int]] = []
+
+    for primary_dim_key in partition_keys_by_dimension[primary_dimension]:
+        materialization_counts_grouped_by_dimension.append(
+            [
+                db_materialization_counts.get(primary_dim_key, {}).get(secondary_dim_key, 0)
+                for secondary_dim_key in partition_keys_by_dimension[secondary_dimension]
+            ]
+        )
+    return materialization_counts_grouped_by_dimension
+
+
+def get_materialization_cts_by_partition(
+    graphene_info,
+    asset_key: AssetKey,
+    partition_keys: Sequence[str],
+) -> Dict[str, int]:
+    db_materialization_counts = (
+        graphene_info.context.instance.get_materialization_count_by_partition([asset_key])[
+            asset_key
+        ]
+    )
+    materialization_counts_by_partition: Dict[str, int] = {}
+    for partition_key in partition_keys:
+        materialization_counts_by_partition[partition_key] = db_materialization_counts.get(
+            partition_key, 0
+        )
+    return materialization_counts_by_partition
+
+
+def get_freshness_info(
+    asset_key: AssetKey,
+    freshness_policy: FreshnessPolicy,
+    data_time_queryer: DataTimeInstanceQueryer,
+) -> "GrapheneAssetFreshnessInfo":
+    from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
+
+    current_time = datetime.datetime.now(tz=datetime.timezone.utc)
+
+    latest_record = data_time_queryer.get_most_recent_materialization_record(asset_key=asset_key)
+    latest_materialization_time = datetime.datetime.fromtimestamp(
+        latest_record.event_log_entry.timestamp,
+        tz=datetime.timezone.utc,
+    )
+
+    used_data_times = data_time_queryer.get_used_data_times_for_record(record=latest_record)
+
+    # in the future, if you have upstream source assets with versioning policies, available data
+    # times will be based off of the timestamp of the most recent materializations.
+    current_minutes_late = freshness_policy.minutes_late(
+        evaluation_time=current_time,
+        used_data_times=used_data_times,
+        available_data_times={
+            # assume materializing an asset at time T will update the data time of that asset to T
+            key: current_time
+            for key in used_data_times.keys()
+        },
+    )
+
+    latest_materialization_minutes_late = freshness_policy.minutes_late(
+        evaluation_time=latest_materialization_time,
+        used_data_times=used_data_times,
+        available_data_times={key: latest_materialization_time for key in used_data_times.keys()},
+    )
+
+    return GrapheneAssetFreshnessInfo(
+        currentMinutesLate=current_minutes_late,
+        latestMaterializationMinutesLate=latest_materialization_minutes_late,
     )

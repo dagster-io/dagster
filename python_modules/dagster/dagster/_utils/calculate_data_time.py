@@ -66,16 +66,18 @@ class DataTimeInstanceQueryer:
     def get_most_recent_materialization_record(
         self, asset_key: AssetKey, before_cursor: Optional[int] = None
     ) -> Optional[EventLogRecord]:
-        records = self.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-                before_cursor=before_cursor,
-            ),
-            ascending=False,
-            limit=1,
+        records = list(
+            self.instance.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=asset_key,
+                    before_cursor=before_cursor,
+                ),
+                ascending=False,
+                limit=1,
+            )
         )
-        return records[0] if records else None
+        return next(iter(records), None)
 
     @cached_method
     def calculate_used_data(

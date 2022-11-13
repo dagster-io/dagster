@@ -1,5 +1,6 @@
 import copy
 import inspect
+import json
 from abc import ABC, abstractmethod
 from datetime import datetime, time, timedelta
 from enum import Enum
@@ -7,6 +8,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -243,6 +245,12 @@ class PartitionsDefinition(ABC, Generic[T]):
             )
             + 1
         ]
+
+    def empty_subset(self) -> "PartitionsSubset":
+        return DefaultPartitionsSubset(self, [])
+
+    def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
+        return DefaultPartitionsSubset.from_serialized(self, serialized)
 
 
 class StaticPartitionsDefinition(
@@ -1003,3 +1011,44 @@ def cron_schedule_from_schedule_type_and_offsets(
         return f"{minute_offset} {hour_offset} {day_offset if day_offset != None else 1} * *"
     else:
         check.assert_never(schedule_type)
+
+
+class PartitionsSubset(ABC):
+    """Represents a subset of the partitions within a PartitionsDefinition"""
+
+    @abstractmethod
+    def get_partition_keys_not_in_subset(
+        self, current_time: Optional[datetime] = None
+    ) -> Iterable[str]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    @abstractmethod
+    def serialize(self) -> str:
+        raise NotImplementedError()
+
+
+class DefaultPartitionsSubset(PartitionsSubset):
+    def __init__(self, partitions_def: PartitionsDefinition, subset=None):
+        self._partitions_def = partitions_def
+        self._subset = subset or set()
+
+    def get_partition_keys_not_in_subset(
+        self, current_time: Optional[datetime] = None
+    ) -> Iterable[str]:
+        return set(self._partitions_def.get_partition_keys()) - self._subset
+
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
+        return DefaultPartitionsSubset(self._partitions_def, self._subset | set(partition_keys))
+
+    def serialize(self) -> str:
+        return json.dumps(self._subset)
+
+    @staticmethod
+    def from_serialized(
+        partitions_def: PartitionsDefinition, serialized: str
+    ) -> "DefaultPartitionsSubset":
+        return DefaultPartitionsSubset(subset=json.loads(serialized), partitions_def=partitions_def)

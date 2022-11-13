@@ -1,5 +1,4 @@
-import {Box, Button, Checkbox, Icon} from '@dagster-io/ui';
-import groupBy from 'lodash/groupBy';
+import {Box, Button} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PartitionRangeInput} from './PartitionRangeInput';
@@ -11,79 +10,23 @@ export const PartitionRangeWizard: React.FC<{
   all: string[];
   partitionData: {[name: string]: PartitionState};
 }> = ({selected, setSelected, all, partitionData}) => {
-  const byState = React.useMemo(() => {
-    return groupBy(Object.keys(partitionData), (name) => partitionData[name]);
-  }, [partitionData]);
-
-  const successPartitions = byState[PartitionState.SUCCESS] || [];
-  const failedPartitions = byState[PartitionState.FAILURE] || [];
-  const missingPartitions = byState[PartitionState.MISSING] || [];
-
   return (
     <>
-      <Box>
-        Select the set of partitions to include in the backfill. You can specify a range using the
-        text selector, or by dragging a range selection in the status indicator.
-      </Box>
-      <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          {successPartitions.length ? (
-            <Checkbox
-              style={{marginBottom: 0, marginLeft: 10}}
-              checked={successPartitions.every((x) => selected.includes(x))}
-              label="Succeeded"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                if (e.target.checked) {
-                  setSelected(Array.from(new Set(selected.concat(successPartitions))));
-                } else {
-                  setSelected(selected.filter((x) => !successPartitions.includes(x)));
-                }
-              }}
-            />
-          ) : null}
-          {failedPartitions.length ? (
-            <Checkbox
-              style={{marginBottom: 0, marginLeft: 10}}
-              checked={failedPartitions.every((x) => selected.includes(x))}
-              label="Failed"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                if (e.target.checked) {
-                  setSelected(Array.from(new Set(selected.concat(failedPartitions))));
-                } else {
-                  setSelected(selected.filter((x) => !failedPartitions.includes(x)));
-                }
-              }}
-            />
-          ) : null}
-          {missingPartitions.length ? (
-            <Checkbox
-              style={{marginBottom: 0, marginLeft: 10}}
-              checked={missingPartitions.every((x) => selected.includes(x))}
-              label="Missing"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                if (e.target.checked) {
-                  setSelected(Array.from(new Set(selected.concat(missingPartitions))));
-                } else {
-                  setSelected(selected.filter((x) => !missingPartitions.includes(x)));
-                }
-              }}
-            />
-          ) : null}
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} padding={{vertical: 4}}>
+        <Box flex={{direction: 'column'}} style={{flex: 1}}>
+          <PartitionRangeInput value={selected} partitionNames={all} onChange={setSelected} />
         </Box>
-        <Button
-          icon={<Icon name="close" />}
-          disabled={!all.length}
-          style={{marginBottom: 0, marginLeft: 10}}
-          small={true}
-          onClick={() => {
-            setSelected([]);
-          }}
-        >
-          Clear selection
+        <Button small={true} onClick={() => setSelected(all.slice(-50))}>
+          Last 50
+        </Button>
+        <Button small={true} onClick={() => setSelected(all.slice(-100))}>
+          Last 100
+        </Button>
+        <Button small={true} onClick={() => setSelected(all)}>
+          Select All
         </Button>
       </Box>
-      <PartitionRangeInput value={selected} partitionNames={all} onChange={setSelected} />
-      <Box margin={{top: 8}}>
+      <Box margin={{bottom: 8}}>
         <PartitionStatus
           partitionNames={all}
           partitionData={partitionData}

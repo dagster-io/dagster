@@ -155,7 +155,8 @@ def _validate_empty_selector_config(context: ValidationContext) -> EvaluateValue
 
 
 def validate_selector_config(
-    context: ValidationContext, config_value: object
+    context: ValidationContext,
+    config_value: object,
 ) -> EvaluateValueResult[Mapping[str, object]]:
     check.inst_param(context, "context", ValidationContext)
     check.param_invariant(context.config_type_snap.kind == ConfigTypeKind.SELECTOR, "selector_type")
@@ -173,6 +174,7 @@ def validate_selector_config(
 
     if not isinstance(config_value, dict):
         return EvaluateValueResult.for_error(create_selector_type_error(context, config_value))
+    config_value = cast(Mapping[str, object], config_value)
 
     if len(config_value) > 1:
         return EvaluateValueResult.for_error(

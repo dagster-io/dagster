@@ -24,6 +24,11 @@ export interface SingleAssetQuery_assetOrError_Asset_key {
   path: string[];
 }
 
+export interface SingleAssetQuery_assetOrError_Asset_definition_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
 export interface SingleAssetQuery_assetOrError_Asset_definition_repository_location {
   __typename: "RepositoryLocation";
   id: string;
@@ -52,7 +57,7 @@ export interface SingleAssetQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
   groupName: string | null;
-  partitionDefinition: string | null;
+  partitionDefinition: SingleAssetQuery_assetOrError_Asset_definition_partitionDefinition | null;
   description: string | null;
   repository: SingleAssetQuery_assetOrError_Asset_definition_repository;
   opNames: string[];

@@ -116,3 +116,14 @@ class LastPartitionMapping(PartitionMapping):
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
         raise NotImplementedError()
+
+
+def infer_partition_mapping(
+    partition_mapping: Optional[PartitionMapping], partitions_def: Optional[PartitionsDefinition]
+) -> PartitionMapping:
+    if partition_mapping is not None:
+        return partition_mapping
+    elif partitions_def is not None:
+        return partitions_def.get_default_partition_mapping()
+    else:
+        return AllPartitionMapping()

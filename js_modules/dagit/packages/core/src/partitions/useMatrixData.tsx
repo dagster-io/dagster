@@ -169,6 +169,8 @@ interface MatrixDataInputs {
   options?: DisplayOptions;
 }
 
+export type MatrixData = ReturnType<typeof buildMatrixData>;
+
 /**
  * This hook uses the inputs provided to filter the data displayed and calls through to buildMatrixData.
  * It uses a React ref to cache the result and avoids re-computing when all inputs are shallow-equal.
@@ -182,7 +184,7 @@ interface MatrixDataInputs {
  */
 export const useMatrixData = (inputs: MatrixDataInputs) => {
   const cachedMatrixData = React.useRef<{
-    result: ReturnType<typeof buildMatrixData>;
+    result: MatrixData;
     inputs: MatrixDataInputs;
   }>();
   if (!inputs.solidHandles) {

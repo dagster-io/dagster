@@ -132,7 +132,7 @@ def test_calculate_data_time(relative_to, runs_to_expected_data_times_index):
 
     all_assets = [a, bcd, e, f]
 
-    asset_graph = AssetGraph(all_assets)
+    asset_graph = AssetGraph.from_assets(all_assets)
 
     @repository
     def my_repo():

@@ -26,8 +26,10 @@ from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
@@ -602,6 +604,47 @@ class ExternalStaticPartitionsDefinitionData(
 
 
 @whitelist_for_serdes
+class ExternalPartitionDimensionDefinition(
+    NamedTuple(
+        "_ExternalPartitionDimensionDefinition",
+        [("name", str), ("external_partitions_def_data", ExternalPartitionsDefinitionData)],
+    )
+):
+    def __new__(cls, name: str, external_partitions_def_data: ExternalPartitionsDefinitionData):
+        return super(ExternalPartitionDimensionDefinition, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            external_partitions_def_data=check.inst_param(
+                external_partitions_def_data,
+                "external_partitions_def_data",
+                ExternalPartitionsDefinitionData,
+            ),
+        )
+
+
+@whitelist_for_serdes
+class ExternalMultiPartitionsDefinitionData(
+    ExternalPartitionsDefinitionData,
+    NamedTuple(
+        "_ExternalMultiPartitionsDefinitionData",
+        [
+            (
+                "external_partition_dimension_definitions",
+                Sequence[ExternalPartitionDimensionDefinition],
+            )
+        ],
+    ),
+):
+    def get_partitions_definition(self):
+        return MultiPartitionsDefinition(
+            {
+                partition_dimension.name: partition_dimension.external_partitions_def_data.get_partitions_definition()
+                for partition_dimension in self.external_partition_dimension_definitions
+            }
+        )
+
+
+@whitelist_for_serdes
 class ExternalPartitionSetData(
     NamedTuple(
         "_ExternalPartitionSetData",
@@ -800,6 +843,7 @@ class ExternalAssetNode(
             ("output_description", Optional[str]),
             ("metadata_entries", Sequence[MetadataEntry]),
             ("group_name", Optional[str]),
+            ("freshness_policy", Optional[FreshnessPolicy]),
         ],
     )
 ):
@@ -825,6 +869,7 @@ class ExternalAssetNode(
         output_description: Optional[str] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         group_name: Optional[str] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -856,6 +901,9 @@ class ExternalAssetNode(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             group_name=check.opt_str_param(group_name, "group_name"),
+            freshness_policy=check.opt_inst_param(
+                freshness_policy, "freshness_policy", FreshnessPolicy
+            ),
         )
 
 
@@ -911,6 +959,7 @@ def external_asset_graph_from_defs(
         AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
     ] = defaultdict(list)
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
+    freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
     metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
@@ -948,6 +997,7 @@ def external_asset_graph_from_defs(
 
         for assets_def in pipeline_def.asset_layer.assets_defs_by_key.values():
             metadata_by_asset_key.update(assets_def.metadata_by_key)
+            freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
         group_names.update(pipeline_def.asset_layer.group_names_by_assets())
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
@@ -1006,26 +1056,11 @@ def external_asset_graph_from_defs(
 
         job_names = [job_def.name for _, job_def in node_tuple_list]
 
-        # temporary workaround to retrieve asset partition definition from job
-        partitions_def_data: Optional[
-            Union[
-                ExternalTimeWindowPartitionsDefinitionData,
-                ExternalStaticPartitionsDefinitionData,
-            ]
-        ] = None
+        partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None
 
         partitions_def = asset_info.partitions_def
         if partitions_def:
-            if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-                partitions_def_data = external_time_window_partitions_definition_from_def(
-                    partitions_def
-                )
-            elif isinstance(partitions_def, StaticPartitionsDefinition):
-                partitions_def_data = external_static_partitions_definition_from_def(partitions_def)
-            else:
-                raise DagsterInvalidDefinitionError(
-                    "Only static partition and time window partitions are currently supported."
-                )
+            partitions_def_data = external_partitions_definition_from_def(partitions_def)
 
         # if the asset is produced by an op at the top level of the graph, graph_name should be None
         graph_name = None
@@ -1056,6 +1091,7 @@ def external_asset_graph_from_defs(
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
                 # such assets are part of the default group
                 group_name=group_names.get(asset_key, DEFAULT_GROUP_NAME),
+                freshness_policy=freshness_policy_by_asset_key.get(asset_key),
             )
         )
 
@@ -1115,6 +1151,21 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
     )
 
 
+def external_partitions_definition_from_def(
+    partitions_def: PartitionsDefinition,
+) -> ExternalPartitionsDefinitionData:
+    if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        return external_time_window_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, StaticPartitionsDefinition):
+        return external_static_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, MultiPartitionsDefinition):
+        return external_multi_partitions_definition_from_def(partitions_def)
+    else:
+        raise DagsterInvalidDefinitionError(
+            "Only static, time window, and multi-dimensional partitions are currently supported."
+        )
+
+
 def external_time_window_partitions_definition_from_def(
     partitions_def: TimeWindowPartitionsDefinition,
 ) -> ExternalTimeWindowPartitionsDefinitionData:
@@ -1134,6 +1185,34 @@ def external_static_partitions_definition_from_def(
     check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
     return ExternalStaticPartitionsDefinitionData(
         partition_keys=partitions_def.get_partition_keys()
+    )
+
+
+def external_multi_partitions_definition_from_def(
+    partitions_def: MultiPartitionsDefinition,
+) -> ExternalMultiPartitionsDefinitionData:
+    check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
+
+    if any(
+        [
+            not (
+                isinstance(dimension.partitions_def, TimeWindowPartitionsDefinition)
+                or isinstance(dimension.partitions_def, StaticPartitionsDefinition)
+            )
+            for dimension in partitions_def.partitions_defs
+        ]
+    ):
+        raise DagsterInvalidDefinitionError(
+            "Only static and time window partition dimensions are currently supported."
+        )
+
+    return ExternalMultiPartitionsDefinitionData(
+        external_partition_dimension_definitions=[
+            ExternalPartitionDimensionDefinition(
+                dimension.name, external_partitions_definition_from_def(dimension.partitions_def)
+            )
+            for dimension in partitions_def.partitions_defs
+        ]
     )
 
 
