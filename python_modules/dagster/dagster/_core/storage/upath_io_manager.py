@@ -18,10 +18,10 @@ class UPathIOManager(MemoizableIOManager):
     Features:
      - compatible with any filesystem supported by `fsspec`
      - handling loading multiple upstream asset partitions
-     (returns a dictionary with mapping from partition_keys to partitions in this case)
+       (returns a dictionary with mapping from partition_keys to partitions in this case)
      - the `get_metadata` method can be customized to add additional metadata to the outputs
      - the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions
-    (the default behavior is to raise an error)
+       (the default behavior is to raise an error)
 
     """
 
