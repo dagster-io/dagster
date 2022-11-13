@@ -1,20 +1,22 @@
-import pytest
 import sys
+
+import pytest
+
 from dagster import (
-    asset,
-    definitions,
-    op,
-    job,
-    ScheduleDefinition,
-    define_asset_job,
-    sensor,
     ResourceDefinition,
+    ScheduleDefinition,
+    asset,
+    define_asset_job,
+    definitions,
+    job,
+    op,
+    sensor,
 )
 from dagster._core.definitions.definitions_fn import (
     MAGIC_REPO_GLOBAL_KEY,
+    DefinitionsAlreadyCalledError,
     definitions_test_scope,
     get_python_env_global_dagster_repository,
-    DefinitionsAlreadyCalledError,
 )
 
 

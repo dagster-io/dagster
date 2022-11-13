@@ -1,15 +1,17 @@
-from .decorators import repository
-from contextlib import contextmanager
 import inspect
 import sys
-from typing import List, Union, Mapping, Any
+from contextlib import contextmanager
+from typing import Any, List, Mapping, Union
+
+from dagster._core.execution.with_resources import with_resources
+
 from .assets import AssetsDefinition, SourceAsset
-from .schedule_definition import ScheduleDefinition
-from .resource_definition import ResourceDefinition
-from .sensor_definition import SensorDefinition
+from .decorators import repository
 from .job_definition import JobDefinition
 from .repository_definition import RepositoryDefinition
-from dagster._core.execution.with_resources import with_resources
+from .resource_definition import ResourceDefinition
+from .schedule_definition import ScheduleDefinition
+from .sensor_definition import SensorDefinition
 
 MAGIC_REPO_GLOBAL_KEY = "__dagster_repository"
 
