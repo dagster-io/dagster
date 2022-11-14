@@ -1,7 +1,50 @@
 import pandas as pd
+import pandas_gbq
 from github import Github
 
-from dagster import Field, MetadataValue, StringSource, asset
+from dagster import Field, MetadataValue, StringSource, asset, OutputContext
+
+
+# (dataset, exists_ok) = [context.op_config.get(k) for k in ("dataset", "exists_ok")]
+# context.log.info("executing BQ create_dataset for dataset %s" % (dataset))
+# context.resources.bigquery.create_dataset(dataset, exists_ok)
+
+from dagster import IOManager, io_manager
+
+
+class BigQueryPandasIOManager(IOManager):
+    # def _get_path(self, context) -> str:
+    #     return "/".join(context.asset_key.path)
+
+    def handle_output(self, context: OutputContext, obj: pd.DataFrame):
+        table_id = ""
+        project_id = ""
+        pandas_gbq.to_gbq(obj, table_id, project_id=project_id)
+        # write_csv(self._get_path(context), obj)
+
+    def load_input(self, context) -> pd.DataFrame:
+        import pandas
+
+        sql = """
+            SELECT name
+            FROM `bigquery-public-data.usa_names.usa_1910_current`
+            WHERE state = 'TX'
+            LIMIT 100
+        """
+
+        # Run a Standard SQL query using the environment's default project
+        df = pandas.read_gbq(sql, dialect="standard")
+
+        # Run a Standard SQL query with the project set explicitly
+        project_id = "your-project-id"
+        df = pandas.read_gbq(sql, project_id=project_id, dialect="standard")
+
+        return read_csv(self._get_path(context))
+
+
+@io_manager(required_resource_keys={"bigquery"})
+def bigquery_pandas_io_manager(init_context):
+    return BigQueryPandasIOManager()
 
 
 @asset(

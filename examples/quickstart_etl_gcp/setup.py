@@ -12,6 +12,8 @@ setup(
         "tweepy",
         "dagster-cloud",
         "wordcloud",
+        "dagster-gcp",
+        "pandas_gbq",
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )
