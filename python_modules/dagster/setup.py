@@ -57,7 +57,7 @@ setup(
     install_requires=[
         # cli
         "click>=5.0",
-        "coloredlogs>=6.1, <=14.0",
+        "coloredlogs>=6.1, <=15.0",
         "contextvars; python_version < '3.7'",
         "Jinja2",
         "PyYAML>=5.1",
