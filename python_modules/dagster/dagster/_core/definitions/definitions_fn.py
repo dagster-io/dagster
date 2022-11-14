@@ -3,7 +3,7 @@ import itertools
 import sys
 from contextlib import contextmanager
 from types import ModuleType
-from typing import Any, Iterable, List, Mapping, Optional, Union
+from typing import Any, Iterable, Mapping, Optional, Union
 
 from dagster import _check as check
 from dagster._core.execution.with_resources import with_resources
