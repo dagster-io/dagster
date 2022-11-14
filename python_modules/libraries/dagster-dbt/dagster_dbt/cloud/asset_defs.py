@@ -111,7 +111,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     ) -> AssetsDefinitionCacheableData:
         """
         Given all of the nodes and dependencies for a dbt Cloud job, build the cacheable
-        representation that generate the asset defintion for the job.
+        representation that generate the asset definition for the job.
         """
 
         (

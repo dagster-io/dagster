@@ -522,7 +522,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         return self._build_definitions_with_resources(data)
 
 
-class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
+class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition):
     def __init__(
         self,
         airbyte_resource_def: ResourceDefinition,
@@ -600,7 +600,7 @@ class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefiniti
         )
 
 
-class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
+class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition):
     def __init__(
         self,
         project_dir: str,
@@ -754,7 +754,7 @@ def load_assets_from_airbyte_instance(
     if not connection_to_io_manager_key_fn:
         connection_to_io_manager_key_fn = lambda _: io_manager_key
 
-    return AirbyteInstanceCacheableAssetsDefintion(
+    return AirbyteInstanceCacheableAssetsDefinition(
         airbyte_resource_def=airbyte,
         workspace_id=workspace_id,
         key_prefix=key_prefix,
@@ -841,7 +841,7 @@ def load_assets_from_airbyte_project(
     if not connection_to_io_manager_key_fn:
         connection_to_io_manager_key_fn = lambda _: io_manager_key
 
-    return AirbyteYAMLCacheableAssetsDefintion(
+    return AirbyteYAMLCacheableAssetsDefinition(
         project_dir=project_dir,
         workspace_id=workspace_id,
         key_prefix=key_prefix,

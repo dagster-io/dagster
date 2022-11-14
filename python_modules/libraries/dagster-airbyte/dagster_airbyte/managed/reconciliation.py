@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Seque
 
 from dagster_airbyte.asset_defs import (
     AirbyteConnectionMetadata,
-    AirbyteInstanceCacheableAssetsDefintion,
+    AirbyteInstanceCacheableAssetsDefinition,
     _clean_name,
 )
 from dagster_airbyte.managed.types import (
@@ -657,7 +657,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
         )
 
 
-class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAssetsDefintion):
+class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAssetsDefinition):
     def __init__(
         self,
         airbyte_resource_def: ResourceDefinition,
