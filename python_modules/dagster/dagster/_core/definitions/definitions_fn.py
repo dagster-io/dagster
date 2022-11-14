@@ -3,14 +3,14 @@ import itertools
 import sys
 from contextlib import contextmanager
 from types import ModuleType
-from typing import Any, List, Mapping, Union, Iterable
+from typing import Any, List, Mapping, Union, Iterable, Optional
 
 from dagster._core.execution.with_resources import with_resources
 from dagster import _check as check
 from .assets import AssetsDefinition, SourceAsset
 from .decorators import repository
 from .job_definition import JobDefinition
-from .repository_definition import RepositoryDefinition
+from .repository_definition import RepositoryDefinition, PendingRepositoryDefinition
 from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
@@ -67,12 +67,12 @@ def get_dagster_definitions_in_module(mod: ModuleType):
 # TODO: Add a new Definitions class to wrap RepositoryDefinition?
 def definitions(
     *,
-    assets: Iterable[Union[AssetsDefinition, SourceAsset]] = None,
-    schedules: Iterable[ScheduleDefinition] = None,
-    sensors: Iterable[SensorDefinition] = None,
-    jobs: Iterable[JobDefinition] = None,
-    resources: Mapping[str, Any] = None,
-) -> RepositoryDefinition:
+    assets: Optional[Iterable[Union[AssetsDefinition, SourceAsset]]] = None,
+    schedules: Optional[Iterable[ScheduleDefinition]] = None,
+    sensors: Optional[Iterable[SensorDefinition]] = None,
+    jobs: Optional[Iterable[JobDefinition]] = None,
+    resources: Optional[Mapping[str, Any]] = None,
+) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
 
     module_name = get_module_name_of_caller()
     mod = sys.modules[module_name]
@@ -95,10 +95,9 @@ def definitions(
     # the name can be "__main__".
     @repository(name=repo_name)
     def global_repo():
-
         # mimicking style of new APIs by using Iterable/Sequence
         # instead of List, but they prevent the use of + operators
-
+        # so have to bring in itertools
         return list(
             itertools.chain(
                 with_resources(assets or [], resource_defs),

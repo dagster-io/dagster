@@ -45,13 +45,10 @@ forecast_job = define_asset_job("refresh_forecast_model_job", selection="*order_
 
 duckdb_io_manager = build_duckdb_io_manager(type_handlers=[DuckDBPandasTypeHandler()])
 
-# Unsupported left operand type for + ("Sequence[AssetsDefinition]")
-# Was getting this error even though this code is just moving?
-assets = dbt_assets + raw_data_assets + forecasting_assets 
-# type: ignore
-
 definitions(
-    assets=assets,
+    # this code was moved from repository.py which is not typechecked for some reason
+    # not going to fix that issues right now
+    assets=dbt_assets + raw_data_assets + forecasting_assets,  # type: ignore
     schedules=[
         ScheduleDefinition(job=everything_job, cron_schedule="@weekly"),
         ScheduleDefinition(job=forecast_job, cron_schedule="@daily"),
