@@ -66,7 +66,7 @@ def test_basic_asset_definitions():
         definitions(assets=[an_asset])
 
         repo = get_python_env_global_dagster_repository()
-        all_assets = list(repo._assets_defs_by_key.values()) # pylint: disable=protected-access)
+        all_assets = list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access)
         assert len(all_assets) == 1
         assert all_assets[0].key.to_user_string() == "an_asset"
 

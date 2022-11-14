@@ -81,10 +81,9 @@ def definitions(
     @repository(name=repo_name)
     def global_repo():
 
-        # mypy typing forces the arguments above to be Iterable
-        # rather than List, so need to pull out itertools
-        # to chain together iterables that will be materialized
-        # anyways
+        # mimicking style of new APIs by using Iterable/Sequence
+        # instead of List, but they prevent the use of + operators
+
         return list(
             itertools.chain(
                 with_resources(assets or [], resource_defs),
