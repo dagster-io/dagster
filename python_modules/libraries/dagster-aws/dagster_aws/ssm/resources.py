@@ -39,7 +39,7 @@ def ssm_resource(context):
 
             @job(resource_defs={'ssm': ssm_resource})
             def example_job():
-                example_ssm_op)
+                example_ssm_op()
 
             example_job.execute_in_process(
                 run_config={
@@ -156,7 +156,7 @@ def parameter_store_resource(context):
             example_job.execute_in_process(
                 run_config={
                     'resources': {
-                        'secrets': {
+                        'parameter_store': {
                             'config': {
                                 'region_name': 'us-west-1',
                                 'parameter_tags': 'dagster',
@@ -187,12 +187,12 @@ def parameter_store_resource(context):
               # profile as specified in ~/.aws/credentials file
               parameters: ["parameter1", "/path/based/parameter2"]
               # Optional[List[str]]: Specifies a list of parameter names to pull from parameter store.
-              secrets_tag: "dagster"
+              parameters_tag: "dagster"
               # Optional[List[dict]]: Specifies a list of tag specifications, all parameters which have the tag set
               will be pulled  from Parameter Store. Each tag specification is in the format {"tag": "tag name or prefix", "option": "BeginsWith|Equals"};
               when option == "BeginsWith", all parameters with tags that start with the tag value will be pulled.
               add_to_environment: true
-              # Optional[bool]: Whether to set the selected secrets as environment variables. Defaults
+              # Optional[bool]: Whether to set the selected parameters as environment variables. Defaults
               # to false.
 
     """
