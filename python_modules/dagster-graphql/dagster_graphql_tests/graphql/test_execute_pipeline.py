@@ -357,6 +357,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
+            "LogsCapturedEvent",
             "ExecutionStepStartEvent",
             "LogMessageEvent",
             "LoadedInputEvent",
