@@ -39,7 +39,10 @@ class GlobalRepoSingleton:
 
     @classmethod
     def get_instance(cls) -> RepositoryDefinitionIsh:
-        return check.not_none(cls._repo_instance, "Instance must be set via set_instance")
+        # forced to tell mypy to ignore because of https://github.com/python/mypy/issues/12009
+        return check.not_none(
+            cls._repo_instance, "Instance must be set via set_instance"
+        )  # type:ignore
 
     @classmethod
     def clear(cls):
