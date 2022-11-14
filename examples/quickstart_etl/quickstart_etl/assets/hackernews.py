@@ -64,43 +64,46 @@ def hackernews_topstories_word_cloud(context: OpExecutionContext, hackernews_top
     plt.axis("off")
     plt.tight_layout(pad=0)
 
-    filepath = file_relative_path(__file__, "plot.png")
+    filepath = file_relative_path(__file__, "hackernews_word_cloud.png")
     plt.savefig(filepath)
     context.add_output_metadata({"plot_path": MetadataValue.path(filepath)})
-    # TODO: remote friendly??? add github token
 
 
-@asset(
-    group_name="hackernews",
-    compute_kind="Pandas",
-    config_schema={"keyword": Field(str, description="by default. no keyword", is_required=False)},
-)
-def hackernews_stories_by_date(
-    context: OpExecutionContext, hackernews_topstories: pd.DataFrame
-) -> pd.DataFrame:
-    """
-    Aggregate stories by date. Filter stories based on the given keyword.
+# TODO: do we want the part below? this does the daily agg as the github asset group does. and then we
+# merge two DFs by date and build a "daily report". but not including it can make the quickstart
+# simpler.
 
-    No keyword filtering by default. You can change the keyword by supplying the config. TODO: link to config docs
-    """
+# @asset(
+#     group_name="hackernews",
+#     compute_kind="Pandas",
+#     config_schema={"keyword": Field(str, description="by default. no keyword", is_required=False)},
+# )
+# def hackernews_stories_by_date(
+#     context: OpExecutionContext, hackernews_topstories: pd.DataFrame
+# ) -> pd.DataFrame:
+#     """
+#     Aggregate stories by date. Filter stories based on the given keyword.
 
-    df = pd.DataFrame(hackernews_topstories)
+#     No keyword filtering by default. You can change the keyword by supplying the config. TODO: link to config docs
+#     """
 
-    keyword = context.op_config.get("keyword")
-    if keyword:
-        df = df[df["title"].str.contains(keyword, case=False, na=False)]
+#     df = pd.DataFrame(hackernews_topstories)
 
-    df["date"] = pd.to_datetime(df["time"], unit="s").dt.date
+#     keyword = context.op_config.get("keyword")
+#     if keyword:
+#         df = df[df["title"].str.contains(keyword, case=False, na=False)]
 
-    result = (
-        df["date"]
-        .groupby(by=df["date"])
-        .count()
-        .reset_index(name="num_hn_stories")
-        .sort_values("date")
-    )
-    context.add_output_metadata(
-        {"preview": MetadataValue.md(result.head().to_markdown()), "keyword": keyword}
-    )
+#     df["date"] = pd.to_datetime(df["time"], unit="s").dt.date
 
-    return result
+#     result = (
+#         df["date"]
+#         .groupby(by=df["date"])
+#         .count()
+#         .reset_index(name="num_hn_stories")
+#         .sort_values("date")
+#     )
+#     context.add_output_metadata(
+#         {"preview": MetadataValue.md(result.head().to_markdown()), "keyword": keyword}
+#     )
+
+#     return result

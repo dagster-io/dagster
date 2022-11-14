@@ -49,11 +49,29 @@ def github_stars_by_date(context, github_stargazers):
         github_stargazers[["date"]]
         .groupby("date")
         .size()
-        .reset_index(name="count")
-        .sort_values(["count"], ascending=False)
+        .reset_index(name="daily_stars")
+        .sort_values(["date"])
     )
+    df["total_stars"] = df["daily_stars"].cumsum()
 
-    df["total_github_stars"] = df["stargazer"].cumsum()
-
-    context.add_output_metadata({"preview": MetadataValue.md(df.head().to_markdown())})
+    context.add_output_metadata({"preview": MetadataValue.md(df.tail().to_markdown())})
     return df
+
+
+from dagster import MetadataValue, asset, file_relative_path
+import matplotlib.pyplot as plt
+
+
+@asset(
+    description="Star history line chart",
+    group_name="github",
+    compute_kind="Plot",
+)
+def github_star_history(context, github_stars_by_date):
+    """
+    Line chart of the star history.
+    """
+    github_stars_by_date.plot(x="date", y="total_stars")
+    path = file_relative_path(__file__, "github_star_history.png")
+    plt.savefig(path)
+    context.add_output_metadata({"plot_path": MetadataValue.path(path)})

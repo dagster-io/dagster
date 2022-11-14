@@ -7,8 +7,13 @@ This project is scaffolded with [`dagster project scaffold`](https://docs.dagste
 
 ## Introduction
 
-<p align="center">
+<!-- V0 -->
+<!-- <p align="center">
     <img height="500" src="https://user-images.githubusercontent.com/4531914/200668814-2c0be35e-25eb-4555-a3a5-f7e52ff792f4.png">
+</p> -->
+
+<p align="center">
+    <img height="500" src="https://user-images.githubusercontent.com/4531914/201776202-af72aa4b-2d6d-4557-92f6-50046baabbc6.png">
 </p>
 
 
@@ -68,8 +73,14 @@ Navigate to `hackernews` asset group. You will find four assets with different t
 * `hackernews_stories_by_date` aggregates stories by date, which later will be used to generate a metrics report.
 * `hackernews_stories_word_cloud` explores the dataset by visualizing the word cloud of trending story titles.
 
-<p align="center">
+<!-- V0 -->
+<!-- <p align="center">
     <img height="500" src="https://user-images.githubusercontent.com/4531914/200672470-fe8c7880-6fb7-4ec7-b5a6-c167416cbf1c.png">
+</p> -->
+
+
+<p align="center">
+    <img height="500" src="https://user-images.githubusercontent.com/4531914/201776745-4aeb3e2c-bc45-425d-9bec-c49166eb7b05.png">
 </p>
 
 Click `Materialize all`. Now you've launched a Dagster run and it will materialize all the assets in this group. *(It may take 1-2 minutes to fetch all top 500 stories from HackerNews).*
