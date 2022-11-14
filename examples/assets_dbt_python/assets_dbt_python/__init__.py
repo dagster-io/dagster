@@ -47,7 +47,8 @@ duckdb_io_manager = build_duckdb_io_manager(type_handlers=[DuckDBPandasTypeHandl
 
 # Unsupported left operand type for + ("Sequence[AssetsDefinition]")
 # Was getting this error even though this code is just moving?
-assets = dbt_assets + raw_data_assets + forecasting_assets  # type: ignore
+assets = dbt_assets + raw_data_assets + forecasting_assets 
+# type: ignore
 
 definitions(
     assets=assets,

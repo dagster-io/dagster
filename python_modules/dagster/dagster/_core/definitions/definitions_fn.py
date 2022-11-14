@@ -6,7 +6,7 @@ from types import ModuleType
 from typing import Any, List, Mapping, Union, Iterable
 
 from dagster._core.execution.with_resources import with_resources
-
+from dagster import _check as check
 from .assets import AssetsDefinition, SourceAsset
 from .decorators import repository
 from .job_definition import JobDefinition
@@ -17,12 +17,27 @@ from .sensor_definition import SensorDefinition
 
 MAGIC_REPO_GLOBAL_KEY = "__dagster_repository"
 
+NO_STACK_FRAME_ERROR_MSG = "Python interpreter must support Python stack frames. Python interpreters that are not CPython do not necessarily implement the necessary APIs."
+
 # invoke this function to get the module name the function that called the current
 # scope
 def get_module_name_of_caller() -> str:
     # based on https://stackoverflow.com/questions/2000861/retrieve-module-object-from-stack-frame
     # two f_backs to get past get_module_name_of_caller frame
-    return inspect.currentframe().f_back.f_back.f_globals["__name__"]
+
+    # Need to do none checking because of:
+    # https://docs.python.org/3/library/inspect.html#inspect.currentframe
+    # CPython implementation detail: This function relies on Python stack frame
+    # support in the interpreter, which isn’t guaranteed to exist in all
+    # implementations of Python. If running in an implementation without
+    # Python stack frame support this function returns None.
+
+    frame = check.not_none(inspect.currentframe(), NO_STACK_FRAME_ERROR_MSG)
+    back_frame = check.not_none(frame.f_back, NO_STACK_FRAME_ERROR_MSG)
+    back_back_frame = check.not_none(back_frame.f_back, NO_STACK_FRAME_ERROR_MSG)
+    return back_back_frame.f_globals["__name__"]
+    # without error checking
+    # return inspect.currentframe().f_back.f_back.f_globals["__name__"]
 
 
 def get_python_env_global_dagster_repository() -> RepositoryDefinition:
