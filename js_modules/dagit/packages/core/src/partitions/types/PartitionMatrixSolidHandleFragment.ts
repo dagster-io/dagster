@@ -25,7 +25,7 @@ export interface PartitionMatrixSolidHandleFragment_solid_definition_SolidDefini
 }
 
 export interface PartitionMatrixSolidHandleFragment_solid_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -36,7 +36,7 @@ export interface PartitionMatrixSolidHandleFragment_solid_definition_SolidDefini
 }
 
 export interface PartitionMatrixSolidHandleFragment_solid_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -48,7 +48,7 @@ export interface PartitionMatrixSolidHandleFragment_solid_definition_SolidDefini
 }
 
 export interface PartitionMatrixSolidHandleFragment_solid_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -87,7 +87,7 @@ export interface PartitionMatrixSolidHandleFragment_solid_definition_CompositeSo
 }
 
 export interface PartitionMatrixSolidHandleFragment_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -98,7 +98,7 @@ export interface PartitionMatrixSolidHandleFragment_solid_definition_CompositeSo
 }
 
 export interface PartitionMatrixSolidHandleFragment_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -184,7 +184,7 @@ export interface PartitionMatrixSolidHandleFragment_solid_inputs_dependsOn_solid
 }
 
 export interface PartitionMatrixSolidHandleFragment_solid_inputs_dependsOn_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -218,7 +218,7 @@ export interface PartitionMatrixSolidHandleFragment_solid_outputs_dependedBy_sol
 }
 
 export interface PartitionMatrixSolidHandleFragment_solid_outputs_dependedBy_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 

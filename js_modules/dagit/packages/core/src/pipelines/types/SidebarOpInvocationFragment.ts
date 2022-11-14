@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface SidebarOpInvocationFragment_inputs_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -45,7 +45,7 @@ export interface SidebarOpInvocationFragment_inputs {
 }
 
 export interface SidebarOpInvocationFragment_outputs_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;

@@ -19,7 +19,7 @@ export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_inputs_dependsOn_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -58,7 +58,7 @@ export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs_dependedBy_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -98,7 +98,7 @@ export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -109,7 +109,7 @@ export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -121,7 +121,7 @@ export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -160,7 +160,7 @@ export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -171,7 +171,7 @@ export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface BackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 

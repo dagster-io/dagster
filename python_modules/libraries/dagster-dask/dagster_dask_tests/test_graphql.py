@@ -1,8 +1,9 @@
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
-from dagster_graphql.schema import create_schema
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
-from graphql import graphql
-from graphql.execution.executors.sync import SyncExecutor
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    execute_dagster_graphql_subscription,
+    infer_pipeline_selector,
+)
 
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
 from dagster._core.test_utils import instance_for_test
@@ -22,7 +23,6 @@ def test_execute_hammer_through_dagit():
         ) as workspace_process_context:
             context = workspace_process_context.create_request_context()
             selector = infer_pipeline_selector(context, "hammer_job")
-            executor = SyncExecutor()
 
             variables = {
                 "executionParams": {
@@ -34,12 +34,10 @@ def test_execute_hammer_through_dagit():
                 }
             }
 
-            start_pipeline_result = graphql(
-                request_string=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-                schema=create_schema(),
-                context=context,
+            start_pipeline_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
                 variables=variables,
-                executor=executor,
             )
 
             if start_pipeline_result.errors:
@@ -49,12 +47,9 @@ def test_execute_hammer_through_dagit():
 
             context.instance.run_launcher.join(timeout=60)
 
-            subscription = execute_dagster_graphql(
+            subscribe_results = execute_dagster_graphql_subscription(
                 context, SUBSCRIPTION_QUERY, variables={"runId": run_id}
             )
-
-            subscribe_results = []
-            subscription.subscribe(subscribe_results.append)
 
             messages = [
                 x["__typename"] for x in subscribe_results[0].data["pipelineRunLogs"]["messages"]

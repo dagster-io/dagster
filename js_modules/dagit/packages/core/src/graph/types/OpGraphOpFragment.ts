@@ -13,7 +13,7 @@ export interface OpGraphOpFragment_inputs_definition {
 }
 
 export interface OpGraphOpFragment_inputs_dependsOn_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -52,7 +52,7 @@ export interface OpGraphOpFragment_outputs_dependedBy_solid {
 }
 
 export interface OpGraphOpFragment_outputs_dependedBy_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -92,7 +92,7 @@ export interface OpGraphOpFragment_definition_SolidDefinition_assetNodes {
 }
 
 export interface OpGraphOpFragment_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -103,7 +103,7 @@ export interface OpGraphOpFragment_definition_SolidDefinition_inputDefinitions {
 }
 
 export interface OpGraphOpFragment_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -115,7 +115,7 @@ export interface OpGraphOpFragment_definition_SolidDefinition_outputDefinitions 
 }
 
 export interface OpGraphOpFragment_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -154,7 +154,7 @@ export interface OpGraphOpFragment_definition_CompositeSolidDefinition_assetNode
 }
 
 export interface OpGraphOpFragment_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -165,7 +165,7 @@ export interface OpGraphOpFragment_definition_CompositeSolidDefinition_inputDefi
 }
 
 export interface OpGraphOpFragment_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 

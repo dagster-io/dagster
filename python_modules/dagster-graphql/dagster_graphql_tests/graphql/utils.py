@@ -1,5 +1,5 @@
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, execute_dagster_graphql_subscription
 
 from dagster import DagsterEventType
 from dagster import _check as check
@@ -18,10 +18,12 @@ def get_all_logs_for_finished_run_via_subscription(context, run_id):
 
     assert run.is_finished
 
-    subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={"runId": run_id})
-    subscribe_results = []
+    subscribe_results = execute_dagster_graphql_subscription(
+        context,
+        SUBSCRIPTION_QUERY,
+        {"runId": run_id},
+    )
 
-    subscription.subscribe(subscribe_results.append)
     assert len(subscribe_results) == 1
     subscribe_result = subscribe_results[0]
     if subscribe_result.errors:

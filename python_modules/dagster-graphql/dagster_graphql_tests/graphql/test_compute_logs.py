@@ -1,4 +1,8 @@
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    execute_dagster_graphql_subscription,
+    infer_pipeline_selector,
+)
 
 from dagster._core.events import DagsterEventType
 
@@ -60,7 +64,7 @@ class TestComputeLogs(ExecutingGraphQLContextTestMatrix):
         entry = logs[0]
         file_key = entry.dagster_event.logs_captured_data.file_key
 
-        subscription = execute_dagster_graphql(
+        results = execute_dagster_graphql_subscription(
             graphql_context,
             COMPUTE_LOGS_SUBSCRIPTION,
             variables={
@@ -70,9 +74,8 @@ class TestComputeLogs(ExecutingGraphQLContextTestMatrix):
                 "cursor": "0",
             },
         )
-        results = []
-        subscription.subscribe(lambda x: results.append(x.data))
+
         assert len(results) == 1
         result = results[0]
-        assert result["computeLogs"]["data"] == "HELLO WORLD\n"
-        snapshot.assert_match(results)
+        assert result.data["computeLogs"]["data"] == "HELLO WORLD\n"
+        snapshot.assert_match([result.data])

@@ -316,7 +316,7 @@ class GrapheneRun(graphene.ObjectType):
         pipeline_run = record.pipeline_run
         super().__init__(
             runId=pipeline_run.run_id,
-            status=PipelineRunStatus(pipeline_run.status),
+            status=pipeline_run.status.value,
             mode=pipeline_run.mode,
         )
         self._pipeline_run = pipeline_run
@@ -370,7 +370,7 @@ class GrapheneRun(graphene.ObjectType):
             self.run_id, fileKey
         )
         log_data = graphene_info.context.instance.compute_log_manager.get_log_data(log_key)
-        return from_captured_log_data(graphene_info, log_data)
+        return from_captured_log_data(log_data)
 
     def resolve_executionPlan(self, graphene_info):
         if not (

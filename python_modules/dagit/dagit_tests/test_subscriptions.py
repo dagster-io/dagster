@@ -60,7 +60,9 @@ def start_subscription(ws, query, variables=None):
     send_subscription_message(ws, GraphQLWS.CONNECTION_INIT)
     ws.receive_json()
     send_subscription_message(ws, GraphQLWS.START, start_payload)
-    ws.receive_json()
+    rx = ws.receive_json()
+    assert rx["type"] != GraphQLWS.ERROR, rx
+    return rx
 
 
 def end_subscription(ws):
@@ -91,8 +93,11 @@ def test_event_log_subscription():
 
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
-                assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 1
+                assert len(objgraph.by_type("async_generator")) == 1
                 end_subscription(ws)
+
+            gc.collect()
+            assert len(objgraph.by_type("async_generator")) == 0
 
 
 def test_event_log_subscription_chunked():
@@ -107,9 +112,12 @@ def test_event_log_subscription_chunked():
 
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
-                assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 1
+                assert len(objgraph.by_type("async_generator")) == 1
 
                 end_subscription(ws)
+
+            gc.collect()
+            assert len(objgraph.by_type("async_generator")) == 0
 
 
 @mock.patch(
