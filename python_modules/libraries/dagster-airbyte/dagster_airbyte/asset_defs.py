@@ -67,7 +67,6 @@ def _build_airbyte_asset_defn_metadata(
         )
     )
 
-    table_to_asset_key_map = {table: table_to_asset_key_fn(table) for table in tables}
     outputs = {
         table: AssetKey(asset_key_prefix + table_to_asset_key_fn(table).path) for table in tables
     }
@@ -112,7 +111,6 @@ def _build_airbyte_asset_defn_metadata(
             "destination_tables": destination_tables,
             "normalization_tables": normalization_tables,
             "io_manager_key": io_manager_key,
-            "table_to_asset_key_map": table_to_asset_key_map,
         },
     )
 
@@ -128,7 +126,6 @@ def _build_airbyte_assets_from_metadata(
     destination_tables = cast(List[str], metadata["destination_tables"])
     normalization_tables = cast(Mapping[str, List[str]], metadata["normalization_tables"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
-    table_to_asset_key_map = cast(Dict[str, AssetKey], metadata["table_to_asset_key_map"])
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
