@@ -823,9 +823,7 @@ def build_asset_selection_job(
     if asset_selection:
         (
             included_assets,
-            _excluded_assets,
             included_source_assets,
-            _excluded_source_assets,
         ) = _subset_assets_defs(assets, source_assets, asset_selection)
     else:
         included_assets = list(assets)
@@ -866,8 +864,6 @@ def _subset_assets_defs(
     selected_asset_keys: AbstractSet[AssetKey],
 ) -> Tuple[
     Sequence["AssetsDefinition"],
-    Sequence["AssetsDefinition"],
-    Sequence["SourceAsset"],
     Sequence["SourceAsset"],
 ]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
@@ -907,6 +903,10 @@ def _subset_assets_defs(
     selected_source_asset_keys = selected_asset_keys & {
         source_asset.key for source_asset in source_assets
     }
+
+    if len(included_assets) > 0 and len(selected_source_asset_keys) > 0:
+        check.failed("Illegal selection includes both source assets and regular assets.")
+
     for source_asset in set(source_assets):
         # ignore source asset selection if selection contains regular assets
         if (
@@ -920,7 +920,5 @@ def _subset_assets_defs(
 
     return (
         list(included_assets),
-        list(excluded_assets),
         list(included_source_assets),
-        list(excluded_source_assets),
     )
