@@ -64,7 +64,7 @@ Consider the following diagram. In this example, a job has two IO managers, each
 
 The default IO manager, <PyObject module="dagster" object="fs_io_manager" />, stores and retrieves values from pickle files in the local filesystem. If a job is invoked via <PyObject object="JobDefinition" method="execute_in_process" />, the default IO manager is switched to <PyObject module="dagster" object="mem_io_manager"/>, which stores outputs in memory.
 
-Dagster provides out-of-the-box IO managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own.
+Dagster provides out-of-the-box IO managers for popular storage systems: AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />), Azure Blob Storage (<PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />), GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />), and Snowflake (<PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />) - or you can write your own: either from scratch or by extending the `UPathIOManager` if you want to store data in an `fsspec`-supported filesystem.
 
 ### IO managers are resources
 
@@ -353,9 +353,11 @@ The provided `context` argument for `handle_output` is an <PyObject module="dags
 
 ### Handling partitioned assets
 
-IO managers can be written to handle [partitioned](/concepts/partitions-schedules-sensors/partitions) assets. For a partitioned asset, each invocation of `handle_output` will (over)write a single partition, and each invocation of `load_input` will typically load a single partition. When the IO manager is backed by a filesystem or object store, then each partition will typically correspond to a file or object. When it's backed by a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
+IO managers can be written to handle [partitioned](/concepts/partitions-schedules-sensors/partitions) assets. For a partitioned asset, each invocation of `handle_output` will (over)write a single partition, and each invocation of `load_input` will load one or more partitions. When the IO manager is backed by a filesystem or object store, then each partition will typically correspond to a file or object. When it's backed by a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
 
-To handle partitions in an IO manager, you'll need to determine which partition you're dealing with when you're storing an output or loading an input. For this, <PyObject object="OutputContext" /> and <PyObject object="InputContext" /> have a `asset_partition_key` property:
+The default IO Manager has support for loading a partitioned upstream asset for a downstream asset with matching partitions out of the box (see the section below for loading multiple partitions). The <PyObject module="dagster" object="UPathIOManager" /> can be used to handle partitions in custom filesystem-based IO Managers.
+
+To handle partitions in an custom IO manager, you'll need to determine which partition you're dealing with when you're storing an output or loading an input. For this, <PyObject object="OutputContext" /> and <PyObject object="InputContext" /> have a `asset_partition_key` property:
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_partitioned_marker endbefore=end_partitioned_marker
 class MyPartitionedIOManager(IOManager):
@@ -376,7 +378,57 @@ If you're working with time window partitions, you can also use the `asset_parti
 
 #### Handling partition mappings <Experimental />
 
-If you're using a <PyObject object="PartitionMapping" />, a single partition of one asset might depend on a range of partitions of an upstream asset. In that case, you can access the entire range using <PyObject object="InputContext" method="asset_partition_key_range" />, <PyObject object="InputContext" method="asset_partition_keys" />, or <PyObject object="InputContext" method="asset_partitions_time_window" />.
+A single partition of one asset might depend on a range of partitions of an upstream asset.
+
+The default IO Manager has support for loading multiple upstream partitions. In this case, the downstream asset should use `Dict[str, ...]` (or leave it blank) type for the upstream `DagsterType`. Here is an example of loading multiple upstream partitions using the default partition mapping:
+
+```python file=/concepts/io_management/loading_multiple_upstream_partitions.py
+from datetime import datetime
+from typing import Dict
+
+import pandas as pd
+
+from dagster import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    OpExecutionContext,
+    asset,
+    materialize,
+)
+
+start = datetime(2022, 1, 1)
+
+hourly_partitions = HourlyPartitionsDefinition(start_date=f"{start:%Y-%m-%d-%H:%M}")
+daily_partitions = DailyPartitionsDefinition(start_date=f"{start:%Y-%m-%d}")
+
+
+@asset(partitions_def=hourly_partitions)
+def upstream_asset(context: OpExecutionContext) -> pd.DataFrame:
+    return pd.DataFrame({"date": [context.partition_key]})
+
+
+@asset(
+    partitions_def=daily_partitions,
+)
+def downstream_asset(upstream_asset: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    return pd.concat(list(upstream_asset.values()))
+
+
+result = materialize(
+    [*upstream_asset.to_source_assets(), downstream_asset],
+    partition_key=start.strftime(daily_partitions.fmt),
+)
+downstream_asset_data = result.output_for_node("downstream_asset", "result")
+assert (
+    len(downstream_asset_data) == 24
+), "downstream day should map to upstream 24 hours"
+```
+
+The `upstream_asset` becomes a mapping from partition keys to partition values. This is a property of the default IO manager or any IO manager inheriting from the <PyObject module="dagster" object="UPathIOManager" />.
+
+A custom <PyObject object="PartitionMapping" /> instance can be provided to `In` to configure the mapped upstream partitions.
+
+When writing a custom IO Manager for loading multiple upstream partitions, the mapped keys can be accessed using <PyObject object="InputContext" method="asset_partition_keys" />, <PyObject object="InputContext" method="asset_partition_key_range" />, or <PyObject object="InputContext" method="asset_partitions_time_window" />.
 
 ### Writing a per-input IO Manager
 
@@ -491,6 +543,82 @@ def df_table_io_manager():
 def my_job():
     op_2(op_1())
 ```
+
+### Custom filesystem-based IO Manager
+
+Dagster provides a feature-rich base class for filesystem-based IO Managers: <PyObject module="dagster" object="UPathIOManager" />. It's compatible with both local and remote filesystems (like S3 or GCS) by using `universal-pathlib` and `fsspec`. The full list of supported filesystems can be found [here](https://github.com/fsspec/universal_pathlib#currently-supported-filesystems-and-schemes). The `UPathIOManager` also has other important features:
+
+- handles partitioned assets
+- handles loading a single upstream partition
+- handles loading multiple upstream partitions (with respect to <PyObject object="PartitionMapping" />)
+- the `get_metadata` method can be customized to add additional metadata to the output
+- the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions (the default behavior is to raise an error)
+
+The default IO manager inherits from the `UPathIOManager` and therefore has these features too.
+
+The `UPathIOManager` already implements the `load_input` and `handle_output` methods. Instead, <PyObject module="dagster" object="UPathIOManager" method="dump_to_path" /> and <PyObject module="dagster" object="UPathIOManager" method="load_from_path" /> for a given `universal_pathlib.UPath` have to be implemented. Here are some examples:
+
+```python file=/concepts/io_management/filesystem_io_manager.py startafter=start_marker endbefore=end_class_marker
+import pandas as pd
+from upath import UPath
+
+from dagster import (
+    Field,
+    InitResourceContext,
+    InputContext,
+    OutputContext,
+    StringSource,
+    UPathIOManager,
+    io_manager,
+)
+
+
+class PandasParquetIOManager(UPathIOManager):
+    extension: str = ".parquet"
+
+    def dump_to_path(self, context: OutputContext, obj: pd.DataFrame, path: UPath):
+        with path.open("wb") as file:
+            obj.to_parquet(file)
+
+    def load_from_path(self, context: InputContext, path: UPath) -> pd.DataFrame:
+        with path.open("rb") as file:
+            return pd.read_parquet(file)
+```
+
+The extension attribute defines the suffix all the file paths generated by the IOManager will end with.
+
+The io managers defined above will work with partitioned assets on any filesystem:
+
+```python file=/concepts/io_management/filesystem_io_manager.py startafter=start_def_marker endbefore=end_marker
+@io_manager(config_schema={"base_path": Field(str, is_required=False)})
+def local_pandas_parquet_io_manager(
+    init_context: InitResourceContext,
+) -> PandasParquetIOManager:
+    assert init_context.instance is not None  # to please mypy
+    base_path = UPath(
+        init_context.resource_config.get(
+            "base_path", init_context.instance.storage_directory()
+        )
+    )
+    return PandasParquetIOManager(base_path=base_path)
+
+
+@io_manager(
+    config_schema={
+        "base_path": Field(str, is_required=True),
+        "AWS_ACCESS_KEY_ID": StringSource,
+        "AWS_SECRET_ACCESS_KEY": StringSource,
+    }
+)
+def s3_parquet_io_manager(init_context: InitResourceContext) -> PandasParquetIOManager:
+    # `UPath` will read boto env vars.
+    # The credentials can also be taken from the config and passed to `UPath` directly.
+    base_path = UPath(init_context.resource_config.get("base_path"))
+    assert str(base_path).startswith("s3://"), base_path
+    return PandasParquetIOManager(base_path=base_path)
+```
+
+Notice how the local and S3 IO managers are practically the same - the only difference is in the required resources.
 
 ### Providing per-output config to an IO manager
 

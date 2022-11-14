@@ -1,7 +1,7 @@
 import datetime
-import os
 import random
 import string
+from typing import Any, Dict, Union
 
 import pandas as pd
 
@@ -9,15 +9,17 @@ from dagster import (
     Array,
     AssetKey,
     Field,
+    IOManager,
+    InputContext,
     MetadataEntry,
     MetadataValue,
     Out,
     Output,
+    OutputContext,
     Partition,
     graph,
     op,
 )
-from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.storage.io_manager import io_manager
 from dagster._legacy import PartitionSetDefinition
 
@@ -66,20 +68,30 @@ def metadata_for_actions(df):
     }
 
 
-class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
-    def _get_path(self, context):
-        keys = context.get_identifier()
+class MyDatabaseIOManager(IOManager):
+    """Pretend this IO Manager uses an external database"""
 
-        return os.path.join("/tmp", *keys)
+    storage: Dict[str, pd.DataFrame] = {}
+
+    @staticmethod
+    def get_key(context: Union[InputContext, OutputContext]):
+        if context.has_asset_key:
+            return "/".join(list(context.get_asset_identifier()))
+        else:
+            return "/".join(list(context.get_identifier()))
+
+    def load_input(self, context: InputContext) -> Any:
+        # loading code here
+        return self.storage[self.get_key(context)]
 
     def handle_output(self, context, obj):
-        super().handle_output(context, obj)
         # can pretend this actually came from a library call
         yield MetadataEntry(
             label="num rows written to db",
             description=None,
             entry_data=MetadataValue.int(len(obj)),
         )
+        self.storage[self.get_key(context)] = obj
 
     def get_output_asset_key(self, context):
         return AssetKey(
