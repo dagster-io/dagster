@@ -691,20 +691,15 @@ type FreshnessPolicy {
 }
 
 union PartitionMaterializationCounts =
-    MaterializationCountByPartition
+    MaterializationCountSingleDimension
   | MaterializationCountGroupedByDimension
 
-type MaterializationCountByPartition {
-  partitionsCounts: [PartitionMaterializationCount!]!
-}
-
-type PartitionMaterializationCount {
-  partition: String!
-  materializationCount: Int!
+type MaterializationCountSingleDimension {
+  materializationCounts: [Int!]!
 }
 
 type MaterializationCountGroupedByDimension {
-  materializationCounts: [[Int!]!]!
+  materializationCountsGrouped: [[Int!]!]!
 }
 
 type PartitionDefinition {
