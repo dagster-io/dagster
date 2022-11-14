@@ -188,7 +188,7 @@ def parameter_store_resource(context):
               parameters: ["parameter1", "/path/based/parameter2"]
               # Optional[List[str]]: Specifies a list of parameter names to pull from parameter store.
               parameters_tag: "dagster"
-              # Optional[List[dict]]: Specifies a list of tag specifications, all parameters which have the tag set
+              # Optional[Sequence[Dict[str, Any]]]: Specifies a list of tag specifications, all parameters which have the tag set
               will be pulled  from Parameter Store. Each tag specification is in the format {"tag": "tag name or prefix", "option": "BeginsWith|Equals"};
               when option == "BeginsWith", all parameters with tags that start with the tag value will be pulled.
               add_to_environment: true
