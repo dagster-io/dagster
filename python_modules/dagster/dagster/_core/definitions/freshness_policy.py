@@ -80,7 +80,10 @@ class FreshnessPolicy(
             # this constraint must be satisfied at all points in time, so generate a series of
             # many constraints (10 per maximum lag window)
             period = pendulum.period(pendulum.instance(window_start), pendulum.instance(window_end))
-            constraint_ticks = period.range("minutes", (self.maximum_lag_minutes / 10.0) + 0.1)
+            # old versions of pendulum return a list, so ensure this is an iterator
+            constraint_ticks = iter(
+                period.range("minutes", (self.maximum_lag_minutes / 10.0) + 0.1)
+            )
 
         # iterate over each schedule tick in the provided time window
         evaluation_tick = next(constraint_ticks, None)
