@@ -2,19 +2,13 @@ import sys
 
 import pytest
 
-from dagster import (
-    ResourceDefinition,
-    ScheduleDefinition,
-    asset,
-    define_asset_job,
-    definitions,
-    job,
-    op,
-    sensor,
-)
+from dagster import ResourceDefinition, ScheduleDefinition
+from dagster import _check as check
+from dagster import asset, define_asset_job, definitions, job, op, repository, sensor
 from dagster._core.definitions.definitions_fn import (
     MAGIC_REPO_GLOBAL_KEY,
     DefinitionsAlreadyCalledError,
+    GlobalRepoSingleton,
     definitions_test_scope,
     get_python_env_global_dagster_repository,
 )
@@ -31,6 +25,10 @@ def test_definitions_is_magic_global_set():
     del sys.modules[__name__].__dict__[MAGIC_REPO_GLOBAL_KEY]
     assert MAGIC_REPO_GLOBAL_KEY not in sys.modules[__name__].__dict__
 
+    assert GlobalRepoSingleton.has_instance()
+    GlobalRepoSingleton.clear()
+    assert not GlobalRepoSingleton.has_instance()
+
 
 def test_definitions_invoke_twice():
     with definitions_test_scope(__name__):
@@ -41,19 +39,30 @@ def test_definitions_invoke_twice():
 
 def test_contextmanager_test_helper():
     assert MAGIC_REPO_GLOBAL_KEY not in sys.modules[__name__].__dict__
+    assert not GlobalRepoSingleton.has_instance()
+
+    @repository
+    def a_repo():
+        return []
+
     with definitions_test_scope(__name__):
-        sys.modules[__name__].__dict__[MAGIC_REPO_GLOBAL_KEY] = "test"
+        sys.modules[__name__].__dict__[MAGIC_REPO_GLOBAL_KEY] = a_repo
+        GlobalRepoSingleton.set_instance(a_repo)
 
     assert MAGIC_REPO_GLOBAL_KEY not in sys.modules[__name__].__dict__
+    assert not GlobalRepoSingleton.has_instance()
 
     try:
         with definitions_test_scope(__name__):
-            sys.modules[__name__].__dict__[MAGIC_REPO_GLOBAL_KEY] = "test"
+            sys.modules[__name__].__dict__[MAGIC_REPO_GLOBAL_KEY] = a_repo
+            GlobalRepoSingleton.set_instance(a_repo)
             raise Exception("foobar")
+            # globals should be unset in finally block of definitions_test_scope
     except Exception:
         pass
 
     assert MAGIC_REPO_GLOBAL_KEY not in sys.modules[__name__].__dict__
+    assert not GlobalRepoSingleton.has_instance()
 
 
 def test_basic_asset_definitions():
@@ -66,7 +75,7 @@ def test_basic_asset_definitions():
         definitions(assets=[an_asset])
 
         repo = get_python_env_global_dagster_repository()
-        all_assets = list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access)
+        all_assets = list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access
         assert len(all_assets) == 1
         assert all_assets[0].key.to_user_string() == "an_asset"
 
@@ -179,3 +188,30 @@ def test_with_resource_wrapping():
         asset_job.execute_in_process()
 
         assert executed["yes"]
+
+
+def test_global_repo_singleton():
+    @repository
+    def a_repo():
+        return []
+
+    assert not GlobalRepoSingleton.has_instance()
+    GlobalRepoSingleton.set_instance(a_repo)  # type: ignore
+    assert GlobalRepoSingleton.get_instance()
+    assert GlobalRepoSingleton.has_instance()
+
+    GlobalRepoSingleton.clear()
+    assert not GlobalRepoSingleton.has_instance()
+
+    # check error conditions
+
+    with pytest.raises(check.CheckError):
+        GlobalRepoSingleton.get_instance()
+
+    with pytest.raises(check.CheckError):
+        GlobalRepoSingleton.clear()
+
+    GlobalRepoSingleton.set_instance(a_repo)  # type: ignore
+
+    with pytest.raises(check.CheckError):
+        GlobalRepoSingleton.set_instance(a_repo)  # type: ignore
