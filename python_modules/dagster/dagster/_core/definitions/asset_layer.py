@@ -19,7 +19,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.assets_job import build_source_assets_job
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.selector.subset_selector import AssetSelectionData
@@ -819,7 +818,7 @@ def build_asset_selection_job(
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> "JobDefinition":
-    from dagster._core.definitions import build_assets_job
+    from dagster._core.definitions import build_assets_job, build_source_assets_job
 
     if asset_selection:
         (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
