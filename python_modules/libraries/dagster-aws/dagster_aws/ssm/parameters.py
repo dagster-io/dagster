@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import boto3
 from dagster_aws.utils import construct_boto_client_retry_config
@@ -24,7 +24,7 @@ def construct_ssm_client(
 
 
 def get_parameters_by_tags(
-    ssm_manager, parameter_tags: Sequence[dict], with_decryption: bool
+    ssm_manager, parameter_tags: Sequence[Dict[str, Any]], with_decryption: bool
 ) -> Dict[str, str]:
     """
     Return a dictionary of AWS Secrets Manager names to arns
