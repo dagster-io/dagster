@@ -8,7 +8,10 @@ import dagster._check as check
 
 class AirbyteSyncMode(ABC):
     """
-    Represents the sync mode for a given Airbyte stream.
+    Represents the sync mode for a given Airbyte stream, which governs how Airbyte reads
+    from a source and writes to a destination.
+
+    For more information, see https://docs.airbyte.com/understanding-airbyte/connections/.
     """
 
     def __eq__(self, other: Any) -> bool:
@@ -32,10 +35,21 @@ class AirbyteSyncMode(ABC):
 
     @classmethod
     def full_refresh_append(cls) -> "AirbyteSyncMode":
+        """
+        Syncs the entire data stream from the source, appending to the destination.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/full-refresh-append/
+        """
         return cls({"syncMode": "full_refresh", "destinationSyncMode": "append"})
 
     @classmethod
     def full_refresh_overwrite(cls) -> "AirbyteSyncMode":
+        """
+        Syncs the entire data stream from the source, replaces data in the destination by
+        overwriting it.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/full-refresh-overwrite
+        """
         return cls({"syncMode": "full_refresh", "destinationSyncMode": "overwrite"})
 
     @classmethod
@@ -43,6 +57,13 @@ class AirbyteSyncMode(ABC):
         cls,
         cursor_field: Optional[str] = None,
     ) -> "AirbyteSyncMode":
+        """
+        Syncs only new records from the source, appending to the destination.
+        May optionally specify the cursor field used to determine which records
+        are new.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/incremental-append/
+        """
         cursor_field = check.opt_str_param(cursor_field, "cursor_field")
 
         return cls(
@@ -59,6 +80,16 @@ class AirbyteSyncMode(ABC):
         cursor_field: Optional[str] = None,
         primary_key: Optional[Union[str, List[str]]] = None,
     ) -> "AirbyteSyncMode":
+        """
+        Syncs new records from the source, appending to an append-only history
+        table in the destination. Also generates a deduplicated view mirroring the
+        source table. May optionally specify the cursor field used to determine
+        which records are new, and the primary key used to determine which records
+        are duplicates.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/incremental-append-dedup/
+        """
+
         cursor_field = check.opt_str_param(cursor_field, "cursor_field")
         if isinstance(primary_key, str):
             primary_key = [primary_key]
