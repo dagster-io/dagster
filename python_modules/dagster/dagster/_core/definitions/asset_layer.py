@@ -19,6 +19,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.assets_job import build_source_assets_job
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.selector.subset_selector import AssetSelectionData
@@ -821,15 +822,21 @@ def build_asset_selection_job(
     from dagster._core.definitions import build_assets_job
 
     if asset_selection:
-        (
-            included_assets,
-            included_source_assets,
-        ) = _subset_assets_defs(assets, source_assets, asset_selection)
+        (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
+        included_source_assets, excluded_source_assets = _subset_source_assets(
+            source_assets, asset_selection
+        )
+
     else:
         included_assets = list(assets)
-        _excluded_assets = []
-        included_source_assets = list(source_assets)
-        _excluded_source_assets = []
+        excluded_assets = []
+        included_source_assets = []
+        excluded_source_assets = list(source_assets)
+
+    check.invariant(
+        not len(included_assets) > 0 and len(included_source_assets) > 0,
+        "Illegal selection includes both source assets and regular assets.",
+    )
 
     if partitions_def:
         for asset in included_assets:
@@ -842,30 +849,39 @@ def build_asset_selection_job(
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=ExperimentalWarning)
-        asset_job = build_assets_job(
-            name=name,
-            assets=included_assets,
-            config=config,
-            source_assets=included_source_assets,
-            resource_defs=resource_defs,
-            executor_def=executor_def,
-            partitions_def=partitions_def,
-            description=description,
-            tags=tags,
-            _asset_selection_data=asset_selection_data,
-        )
+        if len(included_assets) > 0:
+            asset_job = build_assets_job(
+                name=name,
+                assets=included_assets,
+                config=config,
+                source_assets=[*source_assets, *excluded_assets],
+                resource_defs=resource_defs,
+                executor_def=executor_def,
+                partitions_def=partitions_def,
+                description=description,
+                tags=tags,
+                _asset_selection_data=asset_selection_data,
+            )
+        else:
+            asset_job = build_source_assets_job(
+                name=name,
+                source_assets=included_source_assets,
+                config=config,
+                resource_defs=resource_defs,
+                executor_def=executor_def,
+                partitions_def=partitions_def,
+                description=description,
+                tags=tags,
+                _asset_selection_data=asset_selection_data,
+            )
 
     return asset_job
 
 
 def _subset_assets_defs(
     assets: Iterable["AssetsDefinition"],
-    source_assets: Iterable["SourceAsset"],
     selected_asset_keys: AbstractSet[AssetKey],
-) -> Tuple[
-    Sequence["AssetsDefinition"],
-    Sequence["SourceAsset"],
-]:
+) -> Tuple[Sequence["AssetsDefinition"], Sequence["AssetsDefinition"],]:
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """
@@ -873,8 +889,6 @@ def _subset_assets_defs(
 
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
-    included_source_assets: Set["SourceAsset"] = set()
-    excluded_source_assets: Set["SourceAsset"] = set()
 
     for asset in set(assets):
         # intersection
@@ -900,25 +914,29 @@ def _subset_assets_defs(
                 "asset keys produced by this asset."
             )
 
+    return (
+        list(included_assets),
+        list(excluded_assets),
+    )
+
+
+def _subset_source_assets(
+    source_assets: Iterable["SourceAsset"],
+    selected_asset_keys: AbstractSet[AssetKey],
+) -> Tuple[Sequence["SourceAsset"], Sequence["SourceAsset"],]:
+
     selected_source_asset_keys = selected_asset_keys & {
         source_asset.key for source_asset in source_assets
     }
 
-    if len(included_assets) > 0 and len(selected_source_asset_keys) > 0:
-        check.failed("Illegal selection includes both source assets and regular assets.")
+    included_source_assets: List[SourceAsset] = []
+    excluded_source_assets: List[SourceAsset] = []
+    for source_asset in source_assets:
+        lst = (
+            included_source_assets
+            if source_asset.key in selected_source_asset_keys
+            else excluded_source_assets
+        )
+        lst.append(source_asset)
 
-    for source_asset in set(source_assets):
-        # ignore source asset selection if selection contains regular assets
-        if (
-            len(included_assets) > 0
-            or len(selected_source_asset_keys) == 0
-            or source_asset.key in selected_asset_keys
-        ):
-            included_source_assets.add(source_asset)
-        else:
-            excluded_source_assets.add(source_asset)
-
-    return (
-        list(included_assets),
-        list(included_source_assets),
-    )
+    return included_source_assets, excluded_source_assets
