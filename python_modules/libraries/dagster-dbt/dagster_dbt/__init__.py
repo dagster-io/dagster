@@ -16,6 +16,7 @@ from .errors import (
     DagsterDbtCliOutputsNotFoundError,
     DagsterDbtCliRuntimeError,
     DagsterDbtCliUnexpectedOutputError,
+    DagsterDbtCloudJobInvariantViolationError,
     DagsterDbtError,
     DagsterDbtRpcUnexpectedPollOutputError,
 )
