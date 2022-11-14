@@ -40,7 +40,6 @@ export const AssetEvents: React.FC<Props> = ({
   setParams,
   liveData,
 }) => {
-  const {flagNewAssetDetails} = useFeatureFlags();
   const {
     xAxis,
     materializations,
@@ -156,11 +155,9 @@ export const AssetEvents: React.FC<Props> = ({
           </Box>
         )}
       </Box>
-      {!flagNewAssetDetails && (
-        <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
-          <AssetMaterializationGraphs xAxis={xAxis} groups={grouped} columnCount={1} />
-        </Box>
-      )}
+      <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
+        <AssetMaterializationGraphs xAxis={xAxis} groups={grouped} columnCount={1} />
+      </Box>
     </Box>
   );
 };

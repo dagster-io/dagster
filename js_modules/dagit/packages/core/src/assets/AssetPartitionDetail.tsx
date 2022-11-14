@@ -1,3 +1,4 @@
+import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Group, Heading, Icon, Mono, Subheading, Tag} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -13,6 +14,67 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AllIndividualEventsLink} from './AssetEventsTable';
 import {AssetEventGroup} from './groupByPartition';
+import {AssetKey} from './types';
+import {
+  AssetPartitionDetailQuery,
+  AssetPartitionDetailQueryVariables,
+} from './types/AssetPartitionDetailQuery';
+import {ASSET_MATERIALIZATION_FRAGMENT} from './useRecentAssetEvents';
+
+export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partitionKey: string}> = (
+  props,
+) => {
+  const result = useQuery<AssetPartitionDetailQuery, AssetPartitionDetailQueryVariables>(
+    ASSET_PARTITION_DETAIL_QUERY,
+    {
+      variables: {
+        assetKey: props.assetKey,
+        partitionKey: props.partitionKey,
+      },
+    },
+  );
+
+  if (result.loading || !result.data) {
+    return <AssetPartitionDetailEmpty />;
+  }
+
+  const events =
+    result.data?.assetNodeOrError?.__typename === 'AssetNode'
+      ? result.data.assetNodeOrError.assetMaterializations
+      : [];
+
+  const hasLineage = events.some((m) => m.assetLineage.length > 0);
+
+  return (
+    <AssetPartitionDetail
+      hasLineage={hasLineage}
+      group={{
+        latest: events[0],
+        all: events,
+        timestamp: events[0]?.timestamp,
+        partition: props.partitionKey,
+      }}
+    />
+  );
+};
+
+const ASSET_PARTITION_DETAIL_QUERY = gql`
+  query AssetPartitionDetailQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      __typename
+      ... on AssetNode {
+        id
+        assetMaterializations(partitions: [$partitionKey]) {
+          ... on MaterializationEvent {
+            runId
+            ...AssetMaterializationFragment
+          }
+        }
+      }
+    }
+  }
+  ${ASSET_MATERIALIZATION_FRAGMENT}
+`;
 
 export const AssetPartitionDetail: React.FC<{
   group: AssetEventGroup;

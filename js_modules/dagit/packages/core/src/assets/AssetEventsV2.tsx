@@ -25,17 +25,13 @@ interface Props {
   // to retrieve new data. Just don't want to poll the entire table query.
   assetLastMaterializedAt: string | undefined;
 
-  // This is passed in because we need to know whether to default to partition
-  // grouping /before/ loading all the data.
-  assetHasDefinedPartitions: boolean;
   repository?: RepositorySelector;
   opName?: string | null;
 }
 
-export const AssetOverview: React.FC<Props> = ({
+export const AssetEventsV2: React.FC<Props> = ({
   assetKey,
   assetLastMaterializedAt,
-  assetHasDefinedPartitions,
   params,
   setParams,
   liveData,
@@ -47,7 +43,7 @@ export const AssetOverview: React.FC<Props> = ({
     loadedPartitionKeys,
     refetch,
     loading,
-  } = useRecentAssetEvents(assetKey, assetHasDefinedPartitions, params);
+  } = useRecentAssetEvents(assetKey, false, params);
 
   React.useEffect(() => {
     if (params.asOf) {
@@ -57,7 +53,6 @@ export const AssetOverview: React.FC<Props> = ({
   }, [params.asOf, assetLastMaterializedAt, refetch]);
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
-  const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
 
   const onSetFocused = (group: AssetEventGroup | undefined) => {
     const updates: Partial<AssetViewParams> =
@@ -103,32 +98,6 @@ export const AssetOverview: React.FC<Props> = ({
       />
 
       <Box
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        border={{side: 'bottom', color: Colors.KeylineGray, width: 1}}
-        padding={{vertical: 16, left: 24, right: 12}}
-      >
-        <Subheading>Activity</Subheading>
-        {assetHasDefinedPartitions ? (
-          <div style={{margin: '-6px 0 '}}>
-            <ButtonGroup
-              activeItems={activeItems}
-              buttons={[
-                {id: 'partition', label: 'Partitions', icon: 'partition'},
-                {id: 'time', label: 'Events', icon: 'materialization'},
-              ]}
-              onClick={(id: string) =>
-                setParams(
-                  id === 'time'
-                    ? {...params, partition: undefined, time: focused?.timestamp || ''}
-                    : {...params, partition: focused?.partition || '', time: undefined},
-                )
-              }
-            />
-          </div>
-        ) : null}
-      </Box>
-
-      <Box
         style={{flex: 1, minHeight: 0, outline: 'none'}}
         flex={{direction: 'row'}}
         onKeyDown={onKeyDown}
@@ -146,22 +115,10 @@ export const AssetOverview: React.FC<Props> = ({
           ) : (
             <AssetEventList
               xAxis={xAxis}
-              hasPartitions={assetHasDefinedPartitions}
-              hasLineage={assetHasLineage}
               groups={grouped}
               focused={focused}
               setFocused={onSetFocused}
             />
-          )}
-
-          {loadedPartitionKeys && (
-            <Box
-              style={{color: Colors.Gray400}}
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-            >
-              Showing materializations for the last {loadedPartitionKeys.length} partitions.
-            </Box>
           )}
         </Box>
 

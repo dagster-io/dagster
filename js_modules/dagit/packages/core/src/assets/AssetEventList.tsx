@@ -15,8 +15,6 @@ import {AssetEventGroup} from './groupByPartition';
 
 export const AssetEventList: React.FC<{
   xAxis: 'time' | 'partition';
-  hasPartitions: boolean;
-  hasLineage: boolean;
   groups: AssetEventGroup[];
   focused?: AssetEventGroup;
   setFocused?: (item: AssetEventGroup | undefined) => void;

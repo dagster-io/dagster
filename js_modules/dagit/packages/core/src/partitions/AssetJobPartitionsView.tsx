@@ -53,19 +53,19 @@ export const AssetJobPartitionsView: React.FC<{
 
   const [pageSize, setPageSize] = React.useState(60);
   const [offset, setOffset] = React.useState<number>(0);
-  const [showSteps, setShowSteps] = React.useState(false);
+  const [showAssets, setShowAssets] = React.useState(false);
 
   React.useEffect(() => {
-    if (viewport.width && !showSteps) {
+    if (viewport.width && !showAssets) {
       // magical numbers to approximate the size of the window, which is calculated in the step
       // status component.  This approximation is to make sure that the window does not jump as
       // the pageSize gets recalculated
       const approxPageSize = getVisibleItemCount(viewport.width - GRID_FLOATING_CONTAINER_WIDTH);
       setPageSize(approxPageSize);
     }
-  }, [viewport.width, showSteps, setPageSize]);
+  }, [viewport.width, showAssets, setPageSize]);
 
-  const selectedPartitions = showSteps
+  const selectedPartitions = showAssets
     ? partitionNames.slice(
         Math.max(0, partitionNames.length - 1 - offset - pageSize),
         partitionNames.length - offset,
@@ -81,8 +81,8 @@ export const AssetJobPartitionsView: React.FC<{
       >
         <Subheading>Status</Subheading>
         <Box flex={{gap: 8}}>
-          <Button onClick={() => setShowSteps(!showSteps)}>
-            {showSteps ? 'Hide per-asset status' : 'Show per-asset status'}
+          <Button onClick={() => setShowAssets(!showAssets)}>
+            {showAssets ? 'Hide per-asset status' : 'Show per-asset status'}
           </Button>
           <LaunchAssetExecutionButton
             context="all"
@@ -107,7 +107,7 @@ export const AssetJobPartitionsView: React.FC<{
           <PartitionStatus
             partitionNames={partitionNames}
             partitionData={jobHealth}
-            selected={showSteps ? selectedPartitions : undefined}
+            selected={showAssets ? selectedPartitions : undefined}
             selectionWindowSize={pageSize}
             onClick={(partitionName) => {
               const maxIdx = partitionNames.length - 1;
@@ -117,14 +117,14 @@ export const AssetJobPartitionsView: React.FC<{
                 Math.max(0, maxIdx - selectedIdx - 0.5 * pageSize),
               );
               setOffset(nextOffset);
-              if (!showSteps) {
-                setShowSteps(true);
+              if (!showAssets) {
+                setShowAssets(true);
               }
             }}
-            tooltipMessage="Click to view per-step status"
+            tooltipMessage="Click to view per-asset status"
           />
         </div>
-        {showSteps && (
+        {showAssets && (
           <Box margin={{top: 16}}>
             <PartitionPerAssetStatus
               partitionNames={partitionNames}

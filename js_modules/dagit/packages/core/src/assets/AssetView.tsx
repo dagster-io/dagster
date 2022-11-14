@@ -32,12 +32,13 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetEvents} from './AssetEvents';
+import {AssetEventsV2} from './AssetEventsV2';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetLineageScope} from './AssetNodeLineageGraph';
-import {AssetOverview} from './AssetOverview';
 import {AssetPageHeader} from './AssetPageHeader';
+import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
@@ -52,7 +53,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'activity' | 'definition' | 'lineage' | 'overview' | 'plots';
+  view?: 'events' | 'definition' | 'lineage' | 'overview' | 'plots' | 'partitions';
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
   partition?: string;
@@ -62,14 +63,16 @@ export interface AssetViewParams {
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
-  const {flagNewAssetDetails} = useFeatureFlags();
-  const defaultTab = flagNewAssetDetails ? 'overview' : 'activity';
-  const selectedTab = params.view || defaultTab;
 
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} = useAssetViewAssetDefinition(
     assetKey,
   );
+
+  const {flagNewAssetDetails} = useFeatureFlags();
+  const defaultTab =
+    flagNewAssetDetails && definition?.partitionDefinition ? 'partitions' : 'events';
+  const selectedTab = params.view || defaultTab;
 
   // Load the asset graph - a large graph for the Lineage tab, a small graph for the Definition tab
   // tab, or just the current node for other tabs. NOTE: Changing the query does not re-fetch data,
@@ -153,17 +156,31 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
             <Tabs size="large" selectedTabId={selectedTab}>
+              {flagNewAssetDetails && definition?.partitionDefinition && (
+                <Tab
+                  id="partitions"
+                  title="Partitions"
+                  onClick={() => setParams({...params, view: 'partitions'})}
+                />
+              )}
               {flagNewAssetDetails ? (
                 <Tab
-                  id="overview"
-                  title="Overview"
-                  onClick={() => setParams({...params, view: 'overview'})}
+                  id="events"
+                  title="Events"
+                  onClick={() => setParams({...params, view: 'events'})}
                 />
               ) : (
                 <Tab
-                  id="activity"
+                  id="events"
                   title="Activity"
-                  onClick={() => setParams({...params, view: 'activity'})}
+                  onClick={() => setParams({...params, view: 'events'})}
+                />
+              )}
+              {flagNewAssetDetails && (
+                <Tab
+                  id="plots"
+                  title="Plots"
+                  onClick={() => setParams({...params, view: 'plots'})}
                 />
               )}
               <Tab
@@ -178,13 +195,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 onClick={() => setParams({...params, view: 'lineage'})}
                 disabled={!definition}
               />
-              {flagNewAssetDetails && (
-                <Tab
-                  id="plots"
-                  title="Plots"
-                  onClick={() => setParams({...params, view: 'plots'})}
-                />
-              )}
             </Tabs>
             {refreshState && (
               <Box padding={{bottom: 8}}>
@@ -226,8 +236,26 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             renderDefinitionTab()
           ) : selectedTab === 'lineage' ? (
             renderLineageTab()
-          ) : selectedTab === 'overview' ? (
-            <AssetOverview
+          ) : selectedTab === 'partitions' && flagNewAssetDetails ? (
+            <AssetPartitions
+              assetKey={assetKey}
+              assetLastMaterializedAt={lastMaterializedAt}
+              params={params}
+              paramsTimeWindowOnly={!!params.asOf}
+              setParams={setParams}
+              liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+            />
+          ) : selectedTab === 'events' && flagNewAssetDetails ? (
+            <AssetEventsV2
+              assetKey={assetKey}
+              assetLastMaterializedAt={lastMaterializedAt}
+              params={params}
+              paramsTimeWindowOnly={!!params.asOf}
+              setParams={setParams}
+              liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+            />
+          ) : selectedTab === 'events' ? (
+            <AssetEvents
               assetKey={assetKey}
               assetLastMaterializedAt={lastMaterializedAt}
               assetHasDefinedPartitions={!!definition?.partitionDefinition}
@@ -244,15 +272,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               setParams={setParams}
             />
           ) : (
-            <AssetEvents
-              assetKey={assetKey}
-              assetLastMaterializedAt={lastMaterializedAt}
-              assetHasDefinedPartitions={!!definition?.partitionDefinition}
-              params={params}
-              paramsTimeWindowOnly={!!params.asOf}
-              setParams={setParams}
-              liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
-            />
+            <span />
           )}
         </>
       )}
