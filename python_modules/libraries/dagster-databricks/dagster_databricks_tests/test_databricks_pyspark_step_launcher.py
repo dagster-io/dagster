@@ -36,7 +36,7 @@ class TestCreateRemoteConfig:
             add_dagster_env_variables=True, env_variables=test_env_variables
         )
         system_vars = {}
-        for i, var in enumerate(DAGSTER_SYSTEM_ENV_VARS):
+        for var in DAGSTER_SYSTEM_ENV_VARS:
             system_vars[var] = f"{var}_value"
             monkeypatch.setenv(var, f"{var}_value")
 
@@ -51,9 +51,7 @@ class TestCreateRemoteConfig:
         test_launcher = mock_step_launcher_factory(
             add_dagster_env_variables=False, env_variables=vars_to_add
         )
-        system_vars = {}
-        for i, var in enumerate(DAGSTER_SYSTEM_ENV_VARS):
-            system_vars[var] = f"{var}_value"
+        for var in enumerate(DAGSTER_SYSTEM_ENV_VARS):
             monkeypatch.setenv(var, f"{var}_value")
 
         env_vars = test_launcher.create_remote_config()
@@ -64,8 +62,7 @@ class TestCreateRemoteConfig:
         test_launcher = mock_step_launcher_factory(
             add_dagster_env_variables=True, env_variables=vars_to_add
         )
-        system_vars = {}
-        for i, var in enumerate(DAGSTER_SYSTEM_ENV_VARS):
+        for var in DAGSTER_SYSTEM_ENV_VARS:
             assert not os.getenv(var)
 
         env_vars = test_launcher.create_remote_config()
