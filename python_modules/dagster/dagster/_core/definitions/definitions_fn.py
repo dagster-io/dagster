@@ -1,8 +1,9 @@
 import inspect
+import itertools
 import sys
 from contextlib import contextmanager
 from types import ModuleType
-from typing import Any, List, Mapping, Union
+from typing import Any, List, Mapping, Union, Iterable
 
 from dagster._core.execution.with_resources import with_resources
 
@@ -51,10 +52,10 @@ def get_dagster_definitions_in_module(mod: ModuleType):
 # TODO: Add a new Definitions class to wrap RepositoryDefinition?
 def definitions(
     *,
-    assets: List[Union[AssetsDefinition, SourceAsset]] = None,
-    schedules: List[ScheduleDefinition] = None,
-    sensors: List[SensorDefinition] = None,
-    jobs: List[JobDefinition] = None,
+    assets: Iterable[Union[AssetsDefinition, SourceAsset]] = None,
+    schedules: Iterable[ScheduleDefinition] = None,
+    sensors: Iterable[SensorDefinition] = None,
+    jobs: Iterable[JobDefinition] = None,
     resources: Mapping[str, Any] = None,
 ) -> RepositoryDefinition:
 
@@ -79,11 +80,18 @@ def definitions(
     # the name can be "__main__".
     @repository(name=repo_name)
     def global_repo():
-        return (
-            with_resources(assets or [], resource_defs)
-            + (schedules or [])
-            + (sensors or [])
-            + (jobs or [])
+
+        # mypy typing forces the arguments above to be Iterable
+        # rather than List, so need to pull out itertools
+        # to chain together iterables that will be materialized
+        # anyways
+        return list(
+            itertools.chain(
+                with_resources(assets or [], resource_defs),
+                schedules or [],
+                sensors or [],
+                jobs or [],
+            )
         )
 
     mod.__dict__[MAGIC_REPO_GLOBAL_KEY] = global_repo
