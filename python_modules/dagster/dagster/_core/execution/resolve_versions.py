@@ -1,10 +1,14 @@
 import re
+from typing import Mapping, Optional
 
 import dagster._check as check
+from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.version_strategy import OpVersionContext, ResourceVersionContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.step import is_executable_step
+from dagster._core.system_config.objects import ResolvedRunConfig
 
 from .plan.inputs import join_and_hash
 
@@ -44,7 +48,7 @@ def resolve_config_version(config_value: object):
         )
 
 
-def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
+def resolve_step_versions(pipeline_def: PipelineDefinition, execution_plan: ExecutionPlan, resolved_run_config: ResolvedRunConfig) -> Mapping[str, Optional[str]]:
     """Resolves the version of each step in an execution plan.
 
     Execution plan provides execution steps for analysis. It returns dict[str, str] where each key
@@ -77,7 +81,7 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
 
     for step in execution_plan.get_all_steps_in_topo_order():
         # do not compute versions for steps that are not executable
-        if not is_executable_step(step):
+        if not is_executable_step(step):  # type: ignore
             continue
 
         solid_def = pipeline_def.get_solid(step.solid_handle).definition
@@ -163,11 +167,11 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
     return step_versions
 
 
-def resolve_step_output_versions(pipeline_def, execution_plan, resolved_run_config):
+def resolve_step_output_versions(pipeline_def: PipelineDefinition, execution_plan: ExecutionPlan, resolved_run_config: ResolvedRunConfig):
     step_versions = resolve_step_versions(pipeline_def, execution_plan, resolved_run_config)
     return {
         StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
         for step in execution_plan.steps
-        if is_executable_step(step)
+        if is_executable_step(step)  # type: ignore
         for output_name in step.step_output_dict.keys()
     }
