@@ -440,6 +440,7 @@ class DbtCloudResourceV2:
         job_id: int,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
+        **kwargs,
     ) -> DbtCloudOutput:
         """
         Runs a dbt Cloud job and polls until it completes. Will raise a `dagster.Failure` exception
@@ -459,7 +460,7 @@ class DbtCloudResourceV2:
             :py:class:`~DbtCloudOutput`: Class containing details about the specific job run and the
                 parsed run results.
         """
-        run_details = self.run_job(job_id)
+        run_details = self.run_job(job_id, **kwargs)
         run_id = run_details["id"]
         href = run_details["href"]
         final_run_details = self.poll_run(
