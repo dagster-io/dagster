@@ -42,9 +42,8 @@ from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
 from .logs.events import GrapheneMaterializationEvent
 from .pipelines.pipeline import (  # GraphenePartitionMaterializationS,
-    GrapheneMaterializationCountByPartition,
     GrapheneMaterializationCountGroupedByDimension,
-    GraphenePartitionMaterializationCount,
+    GrapheneMaterializationCountSingleDimension,
     GraphenePartitionMaterializationCounts,
     GraphenePipeline,
     GrapheneRun,
@@ -560,14 +559,12 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         if not self.is_multipartitioned():
             partition_keys = self.get_partition_keys()
-
-            return GrapheneMaterializationCountByPartition(
-                [
-                    GraphenePartitionMaterializationCount(partition_key, count)
-                    for partition_key, count in get_materialization_cts_by_partition(
+            return GrapheneMaterializationCountSingleDimension(
+                materializationCounts=iter(
+                    get_materialization_cts_by_partition(
                         graphene_info, asset_key, partition_keys=partition_keys
-                    ).items()
-                ]
+                    )
+                )
             )
         else:
             primary_dimension = kwargs.get("primaryDimension")
@@ -581,7 +578,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
 
             return GrapheneMaterializationCountGroupedByDimension(
-                materializationCounts=get_materialization_cts_grouped_by_dimension(
+                materializationCountsGrouped=get_materialization_cts_grouped_by_dimension(
                     graphene_info,
                     asset_key,
                     [primary_dimension, secondary_dimension],
@@ -616,6 +613,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_partitionKeysByDimension(
         self, _graphene_info
     ) -> Sequence[GrapheneDimensionPartitionKeys]:
+        if not self.is_multipartitioned():
+            return [
+                GrapheneDimensionPartitionKeys(
+                    name="default", partition_keys=self.get_partition_keys()
+                )
+            ]
+
         return [
             GrapheneDimensionPartitionKeys(name=dimension_name, partition_keys=partition_keys)
             for dimension_name, partition_keys in self.get_partition_keys_by_dimension().items()

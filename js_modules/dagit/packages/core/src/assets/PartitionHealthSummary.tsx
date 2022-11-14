@@ -1,20 +1,102 @@
-import {gql, useApolloClient} from '@apollo/client';
+import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import {Tooltip, Spinner, Box, Colors} from '@dagster-io/ui';
-import fromPairs from 'lodash/fromPairs';
 import React from 'react';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assembleIntoSpans} from '../partitions/PartitionRangeInput';
 
 import {AssetKey} from './types';
-import {PartitionHealthQuery, PartitionHealthQueryVariables} from './types/PartitionHealthQuery';
+import {
+  PartitionHealthQuery,
+  PartitionHealthQueryVariables,
+  PartitionHealthQuery_assetNodeOrError_AssetNode_partitionKeysByDimension,
+  PartitionHealthQuery_assetNodeOrError_AssetNode_partitionMaterializationCounts,
+} from './types/PartitionHealthQuery';
 
 export interface PartitionHealthData {
   assetKey: AssetKey;
-  keys: string[];
-  spans: {startIdx: number; endIdx: number; status: boolean}[];
-  statusByPartition: {[partitionName: string]: boolean};
-  indexToPct: (idx: number) => string;
+  dimensions: {name: string; partitionKeys: string[]}[];
+  getCount: (dimensionPartitionKeys: string[]) => number;
+  timeline: {
+    keys: string[];
+    spans: {startIdx: number; endIdx: number; status: boolean}[];
+    statusByPartition: {[partitionName: string]: boolean};
+    indexToPct: (idx: number) => string;
+  };
+}
+
+function assembleTimeline(
+  dimensions: PartitionHealthQuery_assetNodeOrError_AssetNode_partitionKeysByDimension[],
+  counts: PartitionHealthQuery_assetNodeOrError_AssetNode_partitionMaterializationCounts,
+): PartitionHealthData['timeline'] {
+  const timeDimensionIdx = 0;
+
+  const keysForDimension = dimensions[timeDimensionIdx].partitionKeys;
+  const countsForDimension =
+    counts.__typename === 'MaterializationCountSingleDimension'
+      ? counts.materializationCounts
+      : counts.materializationCountsGrouped[timeDimensionIdx];
+
+  const statusByPartition = Object.fromEntries(
+    countsForDimension.map((count, idx) => [keysForDimension[idx], !!count]),
+  );
+  const spans = assembleIntoSpans(keysForDimension, (key) => statusByPartition[key]);
+
+  return {
+    spans,
+    statusByPartition,
+    keys: keysForDimension,
+    indexToPct: (idx: number) => `${((idx * 100) / keysForDimension.length).toFixed(3)}%`,
+  };
+}
+
+async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: AssetKey) {
+  const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
+    query: PARTITION_HEALTH_QUERY,
+    fetchPolicy: 'network-only',
+    variables: {
+      assetKey: {path: loadKey.path},
+    },
+  });
+
+  const dimensions =
+    data.assetNodeOrError.__typename === 'AssetNode'
+      ? data.assetNodeOrError.partitionKeysByDimension
+      : [];
+
+  const counts = (data.assetNodeOrError.__typename === 'AssetNode' &&
+    data.assetNodeOrError.partitionMaterializationCounts) || {
+    __typename: 'MaterializationCountSingleDimension',
+    materializationCounts: [],
+  };
+
+  const getCount = (dimensionPartitionKeys: string[]) => {
+    if (dimensions.length !== dimensionPartitionKeys.length) {
+      return -1;
+    }
+    const idx0 = dimensions[0].partitionKeys.indexOf(dimensionPartitionKeys[0]);
+    const idx1 =
+      dimensionPartitionKeys.length > 1
+        ? dimensions[1].partitionKeys.indexOf(dimensionPartitionKeys[1])
+        : -1;
+
+    return !counts
+      ? 0
+      : counts.__typename === 'MaterializationCountSingleDimension'
+      ? counts.materializationCounts[idx0]
+      : counts.materializationCountsGrouped[idx0][idx1];
+  };
+
+  const timeline = assembleTimeline(dimensions, counts);
+
+  const result: PartitionHealthData = {
+    dimensions,
+    getCount,
+    timeline,
+    assetKey: loadKey,
+  };
+
+  return result;
 }
 
 export function usePartitionHealthData(assetKeys: AssetKey[]) {
@@ -31,52 +113,11 @@ export function usePartitionHealthData(assetKeys: AssetKey[]) {
       return;
     }
     const loadKey: AssetKey = JSON.parse(missingKeyJSON);
-    const load = async () => {
-      const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
-        query: PARTITION_HEALTH_QUERY,
-        fetchPolicy: 'network-only',
-        variables: {
-          assetKey: {path: loadKey.path},
-        },
-      });
-      const latest =
-        (data &&
-          data.assetNodeOrError.__typename === 'AssetNode' &&
-          data.assetNodeOrError.partitionMaterializationCounts &&
-          data.assetNodeOrError.partitionMaterializationCounts.__typename ===
-            'MaterializationCountByPartition' &&
-          data.assetNodeOrError.partitionMaterializationCounts.partitionsCounts) ||
-        [];
-
-      const keys =
-        data &&
-        data.assetNodeOrError.__typename === 'AssetNode' &&
-        data.assetNodeOrError.partitionMaterializationCounts &&
-        data.assetNodeOrError.partitionMaterializationCounts.__typename ===
-          'MaterializationCountByPartition' &&
-        data.assetNodeOrError.partitionMaterializationCounts.partitionsCounts
-          ? data.assetNodeOrError.partitionMaterializationCounts.partitionsCounts.map(
-              ({partition}) => partition,
-            )
-          : [];
-
-      const statusByPartition = fromPairs(
-        latest.map((l) => [l.partition, !!l.materializationCount]),
-      );
-      const spans = assembleIntoSpans(keys, (key) => statusByPartition[key]);
-
-      setResult((result) => [
-        ...result,
-        {
-          keys,
-          spans,
-          assetKey: loadKey,
-          statusByPartition,
-          indexToPct: (idx: number) => `${((idx * 100) / keys.length).toFixed(3)}%`,
-        },
-      ]);
+    const run = async () => {
+      const loaded = await loadPartitionHealthData(client, loadKey);
+      setResult((result) => [...result, loaded]);
     };
-    load();
+    run();
   }, [client, missingKeyJSON]);
 
   return result.filter((r) => assetKeyJSONs.includes(JSON.stringify(r.assetKey)));
@@ -98,7 +139,7 @@ export const PartitionHealthSummary: React.FC<{
     );
   }
 
-  const {spans, keys, indexToPct} = assetData;
+  const {spans, keys, indexToPct} = assetData.timeline;
   const highestIndex = spans.map((s) => s.endIdx).reduce((prev, cur) => Math.max(prev, cur), 0);
 
   const selectedSpans = selected
@@ -202,12 +243,16 @@ const PARTITION_HEALTH_QUERY = gql`
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
         id
+        partitionKeysByDimension {
+          name
+          partitionKeys
+        }
         partitionMaterializationCounts {
-          ... on MaterializationCountByPartition {
-            partitionsCounts {
-              partition
-              materializationCount
-            }
+          ... on MaterializationCountGroupedByDimension {
+            materializationCountsGrouped
+          }
+          ... on MaterializationCountSingleDimension {
+            materializationCounts
           }
         }
       }

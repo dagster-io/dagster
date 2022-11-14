@@ -31,14 +31,18 @@ export const AssetJobPartitionsView: React.FC<{
   });
 
   const assetHealth = usePartitionHealthData(assetGraph.graphAssetKeys);
-  const partitionNames = Array.from(new Set<string>(assetHealth.flatMap((a) => a.keys)));
+  const partitionNames = Array.from(
+    new Set<string>(assetHealth.flatMap((a) => a.dimensions[0].partitionKeys)),
+  );
   const jobHealth = React.useMemo(
     () =>
       Object.fromEntries(
         partitionNames.map((p) => [
           p,
           assetHealth.every((asset) =>
-            p in asset.statusByPartition ? asset.statusByPartition[p] === true : true,
+            p in asset.timeline.statusByPartition
+              ? asset.timeline.statusByPartition[p] === true
+              : true,
           )
             ? PartitionState.SUCCESS
             : PartitionState.MISSING,
