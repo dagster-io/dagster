@@ -1,16 +1,18 @@
 import re
-from typing import Mapping, Optional
+from typing import TYPE_CHECKING, Mapping, Optional
 
 import dagster._check as check
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.version_strategy import OpVersionContext, ResourceVersionContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.step import is_executable_step
 from dagster._core.system_config.objects import ResolvedRunConfig
 
 from .plan.inputs import join_and_hash
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.plan import ExecutionPlan
 
 VALID_VERSION_REGEX_STR = r"^[A-Za-z0-9_]+$"
 VALID_VERSION_REGEX = re.compile(VALID_VERSION_REGEX_STR)
@@ -48,7 +50,7 @@ def resolve_config_version(config_value: object):
         )
 
 
-def resolve_step_versions(pipeline_def: PipelineDefinition, execution_plan: ExecutionPlan, resolved_run_config: ResolvedRunConfig) -> Mapping[str, Optional[str]]:
+def resolve_step_versions(pipeline_def: PipelineDefinition, execution_plan: "ExecutionPlan", resolved_run_config: ResolvedRunConfig) -> Mapping[str, Optional[str]]:
     """Resolves the version of each step in an execution plan.
 
     Execution plan provides execution steps for analysis. It returns dict[str, str] where each key
@@ -167,7 +169,7 @@ def resolve_step_versions(pipeline_def: PipelineDefinition, execution_plan: Exec
     return step_versions
 
 
-def resolve_step_output_versions(pipeline_def: PipelineDefinition, execution_plan: ExecutionPlan, resolved_run_config: ResolvedRunConfig):
+def resolve_step_output_versions(pipeline_def: PipelineDefinition, execution_plan: "ExecutionPlan", resolved_run_config: ResolvedRunConfig):
     step_versions = resolve_step_versions(pipeline_def, execution_plan, resolved_run_config)
     return {
         StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])

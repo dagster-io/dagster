@@ -1051,7 +1051,7 @@ class ExecutionPlan(
         return plan_builder.build()
 
     @staticmethod
-    def rebuild_step_input(step_input_snap: ExecutionStepInputSnap):
+    def rebuild_step_input(step_input_snap: "ExecutionStepInputSnap"):
         from dagster._core.snap.execution_plan_snapshot import ExecutionStepInputSnap
 
         check.inst_param(step_input_snap, "step_input_snap", ExecutionStepInputSnap)
