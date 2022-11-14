@@ -3,14 +3,15 @@ import itertools
 import sys
 from contextlib import contextmanager
 from types import ModuleType
-from typing import Any, List, Mapping, Union, Iterable, Optional
+from typing import Any, Iterable, List, Mapping, Optional, Union
 
-from dagster._core.execution.with_resources import with_resources
 from dagster import _check as check
+from dagster._core.execution.with_resources import with_resources
+
 from .assets import AssetsDefinition, SourceAsset
 from .decorators import repository
 from .job_definition import JobDefinition
-from .repository_definition import RepositoryDefinition, PendingRepositoryDefinition
+from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
