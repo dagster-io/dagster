@@ -5,7 +5,7 @@ description: Integrate your Fivetran connectors into Dagster.
 
 # Using Fivetran with Dagster
 
-Dagster can orchestrate your Fivetran connectors, making it easy to chain an Fivetran sync with upstream or downstream steps in your workflow.
+Dagster can orchestrate your Fivetran connectors, making it easy to chain a Fivetran sync with upstream or downstream steps in your workflow.
 
 This guide focuses on how to work with Fivetran connectors using Dagster's [software-defined asset (SDA)](/concepts/assets/software-defined-assets) framework.
 
@@ -47,9 +47,9 @@ You'll also want to have set up [a Fivetran instance](https://fivetran.com/docs/
 
 ## Step 1: Connecting to Fivetran
 
-The first step in using Fivetran with Dagster is to tell Dagster how to connect to your Fivetran instance using an Fivetran [resource](/concepts/resources). This resource contains the credentials needed to access your Fivetran instance.
+The first step in using Fivetran with Dagster is to tell Dagster how to connect to your Fivetran instance using a Fivetran [resource](/concepts/resources). This resource contains the credentials needed to access your Fivetran instance.
 
-We will supply our credentials as environment variables:
+We will supply our credentials as environment variables. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets).
 
 ```bash
 export FIVETRAN_API_KEY=...
@@ -108,7 +108,7 @@ Instead of having Dagster automatically create the asset defintions for your Fiv
   <Image
     alt="Screenshot of the Fivetran UI in a browser, showing the connector ID in the settings page."
     src="/images/integrations/fivetran/fivetran_connector_id.png"
-    width={1292}
+    width={772}
     height={500}
   />
 </center>
@@ -126,7 +126,7 @@ fivetran_assets = build_fivetran_assets(
 
 #### Adding a resource
 
-Manually built Fivetran assets require an `fivetran_resource`, which defines how to connect and interact with your Fivetran instance.
+Manually-built Fivetran assets require a `fivetran_resource`, which defines how to connect and interact with your Fivetran instance.
 
 We can add the Fivetran resource we configured above to our Fivetran assets by doing the following:
 
@@ -206,4 +206,5 @@ If you have questions on using Fivetran with Dagster, we'd love to hear from you
 - [`dagster-fivetran` API reference](/\_apidocs/libraries/dagster-fivetran)
 - [Software-defined assets](/concepts/assets/software-defined-assets)
 - [Resources](/concepts/resources)
+- [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets)
 - [Scheduling Dagster jobs](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler)
