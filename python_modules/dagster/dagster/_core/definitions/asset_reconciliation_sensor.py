@@ -412,7 +412,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     # look within a 12-hour time window to combine future runs together
     current_time = pendulum.now(tz=pendulum.UTC)
     plan_window_start = current_time
-    plan_window_end = plan_window_start + pendulum.duration(hours=12)
+    plan_window_end = plan_window_start + datetime.timedelta(hours=12)
 
     # a dictionary mapping each asset to a set of constraints that must be satisfied about the data
     # times of its upstream assets
