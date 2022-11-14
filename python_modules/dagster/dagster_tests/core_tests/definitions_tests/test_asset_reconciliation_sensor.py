@@ -1,4 +1,5 @@
 import contextlib
+import datetime
 import itertools
 from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Union
 
@@ -44,7 +45,7 @@ class RunSpec(NamedTuple):
 class AssetReconciliationScenario(NamedTuple):
     unevaluated_runs: Sequence[RunSpec]
     assets: Sequence[AssetsDefinition]
-    evaluation_delta: Optional[pendulum.Duration] = None
+    evaluation_delta: Optional[datetime.timedelta] = None
     cursor_from: Optional["AssetReconciliationScenario"] = None  # type: ignore
 
     expected_run_requests: Optional[Sequence[RunRequest]] = None
@@ -589,7 +590,7 @@ scenarios = {
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
         ),
         unevaluated_runs=[run(["asset1"])],
-        evaluation_delta=pendulum.duration(minutes=35),
+        evaluation_delta=datetime.timedelta(minutes=35),
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
     ),
     "freshness_half_run": AssetReconciliationScenario(
@@ -600,7 +601,7 @@ scenarios = {
     "freshness_half_run_stale": AssetReconciliationScenario(
         assets=diamond_freshness,
         unevaluated_runs=[run(["asset1", "asset2"])],
-        evaluation_delta=pendulum.duration(minutes=35),
+        evaluation_delta=datetime.timedelta(minutes=35),
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
     ),
     "freshness_overlapping_runs": AssetReconciliationScenario(
@@ -612,7 +613,7 @@ scenarios = {
         assets=overlapping_freshness,
         unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
         # evaluate 35 minutes later, only need to refresh the assets on the shorter freshness policy
-        evaluation_delta=pendulum.duration(minutes=35),
+        evaluation_delta=datetime.timedelta(minutes=35),
         expected_run_requests=[run_request(asset_keys=["asset1", "asset3", "asset5"])],
     ),
     "freshness_overlapping_defer_propogate": AssetReconciliationScenario(
