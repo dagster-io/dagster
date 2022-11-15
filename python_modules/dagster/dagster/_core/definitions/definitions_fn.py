@@ -1,5 +1,4 @@
 import inspect
-import itertools
 import sys
 from contextlib import contextmanager
 from types import ModuleType
@@ -135,17 +134,12 @@ def definitions(
     # the name can be "__main__".
     @repository(name=repo_name)
     def global_repo():
-        # mimicking style of new APIs by using Iterable/Sequence
-        # instead of List, but they prevent the use of + operators
-        # so have to bring in itertools
-        return list(
-            itertools.chain(
-                with_resources(assets or [], resource_defs),  # type: ignore
-                schedules or [],
-                sensors or [],
-                jobs or [],
-            )
-        )
+        return [
+            *with_resources(assets or [], resource_defs),
+            *(schedules or []),
+            *(sensors or []),
+            *(jobs or []),
+        ]
 
     mod.__dict__[MAGIC_REPO_GLOBAL_KEY] = global_repo
     global_repo_singleton.set_instance(global_repo)
