@@ -52,7 +52,7 @@ export interface AssetGraphQuery_assetNodes {
   computeKind: string | null;
   isSource: boolean;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
-  isVersioned: boolean;
+  isObservable: boolean;
 }
 
 export interface AssetGraphQuery {

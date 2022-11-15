@@ -23,5 +23,5 @@ export interface AssetNodeFragment {
   computeKind: string | null;
   isSource: boolean;
   assetKey: AssetNodeFragment_assetKey;
-  isVersioned: boolean;
+  isObservable: boolean;
 }

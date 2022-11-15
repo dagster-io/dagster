@@ -30,7 +30,6 @@ import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetGraphLiveQuery_assetNodes_freshnessPolicy} from './types/AssetGraphLiveQuery';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
-import { VERSION } from 'lodash';
 
 const MISSING_LIVE_DATA: LiveDataForNode = {
   unstartedRunIds: [],
@@ -71,9 +70,23 @@ export const AssetNode: React.FC<{
 
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1];
 
-  const {lastMaterialization, lastObservation, currentLogicalVersion, projectedLogicalVersion, computeStatus} = liveData || MISSING_LIVE_DATA;
-  const isStale = !!(!definition.isSource && projectedLogicalVersion &&
-              currentLogicalVersion !== projectedLogicalVersion);
+  const {
+    lastMaterialization,
+    lastObservation,
+    currentLogicalVersion,
+    projectedLogicalVersion,
+    computeStatus,
+  } = liveData || MISSING_LIVE_DATA;
+
+  let staleStatus: 'ok' | 'never' | 'out-of-sync';
+  if (definition.isSource) {
+    staleStatus = 'ok';
+  } else if (computeStatus === AssetComputeStatus.NONE) {
+    staleStatus = 'never';
+  } else {
+    staleStatus = currentLogicalVersion === projectedLogicalVersion ? 'ok' : 'out-of-sync';
+  }
+  const isStale = staleStatus === 'never' || staleStatus === 'out-of-sync';
 
   return (
     <AssetInsetForHoverEffect>
@@ -81,7 +94,7 @@ export const AssetNode: React.FC<{
         <AssetNodeBox $selected={selected}>
           <Name $isSource={definition.isSource}>
             <span style={{marginTop: 1}}>
-              <Icon name={definition.isSource ? "source_asset" : "asset"} />
+              <Icon name={definition.isSource ? 'source_asset' : 'asset'} />
             </span>
             <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
               {withMiddleTruncation(displayName, {
@@ -89,12 +102,9 @@ export const AssetNode: React.FC<{
               })}
             </div>
             <div style={{flex: 1}} />
-            {definition.isVersioned ?
-              <VersionedBadge $isSource={definition.isSource} $isStale={isStale}>V</VersionedBadge> : (
-              <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
-                <ComputeStatusNotice computeStatus={computeStatus} />
-              </div>
-              )}
+            <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
+              <StaleNotice staleStatus={staleStatus} />
+            </div>
           </Name>
           {definition.description && !inAssetCatalog && (
             <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
@@ -113,36 +123,33 @@ export const AssetNode: React.FC<{
             </Description>
           )}
 
-          {(definition.isSource && !definition.isVersioned) ? null :
-
-          <Stats>
-
-            {definition.isSource ? (
-              lastObservation ? (
-                <StatsRow>
-                  <span>Observed</span>
-                  <CaptionMono style={{textAlign: 'right'}}>
-                    <AssetRunLink
-                      runId={lastObservation.runId}
-                      event={{stepKey, timestamp: lastObservation.timestamp}}
-                    >
-                      <TimestampDisplay
-                        timestamp={Number(lastObservation.timestamp) / 1000}
-                        timeFormat={{showSeconds: false, showTimezone: false}}
-                      />
-                    </AssetRunLink>
-                  </CaptionMono>
-                </StatsRow>
-              ) : (
-                <>
+          {definition.isSource && !definition.isObservable ? null : (
+            <Stats>
+              {definition.isSource ? (
+                lastObservation ? (
                   <StatsRow>
                     <span>Observed</span>
-                    <span>–</span>
+                    <CaptionMono style={{textAlign: 'right'}}>
+                      <AssetRunLink
+                        runId={lastObservation.runId}
+                        event={{stepKey, timestamp: lastObservation.timestamp}}
+                      >
+                        <TimestampDisplay
+                          timestamp={Number(lastObservation.timestamp) / 1000}
+                          timeFormat={{showSeconds: false, showTimezone: false}}
+                        />
+                      </AssetRunLink>
+                    </CaptionMono>
                   </StatsRow>
-                </>
-              )
-            ) : (
-              lastMaterialization ? (
+                ) : (
+                  <>
+                    <StatsRow>
+                      <span>Observed</span>
+                      <span>–</span>
+                    </StatsRow>
+                  </>
+                )
+              ) : lastMaterialization ? (
                 <StatsRow>
                   <span>Materialized</span>
                   <CaptionMono style={{textAlign: 'right'}}>
@@ -181,33 +188,51 @@ export const AssetNode: React.FC<{
                   </CaptionMono>
                 </StatsRow>
                 {definition.opVersion && definition.opVersion !== 'DEFAULT' && (
+              )}
+              {!definition.isSource && (
+                <>
                   <StatsRow>
-                    <span>Code Version</span>
+                    <span>Latest&nbsp;Run</span>
                     <CaptionMono style={{textAlign: 'right'}}>
-                      {definition.opVersion}
+                      <AssetLatestRunWithNotices liveData={liveData} />
                     </CaptionMono>
                   </StatsRow>
-                )}
-              </>
-            )}
-              {definition.isVersioned && currentLogicalVersion && (definition.isSource || lastMaterialization) && (
+                  {definition.opVersion && definition.opVersion !== 'DEFAULT' && (
+                    <StatsRow>
+                      <span>Code Version</span>
+                      <CaptionMono style={{textAlign: 'right'}}>{definition.opVersion}</CaptionMono>
+                    </StatsRow>
+                  )}
+                </>
+              )}
+              {currentLogicalVersion && (definition.isSource || lastMaterialization) && (
                 <StatsRow>
-                  <span style={{color: isStale ? VERSION_COLORS.staleText : VERSION_COLORS.okText}}>Logical Version</span>
+                  <span style={{color: isStale ? VERSION_COLORS.staleText : VERSION_COLORS.okText}}>
+                    Logical Version
+                  </span>
                   <CaptionMono style={{textAlign: 'right'}}>
-                    <LogicalVersion isSource={definition.isSource} isStale={isStale} value={currentLogicalVersion} />
+                    <LogicalVersion
+                      isSource={definition.isSource}
+                      isStale={isStale}
+                      value={currentLogicalVersion}
+                    />
                   </CaptionMono>
                 </StatsRow>
               )}
               {isStale && lastMaterialization && projectedLogicalVersion && (
-                  <StatsRow>
-                    <span style={{color: VERSION_COLORS.staleText}}>Projected Logical Version</span>
-                    <CaptionMono style={{textAlign: 'right'}}>
-                      <LogicalVersion isSource={definition.isSource} isStale={isStale} value={projectedLogicalVersion} />
-                    </CaptionMono>
-                  </StatsRow>
-                )}
-          </Stats>
-          }
+                <StatsRow>
+                  <span style={{color: VERSION_COLORS.staleText}}>Projected Logical Version</span>
+                  <CaptionMono style={{textAlign: 'right'}}>
+                    <LogicalVersion
+                      isSource={definition.isSource}
+                      isStale={isStale}
+                      value={projectedLogicalVersion}
+                    />
+                  </CaptionMono>
+                </StatsRow>
+              )}
+            </Stats>
+          )}
           {definition.computeKind && (
             <OpTags
               minified={false}
@@ -310,7 +335,7 @@ export const ASSET_NODE_FRAGMENT = gql`
     assetKey {
       path
     }
-    isVersioned
+    isObservable
   }
 `;
 
@@ -347,7 +372,7 @@ const Name = styled.div<{$isSource: boolean}>`
   /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
   display: flex;
   padding: 4px 6px;
-  background: ${(p) => p.$isSource ? Colors.Gray200 : Colors.White};
+  background: ${(p) => (p.$isSource ? Colors.Gray200 : Colors.White)};
   font-family: ${FontFamily.monospace};
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
@@ -391,11 +416,16 @@ const Description = styled.div`
   font-size: 12px;
 `;
 
-export const VersionedBadge = styled.div<{$isStale: boolean, $isSource: boolean}>`
+export const VersionedBadge = styled.div<{$isStale: boolean; $isSource: boolean}>`
   /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
   padding: 2px 5px;
-  background: ${(p) => p.$isSource ? VERSION_COLORS.sourceBackground : p.$isStale ? VERSION_COLORS.staleBackground : VERSION_COLORS.okBackground};
-  color: ${(p) => p.$isStale ? VERSION_COLORS.staleText : VERSION_COLORS.okText};
+  background: ${(p) =>
+    p.$isSource
+      ? VERSION_COLORS.sourceBackground
+      : p.$isStale
+      ? VERSION_COLORS.staleBackground
+      : VERSION_COLORS.okBackground};
+  color: ${(p) => (p.$isStale ? VERSION_COLORS.staleText : VERSION_COLORS.okText)};
   font-family: ${FontFamily.monospace};
   border-radius: 5px;
   font-weight: 600;
@@ -434,9 +464,14 @@ const UpstreamNotice = styled.div`
 const STALE_OVERDUE_MSG = `A materialization incorporating more recent upstream data is overdue.`;
 const STALE_UNMATERIALIZED_MSG = `This asset has never been materialized.`;
 
-const LogicalVersionTag = styled.div<{$isSource: boolean, $isStale: boolean}>`
-  background: ${(p) => p.$isSource ? VERSION_COLORS.sourceBackground : p.$isStale ? VERSION_COLORS.staleBackground : VERSION_COLORS.okBackground};
-  color: ${(p) => p.$isStale ? VERSION_COLORS.staleText : VERSION_COLORS.okText};
+const LogicalVersionTag = styled.div<{$isSource: boolean; $isStale: boolean}>`
+  background: ${(p) =>
+    p.$isSource
+      ? VERSION_COLORS.sourceBackground
+      : p.$isStale
+      ? VERSION_COLORS.staleBackground
+      : VERSION_COLORS.okBackground};
+  color: ${(p) => (p.$isStale ? VERSION_COLORS.staleText : VERSION_COLORS.okText)};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -451,10 +486,34 @@ const LogicalVersion: React.FC<{
 }> = ({value, isStale, isSource}) => (
   <Box flex={{gap: 4, alignItems: 'center'}}>
     <Tooltip content={value}>
-      <LogicalVersionTag $isSource={isSource} $isStale={isStale}>{value}</LogicalVersionTag>
+      <LogicalVersionTag $isSource={isSource} $isStale={isStale}>
+        {value}
+      </LogicalVersionTag>
     </Tooltip>
   </Box>
 );
+
+const StaleNotice: React.FC<{staleStatus: 'ok' | 'never' | 'out-of-sync'}> = ({staleStatus}) => {
+  if (staleStatus === 'ok') {
+    return null;
+  } else if (staleStatus === 'never') {
+    return (
+      <UpstreamNotice>
+        never
+        <br />
+        materialized
+      </UpstreamNotice>
+    );
+  } else {
+    return (
+      <UpstreamNotice>
+        upstream
+        <br />
+        changed
+      </UpstreamNotice>
+    );
+  }
+};
 
 export const ComputeStatusNotice: React.FC<{computeStatus: AssetComputeStatus}> = ({
   computeStatus,

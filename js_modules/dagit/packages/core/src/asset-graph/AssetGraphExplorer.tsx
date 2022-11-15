@@ -68,10 +68,10 @@ interface Props {
 export const MINIMAL_SCALE = 0.5;
 export const EXPERIMENTAL_SCALE = 0.1;
 
-const includeInAll = (
-  {isVersioned}: AssetNode,
-  liveData?: LiveDataForNode,
-) => (isVersioned && liveData ? liveData.currentLogicalVersion !== liveData.projectedLogicalVersion : true);
+const includeInAll = ({isObservable}: AssetNode, liveData?: LiveDataForNode) =>
+  isObservable && liveData
+    ? liveData.currentLogicalVersion !== liveData.projectedLogicalVersion
+    : true;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
@@ -431,10 +431,10 @@ export const AssetGraphExplorerWithData: React.FC<
                 context={selectionContext}
                 assetKeys={(selectedGraphNodes.length
                   ? selectedGraphNodes.filter(
-                      (a) => a.definition.isSource && a.definition.isVersioned,
+                      (a) => a.definition.isObservable,
                     )
                   : Object.values(assetGraphData.nodes).filter(
-                      (a) => a.definition.isSource && a.definition.isVersioned,
+                      (a) => a.definition.isObservable,
                     )
                 ).map((n) => n.assetKey)}
                 preferredJobName={explorerPath.pipelineName}
@@ -445,8 +445,7 @@ export const AssetGraphExplorerWithData: React.FC<
                   ? selectedGraphNodes.filter((a) => !a.definition.isSource)
                   : Object.values(assetGraphData.nodes).filter(
                       (a) =>
-                        !a.definition.isSource &&
-                        includeInAll(a.definition, liveDataByNode[a.id]),
+                        !a.definition.isSource && liveDataByNode[a.id].currentLogicalVersion !== liveDataByNode[a.id].projectedLogicalVersion,
                     )
                 ).map((n) => n.assetKey)}
                 preferredJobName={explorerPath.pipelineName}

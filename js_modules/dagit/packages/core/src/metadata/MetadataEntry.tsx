@@ -188,7 +188,7 @@ export const MetadataEntry: React.FC<{
         </Group>
       );
     case 'LogicalVersionMetadataEntry':
-      return <>{entry.value}</>
+      return <>{entry.value}</>;
     default:
       return assertUnreachable(entry);
   }

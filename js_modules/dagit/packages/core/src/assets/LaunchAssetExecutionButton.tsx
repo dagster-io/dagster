@@ -329,7 +329,10 @@ async function stateForLaunchingAssets(
   };
 }
 
-export function getCommonJob(assets: LaunchAssetExecutionAssetNodeFragment[], preferredJobName?: string) {
+export function getCommonJob(
+  assets: LaunchAssetExecutionAssetNodeFragment[],
+  preferredJobName?: string,
+) {
   const everyAssetHasJob = (jobName: string) => assets.every((a) => a.jobNames.includes(jobName));
   const jobsInCommon = assets[0] ? assets[0].jobNames.filter(everyAssetHasJob) : [];
   return jobsInCommon.find((name) => name === preferredJobName) || jobsInCommon[0] || null;
@@ -370,7 +373,6 @@ export function executionParamsForAssetJob(
   assets: {assetKey: AssetKey; opNames: string[]}[],
   tags: {key: string; value: string}[],
 ): LaunchPipelineExecutionVariables['executionParams'] {
-  console.log("ASSET SELECTION: ", assets.map((asset) => ({ path: asset.assetKey.path })));
   return {
     mode: 'default',
     executionMetadata: {
@@ -429,7 +431,7 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     partitionDefinition {
       description
     }
-    isVersioned
+    isObservable
     isSource
     assetKey {
       path

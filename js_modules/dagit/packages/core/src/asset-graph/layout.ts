@@ -45,7 +45,6 @@ const GROUP_NODE_PREFIX = 'group__';
 export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
 
-  console.log("COMPUTING LAYOUT");
 
   g.setGraph({
     rankdir: 'TB',

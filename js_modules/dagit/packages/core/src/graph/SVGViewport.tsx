@@ -242,8 +242,6 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   resizeObserver: any | undefined;
 
   componentDidMount() {
-
-    console.log("SVG componentDidMount");
     this.autocenter();
 
     // The wheel event cannot be prevented via the `onWheel` handler.
@@ -265,7 +263,6 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
       });
       this.resizeObserver.observe(this.element.current);
     }
-
   }
 
   componentWillUnmount() {
@@ -291,7 +288,6 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   }
 
   focus() {
-    console.log("FOCUS!");
     this.element.current?.focus();
   }
 
@@ -367,12 +363,10 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   }
 
   public zoomToSVGBox(box: IBounds, animate: boolean, newScale = this.state.scale) {
-    console.log("ZOOM SVG BOX!");
     this.zoomToSVGCoords(box.x + box.width / 2, box.y + box.height / 2, animate, newScale);
   }
 
   public zoomToSVGCoords(x: number, y: number, animate: boolean, scale = this.state.scale) {
-    console.log("ZOOMING!");
     const el = this.element.current!;
     const boundedScale = Math.max(
       Math.min(this.getMaxZoom(), scale),

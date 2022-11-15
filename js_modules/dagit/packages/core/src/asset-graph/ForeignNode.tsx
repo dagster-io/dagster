@@ -9,13 +9,17 @@ export const SourceAssetNode: React.FC<{
   assetKey: {path: string[]};
   backgroundColor?: string;
   selected: boolean;
-  versioned?: boolean;
-}> = React.memo(({assetKey, backgroundColor, selected, versioned}) => (
+  observable?: boolean;
+}> = React.memo(({assetKey, backgroundColor, selected, observable}) => (
   <AssetNodeContainer $selected={selected}>
     <AssetNodeBox $selected={selected}>
       <SourceAssetNodeLink style={{backgroundColor}}>
         <span className="label">{displayNameForAssetKey(assetKey)}</span>
-        {versioned ? <VersionedBadge $isSource={true} $isStale={false}>V</VersionedBadge> : null}
+        {observable ? (
+          <VersionedBadge $isSource={true} $isStale={false}>
+            V
+          </VersionedBadge>
+        ) : null}
         <Icon name="open_in_new" color={Colors.Gray500} />
       </SourceAssetNodeLink>
     </AssetNodeBox>

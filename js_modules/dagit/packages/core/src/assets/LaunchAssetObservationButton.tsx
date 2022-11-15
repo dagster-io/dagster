@@ -1,13 +1,13 @@
 import {ApolloClient, useApolloClient} from '@apollo/client';
-import {Button, Spinner, Tooltip} from '@dagster-io/ui';
-import {Icon} from '@dagster-io/ui';
+import {Button, Spinner, Tooltip, Icon} from '@dagster-io/ui';
 import React from 'react';
+
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {usePermissions} from '../app/Permissions';
 import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+
 import {
   buildAssetCollisionsAlert,
   executionParamsForAssetJob,
@@ -35,13 +35,12 @@ export const LaunchAssetObservationButton: React.FC<{
   context?: 'all' | 'selected';
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({assetKeys, preferredJobName, context, intent = 'primary'}) => {
+}> = ({assetKeys, preferredJobName, intent = 'primary'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   const [state, setState] = React.useState<ObserveAssetsState>({type: 'none'});
   const client = useApolloClient();
-  const confirm = useConfirmation();
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
   const label = `Observe source ${count}`;
@@ -127,8 +126,7 @@ async function stateForObservingAssets(
     };
   }
 
-  console.log("VERSIONED", assets[0].isVersioned);
-  if (assets.some((x) => !x.isVersioned)) {
+  if (assets.some((x) => !x.isObservable)) {
     return {
       type: 'error',
       error: 'One or more of the selected source assets are unversioned and cannot be observed.',
@@ -153,7 +151,6 @@ async function stateForObservingAssets(
   }
 
   const jobName = getCommonJob(assets, preferredJobName);
-  console.log(assets);
   if (!jobName) {
     return {
       type: 'error',

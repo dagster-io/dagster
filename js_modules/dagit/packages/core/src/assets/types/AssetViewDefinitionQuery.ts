@@ -3205,7 +3205,7 @@ export interface AssetViewDefinitionQuery_assetOrError_Asset_definition {
   computeKind: string | null;
   isSource: boolean;
   assetKey: AssetViewDefinitionQuery_assetOrError_Asset_definition_assetKey;
-  isVersioned: boolean;
+  isObservable: boolean;
   metadataEntries: AssetViewDefinitionQuery_assetOrError_Asset_definition_metadataEntries[];
   type: AssetViewDefinitionQuery_assetOrError_Asset_definition_type | null;
 }
