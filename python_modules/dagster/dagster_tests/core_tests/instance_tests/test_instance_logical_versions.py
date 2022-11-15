@@ -29,33 +29,3 @@ def test_get_most_recent_logical_version():
         assert instance.get_current_logical_version(delta.key, False) == DEFAULT_LOGICAL_VERSION
         materialize([delta, beta, alpha], instance=instance)
         assert instance.get_current_logical_version(delta.key, False) != DEFAULT_LOGICAL_VERSION
-
-
-def test_get_logical_version_from_inputs():
-    @asset
-    def alpha():
-        pass
-
-    @asset
-    def beta():
-        pass
-
-    @asset
-    def delta(alpha, beta):  # pylint: disable=unused-argument
-        pass
-
-    op_version = "foo"
-
-    with instance_for_test() as instance:
-
-        value = _make_hash(op_version, DEFAULT_LOGICAL_VERSION.value, DEFAULT_LOGICAL_VERSION.value)
-
-        ver = instance.get_logical_version_from_inputs(
-            {alpha.key, beta.key},
-            op_version,
-            {
-                alpha.key: False,
-                beta.key: False,
-            },
-        )
-        assert ver.value == value

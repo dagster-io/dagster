@@ -28,19 +28,23 @@ def mock_io_manager():
     return MockIOManager()
 
 
-def get_materialization_from_result(result: ExecuteInProcessResult, node_str: str) -> AssetMaterialization:
+def get_materialization_from_result(
+    result: ExecuteInProcessResult, node_str: str
+) -> AssetMaterialization:
     mats = result.asset_materializations_for_node(node_str)
     assert len(mats) == 1
     assert isinstance(mats[0], AssetMaterialization)
     return mats[0]
 
 
-def assert_same_versions(mat1: AssetMaterialization, mat2: AssetMaterialization) -> None:
+def assert_same_versions(
+    mat1: AssetMaterialization, mat2: AssetMaterialization, code_version: str
+) -> None:
     assert mat1.tags
-    assert mat1.tags["dagster/code_version"] == "abc"
+    assert mat1.tags["dagster/code_version"] == code_version
     assert mat1.tags["dagster/logical_version"] is not None
     assert mat2.tags
-    assert mat2.tags["dagster/code_version"] == "abc"
+    assert mat2.tags["dagster/code_version"] == code_version
     assert mat2.tags["dagster/logical_version"] == mat1.tags["dagster/logical_version"]
 
 
@@ -49,11 +53,14 @@ def assert_different_versions(mat1: AssetMaterialization, mat2: AssetMaterializa
     assert mat1.tags["dagster/code_version"] is not None
     assert mat1.tags["dagster/logical_version"] is not None
     assert mat2.tags
-    assert mat2.tags["dagster/code_version"] != mat1.tags["dagster/code_version"]
     assert mat2.tags["dagster/logical_version"] != mat1.tags["dagster/logical_version"]
 
 
-def materialize_asset(all_assets: Sequence[Union[AssetsDefinition, SourceAsset]], asset_to_materialize: AssetsDefinition, instance: DagsterInstance) -> AssetMaterialization:
+def materialize_asset(
+    all_assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    asset_to_materialize: AssetsDefinition,
+    instance: DagsterInstance,
+) -> AssetMaterialization:
     assets: List[Union[AssetsDefinition, SourceAsset]] = []
     for asset_def in all_assets:
         if isinstance(asset_def, SourceAsset):
@@ -106,7 +113,7 @@ def test_single_versioned_asset():
 
     instance = DagsterInstance.ephemeral()
     mat1, mat2 = materialize_twice([asset1], asset1, instance)
-    assert_same_versions(mat1, mat2)
+    assert_same_versions(mat1, mat2, "abc")
 
 
 def test_source_asset_non_versioned_asset():
@@ -131,7 +138,7 @@ def test_source_asset_versioned_asset():
     instance = DagsterInstance.ephemeral()
 
     mat1, mat2 = materialize_twice([source1, asset1], asset1, instance)
-    assert_same_versions(mat1, mat2)
+    assert_same_versions(mat1, mat2, "abc")
 
 
 def test_source_asset_non_versioned_asset_non_argument_deps():
@@ -163,7 +170,7 @@ def test_versioned_after_unversioned():
 
     _, asset2_mat1 = materialize_assets(all_assets, instance)
     asset2_mat2 = materialize_asset(all_assets, asset2, instance)
-    assert_same_versions(asset2_mat1, asset2_mat2)
+    assert_same_versions(asset2_mat1, asset2_mat2, "abc")
 
     materialize_asset(all_assets, asset1, instance)
 
@@ -189,8 +196,8 @@ def test_versioned_after_versioned():
     _, asset2_mat2 = materialize_assets(all_assets, instance)
     asset2_mat3 = materialize_asset(all_assets, asset2, instance)
 
-    assert_same_versions(asset2_mat1, asset2_mat2)
-    assert_same_versions(asset2_mat1, asset2_mat3)
+    assert_same_versions(asset2_mat1, asset2_mat2, "xyz")
+    assert_same_versions(asset2_mat1, asset2_mat3, "xyz")
 
 
 def test_unversioned_after_versioned():

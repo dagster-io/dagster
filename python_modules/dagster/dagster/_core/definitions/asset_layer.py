@@ -21,6 +21,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.backcompat import ExperimentalWarning
 
@@ -721,11 +722,11 @@ class AssetLayer:
         return False if assets_def is None else isinstance(assets_def.node_def, GraphDefinition)
 
     def op_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
-        return (
-            None
-            if self.is_graph_backed_asset(asset_key) or not asset_key in self._assets_defs_by_key
-            else self._assets_defs_by_key[asset_key].op.version
-        )
+        assets_def = self.assets_defs_by_key.get(asset_key)
+        if assets_def is not None and isinstance(assets_def.node_def, OpDefinition):
+            return assets_def.node_def.version
+        else:
+            return None
 
     def metadata_for_asset(self, asset_key: AssetKey) -> Optional[MetadataUserInput]:
         if asset_key in self._source_assets_by_key:
