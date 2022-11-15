@@ -665,8 +665,8 @@ type AssetNode {
   graphName: String
   groupName: String
   id: ID!
-  isSource: Boolean!
   isObservable: Boolean!
+  isSource: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!

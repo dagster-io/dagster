@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union, cast
-from dagster._core.errors import DagsterUndefinedLogicalVersionError
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -22,6 +21,7 @@ from dagster_graphql.schema.solids import (
 from dagster import AssetKey
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.errors import DagsterUndefinedLogicalVersionError
 from dagster._core.host_representation import ExternalRepository, RepositoryLocation
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (
@@ -165,8 +165,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     graphName = graphene.String()
     groupName = graphene.String()
     id = graphene.NonNull(graphene.ID)
-    is_source = graphene.NonNull(graphene.Boolean)
-    is_observable = graphene.NonNull(graphene.Boolean)
+    isObservable = graphene.NonNull(graphene.Boolean)
+    isSource = graphene.NonNull(graphene.Boolean)
     jobNames = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
     latestMaterializationByPartition = graphene.Field(
@@ -582,10 +582,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             if self._external_repository.has_external_job(job_name)
         ]
 
-    def resolve_is_source(self, _graphene_info) -> bool:
+    def resolve_isSource(self, _graphene_info) -> bool:
         return self.is_source_asset()
 
-    def resolve_is_observable(self, _graphene_info) -> bool:
+    def resolve_isObservable(self, _graphene_info) -> bool:
         return self._external_asset_node.is_observable
 
     def resolve_latestMaterializationByPartition(

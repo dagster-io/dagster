@@ -25,14 +25,28 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import HasContext
 
 
+def get_full_external_pipeline_or_raise(
+    graphene_info: HasContext,
+    selector: PipelineSelector,
+) -> ExternalPipeline:
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(selector, "selector", PipelineSelector)
+    return _get_external_pipeline_or_raise(graphene_info, selector, ignore_subset=True)
+
+
 def get_external_pipeline_or_raise(
+    graphene_info: HasContext, selector: PipelineSelector
+) -> ExternalPipeline:
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(selector, "selector", PipelineSelector)
+    return _get_external_pipeline_or_raise(graphene_info, selector)
+
+
+def _get_external_pipeline_or_raise(
     graphene_info: HasContext, selector: PipelineSelector, ignore_subset: bool = False
 ) -> ExternalPipeline:
     from ..schema.errors import GrapheneInvalidSubsetError, GraphenePipelineNotFoundError
     from ..schema.pipelines.pipeline import GraphenePipeline
-
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
 
     ctx = graphene_info.context
     if not ctx.has_external_job(selector):
