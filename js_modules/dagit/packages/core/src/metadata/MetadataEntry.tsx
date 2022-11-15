@@ -187,8 +187,6 @@ export const MetadataEntry: React.FC<{
           </IconButton>
         </Group>
       );
-    case 'LogicalVersionMetadataEntry':
-      return <>{entry.value}</>;
     default:
       return assertUnreachable(entry);
   }
@@ -251,9 +249,6 @@ export const METADATA_ENTRY_FRAGMENT = gql`
       schema {
         ...TableSchemaFragment
       }
-    }
-    ... on LogicalVersionMetadataEntry {
-      value
     }
   }
   ${TABLE_SCHEMA_FRAGMENT}
