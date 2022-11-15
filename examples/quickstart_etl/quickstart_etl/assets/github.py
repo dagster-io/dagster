@@ -1,7 +1,8 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 from github import Github
 
-from dagster import Field, MetadataValue, StringSource, asset
+from dagster import Field, MetadataValue, StringSource, asset, file_relative_path
 
 
 @asset(
@@ -41,7 +42,7 @@ def github_stargazers(context) -> pd.DataFrame:
 
 
 @asset(group_name="github", compute_kind="Pandas")
-def github_stars_by_date(context, github_stargazers):
+def github_stars_by_date(context, github_stargazers: pd.DataFrame) -> pd.DataFrame:
     """
     Aggregate stars by date.
     """
@@ -58,16 +59,8 @@ def github_stars_by_date(context, github_stargazers):
     return df
 
 
-from dagster import MetadataValue, asset, file_relative_path
-import matplotlib.pyplot as plt
-
-
-@asset(
-    description="Star history line chart",
-    group_name="github",
-    compute_kind="Plot",
-)
-def github_star_history(context, github_stars_by_date):
+@asset(group_name="github", compute_kind="Plot")
+def github_star_history(context, github_stars_by_date: pd.DataFrame):
     """
     Line chart of the star history.
     """

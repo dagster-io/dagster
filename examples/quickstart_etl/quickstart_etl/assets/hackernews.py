@@ -1,3 +1,5 @@
+from typing import List
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
@@ -7,7 +9,7 @@ from dagster import Field, MetadataValue, OpExecutionContext, asset, file_relati
 
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
-def hackernews_topstory_ids() -> list:
+def hackernews_topstory_ids() -> List[int]:
     """
     Get up to 500 top stories
 
@@ -23,7 +25,9 @@ def hackernews_topstory_ids() -> list:
     compute_kind="HackerNews API",
     config_schema={"sample_size": Field(int, is_required=False)},
 )
-def hackernews_topstories(context: OpExecutionContext, hackernews_topstory_ids) -> pd.DataFrame:
+def hackernews_topstories(
+    context: OpExecutionContext, hackernews_topstory_ids: List[int]
+) -> pd.DataFrame:
     """
     Get items based on story ids. Default to fetching all (up to 500 items) which may take longer.
 
@@ -42,14 +46,20 @@ def hackernews_topstories(context: OpExecutionContext, hackernews_topstory_ids) 
         if len(results) % 20 == 0:
             context.log.info(f"Got {len(results)} items so far.")
 
-    context.add_output_metadata({"num_records": len(results)})
     df = pd.DataFrame(results)
-
+    context.add_output_metadata(
+        {
+            "num_records": len(df),
+            "preview": MetadataValue.md(df.head().to_markdown()),
+        }
+    )
     return df
 
 
 @asset(group_name="hackernews", compute_kind="Plot")
-def hackernews_topstories_word_cloud(context: OpExecutionContext, hackernews_topstories):
+def hackernews_topstories_word_cloud(
+    context: OpExecutionContext, hackernews_topstories: pd.DataFrame
+):
     """
     Exploratory analysis: Generate a word cloud from the current top 500 HN top stories.
 
