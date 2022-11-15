@@ -62,7 +62,7 @@ from dagster._core.utils import str_format_list
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import merge_dicts, traced
-from dagster._utils.backcompat import experimental_functionality_warning
+from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .config import (
@@ -107,6 +107,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.secrets import SecretsLoader
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
+    from dagster._core.storage.captured_log_manager import CapturedLogManager
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
@@ -300,6 +301,7 @@ class DagsterInstance:
         from dagster._core.run_coordinator import RunCoordinator
         from dagster._core.scheduler import Scheduler
         from dagster._core.secrets import SecretsLoader
+        from dagster._core.storage.captured_log_manager import CapturedLogManager
         from dagster._core.storage.compute_log_manager import ComputeLogManager
         from dagster._core.storage.event_log import EventLogStorage
         from dagster._core.storage.root import LocalArtifactStorage
@@ -319,6 +321,10 @@ class DagsterInstance:
         self._compute_log_manager = check.inst_param(
             compute_log_manager, "compute_log_manager", ComputeLogManager
         )
+        if not isinstance(self._compute_log_manager, CapturedLogManager):
+            deprecation_warning(
+                "ComputeLogManager", "1.2.0", "Implement the CapturedLogManager interface instead."
+            )
         self._compute_log_manager.register_instance(self)
         self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
 
