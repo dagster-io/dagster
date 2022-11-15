@@ -519,6 +519,9 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
             variables={"reexecutionParams": {"parentRunId": run_id, "strategy": "ALL_STEPS"}},
         )
 
+        assert retry.data["launchPipelineReexecution"].get("run"), retry.data[
+            "launchPipelineReexecution"
+        ]
         run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
         assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[

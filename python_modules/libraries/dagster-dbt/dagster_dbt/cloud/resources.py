@@ -55,6 +55,18 @@ class DbtCloudResourceV2:
     def api_base_url(self) -> str:
         return urljoin(self._dbt_cloud_host, DBT_ACCOUNTS_PATH)
 
+    def build_url_for_job(self, project_id: int, job_id: int) -> str:
+        return urljoin(
+            self._dbt_cloud_host,
+            f"next/deploy/{self._account_id}/projects/{project_id}/jobs/{job_id}/",
+        )
+
+    def build_url_for_cloud_docs(self, job_id: int, resource_type: str, unique_id: str) -> str:
+        return urljoin(
+            self._dbt_cloud_host,
+            f"/accounts/{self._account_id}/jobs/{job_id}/docs/#!/{resource_type}/{unique_id}",
+        )
+
     def make_request(
         self,
         method: str,
@@ -395,7 +407,7 @@ class DbtCloudResourceV2:
 
             # completed successfully
             if status == "Success":
-                return self.get_run(run_id, include_related=["job", "trigger"])
+                return self.get_run(run_id, include_related=["job", "trigger", "run_steps"])
             elif status in ["Error", "Cancelled"]:
                 break
             elif status not in ["Queued", "Starting", "Running"]:
@@ -428,6 +440,7 @@ class DbtCloudResourceV2:
         job_id: int,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
+        **kwargs,
     ) -> DbtCloudOutput:
         """
         Runs a dbt Cloud job and polls until it completes. Will raise a `dagster.Failure` exception
@@ -447,7 +460,7 @@ class DbtCloudResourceV2:
             :py:class:`~DbtCloudOutput`: Class containing details about the specific job run and the
                 parsed run results.
         """
-        run_details = self.run_job(job_id)
+        run_details = self.run_job(job_id, **kwargs)
         run_id = run_details["id"]
         href = run_details["href"]
         final_run_details = self.poll_run(
@@ -530,11 +543,11 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
         my_dbt_cloud_resource = dbt_cloud_resource.configured(
             {
                 "auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"},
-                "account_id": 30000,
+                "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
             }
         )
 
-        @job(resource_defs={"dbt_cloud":my_dbt_cloud_resource})
+        @job(resource_defs={"dbt_cloud": my_dbt_cloud_resource})
         def my_dbt_cloud_job():
             ...
     """

@@ -176,7 +176,7 @@ class Manager:
             self.context = DagstermillRuntimeExecutionContext(
                 pipeline_context=pipeline_context,
                 pipeline_def=pipeline_def,
-                solid_config=run_config.get("solids", {}).get(solid.name, {}).get("config"),
+                solid_config=run_config.get("ops", {}).get(solid.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     pipeline_def,
@@ -328,7 +328,7 @@ class Manager:
 
         if not self.solid_def.has_output(output_name):
             raise DagstermillError(
-                f"Solid {self.solid_def.name} does not have output named {output_name}."
+                f"Op {self.solid_def.name} does not have output named {output_name}."
                 f"Expected one of {[str(output_def.name) for output_def in self.solid_def.output_defs]}"
             )
 

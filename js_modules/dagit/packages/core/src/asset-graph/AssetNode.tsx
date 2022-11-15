@@ -1,6 +1,17 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, Tooltip, FontFamily, Box, CaptionMono, Spinner} from '@dagster-io/ui';
+import {
+  Colors,
+  Icon,
+  Tooltip,
+  FontFamily,
+  Box,
+  CaptionMono,
+  Spinner,
+  Caption,
+  Tag,
+} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
+import moment from 'moment-timezone';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -8,20 +19,26 @@ import styled from 'styled-components/macro';
 import {withMiddleTruncation} from '../app/Util';
 import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
+import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {humanCronString} from '../schedules/humanCronString';
 import {AssetComputeStatus} from '../types/globalTypes';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
+import {AssetGraphLiveQuery_assetNodes_freshnessPolicy} from './types/AssetGraphLiveQuery';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
-const MISSING_LIVE_DATA = {
+const MISSING_LIVE_DATA: LiveDataForNode = {
   unstartedRunIds: [],
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
+  freshnessInfo: null,
+  freshnessPolicy: null,
   lastMaterialization: null,
+  lastMaterializationRunStatus: null,
   computeStatus: AssetComputeStatus.NONE,
   stepKey: '',
 };
@@ -104,9 +121,9 @@ export const AssetNode: React.FC<{
             )}
             <StatsRow>
               <span>Latest&nbsp;Run</span>
-              <CaptionMono style={{textAlign: 'right'}}>
+              <Caption style={{textAlign: 'right'}}>
                 <AssetLatestRunWithNotices liveData={liveData} />
-              </CaptionMono>
+              </Caption>
             </StatsRow>
           </Stats>
           {definition.computeKind && (
@@ -154,13 +171,15 @@ export const AssetRunLink: React.FC<{
   runId: string;
   event?: Parameters<typeof linkToRunEvent>[1];
 }> = ({runId, children, event}) => (
-  <Link
-    to={event ? linkToRunEvent({runId}, event) : `/instance/runs/${runId}`}
-    target="_blank"
-    rel="noreferrer"
-  >
-    {children || titleForRun({runId})}
-  </Link>
+  <CaptionMono>
+    <Link
+      to={event ? linkToRunEvent({runId}, event) : `/instance/runs/${runId}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {children || titleForRun({runId})}
+    </Link>
+  </CaptionMono>
 );
 
 export const ASSET_NODE_LIVE_FRAGMENT = gql`
@@ -176,6 +195,13 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     assetMaterializations(limit: 1) {
       timestamp
       runId
+    }
+    freshnessPolicy {
+      maximumLagMinutes
+      cronSchedule
+    }
+    freshnessInfo {
+      currentMinutesLate
     }
   }
 `;
@@ -305,6 +331,8 @@ const UpstreamNotice = styled.div`
   border-top-right-radius: 3px;
 `;
 
+const OVERDUE_MESSAGE = `A materialization incorporating more recent upstream data is overdue.`;
+
 export const ComputeStatusNotice: React.FC<{computeStatus: AssetComputeStatus}> = ({
   computeStatus,
 }) =>
@@ -318,46 +346,133 @@ export const ComputeStatusNotice: React.FC<{computeStatus: AssetComputeStatus}> 
 
 export const AssetLatestRunWithNotices: React.FC<{
   liveData?: LiveDataForNode;
-}> = ({liveData}) => {
+  includeFreshness?: boolean;
+}> = ({liveData, includeFreshness}) => {
   const {
     lastMaterialization,
+    lastMaterializationRunStatus,
     unstartedRunIds,
     inProgressRunIds,
     runWhichFailedToMaterialize,
     stepKey,
   } = liveData || MISSING_LIVE_DATA;
 
-  return inProgressRunIds?.length > 0 ? (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Tooltip content="A run is currently rematerializing this asset.">
-        <Spinner purpose="body-text" />
-      </Tooltip>
-      <AssetRunLink runId={inProgressRunIds[0]} />
+  const buildRunTagContent = () => {
+    if (inProgressRunIds?.length > 0) {
+      return (
+        <Box flex={{gap: 4, alignItems: 'center'}}>
+          <Tooltip content="A run is currently rematerializing this asset.">
+            <Spinner purpose="caption-text" />
+          </Tooltip>
+          <AssetRunLink runId={inProgressRunIds[0]} />
+        </Box>
+      );
+    }
+    if (unstartedRunIds?.length > 0) {
+      return (
+        <Box flex={{gap: 4, alignItems: 'center'}}>
+          <Tooltip content="A run has started that will rematerialize this asset soon.">
+            <Spinner purpose="caption-text" stopped />
+          </Tooltip>
+          <AssetRunLink runId={unstartedRunIds[0]} />
+        </Box>
+      );
+    }
+    if (runWhichFailedToMaterialize?.__typename === 'Run') {
+      return (
+        <Box flex={{gap: 4, alignItems: 'center'}}>
+          <Tooltip
+            content={`Run ${titleForRun({
+              runId: runWhichFailedToMaterialize.id,
+            })} failed to materialize this asset`}
+          >
+            <Icon name="warning" color={Colors.Red500} />
+          </Tooltip>
+          <AssetRunLink runId={runWhichFailedToMaterialize.id} />
+        </Box>
+      );
+    }
+    if (lastMaterialization) {
+      return (
+        <Box flex={{gap: 6, alignItems: 'center'}}>
+          {lastMaterializationRunStatus ? (
+            <RunStatusIndicator status={lastMaterializationRunStatus} size={10} />
+          ) : (
+            <div style={{width: 10}} />
+          )}
+          <AssetRunLink
+            runId={lastMaterialization.runId}
+            event={{stepKey, timestamp: lastMaterialization.timestamp}}
+          />
+        </Box>
+      );
+    }
+    return undefined;
+  };
+
+  const runTagContent = buildRunTagContent();
+
+  if (!includeFreshness) {
+    return runTagContent || <span>–</span>;
+  }
+
+  return (
+    <Box flex={{direction: 'row', gap: 4}}>
+      {runTagContent ? <Tag>{runTagContent}</Tag> : <span>–</span>}
+      {liveData && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
     </Box>
-  ) : unstartedRunIds?.length > 0 ? (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Tooltip content="A run has started that will rematerialize this asset soon.">
-        <Spinner purpose="body-text" stopped />
-      </Tooltip>
-      <AssetRunLink runId={unstartedRunIds[0]} />
-    </Box>
-  ) : runWhichFailedToMaterialize?.__typename === 'Run' ? (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Tooltip
-        content={`Run ${titleForRun({
-          runId: runWhichFailedToMaterialize.id,
-        })} failed to materialize this asset`}
-      >
-        <Icon name="warning" color={Colors.Red500} />
-      </Tooltip>
-      <AssetRunLink runId={runWhichFailedToMaterialize.id} />
-    </Box>
-  ) : lastMaterialization ? (
-    <AssetRunLink
-      runId={lastMaterialization.runId}
-      event={{stepKey, timestamp: lastMaterialization.timestamp}}
-    />
-  ) : (
-    <span>–</span>
   );
+};
+
+export const CurrentMinutesLateTag: React.FC<{
+  liveData: LiveDataForNode;
+  policyOnHover?: boolean;
+}> = ({liveData, policyOnHover}) => {
+  const {freshnessInfo, freshnessPolicy, lastMaterialization} = liveData;
+  const description = policyOnHover ? freshnessPolicyDescription(freshnessPolicy) : '';
+
+  if (!lastMaterialization || !freshnessInfo) {
+    return <span />;
+  }
+
+  return freshnessInfo.currentMinutesLate ? (
+    <Tooltip content={<div style={{maxWidth: 400}}>{`${OVERDUE_MESSAGE} ${description}`}</div>}>
+      <Tag intent="danger">
+        {moment
+          .duration(freshnessInfo.currentMinutesLate, 'minute')
+          .humanize(false, {m: 120, h: 48})}
+        {' late'}
+      </Tag>
+    </Tooltip>
+  ) : freshnessInfo.currentMinutesLate === 0 && description ? (
+    <Tooltip content={freshnessPolicyDescription(freshnessPolicy)}>
+      <Tag intent="success">Fresh</Tag>
+    </Tooltip>
+  ) : freshnessInfo.currentMinutesLate === 0 ? (
+    <Tag intent="success">Fresh</Tag>
+  ) : (
+    <span />
+  );
+};
+
+export const freshnessPolicyDescription = (
+  freshnessPolicy: AssetGraphLiveQuery_assetNodes_freshnessPolicy | null,
+) => {
+  if (!freshnessPolicy) {
+    return '';
+  }
+
+  const {cronSchedule, maximumLagMinutes} = freshnessPolicy;
+
+  const cronDesc = cronSchedule ? humanCronString(cronSchedule, 'UTC').replace(/^At /, '') : '';
+  const lagDesc =
+    maximumLagMinutes % 30 === 0
+      ? `${maximumLagMinutes / 60} hour${maximumLagMinutes / 60 !== 1 ? 's' : ''}`
+      : `${maximumLagMinutes} min`;
+
+  if (cronDesc) {
+    return `By ${cronDesc}, this asset should incorporate all data up to ${lagDesc} before that time`;
+  } else {
+    return `At any point in time, this asset should incorporate all data up to ${lagDesc} before that time`;
+  }
 };

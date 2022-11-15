@@ -1061,7 +1061,7 @@ export interface GraphExplorerFragment_Pipeline_modes {
 }
 
 export interface GraphExplorerFragment_Pipeline {
-  __typename: "Pipeline" | "Job" | "Graph" | "CompositeSolidDefinition";
+  __typename: "Pipeline" | "Job" | "CompositeSolidDefinition" | "Graph";
   id: string;
   name: string;
   description: string | null;

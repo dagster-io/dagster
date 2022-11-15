@@ -31,7 +31,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
 }
 
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
   name: string | null;
   description: string | null;
@@ -45,7 +45,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
 }
 
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
   name: string | null;
   description: string | null;
@@ -609,7 +609,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
 }
 
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
   name: string | null;
   description: string | null;
@@ -623,7 +623,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
 }
 
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
   name: string | null;
   description: string | null;

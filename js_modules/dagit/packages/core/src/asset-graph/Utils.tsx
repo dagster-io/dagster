@@ -1,6 +1,6 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {AssetComputeStatus} from '../types/globalTypes';
+import {AssetComputeStatus, RunStatus} from '../types/globalTypes';
 
 import {
   AssetGraphLiveQuery_assetsLatestInfo_latestRun,
@@ -8,6 +8,8 @@ import {
   AssetGraphLiveQuery,
   AssetGraphLiveQuery_assetsLatestInfo,
   AssetGraphLiveQuery_assetNodes,
+  AssetGraphLiveQuery_assetNodes_freshnessPolicy,
+  AssetGraphLiveQuery_assetNodes_freshnessInfo,
 } from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery_assetNodes,
@@ -120,6 +122,9 @@ export interface LiveDataForNode {
   inProgressRunIds: string[]; // run in progress and step in progress
   runWhichFailedToMaterialize: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;
   lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
+  lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
+  freshnessPolicy: AssetGraphLiveQuery_assetNodes_freshnessPolicy | null;
+  freshnessInfo: AssetGraphLiveQuery_assetNodes_freshnessInfo | null;
   computeStatus: AssetComputeStatus;
 }
 export interface LiveData {
@@ -166,7 +171,13 @@ export const buildLiveDataForNode = (
 
   return {
     lastMaterialization,
+    lastMaterializationRunStatus:
+      latestRunForAsset && lastMaterialization?.runId === latestRunForAsset?.id
+        ? latestRunForAsset.status
+        : null,
     stepKey: assetNode.opNames[0],
+    freshnessInfo: assetNode.freshnessInfo,
+    freshnessPolicy: assetNode.freshnessPolicy,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
     computeStatus: assetLatestInfo?.computeStatus || AssetComputeStatus.NONE,

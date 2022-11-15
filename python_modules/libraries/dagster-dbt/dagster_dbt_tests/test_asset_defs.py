@@ -23,6 +23,8 @@ from dagster._core.definitions import build_assets_job
 from dagster._legacy import AssetGroup
 from dagster._utils import file_relative_path
 
+from .utils import assert_assets_match_project
+
 
 @pytest.mark.parametrize(
     "prefix",
@@ -97,44 +99,6 @@ def test_runtime_metadata_fn():
         MetadataEntry("dbt_model", value=materializations[0].asset_key.path[-1]),
     ]:
         assert entry in materializations[0].metadata_entries
-
-
-def assert_assets_match_project(dbt_assets, prefix=None):
-    if prefix is None:
-        prefix = []
-    elif isinstance(prefix, str):
-        prefix = [prefix]
-
-    assert len(dbt_assets) == 1
-    assets_op = dbt_assets[0].op
-    assert assets_op.tags == {"kind": "dbt"}
-    assert len(assets_op.input_defs) == 0
-    assert set(assets_op.output_dict.keys()) == {
-        "sort_by_calories",
-        "least_caloric",
-        "sort_hot_cereals_by_calories",
-        "sort_cold_cereals_by_calories",
-    }
-    for asset_name in [
-        "subdir_schema/least_caloric",
-        "sort_hot_cereals_by_calories",
-        "cold_schema/sort_cold_cereals_by_calories",
-    ]:
-        asset_key = AssetKey(prefix + asset_name.split("/"))
-        output_name = asset_key.path[-1]
-        assert dbt_assets[0].keys_by_output_name[output_name] == asset_key
-        assert dbt_assets[0].asset_deps[asset_key] == {AssetKey(prefix + ["sort_by_calories"])}
-
-    for asset_key, group_name in dbt_assets[0].group_names_by_key.items():
-        if asset_key == AssetKey(prefix + ["subdir_schema", "least_caloric"]):
-            assert group_name == "subdir"
-        else:
-            assert group_name == "default"
-
-    assert dbt_assets[0].keys_by_output_name["sort_by_calories"] == AssetKey(
-        prefix + ["sort_by_calories"]
-    )
-    assert not dbt_assets[0].asset_deps[AssetKey(prefix + ["sort_by_calories"])]
 
 
 def test_fail_immediately(

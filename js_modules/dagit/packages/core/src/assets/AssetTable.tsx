@@ -138,7 +138,7 @@ export const AssetTable = ({
             <th>{view === 'directory' ? 'Asset Key Prefix' : 'Asset Key'}</th>
             <th style={{width: 340}}>Defined in</th>
             <th style={{width: 265}}>Materialized</th>
-            <th style={{width: 115}}>Latest run</th>
+            <th style={{width: 215}}>Latest run</th>
             <th style={{width: 80}}>Actions</th>
           </tr>
         </thead>
@@ -281,13 +281,7 @@ const AssetEntryRow: React.FC<{
             </Box>
           ) : undefined}
         </td>
-        <td>
-          {liveData && (
-            <Mono>
-              <AssetLatestRunWithNotices liveData={liveData} />
-            </Mono>
-          )}
-        </td>
+        <td>{liveData && <AssetLatestRunWithNotices liveData={liveData} includeFreshness />}</td>
         <td>
           {asset ? (
             <Box flex={{gap: 8, alignItems: 'center'}}>

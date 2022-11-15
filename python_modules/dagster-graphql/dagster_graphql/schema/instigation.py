@@ -113,7 +113,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
         self._tick = check.inst_param(tick, "tick", InstigatorTick)
 
         super().__init__(
-            status=tick.status,
+            status=tick.status.value,
             timestamp=tick.timestamp,
             runIds=tick.run_ids,
             runKeys=tick.run_keys,

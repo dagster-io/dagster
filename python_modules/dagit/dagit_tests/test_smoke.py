@@ -66,7 +66,7 @@ def test_smoke_app(gen_instance):
             data = result.json()
             assert "errors" in data
             assert len(data["errors"]) == 1
-            assert "must not have a sub selection" in data["errors"][0]["message"]
+            assert "must not have a selection" in data["errors"][0]["message"]
 
             # Missing routes redirect to the index.html file of the Dagit react app, so the user
             # gets our UI when they navigate to "synthetic" react router URLs.

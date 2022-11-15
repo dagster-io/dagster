@@ -10,12 +10,19 @@ import {
   Menu,
   Popover,
 } from '@dagster-io/ui';
+import keyBy from 'lodash/keyBy';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {tokenForAssetKey} from '../asset-graph/Utils';
+import {PartitionHealthData} from '../assets/PartitionHealthSummary';
+import {GanttChartMode} from '../gantt/Constants';
+import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
+import {RunStatus} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -39,25 +46,29 @@ import {
   PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
   MatrixStep,
   PartitionRuns,
-  StatusSquareFinalColor,
   useMatrixData,
+  MatrixData,
 } from './useMatrixData';
+
+const BUFFER = 3;
+
+export const getVisibleItemCount = (viewportWidth: number) =>
+  Math.ceil(viewportWidth / BOX_SIZE) - BUFFER;
 
 interface PartitionRunSelection {
   partitionName: string;
   stepName?: string;
 }
 
-interface PartitionStepStatusProps {
-  pipelineName: string;
-  partitionNames: string[];
-  partitions: PartitionRuns[];
-  repoAddress: RepoAddress;
-  runFilters?: RunFilterToken[];
-  setRunFilters?: (val: RunFilterToken[]) => void;
+interface PartitionStepStatusBaseProps {
   offset: number;
   setOffset: (val: number) => void;
   setPageSize: (val: number) => void;
+  pipelineName: string;
+  partitionNames: string[];
+
+  runFilters?: RunFilterToken[];
+  setRunFilters?: (val: RunFilterToken[]) => void;
 }
 
 const timeboundsOfPartitions = (partitionColumns: {steps: {unix: number}[]}[]) => {
@@ -73,22 +84,59 @@ const timeboundsOfPartitions = (partitionColumns: {steps: {unix: number}[]}[]) =
   return [minUnix, maxUnix] as const;
 };
 
-export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) => {
-  const {viewport, containerProps} = useViewport();
-  const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
-  const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
-  const {setPageSize} = props;
+export const PartitionPerAssetStatus: React.FC<
+  PartitionStepStatusBaseProps & {
+    assetHealth: PartitionHealthData[];
+    assetQueryItems: GraphQueryItem[];
+  }
+> = ({assetHealth, partitionNames, assetQueryItems, ...rest}) => {
+  const healthByAssetKey = keyBy(assetHealth, (a) => tokenForAssetKey(a.assetKey));
 
-  React.useEffect(() => {
-    if (viewport.width) {
-      const pageSize = Math.ceil(viewport.width / BOX_SIZE) - BUFFER;
-      setPageSize(pageSize);
-    }
-  }, [viewport.width, setPageSize]);
+  const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
+  const layoutBoxesWithPartitions = layout.boxes.filter(
+    (b) => healthByAssetKey[b.node.name].timeline.keys.length,
+  );
 
+  const data: MatrixData = {
+    stepRows: layoutBoxesWithPartitions.map((box) => ({
+      x: box.x,
+      name: box.node.name,
+      totalFailurePercent: 0,
+      finalFailurePercent: 0,
+    })),
+    partitions: [],
+    partitionColumns: partitionNames.map((p, idx) => ({
+      steps: layoutBoxesWithPartitions.map((a) => ({
+        name: a.node.name,
+        color: healthByAssetKey[a.node.name].timeline.statusByPartition[p] ? 'SUCCESS' : 'MISSING',
+        unix: 0,
+      })),
+      idx,
+      name: p,
+      runsLoaded: true,
+      runs: [],
+    })),
+  };
+
+  return (
+    <PartitionStepStatus
+      {...rest}
+      partitionNames={partitionNames}
+      data={data}
+      showLatestRun={false}
+    />
+  );
+};
+
+export const PartitionPerOpStatus: React.FC<
+  PartitionStepStatusBaseProps & {
+    repoAddress: RepoAddress;
+    partitions: PartitionRuns[];
+  }
+> = ({repoAddress, pipelineName, partitions, partitionNames, ...rest}) => {
   // Retrieve the pipeline's structure
-  const repositorySelector = repoAddressToSelector(props.repoAddress);
-  const pipelineSelector = {...repositorySelector, pipelineName: props.pipelineName};
+  const repositorySelector = repoAddressToSelector(repoAddress);
+  const pipelineSelector = {...repositorySelector, pipelineName};
   const pipeline = useQuery<
     PartitionStepStatusPipelineQuery,
     PartitionStepStatusPipelineQueryVariables
@@ -101,15 +149,42 @@ export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) =
     pipeline.data.pipelineSnapshotOrError.solidHandles;
 
   const data = useMatrixData({
-    partitionNames: props.partitionNames,
-    partitions: props.partitions,
+    partitionNames,
+    partitions,
     stepQuery: '',
     solidHandles,
   });
 
-  if (!data || !solidHandles) {
+  if (!data) {
     return <span />;
   }
+  return (
+    <PartitionStepStatus
+      {...rest}
+      showLatestRun={true}
+      pipelineName={pipelineName}
+      partitionNames={partitionNames}
+      data={data}
+    />
+  );
+};
+
+const PartitionStepStatus: React.FC<
+  PartitionStepStatusBaseProps & {
+    data: MatrixData;
+    showLatestRun: boolean;
+  }
+> = (props) => {
+  const {viewport, containerProps} = useViewport();
+  const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
+  const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
+  const {setPageSize, data} = props;
+
+  React.useEffect(() => {
+    if (viewport.width) {
+      setPageSize(getVisibleItemCount(viewport.width));
+    }
+  }, [viewport.width, setPageSize]);
 
   const {stepRows, partitionColumns} = data;
 
@@ -119,8 +194,7 @@ export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) =
     return stepRows.map((stepRow) => stepsByName[stepRow.name]);
   };
 
-  const BUFFER = 3;
-  const visibleCount = Math.ceil(viewport.width / BOX_SIZE) - BUFFER;
+  const visibleCount = getVisibleItemCount(viewport.width);
   const visibleStart = Math.max(0, partitionColumns.length - props.offset - visibleCount);
   const visibleEnd = Math.max(visibleCount, partitionColumns.length - props.offset);
   const visibleColumns = partitionColumns.slice(visibleStart, visibleEnd);
@@ -158,7 +232,7 @@ export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) =
         <GridFloatingContainer floating={props.offset + visibleCount < props.partitionNames.length}>
           <GridColumn disabled style={{flex: 1, flexShrink: 1, overflow: 'hidden'}}>
             <TopLabel style={{height: topLabelHeight}} />
-            <LeftLabel style={{paddingLeft: 24}}>Last run</LeftLabel>
+            {props.showLatestRun && <LeftLabel style={{paddingLeft: 24}}>Last Run</LeftLabel>}
             <Divider />
             {stepRows.map((step) => (
               <LeftLabel
@@ -212,19 +286,21 @@ export const PartitionStepStatus: React.FC<PartitionStepStatusProps> = (props) =
                 }}
               >
                 <TopLabelTilted $height={topLabelHeight} label={p.name} />
-                <LeftLabel style={{textAlign: 'center'}}>
-                  <PartitionSquare
-                    key={`${p.name}:__full_status`}
-                    runs={p.runs}
-                    runsLoaded={p.runsLoaded}
-                    minUnix={minUnix}
-                    maxUnix={maxUnix}
-                    hovered={hovered}
-                    setHovered={setHovered}
-                    setFocused={setFocused}
-                    partitionName={p.name}
-                  />
-                </LeftLabel>
+                {props.showLatestRun && (
+                  <LeftLabel style={{textAlign: 'center'}}>
+                    <PartitionSquare
+                      key={`${p.name}:__full_status`}
+                      runs={p.runs}
+                      runsLoaded={p.runsLoaded}
+                      minUnix={minUnix}
+                      maxUnix={maxUnix}
+                      hovered={hovered}
+                      setHovered={setHovered}
+                      setFocused={setFocused}
+                      partitionName={p.name}
+                    />
+                  </LeftLabel>
+                )}
                 <Divider />
                 {sortPartitionSteps(p.steps).map((s) => (
                   <PartitionSquare
@@ -345,12 +421,13 @@ const PartitionSquare: React.FC<{
 
   if (!runsLoaded) {
     squareStatus = 'loading';
+  } else if (step) {
+    squareStatus = step.color.toLowerCase();
   } else if (runs.length === 0) {
     squareStatus = 'empty';
-  } else if (step) {
-    squareStatus = (StatusSquareFinalColor[step.color] || step.color).toLowerCase();
   } else {
-    squareStatus = runs[runs.length - 1].status.toLowerCase();
+    const runStatus = runs[runs.length - 1].status;
+    squareStatus = runStatus === RunStatus.CANCELED ? 'failure' : runStatus.toLowerCase();
   }
 
   const content = (

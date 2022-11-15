@@ -165,7 +165,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         raise NotImplementedError()
 
 
-@resource(config_schema={"base_dir": Field(StringSource, is_required=False)})
+@resource(config_schema={"base_dir": Field(StringSource, is_required=False)})  # type: ignore  # (mypy bug)
 def local_file_manager(init_context):
     """FileManager that provides abstract access to a local filesystem.
 

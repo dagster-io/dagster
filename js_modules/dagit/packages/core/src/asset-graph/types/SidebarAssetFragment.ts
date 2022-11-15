@@ -3096,7 +3096,7 @@ export interface SidebarAssetFragment_type_innerTypes_outputSchemaType_MapConfig
 export type SidebarAssetFragment_type_innerTypes_outputSchemaType = SidebarAssetFragment_type_innerTypes_outputSchemaType_ArrayConfigType | SidebarAssetFragment_type_innerTypes_outputSchemaType_EnumConfigType | SidebarAssetFragment_type_innerTypes_outputSchemaType_RegularConfigType | SidebarAssetFragment_type_innerTypes_outputSchemaType_CompositeConfigType | SidebarAssetFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType | SidebarAssetFragment_type_innerTypes_outputSchemaType_MapConfigType;
 
 export interface SidebarAssetFragment_type_innerTypes {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -3111,7 +3111,7 @@ export interface SidebarAssetFragment_type_innerTypes {
 }
 
 export interface SidebarAssetFragment_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;

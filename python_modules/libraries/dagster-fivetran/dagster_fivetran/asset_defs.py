@@ -40,7 +40,7 @@ def build_fivetran_assets(
     """
     Build a set of assets for a given Fivetran connector.
 
-    Returns an AssetsDefintion which connects the specified ``asset_keys`` to the computation that
+    Returns an AssetsDefinition which connects the specified ``asset_keys`` to the computation that
     will update them. Internally, executes a Fivetran sync for a given ``connector_id``, and
     polls until that sync completes, raising an error if it is unsuccessful. Requires the use of the
     :py:class:`~dagster_fivetran.fivetran_resource`, which allows it to communicate with the
@@ -206,7 +206,7 @@ def _build_fivetran_assets_from_metadata(
     )[0]
 
 
-class FivetranInstanceCacheableAssetsDefintion(CacheableAssetsDefinition):
+class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
         fivetran_resource_def: ResourceDefinition,
@@ -357,7 +357,7 @@ def load_assets_from_fivetran_instance(
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
-    return FivetranInstanceCacheableAssetsDefintion(
+    return FivetranInstanceCacheableAssetsDefinition(
         fivetran,
         key_prefix,
         connector_to_group_fn,

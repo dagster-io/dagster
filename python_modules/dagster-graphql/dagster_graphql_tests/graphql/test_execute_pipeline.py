@@ -7,8 +7,11 @@ from dagster_graphql.client.query import (
     RUN_EVENTS_QUERY,
     SUBSCRIPTION_QUERY,
 )
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
-from graphql import parse
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    execute_dagster_graphql_subscription,
+    infer_pipeline_selector,
+)
 
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
@@ -351,12 +354,15 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
+            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "ExecutionStepStartEvent",
+            "LogMessageEvent",
             "LoadedInputEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
+            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "RunSuccessEvent",
@@ -375,13 +381,16 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
+            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "LogsCapturedEvent",
             "ExecutionStepStartEvent",
+            "LogMessageEvent",
             "LoadedInputEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
+            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "RunSuccessEvent",
@@ -591,12 +600,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
     def test_subscribe_bad_run_id(self, graphql_context):
         run_id = "nope"
-        subscription = execute_dagster_graphql(
-            graphql_context, parse(SUBSCRIPTION_QUERY), variables={"runId": run_id}
+        subscribe_results = execute_dagster_graphql_subscription(
+            graphql_context, SUBSCRIPTION_QUERY, variables={"runId": run_id}
         )
-
-        subscribe_results = []
-        subscription.subscribe(subscribe_results.append)
 
         assert len(subscribe_results) == 1
         subscribe_result = subscribe_results[0]

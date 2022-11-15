@@ -40,6 +40,7 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionRangeWizard} from './PartitionRangeWizard';
+import {PartitionStateCheckboxes} from './PartitionStateCheckboxes';
 import {PartitionState} from './PartitionStatus';
 import {BackfillSelectorQuery, BackfillSelectorQueryVariables} from './types/BackfillSelectorQuery';
 
@@ -70,11 +71,20 @@ export const BackfillPartitionSelector: React.FC<{
   partitionNames,
 }) => {
   const history = useHistory();
-  const [selected, _setSelected] = React.useState<string[]>(
+  const [range, _setRange] = React.useState<string[]>(
     Object.keys(partitionData).filter(
       (k) => !partitionData[k] || partitionData[k] === PartitionState.FAILURE,
     ),
   );
+  const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
+    PartitionState.MISSING,
+    PartitionState.FAILURE,
+  ]);
+
+  const selected = React.useMemo(() => {
+    return range.filter((r) => stateFilters.includes(partitionData[r]));
+  }, [range, stateFilters, partitionData]);
+
   const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
   const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
   const [query, setQuery] = React.useState<string>('');
@@ -146,11 +156,11 @@ export const BackfillPartitionSelector: React.FC<{
   const isFailed = (name: string) => partitionData[name] === PartitionState.FAILURE;
   const failedPartitions = partitionNames.filter(isFailed);
 
-  const setSelected = (selection: string[]) => {
+  const setRange = (selection: string[]) => {
     const selectionSet = new Set(selection);
     // first order the partition names, according to the order given by partition names, which
     // is the order determined from the partition definition set in user code
-    _setSelected(partitionNames.filter((name) => selectionSet.has(name)));
+    _setRange(partitionNames.filter((name) => selectionSet.has(name)));
     if (options.fromFailure && selection.filter((x) => !isFailed(x)).length > 0) {
       setOptions({...options, fromFailure: false});
     }
@@ -161,11 +171,33 @@ export const BackfillPartitionSelector: React.FC<{
       <DialogBody>
         <Box flex={{direction: 'column', gap: 32}}>
           <Section title="Partitions">
+            <Box>
+              Select partitions to materialize. Click and drag to select a range on the timeline.
+            </Box>
+
             <PartitionRangeWizard
-              selected={selected}
-              setSelected={setSelected}
+              selected={range}
+              setSelected={setRange}
               all={partitionNames}
               partitionData={partitionData}
+            />
+
+            <PartitionStateCheckboxes
+              value={stateFilters}
+              allowed={
+                options.fromFailure
+                  ? [PartitionState.FAILURE]
+                  : [
+                      PartitionState.MISSING,
+                      PartitionState.FAILURE,
+                      PartitionState.QUEUED,
+                      PartitionState.STARTED,
+                      PartitionState.SUCCESS,
+                    ]
+              }
+              onChange={setStateFilters}
+              partitionData={partitionData}
+              partitionKeysForCounts={range}
             />
           </Section>
 
@@ -175,15 +207,17 @@ export const BackfillPartitionSelector: React.FC<{
                 checked={options.fromFailure}
                 disabled={!selected.every(isFailed)}
                 onChange={() => {
-                  if (!options.fromFailure) {
-                    setSelected(failedPartitions);
+                  const next = {
+                    ...options,
+                    fromFailure: !options.fromFailure,
+                    reexecute: !options.reexecute,
+                  };
+
+                  if (next.fromFailure) {
+                    setStateFilters([PartitionState.FAILURE]);
                   }
                   setQuery('');
-                  setOptions({
-                    ...options,
-                    reexecute: !options.reexecute,
-                    fromFailure: !options.fromFailure,
-                  });
+                  setOptions(next);
                 }}
                 label={
                   <Box flex={{display: 'inline-flex', alignItems: 'center'}}>

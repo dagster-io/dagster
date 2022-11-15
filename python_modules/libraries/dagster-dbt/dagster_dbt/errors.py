@@ -2,7 +2,7 @@ import warnings
 from abc import ABC
 from typing import Any, Mapping, Optional, Sequence
 
-from dagster import Failure, MetadataValue
+from dagster import DagsterInvariantViolationError, Failure, MetadataValue
 from dagster import _check as check
 
 
@@ -91,3 +91,7 @@ class DagsterDbtCliOutputsNotFoundError(DagsterDbtError):
 
     def __init__(self, path: str):
         super().__init__("Expected to find file at path {}".format(path))
+
+
+class DagsterDbtCloudJobInvariantViolationError(DagsterDbtError, DagsterInvariantViolationError):
+    """Represents an error when a dbt Cloud job is not supported by the ``dagster-dbt`` library."""

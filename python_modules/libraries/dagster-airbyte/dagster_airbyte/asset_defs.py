@@ -3,6 +3,7 @@ import inspect
 import os
 import re
 from abc import abstractmethod
+from functools import partial
 from itertools import chain
 from typing import (
     Any,
@@ -46,6 +47,7 @@ from dagster._utils import merge_dicts
 def _build_airbyte_asset_defn_metadata(
     connection_id: str,
     destination_tables: Sequence[str],
+    table_to_asset_key_fn: Callable[[str], AssetKey],
     asset_key_prefix: Optional[Sequence[str]] = None,
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     upstream_assets: Optional[Iterable[AssetKey]] = None,
@@ -66,7 +68,10 @@ def _build_airbyte_asset_defn_metadata(
         )
     )
 
-    outputs = {table: AssetKey(asset_key_prefix + [table]) for table in tables}
+    outputs = {
+        table: AssetKey(asset_key_prefix + list(table_to_asset_key_fn(table).path))
+        for table in tables
+    }
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
 
@@ -79,7 +84,9 @@ def _build_airbyte_asset_defn_metadata(
     if normalization_tables:
         for base_table, derived_tables in normalization_tables.items():
             for derived_table in derived_tables:
-                internal_deps[derived_table] = {AssetKey(asset_key_prefix + [base_table])}
+                internal_deps[derived_table] = {
+                    AssetKey(asset_key_prefix + list(table_to_asset_key_fn(base_table).path))
+                }
 
     # All non-normalization tables depend on any user-provided upstream assets
     for table in destination_tables:
@@ -458,6 +465,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
+        connection_to_asset_key: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
     ):
 
         self._key_prefix = key_prefix
@@ -465,6 +473,9 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connection_to_group_fn = connection_to_group_fn
         self._connection_to_io_manager_key_fn = connection_to_io_manager_key_fn
         self._connection_filter = connection_filter
+        self._connection_to_asset_key: Callable[
+            [AirbyteConnectionMetadata, str], AssetKey
+        ] = connection_to_asset_key or (lambda _, table: AssetKey(path=[table]))
 
         contents = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -488,6 +499,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
             )
             schema_by_table_name = _get_schema_by_table_name(stream_table_metadata)
 
+            table_to_asset_key = partial(self._connection_to_asset_key, connection)
             asset_data_for_conn = _build_airbyte_asset_defn_metadata(
                 connection_id=connection_id,
                 destination_tables=list(stream_table_metadata.keys()),
@@ -503,6 +515,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
                 if self._connection_to_io_manager_key_fn
                 else None,
                 schema_by_table_name=schema_by_table_name,
+                table_to_asset_key_fn=table_to_asset_key,
             )
 
             asset_defn_data.append(asset_data_for_conn)
@@ -522,7 +535,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         return self._build_definitions_with_resources(data)
 
 
-class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
+class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition):
     def __init__(
         self,
         airbyte_resource_def: ResourceDefinition,
@@ -532,6 +545,7 @@ class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefiniti
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
+        connection_to_asset_key: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -539,6 +553,7 @@ class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefiniti
             connection_to_group_fn=connection_to_group_fn,
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=connection_filter,
+            connection_to_asset_key=connection_to_asset_key,
         )
         self._workspace_id = workspace_id
         self._airbyte_resource_def = airbyte_resource_def
@@ -600,7 +615,7 @@ class AirbyteInstanceCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefiniti
         )
 
 
-class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
+class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition):
     def __init__(
         self,
         project_dir: str,
@@ -611,6 +626,7 @@ class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_directories: Optional[Sequence[str]],
+        connection_to_asset_key: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -618,6 +634,7 @@ class AirbyteYAMLCacheableAssetsDefintion(AirbyteCoreCacheableAssetsDefinition):
             connection_to_group_fn=connection_to_group_fn,
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=connection_filter,
+            connection_to_asset_key=connection_to_asset_key,
         )
         self._workspace_id = workspace_id
         self._project_dir = project_dir
@@ -683,6 +700,7 @@ def load_assets_from_airbyte_instance(
     io_manager_key: Optional[str] = None,
     connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
+    connection_to_asset_key: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
@@ -708,6 +726,9 @@ def load_assets_from_airbyte_instance(
             the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
         connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which takes
             in connection metadata and returns False if the connection should be excluded from the output assets.
+        connection_to_asset_key (Optional[Callable[[AirbyteConnectionMetadat, str], AssetKey]]): Optional function which
+            takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
+            key is based on the table name. Any asset key prefix will be applied to the output of this function.
 
     **Examples:**
 
@@ -754,7 +775,7 @@ def load_assets_from_airbyte_instance(
     if not connection_to_io_manager_key_fn:
         connection_to_io_manager_key_fn = lambda _: io_manager_key
 
-    return AirbyteInstanceCacheableAssetsDefintion(
+    return AirbyteInstanceCacheableAssetsDefinition(
         airbyte_resource_def=airbyte,
         workspace_id=workspace_id,
         key_prefix=key_prefix,
@@ -762,6 +783,7 @@ def load_assets_from_airbyte_instance(
         connection_to_group_fn=connection_to_group_fn,
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connection_filter=connection_filter,
+        connection_to_asset_key=connection_to_asset_key,
     )
 
 
@@ -776,6 +798,7 @@ def load_assets_from_airbyte_project(
     connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]] = None,
     connection_directories: Optional[Sequence[str]] = None,
+    connection_to_asset_key: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads an Airbyte project into a set of Dagster assets.
@@ -805,6 +828,9 @@ def load_assets_from_airbyte_project(
         connection_directories (Optional[List[str]]): Optional list of connection directories to load assets from.
             If omitted, all connections in the Airbyte project are loaded. May be faster than connection_filter
             if the project has many connections or if the connection yaml files are large.
+        connection_to_asset_key (Optional[Callable[[AirbyteConnectionMetadat, str], AssetKey]]): Optional function which
+            takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
+            key is based on the table name. Any asset key prefix will be applied to the output of this function.
 
     **Examples:**
 
@@ -841,7 +867,7 @@ def load_assets_from_airbyte_project(
     if not connection_to_io_manager_key_fn:
         connection_to_io_manager_key_fn = lambda _: io_manager_key
 
-    return AirbyteYAMLCacheableAssetsDefintion(
+    return AirbyteYAMLCacheableAssetsDefinition(
         project_dir=project_dir,
         workspace_id=workspace_id,
         key_prefix=key_prefix,
@@ -850,4 +876,5 @@ def load_assets_from_airbyte_project(
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connection_filter=connection_filter,
         connection_directories=connection_directories,
+        connection_to_asset_key=connection_to_asset_key,
     )
