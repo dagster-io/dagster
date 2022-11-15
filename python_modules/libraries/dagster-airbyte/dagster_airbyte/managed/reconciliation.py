@@ -737,7 +737,7 @@ def load_assets_from_connections(
         connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
             IO manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
             the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
-        connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadat, str], AssetKey]]): Optional function which
+        connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]]): Optional function which
             takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
             key is based on the table name. Any asset key prefix will be applied to the output of this function.
 

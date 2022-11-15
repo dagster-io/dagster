@@ -728,7 +728,7 @@ def load_assets_from_airbyte_instance(
             the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
         connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which takes
             in connection metadata and returns False if the connection should be excluded from the output assets.
-        connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadat, str], AssetKey]]): Optional function which
+        connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]]): Optional function which
             takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
             key is based on the table name. Any asset key prefix will be applied to the output of this function.
 
@@ -832,7 +832,7 @@ def load_assets_from_airbyte_project(
         connection_directories (Optional[List[str]]): Optional list of connection directories to load assets from.
             If omitted, all connections in the Airbyte project are loaded. May be faster than connection_filter
             if the project has many connections or if the connection yaml files are large.
-        connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadat, str], AssetKey]]): Optional function which
+        connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]]): Optional function which
             takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
             key is based on the table name. Any asset key prefix will be applied to the output of this function.
 
