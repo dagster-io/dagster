@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from dagster import DagsterInstance
 
 
-class DataTimeInstanceQueryer:
+class CachingInstanceQueryer:
     """Allows caching queries to the instance while calculating data times."""
 
     def __init__(self, instance: "DagsterInstance"):

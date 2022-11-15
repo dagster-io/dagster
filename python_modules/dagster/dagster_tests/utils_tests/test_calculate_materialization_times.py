@@ -16,7 +16,7 @@ from dagster import (
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_layer import build_asset_selection_job
 from dagster._core.test_utils import instance_for_test
-from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
 @pytest.mark.parametrize(
@@ -92,7 +92,7 @@ from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
         ),
     ],
 )
-def test_calculate_data_time(relative_to, runs_to_expected_data_times_index):
+def test_caching_instance_queryer(relative_to, runs_to_expected_data_times_index):
     """
     A = B = D = F
      \\  //
@@ -165,7 +165,7 @@ def test_calculate_data_time(relative_to, runs_to_expected_data_times_index):
             assert result.success
 
             # rebuild the data time queryer after each run
-            data_time_queryer = DataTimeInstanceQueryer(instance)
+            data_time_queryer = CachingInstanceQueryer(instance)
 
             # build mapping of expected timestamps
             for entry in instance.all_logs(

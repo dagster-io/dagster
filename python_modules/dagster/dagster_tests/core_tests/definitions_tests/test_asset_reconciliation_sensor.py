@@ -271,6 +271,10 @@ overlapping_freshness_inf = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=freshness_inf),
 ]
+overlapping_freshness_none = diamond + [
+    asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
+    asset_def("asset6", ["asset4"], freshness_policy=None),
+]
 
 # partitions
 one_asset_one_partition = [asset_def("asset1", partitions_def=one_partition_partitions_def)]
@@ -623,15 +627,25 @@ scenarios = {
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
         ),
         # change at the top, doesn't need to be propogated to 1, 3, 5 as freshness policy will
-        # handle it, but assets 2, 4, 6 will not recieve an update in the plan window, so they get
-        # updated immediately
+        # handle it, but assets 2, 4, 6 will not recieve an update in the plan window. 2 can be
+        # updated immediately, but 4 and 6 depend on 3, so will be defered
         unevaluated_runs=[run(["asset1"])],
-        expected_run_requests=[run_request(asset_keys=["asset2", "asset4", "asset6"])],
+        expected_run_requests=[run_request(asset_keys=["asset2"])],
+    ),
+    "freshness_overlapping_defer_propogate2": AssetReconciliationScenario(
+        assets=overlapping_freshness_none,
+        cursor_from=AssetReconciliationScenario(
+            assets=overlapping_freshness_inf,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
+        ),
+        # same as above
+        unevaluated_runs=[run(["asset1"])],
+        expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
 }
 
 
-@pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
+@pytest.mark.parametrize("scenario", list(scenarios.values())[-2:], ids=list(scenarios.keys())[-2:])
 def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
     run_requests, _ = scenario.do_scenario(instance)

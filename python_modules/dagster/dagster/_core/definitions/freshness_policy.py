@@ -11,17 +11,10 @@ from dagster._serdes import whitelist_for_serdes
 from .events import AssetKey
 
 
-class FreshnessConstraint(
-    NamedTuple(
-        "_FreshnessConstraint",
-        [
-            ("asset_key", AssetKey),
-            ("required_data_time", datetime.datetime),
-            ("required_by_time", datetime.datetime),
-        ],
-    )
-):
-    pass
+class FreshnessConstraint(NamedTuple):
+    asset_key: AssetKey
+    required_data_time: datetime.datetime
+    required_by_time: datetime.datetime
 
 
 @experimental
@@ -69,6 +62,22 @@ class FreshnessPolicy(
         used_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
         available_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> AbstractSet[FreshnessConstraint]:
+        """For a given time window, calculate a set of FreshnessConstraints that this asset must
+        satisfy.
+
+        Args:
+            window_start (datetime): The start time of the window that constraints will be
+                calculated for. Generally, this is the current time.
+            window_start (datetime): The end time of the window that constraints will be
+                calculated for.
+            used_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
+                upstream assets, the timestamp of the data that was used to create the current
+                version of this asset.
+            available_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
+                upstream assets, the timestamp of the most recent available data. Currently, this
+                is always equal to the current time, reflecting that if an asset is executed, it
+                will incorporate all data in the external world up until that point in time.
+        """
         constraints = set()
 
         # get an iterator of times to evaluate these constraints at
@@ -124,6 +133,21 @@ class FreshnessPolicy(
         used_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
         available_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> Optional[float]:
+        """Returns a number of minutes past the specified freshness policy that this asset currently
+        is. If the asset is missing upstream data, or is not materialized at all, then it is unknown
+        how late it is, and this will return None.
+
+        Args:
+            evaluation_time (datetime): The time at which we're evaluating the lateness of this
+                asset. Generally, this is the current time.
+            used_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
+                upstream assets, the timestamp of the data that was used to create the current
+                version of this asset.
+            available_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
+                upstream assets, the timestamp of the most recent available data. Currently, this
+                is always equal to the current time, reflecting that if an asset is executed, it
+                will incorporate all data in the external world up until that point in time.
+        """
         if self.cron_schedule:
             # most recent cron schedule tick
             schedule_ticks = croniter(

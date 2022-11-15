@@ -22,6 +22,7 @@ from dagster._utils import make_readonly_value
 
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
+from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition
 from .partition_key_range import PartitionKeyRange
 from .partition_mapping import PartitionMapping, infer_partition_mapping
@@ -44,6 +45,7 @@ class AssetGraph(
                 Optional[Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]]],
             ),
             ("group_names_by_key", Mapping[AssetKey, Optional[str]]),
+            ("freshness_policies_by_key", Mapping[AssetKey, Optional[FreshnessPolicy]]),
         ],
     )
 ):
@@ -56,6 +58,7 @@ class AssetGraph(
             Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]]
         ],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
+        freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
     ):
         return super(AssetGraph, cls).__new__(
             cls,
@@ -64,6 +67,7 @@ class AssetGraph(
             partitions_defs_by_key=make_readonly_value(partitions_defs_by_key),
             partition_mappings_by_key=make_readonly_value(partition_mappings_by_key),
             group_names_by_key=make_readonly_value(group_names_by_key),
+            freshness_policies_by_key=make_readonly_value(freshness_policies_by_key),
         )
 
     @staticmethod
@@ -75,6 +79,7 @@ class AssetGraph(
             AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]
         ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
+        freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
@@ -89,6 +94,7 @@ class AssetGraph(
                 )
                 partitions_defs_by_key.update({key: asset.partitions_def for key in asset.keys})
                 group_names_by_key.update(asset.group_names_by_key)
+                freshness_policies_by_key.update(asset.freshness_policies_by_key)
             else:
                 check.failed(f"Expected SourceAsset or AssetsDefinition, got {type(asset)}")
         return AssetGraph(
@@ -97,6 +103,7 @@ class AssetGraph(
             partitions_defs_by_key=partitions_defs_by_key,
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
+            freshness_policies_by_key=freshness_policies_by_key,
         )
 
     @staticmethod
@@ -105,6 +112,7 @@ class AssetGraph(
         downstream = {}
         partitions_defs_by_key = {}
         group_names_by_key = {}
+        freshness_policies_by_key = {}
 
         for node in external_asset_nodes:
             upstream[node.asset_key] = {dep.upstream_asset_key for dep in node.dependencies}
@@ -115,6 +123,7 @@ class AssetGraph(
                 else None
             )
             group_names_by_key[node.asset_key] = node.group_name
+            freshness_policies_by_key[node.asset_key] = node.freshness_policy
 
         return AssetGraph(
             asset_dep_graph={"upstream": upstream, "downstream": downstream},
@@ -122,6 +131,7 @@ class AssetGraph(
             partitions_defs_by_key=partitions_defs_by_key,
             partition_mappings_by_key=None,
             group_names_by_key=group_names_by_key,
+            freshness_policies_by_key=freshness_policies_by_key,
         )
 
     @property

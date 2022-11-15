@@ -11,7 +11,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.storage.tags import get_dimension_from_partition_tag
-from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .utils import capture_error
 
@@ -343,7 +343,7 @@ def get_materialization_cts_by_partition(
 def get_freshness_info(
     asset_key: AssetKey,
     freshness_policy: FreshnessPolicy,
-    data_time_queryer: DataTimeInstanceQueryer,
+    data_time_queryer: CachingInstanceQueryer,
     asset_graph: AssetGraph,
 ) -> "GrapheneAssetFreshnessInfo":
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
