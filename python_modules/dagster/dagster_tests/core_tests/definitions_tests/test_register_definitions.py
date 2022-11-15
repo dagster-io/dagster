@@ -7,6 +7,7 @@ from dagster import (
     AssetsDefinition,
     ResourceDefinition,
     ScheduleDefinition,
+    SourceAsset,
     asset,
     define_asset_job,
     op,
@@ -102,7 +103,6 @@ def test_basic_asset_definitions():
 
         repo = get_resolved_repository_in_scope()
         all_assets = get_all_assets_from_repo(repo)
-        # all_assets = list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access
         assert len(all_assets) == 1
         assert all_assets[0].key.to_user_string() == "an_asset"
 
@@ -197,7 +197,13 @@ def test_resource_coercion():
 
 
 def test_source_asset():
-    pass
+    with register_definitions_test_scope(__name__):
+        register_definitions(assets=[SourceAsset("a-source-asset")])
+
+        repo = get_resolved_repository_in_scope()
+        all_assets = list(repo.source_assets_by_key.values())
+        assert len(all_assets) == 1
+        assert all_assets[0].key.to_user_string() == "a-source-asset"
 
 
 def test_pending_definitions():

@@ -6,6 +6,7 @@ from types import ModuleType
 from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import experimental
 from dagster._core.execution.with_resources import with_resources
 
 from .assets import AssetsDefinition, SourceAsset
@@ -43,6 +44,7 @@ def get_module_name_of_caller() -> str:
     return back_back_frame.f_globals["__name__"]
 
 
+# @experimental
 def register_definitions(
     *,
     assets: Optional[
