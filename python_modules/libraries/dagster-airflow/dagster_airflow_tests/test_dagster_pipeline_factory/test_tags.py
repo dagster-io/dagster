@@ -1,6 +1,7 @@
 import datetime
 import os
 
+from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
 from airflow.operators.bash_operator import BashOperator
 from airflow.utils.dates import days_ago
@@ -21,8 +22,8 @@ default_args = {
 EXECUTION_DATE = get_current_datetime_in_utc()
 EXECUTION_DATE_MINUS_WEEK = EXECUTION_DATE - datetime.timedelta(days=7)
 
-EXECUTION_DATE_FMT = EXECUTION_DATE.strftime("%Y-%m-%d")
-EXECUTION_DATE_MINUS_WEEK_FMT = EXECUTION_DATE_MINUS_WEEK.strftime("%Y-%m-%d")
+EXECUTION_DATE_FMT = EXECUTION_DATE.isoformat()
+EXECUTION_DATE_MINUS_WEEK_FMT = EXECUTION_DATE_MINUS_WEEK.isoformat()
 
 
 def normalize_file_content(s):
@@ -45,32 +46,33 @@ def check_captured_logs(manager, result, execution_date_fmt):
     file_contents = normalize_file_content(stdout_file.read())
     stdout_file.close()
 
+    assert file_contents.count("Running command:") == 1
     assert (
         file_contents.count(
-            "INFO - Running command: \n    echo '{execution_date_fmt}'\n".format(
-                execution_date_fmt=execution_date_fmt
-            )
+            "command for dt {execution_date_fmt}".format(execution_date_fmt=execution_date_fmt)
         )
-        == 1
+        == 2
     )
-    assert (
-        file_contents.count(
-            "INFO - {execution_date_fmt}\n".format(execution_date_fmt=execution_date_fmt)
-        )
-        == 1
-    )
-    assert file_contents.count("INFO - Command exited with return code 0") == 1
+    assert file_contents.count("Command exited with return code 0") == 1
 
 
 def get_dag():
-    dag = DAG(
-        dag_id="dag",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="dag",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="dag",
+            default_args=default_args,
+            schedule_interval=None,
+        )
 
     templated_command = """
-    echo '{{ ds }}'
+    echo 'command for dt {{ ds }}'
     """
 
     # pylint: disable=unused-variable
@@ -98,7 +100,7 @@ def test_pipeline_tags():
             ),
             instance=instance,
         )
-        check_captured_logs(manager, result, EXECUTION_DATE_MINUS_WEEK_FMT)
+        check_captured_logs(manager, result, EXECUTION_DATE_MINUS_WEEK.strftime("%Y-%m-%d"))
 
 
 def test_pipeline_auto_tag():
@@ -132,7 +134,7 @@ def test_pipeline_auto_tag():
 
         stdout_file.close()
 
-        search_str = "INFO - Running command: \n    echo '"
+        search_str = "command for dt "
         date_start = file_contents.find(search_str) + len(search_str)
         date_end = date_start + 10  # number of characters in YYYY-MM-DD
         date = file_contents[date_start:date_end]

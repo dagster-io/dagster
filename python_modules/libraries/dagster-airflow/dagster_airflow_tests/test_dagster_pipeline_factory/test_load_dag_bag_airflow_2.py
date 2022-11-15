@@ -31,18 +31,18 @@ COMPLEX_DAG_FILE_CONTENTS = '''#
 Example Airflow DAG that shows the complex DAG structure.
 """
 import sys
+import pendulum
 
 from airflow import models
 
-from airflow.utils.dates import days_ago
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.python_operator import PythonOperator
-from airflow.utils.helpers import chain
+from airflow.operators.bash import BashOperator
+from airflow.operators.python import PythonOperator
+from airflow.models.baseoperator import chain
 
-default_args = {"start_date": days_ago(1)}
+default_args = {"start_date": pendulum.today('UTC').add(days=-1)}
 
 with models.DAG(
-    dag_id="example_complex", default_args=default_args, schedule_interval=None, tags=['example'],
+    dag_id="example_complex", default_args=default_args, schedule=None, tags=['example'],
 ) as complex_dag:
 
     # Create
@@ -282,26 +282,26 @@ BASH_DAG_FILE_CONTENTS = '''#
 # DAG
 # airflow
 from datetime import timedelta
+import pendulum
 
 from airflow import DAG
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.utils.dates import days_ago
+from airflow.operators.bash import BashOperator
+from airflow.operators.empty import EmptyOperator
 
 args = {
     'owner': 'airflow',
-    'start_date': days_ago(2),
+    'start_date': pendulum.today('UTC').add(days=-2),
 }
 
 bash_dag = DAG(
     dag_id='example_bash_operator',
     default_args=args,
-    schedule_interval='0 0 * * *',
+    schedule='0 0 * * *',
     dagrun_timeout=timedelta(minutes=60),
     tags=['example'],
 )
 
-run_this_last = DummyOperator(task_id='run_this_last', dag=bash_dag,)
+run_this_last = EmptyOperator(task_id='run_this_last', dag=bash_dag,)
 
 # [START howto_operator_bash]
 run_this = BashOperator(task_id='run_after_loop', bash_command='echo 1', dag=bash_dag,)
@@ -325,9 +325,6 @@ also_run_this = BashOperator(
 )
 # [END howto_operator_bash_template]
 also_run_this >> run_this_last
-
-if __name__ == "__main__":
-    bash_dag.cli()
 '''
 
 COMBINED_FILE_CONTENTS = COMPLEX_DAG_FILE_CONTENTS + BASH_DAG_FILE_CONTENTS
@@ -361,7 +358,7 @@ test_make_repo_inputs = [
 ]
 
 
-@pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
+@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.parametrize(
     "path_and_content_tuples, fn_arg_path, expected_job_names",
     test_make_repo_inputs,
@@ -402,48 +399,71 @@ def test_make_repo(
 test_airflow_example_dags_inputs = [
     (
         [
+            "airflow_dataset_consumes_1",
+            "airflow_dataset_consumes_1_and_2",
+            "airflow_dataset_consumes_1_never_scheduled",
+            "airflow_dataset_consumes_unknown_never_scheduled",
+            "airflow_dataset_produces_1",
+            "airflow_dataset_produces_2",
             "airflow_example_bash_operator",
+            "airflow_example_branch_datetime_operator",
+            "airflow_example_branch_datetime_operator_2",
+            "airflow_example_branch_datetime_operator_3",
             "airflow_example_branch_dop_operator_v3",
+            "airflow_example_branch_labels",
             "airflow_example_branch_operator",
+            "airflow_example_branch_python_operator_decorator",
             "airflow_example_complex",
+            "airflow_example_dag_decorator",
             "airflow_example_external_task_marker_child",
             "airflow_example_external_task_marker_parent",
-            "airflow_example_http_operator",
-            "airflow_example_kubernetes_executor_config",
-            "airflow_example_nested_branch_dag",  # only exists in airflow v1.10.10
+            "airflow_example_kubernetes_executor",
+            "airflow_example_local_kubernetes_executor",
+            "airflow_example_nested_branch_dag",
             "airflow_example_passing_params_via_test_command",
-            "airflow_example_pig_operator",
             "airflow_example_python_operator",
+            "airflow_example_short_circuit_decorator",
             "airflow_example_short_circuit_operator",
             "airflow_example_skip_dag",
+            "airflow_example_sla_dag",
             "airflow_example_subdag_operator",
             "airflow_example_subdag_operator_section_1",
             "airflow_example_subdag_operator_section_2",
+            "airflow_example_task_group",
+            "airflow_example_task_group_decorator",
+            "airflow_example_time_delta_sensor_async",
             "airflow_example_trigger_controller_dag",
             "airflow_example_trigger_target_dag",
+            "airflow_example_weekday_branch_operator",
             "airflow_example_xcom",
+            "airflow_example_xcom_args",
+            "airflow_example_xcom_args_with_operators",
             "airflow_latest_only",
             "airflow_latest_only_with_trigger",
-            "airflow_test_utils",
             "airflow_tutorial",
+            "airflow_tutorial_dag",
+            "airflow_tutorial_taskflow_api",
+            "airflow_tutorial_taskflow_api_virtualenv",
         ],
         [
-            #  No such file or directory: '/foo/volume_mount_test.txt'
-            "airflow_example_kubernetes_executor_config",
-            # [Errno 2] No such file or directory: 'pig'
-            "airflow_example_pig_operator",
+            # requires k8s environment to work
+            # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
+            "airflow_example_kubernetes_executor",
+            # requires params to be passed in to work
+            "airflow_example_passing_params_via_test_command",
+            # requires template files to exist
+            "airflow_example_python_operator",
+            # requires email server to work
+            "airflow_example_dag_decorator",
             # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
-            "airflow_example_trigger_controller_dag",
-            # 'NoneType' object is not subscriptable, target dag does not exist
             "airflow_example_trigger_target_dag",
-            # sleeps forever, not an example
-            "airflow_test_utils",
+            "airflow_example_trigger_controller_dag",
         ],
     ),
 ]
 
 
-@pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
+@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.parametrize(
     "expected_job_names, exclude_from_execution_tests",
     test_airflow_example_dags_inputs,

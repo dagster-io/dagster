@@ -209,6 +209,6 @@ Note that the "execution_date" for the Airflow DAG is specified through the job 
 
 ```python file=../../with_airflow/with_airflow/repository.py startafter=start_repo_marker_1 endbefore=end_repo_marker_1
 airflow_simple_dag_with_execution_date = make_dagster_job_from_airflow_dag(
-    dag=simple_dag, tags={"airflow_execution_date": "2021-11-01 00:00:00"}
+    dag=simple_dag, tags={"airflow_execution_date": "2021-11-01 00:00:00+00:00"}
 )
 ```
