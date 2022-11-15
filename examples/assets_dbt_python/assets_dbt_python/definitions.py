@@ -6,11 +6,11 @@ from dagster_duckdb import build_duckdb_io_manager
 from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 
 from dagster import (
+    Definitions,
     ScheduleDefinition,
     define_asset_job,
     fs_io_manager,
     load_assets_from_package_module,
-    Definitions,
     repository,
     with_resources,
 )

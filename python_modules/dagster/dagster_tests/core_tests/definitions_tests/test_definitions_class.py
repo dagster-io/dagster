@@ -1,4 +1,4 @@
-from dagster import Definitions, asset, ResourceDefinition
+from dagster import Definitions, ResourceDefinition, asset
 
 
 def get_all_assets_from_repo(repo):

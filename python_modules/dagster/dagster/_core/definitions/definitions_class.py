@@ -1,9 +1,6 @@
-from .repository_definition import RepositoryDefinition
 from typing import Any, Dict, Generator, Iterable, Mapping, Optional, Union
 
-
 from dagster._core.execution.with_resources import with_resources
-
 
 from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
@@ -13,6 +10,7 @@ from .repository_definition import PendingRepositoryDefinition, RepositoryDefini
 from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
+
 
 # will refactor to class
 def Definitions(
