@@ -1,9 +1,7 @@
 import inspect
 import sys
-from collections.abc import Generator
 from contextlib import contextmanager
-from types import ModuleType
-from typing import Any, Dict, Iterable, Mapping, Optional, Union
+from typing import Any, Dict, Generator, Iterable, Mapping, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import experimental
