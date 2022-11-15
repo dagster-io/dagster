@@ -526,7 +526,7 @@ class ProjectedLogicalVersionLoader:
         dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
         return compute_logical_version(
             node.op_version or UNKNOWN_VALUE,
-            [self._get_version(dep_key) for dep_key in dep_keys],
+            {dep_key: self._get_version(dep_key) for dep_key in dep_keys},
         )
 
     def _fetch_node(self, key: AssetKey) -> ExternalAssetNode:

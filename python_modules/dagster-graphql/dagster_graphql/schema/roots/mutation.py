@@ -109,7 +109,6 @@ def create_execution_params(graphene_info, graphql_execution_params):
 
 
 def execution_params_from_graphql(graphql_execution_params):
-    print("EXECUTION PARAMS FROM GRAPHQL", graphql_execution_params)
     return ExecutionParams(
         selector=pipeline_selector_from_graphql(graphql_execution_params.get("selector")),
         run_config=parse_run_config_input(
