@@ -723,7 +723,7 @@ class AssetLayer:
     def op_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
         return (
             None
-            if self.is_graph_backed_asset(asset_key)
+            if self.is_graph_backed_asset(asset_key) or not asset_key in self._assets_defs_by_key
             else self._assets_defs_by_key[asset_key].op.version
         )
 
