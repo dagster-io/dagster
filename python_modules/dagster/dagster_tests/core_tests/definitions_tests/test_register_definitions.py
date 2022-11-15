@@ -22,7 +22,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.register_definitions import (
     MAGIC_REGISTERED_DEFINITIONS_KEY,
     ModuleHasRegisteredDefinitionsError,
-    get_module_name_of_caller,
+    get_module_name_of_registered_definitions_caller,
     get_registered_repository_in_module,
     register_definitions_test_scope,
 )
@@ -42,13 +42,13 @@ def test_module_name_of_caller():
     # we have to add another level to the stack in order to replicate
     # the structure for a test case
 
-    def invoke_get_module_name_of_caller():
+    def invoke_get_module_name_of_registered_definitions_caller():
         return add_stack_frame_to_mimic_experimental()
 
     def add_stack_frame_to_mimic_experimental():
-        return get_module_name_of_caller()
+        return get_module_name_of_registered_definitions_caller()
 
-    test_module_name = invoke_get_module_name_of_caller()
+    test_module_name = invoke_get_module_name_of_registered_definitions_caller()
     assert (
         test_module_name == "dagster_tests.core_tests.definitions_tests.test_register_definitions"
     )

@@ -25,14 +25,15 @@ class ModuleHasRegisteredDefinitionsError(Exception):
     pass
 
 
-# invoke this function to get the module name the function that called the current
-# scope
-def get_module_name_of_caller() -> str:
+# invoke this function to get the module name the function
+# that called regsiter_definitions
+def get_module_name_of_registered_definitions_caller() -> str:
     # based on https://stackoverflow.com/questions/2000861/retrieve-module-object-from-stack-frame
-    # three f_backs to get past get_module_name_of_caller and @experimental frame
+    # three f_backs to get past registered_definitions and @experimental frame
 
-    # Need to do none checking because of:
+    # Need to do None checking because of:
     # https://docs.python.org/3/library/inspect.html#inspect.currentframe
+    # Relevant comment is:
     # CPython implementation detail: This function relies on Python stack frame
     # support in the interpreter, which isn’t guaranteed to exist in all
     # implementations of Python. If running in an implementation without
@@ -61,9 +62,8 @@ def register_definitions(
 
     Dagster separates user-defined code from system tools such the web server and
     the daemon. These tools must be able to locate and load this code when they start.
-    Python modules that dagster tools can load are known as "code locations".
 
-    A code location is defined as a python module that has either:
+    A python module is loadable by dagster tools if:
 
     (1) Has one or more dagster definitions as module-level attributes (e.g. a function
     declared at the top-level of a module decorated with @asset).
@@ -87,7 +87,7 @@ def register_definitions(
     Invoking this function dynamically injects an attribute named "__registered_definitions" into
     the calling module that contains a handle to the definitions.
     """
-    module_name = get_module_name_of_caller()
+    module_name = get_module_name_of_registered_definitions_caller()
     python_module = sys.modules[module_name]
 
     if MAGIC_REGISTERED_DEFINITIONS_KEY in python_module.__dict__:
