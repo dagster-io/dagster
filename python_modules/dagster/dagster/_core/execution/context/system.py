@@ -478,7 +478,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
-        self._input_event_records: Optional[Dict[AssetKey, Optional["EventLogRecord"]]] = None
+        self._input_asset_records: Optional[Dict[AssetKey, Optional["EventLogRecord"]]] = None
 
     @property
     def step(self) -> ExecutionStep:
@@ -804,15 +804,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
-        return self._input_event_records
+        return self._input_asset_records
 
-    def fetch_input_event_records(self) -> None:
-        self._input_event_records = {}
-        for lineage_info in self.get_input_lineage():
-            key = lineage_info.asset_key
-            is_source = self.pipeline_def.asset_layer.is_source_for_asset(key)
-            event = self.instance.get_latest_logical_version_record(key, is_source)
-            self._input_event_records[key] = event
+    def fetch_input_asset_records(self) -> None:
+        self._input_asset_records = {}
+        asset_info = check.not_none(self.pipeline_def.asset_layer.asset_info_for_output(
+            self.solid_handle, self.step.step_outputs[0].name
+        ))
+        asset_key = asset_info.key
+        dep_keys = self.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
+        for key in dep_keys:
+            event = self.instance.get_latest_logical_version_record(key)
+            self._input_asset_records[key] = event
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer

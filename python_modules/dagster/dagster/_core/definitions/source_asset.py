@@ -8,7 +8,7 @@ from typing_extensions import Protocol, TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
-from dagster._core.definitions.logical_version import LogicalVersion
+from dagster._core.definitions.logical_version import LOGICAL_VERSION_TAG_KEY, LogicalVersion
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,
@@ -33,7 +33,6 @@ from dagster._core.definitions.utils import (
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
-    DagsterInvalidObservationError,
 )
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils import merge_dicts
@@ -53,7 +52,7 @@ class SourceAssetObserveFunctionWithContext(Protocol):
 
     def __call__(
         self, context: "SourceAssetObserveContext"
-    ) -> Union[MetadataUserInput, LogicalVersion]:
+    ) -> LogicalVersion:
         ...
 
 
@@ -62,7 +61,7 @@ class SourceAssetObserveFunctionNoContext(Protocol):
     def __name__(self) -> str:
         ...
 
-    def __call__(self) -> Union[MetadataUserInput, LogicalVersion]:
+    def __call__(self) -> LogicalVersion:
         ...
 
 
@@ -180,26 +179,30 @@ class SourceAsset(ResourceAddable):
 
     @public  # type: ignore
     @property
-    def is_versioned(self) -> bool:
+    def is_observable(self) -> bool:
         return self.node_def is not None
 
     @property
     def node_def(self) -> Optional[OpDefinition]:
         """Op that generates observation metadata for a source asset."""
+        from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
         if self.observe_fn is None:
             return None
         elif self._node_def is None:
             observe_fn = self.observe_fn
 
-            def compute_fn(context: OpExecutionContext) -> None:
-                raw_observation = observe_fn(context)  # type: ignore
-                metadata = _raw_observation_to_metadata(raw_observation)
+            def fn(context: OpExecutionContext):
+                logical_version = observe_fn(context)  # type: ignore
+                check.inst(logical_version, LogicalVersion, "Source asset observation function must return a LogicalVersion")
+                tags = { LOGICAL_VERSION_TAG_KEY: logical_version.value }
                 context.log_event(
                     AssetObservation(
                         asset_key=self.key,
-                        metadata=metadata,
+                        tags=tags,
                     )
                 )
+
+            compute_fn = DecoratedSolidFunction(decorated_fn=fn)
 
             self._node_def = OpDefinition(
                 compute_fn=compute_fn,
@@ -300,14 +303,3 @@ class SourceAsset(ResourceAddable):
                 and self.resource_defs == other.resource_defs
                 and self.observe_fn == other.observe_fn
             )
-
-
-def _raw_observation_to_metadata(raw_observation: object) -> MetadataUserInput:
-    if isinstance(raw_observation, dict):
-        return raw_observation
-    elif isinstance(raw_observation, LogicalVersion):
-        return {"logical_version": raw_observation}
-    else:
-        raise DagsterInvalidObservationError(
-            "Source asset observe function must return a metadata dictionary."
-        )

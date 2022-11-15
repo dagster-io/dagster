@@ -489,9 +489,10 @@ class AssetMaterialization(
             asset_key = AssetKey(asset_key)
 
         check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
-        if any([not tag.startswith(SYSTEM_TAG_PREFIX) for tag in tags or {}]):
+        invalid_tags = [tag for tag in tags or {} if not tag.startswith(SYSTEM_TAG_PREFIX)]
+        if len(invalid_tags) > 0:
             check.failed(
-                "Users should not pass values into the tags argument for AssetMaterializations. "
+                f"Invalid tags: {tags} Users should not pass values into the tags argument for AssetMaterializations. "
                 "The tags argument is reserved for system-populated tags."
             )
 

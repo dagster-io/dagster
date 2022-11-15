@@ -79,7 +79,7 @@ class LogicalVersionProvenance(
         code_version = tags.get(CODE_VERSION_TAG_KEY)
         if code_version is None:
             return None
-        start_index = len(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX)
+        start_index = len(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX) + 1
         input_logical_versions = {
             AssetKey.from_user_string(k[start_index:]): LogicalVersion(tags[k])
             for k, v in tags.items()
@@ -99,7 +99,7 @@ INPUT_EVENT_POINTER_TAG_KEY_PREFIX: Final[str] = "dagster/input_event_pointer"
 
 
 def get_input_logical_version_tag_key(input_key: "AssetKey") -> str:
-    return f"f{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/{input_key.to_user_string()}"
+    return f"{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/{input_key.to_user_string()}"
 
 
 def get_input_event_pointer_tag_key(input_key: "AssetKey") -> str:
@@ -178,4 +178,4 @@ def extract_logical_version_from_event_log_entry(
     else:
         logical_version = LogicalVersion(value)
         provenance = LogicalVersionProvenance.from_tags(tags)
-        return (logical_version, provenance)
+        return (logical_version, provenance) if include_provenance else logical_version

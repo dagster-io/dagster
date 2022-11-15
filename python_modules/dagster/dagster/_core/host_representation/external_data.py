@@ -847,7 +847,7 @@ class ExternalAssetNode(
             ("group_name", Optional[str]),
             ("freshness_policy", Optional[FreshnessPolicy]),
             ("is_source", bool),
-            ("is_versioned", bool),
+            ("is_observable", bool),
         ],
     )
 ):
@@ -876,7 +876,7 @@ class ExternalAssetNode(
         group_name: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         is_source: bool = False,
-        is_versioned: bool = False,
+        is_observable: bool = False,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -914,7 +914,7 @@ class ExternalAssetNode(
                 freshness_policy, "freshness_policy", FreshnessPolicy
             ),
             is_source=check.bool_param(is_source, "is_source"),
-            is_versioned=check.bool_param(is_versioned, "versioned"),
+            is_observable=check.bool_param(is_observable, "is_observable"),
         )
 
 
@@ -978,7 +978,6 @@ def external_asset_graph_from_defs(
     all_upstream_asset_keys: Set[AssetKey] = set()
     op_names_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
     op_version_by_asset_key: Dict[AssetKey, Optional[str]] = dict()
-    is_versioned_by_asset_key: Dict[AssetKey, bool] = dict()
     group_name_by_asset_key: Dict[AssetKey, str] = {}
 
     for pipeline_def in pipelines:
@@ -999,9 +998,6 @@ def external_asset_graph_from_defs(
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
             asset_info_by_asset_key[output_key] = asset_info
-            is_versioned_by_asset_key[output_key] = pipeline_def.asset_layer.assets_def_for_asset(
-                output_key
-            ).is_versioned
 
             for upstream_key in upstream_asset_keys:
                 deps[output_key][upstream_key] = ExternalAssetDependency(
@@ -1050,7 +1046,7 @@ def external_asset_graph_from_defs(
                     metadata_entries=metadata_entries,
                     group_name=source_asset.group_name,
                     is_source=True,
-                    is_versioned=source_asset.is_versioned,
+                    is_observable=source_asset.is_observable,
                 )
             )
 
@@ -1114,7 +1110,6 @@ def external_asset_graph_from_defs(
                 # such assets are part of the default group
                 group_name=group_name_by_asset_key.get(asset_key, DEFAULT_GROUP_NAME),
                 freshness_policy=freshness_policy_by_asset_key.get(asset_key),
-                is_versioned=is_versioned_by_asset_key[asset_key],
             )
         )
 

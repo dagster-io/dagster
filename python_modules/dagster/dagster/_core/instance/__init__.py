@@ -2250,12 +2250,17 @@ class DagsterInstance:
     def get_latest_logical_version_record(
         self,
         key: AssetKey,
-        is_source: bool,
+        is_source: Optional[bool] = None,
     ) -> Optional[EventLogRecord]:
         from dagster._core.event_api import EventRecordsFilter
         from dagster._core.events import DagsterEventType
 
-        if is_source:
+        # When we cant don't know whether the requested key corresponds to a source or regular
+        # asset, we need to retrieve both the latest observation and materialization for all assets.
+        # If there is a materialization, it's a regular asset and we can ignore the observation.
+
+        observation: Optional[EventLogRecord] = None
+        if is_source or is_source is None:
             observations = self.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_OBSERVATION,
@@ -2263,8 +2268,10 @@ class DagsterInstance:
                 ),
                 limit=1,
             )
-            return next(iter(observations), None)
-        else:
+            observation = next(iter(observations), None)
+
+        materialization: Optional[EventLogRecord] = None
+        if not is_source:
             materializations = self.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -2272,4 +2279,6 @@ class DagsterInstance:
                 ),
                 limit=1,
             )
-            return next(iter(materializations), None)
+            materialization = next(iter(materializations), None)
+
+        return materialization or observation

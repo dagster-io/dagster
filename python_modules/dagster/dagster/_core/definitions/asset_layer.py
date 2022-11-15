@@ -715,8 +715,11 @@ class AssetLayer:
     def is_source_for_asset(self, asset_key: AssetKey) -> bool:
         return asset_key in self.source_assets_by_key
 
-    def is_versioned_for_asset(self, asset_key: AssetKey) -> bool:
-        return self._assets_defs_by_key[asset_key].is_versioned
+    def is_observable_for_asset(self, asset_key: AssetKey) -> bool:
+        return (
+            asset_key in self.source_assets_by_key
+            and self.source_assets_by_key[asset_key].is_observable
+        )
 
     def op_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
         return self._assets_defs_by_key[asset_key].op.version
@@ -818,22 +821,19 @@ def build_asset_selection_job(
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> "JobDefinition":
-    from dagster._core.definitions import build_assets_job, build_source_assets_job
+    from dagster._core.definitions.assets_job import build_assets_job, build_source_assets_job
 
     if asset_selection:
         (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
-        included_source_assets, excluded_source_assets = _subset_source_assets(
-            source_assets, asset_selection
-        )
+        included_source_assets = _subset_source_assets(source_assets, asset_selection)
 
     else:
         included_assets = list(assets)
         excluded_assets = []
         included_source_assets = []
-        excluded_source_assets = list(source_assets)
 
     check.invariant(
-        not len(included_assets) > 0 and len(included_source_assets) > 0,
+        not (len(included_assets) > 0 and len(included_source_assets) > 0),
         "Illegal selection includes both source assets and regular assets.",
     )
 
@@ -922,20 +922,7 @@ def _subset_assets_defs(
 def _subset_source_assets(
     source_assets: Iterable["SourceAsset"],
     selected_asset_keys: AbstractSet[AssetKey],
-) -> Tuple[Sequence["SourceAsset"], Sequence["SourceAsset"],]:
-
-    selected_source_asset_keys = selected_asset_keys & {
-        source_asset.key for source_asset in source_assets
-    }
-
-    included_source_assets: List[SourceAsset] = []
-    excluded_source_assets: List[SourceAsset] = []
-    for source_asset in source_assets:
-        lst = (
-            included_source_assets
-            if source_asset.key in selected_source_asset_keys
-            else excluded_source_assets
-        )
-        lst.append(source_asset)
-
-    return included_source_assets, excluded_source_assets
+) -> Sequence["SourceAsset"]:
+    return [
+        source_asset for source_asset in source_assets if source_asset.key in selected_asset_keys
+    ]

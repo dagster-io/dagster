@@ -334,11 +334,12 @@ def core_dagster_event_sequence_for_step(
 
     inputs = {}
 
+    if step_context.step_materializes_assets:
+        step_context.fetch_input_asset_records()
+
     for step_input in step_context.step.step_inputs:
         input_def = step_context.solid_def.input_def_named(step_input.name)
         dagster_type = input_def.dagster_type
-        if step_context.step_materializes_assets:
-            step_context.fetch_input_event_records()
 
         if dagster_type.is_nothing:
             continue
@@ -563,7 +564,7 @@ def _get_output_asset_materializations(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=DeprecationWarning)
 
-            yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
+            yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata, tags=tags)
 
 
 def _extract_logical_version_tags(
@@ -573,11 +574,11 @@ def _extract_logical_version_tags(
     dep_keys = asset_layer.upstream_assets_for_asset(asset_key)
     code_version = asset_layer.op_version_for_asset(asset_key) or step_context.pipeline_run.run_id
     dep_key_to_is_source_map = {key: asset_layer.is_source_for_asset(key) for key in dep_keys}
-    input_event_records = check.not_none(step_context.input_asset_records)
+    input_asset_records = check.not_none(step_context.input_asset_records)
     input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG_KEY] = code_version
-    for key, event in input_event_records.items():
+    for key, event in input_asset_records.items():
         is_source = asset_layer.is_source_for_asset(key)
         logical_version = step_context.instance.get_current_logical_version(
             key, is_source, event=event
