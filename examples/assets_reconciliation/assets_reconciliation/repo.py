@@ -56,12 +56,20 @@ def delta(context, foo, bar, baz):
 def epsilon(context, alpha):
     return alpha + 100
 
+@asset
+def gamma(context):
+    return 100
+
+@asset
+def rho(context, gamma):
+    return gamma + 100
+
 
 @repository
 def repo():
     return [
         *with_resources(
-            [foo, bar, baz, alpha, beta, delta, epsilon],
+            [foo, bar, baz, alpha, beta, delta, epsilon, gamma, rho],
             {"source_asset_input_manager": source_asset_input_manager},
         )
     ]
