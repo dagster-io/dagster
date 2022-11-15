@@ -7,7 +7,6 @@ from dagster import DagsterInstance
 from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.logical_version import (
-    UNKNOWN_LOGICAL_VERSION,
     UNKNOWN_VALUE,
     LogicalVersion,
     LogicalVersionProvenance,
@@ -459,12 +458,6 @@ class ProjectedLogicalVersionLoader:
     dependency logical versions.
     """
 
-    # @static
-    # def from_node(node: ExternalAssetNode, instance: DagsterInstance):
-    #     return ProjectedLogicalVersionLoader(
-    #         instance, [node.repository], {node.key: node}
-    #     )
-
     def __init__(
         self,
         instance: DagsterInstance,
@@ -472,19 +465,19 @@ class ProjectedLogicalVersionLoader:
         key_to_node_map: Optional[Mapping[AssetKey, ExternalAssetNode]],
     ):
         self._instance = instance
-        self._key_to_node_map = check.opt_dict_param(key_to_node_map, "key_to_node_map")
+        self._key_to_node_map = check.opt_mapping_param(key_to_node_map, "key_to_node_map")
         self._key_to_version_map: Dict[AssetKey, LogicalVersion] = {}
         self._repositories = repositories
 
     def get(self, asset_key: AssetKey) -> str:
         if not self._has_version(asset_key):
             self._compute_and_store_version(asset_key)
-        return self._fetch_version(asset_key).value
+        return self._get_version(asset_key).value
 
     def _has_version(self, key: AssetKey) -> bool:
         return key in self._key_to_version_map
 
-    def _fetch_version(self, key: AssetKey) -> LogicalVersion:
+    def _get_version(self, key: AssetKey) -> LogicalVersion:
         return self._key_to_version_map[key]
 
     def _compute_and_store_version(self, key: AssetKey) -> None:
@@ -492,11 +485,11 @@ class ProjectedLogicalVersionLoader:
         if node.is_source:
             version = self._instance.get_current_logical_version(key, True)
         elif node.op_version is not None:
-            version = self._compute_newly_materialized_version(node)
+            version = self._compute_projected_new_materialization_logical_version(node)
         else:
             materialization = self._instance.get_latest_materialization_event(key)
             if materialization is None:  # never been materialized
-                version = self._compute_newly_materialized_version(node)
+                version = self._compute_projected_new_materialization_logical_version(node)
             else:
                 logical_version, provenance = extract_logical_version_from_event_log_entry(
                     materialization, include_provenance=True
@@ -506,9 +499,9 @@ class ProjectedLogicalVersionLoader:
                     or provenance is None  # should never happen
                     or self._is_provenance_changed(node, provenance)
                 ):
-                    version = self._compute_newly_materialized_version(node)
+                    version = self._compute_projected_new_materialization_logical_version(node)
                 else:
-                    version = self._instance.get_current_logical_version(key, True)
+                    version = self._instance.get_current_logical_version(key, False)
         self._key_to_version_map[key] = version
 
     def _is_provenance_changed(
@@ -516,7 +509,7 @@ class ProjectedLogicalVersionLoader:
     ) -> bool:
         self._ensure_dep_versions_loaded(node)
         for k, v in provenance.input_logical_versions.items():
-            if self._fetch_version(k) != v:
+            if self._get_version(k) != v:
                 return True
         return False
 
@@ -526,12 +519,14 @@ class ProjectedLogicalVersionLoader:
             if not self._has_version(dep_key):
                 self._compute_and_store_version(dep_key)
 
-    def _compute_newly_materialized_version(self, node: ExternalAssetNode) -> LogicalVersion:
+    def _compute_projected_new_materialization_logical_version(
+        self, node: ExternalAssetNode
+    ) -> LogicalVersion:
         self._ensure_dep_versions_loaded(node)
         dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
         return compute_logical_version(
             node.op_version or UNKNOWN_VALUE,
-            [self._fetch_version(dep_key) for dep_key in dep_keys],
+            [self._get_version(dep_key) for dep_key in dep_keys],
         )
 
     def _fetch_node(self, key: AssetKey) -> ExternalAssetNode:

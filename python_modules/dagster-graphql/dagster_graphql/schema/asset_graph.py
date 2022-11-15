@@ -166,7 +166,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     groupName = graphene.String()
     id = graphene.NonNull(graphene.ID)
     is_source = graphene.NonNull(graphene.Boolean)
-    is_versioned = graphene.NonNull(graphene.Boolean)
+    is_observable = graphene.NonNull(graphene.Boolean)
     jobNames = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
     latestMaterializationByPartition = graphene.Field(
@@ -452,19 +452,16 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.compute_kind
 
     def resolve_currentLogicalVersion(self, graphene_info: HasContext) -> Optional[str]:
-        if not self.external_asset_node.is_versioned:
+        try:
+            return graphene_info.context.instance.get_current_logical_version(
+                self._external_asset_node.asset_key,
+                self._external_asset_node.is_source,
+            ).value
+        except DagsterUndefinedLogicalVersionError:
             return None
-        else:
-            try:
-                return graphene_info.context.instance.get_current_logical_version(
-                    self._external_asset_node.asset_key,
-                    self._external_asset_node.is_source,
-                ).value
-            except DagsterUndefinedLogicalVersionError:
-                return None
 
     def resolve_projectedLogicalVersion(self, _graphene_info) -> Optional[str]:
-        if self.external_asset_node.is_source or not self.external_asset_node.is_versioned:
+        if self.external_asset_node.is_source:
             return None
         else:
             loader = check.not_none(
@@ -588,8 +585,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_is_source(self, _graphene_info) -> bool:
         return self.is_source_asset()
 
-    def resolve_is_versioned(self, _graphene_info) -> bool:
-        return self._external_asset_node.is_versioned
+    def resolve_is_observable(self, _graphene_info) -> bool:
+        return self._external_asset_node.is_observable
 
     def resolve_latestMaterializationByPartition(
         self, graphene_info, **kwargs
