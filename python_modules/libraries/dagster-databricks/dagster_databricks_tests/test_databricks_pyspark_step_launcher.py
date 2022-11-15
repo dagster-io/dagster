@@ -51,7 +51,7 @@ class TestCreateRemoteConfig:
         test_launcher = mock_step_launcher_factory(
             add_dagster_env_variables=False, env_variables=vars_to_add
         )
-        for var in enumerate(DAGSTER_SYSTEM_ENV_VARS):
+        for var in DAGSTER_SYSTEM_ENV_VARS:
             monkeypatch.setenv(var, f"{var}_value")
 
         env_vars = test_launcher.create_remote_config()
