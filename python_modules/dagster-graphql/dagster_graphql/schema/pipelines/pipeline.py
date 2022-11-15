@@ -87,23 +87,15 @@ def parse_time_range_args(args):
     return before_timestamp, after_timestamp
 
 
-class GraphenePartitionMaterializationCount(graphene.ObjectType):
-    partition = graphene.NonNull(graphene.String)
-    materializationCount = graphene.NonNull(graphene.Int)
+class GrapheneMaterializationCountSingleDimension(graphene.ObjectType):
+    materializationCounts = non_null_list(graphene.Int)
 
     class Meta:
-        name = "PartitionMaterializationCount"
-
-
-class GrapheneMaterializationCountByPartition(graphene.ObjectType):
-    partitionsCounts = non_null_list(GraphenePartitionMaterializationCount)
-
-    class Meta:
-        name = "MaterializationCountByPartition"
+        name = "MaterializationCountSingleDimension"
 
 
 class GrapheneMaterializationCountGroupedByDimension(graphene.ObjectType):
-    materializationCounts = graphene.NonNull(graphene.List(non_null_list(graphene.Int)))
+    materializationCountsGrouped = graphene.NonNull(graphene.List(non_null_list(graphene.Int)))
 
     class Meta:
         name = "MaterializationCountGroupedByDimension"
@@ -112,7 +104,7 @@ class GrapheneMaterializationCountGroupedByDimension(graphene.ObjectType):
 class GraphenePartitionMaterializationCounts(graphene.Union):
     class Meta:
         types = (
-            GrapheneMaterializationCountByPartition,
+            GrapheneMaterializationCountSingleDimension,
             GrapheneMaterializationCountGroupedByDimension,
         )
         name = "PartitionMaterializationCounts"

@@ -326,18 +326,17 @@ def get_materialization_cts_by_partition(
     graphene_info,
     asset_key: AssetKey,
     partition_keys: Sequence[str],
-) -> Dict[str, int]:
+) -> List[int]:
     db_materialization_counts = (
         graphene_info.context.instance.get_materialization_count_by_partition([asset_key])[
             asset_key
         ]
     )
-    materialization_counts_by_partition: Dict[str, int] = {}
+    ordered_materialization_counts: List[int] = []
     for partition_key in partition_keys:
-        materialization_counts_by_partition[partition_key] = db_materialization_counts.get(
-            partition_key, 0
-        )
-    return materialization_counts_by_partition
+        ordered_materialization_counts.append(db_materialization_counts.get(partition_key, 0))
+
+    return ordered_materialization_counts
 
 
 def get_freshness_info(

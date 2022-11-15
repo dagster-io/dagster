@@ -94,7 +94,7 @@ export const PartitionPerAssetStatus: React.FC<
 
   const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
   const layoutBoxesWithPartitions = layout.boxes.filter(
-    (b) => healthByAssetKey[b.node.name].keys.length,
+    (b) => healthByAssetKey[b.node.name].timeline.keys.length,
   );
 
   const data: MatrixData = {
@@ -108,7 +108,7 @@ export const PartitionPerAssetStatus: React.FC<
     partitionColumns: partitionNames.map((p, idx) => ({
       steps: layoutBoxesWithPartitions.map((a) => ({
         name: a.node.name,
-        color: healthByAssetKey[a.node.name].statusByPartition[p] ? 'SUCCESS' : 'MISSING',
+        color: healthByAssetKey[a.node.name].timeline.statusByPartition[p] ? 'SUCCESS' : 'MISSING',
         unix: 0,
       })),
       idx,
