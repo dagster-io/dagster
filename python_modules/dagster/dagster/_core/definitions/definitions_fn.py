@@ -24,34 +24,6 @@ NO_STACK_FRAME_ERROR_MSG = "Python interpreter must support Python stack frames.
 RepositoryDefinitionIsh = Union[PendingRepositoryDefinition, RepositoryDefinition]
 
 
-class GlobalRepoSingleton:
-    _repo_instance: Optional[RepositoryDefinitionIsh] = None
-
-    @classmethod
-    def set_instance(cls, repo_instance: RepositoryDefinitionIsh) -> RepositoryDefinitionIsh:
-        check.invariant(cls._repo_instance is None, "Cannot set already set global instance")
-        cls._repo_instance = repo_instance
-        return cls._repo_instance
-
-    @classmethod
-    def has_instance(cls) -> bool:
-        return cls._repo_instance is not None
-
-    @classmethod
-    def get_instance(cls) -> RepositoryDefinitionIsh:
-        # forced to tell mypy to ignore because of https://github.com/python/mypy/issues/12009
-        return check.not_none(
-            cls._repo_instance, "Instance must be set via set_instance"
-        )  # type:ignore
-
-    @classmethod
-    def clear(cls):
-        check.invariant(cls._repo_instance is not None, "Cannot clear empty global repo")
-        cls._repo_instance = None
-
-
-global_repo_singleton = GlobalRepoSingleton()
-
 # invoke this function to get the module name the function that called the current
 # scope
 def get_module_name_of_caller() -> str:
@@ -73,24 +45,19 @@ def get_module_name_of_caller() -> str:
     # return inspect.currentframe().f_back.f_back.f_globals["__name__"]
 
 
-def get_python_env_global_dagster_repository() -> RepositoryDefinitionIsh:
-    return global_repo_singleton.get_instance()
+def get_dagster_repository_in_module(module_name: str) -> RepositoryDefinitionIsh:
+    return sys.modules[module_name].__dict__[MAGIC_REPO_GLOBAL_KEY]
 
 
 @contextmanager
 def definitions_test_scope(dundername):
     parent_mod = sys.modules[dundername]
     assert MAGIC_REPO_GLOBAL_KEY not in parent_mod.__dict__
-    assert not GlobalRepoSingleton.has_instance()
     try:
         yield
     finally:
-        try:
-            if MAGIC_REPO_GLOBAL_KEY in parent_mod.__dict__:
-                del parent_mod.__dict__[MAGIC_REPO_GLOBAL_KEY]
-        finally:
-            if GlobalRepoSingleton.has_instance():
-                GlobalRepoSingleton.clear()
+        if MAGIC_REPO_GLOBAL_KEY in parent_mod.__dict__:
+            del parent_mod.__dict__[MAGIC_REPO_GLOBAL_KEY]
 
 
 class DefinitionsAlreadyCalledError(Exception):
@@ -119,9 +86,6 @@ def definitions(
     if MAGIC_REPO_GLOBAL_KEY in mod.__dict__:
         raise DefinitionsAlreadyCalledError()
 
-    if global_repo_singleton.has_instance():
-        raise DefinitionsAlreadyCalledError()
-
     # This is likely fairly fragile, but this grabs
     # the last component of a module name (typically the name
     # of the file) and uses it for the repository name
@@ -145,7 +109,6 @@ def definitions(
         ]
 
     mod.__dict__[MAGIC_REPO_GLOBAL_KEY] = global_repo
-    global_repo_singleton.set_instance(global_repo)
 
     return global_repo
 
