@@ -281,6 +281,9 @@ from dagster._core.definitions.reconstruct import (
     build_reconstructable_job as build_reconstructable_job,
     reconstructable as reconstructable,
 )
+from dagster._core.definitions.register_definitions import (
+    register_definitions as register_definitions,
+)
 from dagster._core.definitions.repository_definition import (
     RepositoryData as RepositoryData,
     RepositoryDefinition as RepositoryDefinition,
