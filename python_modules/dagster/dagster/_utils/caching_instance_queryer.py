@@ -22,7 +22,8 @@ if TYPE_CHECKING:
 
 
 class CachingInstanceQueryer:
-    """Allows caching queries to the instance while calculating data times."""
+    """Provides utility functions for querying for asset-materialization related data from the
+    instance which will attempt to limit redundant expensive calls."""
 
     def __init__(self, instance: "DagsterInstance"):
         self._instance = instance
