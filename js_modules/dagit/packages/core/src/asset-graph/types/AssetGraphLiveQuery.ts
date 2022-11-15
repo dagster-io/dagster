@@ -36,6 +36,12 @@ export interface AssetGraphLiveQuery_assetNodes_freshnessInfo {
   currentMinutesLate: number | null;
 }
 
+export interface AssetGraphLiveQuery_assetNodes_assetObservations {
+  __typename: "ObservationEvent";
+  timestamp: string;
+  runId: string;
+}
+
 export interface AssetGraphLiveQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
@@ -45,6 +51,7 @@ export interface AssetGraphLiveQuery_assetNodes {
   assetMaterializations: AssetGraphLiveQuery_assetNodes_assetMaterializations[];
   freshnessPolicy: AssetGraphLiveQuery_assetNodes_freshnessPolicy | null;
   freshnessInfo: AssetGraphLiveQuery_assetNodes_freshnessInfo | null;
+  assetObservations: AssetGraphLiveQuery_assetNodes_assetObservations[];
   currentLogicalVersion: string | null;
   projectedLogicalVersion: string | null;
 }

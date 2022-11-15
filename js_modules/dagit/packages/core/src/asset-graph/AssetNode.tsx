@@ -173,12 +173,6 @@ export const AssetNode: React.FC<{
                 </>
               )
             )}
-            <StatsRow>
-              <span>Latest&nbsp;Run</span>
-              <Caption style={{textAlign: 'right'}}>
-                <AssetLatestRunWithNotices liveData={liveData} />
-              </Caption>
-            </StatsRow>
             {!definition.isSource && (
               <>
                 <StatsRow>
@@ -309,6 +303,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
     freshnessInfo {
       currentMinutesLate
+    }
     assetObservations(limit: 1) {
       timestamp
       runId
