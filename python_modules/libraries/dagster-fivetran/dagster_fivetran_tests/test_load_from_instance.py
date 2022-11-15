@@ -1,7 +1,10 @@
 import pytest
 import responses
 from dagster_fivetran import fivetran_resource
-from dagster_fivetran.asset_defs import load_assets_from_fivetran_instance
+from dagster_fivetran.asset_defs import (
+    FivetranConnectionMetadata,
+    load_assets_from_fivetran_instance,
+)
 from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
     get_complex_sample_connector_schema_config,
@@ -17,7 +20,11 @@ from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 @responses.activate
 @pytest.mark.parametrize("connector_to_group_fn", [None, lambda x: f"{x[0]}_group"])
 @pytest.mark.parametrize("filter_connector", [True, False])
-def test_load_from_instance(connector_to_group_fn, filter_connector):
+@pytest.mark.parametrize(
+    "connector_to_asset_key",
+    [None, lambda conn, name: AssetKey([*conn.name.split("."), *name.split(".")])],
+)
+def test_load_from_instance(connector_to_group_fn, filter_connector, connector_to_asset_key):
 
     ft_resource = fivetran_resource(
         build_init_resource_context(
@@ -58,11 +65,13 @@ def test_load_from_instance(connector_to_group_fn, filter_connector):
                 ft_instance,
                 connector_to_group_fn=connector_to_group_fn,
                 connector_filter=(lambda _: False) if filter_connector else None,
+                connector_to_asset_key=connector_to_asset_key,
             )
         else:
             ft_cacheable_assets = load_assets_from_fivetran_instance(
                 ft_instance,
                 connector_filter=(lambda _: False) if filter_connector else None,
+                connector_to_asset_key=connector_to_asset_key,
             )
         ft_assets = ft_cacheable_assets.build_definitions(
             ft_cacheable_assets.compute_cacheable_data()
@@ -79,6 +88,15 @@ def test_load_from_instance(connector_to_group_fn, filter_connector):
         AssetKey(["qwerty", "fed"]),
         AssetKey(["qwerty", "bar"]),
     }
+
+    if connector_to_asset_key:
+        tables = {
+            connector_to_asset_key(
+                FivetranConnectionMetadata("some_service.some_name", "", "=", []),
+                ".".join(t.path),
+            )
+            for t in tables
+        }
 
     # # Check schema metadata is added correctly to asset def
 

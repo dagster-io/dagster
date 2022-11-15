@@ -1,6 +1,7 @@
 import hashlib
 import inspect
 import re
+from functools import partial
 from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
@@ -35,6 +36,7 @@ def build_fivetran_assets(
     io_manager_key: Optional[str] = None,
     asset_key_prefix: Optional[Sequence[str]] = None,
     metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
+    table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
 ) -> Sequence[AssetsDefinition]:
 
     """
@@ -90,7 +92,7 @@ def build_fivetran_assets(
 
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
-    tracked_asset_keys = {
+    tracked_asset_keys = table_to_asset_key_map or {
         table: AssetKey([*asset_key_prefix, *table.split(".")]) for table in destination_tables
     }
 
@@ -149,6 +151,8 @@ class FivetranConnectionMetadata(
         self,
         key_prefix: Sequence[str],
         group_name: Optional[str],
+        table_to_asset_key_fn: Callable[[str], AssetKey],
+        io_manager_key: Optional[str] = None,
     ) -> AssetsDefinitionCacheableData:
 
         schema_table_meta: Dict[str, MetadataUserInput] = {}
@@ -166,7 +170,10 @@ class FivetranConnectionMetadata(
         else:
             schema_table_meta[self.name] = {}
 
-        outputs = {table: AssetKey([*key_prefix, table]) for table in schema_table_meta.keys()}
+        outputs = {
+            table: AssetKey([*key_prefix, *list(table_to_asset_key_fn(table).path)])
+            for table in schema_table_meta.keys()
+        }
 
         internal_deps: Dict[str, Set[AssetKey]] = {}
 
@@ -180,6 +187,7 @@ class FivetranConnectionMetadata(
             metadata_by_output_name=schema_table_meta,
             extra_metadata={
                 "connector_id": self.connector_id,
+                "io_manager_key": io_manager_key,
             },
         )
 
@@ -187,7 +195,9 @@ class FivetranConnectionMetadata(
 def _build_fivetran_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
 ) -> AssetsDefinition:
-    connector_id = check.not_none(assets_defn_meta.extra_metadata)["connector_id"]
+    metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
+    connector_id = cast(str, metadata["connector_id"])
+    io_manager_key = cast(Optional[str], metadata["io_manager_key"])
 
     return with_group(
         build_fivetran_assets(
@@ -201,6 +211,8 @@ def _build_fivetran_assets_from_metadata(
             metadata_by_table_name=cast(
                 Dict[str, MetadataUserInput], assets_defn_meta.metadata_by_output_name
             ),
+            io_manager_key=io_manager_key,
+            table_to_asset_key_map=assets_defn_meta.keys_by_output_name,
         ),
         assets_defn_meta.group_name,
     )[0]
@@ -213,6 +225,8 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         key_prefix: Sequence[str],
         connector_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
+        connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
+        connector_to_asset_key: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]],
     ):
 
         self._fivetran_resource_def = fivetran_resource_def
@@ -223,6 +237,10 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._key_prefix = key_prefix
         self._connector_to_group_fn = connector_to_group_fn
         self._connection_filter = connector_filter
+        self._connector_to_io_manager_key_fn = connector_to_io_manager_key_fn
+        self._connector_to_asset_key: Callable[
+            [FivetranConnectionMetadata, str], AssetKey
+        ] = connector_to_asset_key or (lambda _, table: AssetKey(path=table.split(".")))
 
         contents = hashlib.sha1()
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -269,13 +287,17 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         for connector in self._get_connectors():
 
             if not self._connection_filter or self._connection_filter(connector):
-
+                table_to_asset_key = partial(self._connector_to_asset_key, connector)
                 asset_defn_data.append(
                     connector.build_asset_defn_metadata(
-                        self._key_prefix,
-                        self._connector_to_group_fn(connector.name)
+                        key_prefix=self._key_prefix,
+                        group_name=self._connector_to_group_fn(connector.name)
                         if self._connector_to_group_fn
                         else None,
+                        io_manager_key=self._connector_to_io_manager_key_fn(connector.name)
+                        if self._connector_to_io_manager_key_fn
+                        else None,
+                        table_to_asset_key_fn=table_to_asset_key,
                     )
                 )
 
@@ -302,7 +324,10 @@ def load_assets_from_fivetran_instance(
     fivetran: ResourceDefinition,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     connector_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    io_manager_key: Optional[str] = None,
+    connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]] = None,
+    connector_to_asset_key: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
@@ -316,6 +341,11 @@ def load_assets_from_fivetran_instance(
         connector_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Fivetran connector name. If None, no groups will be created. Defaults
             to a basic sanitization function.
+        io_manager_key (Optional[str]): The IO manager key to use for all assets. Defaults to "io_manager".
+            Use this if all assets should be loaded from the same source, otherwise use connector_to_io_manager_key_fn.
+        connector_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
+            IO manager key for a given Fivetran connector name. When other ops are downstream of the loaded assets,
+            the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
         connector_filter (Optional[Callable[[FivetranConnectorMetadata], bool]]): Optional function which takes
             in connector metadata and returns False if the connector should be excluded from the output assets.
 
@@ -357,9 +387,18 @@ def load_assets_from_fivetran_instance(
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
+    check.invariant(
+        not io_manager_key or not connector_to_io_manager_key_fn,
+        "Cannot specify both io_manager_key and connector_to_io_manager_key_fn",
+    )
+    if not connector_to_io_manager_key_fn:
+        connector_to_io_manager_key_fn = lambda _: io_manager_key
+
     return FivetranInstanceCacheableAssetsDefinition(
-        fivetran,
-        key_prefix,
-        connector_to_group_fn,
-        connector_filter,
+        fivetran_resource_def=fivetran,
+        key_prefix=key_prefix,
+        connector_to_group_fn=connector_to_group_fn,
+        connector_to_io_manager_key_fn=connector_to_io_manager_key_fn,
+        connector_filter=connector_filter,
+        connector_to_asset_key=connector_to_asset_key,
     )
