@@ -26,7 +26,7 @@ from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
-from dagster._utils.calculate_data_time import DataTimeInstanceQueryer
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..implementation.fetch_assets import (
     get_freshness_info,
@@ -493,11 +493,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             return get_freshness_info(
                 asset_key=self._external_asset_node.asset_key,
                 freshness_policy=self._external_asset_node.freshness_policy,
-                # in the future, we can share this same DataTimeInstanceQueryer across all
+                asset_graph=asset_graph,
+                # in the future, we can share this same CachingInstanceQueryer across all
                 # GrapheneAssetNodes which share an external repository for improved performance
-                data_time_queryer=DataTimeInstanceQueryer(
-                    instance=graphene_info.context.instance, asset_graph=asset_graph
-                ),
+                data_time_queryer=CachingInstanceQueryer(instance=graphene_info.context.instance),
             )
         return None
 
