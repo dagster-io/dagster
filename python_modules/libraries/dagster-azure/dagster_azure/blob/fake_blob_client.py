@@ -1,7 +1,7 @@
 import io
 import random
-from collections import defaultdict
 from contextlib import contextmanager
+from dataclasses import dataclass
 from unittest import mock
 
 from .utils import ResourceNotFoundError
@@ -41,11 +41,17 @@ class FakeBlobServiceClient:
         return self.get_container_client(container).get_blob_client(blob)
 
 
+@dataclass
+class FakeBlob:
+    name: str
+    url: str
+
+
 class FakeBlobContainerClient:
     """Stateful mock of an Blob container client for testing."""
 
     def __init__(self, account_name, container_name):
-        self._container = defaultdict(FakeBlobClient)
+        self._container = {}
         self._account_name = account_name
         self._container_name = container_name
 
@@ -63,29 +69,30 @@ class FakeBlobContainerClient:
     def get_container_properties(self):
         return {"account_name": self.account_name, "container_name": self.container_name}
 
-    def has_blob(self, path):
-        return bool(self._container.get(path))
+    def has_blob(self, blob_key):
+        return bool(self._container.get(blob_key))
 
-    def get_blob_client(self, blob):
-        return self._container[blob]
+    def get_blob_client(self, blob_key):
+        if blob_key not in self._container:
+            blob = self.create_blob(blob_key)
+        else:
+            blob = self._container[blob_key]
+        return blob
 
-    def create_blob(self, blob):
-        return self._container[blob]
+    def create_blob(self, blob_key):
+        blob = FakeBlobClient()
+        self._container[blob_key] = blob
+        return blob
 
     def list_blobs(self, name_starts_with=None):
         for k, v in self._container.items():
             if name_starts_with is None or k.startswith(name_starts_with):
-                yield {
-                    "name": k,
-                    # This clearly isn't actually the URL but we need a way of copying contents
-                    # across blobs and this allows us to do it
-                    "url": v.contents,
-                }
+                yield FakeBlob(name=k, url=v.contents)
 
-    def delete_blob(self, blob):
+    def delete_blob(self, prefix):
         # Use list to avoid mutating dict as we iterate
         for k in list(self._container.keys()):
-            if k.startswith(blob):
+            if k.startswith(prefix):
                 del self._container[k]
 
 
