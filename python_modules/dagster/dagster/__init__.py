@@ -162,6 +162,7 @@ from dagster._core.definitions.dependency import (
     MultiDependencyDefinition as MultiDependencyDefinition,
     NodeInvocation as NodeInvocation,
 )
+from dagster._core.definitions.definitions_class import Definitions as Definitions
 from dagster._core.definitions.events import (
     AssetKey as AssetKey,
     AssetMaterialization as AssetMaterialization,
