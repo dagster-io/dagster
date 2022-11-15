@@ -540,8 +540,9 @@ def test_lazy_load_via_env_var():
             process.wait()
 
 
-def test_load_with_secrets_manager():
+def test_load_with_missing_env_var():
     port = find_free_port()
+    client = DagsterGrpcClient(port=port)
     python_file = file_relative_path(__file__, "grpc_repo_with_env_vars.py")
 
     subprocess_args = [
@@ -556,21 +557,34 @@ def test_load_with_secrets_manager():
     ]
 
     process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
-
     try:
-        wait_for_grpc_server(
-            process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
-        )
+        wait_for_grpc_server(process, client, subprocess_args)
         list_repositories_response = deserialize_json_to_dagster_namedtuple(
-            DagsterGrpcClient(port=port).list_repositories()
+            client.list_repositories()
         )
         assert isinstance(list_repositories_response, SerializableErrorInfo)
         assert "Missing env var" in list_repositories_response.message
     finally:
-        process.terminate()
-        process.wait()
+        client.shutdown_server()
+        process.communicate(timeout=30)
 
+
+def test_load_with_secrets_loader_no_instance_ref():
     # Now with secrets manager and correct args
+    port = find_free_port()
+    client = DagsterGrpcClient(port=port)
+
+    python_file = file_relative_path(__file__, "grpc_repo_with_env_vars.py")
+    subprocess_args = [
+        "dagster",
+        "api",
+        "grpc",
+        "--port",
+        str(port),
+        "--python-file",
+        python_file,
+        "--lazy-load-user-code",
+    ]
 
     with environ({"FOO": None}):
         with instance_for_test(
@@ -598,15 +612,9 @@ def test_load_with_secrets_manager():
                     "--instance-ref",
                     serialize_dagster_namedtuple(instance.get_ref()),
                 ],
-                stdout=subprocess.PIPE,
             )
-
             try:
-                wait_for_grpc_server(
-                    process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
-                )
-
-                client = DagsterGrpcClient(port=port)
+                wait_for_grpc_server(process, client, subprocess_args)
 
                 list_repositories_response = deserialize_json_to_dagster_namedtuple(
                     client.list_repositories()
@@ -647,10 +655,26 @@ def test_load_with_secrets_manager():
                 assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
             finally:
-                process.terminate()
-                process.wait()
+                client.shutdown_server()
+                process.communicate(timeout=30)
 
-    # also works if the instance is loaded via DAGSTER_HOME and ref is not passed in
+
+def test_load_with_secrets_loader_instance_ref():
+    port = find_free_port()
+    client = DagsterGrpcClient(port=port)
+    python_file = file_relative_path(__file__, "grpc_repo_with_env_vars.py")
+
+    subprocess_args = [
+        "dagster",
+        "api",
+        "grpc",
+        "--port",
+        str(port),
+        "--python-file",
+        python_file,
+        "--lazy-load-user-code",
+    ]
+
     with environ({"FOO": None}):
         with instance_for_test(
             overrides={
@@ -663,16 +687,16 @@ def test_load_with_secrets_manager():
                 },
             },
             set_dagster_home=True,
-        ) as instance:
+        ):
             process = subprocess.Popen(
                 subprocess_args + ["--inject-env-vars-from-instance"],
                 stdout=subprocess.PIPE,
             )
 
+            client = DagsterGrpcClient(port=port, host="localhost")
+
             try:
-                wait_for_grpc_server(
-                    process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
-                )
+                wait_for_grpc_server(process, client, subprocess_args)
                 list_repositories_response = deserialize_json_to_dagster_namedtuple(
                     DagsterGrpcClient(port=port).list_repositories()
                 )
@@ -680,8 +704,8 @@ def test_load_with_secrets_manager():
                 assert isinstance(list_repositories_response, ListRepositoriesResponse)
 
             finally:
-                process.terminate()
-                process.wait()
+                client.shutdown_server()
+                process.communicate(timeout=30)
 
 
 def test_streaming():
