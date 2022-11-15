@@ -67,15 +67,16 @@ export const AssetPartitions: React.FC<Props> = ({
       : [params.partition] // "|" character is allowed in 1D partition keys for historical reasons
     : [];
 
-  const partitionRowsForRange = (range: PartitionHealthDimensionRange, idx: number) => {
+  const dimensionKeysOrdered = (range: PartitionHealthDimensionRange) => {
+    return isTimeseriesPartition(range.selected[0])
+      ? [...range.selected].reverse()
+      : range.selected;
+  };
+  const dimensionRowsForRange = (range: PartitionHealthDimensionRange, idx: number) => {
     if (timeRange && timeRange.selected.length === 0) {
       return [];
     }
-    const dimensionKeys = isTimeseriesPartition(range.selected[0])
-      ? [...range.selected].reverse()
-      : range.selected;
-
-    return dimensionKeys
+    return dimensionKeysOrdered(range)
       .map((dimensionKey) => {
         const state =
           focusedDimensionKeys.length >= idx
@@ -145,7 +146,7 @@ export const AssetPartitions: React.FC<Props> = ({
                 background={Colors.White}
                 border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
               >
-                <Icon name="partition_dimension" />
+                <Icon name="partition" />
                 <Subheading>{range.dimension.name}</Subheading>
               </Box>
             )}
@@ -156,16 +157,21 @@ export const AssetPartitions: React.FC<Props> = ({
               </Box>
             ) : (
               <AssetPartitionList
-                partitions={partitionRowsForRange(range, idx)}
+                partitions={dimensionRowsForRange(range, idx)}
                 focusedDimensionKey={focusedDimensionKeys[idx]}
                 setFocusedDimensionKey={(dimensionKey) => {
-                  if (focusedDimensionKeys.length < idx) {
-                    return;
+                  const nextFocusedDimensionKeys: string[] = [];
+                  for (let ii = 0; ii < idx; ii++) {
+                    nextFocusedDimensionKeys.push(
+                      focusedDimensionKeys[ii] || dimensionKeysOrdered(ranges[ii])[0],
+                    );
                   }
-                  const partition = [...focusedDimensionKeys.slice(0, idx), dimensionKey].join('|');
+                  if (dimensionKey) {
+                    nextFocusedDimensionKeys.push(dimensionKey);
+                  }
                   setParams({
                     ...params,
-                    partition,
+                    partition: nextFocusedDimensionKeys.join('|'),
                   });
                 }}
               />

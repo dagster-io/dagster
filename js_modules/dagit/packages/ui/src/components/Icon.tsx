@@ -85,7 +85,6 @@ import panel_show_left from '../icon-svgs/panel_show_left.svg';
 import panel_show_right from '../icon-svgs/panel_show_right.svg';
 import panel_show_top from '../icon-svgs/panel_show_top.svg';
 import partition from '../icon-svgs/partition.svg';
-import partition_dimension from '../icon-svgs/partition_dimension.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
@@ -146,7 +145,6 @@ export const Icons = {
   op_dynamic: bolt,
   partition_set: schedule,
   partition,
-  partition_dimension,
   repo: source,
   resource: layers,
   run: history,

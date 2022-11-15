@@ -189,7 +189,7 @@ export const PartitionStatus: React.FC<{
           height: small ? 12 : 24,
           borderRadius: 4,
           overflow: 'hidden',
-          cursor: 'pointer',
+          cursor: 'col-resize',
           background: Colors.Gray200,
         }}
         ref={ref}

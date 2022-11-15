@@ -1,10 +1,11 @@
-import {Box, Colors, Icon} from '@dagster-io/ui';
+import {Box, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
 import {PartitionState, partitionStateToColor} from '../partitions/PartitionStatus';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
+import {Inner} from '../ui/VirtualizedTable';
+
+import {AssetListRow, AssetListContainer} from './AssetEventList';
 
 export const AssetPartitionList: React.FC<{
   partitions: {dimensionKey: string; state: PartitionState}[];
@@ -32,7 +33,7 @@ export const AssetPartitionList: React.FC<{
   }, [focusedDimensionKey, rowVirtualizer, partitions]);
 
   return (
-    <Container
+    <AssetListContainer
       ref={parentRef}
       tabIndex={-1}
       onKeyDown={(e) => {
@@ -53,7 +54,7 @@ export const AssetPartitionList: React.FC<{
           const {dimensionKey, state} = partitions[index];
 
           return (
-            <ClickableRow
+            <AssetListRow
               key={key}
               $height={size}
               $start={start}
@@ -78,36 +79,19 @@ export const AssetPartitionList: React.FC<{
               >
                 <AssetPartitionListRow dimensionKey={dimensionKey} state={state} />
               </Box>
-            </ClickableRow>
+            </AssetListRow>
           );
         })}
       </Inner>
-    </Container>
+    </AssetListContainer>
   );
 };
-
-const ClickableRow = styled(Row)<{$focused: boolean}>`
-  cursor: pointer;
-
-  :focus,
-  :active,
-  :hover {
-    outline: none;
-    background: ${Colors.White};
-  }
-  ${(p) =>
-    p.$focused &&
-    `background: ${Colors.White};
-    `}
-`;
-
 const AssetPartitionListRow: React.FC<{dimensionKey: string; state: PartitionState}> = ({
   dimensionKey,
   state,
 }) => {
   return (
     <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-      <Icon name="partition" />
       {dimensionKey}
       <div style={{flex: 1}} />
       {(state === PartitionState.SUCCESS_MISSING || state === PartitionState.SUCCESS) && (
