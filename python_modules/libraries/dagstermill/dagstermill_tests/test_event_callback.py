@@ -35,7 +35,7 @@ def test_event_callback_logging():
         assert res.success
 
         passed_before_timeout = False
-        retries = 50
+        retries = 5
         while retries > 0:
             time.sleep(0.333)
             if DagsterEventType.RUN_FAILURE in events.keys():
@@ -44,7 +44,5 @@ def test_event_callback_logging():
                 passed_before_timeout = True
                 break
             retries -= 1
-
-        print(events)
 
         assert passed_before_timeout
