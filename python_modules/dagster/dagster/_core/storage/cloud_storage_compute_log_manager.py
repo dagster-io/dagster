@@ -50,9 +50,11 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         """
 
     @abstractmethod
-    def delete_logs(self, log_key: Sequence[str]):
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
         """
-        Deletes logs for a given log_key
+        Deletes logs for a given log_key or prefix
         """
 
     @abstractmethod

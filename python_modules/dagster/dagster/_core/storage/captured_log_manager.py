@@ -203,11 +203,14 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def delete_logs(self, log_key: Sequence[str]):
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
         """Deletes the captured logs for a given log key.
 
         Args:
-            log_key (List[String]): The log key identifying the captured logs
+            log_key(Optional[List[String]]): The log key of the logs to delete
+            prefix(Optional[List[String]]): The prefix of the log keys to delete
         """
 
     @abstractmethod

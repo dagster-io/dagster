@@ -127,19 +127,35 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         paths = [self._blob_prefix, "storage", *namespace, filename]
         return "/".join(paths)  # blob path delimiter
 
-    def delete_logs(self, log_key: Sequence[str]):
-        prefix = "/".join(self._blob_key(log_key, ComputeIOType.STDERR).split("/")[:-1])
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
+        self.local_manager.delete_logs(log_key=log_key, prefix=prefix)
+        if log_key:
+            prefix_path = "/".join([self._blob_prefix, "storage", *log_key])
+        elif prefix:
+            # add the trailing '/' to make sure that ['a'] does not match ['apple']
+            prefix_path = "/".join([self._blob_prefix, "storage", *prefix, ""])
+
         blob_list = {
-            b.name for b in list(self._container_client.list_blobs(name_starts_with=prefix))
+            b.name for b in list(self._container_client.list_blobs(name_starts_with=prefix_path))
         }
-        known_keys = [
-            self._blob_key(log_key, ComputeIOType.STDOUT),
-            self._blob_key(log_key, ComputeIOType.STDERR),
-            self._blob_key(log_key, ComputeIOType.STDOUT, partial=True),
-            self._blob_key(log_key, ComputeIOType.STDERR, partial=True),
-        ]
-        to_remove = [key for key in known_keys if key in blob_list]
-        self._container_client.delete_blobs(*to_remove)
+
+        to_remove = None
+        if log_key:
+            # filter to the known set of keys
+            known_keys = [
+                self._blob_key(log_key, ComputeIOType.STDOUT),
+                self._blob_key(log_key, ComputeIOType.STDERR),
+                self._blob_key(log_key, ComputeIOType.STDOUT, partial=True),
+                self._blob_key(log_key, ComputeIOType.STDERR, partial=True),
+            ]
+            to_remove = [key for key in known_keys if key in blob_list]
+        elif prefix:
+            to_remove = list(blob_list)
+
+        if to_remove:
+            self._container_client.delete_blobs(*to_remove)
 
     def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):

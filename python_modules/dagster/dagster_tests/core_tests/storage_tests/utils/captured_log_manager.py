@@ -130,3 +130,54 @@ class TestCapturedLogManager:
             assert not read_manager.cloud_storage_has_logs(log_key, ComputeIOType.STDOUT)
             assert read_manager.cloud_storage_has_logs(log_key, ComputeIOType.STDERR, partial=True)
             assert read_manager.cloud_storage_has_logs(log_key, ComputeIOType.STDERR, partial=True)
+
+    def test_log_stream(self, captured_log_manager):
+        log_key = ["some", "log", "key"]
+        with captured_log_manager.open_log_stream(log_key, ComputeIOType.STDOUT) as write_stream:
+            write_stream.write("hello hello")
+        log_data = captured_log_manager.get_log_data(log_key)
+        assert log_data.stdout == b"hello hello"
+
+    def test_delete_logs(self, captured_log_manager):
+        log_key = ["some", "log", "key"]
+        other_log_key = ["other", "log", "key"]
+        with captured_log_manager.open_log_stream(log_key, ComputeIOType.STDOUT) as write_stream:
+            write_stream.write("hello hello")
+        with captured_log_manager.open_log_stream(
+            other_log_key, ComputeIOType.STDOUT
+        ) as write_stream:
+            write_stream.write("hello hello")
+
+        log_data = captured_log_manager.get_log_data(log_key)
+        assert log_data.stdout == b"hello hello"
+        other_log_data = captured_log_manager.get_log_data(other_log_key)
+        assert other_log_data.stdout == b"hello hello"
+
+        captured_log_manager.delete_logs(log_key=log_key)
+
+        log_data = captured_log_manager.get_log_data(log_key)
+        assert log_data.stdout == None
+        other_log_data = captured_log_manager.get_log_data(other_log_key)
+        assert other_log_data.stdout == b"hello hello"
+
+    def test_delete_log_prefix(self, captured_log_manager):
+        log_key = ["some", "log", "key"]
+        other_log_key = ["some", "log", "other_key"]
+        with captured_log_manager.open_log_stream(log_key, ComputeIOType.STDOUT) as write_stream:
+            write_stream.write("hello hello")
+        with captured_log_manager.open_log_stream(
+            other_log_key, ComputeIOType.STDOUT
+        ) as write_stream:
+            write_stream.write("hello hello")
+
+        log_data = captured_log_manager.get_log_data(log_key)
+        assert log_data.stdout == b"hello hello"
+        other_log_data = captured_log_manager.get_log_data(other_log_key)
+        assert other_log_data.stdout == b"hello hello"
+
+        captured_log_manager.delete_logs(prefix=["some", "log"])
+
+        log_data = captured_log_manager.get_log_data(log_key)
+        assert log_data.stdout == None
+        other_log_data = captured_log_manager.get_log_data(other_log_key)
+        assert other_log_data.stdout == None

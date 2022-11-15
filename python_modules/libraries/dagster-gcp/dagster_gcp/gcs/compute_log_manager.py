@@ -122,16 +122,24 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         paths = [self._prefix, "storage", *namespace, filename]
         return "/".join(paths)
 
-    def delete_logs(self, log_key: Sequence[str]):
-        self._local_manager.delete_logs(log_key)
-        gcs_keys_to_remove = [
-            self._gcs_key(log_key, ComputeIOType.STDOUT),
-            self._gcs_key(log_key, ComputeIOType.STDERR),
-            self._gcs_key(log_key, ComputeIOType.STDOUT, partial=True),
-            self._gcs_key(log_key, ComputeIOType.STDERR, partial=True),
-        ]
-        # if the blob doesn't exist, do nothing instead of raising a not found exception
-        self._bucket.delete_blobs(gcs_keys_to_remove, on_error=lambda _: None)
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
+        self._local_manager.delete_logs(log_key, prefix)
+        if log_key:
+            gcs_keys_to_remove = [
+                self._gcs_key(log_key, ComputeIOType.STDOUT),
+                self._gcs_key(log_key, ComputeIOType.STDERR),
+                self._gcs_key(log_key, ComputeIOType.STDOUT, partial=True),
+                self._gcs_key(log_key, ComputeIOType.STDERR, partial=True),
+            ]
+            # if the blob doesn't exist, do nothing instead of raising a not found exception
+            self._bucket.delete_blobs(gcs_keys_to_remove, on_error=lambda _: None)
+        elif prefix:
+            # add the trailing '/' to make sure that ['a'] does not match ['apple']
+            delete_prefix = "/".join([self._prefix, "storage", *prefix, ""])
+            to_delete = self._bucket.list_blobs(prefix=delete_prefix)
+            self._bucket.delete_blobs(list(to_delete))
 
     def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):
