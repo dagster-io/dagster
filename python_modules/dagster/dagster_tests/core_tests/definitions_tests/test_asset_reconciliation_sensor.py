@@ -225,7 +225,12 @@ class FanOutPartitionMapping(PartitionMapping):
         return PartitionKeyRange(f"{upstream_partition_key}_1", f"{upstream_partition_key}_3")
 
 
-daily_partitions_def = DailyPartitionsDefinition("2022-10-31")
+# time-dependent scenarios
+
+
+time_partition_start = pendulum.yesterday().format("YYYY-MM-DD")
+daily_partitions_def = DailyPartitionsDefinition(time_partition_start)
+
 one_partition_partitions_def = StaticPartitionsDefinition(["a"])
 two_partitions_partitions_def = StaticPartitionsDefinition(["a", "b"])
 fanned_out_partitions_def = StaticPartitionsDefinition(["a_1", "a_2", "a_3"])
@@ -274,6 +279,21 @@ overlapping_freshness_inf = diamond + [
 overlapping_freshness_none = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=None),
+]
+
+# time-partitioned freshness policy
+freshness_depends_on_daily = [
+    asset_def("daily_asset", partitions_def=daily_partitions_def),
+    # can't actually satisfy this freshness policy at all points in time, as its upstream data only
+    # comes in 1-day chunks (so 35 minutes after you get the most recent chunk, you'll be out of
+    # date). in real world, would use a cron freshness policy
+    asset_def("asset2", ["daily_asset"], freshness_policy=freshness_30m),
+]
+freshness_diamond_depends_on_daily = [
+    asset_def("daily_asset", partitions_def=daily_partitions_def),
+    asset_def("daily_asset2", ["daily_asset"], partitions_def=daily_partitions_def),
+    asset_def("asset3", ["daily_asset"]),
+    asset_def("asset4", ["daily_asset2", "asset3"], freshness_policy=freshness_30m),
 ]
 
 # partitions
@@ -642,10 +662,50 @@ scenarios = {
         unevaluated_runs=[run(["asset1"])],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
+    ################################################################################################
+    # Time-partitioned freshness policies
+    ################################################################################################
+    "freshness_depends_on_daily1": AssetReconciliationScenario(
+        assets=freshness_depends_on_daily,
+        unevaluated_runs=[],
+        expected_run_requests=[
+            run_request(asset_keys=["daily_asset"], partition_key=time_partition_start)
+        ],
+    ),
+    "freshness_depends_on_daily2": AssetReconciliationScenario(
+        assets=freshness_depends_on_daily,
+        cursor_from=AssetReconciliationScenario(
+            assets=freshness_depends_on_daily,
+            unevaluated_runs=[],
+        ),
+        unevaluated_runs=[run(asset_keys=["daily_asset"], partition_key=time_partition_start)],
+        # now can run asset2 to update it
+        expected_run_requests=[run_request(asset_keys=["asset2"])],
+    ),
+    "freshness_diamond_depends_on_daily1": AssetReconciliationScenario(
+        assets=freshness_diamond_depends_on_daily,
+        unevaluated_runs=[run(["daily_asset"], partition_key=time_partition_start)],
+        expected_run_requests=[
+            run_request(asset_keys=["daily_asset2"], partition_key=time_partition_start),
+            run_request(asset_keys=["asset3"]),
+        ],
+    ),
+    "freshness_diamond_depends_on_daily2": AssetReconciliationScenario(
+        assets=freshness_diamond_depends_on_daily,
+        cursor_from=AssetReconciliationScenario(
+            assets=freshness_diamond_depends_on_daily,
+            unevaluated_runs=[run(["daily_asset"], partition_key=time_partition_start)],
+        ),
+        unevaluated_runs=[
+            run(asset_keys=["daily_asset2"], partition_key=time_partition_start),
+            run(asset_keys=["asset3"]),
+        ],
+        expected_run_requests=[run_request(asset_keys=["asset4"])],
+    ),
 }
 
 
-@pytest.mark.parametrize("scenario", list(scenarios.values())[-2:], ids=list(scenarios.keys())[-2:])
+@pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
     run_requests, _ = scenario.do_scenario(instance)

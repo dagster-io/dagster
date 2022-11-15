@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, AbstractSet, Dict, Iterable, Mapping, Optional
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.event_log import EventLogRecord
 from dagster._core.storage.pipeline_run import (
@@ -242,7 +243,7 @@ class CachingInstanceQueryer:
             kvs_key = self._kvs_key_for_record_id(record_id)
             serialized_times = self._instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "{}")
             return {
-                AssetKey.from_user_string(key): tuple(value)  # type:ignore
+                AssetKey.from_user_string(key): tuple(value)  # type: ignore
                 for key, value in json.loads(serialized_times).items()
             }
         return {}
@@ -254,11 +255,24 @@ class CachingInstanceQueryer:
         asset_key: AssetKey,
         record_id: Optional[int],
         record_timestamp: Optional[float],
+        record_partition_key: Optional[str],
         required_keys: AbstractSet[AssetKey],
     ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
 
         if record_id is None:
             return {key: (None, None) for key in required_keys}
+
+        # if this corresponds to a time-partitioned asset, base the used data time off of the
+        # partition key
+        partitions_def = asset_graph.get_partitions_def(asset_key)
+        if record_partition_key is not None and isinstance(
+            partitions_def, TimeWindowPartitionsDefinition
+        ):
+            # for some reason, mypy can't tell that this must be a TimeWindowPartitionsDefinition
+            data_timestamp = partitions_def.end_time_for_partition_key(  # type: ignore
+                record_partition_key
+            ).timestamp()
+            return {required_key: (None, data_timestamp) for required_key in required_keys}
 
         # grab the existing upstream data times already calculated for this record (if any)
         known_data = self.get_known_used_data(record_id)
@@ -291,6 +305,9 @@ class CachingInstanceQueryer:
                     asset_key=parent_key,
                     record_id=latest_parent_record.storage_id if latest_parent_record else None,
                     record_timestamp=latest_parent_record.event_log_entry.timestamp
+                    if latest_parent_record
+                    else None,
+                    record_partition_key=latest_parent_record.partition_key
                     if latest_parent_record
                     else None,
                     required_keys=frozenset(upstream_required_keys),
@@ -329,6 +346,7 @@ class CachingInstanceQueryer:
             asset_key=record.asset_key,
             record_id=record.storage_id,
             record_timestamp=record.event_log_entry.timestamp,
+            record_partition_key=record.partition_key,
             required_keys=frozenset(upstream_keys),
         )
         self.set_known_used_data(record.storage_id, new_known_data=data)
