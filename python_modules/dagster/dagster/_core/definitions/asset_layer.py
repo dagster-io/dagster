@@ -681,7 +681,7 @@ class AssetLayer:
 
     @property
     def asset_keys(self) -> Iterable[AssetKey]:
-        return [*self._dependency_node_handles_by_asset_key.keys(), *self._source_assets_by_key.keys()]
+        return self._dependency_node_handles_by_asset_key.keys()
 
     @property
     def source_assets_by_key(self) -> Mapping[AssetKey, "SourceAsset"]:
@@ -816,7 +816,10 @@ def build_asset_selection_job(
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> "JobDefinition":
-    from dagster._core.definitions.assets_job import build_assets_job, build_source_asset_observation_job
+    from dagster._core.definitions.assets_job import (
+        build_assets_job,
+        build_source_asset_observation_job,
+    )
 
     if asset_selection:
         (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)

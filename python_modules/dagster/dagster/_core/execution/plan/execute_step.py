@@ -32,9 +32,9 @@ from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
     LOGICAL_VERSION_TAG_KEY,
     LogicalVersion,
+    compute_logical_version,
     get_input_event_pointer_tag_key,
     get_input_logical_version_tag_key,
-    compute_logical_version,
 )
 from dagster._core.definitions.metadata import (
     MetadataEntry,
@@ -592,6 +592,7 @@ def _build_logical_version_tags(
     logical_version = compute_logical_version(code_version, input_logical_versions)
     tags[LOGICAL_VERSION_TAG_KEY] = logical_version.value
     return tags
+
 
 def _store_output(
     step_context: StepExecutionContext,

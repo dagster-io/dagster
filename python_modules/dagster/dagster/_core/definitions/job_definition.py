@@ -437,20 +437,22 @@ class JobDefinition(PipelineDefinition):
     ) -> "JobDefinition":
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
 
-        for asset in asset_selection:
-            nonexistent_assets = [
-                asset for asset in asset_selection if asset not in self.asset_layer.asset_keys
-            ]
-            nonexistent_asset_strings = [
-                asset_str
-                for asset_str in (asset.to_string() for asset in nonexistent_assets)
-                if asset_str
-            ]
-            if nonexistent_assets:
-                raise DagsterInvalidSubsetError(
-                    "Assets provided in asset_selection argument "
-                    f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
-                )
+        nonexistent_assets = [
+            asset
+            for asset in asset_selection
+            if asset not in self.asset_layer.asset_keys
+            and asset not in self.asset_layer.source_assets_by_key
+        ]
+        nonexistent_asset_strings = [
+            asset_str
+            for asset_str in (asset.to_string() for asset in nonexistent_assets)
+            if asset_str
+        ]
+        if nonexistent_assets:
+            raise DagsterInvalidSubsetError(
+                "Assets provided in asset_selection argument "
+                f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
+            )
         asset_selection_data = AssetSelectionData(
             asset_selection=asset_selection,
             parent_job_def=self,
