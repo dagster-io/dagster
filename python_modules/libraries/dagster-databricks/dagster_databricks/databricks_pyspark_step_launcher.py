@@ -38,6 +38,19 @@ from .configs import (
 
 CODE_ZIP_NAME = "code.zip"
 PICKLED_CONFIG_FILE_NAME = "config.pkl"
+DAGSTER_SYSTEM_ENV_VARS = {
+    "DAGSTER_CLOUD_DEPLOYMENT_NAME",
+    "DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT",
+    "DAGSTER_CLOUD_GIT_SHA",
+    "DAGSTER_CLOUD_GIT_TIMESTAMP",
+    "DAGSTER_CLOUD_GIT_AUTHOR_EMAIL",
+    "DAGSTER_CLOUD_GIT_AUTHOR_NAME",
+    "DAGSTER_CLOUD_GIT_MESSAGE",
+    "DAGSTER_CLOUD_GIT_BRANCH",
+    "DAGSTER_CLOUD_GIT_REPO",
+    "DAGSTER_CLOUD_PULL_REQUEST_ID",
+    "DAGSTER_CLOUD_PULL_REQUEST_STATUS",
+}
 
 
 @resource(
@@ -114,6 +127,13 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
             "It can be helpful for Dagit performance to set to False when running long-running or fan-out "
             "Databricks jobs, to avoid forcing the UI to fetch large amounts of debug logs.",
         ),
+        "add_dagster_env_variables": Field(
+            bool,
+            default_value=True,
+            description="Automatically add Dagster system environment variables. This option is only applicable when "
+            "the code being executed is deployed on Dagster Cloud. It will be ignored when the environment "
+            "variables provided by Dagster Cloud are not present.",
+        ),
     }
 )
 def databricks_pyspark_step_launcher(context):
@@ -150,6 +170,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         local_pipeline_package_path=None,
         local_dagster_job_package_path=None,
         verbose_logs=True,
+        add_dagster_env_variables=True,
     ):
         self.run_config = check.dict_param(run_config, "run_config")
         self.permissions = check.dict_param(permissions, "permissions")
@@ -181,6 +202,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             max_wait_time_sec=max_completion_wait_time_seconds,
         )
         self.verbose_logs = check.bool_param(verbose_logs, "verbose_logs")
+        self.add_dagster_env_variables = check.bool_param(
+            add_dagster_env_variables, "add_dagster_env_variables"
+        )
 
     def launch_step(self, step_context):
         step_run_ref = step_context_to_step_run_ref(
@@ -412,14 +436,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             overwrite=True,
         )
 
-        databricks_config = DatabricksConfig(
-            env_variables=self.env_variables,
-            storage=self.storage,
-            secrets=self.secrets,
-        )
+        databricks_config = self.create_remote_config()
         log.info("Uploading Databricks configuration to DBFS")
         databricks_config_file = io.BytesIO()
-
         pickle.dump(databricks_config, databricks_config_file)
         databricks_config_file.seek(0)
         self.databricks_runner.client.put_file(
@@ -427,6 +446,24 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             self._dbfs_path(run_id, step_key, PICKLED_CONFIG_FILE_NAME),
             overwrite=True,
         )
+
+    def get_dagster_env_variables(self):
+        out = {}
+        if self.add_dagster_env_variables:
+            for var in DAGSTER_SYSTEM_ENV_VARS:
+                if os.getenv(var):
+                    out.update({var: os.getenv(var)})
+        return out
+
+    def create_remote_config(self):
+        env_variables = self.get_dagster_env_variables()
+        env_variables.update(self.env_variables)
+        databricks_config = DatabricksConfig(
+            env_variables=env_variables,
+            storage=self.storage,
+            secrets=self.secrets,
+        )
+        return databricks_config
 
     def _log_logs_from_cluster(self, log, run_id):
         logs = self.databricks_runner.retrieve_logs_for_run_id(log, run_id)
