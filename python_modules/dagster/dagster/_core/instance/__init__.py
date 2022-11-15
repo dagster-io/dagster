@@ -2178,25 +2178,6 @@ class DagsterInstance:
         for k, v in new_env.items():
             os.environ[k] = v
 
-    def get_logical_version_from_inputs(
-        self,
-        dependency_keys: AbstractSet[AssetKey],
-        code_version: str,
-        key_to_is_source_map: Mapping[AssetKey, bool],
-        logical_version_overrides: Optional[Mapping[AssetKey, LogicalVersion]] = None,
-    ) -> LogicalVersion:
-        logical_version_overrides = check.opt_mapping_param(
-            logical_version_overrides, "logical_version_overrides"
-        )
-        ordered_dependency_keys = sorted(dependency_keys, key=str)
-        dependency_logical_versions = [
-            logical_version_overrides[k]
-            if k in logical_version_overrides
-            else self.get_current_logical_version(k, key_to_is_source_map[k])
-            for k in ordered_dependency_keys
-        ]
-        return compute_logical_version(code_version, dependency_logical_versions)
-
     def get_current_logical_version(
         self,
         key: AssetKey,

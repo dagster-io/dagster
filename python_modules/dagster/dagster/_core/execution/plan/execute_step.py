@@ -33,6 +33,7 @@ from dagster._core.definitions.logical_version import (
     LogicalVersion,
     get_input_event_pointer_tag_key,
     get_input_logical_version_tag_key,
+    compute_logical_version,
 )
 from dagster._core.definitions.metadata import (
     MetadataEntry,
@@ -573,9 +574,7 @@ def _extract_logical_version_tags(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Dict[str, str]:
     asset_layer = step_context.pipeline_def.asset_layer
-    dep_keys = asset_layer.upstream_assets_for_asset(asset_key)
     code_version = asset_layer.op_version_for_asset(asset_key) or step_context.pipeline_run.run_id
-    dep_key_to_is_source_map = {key: asset_layer.is_source_for_asset(key) for key in dep_keys}
     input_asset_records = check.not_none(step_context.input_asset_records)
     input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
     tags: Dict[str, str] = {}
@@ -589,12 +588,9 @@ def _extract_logical_version_tags(
         tags[get_input_logical_version_tag_key(key)] = logical_version.value
         tags[get_input_event_pointer_tag_key(key)] = str(event.storage_id) if event else "NULL"
 
-    logical_version = step_context.instance.get_logical_version_from_inputs(
-        dep_keys, code_version, dep_key_to_is_source_map, input_logical_versions
-    )
+    logical_version = compute_logical_version(code_version, input_logical_versions)
     tags["dagster/logical_version"] = logical_version.value
     return tags
-
 
 def _store_output(
     step_context: StepExecutionContext,

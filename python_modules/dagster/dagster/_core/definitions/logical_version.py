@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from hashlib import sha256
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Union
 
 from typing_extensions import Final
 
@@ -117,24 +117,25 @@ def get_input_event_pointer_tag_key(input_key: "AssetKey") -> str:
 
 
 def compute_logical_version(
-    code_version: Union[str, UnknownValue], input_logical_versions: Sequence[LogicalVersion]
+    code_version: Union[str, UnknownValue], input_logical_versions: Mapping[AssetKey, LogicalVersion]
 ) -> LogicalVersion:
     """Compute a logical version from inputs.
 
     Args:
         code_version (LogicalVersion): The code version of the computation.
-        input_logical_versions (Sequence[LogicalVersion]): The logical versions of the inputs.
+        input_logical_versions (Mapping[AssetKey, LogicalVersion]): The logical versions of the inputs.
 
     Returns:
         LogicalVersion: The computed logical version.
     """
     check.inst_param(code_version, "code_version", (str, UnknownValue))
-    check.sequence_param(input_logical_versions, "input_versions", of_type=LogicalVersion)
+    check.mapping_param(input_logical_versions, "input_versions", key_type=AssetKey, value_type=LogicalVersion)
 
-    if isinstance(code_version, UnknownValue) or UNKNOWN_LOGICAL_VERSION in input_logical_versions:
+    if isinstance(code_version, UnknownValue) or UNKNOWN_LOGICAL_VERSION in input_logical_versions.values():
         return UNKNOWN_LOGICAL_VERSION
 
-    all_inputs = (code_version, *(v.value for v in input_logical_versions))
+    ordered_input_versions = [input_logical_versions[k] for k in sorted(input_logical_versions.keys(), key=str)]
+    all_inputs = (code_version, *(v.value for v in ordered_input_versions))
 
     hash_sig = sha256()
     hash_sig.update(bytearray("".join(all_inputs), "utf8"))
