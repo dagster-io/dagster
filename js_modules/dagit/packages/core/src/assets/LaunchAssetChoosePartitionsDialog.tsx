@@ -83,10 +83,10 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
 };
 
 export function assetHealthToPartitionStatus(assetHealth: PartitionHealthData[]) {
-  const partitionNames = assetHealth[0] ? assetHealth[0].keys : [];
+  const partitionNames = assetHealth[0] ? assetHealth[0].timeline.keys : [];
   const result: {[partitionName: string]: PartitionState} = {};
   partitionNames.forEach((partitionName) => {
-    const success = assetHealth.every((d) => d.statusByPartition[partitionName]);
+    const success = assetHealth.every((d) => d.timeline.statusByPartition[partitionName]);
     result[partitionName] = success ? PartitionState.SUCCESS : PartitionState.MISSING;
   });
   return result;
@@ -113,7 +113,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const partitionStatusData = React.useMemo(() => assetHealthToPartitionStatus(assetHealth), [
     assetHealth,
   ]);
-  const partitionKeys = React.useMemo(() => (assetHealth[0] ? assetHealth[0].keys : []), [
+  const partitionKeys = React.useMemo(() => (assetHealth[0] ? assetHealth[0].timeline.keys : []), [
     assetHealth,
   ]);
 
@@ -256,7 +256,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const upstreamUnavailable = (key: string) =>
     upstreamAssetHealth.length > 0 &&
-    upstreamAssetHealth.some((a) => a.keys.includes(key) && !a.statusByPartition[key]);
+    upstreamAssetHealth.some(
+      (a) => a.timeline.keys.includes(key) && !a.timeline.statusByPartition[key],
+    );
 
   const upstreamUnavailableSpans = assembleIntoSpans(selected, upstreamUnavailable).filter(
     (s) => s.status === true,

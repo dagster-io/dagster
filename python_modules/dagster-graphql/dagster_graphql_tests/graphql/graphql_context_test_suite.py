@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 from dagster_graphql import DagsterGraphQLClient
 from dagster_graphql.test.utils import execute_dagster_graphql
+from graphql import DocumentNode, print_ast
 
 import dagster._check as check
 from dagster import file_relative_path
@@ -837,10 +838,10 @@ def make_graphql_context_test_suite(context_variants):
         @pytest.fixture(name="graphql_client")
         def yield_graphql_client(self, graphql_context):
             class MockedGraphQLClient:
-                def execute(self, gql_query, variable_values=None):
+                def execute(self, gql_query: DocumentNode, variable_values=None):
                     return execute_dagster_graphql(
                         graphql_context,
-                        gql_query,
+                        print_ast(gql_query),  # convert doc back to str
                         variable_values,
                     ).data
 

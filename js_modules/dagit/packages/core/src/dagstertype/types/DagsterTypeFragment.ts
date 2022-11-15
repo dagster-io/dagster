@@ -2378,7 +2378,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType {
 export type DagsterTypeFragment_innerTypes_outputSchemaType = DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType | DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType | DagsterTypeFragment_innerTypes_outputSchemaType_RegularConfigType | DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfigType | DagsterTypeFragment_innerTypes_outputSchemaType_ScalarUnionConfigType | DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType;
 
 export interface DagsterTypeFragment_innerTypes {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -2393,7 +2393,7 @@ export interface DagsterTypeFragment_innerTypes {
 }
 
 export interface DagsterTypeFragment {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;

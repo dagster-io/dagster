@@ -6,7 +6,9 @@ export const BOX_SIZE = 32;
 
 export const STEP_STATUS_COLORS = {
   SUCCESS: Colors.Green500,
+  SUCCESS_SKIPPED: Colors.Green200,
   FAILURE: Colors.Red500,
+  FAILURE_SKIPPED: Colors.Red200,
   SKIPPED: Colors.Yellow500,
   IN_PROGRESS: '#eee',
 };
@@ -123,77 +125,29 @@ export const GridColumn = styled.div<{
         background: ${STEP_STATUS_COLORS.SUCCESS};
       }
     }
-    &.success-skipped {
-      &:before {
-        background: linear-gradient(
-          135deg,
-          ${STEP_STATUS_COLORS.SUCCESS} 49%,
-          ${STEP_STATUS_COLORS.SKIPPED} 51%
-        );
-      }
-    }
-    &.success-failure {
-      &:before {
-        background: linear-gradient(
-          135deg,
-          ${STEP_STATUS_COLORS.SUCCESS} 49%,
-          ${STEP_STATUS_COLORS.FAILURE} 51%
-        );
-      }
-    }
     &.failure {
       &:before {
         background: ${STEP_STATUS_COLORS.FAILURE};
       }
     }
-    &.failure-success {
+    &.success-missing {
       &:before {
-        background: linear-gradient(
-          135deg,
-          ${STEP_STATUS_COLORS.FAILURE} 49%,
-          ${STEP_STATUS_COLORS.SUCCESS} 51%
-        );
+        background: ${STEP_STATUS_COLORS.SUCCESS_SKIPPED};
       }
     }
-    &.failure-skipped {
+    &.failure-missing {
       &:before {
-        background: linear-gradient(
-          135deg,
-          ${STEP_STATUS_COLORS.FAILURE} 49%,
-          ${STEP_STATUS_COLORS.SKIPPED} 51%
-        );
+        background: ${STEP_STATUS_COLORS.FAILURE_SKIPPED};
       }
     }
     &.failure-blank {
       &:before {
-        background: linear-gradient(
-          135deg,
-          ${STEP_STATUS_COLORS.FAILURE} 49%,
-          rgba(150, 150, 150, 0.3) 51%
-        );
+        background: ${STEP_STATUS_COLORS.FAILURE_SKIPPED};
       }
     }
     &.skipped {
       &:before {
         background: ${STEP_STATUS_COLORS.SKIPPED};
-      }
-    }
-    &.skipped-success {
-      &:before {
-        background: linear-gradient(
-          135deg,
-          ${STEP_STATUS_COLORS.SKIPPED} 49%,
-          ${STEP_STATUS_COLORS.SUCCESS} 51%
-        );
-      }
-    }
-    &.skipped-failure {
-      &:before {
-        background: linear-gradient(
-          135deg,
-          ${STEP_STATUS_COLORS.SKIPPED} 49%,
-          ${STEP_STATUS_COLORS.FAILURE} 51%
-        );
       }
     }
   }

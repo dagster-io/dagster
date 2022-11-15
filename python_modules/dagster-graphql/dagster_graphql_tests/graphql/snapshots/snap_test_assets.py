@@ -871,6 +871,27 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
     }
 }
 
+snapshots['TestAssetAwareEventLog.test_asset_op[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = {
+    'assetOrError': {
+        'definition': {
+            'op': {
+                'description': None,
+                'inputDefinitions': [
+                    {
+                        'name': 'asset_one'
+                    }
+                ],
+                'name': 'asset_two',
+                'outputDefinitions': [
+                    {
+                        'name': 'result'
+                    }
+                ]
+            }
+        }
+    }
+}
+
 snapshots['TestAssetAwareEventLog.test_asset_op[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
     'assetOrError': {
         'definition': {

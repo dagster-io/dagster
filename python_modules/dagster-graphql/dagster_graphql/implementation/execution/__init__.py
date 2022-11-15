@@ -1,21 +1,24 @@
+import asyncio
+import os
 import sys
+from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Tuple, Union
 
 from graphene import ResolveInfo
-from rx import Observable
+from starlette.concurrency import (
+    run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
+)
 
 import dagster._check as check
-from dagster._core.events import DagsterEventType, EngineEventData
+from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.captured_log_manager import CapturedLogSubscription
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import CapturedLogManager, CapturedLogSubscription
+from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster._serdes import serialize_dagster_namedtuple
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
 from ..fetch_runs import is_config_valid
-from ..pipeline_run_storage import PipelineRunObservableSubscribe
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_error
 from .backfill import (
     cancel_partition_backfill,
@@ -28,8 +31,15 @@ from .launch_execution import (
     launch_reexecution_from_parent_run,
 )
 
+if TYPE_CHECKING:
+    from dagster_graphql.schema.logs.compute_logs import GrapheneComputeLogFile
+    from dagster_graphql.schema.pipelines.subscription import (
+        GraphenePipelineRunLogsSubscriptionFailure,
+        GraphenePipelineRunLogsSubscriptionSuccess,
+    )
 
-def _force_mark_as_canceled(instance, run_id):
+
+def _force_mark_as_canceled(instance: DagsterInstance, run_id):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import GrapheneTerminateRunSuccess
 
@@ -47,7 +57,7 @@ def _force_mark_as_canceled(instance, run_id):
 
 
 @capture_error
-def terminate_pipeline_execution(instance, run_id, terminate_policy):
+def terminate_pipeline_execution(instance: DagsterInstance, run_id, terminate_policy):
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import (
@@ -114,7 +124,7 @@ def delete_pipeline_run(graphene_info, run_id):
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.roots.mutation import GrapheneDeletePipelineRunSuccess
 
-    instance = graphene_info.context.instance
+    instance: DagsterInstance = graphene_info.context.instance
 
     if not instance.has_run(run_id):
         return GrapheneRunNotFoundError(run_id)
@@ -124,7 +134,20 @@ def delete_pipeline_run(graphene_info, run_id):
     return GrapheneDeletePipelineRunSuccess(run_id)
 
 
-def get_pipeline_run_observable(graphene_info, run_id, cursor=None):
+def get_chunk_size() -> int:
+    return int(os.getenv("DAGIT_EVENT_LOAD_CHUNK_SIZE", "10000"))
+
+
+async def gen_events_for_run(
+    graphene_info: ResolveInfo,
+    run_id: str,
+    after_cursor: Optional[str] = None,
+) -> AsyncIterator[
+    Union[
+        "GraphenePipelineRunLogsSubscriptionFailure",
+        "GraphenePipelineRunLogsSubscriptionSuccess",
+    ]
+]:
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
@@ -134,40 +157,71 @@ def get_pipeline_run_observable(graphene_info, run_id, cursor=None):
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
-    check.opt_str_param(cursor, "cursor")
-    instance = graphene_info.context.instance
+    after_cursor = check.opt_str_param(after_cursor, "after_cursor")
+    instance: DagsterInstance = graphene_info.context.instance
     records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
     if not records:
-
-        def _get_error_observable(observer):
-            observer.on_next(
-                GraphenePipelineRunLogsSubscriptionFailure(
-                    missingRunId=run_id, message="Could not load run with id {}".format(run_id)
-                )
-            )
-
-        return Observable.create(_get_error_observable)  # pylint: disable=E1101
+        yield GraphenePipelineRunLogsSubscriptionFailure(
+            missingRunId=run_id,
+            message="Could not load run with id {}".format(run_id),
+        )
+        return
 
     record = records[0]
     run = record.pipeline_run
 
-    def _handle_events(payload):
-        events, loading_past, cursor = payload
-        return GraphenePipelineRunLogsSubscriptionSuccess(
-            run=GrapheneRun(record),
-            messages=[from_event_record(event, run.pipeline_name) for event in events],
-            hasMorePastEvents=loading_past,
-            cursor=cursor,
+    chunk_size = get_chunk_size()
+    # load the existing events in chunks
+    has_more = True
+    while has_more:
+        # run the fetch in a thread since its sync
+        connection = await run_in_threadpool(
+            instance.get_records_for_run,
+            run_id=run_id,
+            cursor=after_cursor,
+            limit=chunk_size,
         )
+        yield GraphenePipelineRunLogsSubscriptionSuccess(
+            run=GrapheneRun(record),
+            messages=[
+                from_event_record(record.event_log_entry, run.pipeline_name)
+                for record in connection.records
+            ],
+            hasMorePastEvents=connection.has_more,
+            cursor=connection.cursor,
+        )
+        has_more = connection.has_more
+        after_cursor = connection.cursor
 
-    # pylint: disable=E1101
-    return Observable.create(PipelineRunObservableSubscribe(instance, run_id, cursor=cursor)).map(
-        _handle_events
-    )
+    loop = asyncio.get_event_loop()
+    queue: asyncio.Queue[Tuple[Any, Any]] = asyncio.Queue()
+
+    def _enqueue(event, cursor):
+        loop.call_soon_threadsafe(queue.put_nowait, (event, cursor))
+
+    # watch for live events
+    instance.watch_event_logs(run_id, after_cursor, _enqueue)
+    try:
+        while True:
+            event, cursor = await queue.get()
+            yield GraphenePipelineRunLogsSubscriptionSuccess(
+                run=GrapheneRun(record),
+                messages=[from_event_record(event, run.pipeline_name)],
+                hasMorePastEvents=False,
+                cursor=cursor,
+            )
+    finally:
+        instance.end_watch_event_logs(run_id, _enqueue)
 
 
-def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=None):
+async def gen_compute_logs(
+    graphene_info: ResolveInfo,
+    run_id: str,
+    step_key: str,
+    io_type: ComputeIOType,
+    cursor: Optional[str] = None,
+) -> AsyncIterator[Optional["GrapheneComputeLogFile"]]:
     from ...schema.logs.compute_logs import from_compute_log_file
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
@@ -175,21 +229,53 @@ def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=
     check.str_param(step_key, "step_key")
     check.inst_param(io_type, "io_type", ComputeIOType)
     check.opt_str_param(cursor, "cursor")
+    instance: DagsterInstance = graphene_info.context.instance
 
-    return graphene_info.context.instance.compute_log_manager.observable(
-        run_id, step_key, io_type, cursor
-    ).map(lambda update: from_compute_log_file(graphene_info, update))
+    obs = instance.compute_log_manager.observable(run_id, step_key, io_type, cursor)
+
+    loop = asyncio.get_event_loop()
+    queue: asyncio.Queue[ComputeLogFileData] = asyncio.Queue()
+
+    def _enqueue(new_event):
+        loop.call_soon_threadsafe(queue.put_nowait, new_event)
+
+    obs(_enqueue)
+    is_complete = False
+    try:
+        while not is_complete:
+            update = await queue.get()
+            yield from_compute_log_file(update)
+            is_complete = obs.is_complete
+    finally:
+        obs.dispose()
 
 
-def get_captured_log_observable(graphene_info, log_key, cursor=None):
+async def gen_captured_log_data(graphene_info, log_key, cursor=None):
     from ...schema.logs.compute_logs import from_captured_log_data
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    instance: DagsterInstance = graphene_info.context.instance
 
-    compute_log_manager = graphene_info.context.instance.compute_log_manager
+    compute_log_manager = instance.compute_log_manager
+    if not isinstance(compute_log_manager, CapturedLogManager):
+        return
+
     subscription = compute_log_manager.subscribe(log_key, cursor)
-    observable = Observable.create(subscription)
-    return observable.map(lambda log_data: from_captured_log_data(graphene_info, log_data))
+
+    loop = asyncio.get_event_loop()
+    queue: asyncio.Queue[ComputeLogFileData] = asyncio.Queue()
+
+    def _enqueue(new_event):
+        loop.call_soon_threadsafe(queue.put_nowait, new_event)
+
+    subscription(_enqueue)
+    is_complete = False
+    try:
+        while not is_complete:
+            update = await queue.get()
+            yield from_captured_log_data(update)
+            is_complete = subscription.is_complete
+    finally:
+        subscription.dispose()
 
 
 @capture_error

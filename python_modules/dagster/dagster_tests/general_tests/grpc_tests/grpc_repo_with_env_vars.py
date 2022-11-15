@@ -8,7 +8,8 @@ if os.getenv("FOO") != "BAR":
 
 @op
 def needs_env_var():
-    pass
+    if os.getenv("FOO_INSIDE_OP") != "BAR_INSIDE_OP":
+        raise Exception("Missing env var inside op")
 
 
 @job

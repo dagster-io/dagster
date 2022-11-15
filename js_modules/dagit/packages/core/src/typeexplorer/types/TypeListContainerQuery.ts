@@ -14,7 +14,7 @@ export interface TypeListContainerQuery_pipelineOrError_PipelineNotFoundError {
 }
 
 export interface TypeListContainerQuery_pipelineOrError_Pipeline_dagsterTypes {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   isBuiltin: boolean;
   displayName: string;

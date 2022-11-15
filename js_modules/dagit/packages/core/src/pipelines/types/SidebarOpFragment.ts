@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface SidebarOpFragment_solidHandle_solid_inputs_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -45,7 +45,7 @@ export interface SidebarOpFragment_solidHandle_solid_inputs {
 }
 
 export interface SidebarOpFragment_solidHandle_solid_outputs_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -82,7 +82,7 @@ export interface SidebarOpFragment_solidHandle_solid_outputs {
 }
 
 export interface SidebarOpFragment_solidHandle_solid_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -97,7 +97,7 @@ export interface SidebarOpFragment_solidHandle_solid_definition_SolidDefinition_
 }
 
 export interface SidebarOpFragment_solidHandle_solid_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -660,7 +660,7 @@ export interface SidebarOpFragment_solidHandle_solid_definition_SolidDefinition 
 }
 
 export interface SidebarOpFragment_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -675,7 +675,7 @@ export interface SidebarOpFragment_solidHandle_solid_definition_CompositeSolidDe
 }
 
 export interface SidebarOpFragment_solidHandle_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -788,7 +788,7 @@ export interface SidebarOpFragment_solidHandle {
 }
 
 export interface SidebarOpFragment {
-  __typename: "Pipeline" | "Job" | "PipelineSnapshot" | "Graph" | "CompositeSolidDefinition";
+  __typename: "Pipeline" | "PipelineSnapshot" | "Job" | "CompositeSolidDefinition" | "Graph";
   id: string;
   name: string;
   solidHandle: SidebarOpFragment_solidHandle | null;

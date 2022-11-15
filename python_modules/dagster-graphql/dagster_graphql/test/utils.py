@@ -1,7 +1,7 @@
+import asyncio
 from contextlib import contextmanager
 
 from dagster_graphql.schema import create_schema
-from graphql import graphql
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance
@@ -19,17 +19,13 @@ def main_repo_name():
 
 
 def execute_dagster_graphql(context, query, variables=None):
-    result = graphql(
-        create_schema(),
+    result = create_schema().execute(
         query,
         context_value=context,
         variable_values=variables,
-        allow_subscriptions=True,
-        return_promise=False,
     )
 
-    # has to check attr because in subscription case it returns AnonymousObservable
-    if hasattr(result, "errors") and result.errors:
+    if result.errors:
         first_error = result.errors[0]
         if hasattr(first_error, "original_error") and first_error.original_error:
             raise result.errors[0].original_error
@@ -37,6 +33,31 @@ def execute_dagster_graphql(context, query, variables=None):
         raise result.errors[0]
 
     return result
+
+
+def execute_dagster_graphql_subscription(
+    context,
+    query,
+    variables=None,
+):
+    results = []
+
+    subscription = create_schema().subscribe(
+        query,
+        context_value=context,
+        variable_values=variables,
+    )
+
+    async def _process():
+        payload_aiter = await subscription
+        async for res in payload_aiter:
+            results.append(res)
+            # first payload should have it all
+            break
+
+    asyncio.run(_process())
+
+    return results
 
 
 def execute_dagster_graphql_and_finish_runs(context, query, variables=None):

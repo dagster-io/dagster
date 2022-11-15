@@ -13,7 +13,7 @@ export interface OpNodeInvocationFragment_inputs_definition {
 }
 
 export interface OpNodeInvocationFragment_inputs_dependsOn_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -52,7 +52,7 @@ export interface OpNodeInvocationFragment_outputs_dependedBy_solid {
 }
 
 export interface OpNodeInvocationFragment_outputs_dependedBy_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 

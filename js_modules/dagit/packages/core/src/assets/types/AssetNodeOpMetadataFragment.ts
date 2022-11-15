@@ -2543,7 +2543,7 @@ export interface AssetNodeOpMetadataFragment_type_innerTypes_outputSchemaType_Ma
 export type AssetNodeOpMetadataFragment_type_innerTypes_outputSchemaType = AssetNodeOpMetadataFragment_type_innerTypes_outputSchemaType_ArrayConfigType | AssetNodeOpMetadataFragment_type_innerTypes_outputSchemaType_EnumConfigType | AssetNodeOpMetadataFragment_type_innerTypes_outputSchemaType_RegularConfigType | AssetNodeOpMetadataFragment_type_innerTypes_outputSchemaType_CompositeConfigType | AssetNodeOpMetadataFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType | AssetNodeOpMetadataFragment_type_innerTypes_outputSchemaType_MapConfigType;
 
 export interface AssetNodeOpMetadataFragment_type_innerTypes {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -2558,7 +2558,7 @@ export interface AssetNodeOpMetadataFragment_type_innerTypes {
 }
 
 export interface AssetNodeOpMetadataFragment_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;

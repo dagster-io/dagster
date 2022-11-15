@@ -1061,7 +1061,7 @@ export interface SidebarRootContainerFragment_Pipeline_modes {
 }
 
 export interface SidebarRootContainerFragment_Pipeline {
-  __typename: "Pipeline" | "Job" | "Graph" | "CompositeSolidDefinition";
+  __typename: "Pipeline" | "Job" | "CompositeSolidDefinition" | "Graph";
   id: string;
   name: string;
   description: string | null;

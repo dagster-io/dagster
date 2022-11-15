@@ -1,4 +1,8 @@
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    execute_dagster_graphql_subscription,
+    infer_pipeline_selector,
+)
 
 from dagster._core.events import DagsterEventType
 
@@ -29,8 +33,8 @@ CAPTURED_LOGS_SUBSCRIPTION = """
 """
 
 
-class TestComputeLogs(ExecutingGraphQLContextTestMatrix):
-    def test_get_compute_logs_over_graphql(self, graphql_context, snapshot):
+class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
+    def test_get_captured_logs_over_graphql(self, graphql_context, snapshot):
         selector = infer_pipeline_selector(graphql_context, "spew_pipeline")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -49,7 +53,7 @@ class TestComputeLogs(ExecutingGraphQLContextTestMatrix):
         stdout = result.data["pipelineRunOrError"]["capturedLogs"]["stdout"]
         snapshot.assert_match(stdout)
 
-    def test_compute_logs_subscription_graphql(self, graphql_context, snapshot):
+    def test_captured_logs_subscription_graphql(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "spew_pipeline")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -61,15 +65,12 @@ class TestComputeLogs(ExecutingGraphQLContextTestMatrix):
         entry = logs[0]
         log_key = [run_id, "compute_logs", entry.dagster_event.logs_captured_data.file_key]
 
-        subscription = execute_dagster_graphql(
+        results = execute_dagster_graphql_subscription(
             graphql_context,
             CAPTURED_LOGS_SUBSCRIPTION,
             variables={"logKey": log_key},
         )
-        results = []
-        subscription.subscribe(lambda x: results.append(x.data["capturedLogs"]["stdout"]))
 
         assert len(results) == 1
-        result = results[0]
-        assert result == "HELLO WORLD\n"
-        snapshot.assert_match(results)
+        stdout = results[0].data["capturedLogs"]["stdout"]
+        assert stdout == "HELLO WORLD\n"

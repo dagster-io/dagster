@@ -14,7 +14,7 @@ export interface OpsRootQuery_repositoryOrError_PythonError {
 }
 
 export interface OpsRootQuery_repositoryOrError_Repository_usedSolids_definition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -27,7 +27,7 @@ export interface OpsRootQuery_repositoryOrError_Repository_usedSolids_definition
 }
 
 export interface OpsRootQuery_repositoryOrError_Repository_usedSolids_definition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -40,7 +40,7 @@ export interface OpsRootQuery_repositoryOrError_Repository_usedSolids_definition
 }
 
 export interface OpsRootQuery_repositoryOrError_Repository_usedSolids_definition {
-  __typename: "SolidDefinition" | "CompositeSolidDefinition";
+  __typename: "CompositeSolidDefinition" | "SolidDefinition";
   name: string;
   outputDefinitions: OpsRootQuery_repositoryOrError_Repository_usedSolids_definition_outputDefinitions[];
   inputDefinitions: OpsRootQuery_repositoryOrError_Repository_usedSolids_definition_inputDefinitions[];
