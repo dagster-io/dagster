@@ -6,7 +6,7 @@ from dagit.app import create_app_from_workspace_process_context
 from starlette.testclient import TestClient
 
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
-from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
 from dagster._utils import check_script, pushd, script_relative_path
 
 PIPELINES_OR_ERROR_QUERY = """
@@ -99,29 +99,29 @@ def path_to_tutorial_file(path):
 
 
 def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
-    instance = DagsterInstance.ephemeral()
-    with get_workspace_process_context_from_kwargs(
-        instance, version="", read_only=False, kwargs=kwargs
-    ) as workspace_process_context:
-        client = TestClient(
-            create_app_from_workspace_process_context(workspace_process_context)
-        )
-
-        res = client.get(
-            "/graphql?query={query_string}".format(
-                query_string=PIPELINES_OR_ERROR_QUERY
+    with instance_for_test() as instance:
+        with get_workspace_process_context_from_kwargs(
+            instance, version="", read_only=False, kwargs=kwargs
+        ) as workspace_process_context:
+            client = TestClient(
+                create_app_from_workspace_process_context(workspace_process_context)
             )
-        )
-        json_res = res.json()
-        assert "data" in json_res
-        assert "repositoriesOrError" in json_res["data"]
-        assert "nodes" in json_res["data"]["repositoriesOrError"]
-        assert (
-            len(json_res["data"]["repositoriesOrError"]["nodes"][0]["pipelines"])
-            == n_pipelines
-        )
 
-    return res
+            res = client.get(
+                "/graphql?query={query_string}".format(
+                    query_string=PIPELINES_OR_ERROR_QUERY
+                )
+            )
+            json_res = res.json()
+            assert "data" in json_res
+            assert "repositoriesOrError" in json_res["data"]
+            assert "nodes" in json_res["data"]["repositoriesOrError"]
+            assert (
+                len(json_res["data"]["repositoriesOrError"]["nodes"][0]["pipelines"])
+                == n_pipelines
+            )
+
+        return res
 
 
 @pytest.mark.parametrize(

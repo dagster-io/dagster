@@ -7,17 +7,23 @@ from dagster import _seven
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation import GrpcServerRepositoryLocationOrigin
-from dagster._core.test_utils import environ
+from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import location_origins_from_config
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils import file_relative_path
 
 
+@pytest.fixture
+def instance():
+    with instance_for_test() as instance:
+        yield instance
+
+
 @pytest.mark.skipif(_seven.IS_WINDOWS, reason="no named sockets on Windows")
-def test_grpc_socket_workspace():
-    first_server_process = GrpcServerProcess()
+def test_grpc_socket_workspace(instance):
+    first_server_process = GrpcServerProcess(instance_ref=instance.get_ref())
     with first_server_process.create_ephemeral_client() as first_server:
-        second_server_process = GrpcServerProcess()
+        second_server_process = GrpcServerProcess(instance_ref=instance.get_ref())
         with second_server_process.create_ephemeral_client() as second_server:
             first_socket = first_server.socket
             second_socket = second_server.socket
@@ -110,8 +116,8 @@ def test_grpc_server_env_vars():
         assert socket_origin.host == "barhost"
 
 
-def test_ssl_grpc_server_workspace():
-    server_process = GrpcServerProcess(force_port=True)
+def test_ssl_grpc_server_workspace(instance):
+    server_process = GrpcServerProcess(instance_ref=instance.get_ref(), force_port=True)
     try:
         with server_process.create_ephemeral_client() as client:
 
@@ -145,10 +151,10 @@ def test_ssl_grpc_server_workspace():
         server_process.wait()
 
 
-def test_grpc_server_workspace():
-    first_server_process = GrpcServerProcess(force_port=True)
+def test_grpc_server_workspace(instance):
+    first_server_process = GrpcServerProcess(instance_ref=instance.get_ref(), force_port=True)
     with first_server_process.create_ephemeral_client() as first_server:
-        second_server_process = GrpcServerProcess(force_port=True)
+        second_server_process = GrpcServerProcess(instance_ref=instance.get_ref(), force_port=True)
         with second_server_process.create_ephemeral_client() as second_server:
             first_port = first_server.port
             second_port = second_server.port

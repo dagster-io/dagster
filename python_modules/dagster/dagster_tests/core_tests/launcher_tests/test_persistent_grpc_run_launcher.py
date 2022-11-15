@@ -28,7 +28,9 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
             python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
         )
         server_process = GrpcServerProcess(
-            loadable_target_origin=loadable_target_origin, max_workers=4
+            instance_ref=instance.get_ref(),
+            loadable_target_origin=loadable_target_origin,
+            max_workers=4,
         )
         with server_process.create_ephemeral_client():  # Shuts down when leaves context
             with WorkspaceProcessContext(
@@ -86,7 +88,9 @@ def test_run_from_pending_repository():
             python_file=file_relative_path(__file__, "pending_repository.py"),
         )
         server_process = GrpcServerProcess(
-            loadable_target_origin=loadable_target_origin, max_workers=4
+            instance_ref=instance.get_ref(),
+            loadable_target_origin=loadable_target_origin,
+            max_workers=4,
         )
         with server_process.create_ephemeral_client():  # Shuts down when leaves context
             with WorkspaceProcessContext(
@@ -252,7 +256,10 @@ def test_server_down():
         )
 
         server_process = GrpcServerProcess(
-            loadable_target_origin=loadable_target_origin, max_workers=4, force_port=True
+            instance_ref=instance.get_ref(),
+            loadable_target_origin=loadable_target_origin,
+            max_workers=4,
+            force_port=True,
         )
 
         with server_process.create_ephemeral_client() as api_client:

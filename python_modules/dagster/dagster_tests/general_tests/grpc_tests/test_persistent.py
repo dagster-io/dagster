@@ -94,16 +94,18 @@ def test_python_environment_args():
         executable_path=sys.executable, python_file=python_file
     )
 
-    process = None
-    try:
-        process = open_server_process(
-            port, socket=None, loadable_target_origin=loadable_target_origin
-        )
-        assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
-    finally:
-        if process:
-            process.terminate()
-            process.wait()
+    with instance_for_test() as instance:
+
+        process = None
+        try:
+            process = open_server_process(
+                instance.get_ref(), port, socket=None, loadable_target_origin=loadable_target_origin
+            )
+            assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
+        finally:
+            if process:
+                process.terminate()
+                process.wait()
 
 
 def test_empty_executable_args():
@@ -112,20 +114,21 @@ def test_empty_executable_args():
     loadable_target_origin = LoadableTargetOrigin(executable_path="", python_file=python_file)
     # with an empty executable_path, the args change
     process = None
-    try:
-        process = open_server_process(
-            port, socket=None, loadable_target_origin=loadable_target_origin
-        )
-        assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
+    with instance_for_test() as instance:
+        try:
+            process = open_server_process(
+                instance.get_ref(), port, socket=None, loadable_target_origin=loadable_target_origin
+            )
+            assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
 
-        client = DagsterGrpcClient(port=port, host="localhost")
-        list_repositories_response = sync_list_repositories_grpc(client)
-        assert list_repositories_response.entry_point == ["dagster"]
-        assert list_repositories_response.executable_path == sys.executable
-    finally:
-        if process:
-            process.terminate()
-            process.wait()
+            client = DagsterGrpcClient(port=port, host="localhost")
+            list_repositories_response = sync_list_repositories_grpc(client)
+            assert list_repositories_response.entry_point == ["dagster"]
+            assert list_repositories_response.executable_path == sys.executable
+        finally:
+            if process:
+                process.terminate()
+                process.wait()
 
 
 def test_load_grpc_server_python_env():

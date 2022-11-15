@@ -2,7 +2,6 @@ import pytest
 from dagit import app
 from starlette.testclient import TestClient
 
-from dagster import DagsterInstance
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
 from dagster._core.test_utils import instance_for_test
 
@@ -27,7 +26,7 @@ SMOKE_TEST_QUERY = """
 
 @pytest.mark.parametrize(
     "gen_instance",
-    [DagsterInstance.ephemeral, instance_for_test],
+    [instance_for_test],
 )
 def test_smoke_app(gen_instance):
     with gen_instance() as instance:

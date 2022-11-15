@@ -1009,17 +1009,19 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
 
 
 def open_server_process(
-    port,
-    socket,
-    loadable_target_origin=None,
-    max_workers=None,
-    heartbeat=False,
-    heartbeat_timeout=30,
-    fixed_server_id=None,
-    startup_timeout=20,
-    cwd=None,
-    log_level="WARNING",  # don't log INFO messages for automatically spun up servers
-    env=None,
+    instance_ref: InstanceRef,
+    port: Optional[int],
+    socket: Optional[str],
+    location_name: Optional[str] = None,
+    loadable_target_origin: Optional[LoadableTargetOrigin] = None,
+    max_workers: Optional[int] = None,
+    heartbeat: bool = False,
+    heartbeat_timeout: int = 30,
+    fixed_server_id: Optional[str] = None,
+    startup_timeout: int = 20,
+    cwd: Optional[str] = None,
+    log_level: str = "WARNING",
+    env: Optional[Dict[str, str]] = None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -1045,6 +1047,8 @@ def open_server_process(
         + (["--log-level", log_level])
         # only use the Python environment if it has been explicitly set in the workspace
         + (["--use-python-environment-entry-point"] if executable_path else [])
+        + (["--instance-ref", serialize_dagster_namedtuple(instance_ref)])
+        + (["--location-name", location_name] if location_name else [])
     )
 
     if loadable_target_origin:
@@ -1070,17 +1074,19 @@ def open_server_process(
     return server_process
 
 
-def open_server_process_on_dynamic_port(
-    max_retries=10,
-    loadable_target_origin=None,
-    max_workers=None,
-    heartbeat=False,
-    heartbeat_timeout=30,
-    fixed_server_id=None,
-    startup_timeout=20,
-    cwd=None,
-    log_level="WARNING",
-    env=None,
+def _open_server_process_on_dynamic_port(
+    instance_ref: InstanceRef,
+    location_name: Optional[str] = None,
+    max_retries: int = 10,
+    loadable_target_origin: Optional[LoadableTargetOrigin] = None,
+    max_workers: Optional[int] = None,
+    heartbeat: bool = False,
+    heartbeat_timeout: int = 30,
+    fixed_server_id: Optional[str] = None,
+    startup_timeout: int = 20,
+    cwd: Optional[str] = None,
+    log_level: str = "WARNING",
+    env: Optional[Dict[str, str]] = None,
 ):
     server_process = None
     retries = 0
@@ -1088,6 +1094,8 @@ def open_server_process_on_dynamic_port(
         port = find_free_port()
         try:
             server_process = open_server_process(
+                instance_ref=instance_ref,
+                location_name=location_name,
                 port=port,
                 socket=None,
                 loadable_target_origin=loadable_target_origin,
@@ -1111,17 +1119,19 @@ def open_server_process_on_dynamic_port(
 class GrpcServerProcess:
     def __init__(
         self,
-        loadable_target_origin=None,
-        force_port=False,
-        max_retries=10,
-        max_workers=None,
-        heartbeat=False,
-        heartbeat_timeout=30,
-        fixed_server_id=None,
-        startup_timeout=20,
-        cwd=None,
-        log_level="WARNING",
-        env=None,
+        instance_ref: InstanceRef,
+        location_name: Optional[str] = None,
+        loadable_target_origin: Optional[LoadableTargetOrigin] = None,
+        force_port: bool = False,
+        max_retries: int = 10,
+        max_workers: Optional[int] = None,
+        heartbeat: bool = False,
+        heartbeat_timeout: int = 30,
+        fixed_server_id: Optional[str] = None,
+        startup_timeout: int = 20,
+        cwd: Optional[str] = None,
+        log_level: str = "WARNING",
+        env: Optional[Dict[str, str]] = None,
     ):
         self.port = None
         self.socket = None
@@ -1145,7 +1155,9 @@ class GrpcServerProcess:
         )
 
         if seven.IS_WINDOWS or force_port:
-            self.server_process, self.port = open_server_process_on_dynamic_port(
+            self.server_process, self.port = _open_server_process_on_dynamic_port(
+                instance_ref=instance_ref,
+                location_name=location_name,
                 max_retries=max_retries,
                 loadable_target_origin=loadable_target_origin,
                 max_workers=max_workers,
@@ -1161,6 +1173,8 @@ class GrpcServerProcess:
             self.socket = safe_tempfile_path_unmanaged()
 
             self.server_process = open_server_process(
+                instance_ref=instance_ref,
+                location_name=location_name,
                 port=None,
                 socket=self.socket,
                 loadable_target_origin=loadable_target_origin,
