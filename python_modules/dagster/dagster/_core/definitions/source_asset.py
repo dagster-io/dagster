@@ -30,10 +30,7 @@ from dagster._core.definitions.utils import (
     DEFAULT_IO_MANAGER_KEY,
     validate_group_name,
 )
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-)
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
@@ -50,9 +47,7 @@ class SourceAssetObserveFunctionWithContext(Protocol):
     def __name__(self) -> str:
         ...
 
-    def __call__(
-        self, context: "SourceAssetObserveContext"
-    ) -> LogicalVersion:
+    def __call__(self, context: "SourceAssetObserveContext") -> LogicalVersion:
         ...
 
 
@@ -186,6 +181,7 @@ class SourceAsset(ResourceAddable):
     def node_def(self) -> Optional[OpDefinition]:
         """Op that generates observation metadata for a source asset."""
         from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+
         if self.observe_fn is None:
             return None
         elif self._node_def is None:
@@ -193,8 +189,12 @@ class SourceAsset(ResourceAddable):
 
             def fn(context: OpExecutionContext):
                 logical_version = observe_fn(context)  # type: ignore
-                check.inst(logical_version, LogicalVersion, "Source asset observation function must return a LogicalVersion")
-                tags = { LOGICAL_VERSION_TAG_KEY: logical_version.value }
+                check.inst(
+                    logical_version,
+                    LogicalVersion,
+                    "Source asset observation function must return a LogicalVersion",
+                )
+                tags = {LOGICAL_VERSION_TAG_KEY: logical_version.value}
                 context.log_event(
                     AssetObservation(
                         asset_key=self.key,

@@ -564,7 +564,9 @@ def _get_output_asset_materializations(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=DeprecationWarning)
 
-            yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata, tags=tags)
+            yield AssetMaterialization(
+                asset_key=asset_key, metadata_entries=all_metadata, tags=tags
+            )
 
 
 def _extract_logical_version_tags(

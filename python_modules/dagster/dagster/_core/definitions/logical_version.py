@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 from hashlib import sha256
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, overload
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Union
 
-from typing_extensions import Final, Literal
+from typing_extensions import Final
 
 from dagster import _check as check
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.events import AssetKey, Materialization
+    from dagster._core.definitions.events import (
+        AssetKey,
+        AssetMaterialization,
+        AssetObservation,
+        Materialization,
+    )
     from dagster._core.events.log import EventLogEntry
 
 
@@ -136,30 +141,30 @@ def compute_logical_version(
     return LogicalVersion(hash_sig.hexdigest())
 
 
-@overload
-def extract_logical_version_from_event_log_entry(
-    event: EventLogEntry, *, include_provenance: Literal[False] = ...
+def extract_logical_version_from_entry(
+    entry: EventLogEntry,
 ) -> Optional[LogicalVersion]:
-    ...
+    event_data = _extract_event_data_from_entry(entry)
+    tags = event_data.tags or {}
+    value = tags.get(LOGICAL_VERSION_TAG_KEY)
+    return None if value is None else LogicalVersion(value)
 
 
-@overload
-def extract_logical_version_from_event_log_entry(
-    event: EventLogEntry, *, include_provenance: Literal[True]
-) -> Tuple[Optional[LogicalVersion], Optional[LogicalVersionProvenance]]:
-    ...
+def extract_logical_version_provenance_from_entry(
+    entry: EventLogEntry,
+) -> Optional[LogicalVersionProvenance]:
+    event_data = _extract_event_data_from_entry(entry)
+    tags = event_data.tags or {}
+    return LogicalVersionProvenance.from_tags(tags)
 
 
-# Never set `include_provenance` to True when retrieving for a source asset.
-def extract_logical_version_from_event_log_entry(
-    event: EventLogEntry, *, include_provenance: bool = False
-) -> Union[
-    Optional[LogicalVersion], Tuple[Optional[LogicalVersion], Optional[LogicalVersionProvenance]]
-]:
+def _extract_event_data_from_entry(
+    entry: EventLogEntry,
+) -> Union["AssetMaterialization", "AssetObservation"]:
     from dagster._core.definitions.events import AssetMaterialization, AssetObservation
     from dagster._core.events import AssetObservationData, StepMaterializationData
 
-    data = check.not_none(event.dagster_event).event_specific_data
+    data = check.not_none(entry.dagster_event).event_specific_data
     event_data: Union[Materialization, AssetMaterialization, AssetObservation]
     if isinstance(data, StepMaterializationData):
         event_data = data.materialization
@@ -169,13 +174,4 @@ def extract_logical_version_from_event_log_entry(
         check.failed(f"Unexpected event type {type(data)}")
 
     assert isinstance(event_data, (AssetMaterialization, AssetObservation))
-
-    tags = event_data.tags or {}
-    value = tags.get(LOGICAL_VERSION_TAG_KEY)
-
-    if value is None:
-        return (None, None) if include_provenance else None
-    else:
-        logical_version = LogicalVersion(value)
-        provenance = LogicalVersionProvenance.from_tags(tags)
-        return (logical_version, provenance) if include_provenance else logical_version
+    return event_data

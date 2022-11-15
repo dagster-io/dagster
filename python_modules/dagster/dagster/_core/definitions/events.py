@@ -661,6 +661,7 @@ class Materialization(
     def tags(self) -> Mapping[str, str]:
         return {}
 
+
 @whitelist_for_serdes
 class ExpectationResult(
     NamedTuple(

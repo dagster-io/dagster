@@ -1,6 +1,6 @@
 # pylint: disable=unused-argument
 
-from typing import Iterable, Tuple, cast
+from typing import Iterable, List, Tuple, Union, cast
 
 from dagster import (
     AssetMaterialization,
@@ -52,7 +52,7 @@ def assert_different_versions(mat1: AssetMaterialization, mat2: AssetMaterializa
 
 
 def materialize_asset(all_assets, asset_to_materialize, instance) -> AssetMaterialization:
-    assets = []
+    assets: List[Union[AssetsDefinition, SourceAsset]] = []
     for asset_def in all_assets:
         if isinstance(asset_def, SourceAsset):
             assets.append(asset_def)

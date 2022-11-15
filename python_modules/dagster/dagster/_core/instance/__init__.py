@@ -43,7 +43,8 @@ from dagster._core.definitions.logical_version import (
     LogicalVersion,
     LogicalVersionProvenance,
     compute_logical_version,
-    extract_logical_version_from_event_log_entry,
+    extract_logical_version_from_entry,
+    extract_logical_version_provenance_from_entry,
 )
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
@@ -2196,56 +2197,39 @@ class DagsterInstance:
         ]
         return compute_logical_version(code_version, dependency_logical_versions)
 
-    @overload
-    def get_current_logical_version(
-        self,
-        key: AssetKey,
-        is_source: bool,
-        *,
-        event: Optional[EventLogRecord] = ...,
-        include_provenance: Literal[False] = ...,
-    ) -> LogicalVersion:
-        ...
-
-    @overload
-    def get_current_logical_version(
-        self,
-        key: AssetKey,
-        is_source: bool,
-        *,
-        event: Optional[EventLogRecord] = ...,
-        include_provenance: Literal[True],
-    ) -> Tuple[LogicalVersion, Optional[LogicalVersionProvenance]]:
-        ...
-
     def get_current_logical_version(
         self,
         key: AssetKey,
         is_source: bool,
         *,
         event: Optional[EventLogRecord] = None,
-        include_provenance: bool = False,
-    ) -> Union[LogicalVersion, Tuple[LogicalVersion, Optional[LogicalVersionProvenance]]]:
-
-        check.invariant(
-            not (is_source and include_provenance), "Provenance is not supported for source assets"
-        )
+    ) -> LogicalVersion:
 
         event = event or self.get_latest_logical_version_record(key, is_source)
-        if event is None and not is_source:
+        if event is None and is_source:
+            return DEFAULT_LOGICAL_VERSION
+        elif event is None:
             raise DagsterUndefinedLogicalVersionError(
                 f"No logical version defined for asset {key}; no materialization events found.",
             )
-        elif event is None:  # implies is_source=True
-            return DEFAULT_LOGICAL_VERSION
-        elif include_provenance:  # implies is_source=False
-            logical_version, provenance = extract_logical_version_from_event_log_entry(
-                event.event_log_entry, include_provenance=True
-            )
-            return logical_version or DEFAULT_LOGICAL_VERSION, provenance
         else:
-            logical_version = extract_logical_version_from_event_log_entry(event.event_log_entry)
+            logical_version = extract_logical_version_from_entry(event.event_log_entry)
             return logical_version or DEFAULT_LOGICAL_VERSION
+
+    def get_current_logical_version_provenance(
+        self,
+        key: AssetKey,
+        *,
+        event: Optional[EventLogRecord] = None,
+    ) -> Optional[LogicalVersionProvenance]:
+
+        event = event or self.get_latest_logical_version_record(key, is_source=False)
+        if event is None:
+            raise DagsterUndefinedLogicalVersionError(
+                f"No logical version defined for asset {key}; no materialization events found.",
+            )
+        else:
+            return extract_logical_version_provenance_from_entry(event.event_log_entry)
 
     def get_latest_logical_version_record(
         self,

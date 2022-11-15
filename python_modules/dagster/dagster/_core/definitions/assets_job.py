@@ -319,7 +319,9 @@ def build_job_partitions_from_assets(
     if len(assets_with_partitions_defs) == 0:
         return None
 
-    first_asset_with_partitions_def: Union[AssetsDefinition, SourceAsset] = assets_with_partitions_defs[0]
+    first_asset_with_partitions_def: Union[
+        AssetsDefinition, SourceAsset
+    ] = assets_with_partitions_defs[0]
     for asset in assets_with_partitions_defs:
         if asset.partitions_def != first_asset_with_partitions_def.partitions_def:
             first_asset_key = _key_for_asset(asset).to_string()
@@ -332,11 +334,13 @@ def build_job_partitions_from_assets(
 
     return first_asset_with_partitions_def.partitions_def
 
+
 def _key_for_asset(asset: Union[AssetsDefinition, SourceAsset]) -> AssetKey:
     if isinstance(asset, AssetsDefinition):
         return next(iter(asset.keys))
     else:
         return asset.key
+
 
 def build_node_deps(
     assets_defs: Iterable[AssetsDefinition],

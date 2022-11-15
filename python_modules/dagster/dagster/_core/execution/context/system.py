@@ -808,9 +808,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def fetch_input_asset_records(self) -> None:
         self._input_asset_records = {}
-        asset_info = check.not_none(self.pipeline_def.asset_layer.asset_info_for_output(
-            self.solid_handle, self.step.step_outputs[0].name
-        ))
+        asset_info = check.not_none(
+            self.pipeline_def.asset_layer.asset_info_for_output(
+                self.solid_handle, self.step.step_outputs[0].name
+            )
+        )
         asset_key = asset_info.key
         dep_keys = self.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
         for key in dep_keys:
