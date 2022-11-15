@@ -120,7 +120,9 @@ def scope_add_downstream_assets():
         io_manager_key="snowflake_io_manager",
     )
 
-    @asset(ins={"survey_responses": AssetIn(key=AssetKey("public", "survey_responses"))})
+    @asset(
+        ins={"survey_responses": AssetIn(key=AssetKey("public", "survey_responses"))}
+    )
     def survey_responses_file(survey_responses):
         with open("survey_responses.json", "w", encoding="utf8") as f:
             f.write(json.dumps(survey_responses, indent=2))
