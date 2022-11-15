@@ -19,7 +19,6 @@ from typing import (
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, experimental, public
-from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.backcompat import (
@@ -35,7 +34,6 @@ if TYPE_CHECKING:
 
 RawMetadataValue = Union[
     "MetadataValue",
-    LogicalVersion,
     Dict[Any, Any],
     float,
     int,
@@ -129,8 +127,6 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
         return MetadataValue.asset(raw_value)
     elif isinstance(raw_value, TableSchema):
         return MetadataValue.table_schema(raw_value)
-    elif isinstance(raw_value, LogicalVersion):
-        return MetadataValue.logical_version(raw_value)
 
     raise DagsterInvalidMetadata(
         f"Its type was {type(raw_value)}. Consider wrapping the value with the appropriate "
@@ -298,24 +294,6 @@ class MetadataValue(ABC):
             data (Dict[str, Any]): The JSON data for a metadata entry.
         """
         return JsonMetadataValue(data)
-
-    @public
-    @staticmethod
-    def logical_version(version: LogicalVersion) -> "LogicalVersionMetadataValue":
-        """Static constructor for a metadata value wrapping a logical version as
-        :py:class:`LogicalVersionMetadataValue`.
-
-        .. code-block:: python
-
-            @source_asset
-            def my_source_asset(context):
-                version = LogicalVersion("foo")
-                return { "logical_version": MetadataValue.logical_version(version) }
-
-        Args:
-            version (LogicalVersion): The JSON data for a metadata entry.
-        """
-        return LogicalVersionMetadataValue(version)
 
     @public
     @staticmethod
@@ -679,29 +657,6 @@ class JsonMetadataValue(
     @property
     def value(self) -> Mapping[str, Any]:
         return self.data
-
-
-@whitelist_for_serdes(storage_name="LogicalVersionMetadataEntryData")
-class LogicalVersionMetadataValue(
-    NamedTuple(
-        "_LogicalVersionMetadataValue",
-        [
-            ("value", PublicAttr[str]),
-        ],
-    ),
-    MetadataValue,
-):
-    """Container class for logical version metadata.
-
-    Args:
-        logical_version (LogicalVersion): A logical version.
-    """
-
-    # TODO: we accept str here to work around a bug with the multiprocess executor
-    def __new__(cls, value: Union[str, LogicalVersion]):
-        check.inst_param(value, "logical_version", (LogicalVersion, str))
-        str_value = value.value if isinstance(value, LogicalVersion) else value
-        return super(LogicalVersionMetadataValue, cls).__new__(cls, str_value)
 
 
 @whitelist_for_serdes(storage_name="MarkdownMetadataEntryData")

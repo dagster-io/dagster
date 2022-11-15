@@ -681,12 +681,12 @@ class AssetLayer:
 
     @property
     def asset_keys(self) -> Iterable[AssetKey]:
-        # return [*self._dependency_node_handles_by_asset_key.keys(), *self._source_assets_by_key.keys()]
-        from itertools import chain
-
-        return chain(
-            self._dependency_node_handles_by_asset_key.keys(), self._source_assets_by_key.keys()
-        )
+        return [*self._dependency_node_handles_by_asset_key.keys(), *self._source_assets_by_key.keys()]
+        # from itertools import chain
+        #
+        # return chain(
+        #     self._dependency_node_handles_by_asset_key.keys(), self._source_assets_by_key.keys()
+        # )
 
     @property
     def source_assets_by_key(self) -> Mapping[AssetKey, "SourceAsset"]:
