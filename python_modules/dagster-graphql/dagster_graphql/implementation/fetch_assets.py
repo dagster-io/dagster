@@ -1,14 +1,16 @@
 import datetime
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional, Sequence, cast
 
 from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 
 import dagster._seven as seven
-from dagster import AssetKey, DagsterEventType, EventRecordsFilter
+from dagster import AssetKey, DagsterEventType, DagsterInstance, EventRecordsFilter
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -337,6 +339,56 @@ def get_materialization_cts_by_partition(
         ordered_materialization_counts.append(db_materialization_counts.get(partition_key, 0))
 
     return ordered_materialization_counts
+
+
+class AssetPartitionsStatusCacheValue(NamedTuple):
+    latest_storage_id: int
+    materialized_subset: PartitionsSubset
+    partitions_def_id: str
+
+
+def get_materialized_partition_ranges(
+    instance: DagsterInstance, asset_graph: AssetGraph, asset_key: AssetKey
+) -> Sequence[PartitionKeyRange]:
+    partitions_def = cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
+
+    latest_storage_id = None
+    materialized_subset = partitions_def.empty_subset()
+
+    serialized_cache_value = instance.run_storage.kvs_get(asset_key)
+    # TODO: assert that partitions_def_id is the same
+    if serialized_cache_value:
+        cache_value = AssetPartitionsStatusCacheValue.from_serialized(
+            serialized_cache_value, asset_graph.get_partitions_def(asset_key)
+        )
+        if partitions_def.unique_identifier == cache_value.partitions_def.unique_identifier:
+            latest_storage_id = cache_value.latest_storage_id
+            materialized_subset = cache_value.materialized_subset
+
+    new_materialization_records = instance.get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=asset_key,
+            after_cursor=latest_storage_id,
+        )
+    )
+
+    new_materialization_partitions = {
+        record.partition_key for record in new_materialization_records
+    }
+    max_storage_id = max(
+        (record.storage_id for record in new_materialization_records), default=latest_storage_id
+    )
+
+    updated_materialized_subset = materialized_subset.with_partition_keys(
+        new_materialization_partitions
+    )
+
+    instance.kv_store.put(
+        asset_key, AssetPartitionsStatusCacheValue(updated_materialized_subset, max_storage_id)
+    )
+
+    return updated_materialized_subset.key_ranges
 
 
 def get_freshness_info(

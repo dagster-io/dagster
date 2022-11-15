@@ -797,3 +797,14 @@ def test_static_partition_keys_in_range():
         partitions.get_partition_keys_in_range(
             PartitionKeyRange(start="foo", end="nonexistent_key")
         )
+
+
+def test_unique_identifier():
+    assert (
+        StaticPartitionsDefinition(["a", "b", "c"]).unique_identifier
+        != StaticPartitionsDefinition(["a", "b"]).unique_identifier
+    )
+    assert (
+        StaticPartitionsDefinition(["a", "b", "c"]).unique_identifier
+        == StaticPartitionsDefinition(["a", "b", "c"]).unique_identifier
+    )

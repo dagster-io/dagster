@@ -500,3 +500,14 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
         1 if updated_subset_str[0] == "+" else 0
     )
     assert len(updated_subset.key_ranges) == expected_range_count, updated_subset_str
+
+
+def test_unique_identifier():
+    assert (
+        DailyPartitionsDefinition(start_date="2015-01-01").unique_identifier
+        != DailyPartitionsDefinition(start_date="2015-01-02").unique_identifier
+    )
+    assert (
+        DailyPartitionsDefinition(start_date="2015-01-01").unique_identifier
+        == DailyPartitionsDefinition(start_date="2015-01-01").unique_identifier
+    )

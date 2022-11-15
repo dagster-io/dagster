@@ -1,5 +1,7 @@
 import copy
+import hashlib
 import inspect
+import itertools
 import json
 from abc import ABC, abstractmethod
 from datetime import datetime, time, timedelta
@@ -251,6 +253,10 @@ class PartitionsDefinition(ABC, Generic[T]):
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return DefaultPartitionsSubset.from_serialized(self, serialized)
+
+    @property
+    def unique_identifier(self) -> str:
+        return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
 
 
 class StaticPartitionsDefinition(

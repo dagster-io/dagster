@@ -430,6 +430,10 @@ class TimeWindowPartitionsDefinition(
     def deserialize_subset(self, serialized: str) -> "TimeWindowPartitionsSubset":
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
 
+    @property
+    def unique_identifier(self) -> str:
+        return str(self)
+
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(  # pylint: disable=signature-differs
