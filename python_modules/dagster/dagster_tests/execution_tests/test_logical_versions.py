@@ -1,6 +1,6 @@
 # pylint: disable=unused-argument
 
-from typing import Iterable, List, Tuple, Union, cast
+from typing import Iterable, List, Sequence, Tuple, Union, cast
 
 from dagster import (
     AssetMaterialization,
@@ -12,6 +12,7 @@ from dagster import (
     io_manager,
     materialize,
 )
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 class MockIOManager(IOManager):
@@ -27,9 +28,10 @@ def mock_io_manager():
     return MockIOManager()
 
 
-def get_materialization_from_result(result, node_str):
+def get_materialization_from_result(result: ExecuteInProcessResult, node_str: str) -> AssetMaterialization:
     mats = result.asset_materializations_for_node(node_str)
     assert len(mats) == 1
+    assert isinstance(mats[0], AssetMaterialization)
     return mats[0]
 
 
@@ -51,7 +53,7 @@ def assert_different_versions(mat1: AssetMaterialization, mat2: AssetMaterializa
     assert mat2.tags["dagster/logical_version"] != mat1.tags["dagster/logical_version"]
 
 
-def materialize_asset(all_assets, asset_to_materialize, instance) -> AssetMaterialization:
+def materialize_asset(all_assets: Sequence[Union[AssetsDefinition, SourceAsset]], asset_to_materialize: AssetsDefinition, instance: DagsterInstance) -> AssetMaterialization:
     assets: List[Union[AssetsDefinition, SourceAsset]] = []
     for asset_def in all_assets:
         if isinstance(asset_def, SourceAsset):
@@ -64,7 +66,8 @@ def materialize_asset(all_assets, asset_to_materialize, instance) -> AssetMateri
                 assets.append(asset_def.to_source_assets()[0])
 
     result = materialize(assets, instance=instance, resources={"io_manager": mock_io_manager})
-    mat = get_materialization_from_result(result, asset_to_materialize.key)
+    node_str = asset_to_materialize.key.path[-1]
+    mat = get_materialization_from_result(result, node_str)
 
     assert isinstance(mat, AssetMaterialization)
     return mat
@@ -74,7 +77,8 @@ def materialize_assets(assets, instance) -> Iterable[AssetMaterialization]:
     result = materialize(assets, instance=instance, resources={"io_manager": mock_io_manager})
     for asset_def in assets:
         if isinstance(asset_def, AssetsDefinition):
-            yield cast(AssetMaterialization, get_materialization_from_result(result, asset_def.key))
+            node_str = asset_def.key.path[-1]
+            yield cast(AssetMaterialization, get_materialization_from_result(result, node_str))
 
 
 def materialize_twice(

@@ -717,7 +717,8 @@ class AssetLayer:
         )
 
     def is_graph_backed_asset(self, asset_key: AssetKey) -> bool:
-        return isinstance(self.assets_def_for_asset(asset_key).node_def, GraphDefinition)
+        assets_def = self.assets_defs_by_key.get(asset_key)
+        return False if assets_def is None else isinstance(assets_def.node_def, GraphDefinition)
 
     def op_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
         return (
