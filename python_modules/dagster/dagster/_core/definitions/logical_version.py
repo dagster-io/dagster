@@ -117,7 +117,8 @@ def get_input_event_pointer_tag_key(input_key: "AssetKey") -> str:
 
 
 def compute_logical_version(
-    code_version: Union[str, UnknownValue], input_logical_versions: Mapping[AssetKey, LogicalVersion]
+    code_version: Union[str, UnknownValue],
+    input_logical_versions: Mapping["AssetKey", LogicalVersion],
 ) -> LogicalVersion:
     """Compute a logical version from inputs.
 
@@ -128,13 +129,22 @@ def compute_logical_version(
     Returns:
         LogicalVersion: The computed logical version.
     """
-    check.inst_param(code_version, "code_version", (str, UnknownValue))
-    check.mapping_param(input_logical_versions, "input_versions", key_type=AssetKey, value_type=LogicalVersion)
+    from dagster._core.definitions.events import AssetKey
 
-    if isinstance(code_version, UnknownValue) or UNKNOWN_LOGICAL_VERSION in input_logical_versions.values():
+    check.inst_param(code_version, "code_version", (str, UnknownValue))
+    check.mapping_param(
+        input_logical_versions, "input_versions", key_type=AssetKey, value_type=LogicalVersion
+    )
+
+    if (
+        isinstance(code_version, UnknownValue)
+        or UNKNOWN_LOGICAL_VERSION in input_logical_versions.values()
+    ):
         return UNKNOWN_LOGICAL_VERSION
 
-    ordered_input_versions = [input_logical_versions[k] for k in sorted(input_logical_versions.keys(), key=str)]
+    ordered_input_versions = [
+        input_logical_versions[k] for k in sorted(input_logical_versions.keys(), key=str)
+    ]
     all_inputs = (code_version, *(v.value for v in ordered_input_versions))
 
     hash_sig = sha256()
