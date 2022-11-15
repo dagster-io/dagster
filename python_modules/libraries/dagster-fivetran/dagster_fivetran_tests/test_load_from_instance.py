@@ -26,13 +26,13 @@ from dagster._core.execution.with_resources import with_resources
 @pytest.mark.parametrize("connector_to_group_fn", [None, lambda x: f"{x[0]}_group"])
 @pytest.mark.parametrize("filter_connector", [True, False])
 @pytest.mark.parametrize(
-    "connector_to_asset_key",
+    "connector_to_asset_key_fn",
     [
         None,
         lambda conn, name: AssetKey([*conn.name.split("."), *name.split(".")]),
     ],
 )
-def test_load_from_instance(connector_to_group_fn, filter_connector, connector_to_asset_key):
+def test_load_from_instance(connector_to_group_fn, filter_connector, connector_to_asset_key_fn):
 
     load_calls = []
 
@@ -87,14 +87,14 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
                 ft_instance,
                 connector_to_group_fn=connector_to_group_fn,
                 connector_filter=(lambda _: False) if filter_connector else None,
-                connector_to_asset_key=connector_to_asset_key,
+                connector_to_asset_key_fn=connector_to_asset_key_fn,
                 connector_to_io_manager_key_fn=(lambda _: "test_io_manager"),
             )
         else:
             ft_cacheable_assets = load_assets_from_fivetran_instance(
                 ft_instance,
                 connector_filter=(lambda _: False) if filter_connector else None,
-                connector_to_asset_key=connector_to_asset_key,
+                connector_to_asset_key_fn=connector_to_asset_key_fn,
                 io_manager_key="test_io_manager",
             )
         ft_assets = ft_cacheable_assets.build_definitions(
@@ -112,9 +112,9 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
         AssetKey(["xyz1", "abc1"]),
         AssetKey(["abc", "xyz"]),
     }
-    if connector_to_asset_key:
+    if connector_to_asset_key_fn:
         tables = {
-            connector_to_asset_key(
+            connector_to_asset_key_fn(
                 FivetranConnectionMetadata("some_service.some_name", "", "=", []),
                 ".".join(t.path),
             )
@@ -123,11 +123,11 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
 
     # Set up a downstream asset to consume the xyz output table
     xyz_asset_key = (
-        connector_to_asset_key(
+        connector_to_asset_key_fn(
             FivetranConnectionMetadata("some_service.some_name", "", "=", []),
             "abc.xyz",
         )
-        if connector_to_asset_key
+        if connector_to_asset_key_fn
         else AssetKey(["abc", "xyz"])
     )
 

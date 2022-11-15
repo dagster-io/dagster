@@ -253,7 +253,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         connector_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
         connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
-        connector_to_asset_key: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]],
+        connector_to_asset_key_fn: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]],
     ):
 
         self._fivetran_resource_def = fivetran_resource_def
@@ -265,9 +265,9 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connector_to_group_fn = connector_to_group_fn
         self._connection_filter = connector_filter
         self._connector_to_io_manager_key_fn = connector_to_io_manager_key_fn
-        self._connector_to_asset_key: Callable[
+        self._connector_to_asset_key_fn: Callable[
             [FivetranConnectionMetadata, str], AssetKey
-        ] = connector_to_asset_key or (lambda _, table: AssetKey(path=table.split(".")))
+        ] = connector_to_asset_key_fn or (lambda _, table: AssetKey(path=table.split(".")))
 
         contents = hashlib.sha1()
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -314,7 +314,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         for connector in self._get_connectors():
 
             if not self._connection_filter or self._connection_filter(connector):
-                table_to_asset_key = partial(self._connector_to_asset_key, connector)
+                table_to_asset_key = partial(self._connector_to_asset_key_fn, connector)
                 asset_defn_data.append(
                     connector.build_asset_defn_metadata(
                         key_prefix=self._key_prefix,
@@ -354,7 +354,9 @@ def load_assets_from_fivetran_instance(
     io_manager_key: Optional[str] = None,
     connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
     connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]] = None,
-    connector_to_asset_key: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]] = None,
+    connector_to_asset_key_fn: Optional[
+        Callable[[FivetranConnectionMetadata, str], AssetKey]
+    ] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
@@ -427,5 +429,5 @@ def load_assets_from_fivetran_instance(
         connector_to_group_fn=connector_to_group_fn,
         connector_to_io_manager_key_fn=connector_to_io_manager_key_fn,
         connector_filter=connector_filter,
-        connector_to_asset_key=connector_to_asset_key,
+        connector_to_asset_key_fn=connector_to_asset_key_fn,
     )
