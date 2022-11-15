@@ -140,14 +140,6 @@ class GrapheneAssetMetadataEntry(graphene.ObjectType):
         name = "AssetMetadataEntry"
 
 
-class GrapheneLogicalVersionMetadataEntry(graphene.ObjectType):
-    value = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneMetadataEntry,)
-        name = "LogicalVersionMetadataEntry"
-
-
 def types():
     return [
         GrapheneMetadataEntry,
@@ -166,5 +158,4 @@ def types():
         GrapheneUrlMetadataEntry,
         GraphenePipelineRunMetadataEntry,
         GrapheneAssetMetadataEntry,
-        GrapheneLogicalVersionMetadataEntry,
     ]
