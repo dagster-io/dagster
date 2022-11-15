@@ -211,7 +211,7 @@ def build_assets_job(
 
 
 @experimental
-def build_source_assets_job(
+def build_source_asset_observation_job(
     name: str,
     source_assets: Sequence[SourceAsset],
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,

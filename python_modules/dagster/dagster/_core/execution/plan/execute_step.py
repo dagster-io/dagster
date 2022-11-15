@@ -30,6 +30,7 @@ from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidF
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
+    LOGICAL_VERSION_TAG_KEY,
     LogicalVersion,
     get_input_event_pointer_tag_key,
     get_input_logical_version_tag_key,
@@ -515,7 +516,7 @@ def _get_output_asset_materializations(
 ) -> Iterator[AssetMaterialization]:
 
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
-    tags = _extract_logical_version_tags(asset_key, step_context)
+    tags = _build_logical_version_tags(asset_key, step_context)
 
     if asset_partitions:
         metadata_mapping: Dict[
@@ -570,7 +571,7 @@ def _get_output_asset_materializations(
             )
 
 
-def _extract_logical_version_tags(
+def _build_logical_version_tags(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Dict[str, str]:
     asset_layer = step_context.pipeline_def.asset_layer
@@ -589,7 +590,7 @@ def _extract_logical_version_tags(
         tags[get_input_event_pointer_tag_key(key)] = str(event.storage_id) if event else "NULL"
 
     logical_version = compute_logical_version(code_version, input_logical_versions)
-    tags["dagster/logical_version"] = logical_version.value
+    tags[LOGICAL_VERSION_TAG_KEY] = logical_version.value
     return tags
 
 def _store_output(
