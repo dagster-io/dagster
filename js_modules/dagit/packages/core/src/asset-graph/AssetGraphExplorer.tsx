@@ -68,10 +68,8 @@ interface Props {
 export const MINIMAL_SCALE = 0.5;
 export const EXPERIMENTAL_SCALE = 0.1;
 
-const includeInAll = ({isObservable}: AssetNode, liveData?: LiveDataForNode) =>
-  isObservable && liveData
-    ? liveData.currentLogicalVersion !== liveData.projectedLogicalVersion
-    : true;
+const includeInMaterializeAll = (liveData?: LiveDataForNode) =>
+  liveData && liveData.currentLogicalVersion !== liveData.projectedLogicalVersion;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
@@ -444,9 +442,7 @@ export const AssetGraphExplorerWithData: React.FC<
                 assetKeys={(selectedGraphNodes.length
                   ? selectedGraphNodes.filter((a) => !a.definition.isSource)
                   : Object.values(assetGraphData.nodes).filter(
-                      (a) =>
-                        !a.definition.isSource && liveDataByNode[a.id].currentLogicalVersion !== liveDataByNode[a.id].projectedLogicalVersion,
-                    )
+                      (a) => !a.definition.isSource && includeInMaterializeAll(liveDataByNode[a.id]))
                 ).map((n) => n.assetKey)}
                 preferredJobName={explorerPath.pipelineName}
               />
