@@ -1,16 +1,16 @@
 ---
-title: Data Science with Dagstermill | Dagster"
-description: The Dagstermill package lets you run notebooks using the Dagster tools and integrate them into data jobs with heterogeneous ops.
+title: Data Science with Jupyter, Papermill, and Dagster"
+description: The Dagstermill (Dagster + papermill) package lets you run notebooks using the Dagster tools and integrate them into your data pipelines.
 ---
 
 # Data Science with Notebooks
 
-- [Notebooks as ops](#notebooks-as-ops)
+<!-- - [Notebooks as ops](#notebooks-as-ops)
 - [Expressing dependencies](#expressing-dependencies)
 - [The notebook context](#the-notebook-context)
-- [Results and custom materializations](#results-and-custom-materializations)
+- [Results and custom materializations](#results-and-custom-materializations) -->
 
-Fast iteration, the literate combination of arbitrary code with markdown blocks, and inline plotting make notebooks an indispensible tool for data science. The Dagstermill package makes it straightforward to run notebooks using the Dagster tools and to integrate them into data jobs with heterogeneous ops: for instance, Spark jobs, SQL statements run against a data warehouse, or arbitrary Python code.
+Fast iteration, the literate combination of arbitrary code with markdown blocks, and inline plotting make notebooks an indispensible tool for data science. The Dagstermill package makes it straightforward to run notebooks using the Dagster tools and to integrate them with your Dagster assets or jobs: for instance, Spark jobs, SQL statements run against a data warehouse, or arbitrary Python code.
 
 ```bash
 pip install dagstermill
@@ -18,15 +18,82 @@ pip install dagstermill
 
 Dagstermill lets you:
 
-- Run notebooks as ops in heterogeneous data jobs with minimal changes to notebook code
-- Define data dependencies to flow inputs and outputs between notebooks, and between notebooks and other ops
+- Run notebooks as assets or ops in heterogeneous data jobs with minimal changes to notebook code
+- View notebooks directly in Dagit without needing to set up a Jupyter kernel
+- Define data dependencies to flow inputs and outputs from assets/ops to notebooks, between notebooks, and from notebooks to other assets/ops
 - Use Dagster resources, and the Dagster config system, from inside notebooks
-- Aggregate notebook logs with logs from other Dagster ops
+- Aggregate notebook logs with logs from other Dagster assets and ops
 - Yield custom materializations and other Dagster events from your notebook code
 
-Our goal is to make it unnecessary to go through a tedious "productionization" process where code developed in notebooks must be translated into some other (less readable and interpretable) format in order to be integrated into production workflows. Instead, we can use notebooks as ops directly, with minimal, incremental metadata declarations to integrate them into jobs that may also contain arbitrary heterogeneous ops.
+Our goal is to make it unnecessary to go through a tedious "productionization" process where code developed in notebooks must be translated into some other (less readable and interpretable) format in order to be integrated into production workflows. Instead, we can use notebooks as assets or ops directly, with minimal changes to notebook code that still allow for standalone execution of the notebook.
 
-<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/legacy/data_science/" />
+<CodeReferenceLink filePath="examples/tutorial_notebook_assets/" />
+
+In this guide we go through the process of creating a Dagster asset for a Jupyter notebook. Then we will create an asset that will be an input for the notebook.
+
+## Set up
+To follow along with the code examples in this guide, you can download Dagster's `tutorial_notebook_assets` example:
+
+```shell
+pip install dagster
+dagster project from-example --name tutorial_notebook_assets --example tutorial_notebook_assets
+cd tutorial_notebook_assets
+pip install -e ".[dev]"
+```
+
+This series of commands installs Dagster, downloads the code for the `tutorial_notebook_assets` example project, and installs the dependencies required for the example project.
+
+The `tutorial_notebook_assets` example project contains two subfolders: `tutorial_finished` and `tutorial_template`. These folders each contain a Dagster repository. `tutorial_finished` contains a completed version of the code in `tutorial_template`. In this guide we will be working in `tutorial_template`. `tutorial_template` contains subfolders `assets` and `notebooks`. `notebooks/iris-kmeans.ipynb` is the Jupyter notebook we will be using in the guide and `assets/__init__.py` is where we will be writing our Dagster assets.
+
+## The Jupyter notebook
+
+The `iris-kmeans.ipynb` Jupyter notebook does some analysis of the class Iris dataset(1, 2), collected in 1936 by the American botanist Edgar Anderson and made famous by statistician Ronald Fisher. The Iris dataset is a basic example in machine learning because it contains three classes of observation, one of which is straightforwardly linearly separable from the other two, which in turn can only be distinguished by more sophisticated methods.
+
+In the Jupyter notebook, we first fetch the Iris dataset:
+
+```python:
+iris = pd.read_csv(
+    "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+    names=[
+        "Sepal length (cm)",
+        "Sepal width (cm)",
+        "Petal length (cm)",
+        "Petal width (cm)",
+        "Species",
+    ],
+)
+```
+
+Then we do some descriptive analysis to explore the dataset. Then we conduct our K-means analysis:
+
+```python
+estimator = sklearn.cluster.KMeans(n_clusters=3)
+estimator.fit(
+    iris[["Sepal length (cm)", "Sepal width (cm)", "Petal length (cm)", "Petal width (cm)"]]
+)
+```
+
+And finally we plot the results of the K-means analysis to see how it did. We can see from the plots that one species of Iris is separable from the other two, but a more sophisticated model will be required to distiguish the other two species.
+
+Like many notebooks, this example does some fairly sophisticated work, producing diagnostic plots and a statistical model that are then locked away in the `.ipynb` format, and can only be reproduced using a complex Jupyter setup, and are only programmatically accessible within the notebook context.
+
+## Jupyter Notebook as a Dagster asset
+
+By creating a Dagster asset from our notebook, we can integrate the notebook as part of our data platform and begin to make the contents of the notebook more accessible to developers, stakeholders, and the other assets in Dagster.
+
+To create a Dagster asset from a Jupyter notebook, use the <PyObject module="dagstermill" object="define_dagstermill_asset" /> function:
+
+```python
+iris_kmeans_jupyter_notebook = define_dagstermill_asset(
+    name="iris_kmeans_jupyter",
+    notebook_path=file_relative_path(__file__, "../notebooks/iris-kmeans.ipynb"),
+    group_name="template_tutorial",
+)
+```
+
+Let's go over what's happening in this code block. First, the `define_dagstermill_asset` will create a Dagster asset and return it. We provide the name for the asset with the `name` parameter and the path to our `.ipynb` file with the `notebook_path` parameter. Finally, we are providing a `group_name` to help with organization in Dagit (but this parameter is optional).
+
+This asset will execute our notebook and store the resulting `.ipynb` file in a persistent location 
 
 ## Notebooks as ops
 
