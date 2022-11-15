@@ -331,7 +331,8 @@ const UpstreamNotice = styled.div`
   border-top-right-radius: 3px;
 `;
 
-const OVERDUE_MESSAGE = `A materialization incorporating more recent upstream data is overdue.`;
+const STALE_OVERDUE_MSG = `A materialization incorporating more recent upstream data is overdue.`;
+const STALE_UNMATERIALIZED_MSG = `This asset has never been materialized.`;
 
 export const ComputeStatusNotice: React.FC<{computeStatus: AssetComputeStatus}> = ({
   computeStatus,
@@ -428,15 +429,35 @@ export const CurrentMinutesLateTag: React.FC<{
   liveData: LiveDataForNode;
   policyOnHover?: boolean;
 }> = ({liveData, policyOnHover}) => {
-  const {freshnessInfo, freshnessPolicy, lastMaterialization} = liveData;
+  const {freshnessInfo, freshnessPolicy} = liveData;
   const description = policyOnHover ? freshnessPolicyDescription(freshnessPolicy) : '';
 
-  if (!lastMaterialization || !freshnessInfo) {
+  if (!freshnessInfo) {
     return <span />;
   }
 
-  return freshnessInfo.currentMinutesLate ? (
-    <Tooltip content={<div style={{maxWidth: 400}}>{`${OVERDUE_MESSAGE} ${description}`}</div>}>
+  if (freshnessInfo.currentMinutesLate === null) {
+    return (
+      <Tooltip
+        content={<div style={{maxWidth: 400}}>{`${STALE_UNMATERIALIZED_MSG} ${description}`}</div>}
+      >
+        <Tag intent="danger">Late</Tag>
+      </Tooltip>
+    );
+  }
+
+  if (freshnessInfo.currentMinutesLate === 0) {
+    return description ? (
+      <Tooltip content={freshnessPolicyDescription(freshnessPolicy)}>
+        <Tag intent="success">Fresh</Tag>
+      </Tooltip>
+    ) : (
+      <Tag intent="success">Fresh</Tag>
+    );
+  }
+
+  return (
+    <Tooltip content={<div style={{maxWidth: 400}}>{`${STALE_OVERDUE_MSG} ${description}`}</div>}>
       <Tag intent="danger">
         {moment
           .duration(freshnessInfo.currentMinutesLate, 'minute')
@@ -444,14 +465,6 @@ export const CurrentMinutesLateTag: React.FC<{
         {' late'}
       </Tag>
     </Tooltip>
-  ) : freshnessInfo.currentMinutesLate === 0 && description ? (
-    <Tooltip content={freshnessPolicyDescription(freshnessPolicy)}>
-      <Tag intent="success">Fresh</Tag>
-    </Tooltip>
-  ) : freshnessInfo.currentMinutesLate === 0 ? (
-    <Tag intent="success">Fresh</Tag>
-  ) : (
-    <span />
   );
 };
 
@@ -471,8 +484,8 @@ export const freshnessPolicyDescription = (
       : `${maximumLagMinutes} min`;
 
   if (cronDesc) {
-    return `By ${cronDesc}, this asset should incorporate all data up to ${lagDesc} before that time`;
+    return `By ${cronDesc}, this asset should incorporate all data up to ${lagDesc} before that time.`;
   } else {
-    return `At any point in time, this asset should incorporate all data up to ${lagDesc} before that time`;
+    return `At any point in time, this asset should incorporate all data up to ${lagDesc} before that time.`;
   }
 };
