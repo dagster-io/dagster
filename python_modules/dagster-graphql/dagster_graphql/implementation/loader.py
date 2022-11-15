@@ -11,7 +11,8 @@ from dagster._core.definitions.logical_version import (
     LogicalVersion,
     LogicalVersionProvenance,
     compute_logical_version,
-    extract_logical_version_from_event_log_entry,
+    extract_logical_version_from_entry,
+    extract_logical_version_provenance_from_entry,
 )
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository
@@ -491,9 +492,8 @@ class ProjectedLogicalVersionLoader:
             if materialization is None:  # never been materialized
                 version = self._compute_projected_new_materialization_logical_version(node)
             else:
-                logical_version, provenance = extract_logical_version_from_event_log_entry(
-                    materialization, include_provenance=True
-                )
+                logical_version = extract_logical_version_from_entry(materialization)
+                provenance = extract_logical_version_provenance_from_entry(materialization)
                 if (
                     logical_version is None  # old materialization event before logical versions
                     or provenance is None  # should never happen
