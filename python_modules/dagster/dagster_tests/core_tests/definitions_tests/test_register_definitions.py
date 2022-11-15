@@ -1,32 +1,33 @@
 import sys
+
 import pytest
 
 from dagster import (
-    op,
     AssetKey,
-    asset,
-    register_definitions,
-    ScheduleDefinition,
-    define_asset_job,
-    sensor,
-    repository,
     AssetsDefinition,
     ResourceDefinition,
-)
-from dagster._core.definitions.register_definitions import (
-    MAGIC_REGISTERED_DEFINITIONS_KEY,
-    get_module_name_of_caller,
-    register_definitions_test_scope,
-    ModuleHasRegisteredDefinitionsError,
-    get_registered_repository_in_module,
-)
-from dagster._core.definitions.repository_definition import (
-    PendingRepositoryDefinition,
-    RepositoryDefinition,
+    ScheduleDefinition,
+    asset,
+    define_asset_job,
+    op,
+    register_definitions,
+    repository,
+    sensor,
 )
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
+)
+from dagster._core.definitions.register_definitions import (
+    MAGIC_REGISTERED_DEFINITIONS_KEY,
+    ModuleHasRegisteredDefinitionsError,
+    get_module_name_of_caller,
+    get_registered_repository_in_module,
+    register_definitions_test_scope,
+)
+from dagster._core.definitions.repository_definition import (
+    PendingRepositoryDefinition,
+    RepositoryDefinition,
 )
 
 
@@ -193,6 +194,10 @@ def test_resource_coercion():
         asset_job = repo.get_all_jobs()[0]
         asset_job.execute_in_process()
         assert executed["yes"]
+
+
+def test_source_asset():
+    pass
 
 
 def test_pending_definitions():

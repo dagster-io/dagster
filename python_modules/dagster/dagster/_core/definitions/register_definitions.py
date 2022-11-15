@@ -3,24 +3,19 @@ import sys
 from collections.abc import Generator
 from contextlib import contextmanager
 from types import ModuleType
-from typing import Any, Iterable, Mapping, Optional, Union, Dict
+from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
 import dagster._check as check
-
 from dagster._core.execution.with_resources import with_resources
 
 from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
-
 from .decorators import repository
 from .job_definition import JobDefinition
-
+from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
-
-from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
-
 
 MAGIC_REGISTERED_DEFINITIONS_KEY = "__registered_definitions"
 
@@ -73,13 +68,6 @@ def register_definitions(
     or
 
     (2) A module that contains an explicit call to register_definitions.
-
-    alts:
-    dagsterify_module
-    make_module_loadable
-    defined_loadable_module
-    definitions_in_module
-    register_definitions
 
     For anything beyond lightweight testing and exploration, the use of register_definitions
     is strongly recommended.
