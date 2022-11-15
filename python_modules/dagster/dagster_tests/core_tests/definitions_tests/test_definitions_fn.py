@@ -2,15 +2,23 @@ import sys
 
 import pytest
 
-from dagster import ResourceDefinition, ScheduleDefinition
+from dagster import AssetKey, AssetsDefinition, ResourceDefinition, ScheduleDefinition, SkipReason
 from dagster import _check as check
 from dagster import asset, define_asset_job, definitions, job, op, repository, sensor
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.definitions_fn import (
     MAGIC_REPO_GLOBAL_KEY,
     DefinitionsAlreadyCalledError,
     GlobalRepoSingleton,
     definitions_test_scope,
     get_python_env_global_dagster_repository,
+)
+from dagster._core.definitions.repository_definition import (
+    PendingRepositoryDefinition,
+    RepositoryDefinition,
 )
 
 
@@ -35,6 +43,15 @@ def test_definitions_invoke_twice():
         definitions()
         with pytest.raises(DefinitionsAlreadyCalledError):
             definitions()
+
+
+def get_defined_repo() -> RepositoryDefinition:
+    repo_or_caching_repo = get_python_env_global_dagster_repository()
+    return (
+        repo_or_caching_repo.compute_repository_definition()
+        if isinstance(repo_or_caching_repo, PendingRepositoryDefinition)
+        else repo_or_caching_repo
+    )
 
 
 def test_contextmanager_test_helper():
@@ -65,6 +82,11 @@ def test_contextmanager_test_helper():
     assert not GlobalRepoSingleton.has_instance()
 
 
+def get_all_assets_from_repo(repo):
+    # could not find public method on repository to do this
+    return list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access
+
+
 def test_basic_asset_definitions():
     with definitions_test_scope(__name__):
 
@@ -74,8 +96,9 @@ def test_basic_asset_definitions():
 
         definitions(assets=[an_asset])
 
-        repo = get_python_env_global_dagster_repository()
-        all_assets = list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access
+        repo = get_defined_repo()
+        all_assets = get_all_assets_from_repo(repo)
+        # all_assets = list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access
         assert len(all_assets) == 1
         assert all_assets[0].key.to_user_string() == "an_asset"
 
@@ -93,7 +116,7 @@ def test_basic_job_definition():
 
         definitions(jobs=[a_job])
 
-        repo = get_python_env_global_dagster_repository()
+        repo = get_defined_repo()
 
         jobs = repo.get_all_jobs()
         assert len(jobs) == 1
@@ -118,7 +141,7 @@ def test_basic_schedule_definition():
             ],
         )
 
-        repo = get_python_env_global_dagster_repository()
+        repo = get_defined_repo()
         assert repo.get_schedule_def("daily_an_asset_schedule")
 
 
@@ -133,14 +156,14 @@ def test_basic_sensor_definition():
 
         @sensor(name="an_asset_sensor", job=an_asset_job)
         def a_sensor():
-            pass
+            yield SkipReason("type check do not bother me")
 
         definitions(
             assets=[an_asset],
             sensors=[a_sensor],
         )
 
-        repo = get_python_env_global_dagster_repository()
+        repo = get_defined_repo()
 
         assert repo.get_sensor_def("an_asset_sensor")
 
@@ -160,7 +183,7 @@ def test_with_resource_binding():
             resources={"foo": ResourceDefinition.hardcoded_resource("wrapped")},
         )
 
-        repo = get_python_env_global_dagster_repository()
+        repo = get_defined_repo()
 
         asset_job = repo.get_all_jobs()[0]
         asset_job.execute_in_process()
@@ -182,7 +205,7 @@ def test_with_resource_wrapping():
             resources={"foo": "raw"},
         )
 
-        repo = get_python_env_global_dagster_repository()
+        repo = get_defined_repo()
 
         asset_job = repo.get_all_jobs()[0]
         asset_job.execute_in_process()
@@ -215,3 +238,44 @@ def test_global_repo_singleton():
 
     with pytest.raises(check.CheckError):
         GlobalRepoSingleton.set_instance(a_repo)  # type: ignore
+
+    GlobalRepoSingleton.clear()
+
+
+def test_global_pending_repo():
+    class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
+        def compute_cacheable_data(self):
+            return [
+                AssetsDefinitionCacheableData(
+                    keys_by_input_name={}, keys_by_output_name={"result": AssetKey(self.unique_id)}
+                )
+            ]
+
+        def build_definitions(self, data):
+            @op
+            def my_op():
+                return 1
+
+            return [
+                AssetsDefinition.from_op(
+                    my_op,
+                    keys_by_input_name=cd.keys_by_input_name,
+                    keys_by_output_name=cd.keys_by_output_name,
+                )
+                for cd in data
+            ]
+
+    @repository
+    def a_pending_repo():
+        return [MyCacheableAssetsDefinition("foobar")]
+
+    assert isinstance(a_pending_repo, PendingRepositoryDefinition)
+
+    assert isinstance(a_pending_repo.compute_repository_definition(), RepositoryDefinition)
+
+    with definitions_test_scope(__name__):
+        definitions(assets=[MyCacheableAssetsDefinition("foobar")])
+        repo = get_defined_repo()
+        all_assets = get_all_assets_from_repo(repo)
+        assert len(all_assets) == 1
+        assert all_assets[0].key.to_user_string() == "foobar"

@@ -8,6 +8,7 @@ from dagster import _check as check
 from dagster._core.execution.with_resources import with_resources
 
 from .assets import AssetsDefinition, SourceAsset
+from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
 from .job_definition import JobDefinition
 from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
@@ -103,7 +104,9 @@ def get_dagster_definitions_in_module(mod: ModuleType):
 # TODO: Add a new Definitions class to wrap RepositoryDefinition?
 def definitions(
     *,
-    assets: Optional[Iterable[Union[AssetsDefinition, SourceAsset]]] = None,
+    assets: Optional[
+        Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+    ] = None,
     schedules: Optional[Iterable[ScheduleDefinition]] = None,
     sensors: Optional[Iterable[SensorDefinition]] = None,
     jobs: Optional[Iterable[JobDefinition]] = None,
