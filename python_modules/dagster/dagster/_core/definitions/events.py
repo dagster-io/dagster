@@ -657,6 +657,9 @@ class Materialization(
             asset_key=asset_key,
         )
 
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return {}
 
 @whitelist_for_serdes
 class ExpectationResult(
