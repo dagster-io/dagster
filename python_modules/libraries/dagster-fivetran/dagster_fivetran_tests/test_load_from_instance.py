@@ -12,9 +12,10 @@ from dagster_fivetran_tests.utils import (
     get_sample_groups_response,
 )
 
-from dagster import AssetKey, build_init_resource_context
+from dagster import AssetKey, IOManager, build_init_resource_context, io_manager
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.execution.with_resources import with_resources
 
 
 @responses.activate
@@ -25,6 +26,20 @@ from dagster._core.definitions.metadata.table import TableColumn, TableSchema
     [None, lambda conn, name: AssetKey([*conn.name.split("."), *name.split(".")])],
 )
 def test_load_from_instance(connector_to_group_fn, filter_connector, connector_to_asset_key):
+
+    load_calls = []
+
+    @io_manager
+    def test_io_manager(_context):
+        class TestIOManager(IOManager):
+            def handle_output(self, context, obj):
+                return
+
+            def load_input(self, context):
+                load_calls.append(context.asset_key)
+                return None
+
+        return TestIOManager()
 
     ft_resource = fivetran_resource(
         build_init_resource_context(
@@ -66,16 +81,19 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
                 connector_to_group_fn=connector_to_group_fn,
                 connector_filter=(lambda _: False) if filter_connector else None,
                 connector_to_asset_key=connector_to_asset_key,
+                connection_to_io_manager_key_fn=(lambda _: "test_io_manager"),
             )
         else:
             ft_cacheable_assets = load_assets_from_fivetran_instance(
                 ft_instance,
                 connector_filter=(lambda _: False) if filter_connector else None,
                 connector_to_asset_key=connector_to_asset_key,
+                io_manager_key="test_io_manager",
             )
         ft_assets = ft_cacheable_assets.build_definitions(
             ft_cacheable_assets.compute_cacheable_data()
         )
+        ft_assets = with_resources(ft_assets, {"test_io_manager": test_io_manager})
 
     if filter_connector:
         assert len(ft_assets) == 0
