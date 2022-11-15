@@ -753,4 +753,5 @@ def load_assets_from_connections(
         ),
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connections=check.iterable_param(connections, "connections", of_type=AirbyteConnection),
+        connection_to_asset_key=connection_to_asset_key,
     )

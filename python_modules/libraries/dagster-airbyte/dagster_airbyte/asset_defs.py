@@ -3,6 +3,7 @@ import inspect
 import os
 import re
 from abc import abstractmethod
+from functools import partial
 from itertools import chain
 from typing import (
     Any,
@@ -68,7 +69,8 @@ def _build_airbyte_asset_defn_metadata(
     )
 
     outputs = {
-        table: AssetKey(asset_key_prefix + table_to_asset_key_fn(table).path) for table in tables
+        table: AssetKey(asset_key_prefix + list(table_to_asset_key_fn(table).path))
+        for table in tables
     }
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
@@ -83,7 +85,7 @@ def _build_airbyte_asset_defn_metadata(
         for base_table, derived_tables in normalization_tables.items():
             for derived_table in derived_tables:
                 internal_deps[derived_table] = {
-                    AssetKey(asset_key_prefix + table_to_asset_key_fn(base_table).path)
+                    AssetKey(asset_key_prefix + list(table_to_asset_key_fn(base_table).path))
                 }
 
     # All non-normalization tables depend on any user-provided upstream assets
@@ -471,7 +473,9 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connection_to_group_fn = connection_to_group_fn
         self._connection_to_io_manager_key_fn = connection_to_io_manager_key_fn
         self._connection_filter = connection_filter
-        self._connection_to_asset_key = connection_to_asset_key
+        self._connection_to_asset_key: Callable[
+            [AirbyteConnectionMetadata, str], AssetKey
+        ] = connection_to_asset_key or (lambda _, table: AssetKey(path=[table]))
 
         contents = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -495,6 +499,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
             )
             schema_by_table_name = _get_schema_by_table_name(stream_table_metadata)
 
+            table_to_asset_key = partial(self._connection_to_asset_key, connection)
             asset_data_for_conn = _build_airbyte_asset_defn_metadata(
                 connection_id=connection_id,
                 destination_tables=list(stream_table_metadata.keys()),
@@ -510,9 +515,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
                 if self._connection_to_io_manager_key_fn
                 else None,
                 schema_by_table_name=schema_by_table_name,
-                table_to_asset_key_fn=(lambda x: self._connection_to_asset_key(connection, x))
-                if self._connection_to_asset_key
-                else (lambda x: AssetKey(path=[x])),
+                table_to_asset_key_fn=table_to_asset_key,
             )
 
             asset_defn_data.append(asset_data_for_conn)
