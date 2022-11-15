@@ -1,7 +1,7 @@
 import pytest
 import responses
 from dagster_airbyte import airbyte_resource
-from dagster_airbyte.asset_defs import load_assets_from_airbyte_instance
+from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
 from dagster import AssetKey, IOManager, asset, build_init_resource_context, io_manager, materialize
 from dagster._core.definitions.metadata import MetadataValue
@@ -21,10 +21,14 @@ from .utils import (
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
 @pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
 @pytest.mark.parametrize("filter_connection", [True, False])
+@pytest.mark.parametrize(
+    "connection_to_asset_key", [None, lambda conn, name: AssetKey([f"{conn.name[0]}_{name}"])]
+)
 def test_load_from_instance(
     use_normalization_tables,
     connection_to_group_fn,
     filter_connection,
+    connection_to_asset_key,
 ):
 
     load_calls = []
@@ -81,6 +85,7 @@ def test_load_from_instance(
             connection_to_group_fn=connection_to_group_fn,
             connection_filter=(lambda _: False) if filter_connection else None,
             connection_to_io_manager_key_fn=(lambda _: "test_io_manager"),
+            connection_to_asset_key=connection_to_asset_key,
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
@@ -88,13 +93,22 @@ def test_load_from_instance(
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_filter=(lambda _: False) if filter_connection else None,
             io_manager_key="test_io_manager",
+            connection_to_asset_key=connection_to_asset_key,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
     ab_assets = with_resources(ab_assets, {"test_io_manager": test_io_manager})
 
-    @asset
-    def downstream_asset(dagster_tags):  # pylint: disable=unused-argument
-        return
+    if connection_to_asset_key:
+
+        @asset
+        def downstream_asset(G_dagster_tags):  # pylint: disable=unused-argument
+            return
+
+    else:
+
+        @asset
+        def downstream_asset(dagster_tags):  # pylint: disable=unused-argument
+            return
 
     all_assets = [downstream_asset] + ab_assets
 
@@ -112,6 +126,17 @@ def test_load_from_instance(
         if use_normalization_tables
         else set()
     )
+
+    if connection_to_asset_key:
+        tables = {
+            connection_to_asset_key(
+                AirbyteConnectionMetadata(
+                    "Github <> snowflake-ben", "", use_normalization_tables, []
+                ),
+                t,
+            ).path[0]
+            for t in tables
+        }
 
     # Check schema metadata is added correctly to asset def
 
@@ -189,4 +214,4 @@ def test_load_from_instance(
     assert len(materializations) == len(tables)
     assert {m.asset_key for m in materializations} == {AssetKey(t) for t in tables}
 
-    assert load_calls == [AssetKey("dagster_tags")]
+    assert load_calls == [AssetKey("G_dagster_tags" if connection_to_asset_key else "dagster_tags")]
