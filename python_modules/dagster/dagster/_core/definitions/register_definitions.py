@@ -29,7 +29,7 @@ class ModuleHasRegisteredDefinitionsError(Exception):
 # scope
 def get_module_name_of_caller() -> str:
     # based on https://stackoverflow.com/questions/2000861/retrieve-module-object-from-stack-frame
-    # two f_backs to get past get_module_name_of_caller frame
+    # three f_backs to get past get_module_name_of_caller and @experimental frame
 
     # Need to do none checking because of:
     # https://docs.python.org/3/library/inspect.html#inspect.currentframe
@@ -39,12 +39,13 @@ def get_module_name_of_caller() -> str:
     # Python stack frame support this function returns None.
 
     frame = check.not_none(inspect.currentframe(), NO_STACK_FRAME_ERROR_MSG)
-    back_frame = check.not_none(frame.f_back, NO_STACK_FRAME_ERROR_MSG)
-    back_back_frame = check.not_none(back_frame.f_back, NO_STACK_FRAME_ERROR_MSG)
-    return back_back_frame.f_globals["__name__"]
+    register_definitions_frame = check.not_none(frame.f_back, NO_STACK_FRAME_ERROR_MSG)
+    experimental_frame = check.not_none(register_definitions_frame.f_back, NO_STACK_FRAME_ERROR_MSG)
+    caller_frame = check.not_none(experimental_frame.f_back, NO_STACK_FRAME_ERROR_MSG)
+    return caller_frame.f_globals["__name__"]
 
 
-# @experimental
+@experimental
 def register_definitions(
     *,
     assets: Optional[

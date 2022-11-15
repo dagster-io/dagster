@@ -36,11 +36,18 @@ def test_include_register_definition_works():
     assert register_definitions
 
 
-def invoke_get_module_name_of_caller():
-    return get_module_name_of_caller()
-
-
 def test_module_name_of_caller():
+
+    # register_definitions is experimental and mark with a decorator
+    # we have to add another level to the stack in order to replicate
+    # the structure for a test case
+
+    def invoke_get_module_name_of_caller():
+        return add_stack_frame_to_mimic_experimental()
+
+    def add_stack_frame_to_mimic_experimental():
+        return get_module_name_of_caller()
+
     test_module_name = invoke_get_module_name_of_caller()
     assert (
         test_module_name == "dagster_tests.core_tests.definitions_tests.test_register_definitions"
