@@ -40,9 +40,10 @@ def _build_fivetran_assets(
 
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
-    tracked_asset_keys = table_to_asset_key_map or {
+    tracked_asset_keys = {
         table: AssetKey([*asset_key_prefix, *table.split(".")]) for table in destination_tables
     }
+    user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
 
     metadata_by_table_name = check.opt_dict_param(
         metadata_by_table_name, "metadata_by_table_name", key_type=str
@@ -52,7 +53,9 @@ def _build_fivetran_assets(
         name=f"fivetran_sync_{connector_id}",
         outs={
             "_".join(key.path): AssetOut(
-                io_manager_key=io_manager_key, key=key, metadata=metadata_by_table_name.get(table)
+                io_manager_key=io_manager_key,
+                key=user_facing_asset_keys[table],
+                metadata=metadata_by_table_name.get(table),
             )
             for table, key in tracked_asset_keys.items()
         },
@@ -180,14 +183,15 @@ class FivetranConnectionMetadata(
         if "schemas" in self.schemas:
             schemas_inner = cast(Dict[str, Any], self.schemas["schemas"])
             for schema in schemas_inner.values():
-                schema_name = schema["name_in_destination"]
-                schema_tables = cast(Dict[str, Dict[str, Any]], schema["tables"])
-                for table in schema_tables.values():
-                    if table["enabled"]:
-                        table_name = table["name_in_destination"]
-                        schema_table_meta[f"{schema_name}.{table_name}"] = metadata_for_table(
-                            table, self.connector_url
-                        )
+                if schema["enabled"]:
+                    schema_name = schema["name_in_destination"]
+                    schema_tables = cast(Dict[str, Dict[str, Any]], schema["tables"])
+                    for table in schema_tables.values():
+                        if table["enabled"]:
+                            table_name = table["name_in_destination"]
+                            schema_table_meta[f"{schema_name}.{table_name}"] = metadata_for_table(
+                                table, self.connector_url
+                            )
         else:
             schema_table_meta[self.name] = {}
 
