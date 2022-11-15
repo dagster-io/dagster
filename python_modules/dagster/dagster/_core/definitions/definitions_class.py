@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, Iterable, Mapping, Optional, Union
+from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
 from dagster._core.execution.with_resources import with_resources
 
