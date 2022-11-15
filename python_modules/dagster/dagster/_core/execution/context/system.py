@@ -794,7 +794,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def step_materializes_assets(self) -> bool:
         step_outputs = self.step.step_outputs
-        if len(step_outputs) != 1:
+        if len(step_outputs) == 0:
             return False
         else:
             asset_info = self.pipeline_def.asset_layer.asset_info_for_output(

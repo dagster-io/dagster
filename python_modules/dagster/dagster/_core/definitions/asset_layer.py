@@ -716,8 +716,15 @@ class AssetLayer:
             and self.source_assets_by_key[asset_key].is_observable
         )
 
+    def is_graph_backed_asset(self, asset_key: AssetKey) -> bool:
+        return isinstance(self.assets_def_for_asset(asset_key).node_def, GraphDefinition)
+
     def op_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
-        return self._assets_defs_by_key[asset_key].op.version
+        return (
+            None
+            if self.is_graph_backed_asset(asset_key)
+            else self._assets_defs_by_key[asset_key].op.version
+        )
 
     def metadata_for_asset(self, asset_key: AssetKey) -> Optional[MetadataUserInput]:
         if asset_key in self._source_assets_by_key:
