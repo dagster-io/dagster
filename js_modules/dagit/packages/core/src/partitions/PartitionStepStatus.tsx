@@ -16,7 +16,7 @@ import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
-import {PartitionHealthData} from '../assets/PartitionHealthSummary';
+import {PartitionHealthData} from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
@@ -28,6 +28,7 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionRunList} from './PartitionRunList';
+import {PartitionState} from './PartitionStatus';
 import {
   BOX_SIZE,
   GridColumn,
@@ -92,9 +93,10 @@ export const PartitionPerAssetStatus: React.FC<
 > = ({assetHealth, partitionNames, assetQueryItems, ...rest}) => {
   const healthByAssetKey = keyBy(assetHealth, (a) => tokenForAssetKey(a.assetKey));
 
+  const timeDimensionIdx = 0;
   const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
   const layoutBoxesWithPartitions = layout.boxes.filter(
-    (b) => healthByAssetKey[b.node.name].timeline.keys.length,
+    (b) => healthByAssetKey[b.node.name].dimensions[timeDimensionIdx].partitionKeys.length,
   );
 
   const data: MatrixData = {
@@ -105,16 +107,20 @@ export const PartitionPerAssetStatus: React.FC<
       finalFailurePercent: 0,
     })),
     partitions: [],
-    partitionColumns: partitionNames.map((p, idx) => ({
-      steps: layoutBoxesWithPartitions.map((a) => ({
-        name: a.node.name,
-        color: healthByAssetKey[a.node.name].timeline.statusByPartition[p] ? 'SUCCESS' : 'MISSING',
-        unix: 0,
-      })),
+    partitionColumns: partitionNames.map((partitionName, idx) => ({
       idx,
-      name: p,
+      name: partitionName,
       runsLoaded: true,
       runs: [],
+      steps: layoutBoxesWithPartitions.map((a) => ({
+        name: a.node.name,
+        color:
+          healthByAssetKey[a.node.name].stateForSingleDimension(timeDimensionIdx, partitionName) ===
+          PartitionState.SUCCESS
+            ? 'SUCCESS'
+            : 'MISSING',
+        unix: 0,
+      })),
     })),
   };
 

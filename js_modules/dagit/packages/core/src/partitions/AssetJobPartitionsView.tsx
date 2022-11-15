@@ -3,7 +3,8 @@ import React from 'react';
 
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
-import {usePartitionHealthData} from '../assets/PartitionHealthSummary';
+import {mergedAssetHealth, explodePartitionKeysInRanges} from '../assets/MultipartitioningSupport';
+import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {useViewport} from '../gantt/useViewport';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -34,22 +35,20 @@ export const AssetJobPartitionsView: React.FC<{
   const partitionNames = Array.from(
     new Set<string>(assetHealth.flatMap((a) => a.dimensions[0].partitionKeys)),
   );
-  const jobHealth = React.useMemo(
-    () =>
-      Object.fromEntries(
-        partitionNames.map((p) => [
-          p,
-          assetHealth.every((asset) =>
-            p in asset.timeline.statusByPartition
-              ? asset.timeline.statusByPartition[p] === true
-              : true,
-          )
-            ? PartitionState.SUCCESS
-            : PartitionState.MISSING,
-        ]),
-      ),
-    [assetHealth, partitionNames],
-  );
+
+  // TODO BG: This page will break if the job has assets with different partition sets
+
+  const {total, missing, merged} = React.useMemo(() => {
+    const merged = mergedAssetHealth(assetHealth);
+    const ranges = merged.dimensions.map((d) => ({selected: d.partitionKeys, dimension: d}));
+    const allKeys = explodePartitionKeysInRanges(ranges, merged.stateForKey);
+
+    return {
+      merged,
+      total: allKeys.length,
+      missing: allKeys.filter((p) => p.state === PartitionState.MISSING).length,
+    };
+  }, [assetHealth]);
 
   const [pageSize, setPageSize] = React.useState(60);
   const [offset, setOffset] = React.useState<number>(0);
@@ -96,17 +95,14 @@ export const AssetJobPartitionsView: React.FC<{
         border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
         padding={{left: 8}}
       >
-        <CountBox count={partitionNames.length} label="Total partitions" />
-        <CountBox
-          count={partitionNames.filter((x) => jobHealth[x] === PartitionState.MISSING).length}
-          label="Missing partitions"
-        />
+        <CountBox count={total} label="Total partitions" />
+        <CountBox count={missing} label="Missing partitions" />
       </Box>
       <Box padding={{vertical: 16, horizontal: 24}}>
         <div {...containerProps}>
           <PartitionStatus
             partitionNames={partitionNames}
-            partitionData={jobHealth}
+            partitionStateForKey={(key) => merged.stateForSingleDimension(0, key)}
             selected={showAssets ? selectedPartitions : undefined}
             selectionWindowSize={pageSize}
             onClick={(partitionName) => {

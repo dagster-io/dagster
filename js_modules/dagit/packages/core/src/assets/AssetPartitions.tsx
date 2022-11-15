@@ -1,4 +1,4 @@
-import {Box, Colors, Spinner} from '@dagster-io/ui';
+import {Box, Colors, Icon, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
@@ -12,12 +12,14 @@ import {AssetPartitionList} from './AssetPartitionList';
 import {AssetViewParams} from './AssetView';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
-import {assetHealthToPartitionStatus} from './LaunchAssetChoosePartitionsDialog';
-import {usePartitionHealthData} from './PartitionHealthSummary';
+import {explodePartitionKeysInRanges, isTimeseriesPartition} from './MultipartitioningSupport';
 import {AssetKey} from './types';
+import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
+import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 
 interface Props {
   assetKey: AssetKey;
+  assetPartitionNames?: string[];
   liveData?: LiveDataForNode;
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
@@ -31,37 +33,58 @@ interface Props {
   opName?: string | null;
 }
 
-export const AssetPartitions: React.FC<Props> = ({assetKey, params, setParams, liveData}) => {
+export const AssetPartitions: React.FC<Props> = ({
+  assetKey,
+  assetPartitionNames,
+  params,
+  setParams,
+  liveData,
+}) => {
   const [assetHealth] = usePartitionHealthData([assetKey]);
-  const partitionNames = React.useMemo(() => assetHealth?.keys || [], [assetHealth]);
-  const partitionStatusData = React.useMemo(() => assetHealthToPartitionStatus([assetHealth]), [
-    assetHealth,
-  ]);
+  const [ranges, setRanges] = usePartitionDimensionRanges(assetHealth, assetPartitionNames, 'view');
 
-  const [rangePartitionKeys, setRangePartitionKeys] = React.useState<string[]>([]);
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
+    PartitionState.SUCCESS_MISSING,
     PartitionState.SUCCESS,
   ]);
 
-  React.useEffect(() => {
-    setRangePartitionKeys(partitionNames);
-  }, [partitionNames]);
+  const timeRangeIdx = ranges.findIndex((r) => isTimeseriesPartition(r.dimension.partitionKeys[0]));
+  const timeRange = timeRangeIdx !== -1 ? ranges[timeRangeIdx] : null;
 
-  const selectedPartitionKeys = React.useMemo(() => {
-    return rangePartitionKeys.filter((r) => stateFilters.includes(partitionStatusData[r]));
-  }, [rangePartitionKeys, stateFilters, partitionStatusData]);
+  const allInRanges = React.useMemo(() => {
+    return assetHealth ? explodePartitionKeysInRanges(ranges, assetHealth.stateForKey) : [];
+  }, [ranges, assetHealth]);
 
-  const onKeyDown = (e: React.KeyboardEvent<any>) => {
-    const shift = {ArrowDown: 1, ArrowUp: -1}[e.key];
-    if (!shift || !params.partition || e.isDefaultPrevented()) {
-      return;
+  const allSelected = React.useMemo(
+    () => allInRanges.filter((p) => stateFilters.includes(p.state)),
+    [allInRanges, stateFilters],
+  );
+
+  const focusedDimensionKeys = params.partition
+    ? ranges.length > 1
+      ? params.partition.split('|').filter(Boolean)
+      : [params.partition] // "|" character is allowed in 1D partition keys for historical reasons
+    : [];
+
+  const partitionRowsForRange = (range: PartitionHealthDimensionRange, idx: number) => {
+    if (timeRange && timeRange.selected.length === 0) {
+      return [];
     }
-    const next = selectedPartitionKeys[selectedPartitionKeys.indexOf(params.partition) + shift];
-    if (next) {
-      e.preventDefault();
-      setParams({...params, partition: next});
-    }
+    const dimensionKeys = isTimeseriesPartition(range.selected[0])
+      ? [...range.selected].reverse()
+      : range.selected;
+
+    return dimensionKeys
+      .map((dimensionKey) => {
+        const state =
+          focusedDimensionKeys.length >= idx
+            ? assetHealth.stateForPartialKey([...focusedDimensionKeys.slice(0, idx), dimensionKey])
+            : assetHealth.stateForSingleDimension(idx, dimensionKey, ranges[idx - 1]?.selected);
+
+        return {dimensionKey, state};
+      })
+      .filter((row) => stateFilters.includes(row.state));
   };
 
   return (
@@ -75,63 +98,83 @@ export const AssetPartitions: React.FC<Props> = ({assetKey, params, setParams, l
         liveData={liveData}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       />
-      <Box
-        padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        <PartitionRangeWizard
-          all={partitionNames}
-          partitionData={partitionStatusData}
-          selected={rangePartitionKeys}
-          setSelected={setRangePartitionKeys}
-        />
-      </Box>
+      {timeRange && (
+        <Box
+          padding={{vertical: 16, horizontal: 24}}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        >
+          <PartitionRangeWizard
+            partitionKeys={timeRange.dimension.partitionKeys}
+            partitionStateForKey={(dimensionKey) =>
+              assetHealth.stateForSingleDimension(timeRangeIdx, dimensionKey)
+            }
+            selected={timeRange.selected}
+            setSelected={(selected) =>
+              setRanges(ranges.map((r) => (r === timeRange ? {...r, selected} : r)))
+            }
+          />
+        </Box>
+      )}
 
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between'}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       >
-        <div>{selectedPartitionKeys.length.toLocaleString()} Partitions Selected</div>
+        <div>{allSelected.length.toLocaleString()} Partitions Selected</div>
         <PartitionStateCheckboxes
-          allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
+          partitionKeysForCounts={allInRanges}
+          allowed={[PartitionState.MISSING, PartitionState.SUCCESS_MISSING, PartitionState.SUCCESS]}
           value={stateFilters}
           onChange={setStateFilters}
-          partitionData={partitionStatusData}
-          partitionKeysForCounts={selectedPartitionKeys}
         />
       </Box>
-      <Box
-        style={{flex: 1, minHeight: 0, outline: 'none'}}
-        flex={{direction: 'row'}}
-        onKeyDown={onKeyDown}
-        tabIndex={-1}
-      >
-        <Box
-          style={{display: 'flex', flex: 1}}
-          flex={{direction: 'column'}}
-          background={Colors.Gray50}
-        >
-          {!assetHealth ? (
-            <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
-              <Spinner purpose="section" />
-            </Box>
-          ) : (
-            <AssetPartitionList
-              partitionKeys={selectedPartitionKeys}
-              partitionStatusData={partitionStatusData}
-              focused={params.partition}
-              setFocused={(partition) => setParams({...params, partition})}
-            />
-          )}
-        </Box>
+      <Box style={{flex: 1, minHeight: 0, outline: 'none'}} flex={{direction: 'row'}} tabIndex={-1}>
+        {ranges.map((range, idx) => (
+          <Box
+            key={range.dimension.name}
+            style={{display: 'flex', flex: 1, paddingRight: 1}}
+            flex={{direction: 'column'}}
+            border={{side: 'right', color: Colors.KeylineGray, width: 1}}
+            background={Colors.Gray50}
+          >
+            {range.dimension.name !== 'default' && (
+              <Box
+                padding={{horizontal: 24, vertical: 8}}
+                flex={{gap: 8, alignItems: 'center'}}
+                background={Colors.White}
+                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+              >
+                <Icon name="partition_dimension" />
+                <Subheading>{range.dimension.name}</Subheading>
+              </Box>
+            )}
 
-        <Box
-          style={{flex: 3}}
-          flex={{direction: 'column'}}
-          border={{side: 'left', color: Colors.KeylineGray, width: 1}}
-        >
-          {params.partition ? (
+            {!assetHealth ? (
+              <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
+                <Spinner purpose="section" />
+              </Box>
+            ) : (
+              <AssetPartitionList
+                partitions={partitionRowsForRange(range, idx)}
+                focusedDimensionKey={focusedDimensionKeys[idx]}
+                setFocusedDimensionKey={(dimensionKey) => {
+                  if (focusedDimensionKeys.length < idx) {
+                    return;
+                  }
+                  const partition = [...focusedDimensionKeys.slice(0, idx), dimensionKey].join('|');
+                  setParams({
+                    ...params,
+                    partition,
+                  });
+                }}
+              />
+            )}
+          </Box>
+        ))}
+
+        <Box style={{flex: 3}} flex={{direction: 'column'}}>
+          {params.partition && focusedDimensionKeys.length === ranges.length ? (
             <AssetPartitionDetailLoader assetKey={assetKey} partitionKey={params.partition} />
           ) : (
             <AssetPartitionDetailEmpty />

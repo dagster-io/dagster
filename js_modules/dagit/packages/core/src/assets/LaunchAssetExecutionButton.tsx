@@ -428,6 +428,9 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     partitionDefinition {
       description
     }
+    partitionKeysByDimension {
+      name
+    }
     assetKey {
       path
     }

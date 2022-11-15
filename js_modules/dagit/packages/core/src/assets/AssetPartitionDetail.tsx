@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Group, Heading, Icon, Mono, Subheading, Tag} from '@dagster-io/ui';
+import {Box, Colors, Group, Heading, Icon, Mono, Spinner, Subheading, Tag} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -35,7 +35,7 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
   );
 
   if (result.loading || !result.data) {
-    return <AssetPartitionDetailEmpty />;
+    return <AssetPartitionDetailEmpty partitionKey={props.partitionKey} />;
   }
 
   const events =
@@ -79,7 +79,8 @@ const ASSET_PARTITION_DETAIL_QUERY = gql`
 export const AssetPartitionDetail: React.FC<{
   group: AssetEventGroup;
   hasLineage: boolean;
-}> = ({group, hasLineage}) => {
+  hasLoadingState?: boolean;
+}> = ({group, hasLineage, hasLoadingState}) => {
   const {latest, partition, all} = group;
   const run = latest?.runOrError?.__typename === 'Run' ? latest.runOrError : null;
   const repositoryOrigin = run?.repositoryOrigin;
@@ -104,9 +105,15 @@ export const AssetPartitionDetail: React.FC<{
         flex={{alignItems: 'center'}}
       >
         {partition ? (
-          <Box flex={{gap: 12}}>
+          <Box flex={{gap: 12, alignItems: 'center'}}>
             <Heading>{partition}</Heading>
-            {latest ? <Tag intent="success">Materialized</Tag> : <Tag intent="none">Missing</Tag>}
+            {hasLoadingState ? (
+              <Spinner purpose="body-text" />
+            ) : latest ? (
+              <Tag intent="success">Materialized</Tag>
+            ) : (
+              <Tag intent="none">Missing</Tag>
+            )}
           </Box>
         ) : (
           <Heading color={Colors.Gray400}>No Partition Selected</Heading>
@@ -188,9 +195,10 @@ export const AssetPartitionDetail: React.FC<{
   );
 };
 
-export const AssetPartitionDetailEmpty = () => (
+export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string}) => (
   <AssetPartitionDetail
-    group={{all: [], latest: null, timestamp: '0', partition: undefined}}
+    group={{all: [], latest: null, timestamp: '0', partition: partitionKey}}
     hasLineage={false}
+    hasLoadingState
   />
 );

@@ -284,13 +284,15 @@ class GrapheneAssetNode(graphene.ObjectType):
         external_multipartitions_def = cast(
             ExternalMultiPartitionsDefinitionData, self._external_asset_node.partitions_def_data
         )
-        static_dimensions = [
+        time_dimensions = [
             dim
             for dim in external_multipartitions_def.external_partition_dimension_definitions
-            if isinstance(dim.external_partitions_def_data, ExternalStaticPartitionsDefinitionData)
+            if isinstance(
+                dim.external_partitions_def_data, ExternalTimeWindowPartitionsDefinitionData
+            )
         ]
-        if len(static_dimensions) == 1:
-            return next(iter(static_dimensions)).name
+        if len(time_dimensions) == 1:
+            return next(iter(time_dimensions)).name
 
         return next(
             iter(external_multipartitions_def.external_partition_dimension_definitions)

@@ -1,24 +1,20 @@
-import {Box, Colors, Icon, Tag} from '@dagster-io/ui';
+import {Box, Colors, Icon} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {PartitionState} from '../partitions/PartitionStatus';
+import {PartitionState, partitionStateToColor} from '../partitions/PartitionStatus';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
-// This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
-
 export const AssetPartitionList: React.FC<{
-  partitionStatusData: {[name: string]: PartitionState};
-  partitionKeys: string[];
-  focused?: string;
-  setFocused?: (assetKey: string | undefined) => void;
-}> = ({partitionKeys, focused, setFocused, partitionStatusData}) => {
+  partitions: {dimensionKey: string; state: PartitionState}[];
+  focusedDimensionKey?: string;
+  setFocusedDimensionKey?: (dimensionKey: string | undefined) => void;
+}> = ({focusedDimensionKey, setFocusedDimensionKey, partitions}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const focusedRowRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
-    count: partitionKeys.length,
+    count: partitions.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 36,
     overscan: 10,
@@ -27,26 +23,41 @@ export const AssetPartitionList: React.FC<{
   const items = rowVirtualizer.getVirtualItems();
 
   React.useEffect(() => {
-    if (focusedRowRef.current) {
-      const el = focusedRowRef.current;
-      if (el && el instanceof HTMLElement && 'scrollIntoView' in el) {
-        el.scrollIntoView({block: 'nearest'});
-      }
+    if (focusedDimensionKey) {
+      rowVirtualizer.scrollToIndex(
+        partitions.findIndex((p) => p.dimensionKey === focusedDimensionKey),
+        {smoothScroll: false, align: 'auto'},
+      );
     }
-  }, [focused]);
+  }, [focusedDimensionKey, rowVirtualizer, partitions]);
 
   return (
-    <Container ref={parentRef}>
+    <Container
+      ref={parentRef}
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        const shift = {ArrowDown: 1, ArrowUp: -1}[e.key];
+        if (!setFocusedDimensionKey || !shift || !focusedDimensionKey || e.isDefaultPrevented()) {
+          return;
+        }
+        const nextIdx = partitions.findIndex((p) => p.dimensionKey === focusedDimensionKey) + shift;
+        const next = partitions[nextIdx];
+        if (next) {
+          e.preventDefault();
+          setFocusedDimensionKey(next.dimensionKey);
+        }
+      }}
+    >
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
-          const partitionKey = partitionKeys[index];
+          const {dimensionKey, state} = partitions[index];
+
           return (
             <ClickableRow
               key={key}
               $height={size}
               $start={start}
-              $focused={partitionKey === focused}
-              ref={partitionKey === focused ? focusedRowRef : undefined}
+              $focused={dimensionKey === focusedDimensionKey}
               onClick={(e) => {
                 // If you're interacting with something in the row, don't trigger a focus change.
                 // Since focus is stored in the URL bar this overwrites any link click navigation.
@@ -54,7 +65,9 @@ export const AssetPartitionList: React.FC<{
                 if (e.target instanceof HTMLElement && e.target.closest('a')) {
                   return;
                 }
-                setFocused?.(focused !== partitionKey ? partitionKey : undefined);
+                setFocusedDimensionKey?.(
+                  focusedDimensionKey !== dimensionKey ? dimensionKey : undefined,
+                );
               }}
             >
               <Box
@@ -63,10 +76,7 @@ export const AssetPartitionList: React.FC<{
                 flex={{direction: 'column', justifyContent: 'center', gap: 8}}
                 border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
               >
-                <AssetPartitionListRow
-                  partitionKey={partitionKey}
-                  state={partitionStatusData[partitionKey]}
-                />
+                <AssetPartitionListRow dimensionKey={dimensionKey} state={state} />
               </Box>
             </ClickableRow>
           );
@@ -91,20 +101,34 @@ const ClickableRow = styled(Row)<{$focused: boolean}>`
     `}
 `;
 
-const AssetPartitionListRow: React.FC<{partitionKey: string; state: PartitionState}> = ({
-  partitionKey,
+const AssetPartitionListRow: React.FC<{dimensionKey: string; state: PartitionState}> = ({
+  dimensionKey,
   state,
 }) => {
   return (
-    <Box flex={{gap: 4, direction: 'row', alignItems: 'flex-start'}}>
+    <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
       <Icon name="partition" />
-      {partitionKey}
+      {dimensionKey}
       <div style={{flex: 1}} />
-      {state === PartitionState.MISSING ? (
-        <Tag intent="none">Missing</Tag>
-      ) : (
-        <Tag intent="success">Materialized</Tag>
+      {(state === PartitionState.SUCCESS_MISSING || state === PartitionState.SUCCESS) && (
+        <StateDot state={PartitionState.SUCCESS} />
+      )}
+      {(state === PartitionState.SUCCESS_MISSING || state === PartitionState.MISSING) && (
+        <StateDot state={PartitionState.MISSING} />
       )}
     </Box>
   );
 };
+
+const StateDot = ({state}: {state: PartitionState}) => (
+  <div
+    key={state}
+    style={{
+      width: 10,
+      height: 10,
+      borderRadius: '100%',
+      marginLeft: -5,
+      background: partitionStateToColor(state),
+    }}
+  />
+);

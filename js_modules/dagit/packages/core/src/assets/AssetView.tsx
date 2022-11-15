@@ -239,6 +239,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : selectedTab === 'partitions' && flagNewAssetDetails ? (
             <AssetPartitions
               assetKey={assetKey}
+              assetPartitionNames={definition?.partitionKeysByDimension.map((k) => k.name)}
               assetLastMaterializedAt={lastMaterializedAt}
               params={params}
               paramsTimeWindowOnly={!!params.asOf}
@@ -374,6 +375,9 @@ const ASSET_VIEW_DEFINITION_QUERY = gql`
           groupName
           partitionDefinition {
             description
+          }
+          partitionKeysByDimension {
+            name
           }
           repository {
             id

@@ -1,7 +1,6 @@
 import {Box, ButtonGroup, Colors, NonIdealState, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {RepositorySelector} from '../types/globalTypes';
 

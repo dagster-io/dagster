@@ -12,9 +12,10 @@ import {
   metadataForAssetNode,
 } from '../assets/AssetMetadata';
 import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary';
-import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
+import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
+import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';

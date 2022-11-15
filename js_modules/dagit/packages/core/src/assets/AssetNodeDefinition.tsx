@@ -27,7 +27,6 @@ import {
   metadataForAssetNode,
 } from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
-import {PartitionHealthSummary, usePartitionHealthData} from './PartitionHealthSummary';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
@@ -36,7 +35,6 @@ export const AssetNodeDefinition: React.FC<{
   downstream: AssetGraphQuery_assetNodes[] | null;
   liveDataByNode: LiveData;
 }> = ({assetNode, upstream, downstream, liveDataByNode}) => {
-  const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
 
   const assetConfigSchema = assetNode.configField?.configType;
@@ -75,24 +73,6 @@ export const AssetNodeDefinition: React.FC<{
               maxHeight={260}
             />
           </Box>
-          {assetNode.partitionDefinition && (
-            <>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-                flex={{justifyContent: 'space-between', gap: 8}}
-              >
-                <Subheading>Partitions</Subheading>
-              </Box>
-              <Box
-                padding={{top: 16, horizontal: 24, bottom: 24}}
-                flex={{direction: 'column', gap: 16}}
-              >
-                <p>{assetNode.partitionDefinition.description}</p>
-                <PartitionHealthSummary assetKey={assetNode.assetKey} data={partitionHealthData} />
-              </Box>
-            </>
-          )}
 
           <Box
             padding={{vertical: 16, horizontal: 24}}

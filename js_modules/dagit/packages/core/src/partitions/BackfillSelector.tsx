@@ -2,7 +2,6 @@ import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  Button,
   ButtonLink,
   Checkbox,
   Colors,
@@ -14,6 +13,7 @@ import {
   Spinner,
   Tooltip,
   Mono,
+  Button,
 } from '@dagster-io/ui';
 import {History} from 'history';
 import * as React from 'react';
@@ -178,12 +178,16 @@ export const BackfillPartitionSelector: React.FC<{
             <PartitionRangeWizard
               selected={range}
               setSelected={setRange}
-              all={partitionNames}
-              partitionData={partitionData}
+              partitionStateForKey={(name) => partitionData[name]}
+              partitionKeys={partitionNames}
             />
 
             <PartitionStateCheckboxes
               value={stateFilters}
+              partitionKeysForCounts={range.map((key) => ({
+                partitionKey: key,
+                state: partitionData[key],
+              }))}
               allowed={
                 options.fromFailure
                   ? [PartitionState.FAILURE]
@@ -196,8 +200,6 @@ export const BackfillPartitionSelector: React.FC<{
                     ]
               }
               onChange={setStateFilters}
-              partitionData={partitionData}
-              partitionKeysForCounts={range}
             />
           </Section>
 

@@ -42,7 +42,7 @@ export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
 
 export const PartitionStatus: React.FC<{
   partitionNames: string[];
-  partitionData: {[name: string]: PartitionState};
+  partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState;
   selected?: string[];
   small?: boolean;
   onClick?: (partitionName: string) => void;
@@ -53,7 +53,7 @@ export const PartitionStatus: React.FC<{
   selectionWindowSize?: number;
 }> = ({
   partitionNames,
-  partitionData,
+  partitionStateForKey,
   selected,
   onSelect,
   onClick,
@@ -128,8 +128,18 @@ export const PartitionStatus: React.FC<{
     ? assembleIntoSpans(partitionNames, (key) => selected.includes(key)).filter((s) => s.status)
     : [];
   const spans = splitPartitions
-    ? partitionNames.map((name, idx) => ({startIdx: idx, endIdx: idx, status: partitionData[name]}))
-    : _partitionsToSpans(partitionNames, partitionData);
+    ? partitionNames.map((name, idx) => ({
+        startIdx: idx,
+        endIdx: idx,
+        status: partitionStateForKey(name, idx),
+      }))
+    : _partitionsToSpans(
+        partitionNames,
+        Object.fromEntries(
+          partitionNames.map((name, idx) => [name, partitionStateForKey(name, idx)]),
+        ),
+      );
+
   const highestIndex = spans.map((s) => s.endIdx).reduce((prev, cur) => Math.max(prev, cur), 0);
   const indexToPct = (idx: number) => `${((idx * 100) / partitionNames.length).toFixed(3)}%`;
   const showSeparators =
@@ -209,7 +219,7 @@ export const PartitionStatus: React.FC<{
                   width: '100%',
                   height: 24,
                   outline: 'none',
-                  background: _statusToColor(s.status),
+                  background: partitionStateToColor(s.status),
                 }}
                 title={tooltipMessage}
               />
@@ -234,7 +244,7 @@ export const PartitionStatus: React.FC<{
                     width: '100%',
                     height: 24,
                     outline: 'none',
-                    background: _statusToColor(s.status),
+                    background: partitionStateToColor(s.status),
                   }}
                 />
               </Tooltip>
@@ -380,10 +390,12 @@ function _partitionsToSpans(keys: string[], keyStatus: {[key: string]: Partition
   return spans;
 }
 
-const _statusToColor = (status: PartitionState) => {
+export const partitionStateToColor = (status: PartitionState) => {
   switch (status) {
     case PartitionState.SUCCESS:
       return Colors.Green500;
+    case PartitionState.SUCCESS_MISSING:
+      return Colors.Green200;
     case PartitionState.FAILURE:
       return Colors.Red500;
     case PartitionState.STARTED:
@@ -399,6 +411,8 @@ export const partitionStatusToText = (status: PartitionState) => {
   switch (status) {
     case PartitionState.SUCCESS:
       return 'Completed';
+    case PartitionState.SUCCESS_MISSING:
+      return 'Partial';
     case PartitionState.FAILURE:
       return 'Failed';
     case PartitionState.STARTED:
