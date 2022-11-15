@@ -24,7 +24,65 @@ from dagster._core.definitions.load_assets_from_modules import with_group
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import build_init_resource_context
-from dagster._core.execution.with_resources import with_resources
+
+
+def _build_fivetran_assets(
+    connector_id: str,
+    destination_tables: Sequence[str],
+    poll_interval: float = DEFAULT_POLL_INTERVAL,
+    poll_timeout: Optional[float] = None,
+    io_manager_key: Optional[str] = None,
+    asset_key_prefix: Optional[Sequence[str]] = None,
+    metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
+    table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+) -> Sequence[AssetsDefinition]:
+
+    asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+
+    tracked_asset_keys = table_to_asset_key_map or {
+        table: AssetKey([*asset_key_prefix, *table.split(".")]) for table in destination_tables
+    }
+
+    metadata_by_table_name = check.opt_dict_param(
+        metadata_by_table_name, "metadata_by_table_name", key_type=str
+    )
+
+    @multi_asset(
+        name=f"fivetran_sync_{connector_id}",
+        outs={
+            "_".join(key.path): AssetOut(
+                io_manager_key=io_manager_key, key=key, metadata=metadata_by_table_name.get(table)
+            )
+            for table, key in tracked_asset_keys.items()
+        },
+        required_resource_keys={"fivetran"},
+        compute_kind="fivetran",
+        resource_defs=resource_defs,
+    )
+    def _assets(context):
+        fivetran_output = context.resources.fivetran.sync_and_poll(
+            connector_id=connector_id,
+            poll_interval=poll_interval,
+            poll_timeout=poll_timeout,
+        )
+        for materialization in generate_materializations(
+            fivetran_output, asset_key_prefix=asset_key_prefix
+        ):
+            # scan through all tables actually created, if it was expected then emit an Output.
+            # otherwise, emit a runtime AssetMaterialization
+            if materialization.asset_key in tracked_asset_keys.values():
+                yield Output(
+                    value=None,
+                    output_name="_".join(materialization.asset_key.path),
+                    metadata={
+                        entry.label: entry.entry_data for entry in materialization.metadata_entries
+                    },
+                )
+            else:
+                yield materialization
+
+    return [_assets]
 
 
 @experimental
@@ -36,7 +94,6 @@ def build_fivetran_assets(
     io_manager_key: Optional[str] = None,
     asset_key_prefix: Optional[Sequence[str]] = None,
     metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
-    table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
 ) -> Sequence[AssetsDefinition]:
 
     """
@@ -89,51 +146,15 @@ def build_fivetran_assets(
             )
 
     """
-
-    asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
-
-    tracked_asset_keys = table_to_asset_key_map or {
-        table: AssetKey([*asset_key_prefix, *table.split(".")]) for table in destination_tables
-    }
-
-    metadata_by_table_name = check.opt_dict_param(
-        metadata_by_table_name, "metadata_by_table_name", key_type=str
+    return _build_fivetran_assets(
+        connector_id=connector_id,
+        destination_tables=destination_tables,
+        poll_interval=poll_interval,
+        poll_timeout=poll_timeout,
+        io_manager_key=io_manager_key,
+        asset_key_prefix=asset_key_prefix,
+        metadata_by_table_name=metadata_by_table_name,
     )
-
-    @multi_asset(
-        name=f"fivetran_sync_{connector_id}",
-        outs={
-            "_".join(key.path): AssetOut(
-                io_manager_key=io_manager_key, key=key, metadata=metadata_by_table_name.get(table)
-            )
-            for table, key in tracked_asset_keys.items()
-        },
-        required_resource_keys={"fivetran"},
-        compute_kind="fivetran",
-    )
-    def _assets(context):
-        fivetran_output = context.resources.fivetran.sync_and_poll(
-            connector_id=connector_id,
-            poll_interval=poll_interval,
-            poll_timeout=poll_timeout,
-        )
-        for materialization in generate_materializations(
-            fivetran_output, asset_key_prefix=asset_key_prefix
-        ):
-            # scan through all tables actually created, if it was expected then emit an Output.
-            # otherwise, emit a runtime AssetMaterialization
-            if materialization.asset_key in tracked_asset_keys.values():
-                yield Output(
-                    value=None,
-                    output_name="_".join(materialization.asset_key.path),
-                    metadata={
-                        entry.label: entry.entry_data for entry in materialization.metadata_entries
-                    },
-                )
-            else:
-                yield materialization
-
-    return [_assets]
 
 
 class FivetranConnectionMetadata(
@@ -194,13 +215,14 @@ class FivetranConnectionMetadata(
 
 def _build_fivetran_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
+    resource_defs: Mapping[str, ResourceDefinition],
 ) -> AssetsDefinition:
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connector_id = cast(str, metadata["connector_id"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
 
     return with_group(
-        build_fivetran_assets(
+        _build_fivetran_assets(
             connector_id=connector_id,
             destination_tables=list(
                 assets_defn_meta.keys_by_output_name.keys()
@@ -213,6 +235,7 @@ def _build_fivetran_assets_from_metadata(
             ),
             io_manager_key=io_manager_key,
             table_to_asset_key_map=assets_defn_meta.keys_by_output_name,
+            resource_defs=resource_defs,
         ),
         assets_defn_meta.group_name,
     )[0]
@@ -306,10 +329,10 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
-        return with_resources(
-            [_build_fivetran_assets_from_metadata(meta) for meta in data],
-            {"fivetran": self._fivetran_resource_def},
-        )
+        return [
+            _build_fivetran_assets_from_metadata(meta, {"fivetran": self._fivetran_resource_def})
+            for meta in data
+        ]
 
 
 def _clean_name(name: str) -> str:

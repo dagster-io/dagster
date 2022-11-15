@@ -81,7 +81,7 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
                 connector_to_group_fn=connector_to_group_fn,
                 connector_filter=(lambda _: False) if filter_connector else None,
                 connector_to_asset_key=connector_to_asset_key,
-                connection_to_io_manager_key_fn=(lambda _: "test_io_manager"),
+                connector_to_io_manager_key_fn=(lambda _: "test_io_manager"),
             )
         else:
             ft_cacheable_assets = load_assets_from_fivetran_instance(
