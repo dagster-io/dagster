@@ -96,7 +96,7 @@ export const PartitionPerAssetStatus: React.FC<
   const timeDimensionIdx = 0;
   const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
   const layoutBoxesWithPartitions = layout.boxes.filter(
-    (b) => healthByAssetKey[b.node.name].dimensions[timeDimensionIdx].partitionKeys.length,
+    (b) => !!healthByAssetKey[b.node.name].dimensions[timeDimensionIdx],
   );
 
   const data: MatrixData = {
@@ -114,12 +114,10 @@ export const PartitionPerAssetStatus: React.FC<
       runs: [],
       steps: layoutBoxesWithPartitions.map((a) => ({
         name: a.node.name,
-        color:
-          healthByAssetKey[a.node.name].stateForSingleDimension(timeDimensionIdx, partitionName) ===
-          PartitionState.SUCCESS
-            ? 'SUCCESS'
-            : 'MISSING',
         unix: 0,
+        color: partitionStateToStatusSquareColor(
+          healthByAssetKey[a.node.name].stateForSingleDimension(timeDimensionIdx, partitionName),
+        ),
       })),
     })),
   };
@@ -132,6 +130,14 @@ export const PartitionPerAssetStatus: React.FC<
       showLatestRun={false}
     />
   );
+};
+
+export const partitionStateToStatusSquareColor = (state: PartitionState) => {
+  return state === PartitionState.SUCCESS
+    ? 'SUCCESS'
+    : state === PartitionState.SUCCESS_MISSING
+    ? 'SUCCESS-MISSING'
+    : 'MISSING';
 };
 
 export const PartitionPerOpStatus: React.FC<

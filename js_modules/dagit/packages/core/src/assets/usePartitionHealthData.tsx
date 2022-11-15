@@ -75,7 +75,7 @@ async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: Asset
         ]),
   );
 
-  const stateForKey = (dimensionKeys: string[]) =>
+  const stateForKey = (dimensionKeys: string[]): PartitionState =>
     dimensionKeys.reduce((counts, dimensionKey) => counts[dimensionKey], stateByKey);
 
   const stateForSingleDimension = (

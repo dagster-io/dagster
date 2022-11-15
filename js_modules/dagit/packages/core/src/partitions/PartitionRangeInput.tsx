@@ -20,7 +20,7 @@ export const PartitionRangeInput: React.FC<{
 
   const placeholder = React.useMemo(() => {
     return placeholderForPartitions(partitionKeys, isTimeseries);
-  }, [partitionKeys]);
+  }, [partitionKeys, isTimeseries]);
 
   const tryCommit = (e: React.SyntheticEvent<HTMLInputElement>) => {
     try {

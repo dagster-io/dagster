@@ -9,7 +9,9 @@ import {
   DialogFooter,
   Tooltip,
   Colors,
+  Alert,
 } from '@dagster-io/ui';
+import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 
@@ -30,6 +32,7 @@ import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
 } from '../launchpad/types/ConfigPartitionSelectionQuery';
+import {assembleIntoSpans, stringForSpan} from '../partitions/PartitionRangeInput';
 import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
@@ -44,7 +47,7 @@ import {
   LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension,
 } from './types/LaunchAssetExecutionAssetNodeFragment';
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
-import {usePartitionHealthData} from './usePartitionHealthData';
+import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
 
 interface Props {
@@ -94,6 +97,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   assets,
   repoAddress,
   assetJobName,
+  upstreamAssetKeys,
 }) => {
   const {canLaunchPartitionBackfill} = usePermissions();
   const [previewCount, setPreviewCount] = React.useState(0);
@@ -240,20 +244,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     }
   };
 
-  // TODO: BG COME BACK TO THIS
-  // const upstreamUnavailable = (key: string) =>
-  //   upstreamAssetHealth.length > 0 &&
-  //   upstreamAssetHealth.some(
-  //     (a) => a.timeline.keys.includes(key) && !a.timeline.statusByPartition[key],
-  //   );
-
-  // const upstreamUnavailableSpans = assembleIntoSpans(selected, upstreamUnavailable).filter(
-  //   (s) => s.status === true,
-  // );
-  // const onRemoveUpstreamUnavailable = () => {
-  //   setRange(reject(selected, upstreamUnavailable));
-  // };
-
   return (
     <>
       <DialogBody>
@@ -318,24 +308,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             </Box>
           ) : undefined}
         </Box>
-        {/* {upstreamUnavailableSpans.length > 0 && (
-          <Box margin={{top: 16}}>
-            <Alert
-              intent="warning"
-              title="Upstream Data Missing"
-              description={
-                <>
-                  {upstreamUnavailableSpans.map((span) => stringForSpan(span, selected)).join(', ')}
-                  {
-                    ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
-                  }
-                  <a onClick={onRemoveUpstreamUnavailable}>remove these partitions</a>
-                  {` to avoid failures.`}
-                </>
-              }
-            />
-          </Box>
-        )} */}
+        <UpstreamUnavailableWarning
+          upstreamAssetKeys={upstreamAssetKeys}
+          ranges={ranges}
+          setRanges={setRanges}
+        />
       </DialogBody>
       <DialogFooter
         left={partitionSet && <RunningBackfillsNotice partitionSetName={partitionSet.name} />}
@@ -363,5 +340,61 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         )}
       </DialogFooter>
     </>
+  );
+};
+
+const UpstreamUnavailableWarning: React.FC<{
+  upstreamAssetKeys: AssetKey[];
+  ranges: PartitionHealthDimensionRange[];
+  setRanges: (next: PartitionHealthDimensionRange[]) => void;
+}> = ({upstreamAssetKeys, ranges, setRanges}) => {
+  // We want to warn if an immediately upstream asset 1) has the same partitioning and
+  // 2) is missing materializations for keys in `allSelected`. We only offer this feature
+  // for single-dimensional partitioned assets because it's difficult to express the
+  // unavailable partitions in the multi-dimensional case and our "two range inputs" won't
+  // allow us to remove missing individual pairs.
+  const upstreamAssetHealth = usePartitionHealthData(upstreamAssetKeys);
+  const upstreamUnavailable = (singleDimensionKey: string) =>
+    upstreamAssetHealth.length > 0 &&
+    upstreamAssetHealth.some((a) => {
+      // If the key is not undefined, it's present in the partition key space of the asset
+      return a.stateForKey([singleDimensionKey]) === PartitionState.MISSING;
+    });
+
+  const upstreamUnavailableSpans =
+    ranges.length === 1
+      ? assembleIntoSpans(ranges[0].selected, upstreamUnavailable).filter((s) => s.status === true)
+      : [];
+
+  const onRemoveUpstreamUnavailable = () => {
+    if (ranges.length > 1) {
+      throw new Error('Assertion failed, this feature is only available for 1 dimensional assets');
+    }
+    setRanges([{...ranges[0], selected: reject(ranges[0].selected, upstreamUnavailable)}]);
+  };
+
+  if (upstreamUnavailableSpans.length === 0) {
+    return <span />;
+  }
+
+  return (
+    <Box margin={{top: 16}}>
+      <Alert
+        intent="warning"
+        title="Upstream Data Missing"
+        description={
+          <>
+            {upstreamUnavailableSpans
+              .map((span) => stringForSpan(span, ranges[0].selected))
+              .join(', ')}
+            {
+              ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
+            }
+            <a onClick={onRemoveUpstreamUnavailable}>remove these partitions</a>
+            {` to avoid failures.`}
+          </>
+        }
+      />
+    </Box>
   );
 };

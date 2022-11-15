@@ -1,6 +1,9 @@
+import contextlib
+import datetime
 import itertools
 from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Union
 
+import pendulum
 import pytest
 
 from dagster import (
@@ -29,6 +32,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     reconcile,
 )
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 
 
@@ -41,6 +45,7 @@ class RunSpec(NamedTuple):
 class AssetReconciliationScenario(NamedTuple):
     unevaluated_runs: Sequence[RunSpec]
     assets: Sequence[AssetsDefinition]
+    evaluation_delta: Optional[datetime.timedelta] = None
     cursor_from: Optional["AssetReconciliationScenario"] = None  # type: ignore
 
     expected_run_requests: Optional[Sequence[RunRequest]] = None
@@ -85,13 +90,18 @@ class AssetReconciliationScenario(NamedTuple):
                 raise_on_error=False,
             )
 
-        run_requests, cursor = reconcile(
-            repository_def=repo,
-            instance=instance,
-            asset_selection=AssetSelection.all(),
-            run_tags={},
-            cursor=cursor,
-        )
+        with pendulum.test(
+            pendulum.now() + self.evaluation_delta
+        ) if self.evaluation_delta else contextlib.nullcontext():
+
+            run_requests, cursor = reconcile(
+                repository_def=repo,
+                instance=instance,
+                asset_selection=AssetSelection.all(),
+                run_tags={},
+                cursor=cursor,
+            )
+
         for run_request in run_requests:
             base_job = repo.get_base_job_for_assets(run_request.asset_selection)
             assert base_job is not None
@@ -128,6 +138,7 @@ def asset_def(
     key: str,
     deps: Optional[Union[List[str], Mapping[str, PartitionMapping]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> AssetsDefinition:
     if deps is None:
         non_argument_deps = set()
@@ -148,6 +159,7 @@ def asset_def(
         non_argument_deps=non_argument_deps,
         ins=ins,
         config_schema={"fail": Field(bool, default_value=False)},
+        freshness_policy=freshness_policy,
     )
     def _asset(context, **kwargs):
         del kwargs
@@ -218,7 +230,11 @@ one_partition_partitions_def = StaticPartitionsDefinition(["a"])
 two_partitions_partitions_def = StaticPartitionsDefinition(["a", "b"])
 fanned_out_partitions_def = StaticPartitionsDefinition(["a_1", "a_2", "a_3"])
 
+freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
+freshness_60m = FreshnessPolicy(maximum_lag_minutes=60)
+freshness_inf = FreshnessPolicy(maximum_lag_minutes=99999)
 
+# basics
 one_asset = [asset_def("asset1")]
 
 two_assets_in_sequence = [asset_def("asset1"), asset_def("asset2", ["asset1"])]
@@ -240,8 +256,27 @@ diamond = [
     asset_def("asset4", ["asset2", "asset3"]),
 ]
 
+
 three_assets_in_sequence = two_assets_in_sequence + [asset_def("asset3", ["asset2"])]
 
+# freshness policy
+diamond_freshness = diamond[:-1] + [
+    asset_def("asset4", ["asset2", "asset3"], freshness_policy=freshness_30m)
+]
+overlapping_freshness = diamond + [
+    asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
+    asset_def("asset6", ["asset4"], freshness_policy=freshness_60m),
+]
+overlapping_freshness_inf = diamond + [
+    asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
+    asset_def("asset6", ["asset4"], freshness_policy=freshness_inf),
+]
+overlapping_freshness_none = diamond + [
+    asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
+    asset_def("asset6", ["asset4"], freshness_policy=None),
+]
+
+# partitions
 one_asset_one_partition = [asset_def("asset1", partitions_def=one_partition_partitions_def)]
 one_asset_two_partitions = [asset_def("asset1", partitions_def=two_partitions_partitions_def)]
 two_assets_one_partition = [
@@ -529,10 +564,88 @@ scenarios = {
             run_request(asset_keys=["asset2"], partition_key="a_3"),
         ],
     ),
+    ################################################################################################
+    # Freshness policies
+    ################################################################################################
+    "freshness_blank_slate": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
+    ),
+    "freshness_all_fresh": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
+        expected_run_requests=[],
+    ),
+    "freshness_all_fresh_with_new_run": AssetReconciliationScenario(
+        # expect no runs as the freshness policy will propagate the new change w/in the plan window
+        assets=diamond_freshness,
+        cursor_from=AssetReconciliationScenario(
+            assets=diamond_freshness,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
+        ),
+        unevaluated_runs=[run(["asset1"])],
+        expected_run_requests=[],
+    ),
+    "freshness_all_fresh_with_new_run_stale": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        cursor_from=AssetReconciliationScenario(
+            assets=diamond_freshness,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
+        ),
+        unevaluated_runs=[run(["asset1"])],
+        evaluation_delta=datetime.timedelta(minutes=35),
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
+    ),
+    "freshness_half_run": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        unevaluated_runs=[run(["asset1", "asset2"])],
+        expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
+    ),
+    "freshness_half_run_stale": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        unevaluated_runs=[run(["asset1", "asset2"])],
+        evaluation_delta=datetime.timedelta(minutes=35),
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
+    ),
+    "freshness_overlapping_runs": AssetReconciliationScenario(
+        assets=overlapping_freshness,
+        unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
+        expected_run_requests=[],
+    ),
+    "freshness_overlapping_runs_half_stale": AssetReconciliationScenario(
+        assets=overlapping_freshness,
+        unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
+        # evaluate 35 minutes later, only need to refresh the assets on the shorter freshness policy
+        evaluation_delta=datetime.timedelta(minutes=35),
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset3", "asset5"])],
+    ),
+    "freshness_overlapping_defer_propagate": AssetReconciliationScenario(
+        assets=overlapping_freshness_inf,
+        cursor_from=AssetReconciliationScenario(
+            assets=overlapping_freshness_inf,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
+        ),
+        # change at the top, doesn't need to be propagated to 1, 3, 5 as freshness policy will
+        # handle it, but assets 2, 4, 6 will not recieve an update in the plan window. 2 can be
+        # updated immediately, but 4 and 6 depend on 3, so will be defered
+        unevaluated_runs=[run(["asset1"])],
+        expected_run_requests=[run_request(asset_keys=["asset2"])],
+    ),
+    "freshness_overlapping_defer_propagate2": AssetReconciliationScenario(
+        assets=overlapping_freshness_none,
+        cursor_from=AssetReconciliationScenario(
+            assets=overlapping_freshness_inf,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
+        ),
+        # same as above
+        unevaluated_runs=[run(["asset1"])],
+        expected_run_requests=[run_request(asset_keys=["asset2"])],
+    ),
 }
 
 
-@pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
+@pytest.mark.parametrize("scenario", list(scenarios.values())[-2:], ids=list(scenarios.keys())[-2:])
 def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
     run_requests, _ = scenario.do_scenario(instance)

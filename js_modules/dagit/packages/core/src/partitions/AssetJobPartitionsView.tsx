@@ -32,14 +32,9 @@ export const AssetJobPartitionsView: React.FC<{
   });
 
   const assetHealth = usePartitionHealthData(assetGraph.graphAssetKeys);
-  const partitionNames = Array.from(
-    new Set<string>(assetHealth.flatMap((a) => a.dimensions[0].partitionKeys)),
-  );
-
-  // TODO BG: This page will break if the job has assets with different partition sets
 
   const {total, missing, merged} = React.useMemo(() => {
-    const merged = mergedAssetHealth(assetHealth);
+    const merged = mergedAssetHealth(assetHealth.filter((h) => h.dimensions.length > 0));
     const ranges = merged.dimensions.map((d) => ({selected: d.partitionKeys, dimension: d}));
     const allKeys = explodePartitionKeysInRanges(ranges, merged.stateForKey);
 
@@ -64,12 +59,15 @@ export const AssetJobPartitionsView: React.FC<{
     }
   }, [viewport.width, showAssets, setPageSize]);
 
+  const rangeDimension = merged.dimensions[0];
+  const rangePartitionKeys = rangeDimension?.partitionKeys || [];
+
   const selectedPartitions = showAssets
-    ? partitionNames.slice(
-        Math.max(0, partitionNames.length - 1 - offset - pageSize),
-        partitionNames.length - offset,
+    ? rangePartitionKeys.slice(
+        Math.max(0, rangePartitionKeys.length - 1 - offset - pageSize),
+        rangePartitionKeys.length - offset,
       )
-    : partitionNames;
+    : rangePartitionKeys;
 
   return (
     <div>
@@ -101,13 +99,13 @@ export const AssetJobPartitionsView: React.FC<{
       <Box padding={{vertical: 16, horizontal: 24}}>
         <div {...containerProps}>
           <PartitionStatus
-            partitionNames={partitionNames}
+            partitionNames={rangePartitionKeys}
             partitionStateForKey={(key) => merged.stateForSingleDimension(0, key)}
             selected={showAssets ? selectedPartitions : undefined}
             selectionWindowSize={pageSize}
             onClick={(partitionName) => {
-              const maxIdx = partitionNames.length - 1;
-              const selectedIdx = partitionNames.indexOf(partitionName);
+              const maxIdx = rangePartitionKeys.length - 1;
+              const selectedIdx = rangePartitionKeys.indexOf(partitionName);
               const nextOffset = Math.min(
                 maxIdx,
                 Math.max(0, maxIdx - selectedIdx - 0.5 * pageSize),
@@ -123,7 +121,7 @@ export const AssetJobPartitionsView: React.FC<{
         {showAssets && (
           <Box margin={{top: 16}}>
             <PartitionPerAssetStatus
-              partitionNames={partitionNames}
+              partitionNames={rangePartitionKeys}
               assetHealth={assetHealth}
               assetQueryItems={assetGraph.graphQueryItems}
               pipelineName={pipelineName}
@@ -145,7 +143,7 @@ export const AssetJobPartitionsView: React.FC<{
         <JobBackfillsTable
           partitionSetName={partitionSetName}
           repositorySelector={repositorySelector}
-          partitionNames={partitionNames}
+          partitionNames={rangePartitionKeys}
           refetchCounter={1}
         />
       </Box>
