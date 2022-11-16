@@ -16,6 +16,7 @@ export const AssetPartitionList: React.FC<{
 
   const rowVirtualizer = useVirtualizer({
     count: partitions.length,
+    getItemKey: (idx) => partitions[idx].dimensionKey,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 36,
     overscan: 10,
@@ -77,30 +78,24 @@ export const AssetPartitionList: React.FC<{
                 flex={{direction: 'column', justifyContent: 'center', gap: 8}}
                 border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
               >
-                <AssetPartitionListRow dimensionKey={dimensionKey} state={state} />
+                <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
+                  {dimensionKey}
+                  <div style={{flex: 1}} />
+                  {(state === PartitionState.SUCCESS_MISSING ||
+                    state === PartitionState.SUCCESS) && (
+                    <StateDot state={PartitionState.SUCCESS} />
+                  )}
+                  {(state === PartitionState.SUCCESS_MISSING ||
+                    state === PartitionState.MISSING) && (
+                    <StateDot state={PartitionState.MISSING} />
+                  )}
+                </Box>
               </Box>
             </AssetListRow>
           );
         })}
       </Inner>
     </AssetListContainer>
-  );
-};
-const AssetPartitionListRow: React.FC<{dimensionKey: string; state: PartitionState}> = ({
-  dimensionKey,
-  state,
-}) => {
-  return (
-    <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-      {dimensionKey}
-      <div style={{flex: 1}} />
-      {(state === PartitionState.SUCCESS_MISSING || state === PartitionState.SUCCESS) && (
-        <StateDot state={PartitionState.SUCCESS} />
-      )}
-      {(state === PartitionState.SUCCESS_MISSING || state === PartitionState.MISSING) && (
-        <StateDot state={PartitionState.MISSING} />
-      )}
-    </Box>
   );
 };
 
@@ -111,7 +106,6 @@ const StateDot = ({state}: {state: PartitionState}) => (
       width: 10,
       height: 10,
       borderRadius: '100%',
-      marginLeft: -5,
       ...partitionStateToStyle(state),
     }}
   />

@@ -11,8 +11,8 @@ import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
+import {AllIndividualEventsLink} from './AllIndividualEventsLink';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
-import {AllIndividualEventsLink} from './AssetEventsTable';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
 import {

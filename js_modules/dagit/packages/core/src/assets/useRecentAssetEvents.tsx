@@ -31,7 +31,7 @@ export function useRecentAssetEvents(
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
   const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
   const xAxis: 'partition' | 'time' =
-    assetHasDefinedPartitions && params.partition !== undefined
+    params.partition !== undefined
       ? 'partition'
       : params.time !== undefined || before
       ? 'time'
