@@ -1,9 +1,10 @@
+# start_multi_partitions_marker
 from dagster import (
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     asset,
 )
-
-# start_multi_partitions_marker
-from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition, DailyPartitionsDefinition
 
 
 @asset(
@@ -22,10 +23,7 @@ def multi_partitions_asset(context):
 
 # start_multi_partitions_key_marker
 
-from dagster import (
-    MultiPartitionKey,
-    materialize,
-)
+from dagster import MultiPartitionKey, materialize
 
 result = materialize(
     [multi_partitions_asset],

@@ -1,7 +1,7 @@
+from dagster import MultiPartitionKey, materialize
 from docs_snippets.concepts.partitions_schedules_sensors.multipartitions_asset import (
     multi_partitions_asset,
 )
-from dagster import materialize, MultiPartitionKey
 
 
 def test():
