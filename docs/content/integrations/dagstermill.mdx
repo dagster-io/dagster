@@ -294,7 +294,7 @@ from dagster import file_relative_path, job
 
 k_means_iris = define_dagstermill_op(
     name="k_means_iris",
-    notebook_path=file_relative_path("iris-kmeans.ipynb"),
+    notebook_path=file_relative_path(__file__, "./notebooks/iris-kmeans.ipynb"),
     output_notebook_name="iris_kmeans_output",
 )
 
@@ -322,14 +322,14 @@ You can use the development context to access asset and op config and resources,
 
 For instance, suppose we want to make the number of clusters (the \_k\_ in k-means) configurable. We'll change our op definition to include a config field:
 
-```python file=/integrations/dagstermill/iris_notebook_config.py startafter=start
+```python file=/integrations/dagstermill/iris_notebook_config.py startafter=start endbefore=end
 from dagstermill import define_dagstermill_asset
 
 from dagster import AssetIn, Field, Int, file_relative_path
 
 iris_kmeans_jupyter_notebook = define_dagstermill_asset(
     name="iris_kmeans_jupyter",
-    notebook_path=file_relative_path(__file__, "../notebooks/iris-kmeans.ipynb"),
+    notebook_path=file_relative_path(__file__, "./notebooks/iris-kmeans.ipynb"),
     group_name="template_tutorial",
     ins={"iris": AssetIn("iris_dataset")},
     config_schema=Field(

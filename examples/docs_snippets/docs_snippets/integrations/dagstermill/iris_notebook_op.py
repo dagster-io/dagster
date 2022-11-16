@@ -7,7 +7,7 @@ from dagster import file_relative_path, job
 
 k_means_iris = define_dagstermill_op(
     name="k_means_iris",
-    notebook_path=file_relative_path("iris-kmeans.ipynb"),
+    notebook_path=file_relative_path(__file__, "./notebooks/iris-kmeans.ipynb"),
     output_notebook_name="iris_kmeans_output",
 )
 

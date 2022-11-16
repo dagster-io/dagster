@@ -9,15 +9,15 @@ dagstermill.yield_result(3, output_name="my_output")
 
 
 # start_py_file
-from dagstermill import define_dagstermill_op
+from dagstermill import define_dagstermill_op, local_output_notebook_io_manager
 
-from dagster import file_relative_path, job, op
+from dagster import Out, file_relative_path, job, op
 
 my_notebook_op = define_dagstermill_op(
     name="my_notebook",
-    notebook_path=file_relative_path(__file__, "../notebooks/my_notebook.ipynb"),
+    notebook_path=file_relative_path(__file__, "./notebooks/my_notebook.ipynb"),
     output_notebook_name="output_notebook",
-    outs={"my_output": int},
+    outs={"my_output": Out(int)},
 )
 
 
@@ -26,7 +26,11 @@ def add_two(x):
     return x + 2
 
 
-@job
+@job(
+    resource_defs={
+        "output_notebook_io_manager": local_output_notebook_io_manager,
+    }
+)
 def my_job():
     three, _ = my_notebook_op()
     add_two(three)
