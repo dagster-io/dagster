@@ -25,7 +25,6 @@ from dagster._core.definitions.logical_version import (
     DEFAULT_LOGICAL_VERSION,
     extract_logical_version_from_entry,
 )
-from dagster._core.errors import DagsterUndefinedLogicalVersionError
 from dagster._core.host_representation import ExternalRepository, RepositoryLocation
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (
