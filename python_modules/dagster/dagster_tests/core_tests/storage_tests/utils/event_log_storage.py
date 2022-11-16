@@ -2432,6 +2432,72 @@ class TestEventLogStorage:
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"}
             ]
 
+    def test_add_materialization_tags(self, storage, instance):
+        key = AssetKey("hello")
+
+        @op
+        def tags_op():
+            yield AssetMaterialization(asset_key=key, tags={"a": "foo", "b": "bar", "c": "baz"})
+            yield Output(1)
+
+        run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id]):
+
+            events, _ = _synthesize_events(lambda: tags_op(), run_id)
+            for event in events:
+                storage.store_event(event)
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+            )
+
+            assert len(materializations) == 1
+            mat_record = materializations[0]
+
+            assert storage.get_event_tags_for_asset(key, event_id=mat_record.storage_id) == [
+                {
+                    "a": "foo",
+                    "b": "bar",
+                    "c": "baz",
+                }
+            ]
+
+            storage.add_asset_event_tags(mat_record, new_tags={"a": "something", "d": "other"})
+
+            assert storage.get_event_tags_for_asset(key, event_id=mat_record.storage_id) == [
+                {"a": "something", "b": "bar", "c": "baz", "d": "other"}
+            ]
+
+    def test_add_materialization_tags_initially_empty(self, storage, instance):
+        key = AssetKey("hello")
+
+        @op
+        def tags_op():
+            yield AssetMaterialization(asset_key=key)
+            yield Output(1)
+
+        run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id]):
+
+            events, _ = _synthesize_events(lambda: tags_op(), run_id)
+            for event in events:
+                storage.store_event(event)
+
+            materializations = storage.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
+            )
+
+            assert len(materializations) == 1
+            mat_record = materializations[0]
+
+            assert storage.get_event_tags_for_asset(key, event_id=mat_record.storage_id) == []
+
+            storage.add_asset_event_tags(mat_record, new_tags={"a": "apple", "b": "boot"})
+
+            assert storage.get_event_tags_for_asset(key, event_id=mat_record.storage_id) == [
+                {"a": "apple", "b": "boot"}
+            ]
+
     def test_materialization_tag_on_wipe(self, storage, instance):
         key = AssetKey("hello")
 
