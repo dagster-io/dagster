@@ -586,7 +586,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_partitionMaterializationCounts(
-        self, graphene_info, **kwargs
+        self, graphene_info
     ) -> Optional[GraphenePartitionMaterializationCounts]:
         asset_key = self._external_asset_node.asset_key
 

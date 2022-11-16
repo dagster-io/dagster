@@ -59,10 +59,7 @@ export const AssetEventDetail: React.FC<{
         {event.partition && (
           <Box flex={{gap: 4, direction: 'column'}}>
             <Subheading>Partition</Subheading>
-            <Box flex={{gap: 4}}>
-              <Icon name="partition" />
-              {event.partition}
-            </Box>
+            <Box flex={{gap: 4}}>{event.partition}</Box>
           </Box>
         )}
         <Box flex={{gap: 4, direction: 'column'}} style={{minHeight: 64}}>

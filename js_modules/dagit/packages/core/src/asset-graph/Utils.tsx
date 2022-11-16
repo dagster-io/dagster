@@ -128,6 +128,22 @@ export interface LiveDataForNode {
   projectedLogicalVersion: string | null;
   computeStatus: AssetComputeStatus;
 }
+
+export const MISSING_LIVE_DATA: LiveDataForNode = {
+  unstartedRunIds: [],
+  inProgressRunIds: [],
+  runWhichFailedToMaterialize: null,
+  freshnessInfo: null,
+  freshnessPolicy: null,
+  lastMaterialization: null,
+  lastMaterializationRunStatus: null,
+  lastObservation: null,
+  currentLogicalVersion: null,
+  projectedLogicalVersion: null,
+  computeStatus: AssetComputeStatus.NONE,
+  stepKey: '',
+};
+
 export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }

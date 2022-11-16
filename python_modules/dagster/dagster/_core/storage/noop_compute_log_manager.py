@@ -88,7 +88,9 @@ class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableC
     def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         return CapturedLogMetadata()
 
-    def delete_logs(self, log_key: Sequence[str]):
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
         pass
 
     def subscribe(
