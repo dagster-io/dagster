@@ -155,22 +155,6 @@ def compute_logical_version(
     return LogicalVersion(hash_sig.hexdigest())
 
 
-def get_current_logical_version_from_latest_event(
-    key: AssetKey,
-    is_source: bool,
-    event: Optional[EventLogRecord],
-) -> LogicalVersion:
-    if event is None and is_source:
-        return DEFAULT_LOGICAL_VERSION
-    elif event is None:
-        raise DagsterUndefinedLogicalVersionError(
-            f"No logical version defined for asset {key}; no materialization events found.",
-        )
-    else:
-        logical_version = extract_logical_version_from_entry(event.event_log_entry)
-        return logical_version or DEFAULT_LOGICAL_VERSION
-
-
 def extract_logical_version_from_entry(
     entry: EventLogEntry,
 ) -> Optional[LogicalVersion]:
@@ -205,28 +189,3 @@ def _extract_event_data_from_entry(
 
     assert isinstance(event_data, (AssetMaterialization, AssetObservation))
     return event_data
-
-
-def get_current_logical_version(
-    key: AssetKey,
-    is_source: bool,
-    *,
-    event: Optional[EventLogRecord] = None,
-    instance: Optional["DagsterInstance"] = None,
-) -> LogicalVersion:
-
-    if event is None:
-        instance = check.not_none(
-            instance, "Must provide either an a logical version event or DagsterInstance"
-        )
-        event = instance.get_latest_logical_version_record(key, is_source)
-
-    if event is None and is_source:
-        return DEFAULT_LOGICAL_VERSION
-    elif event is None:
-        raise DagsterUndefinedLogicalVersionError(
-            f"No logical version defined for asset {key}; no materialization events found.",
-        )
-    else:
-        logical_version = extract_logical_version_from_entry(event.event_log_entry)
-        return logical_version or DEFAULT_LOGICAL_VERSION

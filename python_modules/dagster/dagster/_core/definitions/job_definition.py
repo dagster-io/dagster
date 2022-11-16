@@ -441,7 +441,7 @@ class JobDefinition(PipelineDefinition):
             asset
             for asset in asset_selection
             if asset not in self.asset_layer.asset_keys
-            and asset not in self.asset_layer.source_assets_by_key
+            # and asset not in self.asset_layer.source_assets_by_key
         ]
         nonexistent_asset_strings = [
             asset_str
