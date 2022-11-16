@@ -34,10 +34,28 @@ class FreshnessPolicy(
     cron_schedule is set), the data used to produce the current version of this asset must be no
     older than `maximum_lag_minutes` before the most recent available data.
 
-    Examples:
+    The freshness status of assets with policies defined will be visible in the UI. If you are using
+    an asset reconciliation sensor, this sensor will kick off runs to help keep your assets up to
+    date with respect to their FreshnessPolicy.
 
-        * `FreshnessPolicy(maximum_lag_minutes=30)`: At any point in time, this asset must
-        incorporate all data from at least 30 minutes ago.
+    Args:
+        maximum_lag_minutes (float): An upper bound for how old the data contained within this
+            asset may be, relative to the current time.
+        cron_schedule (Optional[str]): A cron schedule string (e.g. "0 1 * * *") specifying a
+            series of times by which the `maximum_lag_minutes` constraint must be satisfied. If
+            no cron schedule is provided, then this constraint must be satisfied at all times.
+
+    .. code-block:: python
+        # At any point in time, this asset must incorporate all data from at least 30 minutes ago.
+        @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+        def fresh_asset():
+            ...
+
+        # At any point in time, this asset must incorporate all data from at least 30 minutes ago.
+        @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+        def cron_up_to_date_asset():
+            ...
+
         * `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 1 * * *"): Every day by 1AM,
         this asset must incorporate all data from at least 60 minutes ago.
     """

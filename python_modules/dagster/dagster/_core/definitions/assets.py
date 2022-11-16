@@ -159,6 +159,13 @@ class AssetsDefinition(ResourceAddable):
                 node_def.resolve_output_to_origin(output_name, None)[0].metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+        for key, freshness_policy in freshness_policies_by_key:
+            check.param_invariant(
+                freshness_policy is not None and self._partitions_def is not None,
+                "freshness_policies_by_key",
+                "FreshnessPolicies are currently unsupported for partitioned assets.",
+            )
+
         self._freshness_policies_by_key = check.opt_dict_param(
             freshness_policies_by_key,
             "freshness_policies_by_key",

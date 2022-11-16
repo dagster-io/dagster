@@ -732,8 +732,11 @@ def build_asset_reconciliation_sensor(
     - This sensor has never tried to materialize it and it has never been materialized.
     - Any of its parents have been materialized more recently than it has.
     - Any of its parents are unreconciled.
+    - It is not currently up to date with respect to its FreshnessPolicy
 
-    The sensor won't try to reconcile any assets before their parents are reconciled.
+    The sensor won't try to reconcile any assets before their parents are reconciled. When multiple
+    FreshnessPolicies require data from the same upstream assets, this sensor will attempt to
+    launch a minimal number of runs of that asset to satisfy all constraints.
 
     Args:
         asset_selection (AssetSelection): The group of assets you want to keep up-to-date
@@ -748,7 +751,7 @@ def build_asset_reconciliation_sensor(
         SensorDefinition
 
     Example:
-        If you have the following asset graph:
+        If you have the following asset graph, with no freshness policies:
 
         .. code-block:: python
 
@@ -768,6 +771,48 @@ def build_asset_reconciliation_sensor(
             )
 
         You will observe the following behavior:
+            * If ``a``, ``b``, and ``c`` are all materialized, then on the next sensor tick, the sensor will see that ``d`` and ``e`` can
+              be materialized. Since ``d`` and ``e`` will be materialized, ``f`` can also be materialized. The sensor will kick off a
+              run that will materialize ``d``, ``e``, and ``f``.
+            * If, on the next sensor tick, none of ``a``, ``b``, and ``c`` have been materialized again, the sensor will not launch a run.
+            * If, before the next sensor tick, just asset ``a`` and ``b`` have been materialized, the sensor will launch a run to
+              materialize ``d``, ``e``, and ``f``, because they're downstream of ``a`` and ``b``.
+              Even though ``c`` hasn't been materialized, the downstream assets can still be
+              updated, because ``c`` is still considered "reconciled".
+
+    Example:
+        If you have the following asset graph, with the following freshness policies:
+
+            * d: FreshnessPolicy(maximum_lag_minutes=120)
+                * This means that d needs to be materialized with data from a and b that is no more
+                than 5 hours old.
+            * e: FreshnessPolicy(maximum_lag_minutes=120, cron_schedule="0 2 * * *")
+                * This means that by 2AM, e needs to be materialized with data from b and c that is
+                no more than 120 minutes old (i.e. all of yesterday's data).
+
+        .. code-block:: python
+
+            a       b
+             \     /
+                d
+
+        and create the sensor:
+
+        .. code-block:: python
+
+            build_asset_reconciliation_sensor(
+                AssetSelection.all(),
+                name="my_reconciliation_sensor",
+            )
+
+        Assume that ``d`` and ``e`` currently have incorporated all source data up to 2022-01-01 23:00.
+
+        You will observe the following behavior:
+            * At time 2022-01-02 00:00, the sensor will see that ``e`` will soon require data from `2022-01-02 00:00`, and so it is
+                possible to kick off a run of ``b``, ``c``, and ``e`` immediately to satisfy that constraint.
+            * On the next tick, the sensor will see that a run is currently planned which will satisfy that constraint, so no
+                runs will be kicked off.
+            * Once
             * If ``a``, ``b``, and ``c`` are all materialized, then on the next sensor tick, the sensor will see that ``d`` and ``e`` can
               be materialized. Since ``d`` and ``e`` will be materialized, ``f`` can also be materialized. The sensor will kick off a
               run that will materialize ``d``, ``e``, and ``f``.
