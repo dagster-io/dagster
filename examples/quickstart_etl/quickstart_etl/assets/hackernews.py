@@ -1,18 +1,13 @@
+import base64
+from io import BytesIO
 from typing import List
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 from wordcloud import STOPWORDS, WordCloud
-from dagster import (
-    Field,
-    MetadataValue,
-    OpExecutionContext,
-    asset,
-    StringSource,
-)
-import base64
-from io import BytesIO
+
+from dagster import MetadataValue, OpExecutionContext, asset
 
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
@@ -20,7 +15,7 @@ def hackernews_topstory_ids() -> List[int]:
     """
     Get up to 500 top stories from the HackerNews topstories endpoint.
 
-    Docs: https://github.com/HackerNews/API#new-top-and-best-stories
+    API Docs: https://github.com/HackerNews/API#new-top-and-best-stories
     """
     newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
     top_500_newstories = requests.get(newstories_url).json()
@@ -34,7 +29,7 @@ def hackernews_topstories(
     """
     Get items based on story ids from the HackerNews items endpoint. It may take 1-2 minutes to fetch all 500 items.
 
-    Docs: https://github.com/HackerNews/API#items
+    API Docs: https://github.com/HackerNews/API#items
     """
 
     results = []
@@ -49,7 +44,7 @@ def hackernews_topstories(
     # Dagster supports attaching arbitrary metadata to asset materializations. This metadata will be
     # shown in the run logs and also be displayed on the "Activity" tab of the "Asset Details" page in the UI.
     # This metadata would be useful for monitoring and maintaining the asset as you iterate.
-    # Read more: https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata
+    # Read more about in asset metadata in https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata
     context.add_output_metadata(
         {
             "num_records": len(df),
@@ -59,26 +54,19 @@ def hackernews_topstories(
     return df
 
 
-@asset(
-    group_name="hackernews",
-    compute_kind="Plot",
-    config_schema={
-        "github_token": Field(StringSource, default_value={"env": "MY_GITHUB_TOKEN"}),
-    },
-)
+@asset(group_name="hackernews", compute_kind="Plot")
 def hackernews_topstories_word_cloud(
     context: OpExecutionContext, hackernews_topstories: pd.DataFrame
 ) -> bytes:
     """
-    Exploratory analysis: Generate a word cloud from the current top 500 HN top stories. Embed the
-    plot into a Markdown metadata.
+    Exploratory analysis: Generate a word cloud from the current top 500 HackerNews top stories.
+    Embed the plot into a Markdown metadata for quick view.
 
-    Docs: TODO word cloud doc link
+    Read more about how to create word clouds in http://amueller.github.io/word_cloud/.
     """
     stopwords = set(STOPWORDS)
     stopwords.update(["Ask", "Show", "HN"])
     titles_text = " ".join([str(item) for item in hackernews_topstories["title"]])
-    context.pdb.set_trace()
     titles_cloud = WordCloud(stopwords=stopwords, background_color="white").generate(titles_text)
 
     # Generate the word cloud image
@@ -87,12 +75,14 @@ def hackernews_topstories_word_cloud(
     plt.axis("off")
     plt.tight_layout(pad=0)
 
-    # Save the image to a buffer and embed the image into a Markdown metadata attached to the asset
+    # Save the image to a buffer and embed the image into Markdown content for quick view
     buffer = BytesIO()
     plt.savefig(buffer, format="png")
     image_data = base64.b64encode(buffer.getvalue())
     md_content = f"![img](data:image/png;base64,{image_data.decode()})"
 
+    # Attach the Markdown content as metadata to the asset
+    # Read about more metadata types in https://docs.dagster.io/_apidocs/ops#metadata-types
     context.add_output_metadata({"plot": MetadataValue.md(md_content)})
 
     return image_data
