@@ -3123,8 +3123,11 @@ export interface AssetNodeDefinitionFragment {
   jobNames: string[];
   partitionDefinition: AssetNodeDefinitionFragment_partitionDefinition | null;
   repository: AssetNodeDefinitionFragment_repository;
+  opVersion: string | null;
   computeKind: string | null;
+  isSource: boolean;
   assetKey: AssetNodeDefinitionFragment_assetKey;
+  isObservable: boolean;
   metadataEntries: AssetNodeDefinitionFragment_metadataEntries[];
   type: AssetNodeDefinitionFragment_type | null;
 }

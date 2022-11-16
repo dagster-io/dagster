@@ -3180,8 +3180,11 @@ export interface AssetViewDefinitionQuery_assetOrError_Asset_definition {
   graphName: string | null;
   opNames: string[];
   jobNames: string[];
+  opVersion: string | null;
   computeKind: string | null;
+  isSource: boolean;
   assetKey: AssetViewDefinitionQuery_assetOrError_Asset_definition_assetKey;
+  isObservable: boolean;
   metadataEntries: AssetViewDefinitionQuery_assetOrError_Asset_definition_metadataEntries[];
   type: AssetViewDefinitionQuery_assetOrError_Asset_definition_type | null;
 }

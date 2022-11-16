@@ -2,7 +2,7 @@ import {Box, Button, ButtonGroup, Colors, Icon, JoinedButtons, TextInput} from '
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {GraphData, isSourceAsset, LiveData} from '../asset-graph/Utils';
+import {GraphData, LiveData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 
 import {AssetLineageScope, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
@@ -68,7 +68,7 @@ export const AssetNodeLineage: React.FC<{
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
             assetKeys={Object.values(assetGraphData.nodes)
-              .filter((n) => !isSourceAsset(n.definition))
+              .filter((n) => n.definition.isSource)
               .map((n) => n.assetKey)}
             intent="none"
             context="all"

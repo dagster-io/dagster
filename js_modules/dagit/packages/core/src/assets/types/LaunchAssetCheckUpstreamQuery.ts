@@ -23,6 +23,7 @@ export interface LaunchAssetCheckUpstreamQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
   assetKey: LaunchAssetCheckUpstreamQuery_assetNodes_assetKey;
+  isSource: boolean;
   opNames: string[];
   graphName: string | null;
   assetMaterializations: LaunchAssetCheckUpstreamQuery_assetNodes_assetMaterializations[];
