@@ -634,7 +634,7 @@ def grpc_command(
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
     configure_loggers(log_level=coerce_valid_log_level(log_level))
-    logger = logging.getLogger("dagster.code_server")
+    logger = logging.getLogger("dagster")
 
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
 
