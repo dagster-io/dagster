@@ -572,6 +572,8 @@ export interface LaunchAssetLoaderQuery_assetNodes {
   graphName: string | null;
   partitionDefinition: LaunchAssetLoaderQuery_assetNodes_partitionDefinition | null;
   partitionKeysByDimension: LaunchAssetLoaderQuery_assetNodes_partitionKeysByDimension[];
+  isObservable: boolean;
+  isSource: boolean;
   assetKey: LaunchAssetLoaderQuery_assetNodes_assetKey;
   dependencyKeys: LaunchAssetLoaderQuery_assetNodes_dependencyKeys[];
   repository: LaunchAssetLoaderQuery_assetNodes_repository;

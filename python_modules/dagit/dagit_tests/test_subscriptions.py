@@ -116,8 +116,8 @@ def test_event_log_subscription_chunked():
 
                 end_subscription(ws)
 
-            gc.collect()
-            assert len(objgraph.by_type("async_generator")) == 0
+        gc.collect()
+        assert len(objgraph.by_type("async_generator")) == 0
 
 
 @mock.patch(

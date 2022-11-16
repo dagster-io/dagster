@@ -55,7 +55,7 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
     [groupPath, history],
   );
 
-  const onNavigateToForeignNode = React.useCallback(
+  const onNavigateToSourceAssetNode = React.useCallback(
     (node: AssetLocation) => {
       if (node.groupName && node.repoAddress) {
         history.replace(
@@ -106,7 +106,7 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
           options={{preferAssetRendering: true, explodeComposites: true}}
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
-          onNavigateToForeignNode={onNavigateToForeignNode}
+          onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
         />
       ) : (
         <AssetsCatalogTable
