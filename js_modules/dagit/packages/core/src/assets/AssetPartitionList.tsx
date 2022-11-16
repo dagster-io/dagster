@@ -2,7 +2,7 @@ import {Box, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {PartitionState, partitionStateToColor} from '../partitions/PartitionStatus';
+import {PartitionState, partitionStateToStyle} from '../partitions/PartitionStatus';
 import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
@@ -112,7 +112,7 @@ const StateDot = ({state}: {state: PartitionState}) => (
       height: 10,
       borderRadius: '100%',
       marginLeft: -5,
-      background: partitionStateToColor(state),
+      ...partitionStateToStyle(state),
     }}
   />
 );

@@ -5,7 +5,7 @@ import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assembleIntoSpans} from '../partitions/PartitionRangeInput';
 import {
   PartitionState,
-  partitionStateToColor,
+  partitionStateToStyle,
   partitionStatusToText,
 } from '../partitions/PartitionStatus';
 
@@ -121,7 +121,7 @@ export const PartitionHealthSummary: React.FC<{
                   width: '100%',
                   height: 14,
                   outline: 'none',
-                  background: partitionStateToColor(s.status),
+                  ...partitionStateToStyle(s.status),
                 }}
               />
             </Tooltip>

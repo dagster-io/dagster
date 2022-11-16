@@ -219,7 +219,7 @@ export const PartitionStatus: React.FC<{
                   width: '100%',
                   height: 24,
                   outline: 'none',
-                  background: partitionStateToColor(s.status),
+                  ...partitionStateToStyle(s.status),
                 }}
                 title={tooltipMessage}
               />
@@ -244,7 +244,7 @@ export const PartitionStatus: React.FC<{
                     width: '100%',
                     height: 24,
                     outline: 'none',
-                    background: partitionStateToColor(s.status),
+                    ...partitionStateToStyle(s.status),
                   }}
                 />
               </Tooltip>
@@ -390,20 +390,23 @@ function _partitionsToSpans(keys: string[], keyStatus: {[key: string]: Partition
   return spans;
 }
 
-export const partitionStateToColor = (status: PartitionState) => {
+export const partitionStateToStyle = (status: PartitionState): React.CSSProperties => {
   switch (status) {
     case PartitionState.SUCCESS:
-      return Colors.Green500;
+      return {background: Colors.Green500};
     case PartitionState.SUCCESS_MISSING:
-      return Colors.Green200;
+      return {
+        background: `linear-gradient(135deg, ${Colors.Green500} 25%, ${Colors.Gray200} 25%, ${Colors.Gray200} 50%, ${Colors.Green500} 50%, ${Colors.Green500} 75%, ${Colors.Gray200} 75%, ${Colors.Gray200} 100%)`,
+        backgroundSize: '8.49px 8.49px',
+      };
     case PartitionState.FAILURE:
-      return Colors.Red500;
+      return {background: Colors.Red500};
     case PartitionState.STARTED:
-      return Colors.Blue500;
+      return {background: Colors.Blue500};
     case PartitionState.QUEUED:
-      return Colors.Blue200;
+      return {background: Colors.Blue200};
     default:
-      return Colors.Gray200;
+      return {background: Colors.Gray200};
   }
 };
 
