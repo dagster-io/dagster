@@ -774,4 +774,3 @@ def _create_type_materializations(
                         )
 
                     yield DagsterEvent.asset_materialization(step_context, materialization)
-

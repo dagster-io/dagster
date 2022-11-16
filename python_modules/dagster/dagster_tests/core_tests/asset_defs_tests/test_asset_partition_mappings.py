@@ -1,5 +1,4 @@
 from typing import Optional
-from dagster._core.test_utils import assert_namedtuple_lists_equal
 
 import pendulum
 
@@ -29,6 +28,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.test_utils import assert_namedtuple_lists_equal
 
 
 def test_filter_mapping_partitions_dep():

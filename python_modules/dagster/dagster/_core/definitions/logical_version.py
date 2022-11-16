@@ -6,17 +6,14 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Union
 from typing_extensions import Final
 
 from dagster import _check as check
-from dagster._core.errors import DagsterUndefinedLogicalVersionError
 
 if TYPE_CHECKING:
-    from dagster._core.instance import DagsterInstance
     from dagster._core.definitions.events import (
         AssetKey,
         AssetMaterialization,
         AssetObservation,
         Materialization,
     )
-    from dagster._core.event_api import EventLogRecord
     from dagster._core.events.log import EventLogEntry
 
 

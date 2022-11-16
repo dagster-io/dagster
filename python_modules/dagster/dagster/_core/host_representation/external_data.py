@@ -7,7 +7,6 @@ for that.
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
-from dagster._core.definitions.op_definition import OpDefinition
 
 import pendulum
 
@@ -32,6 +31,7 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition

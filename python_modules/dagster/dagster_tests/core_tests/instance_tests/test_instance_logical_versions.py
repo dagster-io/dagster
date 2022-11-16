@@ -1,12 +1,10 @@
 import time
 from hashlib import sha256
-from typing import Any
+from typing import Any, Union
 
-from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
-    DEFAULT_LOGICAL_VERSION,
     INPUT_EVENT_POINTER_TAG_KEY_PREFIX,
     INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
     LOGICAL_VERSION_TAG_KEY,
@@ -18,7 +16,6 @@ from dagster._core.definitions.logical_version import (
     extract_logical_version_from_entry,
     extract_logical_version_provenance_from_entry,
 )
-from dagster._core.definitions.materialize import materialize
 from dagster._core.events import (
     AssetObservationData,
     DagsterEvent,
@@ -29,6 +26,7 @@ from dagster._core.events.log import EventLogEntry
 
 
 def _create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> EventLogEntry:
+    event_specific_data: Union[StepMaterializationData, AssetObservationData]
     if isinstance(data, AssetMaterialization):
         event_specific_data = StepMaterializationData(data, [])
     elif isinstance(data, AssetObservation):
@@ -99,14 +97,10 @@ def test_compute_logical_version():
 
 
 def test_compute_logical_version_unknown_code_version():
-    result = compute_logical_version(
-        UNKNOWN_VALUE, {AssetKey(["alpha"]): LogicalVersion("1")}
-    )
+    result = compute_logical_version(UNKNOWN_VALUE, {AssetKey(["alpha"]): LogicalVersion("1")})
     assert result == UNKNOWN_LOGICAL_VERSION
 
 
 def test_compute_logical_version_unknown_dep_version():
-    result = compute_logical_version(
-        "foo", {AssetKey(["alpha"]): UNKNOWN_LOGICAL_VERSION}
-    )
+    result = compute_logical_version("foo", {AssetKey(["alpha"]): UNKNOWN_LOGICAL_VERSION})
     assert result == UNKNOWN_LOGICAL_VERSION

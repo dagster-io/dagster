@@ -38,12 +38,19 @@ from dagster._utils.log import configure_loggers
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 
-def assert_namedtuple_lists_equal(t1_list: Sequence[T_NamedTuple], t2_list: Sequence[T_NamedTuple], exclude_fields: Optional[Sequence[str]] = None) -> None:
+
+def assert_namedtuple_lists_equal(
+    t1_list: Sequence[T_NamedTuple],
+    t2_list: Sequence[T_NamedTuple],
+    exclude_fields: Optional[Sequence[str]] = None,
+) -> None:
     for t1, t2 in zip(t1_list, t2_list):
         assert_namedtuples_equal(t1, t2, exclude_fields)
 
 
-def assert_namedtuples_equal(t1: T_NamedTuple, t2: T_NamedTuple, exclude_fields: Optional[Sequence[str]] = None) -> None:
+def assert_namedtuples_equal(
+    t1: T_NamedTuple, t2: T_NamedTuple, exclude_fields: Optional[Sequence[str]] = None
+) -> None:
     exclude_fields = exclude_fields or []
     for field in type(t1)._fields:
         if not field in exclude_fields:
