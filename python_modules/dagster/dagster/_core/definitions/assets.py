@@ -161,7 +161,7 @@ class AssetsDefinition(ResourceAddable):
             )
         for key, freshness_policy in (freshness_policies_by_key or {}).items():
             check.param_invariant(
-                freshness_policy and self._partitions_def,
+                not (freshness_policy and self._partitions_def),
                 "freshness_policies_by_key",
                 "FreshnessPolicies are currently unsupported for partitioned assets.",
             )
