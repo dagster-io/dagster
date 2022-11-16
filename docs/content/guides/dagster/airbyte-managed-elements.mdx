@@ -41,7 +41,7 @@ airbyte_reconciler = AirbyteManagedElementReconciler(
 
 ## 2. Defining sources and destinations
 
-Next, we will define our sources and destinations. Sources and destinations can be constructed manually using the `AirbyteSource` and `AirbyteDestination` classes, respectively, however `dagster-airbyte` also provides generated, typed classes for specific source and destination types. In this case, we'll import the generated classes for the `File` source and `Local JSON` destination.
+Next, we will define our sources and destinations. Sources and destinations can be constructed manually using the `AirbyteSource` and `AirbyteDestination` classes, respectively, however `dagster-airbyte` also provides generated, typed classes for specific source and destination types. See the [API docs](/\_apidocs/libraries/dagster-airbyte#managed-config-generated-sources) for more information on these generated classes. In this case, we'll import the generated classes for the `File` source and `Local JSON` destination.
 
 Here, we'll configure a source that reads from a hosted CSV file and a destination which writes it to a local JSON file.
 
