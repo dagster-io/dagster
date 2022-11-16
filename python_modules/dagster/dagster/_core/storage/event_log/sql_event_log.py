@@ -243,13 +243,6 @@ class SqlEventLogStorage(EventLogStorage):
         else:
             current_tags = current_tags_list[0]
 
-            asset_key_str = asset_key.to_string()
-
-            if len(current_tags_list) == 0:
-                current_tags: Mapping[str, str] = {}
-            else:
-                current_tags = current_tags_list[0]
-
         with self.index_connection() as conn:
             current_tags_set = set(current_tags.keys())
             new_tags_set = set(new_tags.keys())
@@ -266,8 +259,9 @@ class SqlEventLogStorage(EventLogStorage):
                             AssetEventTagsTable.c.asset_key == asset_key_str,
                             AssetEventTagsTable.c.key == tag,
                         )
-                        .values(value=new_tags[tag])
                     )
+                    .values(value=new_tags[tag])
+                )
 
             if added_tags:
                 conn.execute(
