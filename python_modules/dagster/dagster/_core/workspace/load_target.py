@@ -6,6 +6,8 @@ from dagster._core.host_representation.origin import (
     RepositoryLocationOrigin,
 )
 
+from dagster._seven import import_module_from_path
+
 from .load import (
     location_origin_from_module_name,
     location_origin_from_package_name,
@@ -18,6 +20,32 @@ class WorkspaceLoadTarget(ABC):
     @abstractmethod
     def create_origins(self) -> Sequence[RepositoryLocationOrigin]:
         """Reloads the RepositoryLocationOrigins for this workspace."""
+
+
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass
+class Project:
+    python_package: Optional[str]
+
+
+class ProjectPythonFileTarget(
+    NamedTuple("ProjectLoadTarget", [("path", str)]), WorkspaceLoadTarget
+):
+    def create_origins(self):
+        module = import_module_from_path("__dagster_project", self.path)
+        project = module.__dict__["project"]
+        return [
+            location_origin_from_package_name(
+                project.python_package,
+                attribute=None,
+                working_directory=None,
+                location_name=None,
+                executable_path=None,
+            )
+        ]
 
 
 class WorkspaceFileTarget(

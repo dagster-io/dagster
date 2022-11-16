@@ -26,6 +26,7 @@ from dagster._core.workspace.load_target import (
     PackageTarget,
     PythonFileTarget,
     WorkspaceFileTarget,
+    ProjectPythonFileTarget,
 )
 from dagster._grpc.utils import get_loadable_targets
 from dagster._utils.hosted_user_process import recon_repository_from_origin
@@ -79,6 +80,8 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
+        if os.path.exists("dagster_project.py"):
+            return ProjectPythonFileTarget(path="dagster_project.py")
         if os.path.exists("workspace.yaml"):
             return WorkspaceFileTarget(paths=["workspace.yaml"])
         raise click.UsageError("No arguments given and workspace.yaml not found.")
