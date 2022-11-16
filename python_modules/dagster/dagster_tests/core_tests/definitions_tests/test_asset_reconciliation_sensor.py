@@ -45,7 +45,7 @@ class RunSpec(NamedTuple):
 
 class AssetReconciliationScenario(NamedTuple):
     unevaluated_runs: Sequence[RunSpec]
-    assets: Sequence[AssetsDefinition]
+    assets: Sequence[Union[SourceAsset, AssetsDefinition]]
     evaluation_delta: Optional[datetime.timedelta] = None
     cursor_from: Optional["AssetReconciliationScenario"] = None  # type: ignore
 
@@ -273,7 +273,9 @@ overlapping_freshness = diamond + [
 overlapping_freshness_with_source = [
     SourceAsset("source_asset"),
     asset_def("asset1", ["source_asset"]),
-] + overlapping_freshness[1:]
+] + overlapping_freshness[
+    1:
+]  # type: ignore
 overlapping_freshness_inf = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=freshness_inf),
@@ -621,12 +623,12 @@ scenarios = {
         expected_run_requests=[],
     ),
     "freshness_overlapping_with_source": AssetReconciliationScenario(
-        assets=overlapping_freshness_with_source,
+        assets=overlapping_freshness_with_source,  # type: ignore
         unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
         expected_run_requests=[],
     ),
     "freshness_overlapping_runs_half_stale": AssetReconciliationScenario(
-        assets=overlapping_freshness_with_source,
+        assets=overlapping_freshness_with_source,  # type: ignore
         unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
         # evaluate 35 minutes later, only need to refresh the assets on the shorter freshness policy
         evaluation_delta=datetime.timedelta(minutes=35),
