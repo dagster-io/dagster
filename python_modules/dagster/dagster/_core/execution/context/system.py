@@ -807,15 +807,29 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._input_asset_records
 
     def fetch_input_asset_records(self) -> None:
-        self._input_asset_records = {}
-        asset_info = check.not_none(
-            self.pipeline_def.asset_layer.asset_info_for_output(
-                self.solid_handle, self.step.step_outputs[0].name
+
+        output_keys: List[AssetKey] = []
+        for step_output in self.step.step_outputs:
+            asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+                self.solid_handle, step_output.name
             )
-        )
-        asset_key = asset_info.key
-        dep_keys = self.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
-        for key in dep_keys:
+            if asset_info is None:
+                continue
+            output_keys.append(asset_info.key)
+
+        all_dep_keys: List[AssetKey] = []
+        for output_key in output_keys:
+            if (
+                output_key not in self.pipeline_def.asset_layer._asset_deps
+            ):  # pylint: disable=protected-access
+                continue
+            dep_keys = self.pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
+            for key in dep_keys:
+                if not key in all_dep_keys and key not in output_keys:
+                    all_dep_keys.append(key)
+
+        self._input_asset_records = {}
+        for key in all_dep_keys:
             event = self.instance.get_latest_logical_version_record(key)
             self._input_asset_records[key] = event
 
