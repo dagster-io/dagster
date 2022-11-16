@@ -46,6 +46,7 @@ class FreshnessPolicy(
             no cron schedule is provided, then this constraint must be satisfied at all times.
 
     .. code-block:: python
+
         # At any point in time, this asset must incorporate all data from at least 30 minutes ago.
         @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
         def fresh_asset():
@@ -56,8 +57,6 @@ class FreshnessPolicy(
         def cron_up_to_date_asset():
             ...
 
-        * `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 1 * * *"): Every day by 1AM,
-        this asset must incorporate all data from at least 60 minutes ago.
     """
 
     def __new__(cls, *, maximum_lag_minutes: float, cron_schedule: Optional[str] = None):
