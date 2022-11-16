@@ -100,7 +100,7 @@ describe('useRepositoryReloadLocation', () => {
     });
   });
 
-  it('surfaces repository location errors', async () => {
+  it('surfaces code location errors', async () => {
     const mocks = {
       RepositoryLocationOrLoadError: () => ({
         __typename: 'PythonError',

@@ -50,7 +50,7 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
                 loading={reloading}
                 icon={<Icon name="refresh" />}
               >
-                Reload repository location
+                Reload definitions
               </Button>
             );
           }}

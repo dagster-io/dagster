@@ -18,7 +18,7 @@ export const RepositoryLocationErrorDialog: React.FC<Props> = (props) => {
   return (
     <Dialog
       icon="error"
-      title="Repository location error"
+      title="Code location error"
       isOpen={isOpen}
       canEscapeKeyClose={false}
       canOutsideClickClose={false}
@@ -42,7 +42,7 @@ export const RepositoryLocationNonBlockingErrorDialog: React.FC<Props> = (props)
   return (
     <Dialog
       icon="error"
-      title="Repository location error"
+      title="Code location error"
       isOpen={isOpen}
       style={{width: '90%'}}
       onClose={onDismiss}
@@ -66,8 +66,8 @@ const ErrorContents: React.FC<{
 }> = ({location, error}) => (
   <>
     <Box margin={{bottom: 12}}>
-      Error loading <strong>{location}</strong>. Try reloading the repository location after
-      resolving the issue.
+      Error loading <strong>{location}</strong>. Try reloading the code location after resolving the
+      issue.
     </Box>
     {error ? <PythonErrorInfo error={error} /> : null}
   </>

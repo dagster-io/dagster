@@ -128,8 +128,8 @@ export const RepositoryLocationsList = () => {
       <Box padding={{vertical: 32}}>
         <NonIdealState
           icon="folder"
-          title="No repository locations"
-          description="When you add a repository location to this workspace, it will appear here."
+          title="No definitions"
+          description="When you add a code location, your definitions will appear here."
         />
       </Box>
     );
