@@ -1,7 +1,7 @@
 import json
 import re
 from contextlib import AbstractContextManager
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, cast
 
 import responses
 from dagster_fivetran import (
@@ -43,13 +43,13 @@ class MockFivetran(AbstractContextManager):
         self.rsps = responses.RequestsMock(assert_all_requests_are_fired=False)
         self.connectors = connectors
         self.destinations = destinations
-        self.created_groups = {}
+        self.created_groups: Dict[str, str] = {}
         self.group_id = 1
         self.connectors_by_destination = {
             dest_id: [
                 conn_id
                 for conn_id, conn in connectors.items()
-                if conn.destination.name == dest.name
+                if cast(FivetranDestination, conn.destination).name == dest.name
             ]
             for dest_id, dest in destinations.items()
         }

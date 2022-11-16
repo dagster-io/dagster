@@ -53,7 +53,7 @@ class FivetranConnector:
         schema_name: str,
         source_type: str,
         source_configuration: Dict[str, Any],
-        destination: FivetranDestination,
+        destination: Optional[FivetranDestination],
         auth_configuration: Optional[Dict[str, Any]] = None,
     ):
         self.schema_name = check.str_param(schema_name, "schema_name")

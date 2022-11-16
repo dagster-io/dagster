@@ -124,7 +124,8 @@ def reconcile_connectors(
             existing_connector = None
 
         if configured_connector:
-            group_id = all_destinations[configured_connector.destination.name].destination_id
+            dest_name = check.not_none(configured_connector.destination).name
+            group_id = all_destinations[dest_name].destination_id
             config = {
                 **configured_connector.source_configuration,
                 "schema": configured_connector.schema_name,
@@ -274,7 +275,8 @@ def get_connectors_for_group(res: FivetranResource, group_id: str) -> List[Dict[
         conn["id"] for conn in res.make_request("GET", f"groups/{group_id}/connectors")["items"]
     }
     connectors = [
-        res.make_request("GET", f"connectors/{connector_id}") for connector_id in connector_ids
+        dict(res.make_request("GET", f"connectors/{connector_id}"))
+        for connector_id in connector_ids
     ]
     return connectors
 
@@ -291,12 +293,16 @@ def reconcile_config(
     and a pointer to an Fivetran instance and returns a diff, along with applying the diff
     if dry_run is False.
     """
-    config_dests = {conn.destination.name: conn.destination for conn in objects}
+    config_dests_list = [
+        check.not_none(conn.destination, "Connections must specify a destination")
+        for conn in objects
+    ]
+    config_dests = {dest.name: dest for dest in config_dests_list}
     config_connectors = {conn.schema_name: conn for conn in objects}
 
     existing_groups = res.make_request("GET", "groups")["items"]
     existing_dests_raw = {
-        group["name"]: res.make_request("GET", f"destinations/{group['id']}")
+        group["name"]: dict(res.make_request("GET", f"destinations/{group['id']}"))
         for group in existing_groups
     }
     existing_dests: Dict[str, InitializedFivetranDestination] = {
