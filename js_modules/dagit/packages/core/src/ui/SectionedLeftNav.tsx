@@ -91,16 +91,7 @@ export const SectionedLeftNav = () => {
     return <div style={{flex: 1}} />;
   }
 
-  return sortedRepos.length === 0 ? (
-    <Box
-      flex={{direction: 'column', gap: 8}}
-      padding={{horizontal: 24, bottom: 12}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-    >
-      <span style={{fontSize: '16px', fontWeight: 500}}>No definitions</span>
-      <Body>When you add a code location, your definitions will appear here</Body>
-    </Box>
-  ) : (
+  return (
     <Container>
       {sortedRepos.map((repo) => {
         const repoName = repo.repository.name;

@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui';
+import {Body, Box, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -25,7 +25,14 @@ const LoadedRepositorySection: React.FC<{
 
     return (
       <EmptyState>
-        There are no repositories in this workspace. Add a repository to see a list of jobs.
+        <Box
+          flex={{direction: 'column', gap: 8}}
+          padding={{horizontal: 24, bottom: 12}}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        >
+          <span style={{fontSize: '16px', fontWeight: 500}}>No definitions</span>
+          <Body>When you add a code location, your definitions will appear here</Body>
+        </Box>
       </EmptyState>
     );
   };

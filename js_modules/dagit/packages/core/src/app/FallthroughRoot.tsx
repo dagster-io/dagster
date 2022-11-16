@@ -97,11 +97,11 @@ const FinalRedirectOrLoadingRoot = () => {
     <Box padding={{vertical: 64}}>
       <NonIdealState
         icon="no-results"
-        title={repoWithNoJob ? 'No jobs' : 'No repositories'}
+        title={repoWithNoJob ? 'No jobs' : 'No Definitions'}
         description={
           repoWithNoJob
-            ? 'Your repository is loaded, but no jobs were found.'
-            : 'Add a repository to get started.'
+            ? 'Your definitions are loaded, but no jobs were found.'
+            : 'Add a definition to get started.'
         }
         action={
           <ExternalAnchorButton href="https://docs.dagster.io/getting-started">

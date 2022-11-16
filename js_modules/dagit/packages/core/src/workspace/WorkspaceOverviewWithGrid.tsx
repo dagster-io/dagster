@@ -40,8 +40,8 @@ export const WorkspaceOverviewWithGrid = () => {
         <Box padding={{vertical: 64}}>
           <NonIdealState
             icon="error"
-            title="Error loading repositories"
-            description="Could not load repositories in this workspace."
+            title="Error loading definitions"
+            description="Could not load definitions in this workspace."
           />
         </Box>
       );
@@ -52,8 +52,8 @@ export const WorkspaceOverviewWithGrid = () => {
         <Box padding={{vertical: 64}}>
           <NonIdealState
             icon="folder"
-            title="No repositories"
-            description="When you add a repository to this workspace, it will appear here."
+            title="No definitions"
+            description="When you add a definition to this workspace, it will appear here."
           />
         </Box>
       );
