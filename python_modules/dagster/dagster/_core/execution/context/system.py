@@ -41,7 +41,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError, DagsterUndefinedLogicalVersionError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ExecutionStep
@@ -831,6 +831,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._input_asset_records = {}
         for key in all_dep_keys:
             event = self.instance.get_latest_logical_version_record(key)
+            is_source = self.pipeline_def.asset_layer.is_source_for_asset(key)
+            if event is None and not is_source:
+                raise DagsterUndefinedLogicalVersionError(
+                    f"No logical version defined for asset {key}; no materialization events found.",
+                )
             self._input_asset_records[key] = event
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:

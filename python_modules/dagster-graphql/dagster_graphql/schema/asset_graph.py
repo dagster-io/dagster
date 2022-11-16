@@ -401,7 +401,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
 
     def resolve_computeKind(self, _graphene_info) -> Optional[str]:
-        return self._external_asset_node.compute_kind
+        return s
 
     def resolve_dependedBy(self, graphene_info) -> List[GrapheneAssetDependency]:
         # CrossRepoAssetDependedByLoader class loads cross-repo asset dependencies workspace-wide.

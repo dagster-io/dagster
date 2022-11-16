@@ -10,11 +10,9 @@ import weakref
 from collections import defaultdict
 from contextlib import ExitStack
 from enum import Enum
-from hashlib import sha256
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -29,11 +27,9 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    overload,
 )
 
 import yaml
-from typing_extensions import Literal
 
 import dagster._check as check
 from dagster._annotations import public
@@ -42,7 +38,6 @@ from dagster._core.definitions.logical_version import (
     DEFAULT_LOGICAL_VERSION,
     LogicalVersion,
     LogicalVersionProvenance,
-    compute_logical_version,
     extract_logical_version_from_entry,
     extract_logical_version_provenance_from_entry,
 )
@@ -2184,6 +2179,7 @@ class DagsterInstance:
         is_source: bool,
         *,
         event: Optional[EventLogRecord] = None,
+        instance: Optional["DagsterInstance"] = None,
     ) -> LogicalVersion:
 
         event = event or self.get_latest_logical_version_record(key, is_source)

@@ -30,9 +30,13 @@ from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidF
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
+    DEFAULT_LOGICAL_VERSION,
     LOGICAL_VERSION_TAG_KEY,
     LogicalVersion,
     compute_logical_version,
+    extract_logical_version_from_entry,
+    get_current_logical_version,
+    get_current_logical_version_from_latest_event,
     get_input_event_pointer_tag_key,
     get_input_logical_version_tag_key,
 )
@@ -52,6 +56,7 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
     DagsterTypeCheckError,
     DagsterTypeMaterializationError,
+    DagsterUndefinedLogicalVersionError,
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent
@@ -581,10 +586,10 @@ def _build_logical_version_tags(
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG_KEY] = code_version
     for key, event in input_asset_records.items():
-        is_source = asset_layer.is_source_for_asset(key)
-        logical_version = step_context.instance.get_current_logical_version(
-            key, is_source, event=event
-        )
+        if event is not None:
+            logical_version = extract_logical_version_from_entry(event.event_log_entry) or DEFAULT_LOGICAL_VERSION
+        else:
+            logical_version = DEFAULT_LOGICAL_VERSION
         input_logical_versions[key] = logical_version
         tags[get_input_logical_version_tag_key(key)] = logical_version.value
         tags[get_input_event_pointer_tag_key(key)] = str(event.storage_id) if event else "NULL"
