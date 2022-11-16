@@ -4,30 +4,28 @@ import * as React from 'react';
 import {PartitionState, partitionStatusToText} from './PartitionStatus';
 
 export const PartitionStateCheckboxes: React.FC<{
-  partitionData: {[name: string]: PartitionState};
-  partitionKeysForCounts: string[];
+  partitionKeysForCounts: {partitionKey: string; state: PartitionState}[];
   value: PartitionState[];
   allowed: PartitionState[];
   onChange: (selected: PartitionState[]) => void;
-}> = ({partitionData, partitionKeysForCounts, value, onChange, allowed}) => {
+}> = ({partitionKeysForCounts, value, onChange, allowed}) => {
   const byState = React.useMemo(() => {
     const result: {[state: string]: number} = {
       [PartitionState.SUCCESS]: 0,
+      [PartitionState.SUCCESS_MISSING]: 0,
       [PartitionState.MISSING]: 0,
       [PartitionState.FAILURE]: 0,
       [PartitionState.QUEUED]: 0,
       [PartitionState.STARTED]: 0,
     };
-    for (const key of Object.keys(partitionData)) {
-      if (partitionKeysForCounts.includes(key)) {
-        result[partitionData[key]] = (result[partitionData[key]] || 0) + 1;
-      }
+    for (const key of partitionKeysForCounts) {
+      result[key.state] = (result[key.state] || 0) + 1;
     }
     return result;
-  }, [partitionData, partitionKeysForCounts]);
+  }, [partitionKeysForCounts]);
 
   return (
-    <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+    <Box flex={{direction: 'row', alignItems: 'center', gap: 12}} style={{overflow: 'hidden'}}>
       {allowed.map((state) => (
         <Checkbox
           key={state}

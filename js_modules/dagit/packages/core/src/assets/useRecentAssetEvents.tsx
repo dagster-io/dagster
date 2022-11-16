@@ -16,8 +16,8 @@ import {AssetEventsQuery, AssetEventsQueryVariables} from './types/AssetEventsQu
  */
 export function useRecentAssetEvents(
   assetKey: AssetKey,
-  assetHasDefinedPartitions: boolean,
   params: AssetViewParams,
+  {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
   // The params behavior on this page is a bit nuanced - there are two main query
   // params: ?timestamp= and ?partition= and only one is set at a time. They can
@@ -31,7 +31,7 @@ export function useRecentAssetEvents(
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
   const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
   const xAxis: 'partition' | 'time' =
-    assetHasDefinedPartitions && params.partition !== undefined
+    params.partition !== undefined
       ? 'partition'
       : params.time !== undefined || before
       ? 'time'

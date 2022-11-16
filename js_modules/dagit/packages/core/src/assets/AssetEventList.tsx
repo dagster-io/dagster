@@ -15,8 +15,6 @@ import {AssetEventGroup} from './groupByPartition';
 
 export const AssetEventList: React.FC<{
   xAxis: 'time' | 'partition';
-  hasPartitions: boolean;
-  hasLineage: boolean;
   groups: AssetEventGroup[];
   focused?: AssetEventGroup;
   setFocused?: (item: AssetEventGroup | undefined) => void;
@@ -43,12 +41,12 @@ export const AssetEventList: React.FC<{
   }, [focused]);
 
   return (
-    <Container ref={parentRef}>
+    <AssetListContainer ref={parentRef}>
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
           const group = groups[index];
           return (
-            <ClickableRow
+            <AssetListRow
               key={key}
               $height={size}
               $start={start}
@@ -76,26 +74,38 @@ export const AssetEventList: React.FC<{
                   <AssetEventListEventRow group={group} />
                 )}
               </Box>
-            </ClickableRow>
+            </AssetListRow>
           );
         })}
       </Inner>
-    </Container>
+    </AssetListContainer>
   );
 };
 
-const ClickableRow = styled(Row)<{$focused: boolean}>`
+export const AssetListContainer = styled(Container)`
+  outline: none;
+  &:focus {
+    box-shadow: 0 -1px ${Colors.Blue500};
+  }
+`;
+
+export const AssetListRow = styled(Row)<{$focused: boolean}>`
   cursor: pointer;
+  user-select: none;
 
   :focus,
   :active,
   :hover {
     outline: none;
-    background: ${Colors.White};
+    background: ${Colors.Gray100};
   }
   ${(p) =>
     p.$focused &&
-    `background: ${Colors.White};
+    `background: ${Colors.Blue50};
+     color: ${Colors.Blue700};
+     :hover {
+       background: ${Colors.Blue50};
+     }
     `}
 `;
 
@@ -138,7 +148,7 @@ const AssetEventListEventRow: React.FC<{group: AssetEventGroup}> = ({group}) => 
         <Timestamp timestamp={{ms: Number(timestamp)}} />
       </Box>
       <Box flex={{gap: 4, direction: 'row'}}>
-        {partition && <Tag icon="partition">{partition}</Tag>}
+        {partition && <Tag>{partition}</Tag>}
         {latest && run && (
           <Tag>
             <AssetRunLink

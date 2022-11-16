@@ -1,131 +1,21 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
-import {Tooltip, Spinner, Box, Colors} from '@dagster-io/ui';
+import {Spinner, Box, Colors, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assembleIntoSpans} from '../partitions/PartitionRangeInput';
-
-import {AssetKey} from './types';
 import {
-  PartitionHealthQuery,
-  PartitionHealthQueryVariables,
-  PartitionHealthQuery_assetNodeOrError_AssetNode_partitionKeysByDimension,
-  PartitionHealthQuery_assetNodeOrError_AssetNode_partitionMaterializationCounts,
-} from './types/PartitionHealthQuery';
+  PartitionState,
+  partitionStateToStyle,
+  partitionStatusToText,
+} from '../partitions/PartitionStatus';
 
-export interface PartitionHealthData {
-  assetKey: AssetKey;
-  dimensions: {name: string; partitionKeys: string[]}[];
-  getCount: (dimensionPartitionKeys: string[]) => number;
-  timeline: {
-    keys: string[];
-    spans: {startIdx: number; endIdx: number; status: boolean}[];
-    statusByPartition: {[partitionName: string]: boolean};
-    indexToPct: (idx: number) => string;
-  };
-}
-
-function assembleTimeline(
-  dimensions: PartitionHealthQuery_assetNodeOrError_AssetNode_partitionKeysByDimension[],
-  counts: PartitionHealthQuery_assetNodeOrError_AssetNode_partitionMaterializationCounts,
-): PartitionHealthData['timeline'] {
-  const timeDimensionIdx = 0;
-
-  const keysForDimension = dimensions[timeDimensionIdx].partitionKeys;
-  const countsForDimension =
-    counts.__typename === 'MaterializationCountSingleDimension'
-      ? counts.materializationCounts
-      : counts.materializationCountsGrouped[timeDimensionIdx];
-
-  const statusByPartition = Object.fromEntries(
-    countsForDimension.map((count, idx) => [keysForDimension[idx], !!count]),
-  );
-  const spans = assembleIntoSpans(keysForDimension, (key) => statusByPartition[key]);
-
-  return {
-    spans,
-    statusByPartition,
-    keys: keysForDimension,
-    indexToPct: (idx: number) => `${((idx * 100) / keysForDimension.length).toFixed(3)}%`,
-  };
-}
-
-async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: AssetKey) {
-  const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
-    query: PARTITION_HEALTH_QUERY,
-    fetchPolicy: 'network-only',
-    variables: {
-      assetKey: {path: loadKey.path},
-    },
-  });
-
-  const dimensions =
-    data.assetNodeOrError.__typename === 'AssetNode'
-      ? data.assetNodeOrError.partitionKeysByDimension
-      : [];
-
-  const counts = (data.assetNodeOrError.__typename === 'AssetNode' &&
-    data.assetNodeOrError.partitionMaterializationCounts) || {
-    __typename: 'MaterializationCountSingleDimension',
-    materializationCounts: [],
-  };
-
-  const getCount = (dimensionPartitionKeys: string[]) => {
-    if (dimensions.length !== dimensionPartitionKeys.length) {
-      return -1;
-    }
-    const idx0 = dimensions[0].partitionKeys.indexOf(dimensionPartitionKeys[0]);
-    const idx1 =
-      dimensionPartitionKeys.length > 1
-        ? dimensions[1].partitionKeys.indexOf(dimensionPartitionKeys[1])
-        : -1;
-
-    return !counts
-      ? 0
-      : counts.__typename === 'MaterializationCountSingleDimension'
-      ? counts.materializationCounts[idx0]
-      : counts.materializationCountsGrouped[idx0][idx1];
-  };
-
-  const timeline = assembleTimeline(dimensions, counts);
-
-  const result: PartitionHealthData = {
-    dimensions,
-    getCount,
-    timeline,
-    assetKey: loadKey,
-  };
-
-  return result;
-}
-
-export function usePartitionHealthData(assetKeys: AssetKey[]) {
-  const [result, setResult] = React.useState<PartitionHealthData[]>([]);
-  const client = useApolloClient();
-
-  const assetKeyJSONs = assetKeys.map((k) => JSON.stringify(k));
-  const missingKeyJSON = assetKeyJSONs.find(
-    (k) => !result.some((r) => JSON.stringify(r.assetKey) === k),
-  );
-
-  React.useMemo(() => {
-    if (!missingKeyJSON) {
-      return;
-    }
-    const loadKey: AssetKey = JSON.parse(missingKeyJSON);
-    const run = async () => {
-      const loaded = await loadPartitionHealthData(client, loadKey);
-      setResult((result) => [...result, loaded]);
-    };
-    run();
-  }, [client, missingKeyJSON]);
-
-  return result.filter((r) => assetKeyJSONs.includes(JSON.stringify(r.assetKey)));
-}
+import {isTimeseriesPartition} from './MultipartitioningSupport';
+import {AssetKey} from './types';
+import {PartitionHealthData} from './usePartitionHealthData';
 
 export const PartitionHealthSummary: React.FC<{
   assetKey: AssetKey;
-  selected?: string[];
+  selected?: {partitionKey: string}[];
   showAssetKey?: boolean;
   data: PartitionHealthData[];
 }> = ({showAssetKey, assetKey, selected, data}) => {
@@ -139,17 +29,32 @@ export const PartitionHealthSummary: React.FC<{
     );
   }
 
-  const {spans, keys, indexToPct} = assetData.timeline;
-  const highestIndex = spans.map((s) => s.endIdx).reduce((prev, cur) => Math.max(prev, cur), 0);
+  const timeDimension = assetData.dimensions.find((d) => isTimeseriesPartition(d.partitionKeys[0]));
+  if (!timeDimension) {
+    return <div />;
+  }
 
-  const selectedSpans = selected
-    ? assembleIntoSpans(keys, (key) => selected.includes(key)).filter((s) => s.status)
+  const keys = timeDimension.partitionKeys;
+  const spans = assembleIntoSpans(keys, (key) => assetData.stateForPartialKey([key]));
+
+  const selectedKeys = selected?.map((s) => s.partitionKey);
+  const selectedSpans = selectedKeys
+    ? assembleIntoSpans(keys, (key) => selectedKeys.includes(key)).filter((s) => s.status)
     : [];
 
-  const populated = spans
-    .filter((s) => s.status === true)
-    .map((s) => s.endIdx - s.startIdx + 1)
-    .reduce((a, b) => a + b, 0);
+  const total = assetData.dimensions.reduce((total, d) => d.partitionKeys.length * total, 1);
+  const success = assetData.dimensions
+    .reduce(
+      (combinations, d) =>
+        combinations.length
+          ? combinations.flatMap((keys) => d.partitionKeys.map((key) => [...keys, key]))
+          : d.partitionKeys.map((key) => [key]),
+      [] as string[][],
+    )
+    .filter((dkeys) => assetData.stateForKey(dkeys) === PartitionState.SUCCESS).length;
+
+  const indexToPct = (idx: number) => `${((idx * 100) / keys.length).toFixed(3)}%`;
+  const highestIndex = spans.map((s) => s.endIdx).reduce((prev, cur) => Math.max(prev, cur), 0);
 
   return (
     <div>
@@ -158,12 +63,8 @@ export const PartitionHealthSummary: React.FC<{
         margin={{bottom: 4}}
         style={{fontSize: '0.8rem', color: Colors.Gray500}}
       >
-        <span>
-          {showAssetKey
-            ? displayNameForAssetKey(assetKey)
-            : `${populated}/${keys.length} Partitions`}
-        </span>
-        {showAssetKey ? <span>{`${populated}/${keys.length}`}</span> : undefined}
+        {showAssetKey && <span>{displayNameForAssetKey(assetKey)}</span>}
+        <span>{`${success.toLocaleString()}/${total.toLocaleString()}`}</span>
       </Box>
       {selected && (
         <div style={{position: 'relative', width: '100%', overflowX: 'hidden', height: 10}}>
@@ -209,9 +110,10 @@ export const PartitionHealthSummary: React.FC<{
               content={
                 s.startIdx === s.endIdx
                   ? `Partition ${keys[s.startIdx]} is ${s.status ? 'up-to-date' : 'missing'}`
-                  : `Partitions ${keys[s.startIdx]} through ${keys[s.endIdx]} are ${
-                      s.status ? 'up-to-date' : 'missing'
-                    }`
+                  : `Partitions ${keys[s.startIdx]} through ${
+                      keys[s.endIdx]
+                    } are ${partitionStatusToText(s.status).toLowerCase()}
+                    `
               }
             >
               <div
@@ -219,7 +121,7 @@ export const PartitionHealthSummary: React.FC<{
                   width: '100%',
                   height: 14,
                   outline: 'none',
-                  background: s.status ? Colors.Green500 : Colors.Gray200,
+                  ...partitionStateToStyle(s.status),
                 }}
               />
             </Tooltip>
@@ -237,25 +139,3 @@ export const PartitionHealthSummary: React.FC<{
     </div>
   );
 };
-
-const PARTITION_HEALTH_QUERY = gql`
-  query PartitionHealthQuery($assetKey: AssetKeyInput!) {
-    assetNodeOrError(assetKey: $assetKey) {
-      ... on AssetNode {
-        id
-        partitionKeysByDimension {
-          name
-          partitionKeys
-        }
-        partitionMaterializationCounts {
-          ... on MaterializationCountGroupedByDimension {
-            materializationCountsGrouped
-          }
-          ... on MaterializationCountSingleDimension {
-            materializationCounts
-          }
-        }
-      }
-    }
-  }
-`;

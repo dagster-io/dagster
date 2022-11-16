@@ -39,7 +39,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
     loading,
     refetch,
     xAxis,
-  } = useRecentAssetEvents(assetKey, assetHasDefinedPartitions, {});
+  } = useRecentAssetEvents(assetKey, {}, {assetHasDefinedPartitions});
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
 
