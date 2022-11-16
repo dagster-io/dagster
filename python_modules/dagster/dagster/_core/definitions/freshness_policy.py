@@ -40,9 +40,9 @@ class FreshnessPolicy(
     ago. This calculation is recursive: any given asset is expected to incorporate up-to-date
     data from all of its upstream assets.
 
-    Currently, it is assumed that all root asset definitions (asset definitions with no upstream
-    asset definitions) consume from some always-updating source. That is, if you execute a root
-    asset at time T, that root asset will now incorporate all data up to time T.
+    It is assumed that all asset definitions with no upstream asset definitions consume from some
+    always-updating source. That is, if you materialize that asset at time T, it will incorporate
+    all data up to time T.
 
     If `cron_schedule` is not defined, the given asset will be expected to incorporate upstream
     data from no more than `maximum_lag_minutes` ago at all points in time. For example, "The events
