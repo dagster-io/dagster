@@ -5,7 +5,6 @@ import React from 'react';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
-import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
@@ -323,8 +322,13 @@ const AssetNodeShowOnHover = styled.span`
 export const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
-      ? `border: 2px dashed ${p.$selected ? Colors.Gray500 : Colors.Gray300};`
-      : `border: 2px solid ${p.$selected ? Colors.Blue500 : Colors.Blue200};`}
+      ? `border: 2px dashed ${p.$selected ? Colors.Gray600 : Colors.Gray300}`
+      : `border: 2px solid ${p.$selected ? Colors.Blue500 : Colors.Blue200}`};
+
+  ${(p) =>
+    p.$isSource
+      ? `outline: 3px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
+      : `outline: 3px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
 
   background: ${Colors.White};
   border-radius: 5px;
@@ -349,10 +353,6 @@ const Name = styled.div<{$isSource: boolean}>`
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
-  outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
-  border-radius: 12px;
-  outline-offset: 2px;
-  outline-width: 4px;
   height: 100%;
 `;
 
@@ -365,8 +365,14 @@ const MinimalAssetNodeBox = styled.div<{
   background: ${(p) => p.$background};
   ${(p) =>
     p.$isSource
-      ? `border: 4px dashed ${p.$selected ? Colors.Gray500 : p.$border};`
-      : `border: 4px solid ${p.$selected ? Colors.Blue500 : p.$border};`}
+      ? `border: 4px dashed ${p.$selected ? Colors.Gray500 : p.$border}`
+      : `border: 4px solid ${p.$selected ? Colors.Blue500 : p.$border}`};
+
+  ${(p) =>
+    p.$isSource
+      ? `outline: 8px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
+      : `outline: 8px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
+
   border-radius: 10px;
   position: relative;
   padding: 4px;
