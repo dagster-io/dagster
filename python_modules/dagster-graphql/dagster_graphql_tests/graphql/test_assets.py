@@ -151,10 +151,10 @@ GET_ASSET_PARTITIONS = """
 """
 
 GET_PARTITIONS_BY_DIMENSION = """
-    query AssetNodeQuery($assetKeys: [AssetKeyInput!], $primaryDimension: String) {
+    query AssetNodeQuery($assetKeys: [AssetKeyInput!]) {
         assetNodes(assetKeys: $assetKeys) {
             id
-            partitionKeysByDimension(primaryDimension: $primaryDimension) {
+            partitionKeysByDimension {
                 name
                 partitionKeys
             }
@@ -235,12 +235,12 @@ GET_MATERIALIZATION_COUNT_BY_PARTITION = """
 """
 
 GET_MATERIALIZATION_COUNT_BY_DIMENSION_PARTITION = """
-    query MaterializationCountByDimension($assetKeys: [AssetKeyInput!], $primaryDimension: String) {
+    query MaterializationCountByDimension($assetKeys: [AssetKeyInput!]) {
         assetNodes(assetKeys: $assetKeys) {
             assetKey {
                 path
             }
-            partitionMaterializationCounts(primaryDimension: $primaryDimension) {
+            partitionMaterializationCounts {
                 ... on MaterializationCountGroupedByDimension {
                     materializationCountsGrouped
                 }
@@ -1176,20 +1176,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert dimensions[1]["name"] == "ab"
         assert dimensions[1]["partitionKeys"] == ["a", "b"]
 
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_PARTITIONS_BY_DIMENSION,
-            variables={"assetKeys": [{"path": ["multipartitions_1"]}], "primaryDimension": "ab"},
-        )
-        assert result.data
-        dimensions = result.data["assetNodes"][0]["partitionKeysByDimension"]
-        assert len(dimensions) == 2
-        assert dimensions[0]["name"] == "ab"
-        assert dimensions[0]["partitionKeys"] == ["a", "b"]
-        assert dimensions[1]["name"] == "12"
-        assert dimensions[1]["partitionKeys"] == ["1", "2"]
-
-    def test_multipartitions_asset_materializations(self, graphql_context):
+    def test_multipartitions_get_materialization_count(self, graphql_context):
         _create_partitioned_run(
             graphql_context,
             "multipartitions_job",
@@ -1210,6 +1197,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             },
         )
 
+        assert result.data
         assert result.data["assetNodes"]
         assert result.data["assetNodes"][0]["partitionMaterializationCounts"][
             "materializationCountsGrouped"
@@ -1245,18 +1233,24 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "materializationCountsGrouped"
         ] == [[0, 0], [0, 2]]
 
+        _create_partitioned_run(
+            graphql_context,
+            "multipartitions_job",
+            [AssetKey("multipartitions_1")],
+            MultiPartitionKey({"ab": "b", "12": "1"}),
+        )
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_MATERIALIZATION_COUNT_BY_DIMENSION_PARTITION,
             variables={
                 "assetKeys": [{"path": ["multipartitions_1"]}],
-                "primaryDimension": "ab",
             },
         )
         assert result.data["assetNodes"]
         assert result.data["assetNodes"][0]["partitionMaterializationCounts"][
             "materializationCountsGrouped"
-        ] == [[2, 0], [0, 1]]
+        ] == [[2, 1], [0, 1]]
 
     def test_get_materialization_for_multipartition(self, graphql_context):
         first_run_id = _create_partitioned_run(

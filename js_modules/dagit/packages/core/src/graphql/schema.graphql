@@ -670,7 +670,7 @@ type AssetNode {
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
-  partitionMaterializationCounts(primaryDimension: String): PartitionMaterializationCounts
+  partitionMaterializationCounts: PartitionMaterializationCounts
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
@@ -678,7 +678,7 @@ type AssetNode {
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
-  partitionKeysByDimension(primaryDimension: String): [DimensionPartitionKeys!]!
+  partitionKeysByDimension: [DimensionPartitionKeys!]!
   projectedLogicalVersion: String
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
@@ -715,12 +715,19 @@ type MaterializationCountGroupedByDimension {
 type PartitionDefinition {
   description: String!
   type: PartitionDefinitionType!
+  dimensionTypes: [DimensionDefinitionType!]!
 }
 
 enum PartitionDefinitionType {
   TIME_WINDOW
   STATIC
   MULTIPARTITIONED
+}
+
+type DimensionDefinitionType {
+  name: String!
+  description: String!
+  type: PartitionDefinitionType!
 }
 
 type DimensionPartitionKeys {

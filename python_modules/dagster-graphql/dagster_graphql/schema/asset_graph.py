@@ -176,9 +176,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
     )
-    partitionMaterializationCounts = graphene.Field(
-        GraphenePartitionMaterializationCounts, primaryDimension=graphene.String()
-    )
+    partitionMaterializationCounts = graphene.Field(GraphenePartitionMaterializationCounts)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
@@ -186,9 +184,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     opVersion = graphene.String()
     partitionDefinition = graphene.Field(GraphenePartitionDefinition)
     partitionKeys = non_null_list(graphene.String)
-    partitionKeysByDimension = graphene.Field(
-        non_null_list(GrapheneDimensionPartitionKeys), primaryDimension=graphene.String()
-    )
+    partitionKeysByDimension = non_null_list(GrapheneDimensionPartitionKeys)
     projectedLogicalVersion = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
@@ -302,49 +298,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         return external_multipartitions_def is not None and isinstance(
             external_multipartitions_def, ExternalMultiPartitionsDefinitionData
         )
-
-    def get_default_primary_dimension_name(self) -> str:
-        """
-        Selects a default primary partition dimension for multipartitioned assets.
-
-        If the partitions definition has one static dimension, select that dimension. Otherwise,
-        select the first dimension in the list of dimensions.
-        """
-        if not self.is_multipartitioned():
-            check.failed(
-                "Expected partitions_def_data to be an ExternalMultiPartitionsDefinitionData"
-            )
-        external_multipartitions_def = cast(
-            ExternalMultiPartitionsDefinitionData, self._external_asset_node.partitions_def_data
-        )
-        static_dimensions = [
-            dim
-            for dim in external_multipartitions_def.external_partition_dimension_definitions
-            if isinstance(dim.external_partitions_def_data, ExternalStaticPartitionsDefinitionData)
-        ]
-        if len(static_dimensions) == 1:
-            return next(iter(static_dimensions)).name
-
-        return next(
-            iter(external_multipartitions_def.external_partition_dimension_definitions)
-        ).name
-
-    def get_partition_keys_by_dimension(self) -> Dict[str, List[str]]:
-        if not self.is_multipartitioned():
-            check.failed(
-                "Expected partitions_def_data to be an ExternalMultiPartitionsDefinitionData"
-            )
-
-        external_multipartitions_def = cast(
-            ExternalMultiPartitionsDefinitionData, self._external_asset_node.partitions_def_data
-        )
-
-        partition_keys_by_dimension: Dict[str, List[str]] = {}
-        for dimension in external_multipartitions_def.external_partition_dimension_definitions:
-            partition_keys_by_dimension[dimension.name] = list(
-                dimension.external_partitions_def_data.get_partitions_definition().get_partition_keys()
-            )
-        return partition_keys_by_dimension
 
     def get_required_resource_keys(
         self, node_def_snap: Union[CompositeSolidDefSnap, SolidDefSnap]
@@ -634,8 +587,11 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_partitionMaterializationCounts(
         self, graphene_info, **kwargs
-    ) -> GraphenePartitionMaterializationCounts:
+    ) -> Optional[GraphenePartitionMaterializationCounts]:
         asset_key = self._external_asset_node.asset_key
+
+        if not self._external_asset_node.partitions_def_data:
+            return None
 
         if not self.is_multipartitioned():
             partition_keys = self.get_partition_keys()
@@ -647,22 +603,11 @@ class GrapheneAssetNode(graphene.ObjectType):
                 )
             )
         else:
-            primary_dimension = kwargs.get("primaryDimension")
-
-            if primary_dimension is None:
-                primary_dimension = self.get_default_primary_dimension_name()
-
-            partition_keys_by_dimension = self.get_partition_keys_by_dimension()
-            secondary_dimension = next(
-                iter(list(set(partition_keys_by_dimension.keys()) - {primary_dimension}))
-            )
-
             return GrapheneMaterializationCountGroupedByDimension(
                 materializationCountsGrouped=get_materialization_cts_grouped_by_dimension(
                     graphene_info,
                     asset_key,
-                    [primary_dimension, secondary_dimension],
-                    partition_keys_by_dimension,
+                    self._external_asset_node.partitions_def_data.external_partition_dimension_definitions,
                 )
             )
 
@@ -691,34 +636,25 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.graph_name
 
     def resolve_partitionKeysByDimension(
-        self, _graphene_info, **kwargs
+        self, _graphene_info
     ) -> Sequence[GrapheneDimensionPartitionKeys]:
-        if not self.is_multipartitioned():
+        if not self._external_asset_node.partitions_def_data:
+            return []
+
+        if self.is_multipartitioned():
             return [
                 GrapheneDimensionPartitionKeys(
-                    name="default", partition_keys=self.get_partition_keys()
+                    name=dimension.name,
+                    partition_keys=dimension.external_partitions_def_data.get_partitions_definition().get_partition_keys(),
                 )
+                for dimension in cast(
+                    ExternalMultiPartitionsDefinitionData,
+                    self._external_asset_node.partitions_def_data,
+                ).external_partition_dimension_definitions
             ]
 
-        primary_dimension = kwargs.get("primaryDimension")
-
-        if primary_dimension is None:
-            primary_dimension = self.get_default_primary_dimension_name()
-
-        partition_keys_by_dimension = self.get_partition_keys_by_dimension()
-        secondary_dimension = next(
-            iter(list(set(partition_keys_by_dimension.keys()) - {primary_dimension}))
-        )
-
         return [
-            GrapheneDimensionPartitionKeys(
-                name=primary_dimension,
-                partition_keys=partition_keys_by_dimension.get(primary_dimension),
-            ),
-            GrapheneDimensionPartitionKeys(
-                name=secondary_dimension,
-                partition_keys=partition_keys_by_dimension.get(secondary_dimension),
-            ),
+            GrapheneDimensionPartitionKeys(name="default", partition_keys=self.get_partition_keys())
         ]
 
     def resolve_partitionKeys(self, _graphene_info) -> Sequence[str]:
