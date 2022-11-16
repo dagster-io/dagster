@@ -182,6 +182,9 @@ from dagster._core.definitions.executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
+from dagster._core.definitions.freshness_policy import (
+    FreshnessPolicy as FreshnessPolicy,
+)
 from dagster._core.definitions.graph_definition import (
     GraphDefinition as GraphDefinition,
 )

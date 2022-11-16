@@ -4,7 +4,6 @@ from contextlib import ExitStack
 import pytest
 import yaml
 
-from dagster import DagsterInstance
 from dagster._core.host_representation import GrpcServerRepositoryLocation
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -15,9 +14,15 @@ from dagster._core.workspace.load import (
 from dagster._utils import file_relative_path
 
 
-def test_multi_location_workspace_foo():
+@pytest.fixture
+def instance():
+    with instance_for_test() as instance:
+        yield instance
+
+
+def test_multi_location_workspace_foo(instance):
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(),
+        instance,
         [file_relative_path(__file__, "multi_location.yaml")],
     ) as grpc_workspace:
         assert isinstance(grpc_workspace, WorkspaceProcessContext)
@@ -27,9 +32,9 @@ def test_multi_location_workspace_foo():
         assert grpc_workspace.has_repository_location("loaded_from_package")
 
 
-def test_multi_file_extend_workspace():
+def test_multi_file_extend_workspace(instance):
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(),
+        instance,
         [
             file_relative_path(__file__, "multi_location.yaml"),
             file_relative_path(__file__, "extra_location.yaml"),
@@ -43,9 +48,9 @@ def test_multi_file_extend_workspace():
         assert workspace.has_repository_location("extra_location")
 
 
-def test_multi_file_override_workspace():
+def test_multi_file_override_workspace(instance):
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(),
+        instance,
         [
             file_relative_path(__file__, "multi_location.yaml"),
             file_relative_path(__file__, "override_location.yaml"),
@@ -67,9 +72,9 @@ def test_multi_file_override_workspace():
         assert "extra_repository" in external_repositories
 
 
-def test_multi_file_extend_and_override_workspace():
+def test_multi_file_extend_and_override_workspace(instance):
     with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(),
+        instance,
         [
             file_relative_path(__file__, "multi_location.yaml"),
             file_relative_path(__file__, "override_location.yaml"),

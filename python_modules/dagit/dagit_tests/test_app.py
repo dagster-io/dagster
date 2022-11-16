@@ -56,19 +56,20 @@ def test_create_app_with_workspace_and_scheduler():
 def test_notebook_view():
     notebook_path = file_relative_path(__file__, "render_uuid_notebook.ipynb")
 
-    with load_workspace_process_context_from_yaml_paths(
-        DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
-    ) as workspace_process_context:
-        client = TestClient(
-            create_app_from_workspace_process_context(
-                workspace_process_context,
+    with instance_for_test() as instance:
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
+            client = TestClient(
+                create_app_from_workspace_process_context(
+                    workspace_process_context,
+                )
             )
-        )
-        res = client.get(f"/dagit/notebook?path={notebook_path}&repoLocName=load_from_file")
+            res = client.get(f"/dagit/notebook?path={notebook_path}&repoLocName=load_from_file")
 
-        assert res.status_code == 200
-        # This magic guid is hardcoded in the notebook
-        assert b"6cac0c38-2c97-49ca-887c-4ac43f141213" in res.content
+            assert res.status_code == 200
+            # This magic guid is hardcoded in the notebook
+            assert b"6cac0c38-2c97-49ca-887c-4ac43f141213" in res.content
 
 
 def test_index_view():

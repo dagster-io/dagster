@@ -29,7 +29,7 @@ from dagster_managed_elements.types import (
 from dagster_managed_elements.utils import diff_dicts
 
 import dagster._check as check
-from dagster import ResourceDefinition
+from dagster import AssetKey, ResourceDefinition
 from dagster._annotations import experimental
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
@@ -666,6 +666,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         connection_to_group_fn: Optional[Callable[[str], Optional[str]]],
         connections: Iterable[AirbyteConnection],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
+        connection_to_asset_key: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
     ):
         defined_conn_names = {conn.name for conn in connections}
         super().__init__(
@@ -676,6 +677,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
             connection_to_group_fn=connection_to_group_fn,
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=lambda conn: conn.name in defined_conn_names,
+            connection_to_asset_key=connection_to_asset_key,
         )
         self._connections: List[AirbyteConnection] = list(connections)
 
@@ -702,6 +704,7 @@ def load_assets_from_connections(
     connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
     io_manager_key: Optional[str] = None,
     connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]] = None,
+    connection_to_asset_key: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
@@ -722,6 +725,9 @@ def load_assets_from_connections(
         connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
             IO manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
             the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
+        connection_to_asset_key (Optional[Callable[[AirbyteConnectionMetadat, str], AssetKey]]): Optional function which
+            takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
+            key is based on the table name. Any asset key prefix will be applied to the output of this function.
 
     """
 
@@ -747,4 +753,5 @@ def load_assets_from_connections(
         ),
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connections=check.iterable_param(connections, "connections", of_type=AirbyteConnection),
+        connection_to_asset_key=connection_to_asset_key,
     )

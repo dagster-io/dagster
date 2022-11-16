@@ -23,6 +23,17 @@ export interface AssetNodeLiveFragment_assetMaterializations {
   runId: string;
 }
 
+export interface AssetNodeLiveFragment_freshnessPolicy {
+  __typename: "FreshnessPolicy";
+  maximumLagMinutes: number;
+  cronSchedule: string | null;
+}
+
+export interface AssetNodeLiveFragment_freshnessInfo {
+  __typename: "AssetFreshnessInfo";
+  currentMinutesLate: number | null;
+}
+
 export interface AssetNodeLiveFragment {
   __typename: "AssetNode";
   id: string;
@@ -30,4 +41,6 @@ export interface AssetNodeLiveFragment {
   repository: AssetNodeLiveFragment_repository;
   assetKey: AssetNodeLiveFragment_assetKey;
   assetMaterializations: AssetNodeLiveFragment_assetMaterializations[];
+  freshnessPolicy: AssetNodeLiveFragment_freshnessPolicy | null;
+  freshnessInfo: AssetNodeLiveFragment_freshnessInfo | null;
 }

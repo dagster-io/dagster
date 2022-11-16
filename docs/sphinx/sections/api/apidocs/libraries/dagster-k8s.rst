@@ -22,6 +22,8 @@ Ops
 
 .. autoconfigurable:: k8s_job_op
 
+.. autofunction:: execute_k8s_job
+
 Python API
 ^^^^^^^^^^
 

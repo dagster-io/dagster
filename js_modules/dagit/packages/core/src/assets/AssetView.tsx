@@ -22,6 +22,7 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
+import {CurrentMinutesLateTag} from '../asset-graph/AssetNode';
 import {GraphData, LiveDataForNode, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
@@ -461,6 +462,7 @@ const AssetViewPageHeaderTags: React.FC<{
           </Link>
         </Tag>
       )}
+      {liveData?.freshnessPolicy && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
       {isUpstreamChanged ? (
         <Box onClick={onShowUpstream}>
           <BaseTag

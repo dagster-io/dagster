@@ -53,6 +53,17 @@ export interface SingleAssetQuery_assetOrError_Asset_definition_assetMaterializa
   runId: string;
 }
 
+export interface SingleAssetQuery_assetOrError_Asset_definition_freshnessPolicy {
+  __typename: "FreshnessPolicy";
+  maximumLagMinutes: number;
+  cronSchedule: string | null;
+}
+
+export interface SingleAssetQuery_assetOrError_Asset_definition_freshnessInfo {
+  __typename: "AssetFreshnessInfo";
+  currentMinutesLate: number | null;
+}
+
 export interface SingleAssetQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
@@ -63,6 +74,8 @@ export interface SingleAssetQuery_assetOrError_Asset_definition {
   opNames: string[];
   assetKey: SingleAssetQuery_assetOrError_Asset_definition_assetKey;
   assetMaterializations: SingleAssetQuery_assetOrError_Asset_definition_assetMaterializations[];
+  freshnessPolicy: SingleAssetQuery_assetOrError_Asset_definition_freshnessPolicy | null;
+  freshnessInfo: SingleAssetQuery_assetOrError_Asset_definition_freshnessInfo | null;
 }
 
 export interface SingleAssetQuery_assetOrError_Asset {

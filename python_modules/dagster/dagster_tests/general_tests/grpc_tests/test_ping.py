@@ -7,6 +7,7 @@ import pytest
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.test_utils import instance_for_test
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
 from dagster._grpc.server import GrpcServerProcess, open_server_process
 from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
@@ -39,49 +40,52 @@ def test_server_port_and_socket():
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_server_socket():
-    with safe_tempfile_path() as skt:
-        server_process = open_server_process(port=None, socket=skt)
-        try:
-            assert DagsterGrpcClient(socket=skt).ping("foobar") == "foobar"
-        finally:
-            interrupt_ipc_subprocess_pid(server_process.pid)
-            server_process.terminate()
-            server_process.wait()
+    with instance_for_test() as instance:
+        with safe_tempfile_path() as skt:
+            server_process = open_server_process(instance.get_ref(), port=None, socket=skt)
+            try:
+                assert DagsterGrpcClient(socket=skt).ping("foobar") == "foobar"
+            finally:
+                interrupt_ipc_subprocess_pid(server_process.pid)
+                server_process.terminate()
+                server_process.wait()
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_process_killed_after_client_finished():
+    with instance_for_test() as instance:
 
-    server_process = GrpcServerProcess()
-    try:
-        with server_process.create_ephemeral_client() as client:
-            socket = client.socket
-            assert socket and os.path.exists(socket)
+        server_process = GrpcServerProcess(instance_ref=instance.get_ref())
+        try:
+            with server_process.create_ephemeral_client() as client:
+                socket = client.socket
+                assert socket and os.path.exists(socket)
 
-        start_time = time.time()
-        while server_process.server_process.poll() is None:
-            time.sleep(0.05)
-            # Verify server process cleans up eventually
-            assert time.time() - start_time < 5
+            start_time = time.time()
+            while server_process.server_process.poll() is None:
+                time.sleep(0.05)
+                # Verify server process cleans up eventually
+                assert time.time() - start_time < 5
 
-        # verify socket is cleaned up
-        assert not os.path.exists(socket)
-    finally:
-        server_process.server_process.terminate()
-        server_process.server_process.wait()
+            # verify socket is cleaned up
+            assert not os.path.exists(socket)
+        finally:
+            server_process.server_process.terminate()
+            server_process.server_process.wait()
 
 
 def test_server_port():
-    port = find_free_port()
-    server_process = open_server_process(port=port, socket=None)
-    assert server_process is not None
+    with instance_for_test() as instance:
+        port = find_free_port()
+        server_process = open_server_process(instance.get_ref(), port=port, socket=None)
+        assert server_process is not None
 
-    try:
-        assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
-    finally:
-        interrupt_ipc_subprocess_pid(server_process.pid)
-        server_process.terminate()
-        server_process.wait()
+        try:
+            assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
+        finally:
+            interrupt_ipc_subprocess_pid(server_process.pid)
+            server_process.terminate()
+            server_process.wait()
 
 
 def test_client_bad_port():
@@ -154,23 +158,27 @@ def test_get_server_id():
 
 def create_server_process():
     port = find_free_port()
-    server_process = open_server_process(port=port, socket=None)
-    assert server_process is not None
-    return port, server_process
+    with instance_for_test() as instance:
+        server_process = open_server_process(instance.get_ref(), port=port, socket=None)
+        assert server_process is not None
+        return port, server_process
 
 
 def test_fixed_server_id():
     port = find_free_port()
-    server_process = open_server_process(port=port, socket=None, fixed_server_id="fixed_id")
-    assert server_process is not None
+    with instance_for_test() as instance:
+        server_process = open_server_process(
+            instance.get_ref(), port=port, socket=None, fixed_server_id="fixed_id"
+        )
+        assert server_process is not None
 
-    try:
-        api_client = DagsterGrpcClient(port=port)
-        assert api_client.get_server_id() == "fixed_id"
-    finally:
-        interrupt_ipc_subprocess_pid(server_process.pid)
-        server_process.terminate()
-        server_process.wait()
+        try:
+            api_client = DagsterGrpcClient(port=port)
+            assert api_client.get_server_id() == "fixed_id"
+        finally:
+            interrupt_ipc_subprocess_pid(server_process.pid)
+            server_process.terminate()
+            server_process.wait()
 
 
 def test_detect_server_restart():

@@ -18,6 +18,7 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
+from dagster._core.secrets.env_file import EnvFileLoader
 from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
@@ -92,7 +93,9 @@ def test_unified_storage(tmpdir):
 
 def test_custom_secrets_manager():
     with instance_for_test() as instance:
-        assert not instance._secrets_loader  # pylint:disable=protected-access
+        assert isinstance(
+            instance._secrets_loader, EnvFileLoader  # pylint:disable=protected-access
+        )
 
     with instance_for_test(
         overrides={

@@ -1,15 +1,20 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, Icon, Caption, Subheading, Mono, ConfigTypeSchema} from '@dagster-io/ui';
+import {Box, Colors, Icon, Caption, Subheading, Mono, ConfigTypeSchema, Body} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
+import {
+  ASSET_NODE_FRAGMENT,
+  CurrentMinutesLateTag,
+  freshnessPolicyDescription,
+} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
   isSourceAsset,
   LiveData,
   isHiddenAssetGroupJob,
   __ASSET_JOB_PREFIX,
+  toGraphId,
 } from '../asset-graph/Utils';
 import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
@@ -36,6 +41,7 @@ export const AssetNodeDefinition: React.FC<{
   liveDataByNode: LiveData;
 }> = ({assetNode, upstream, downstream, liveDataByNode}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
+  const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
   const assetConfigSchema = assetNode.configField?.configType;
   const repoAddress = buildRepoAddress(
@@ -73,7 +79,20 @@ export const AssetNodeDefinition: React.FC<{
               maxHeight={260}
             />
           </Box>
-
+          {liveDataForNode?.freshnessPolicy && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+              >
+                <Subheading>Freshness Policy</Subheading>
+              </Box>
+              <Box padding={{vertical: 16, horizontal: 24}} flex={{gap: 12, alignItems: 'center'}}>
+                <CurrentMinutesLateTag liveData={liveDataForNode} />
+                <Body>{freshnessPolicyDescription(liveDataForNode.freshnessPolicy)}</Body>
+              </Box>
+            </>
+          )}
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}

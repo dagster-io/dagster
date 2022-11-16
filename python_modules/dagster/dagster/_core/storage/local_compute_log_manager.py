@@ -115,8 +115,8 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             stderr_location=self.get_captured_local_path(
                 log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR]
             ),
-            stdout_download_url=self._captured_log_download_url(log_key, ComputeIOType.STDOUT),
-            stderr_download_url=self._captured_log_download_url(log_key, ComputeIOType.STDERR),
+            stdout_download_url=self.get_captured_log_download_url(log_key, ComputeIOType.STDOUT),
+            stderr_download_url=self.get_captured_log_download_url(log_key, ComputeIOType.STDERR),
         )
 
     def delete_logs(self, log_key: Sequence[str]):
@@ -181,7 +181,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             new_offset = f.tell()
         return data, new_offset
 
-    def _captured_log_download_url(self, log_key, io_type):
+    def get_captured_log_download_url(self, log_key, io_type):
         check.inst_param(io_type, "io_type", ComputeIOType)
         url = "/logs"
         for part in log_key:

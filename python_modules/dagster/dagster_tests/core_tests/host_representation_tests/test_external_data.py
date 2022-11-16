@@ -643,6 +643,7 @@ def test_unused_source_asset():
             depended_by=[],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
+            is_source=True,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("bar"),
@@ -651,6 +652,7 @@ def test_unused_source_asset():
             depended_by=[],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
+            is_source=True,
         ),
     ]
 
@@ -675,6 +677,7 @@ def test_used_source_asset():
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey(["foo"]))],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
+            is_source=True,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("foo"),

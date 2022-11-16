@@ -94,16 +94,18 @@ def test_python_environment_args():
         executable_path=sys.executable, python_file=python_file
     )
 
-    process = None
-    try:
-        process = open_server_process(
-            port, socket=None, loadable_target_origin=loadable_target_origin
-        )
-        assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
-    finally:
-        if process:
-            process.terminate()
-            process.wait()
+    with instance_for_test() as instance:
+
+        process = None
+        try:
+            process = open_server_process(
+                instance.get_ref(), port, socket=None, loadable_target_origin=loadable_target_origin
+            )
+            assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
+        finally:
+            if process:
+                process.terminate()
+                process.wait()
 
 
 def test_empty_executable_args():
@@ -112,20 +114,21 @@ def test_empty_executable_args():
     loadable_target_origin = LoadableTargetOrigin(executable_path="", python_file=python_file)
     # with an empty executable_path, the args change
     process = None
-    try:
-        process = open_server_process(
-            port, socket=None, loadable_target_origin=loadable_target_origin
-        )
-        assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
+    with instance_for_test() as instance:
+        try:
+            process = open_server_process(
+                instance.get_ref(), port, socket=None, loadable_target_origin=loadable_target_origin
+            )
+            assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
 
-        client = DagsterGrpcClient(port=port, host="localhost")
-        list_repositories_response = sync_list_repositories_grpc(client)
-        assert list_repositories_response.entry_point == ["dagster"]
-        assert list_repositories_response.executable_path == sys.executable
-    finally:
-        if process:
-            process.terminate()
-            process.wait()
+            client = DagsterGrpcClient(port=port, host="localhost")
+            list_repositories_response = sync_list_repositories_grpc(client)
+            assert list_repositories_response.entry_point == ["dagster"]
+            assert list_repositories_response.executable_path == sys.executable
+        finally:
+            if process:
+                process.terminate()
+                process.wait()
 
 
 def test_load_grpc_server_python_env():
@@ -569,7 +572,7 @@ def test_load_with_missing_env_var():
         process.communicate(timeout=30)
 
 
-def test_load_with_secrets_loader_no_instance_ref():
+def test_load_with_secrets_loader_instance_ref():
     # Now with secrets manager and correct args
     port = find_free_port()
     client = DagsterGrpcClient(port=port)
@@ -586,25 +589,10 @@ def test_load_with_secrets_loader_no_instance_ref():
         "--lazy-load-user-code",
     ]
 
-    with environ({"FOO": None}):
+    with environ({"FOO": None, "FOO_INSIDE_OP": None}):
         with instance_for_test(
-            overrides={
-                "secrets": {
-                    "custom": {
-                        "module": "dagster._core.test_utils",
-                        "class": "TestSecretsLoader",
-                        "config": {
-                            "env_vars": {
-                                "FOO": "BAR",
-                                "FOO_INSIDE_OP": "BAR_INSIDE_OP",
-                            }
-                        },
-                    }
-                },
-            },
             set_dagster_home=False,
         ) as instance:
-
             process = subprocess.Popen(
                 subprocess_args
                 + [
@@ -612,6 +600,7 @@ def test_load_with_secrets_loader_no_instance_ref():
                     "--instance-ref",
                     serialize_dagster_namedtuple(instance.get_ref()),
                 ],
+                cwd=os.path.dirname(__file__),
             )
             try:
                 wait_for_grpc_server(process, client, subprocess_args)
@@ -659,7 +648,7 @@ def test_load_with_secrets_loader_no_instance_ref():
                 process.communicate(timeout=30)
 
 
-def test_load_with_secrets_loader_instance_ref():
+def test_load_with_secrets_loader_no_instance_ref():
     port = find_free_port()
     client = DagsterGrpcClient(port=port)
     python_file = file_relative_path(__file__, "grpc_repo_with_env_vars.py")
@@ -677,20 +666,11 @@ def test_load_with_secrets_loader_instance_ref():
 
     with environ({"FOO": None}):
         with instance_for_test(
-            overrides={
-                "secrets": {
-                    "custom": {
-                        "module": "dagster._core.test_utils",
-                        "class": "TestSecretsLoader",
-                        "config": {"env_vars": {"FOO": "BAR"}},
-                    }
-                },
-            },
             set_dagster_home=True,
         ):
             process = subprocess.Popen(
                 subprocess_args + ["--inject-env-vars-from-instance"],
-                stdout=subprocess.PIPE,
+                cwd=os.path.dirname(__file__),
             )
 
             client = DagsterGrpcClient(port=port, host="localhost")
