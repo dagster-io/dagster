@@ -29,17 +29,52 @@ class FreshnessPolicy(
     )
 ):
     """
-    A FreshnessPolicy specifies how up-to-date you want a given asset to be, relative to the
-    most recent available upstream data. At any point in time (or by each cron schedule tick, if
-    cron_schedule is set), the data used to produce the current version of this asset must be no
-    older than `maximum_lag_minutes` before the most recent available data.
+    A FreshnessPolicy specifies how up-to-date you want a given asset to be.
 
-    Examples:
+    Attaching a FreshnessPolicy to an asset definition encodes an expectation on the upstream data
+    that you expect to be incorporated into the current state of that asset at certain points in time.
+    More specifically, imagine you have two assets, where A depends on B.
 
-        * `FreshnessPolicy(maximum_lag_minutes=30)`: At any point in time, this asset must
-        incorporate all data from at least 30 minutes ago.
-        * `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 1 * * *"): Every day by 1AM,
-        this asset must incorporate all data from at least 60 minutes ago.
+    If `B` has a FreshnessPolicy defined, this means that at time T, the most recent materialization
+    of `B` should have come after a materialization of `A` which was no more than `maximum_lag_minutes`
+    ago. This calculation is recursive: any given asset is expected to incorporate up-to-date
+    data from all of its upstream assets.
+
+    It is assumed that all asset definitions with no upstream asset definitions consume from some
+    always-updating source. That is, if you materialize that asset at time T, it will incorporate
+    all data up to time T.
+
+    If `cron_schedule` is not defined, the given asset will be expected to incorporate upstream
+    data from no more than `maximum_lag_minutes` ago at all points in time. For example, "The events
+    table should always have data from at most 1 hour ago".
+
+    If `cron_schedule` is defined, the given asset will be expected to incorporate upstream data
+    from no more than `maximum_lag_minutes` ago at each cron schedule tick. For example, "By 9AM,
+    the signups table should contain all of yesterday's data".
+
+    The freshness status of assets with policies defined will be visible in the UI. If you are using
+    an asset reconciliation sensor, this sensor will kick off runs to help keep your assets up to
+    date with respect to their FreshnessPolicy.
+
+    Args:
+        maximum_lag_minutes (float): An upper bound for how old the data contained within this
+            asset may be.
+        cron_schedule (Optional[str]): A cron schedule string (e.g. ``"0 1 * * *"``) specifying a
+            series of times by which the `maximum_lag_minutes` constraint must be satisfied. If
+            no cron schedule is provided, then this constraint must be satisfied at all times.
+
+    .. code-block:: python
+
+        # At any point in time, this asset must incorporate all upstream data from at least 30 minutes ago.
+        @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+        def fresh_asset():
+            ...
+
+        # At any point in time, this asset must incorporate all upstream data from at least 30 minutes ago.
+        @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+        def cron_up_to_date_asset():
+            ...
+
     """
 
     def __new__(cls, *, maximum_lag_minutes: float, cron_schedule: Optional[str] = None):
