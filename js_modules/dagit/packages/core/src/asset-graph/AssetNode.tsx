@@ -171,24 +171,23 @@ export const AssetNode: React.FC<{
                     <span>–</span>
                   </StatsRow>
                 </>
-              )
-            }
-            {!definition.isSource && (
-              <>
-                <StatsRow>
-                  <span>Latest&nbsp;Run</span>
-                  <Caption style={{textAlign: 'right'}}>
-                    <AssetLatestRunWithNotices liveData={liveData} />
-                  </Caption>
-                </StatsRow>
-                {definition.opVersion && definition.opVersion !== 'DEFAULT' && (
+              )}
+              {!definition.isSource && (
+                <>
                   <StatsRow>
-                    <span>Code Version</span>
-                    <CaptionMono style={{textAlign: 'right'}}>{definition.opVersion}</CaptionMono>
+                    <span>Latest&nbsp;Run</span>
+                    <Caption style={{textAlign: 'right'}}>
+                      <AssetLatestRunWithNotices liveData={liveData} />
+                    </Caption>
                   </StatsRow>
-                )}
-              </>
-            )}
+                  {definition.opVersion && definition.opVersion !== 'DEFAULT' && (
+                    <StatsRow>
+                      <span>Code Version</span>
+                      <CaptionMono style={{textAlign: 'right'}}>{definition.opVersion}</CaptionMono>
+                    </StatsRow>
+                  )}
+                </>
+              )}
               {currentLogicalVersion && (definition.isSource || lastMaterialization) && (
                 <StatsRow>
                   <span style={{color: isStale ? VERSION_COLORS.staleText : VERSION_COLORS.okText}}>

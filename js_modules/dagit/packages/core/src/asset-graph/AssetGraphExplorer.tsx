@@ -428,12 +428,8 @@ export const AssetGraphExplorerWithData: React.FC<
               <LaunchAssetObservationButton
                 context={selectionContext}
                 assetKeys={(selectedGraphNodes.length
-                  ? selectedGraphNodes.filter(
-                      (a) => a.definition.isObservable,
-                    )
-                  : Object.values(assetGraphData.nodes).filter(
-                      (a) => a.definition.isObservable,
-                    )
+                  ? selectedGraphNodes.filter((a) => a.definition.isObservable)
+                  : Object.values(assetGraphData.nodes).filter((a) => a.definition.isObservable)
                 ).map((n) => n.assetKey)}
                 preferredJobName={explorerPath.pipelineName}
               />
@@ -442,7 +438,9 @@ export const AssetGraphExplorerWithData: React.FC<
                 assetKeys={(selectedGraphNodes.length
                   ? selectedGraphNodes.filter((a) => !a.definition.isSource)
                   : Object.values(assetGraphData.nodes).filter(
-                      (a) => !a.definition.isSource && includeInMaterializeAll(liveDataByNode[a.id]))
+                      (a) =>
+                        !a.definition.isSource && includeInMaterializeAll(liveDataByNode[a.id]),
+                    )
                 ).map((n) => n.assetKey)}
                 preferredJobName={explorerPath.pipelineName}
               />
