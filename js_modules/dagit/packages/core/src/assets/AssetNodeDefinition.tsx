@@ -28,6 +28,7 @@ import {
 import {AssetNodeList} from './AssetNodeList';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
+import {Version} from '../versions/Version';
 
 export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
@@ -74,6 +75,19 @@ export const AssetNodeDefinition: React.FC<{
               maxHeight={260}
             />
           </Box>
+          {assetNode.opVersion && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+              >
+                <Subheading>Code version</Subheading>
+              </Box>
+              <Box padding={{vertical: 16, horizontal: 24}} flex={{gap: 12, alignItems: 'center'}}>
+                <Version>{assetNode.opVersion}</Version>
+              </Box>
+            </>
+          )}
           {liveDataForNode?.freshnessPolicy && (
             <>
               <Box
@@ -257,6 +271,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     description
     graphName
     opNames
+    opVersion
     jobNames
     partitionDefinition {
       description

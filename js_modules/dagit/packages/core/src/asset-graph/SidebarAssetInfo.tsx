@@ -26,6 +26,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {LiveDataForNode, displayNameForAssetKey} from './Utils';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetQuery';
+import {Version} from '../versions/Version';
 
 export const SidebarAssetInfo: React.FC<{
   assetKey: AssetKey;
@@ -84,6 +85,14 @@ export const SidebarAssetInfo: React.FC<{
           {asset.op && OpMetadataPlugin?.SidebarComponent && (
             <OpMetadataPlugin.SidebarComponent definition={asset.op} repoAddress={repoAddress} />
           )}
+        </SidebarSection>
+      )}
+
+      {asset.opVersion && (
+        <SidebarSection title="Code Version">
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            <Version>{asset.opVersion}</Version>
+          </Box>
         </SidebarSection>
       )}
 
@@ -187,6 +196,7 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
         value
       }
     }
+    opVersion
     repository {
       id
       name
