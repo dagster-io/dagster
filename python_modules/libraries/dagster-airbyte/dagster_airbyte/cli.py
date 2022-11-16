@@ -1,7 +1,7 @@
 import click
 
 try:
-    from dagster_managed_elements.cli import check_cmd, apply_cmd
+    from dagster_managed_elements.cli import apply_cmd, check_cmd
 
     @click.group()
     def main():
