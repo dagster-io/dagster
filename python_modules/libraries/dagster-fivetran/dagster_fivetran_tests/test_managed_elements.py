@@ -1,34 +1,34 @@
-from typing import Dict, List, Tuple, Any
-from dagster_managed_elements.types import ManagedElementDiff
-from dagster_managed_elements.utils import diff_dicts
+import json
+import re
+from contextlib import AbstractContextManager
+from typing import Any, Dict, List, Tuple
+
 import pytest
 import responses
-from dagster_fivetran import fivetran_resource
+from dagster_fivetran import (
+    FivetranConnector,
+    FivetranDestination,
+    FivetranManagedElementReconciler,
+    fivetran_resource,
+)
 from dagster_fivetran.asset_defs import load_assets_from_fivetran_instance
+from dagster_fivetran.managed.types import (
+    InitializedFivetranConnector,
+    InitializedFivetranDestination,
+)
 from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
     get_complex_sample_connector_schema_config,
     get_sample_connectors_response,
     get_sample_groups_response,
 )
-from dagster_fivetran import (
-    FivetranManagedElementReconciler,
-    FivetranConnector,
-    FivetranDestination,
-)
-
-from dagster_fivetran.managed.types import (
-    InitializedFivetranConnector,
-    InitializedFivetranDestination,
-)
-import json
+from dagster_managed_elements.types import ManagedElementDiff
+from dagster_managed_elements.utils import diff_dicts
+from requests import PreparedRequest
 
 from dagster import AssetKey, build_init_resource_context
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
-from contextlib import AbstractContextManager
-from requests import PreparedRequest
-import re
 
 
 def ok(contents: Dict[str, Any]) -> Any:
