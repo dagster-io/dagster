@@ -78,14 +78,14 @@ mutation {
 
 
 MultiLocationTestSuite: Any = make_graphql_context_test_suite(
-    context_variants=[GraphQLContextVariant.non_launchable_in_memory_instance_multi_location()]
+    context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_multi_location()]
 )
 OutOfProcessTestSuite: Any = make_graphql_context_test_suite(
-    context_variants=[GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env()]
+    context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_managed_grpc_env()]
 )
 ManagedTestSuite: Any = make_graphql_context_test_suite(
     context_variants=[
-        GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env(),
+        GraphQLContextVariant.non_launchable_sqlite_instance_managed_grpc_env(),
     ]
 )
 

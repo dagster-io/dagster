@@ -100,6 +100,7 @@ class ProcessRegistryEntry(
 class ProcessGrpcServerRegistry(GrpcServerRegistry):
     def __init__(
         self,
+        instance,
         # How long each process should run before a new process should be created the next
         # time a given origin is requested (which will pick up any changes that have been
         # made to the code)
@@ -113,6 +114,9 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
         # How long to wait for the server to start up and receive connections before timing out
         startup_timeout,
     ):
+
+        self.instance = instance
+
         # ProcessRegistryEntry map of servers being currently returned, keyed by origin ID
         self._active_entries = {}
 
@@ -209,6 +213,8 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
             try:
                 new_server_id = str(uuid.uuid4())
                 server_process = GrpcServerProcess(
+                    instance_ref=self.instance.get_ref(),
+                    location_name=repository_location_origin.location_name,
                     loadable_target_origin=loadable_target_origin,
                     heartbeat=True,
                     heartbeat_timeout=self._heartbeat_ttl,

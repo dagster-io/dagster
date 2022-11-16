@@ -20,7 +20,22 @@ from ..utils import assert_assets_match_project
 
 
 @responses.activate
-def test_load_assets_from_dbt_cloud_job():
+@pytest.mark.parametrize("dbt_command", ["dbt run", "dbt build"])
+@pytest.mark.parametrize(
+    ["dbt_command_filters", "expected_dbt_command_filters"],
+    [
+        ("-s a:b c:d *x", "--select a:b c:d *x"),
+        ("--exclude e:f g:h", "--exclude e:f g:h"),
+        ("--selector x:y", "--selector x:y"),
+        (
+            "-s a:b c:d --exclude e:f g:h --selector x:y",
+            "--select a:b c:d --exclude e:f g:h --selector x:y",
+        ),
+    ],
+)
+def test_load_assets_from_dbt_cloud_job(
+    mocker, dbt_command, dbt_command_filters, expected_dbt_command_filters
+):
     account_id = 1
     project_id = 12
     job_id = 123
@@ -57,7 +72,7 @@ def test_load_assets_from_dbt_cloud_job():
             "data": {
                 "project_id": project_id,
                 "generate_docs": True,
-                "execute_steps": ["dbt build"],
+                "execute_steps": [f"{dbt_command} {dbt_command_filters}"],
             }
         },
         status=200,
@@ -100,9 +115,22 @@ def test_load_assets_from_dbt_cloud_job():
     )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(dbt_cloud=dbt_cloud, job_id=job_id)
+
+    mock_run_job_and_poll = mocker.patch.object(
+        dbt_cloud_cacheable_assets._dbt_cloud,  # pylint: disable=protected-access
+        "run_job_and_poll",
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # pylint: disable=protected-access
+    )
+
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
     dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
         dbt_assets_definition_cacheable_data
+    )
+
+    mock_run_job_and_poll.assert_called_once_with(
+        job_id=job_id,
+        cause="Generating software-defined assets for Dagster.",
+        steps_override=[f"dbt compile {expected_dbt_command_filters}"],
     )
 
     assert_assets_match_project(dbt_cloud_assets, has_non_argument_deps=True)

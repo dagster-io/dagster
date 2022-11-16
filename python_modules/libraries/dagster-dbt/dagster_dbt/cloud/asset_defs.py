@@ -1,4 +1,18 @@
-from typing import Any, Callable, Dict, FrozenSet, Mapping, Optional, Sequence, Set, Tuple, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    cast,
+)
+
+from dbt.main import parse_args as dbt_parse_args
 
 from dagster import (
     AssetKey,
@@ -86,6 +100,23 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 "It must one of `dbt run` or `dbt build`. Received commands: {commands}."
             )
 
+        # Retrieve the filters options from the dbt Cloud job's command.
+        #
+        # There are three filters: `--select`, `--exclude`, and `--selector`.
+        parsed_args = dbt_parse_args(args=commands[0].split()[1:])
+        dbt_compile_filter_options: List[str] = []
+
+        selected_models = parsed_args.select or []
+        if selected_models:
+            dbt_compile_filter_options.append(f"--select {' '.join(selected_models)}")
+
+        excluded_models = parsed_args.exclude or []
+        if excluded_models:
+            dbt_compile_filter_options.append(f"--exclude {' '.join(excluded_models)}")
+
+        if parsed_args.selector_name:
+            dbt_compile_filter_options.append(f"--selector {parsed_args.selector_name}")
+
         # We need to retrieve the dependency structure for the assets in the dbt Cloud project.
         # However, we can't just use the dependency structure from the latest run, because
         # this historical structure may not be up-to-date with the current state of the project.
@@ -96,17 +127,20 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         compile_run_dbt_output = self._dbt_cloud.run_job_and_poll(
             job_id=self._job_id,
             cause="Generating software-defined assets for Dagster.",
-            # In the future, we need to be able to pass the filters from the run/build step
-            # to this compile step.
-            steps_override=["dbt compile"],
+            # Pass the filters from the run/build step to the compile step.
+            steps_override=[f"dbt compile {' '.join(dbt_compile_filter_options)}"],
         )
 
-        # Fetch the compilation run's manifest and run results.
+        # Target the compile execution step when retrieving run artifacts, rather than assuming
+        # that the last step is the correct target.
         #
-        # In the future, we should target the correct execution step, rather than assuming that
-        # the last step is the one that we want.
+        # Here, we ignore the `dbt docs generate` step.
+        step = len(compile_run_dbt_output.run_details.get("run_steps", []))
+        if step > 0 and self._has_generate_docs:
+            step -= 1
+
+        # Fetch the compilation run's manifest and run results.
         compile_run_id = compile_run_dbt_output.run_id
-        step: Optional[int] = None
 
         manifest_json = self._dbt_cloud.get_manifest(run_id=compile_run_id, step=step)
         run_results_json = self._dbt_cloud.get_run_results(run_id=compile_run_id, step=step)

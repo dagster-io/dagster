@@ -63,7 +63,8 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       node.definition.groupName,
     ].join('__');
 
-  const shouldRender = (node?: GraphNode) => node && node.definition.opNames.length > 0;
+  // const shouldRender = (node?: GraphNode) => node && node.definition.opNames.length > 0;
+  const shouldRender = (node?: GraphNode) => node;
   const renderedNodes = Object.values(graphData.nodes).filter(shouldRender);
 
   const groups: {[id: string]: GroupLayout} = {};
@@ -122,7 +123,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   // Add all the foreign nodes to the graph
   Object.keys(foreignNodes).forEach((id) => {
-    g.setNode(id, getForeignNodeDimensions(id));
+    g.setNode(id, getSourceAssetNodeDimensions(id));
   });
 
   dagre.layout(g);
@@ -198,7 +199,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   };
 };
 
-export const getForeignNodeDimensions = (id: string) => {
+export const getSourceAssetNodeDimensions = (id: string) => {
   const path = JSON.parse(id);
   return {width: displayNameForAssetKey({path}).length * 8 + 30, height: 30};
 };

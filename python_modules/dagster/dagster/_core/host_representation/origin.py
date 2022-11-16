@@ -242,7 +242,8 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
 
     @contextmanager
     def create_single_location(
-        self, instance: "DagsterInstance" = None
+        self,
+        instance: "DagsterInstance",
     ) -> Generator["RepositoryLocation", None, None]:
         from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
@@ -250,6 +251,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         from .repository_location import GrpcServerRepositoryLocation
 
         with ProcessGrpcServerRegistry(
+            instance=instance,
             reload_interval=0,
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
             startup_timeout=instance.code_server_process_startup_timeout

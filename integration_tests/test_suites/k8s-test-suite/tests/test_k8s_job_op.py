@@ -1,11 +1,11 @@
 import kubernetes
 import pytest
-from dagster_k8s import k8s_job_op
+from dagster_k8s import execute_k8s_job, k8s_job_op
 from dagster_k8s.client import DagsterK8sError
 from dagster_k8s.job import get_k8s_job_name
 from dagster_k8s.utils import get_pod_names_in_job, retrieve_pod_logs
 
-from dagster import job
+from dagster import job, op
 
 
 def _get_pod_logs(cluster_provider, job_name, namespace):
@@ -51,6 +51,48 @@ def test_k8s_job_op(namespace, cluster_provider):
     assert "HI" in _get_pod_logs(cluster_provider, job_name, namespace)
 
     job_name = get_k8s_job_name(run_id, second_op.name)
+    assert "GOODBYE" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+
+@pytest.mark.default
+def test_custom_k8s_op(namespace, cluster_provider):
+    @op
+    def my_custom_op(context):
+        execute_k8s_job(
+            context,
+            image="busybox",
+            command=["/bin/sh", "-c"],
+            args=["echo HI"],
+            namespace=namespace,
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+        )
+        return "GOODBYE"
+
+    @op
+    def my_second_custom_op(context, what_to_echo: str):
+        execute_k8s_job(
+            context,
+            image="busybox",
+            command=["/bin/sh", "-c"],
+            args=[f"echo {what_to_echo}"],
+            namespace=namespace,
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+        )
+
+    @job
+    def my_job_with_custom_ops():
+        my_second_custom_op(my_custom_op())
+
+    execute_result = my_job_with_custom_ops.execute_in_process()
+    assert execute_result.success
+
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, my_custom_op.name)
+    assert "HI" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+    job_name = get_k8s_job_name(run_id, my_second_custom_op.name)
     assert "GOODBYE" in _get_pod_logs(cluster_provider, job_name, namespace)
 
 

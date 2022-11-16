@@ -1,6 +1,7 @@
-import {Box, Colors, Spinner} from '@dagster-io/ui';
+import {Body, Box, Colors, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {CurrentMinutesLateTag, freshnessPolicyDescription} from '../asset-graph/AssetNode';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 
@@ -63,6 +64,16 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         liveData={liveData}
         border={{side: 'top', width: 1, color: Colors.KeylineGray}}
       />
+
+      {liveData?.freshnessPolicy && (
+        <SidebarSection title="Freshness Policy">
+          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'center'}}>
+            <CurrentMinutesLateTag liveData={liveData} />
+            <Body>{freshnessPolicyDescription(liveData.freshnessPolicy)}</Body>
+          </Box>
+        </SidebarSection>
+      )}
+
       <SidebarSection title="Materialization in Last Run">
         {materializations[0] ? (
           <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>

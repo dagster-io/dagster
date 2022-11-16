@@ -47,9 +47,12 @@ export interface AssetGraphQuery_assetNodes {
   graphName: string | null;
   jobNames: string[];
   opNames: string[];
+  opVersion: string | null;
   description: string | null;
   computeKind: string | null;
+  isSource: boolean;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
+  isObservable: boolean;
 }
 
 export interface AssetGraphQuery {

@@ -1,4 +1,4 @@
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -8,7 +8,7 @@ from dagster._utils import frozenlist
 DEFAULT_DAGSTER_ENTRY_POINT = frozenlist(["dagster"])
 
 
-def get_python_environment_entry_point(executable_path: str) -> Sequence[str]:
+def get_python_environment_entry_point(executable_path: str) -> List[str]:
     return frozenlist([executable_path, "-m", "dagster"])
 
 

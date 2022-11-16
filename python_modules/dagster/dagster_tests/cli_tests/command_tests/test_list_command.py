@@ -73,10 +73,11 @@ def assert_correct_extra_repository_output(result):
 
 @pytest.mark.skipif(_seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_list_command_grpc_socket():
-    with instance_for_test():
+    with instance_for_test() as instance:
         runner = CliRunner()
 
         server_process = GrpcServerProcess(
+            instance_ref=instance.get_ref(),
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
                 python_file=file_relative_path(__file__, "test_cli_commands.py"),
@@ -107,10 +108,11 @@ def test_list_command_grpc_socket():
 
 
 def test_list_command_deployed_grpc():
-    with instance_for_test():
+    with instance_for_test() as instance:
         runner = CliRunner()
 
         server_process = GrpcServerProcess(
+            instance_ref=instance.get_ref(),
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
                 python_file=file_relative_path(__file__, "test_cli_commands.py"),

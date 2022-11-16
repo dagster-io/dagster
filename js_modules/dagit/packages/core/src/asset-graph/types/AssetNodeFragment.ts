@@ -18,7 +18,10 @@ export interface AssetNodeFragment {
   graphName: string | null;
   jobNames: string[];
   opNames: string[];
+  opVersion: string | null;
   description: string | null;
   computeKind: string | null;
+  isSource: boolean;
   assetKey: AssetNodeFragment_assetKey;
+  isObservable: boolean;
 }

@@ -97,6 +97,7 @@ import settings_backup_restore from '../icon-svgs/settings_backup_restore.svg';
 import slack from '../icon-svgs/slack.svg';
 import sort_by_alpha from '../icon-svgs/sort_by_alpha.svg';
 import source from '../icon-svgs/source.svg';
+import source_asset from '../icon-svgs/source_asset.svg';
 import speed from '../icon-svgs/speed.svg';
 import splitscreen from '../icon-svgs/splitscreen.svg';
 import star from '../icon-svgs/star.svg';
@@ -150,6 +151,7 @@ export const Icons = {
   run: history,
   sensors,
   schedule,
+  source_asset,
   workspace: source,
   gantt_flat,
   gantt_waterfall,

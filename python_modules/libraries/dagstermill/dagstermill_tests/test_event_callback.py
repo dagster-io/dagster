@@ -18,7 +18,7 @@ def test_event_callback_logging():
 
     pipeline = ReconstructablePipeline.for_module(
         "dagstermill.examples.repository",
-        "hello_logging_pipeline",
+        "hello_logging_job",
     )
     pipeline_def = pipeline.get_definition()
     with instance_for_test() as instance:
@@ -38,9 +38,9 @@ def test_event_callback_logging():
         retries = 5
         while retries > 0:
             time.sleep(0.333)
-            if DagsterEventType.PIPELINE_FAILURE in events.keys():
+            if DagsterEventType.RUN_FAILURE in events.keys():
                 break
-            if DagsterEventType.PIPELINE_SUCCESS in events.keys():
+            if DagsterEventType.RUN_SUCCESS in events.keys():
                 passed_before_timeout = True
                 break
             retries -= 1

@@ -328,8 +328,9 @@ def args_with_default_cli_test_instance(*args):
 
 
 @contextmanager
-def grpc_server_bar_kwargs(pipeline_name=None):
+def grpc_server_bar_kwargs(instance, pipeline_name=None):
     server_process = GrpcServerProcess(
+        instance_ref=instance.get_ref(),
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             python_file=file_relative_path(__file__, "test_cli_commands.py"),
@@ -363,8 +364,9 @@ def python_bar_cli_args(job_name=None):
 
 
 @contextmanager
-def grpc_server_bar_cli_args(job_name=None):
+def grpc_server_bar_cli_args(instance, job_name=None):
     server_process = GrpcServerProcess(
+        instance.get_ref(),
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             python_file=file_relative_path(__file__, "test_cli_commands.py"),
@@ -390,7 +392,7 @@ def grpc_server_bar_cli_args(job_name=None):
 @contextmanager
 def grpc_server_bar_pipeline_args():
     with default_cli_test_instance() as instance:
-        with grpc_server_bar_kwargs(pipeline_name="foo") as kwargs:
+        with grpc_server_bar_kwargs(instance, pipeline_name="foo") as kwargs:
             yield kwargs, instance
 
 
@@ -431,7 +433,7 @@ def scheduler_instance(overrides=None):
 @contextmanager
 def grpc_server_scheduler_cli_args(overrides=None):
     with scheduler_instance(overrides) as instance:
-        with grpc_server_bar_cli_args() as args:
+        with grpc_server_bar_cli_args(instance) as args:
             yield args, instance
 
 
@@ -472,7 +474,7 @@ def backfill_command_contexts():
 @contextmanager
 def grpc_server_backfill_args():
     with default_cli_test_instance() as instance:
-        with grpc_server_bar_kwargs() as args:
+        with grpc_server_bar_kwargs(instance) as args:
             yield merge_dicts(args, {"noprompt": True}), instance
 
 

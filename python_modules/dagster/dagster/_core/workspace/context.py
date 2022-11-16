@@ -418,6 +418,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         else:
             self._grpc_server_registry = self._stack.enter_context(
                 ProcessGrpcServerRegistry(
+                    instance=self._instance,
                     reload_interval=0,
                     heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
                     startup_timeout=instance.code_server_process_startup_timeout,

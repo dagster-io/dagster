@@ -407,7 +407,7 @@ class DbtCloudResourceV2:
 
             # completed successfully
             if status == "Success":
-                return self.get_run(run_id, include_related=["job", "trigger"])
+                return self.get_run(run_id, include_related=["job", "trigger", "run_steps"])
             elif status in ["Error", "Cancelled"]:
                 break
             elif status not in ["Queued", "Starting", "Running"]:

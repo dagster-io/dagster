@@ -1963,8 +1963,9 @@ def test_large_schedule(instance, workspace_context, external_repo, executor):
 
 
 @contextmanager
-def _grpc_server_external_repo(port):
+def _grpc_server_external_repo(port, instance):
     server_process = open_server_process(
+        instance.get_ref(),
         port=port,
         socket=None,
         loadable_target_origin=loadable_target_origin(),
@@ -2030,7 +2031,7 @@ def test_grpc_server_down(instance, executor):
 
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     stack = ExitStack()
-    external_repo = stack.enter_context(_grpc_server_external_repo(port))
+    external_repo = stack.enter_context(_grpc_server_external_repo(port, instance))
     workspace_context = stack.enter_context(
         create_test_daemon_workspace_context(
             GrpcServerTarget(
@@ -2066,7 +2067,7 @@ def test_grpc_server_down(instance, executor):
             )
 
         # Server starts back up, tick now succeeds
-        with _grpc_server_external_repo(port) as external_repo:
+        with _grpc_server_external_repo(port, instance) as external_repo:
             evaluate_schedules(server_up_ctx, executor, pendulum.now("UTC"))
             assert instance.get_runs_count() == 1
             ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)

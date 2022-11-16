@@ -41,7 +41,6 @@ def build_docs_steps() -> List[BuildkiteStep]:
             "pip install -U virtualenv",
             "cd docs",
             "make apidoc-build",
-            "python scripts/pack_json.py",
             # "echo '--- Checking git diff (ignoring whitespace) after docs build...'",
             # "git diff --ignore-all-space --stat",
             # "git diff --exit-code --ignore-all-space --no-patch",

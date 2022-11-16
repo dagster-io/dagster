@@ -73,6 +73,7 @@ setup(
         "pendulum",
         "protobuf>=3.13.0,<4",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
         "python-dateutil",
+        "python-dotenv",
         "pytz",
         "requests",
         "setuptools",
