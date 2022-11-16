@@ -371,7 +371,7 @@ export const AssetGraphExplorerWithData: React.FC<
                             assetKey={{path}}
                             selected={selectedAssetValues.includes(path)}
                           />
-                        ) : _scale < MINIMAL_SCALE ? (
+                        ) : scale < MINIMAL_SCALE ? (
                           <AssetNodeMinimal
                             definition={graphNode.definition}
                             selected={selectedGraphNodes.includes(graphNode)}
