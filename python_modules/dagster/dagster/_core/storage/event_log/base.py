@@ -296,7 +296,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def get_event_tags_for_asset(
-        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
+        self,
+        asset_key: AssetKey,
+        filter_tags: Optional[Mapping[str, str]] = None,
+        filter_event_id: Optional[int] = None,
     ) -> Sequence[Mapping[str, str]]:
         pass
 
