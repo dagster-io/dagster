@@ -2437,7 +2437,14 @@ class TestEventLogStorage:
 
         @op
         def tags_op():
-            yield AssetMaterialization(asset_key=key, tags={"a": "foo", "b": "bar", "c": "baz"})
+            yield AssetMaterialization(
+                asset_key=key,
+                partition=MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
+                tags={
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                },
+            )
             yield Output(1)
 
         run_id = make_new_run_id()
@@ -2456,16 +2463,40 @@ class TestEventLogStorage:
 
             assert storage.get_event_tags_for_asset(key, event_id=mat_record.storage_id) == [
                 {
-                    "a": "foo",
-                    "b": "bar",
-                    "c": "baz",
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
                 }
             ]
 
-            storage.add_asset_event_tags(mat_record, new_tags={"a": "something", "d": "other"})
+            storage.add_asset_event_tags(
+                mat_record,
+                new_tags={
+                    "a": "apple",
+                    "b": "boot",
+                },
+            )
 
-            assert storage.get_event_tags_for_asset(key, event_id=mat_record.storage_id) == [
-                {"a": "something", "b": "bar", "c": "baz", "d": "other"}
+            assert storage.get_event_tags_for_asset(key, filter_event_id=mat_record.storage_id) == [
+                {
+                    "a": "apple",
+                    "b": "boot",
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                }
+            ]
+
+            storage.add_asset_event_tags(
+                mat_record,
+                new_tags={"a": "something_new"},
+            )
+
+            assert storage.get_event_tags_for_asset(key, filter_event_id=mat_record.storage_id) == [
+                {
+                    "a": "something_new",
+                    "b": "boot",
+                    "dagster/partition/country": "US",
+                    "dagster/partition/date": "2022-10-13",
+                }
             ]
 
     def test_add_materialization_tags_initially_empty(self, storage, instance):
@@ -2490,11 +2521,13 @@ class TestEventLogStorage:
             assert len(materializations) == 1
             mat_record = materializations[0]
 
-            assert storage.get_event_tags_for_asset(key, event_id=mat_record.storage_id) == []
+            assert (
+                storage.get_event_tags_for_asset(key, filter_event_id=mat_record.storage_id) == []
+            )
 
             storage.add_asset_event_tags(mat_record, new_tags={"a": "apple", "b": "boot"})
 
-            assert storage.get_event_tags_for_asset(key, event_id=mat_record.storage_id) == [
+            assert storage.get_event_tags_for_asset(key, filter_event_id=mat_record.storage_id) == [
                 {"a": "apple", "b": "boot"}
             ]
 
