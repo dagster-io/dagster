@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         Materialization,
     )
     from dagster._core.events.log import EventLogEntry
+    from dagster._core.instance import DagsterInstance
 
 
 class UnknownValue:

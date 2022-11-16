@@ -34,13 +34,6 @@ import yaml
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import (
-    DEFAULT_LOGICAL_VERSION,
-    LogicalVersion,
-    LogicalVersionProvenance,
-    extract_logical_version_from_entry,
-    extract_logical_version_provenance_from_entry,
-)
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
     PipelineDefinition,
