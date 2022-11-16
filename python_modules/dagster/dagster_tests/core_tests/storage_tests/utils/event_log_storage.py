@@ -2461,7 +2461,7 @@ class TestEventLogStorage:
             assert len(materializations) == 1
             mat_record = materializations[0]
 
-            assert storage.get_event_tags_for_asset(key, event_id=mat_record.storage_id) == [
+            assert storage.get_event_tags_for_asset(key, filter_event_id=mat_record.storage_id) == [
                 {
                     "dagster/partition/country": "US",
                     "dagster/partition/date": "2022-10-13",
