@@ -839,11 +839,6 @@ def build_asset_selection_job(
         excluded_assets = []
         included_source_assets = []
 
-    check.invariant(
-        not (len(included_assets) > 0 and len(included_source_assets) > 0),
-        "Illegal selection includes both source assets and regular assets.",
-    )
-
     if partitions_def:
         for asset in included_assets:
             check.invariant(
@@ -853,6 +848,9 @@ def build_asset_selection_job(
                 f"{partitions_def}.",
             )
 
+    # We should disallow simultaneous selection of assets and source assets (but for
+    # backcompat we will simply ignore the source asset selection if any regular assets are
+    # selected).
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=ExperimentalWarning)
         if len(included_assets) > 0:
