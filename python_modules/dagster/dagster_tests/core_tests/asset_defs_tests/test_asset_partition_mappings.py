@@ -165,7 +165,6 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="2")
-    print(result.asset_materializations_for_node("upstream_asset"))
 
     assert_materializations_equal(
         result.asset_materializations_for_node("upstream_asset"),

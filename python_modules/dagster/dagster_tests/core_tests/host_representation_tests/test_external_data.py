@@ -635,7 +635,6 @@ def test_unused_source_asset():
     external_asset_nodes = external_asset_graph_from_defs(
         [], source_assets_by_key={AssetKey("foo"): foo, AssetKey("bar"): bar}
     )
-    print(external_asset_nodes)
     assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
