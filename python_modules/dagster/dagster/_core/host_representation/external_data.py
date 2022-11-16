@@ -1090,9 +1090,6 @@ def external_asset_graph_from_defs(
             node_handle = node_handle.parent
             graph_name = node_handle.name
 
-        print(op_version_by_asset_key)
-        print(op_names_by_asset_key)
-
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=asset_key,
