@@ -3,8 +3,13 @@ import React from 'react';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assembleIntoSpans} from '../partitions/PartitionRangeInput';
-import {PartitionState} from '../partitions/PartitionStatus';
+import {
+  PartitionState,
+  partitionStateToColor,
+  partitionStatusToText,
+} from '../partitions/PartitionStatus';
 
+import {isTimeseriesPartition} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {PartitionHealthData} from './usePartitionHealthData';
 
@@ -24,24 +29,29 @@ export const PartitionHealthSummary: React.FC<{
     );
   }
 
-  const timeDimension = assetData.dimensions[0];
-  const keys = timeDimension.partitionKeys;
+  const timeDimension = assetData.dimensions.find((d) => isTimeseriesPartition(d.partitionKeys[0]));
+  if (!timeDimension) {
+    return <div />;
+  }
 
-  // todo support for partial state on summary bar
-  const spans = assembleIntoSpans(
-    keys,
-    (key) => assetData.stateForPartialKey([key]) === PartitionState.SUCCESS,
-  );
+  const keys = timeDimension.partitionKeys;
+  const spans = assembleIntoSpans(keys, (key) => assetData.stateForPartialKey([key]));
 
   const selectedKeys = selected?.map((s) => s.partitionKey);
   const selectedSpans = selectedKeys
     ? assembleIntoSpans(keys, (key) => selectedKeys.includes(key)).filter((s) => s.status)
     : [];
 
-  const populated = spans
-    .filter((s) => s.status === true)
-    .map((s) => s.endIdx - s.startIdx + 1)
-    .reduce((a, b) => a + b, 0);
+  const total = assetData.dimensions.reduce((total, d) => d.partitionKeys.length * total, 1);
+  const success = assetData.dimensions
+    .reduce(
+      (combinations, d) =>
+        combinations.length
+          ? combinations.flatMap((keys) => d.partitionKeys.map((key) => [...keys, key]))
+          : d.partitionKeys.map((key) => [key]),
+      [] as string[][],
+    )
+    .filter((dkeys) => assetData.stateForKey(dkeys) === PartitionState.SUCCESS).length;
 
   const indexToPct = (idx: number) => `${((idx * 100) / keys.length).toFixed(3)}%`;
   const highestIndex = spans.map((s) => s.endIdx).reduce((prev, cur) => Math.max(prev, cur), 0);
@@ -53,12 +63,8 @@ export const PartitionHealthSummary: React.FC<{
         margin={{bottom: 4}}
         style={{fontSize: '0.8rem', color: Colors.Gray500}}
       >
-        <span>
-          {showAssetKey
-            ? displayNameForAssetKey(assetKey)
-            : `${populated}/${keys.length} Partitions`}
-        </span>
-        {showAssetKey ? <span>{`${populated}/${keys.length}`}</span> : undefined}
+        {showAssetKey && <span>{displayNameForAssetKey(assetKey)}</span>}
+        <span>{`${success.toLocaleString()}/${total.toLocaleString()}`}</span>
       </Box>
       {selected && (
         <div style={{position: 'relative', width: '100%', overflowX: 'hidden', height: 10}}>
@@ -104,9 +110,10 @@ export const PartitionHealthSummary: React.FC<{
               content={
                 s.startIdx === s.endIdx
                   ? `Partition ${keys[s.startIdx]} is ${s.status ? 'up-to-date' : 'missing'}`
-                  : `Partitions ${keys[s.startIdx]} through ${keys[s.endIdx]} are ${
-                      s.status ? 'up-to-date' : 'missing'
-                    }`
+                  : `Partitions ${keys[s.startIdx]} through ${
+                      keys[s.endIdx]
+                    } are ${partitionStatusToText(s.status).toLowerCase()}
+                    `
               }
             >
               <div
@@ -114,7 +121,7 @@ export const PartitionHealthSummary: React.FC<{
                   width: '100%',
                   height: 14,
                   outline: 'none',
-                  background: s.status ? Colors.Green500 : Colors.Gray200,
+                  background: partitionStateToColor(s.status),
                 }}
               />
             </Tooltip>

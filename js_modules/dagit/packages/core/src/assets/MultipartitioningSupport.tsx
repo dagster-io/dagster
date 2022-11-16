@@ -6,7 +6,7 @@ import {
   PartitionHealthDimensionRange,
 } from './usePartitionHealthData';
 
-export function isTimeseriesPartition(aPartitionKey: string) {
+export function isTimeseriesPartition(aPartitionKey = '') {
   return /\d{4}-\d{2}-\d{2}/.test(aPartitionKey); // cheak trick for now
 }
 

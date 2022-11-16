@@ -57,11 +57,8 @@ export const PartitionRangeInput: React.FC<{
   );
 };
 
-export function assembleIntoSpans(
-  keys: string[],
-  keyTestFn: (key: string, idx: number) => boolean,
-) {
-  const spans: {startIdx: number; endIdx: number; status: boolean}[] = [];
+export function assembleIntoSpans<T>(keys: string[], keyTestFn: (key: string, idx: number) => T) {
+  const spans: {startIdx: number; endIdx: number; status: T}[] = [];
 
   for (let ii = 0; ii < keys.length; ii++) {
     const status = keyTestFn(keys[ii], ii);
