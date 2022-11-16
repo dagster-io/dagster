@@ -56,7 +56,12 @@ def diff_dicts(
                 else None
             )
             if custom_compare_result is False:
-                diff = diff.modify(key, dst_dict[key], config_dict[key])
+                if key not in config_dict:
+                    diff = diff.delete(key, dst_dict[key])
+                elif key not in dst_dict:
+                    diff = diff.add(key, config_dict[key])
+                else:
+                    diff = diff.modify(key, dst_dict[key], config_dict[key])
             elif custom_compare_result is True:
                 pass
             else:

@@ -1,6 +1,5 @@
 import json
 from abc import ABC
-from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
@@ -118,8 +117,7 @@ class AirbyteSource:
         )
 
     def must_be_recreated(self, other: "AirbyteSource") -> bool:
-        return False
-        # return self.name != other.name or self.source_configuration != other.source_configuration
+        return self.name != other.name or self.source_configuration != other.source_configuration
 
 
 class InitializedAirbyteSource:
@@ -160,11 +158,10 @@ class AirbyteDestination:
         )
 
     def must_be_recreated(self, other: "AirbyteDestination") -> bool:
-        return False
-        # return (
-        #     self.name != other.name
-        #     or self.destination_configuration != other.destination_configuration
-        # )
+        return (
+            self.name != other.name
+            or self.destination_configuration != other.destination_configuration
+        )
 
 
 class InitializedAirbyteDestination:
