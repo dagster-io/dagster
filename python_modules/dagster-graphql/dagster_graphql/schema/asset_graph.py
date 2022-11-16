@@ -698,9 +698,22 @@ class GrapheneAssetNode(graphene.ObjectType):
                 )
             ]
 
+        primary_dimension = self.get_default_primary_dimension_name()
+
+        partition_keys_by_dimension = self.get_partition_keys_by_dimension()
+        secondary_dimension = next(
+            iter(list(set(partition_keys_by_dimension.keys()) - {primary_dimension}))
+        )
+
         return [
-            GrapheneDimensionPartitionKeys(name=dimension_name, partition_keys=partition_keys)
-            for dimension_name, partition_keys in self.get_partition_keys_by_dimension().items()
+            GrapheneDimensionPartitionKeys(
+                name=primary_dimension,
+                partition_keys=partition_keys_by_dimension.get(primary_dimension),
+            ),
+            GrapheneDimensionPartitionKeys(
+                name=secondary_dimension,
+                partition_keys=partition_keys_by_dimension.get(secondary_dimension),
+            ),
         ]
 
     def resolve_partitionKeys(self, _graphene_info) -> Sequence[str]:
