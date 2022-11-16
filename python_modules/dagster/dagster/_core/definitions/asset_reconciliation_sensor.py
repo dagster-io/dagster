@@ -782,9 +782,9 @@ def build_asset_reconciliation_sensor(
 
     Example:
         If you have the following asset graph, with the following freshness policies:
-            * c: `FreshnessPolicy(maximum_lag_minutes=120, cron_schedule="0 2 \* \* \*"), meaning
-            that by 2AM, c needs to be materialized with data from a and b that is no more than 120
-            minutes old (i.e. all of yesterday's data).
+            * ``c: FreshnessPolicy(maximum_lag_minutes=120, cron_schedule="0 2 \* \* \*")``, meaning
+              that by 2AM, c needs to be materialized with data from a and b that is no more than 120
+              minutes old (i.e. all of yesterday's data).
 
         .. code-block:: python
 
@@ -801,13 +801,13 @@ def build_asset_reconciliation_sensor(
                 name="my_reconciliation_sensor",
             )
 
-        Assume that ``c`` currently has incorporated all source data up to 2022-01-01 23:00.
+        Assume that ``c`` currently has incorporated all source data up to ``2022-01-01 23:00``.
 
         You will observe the following behavior:
-            * At any time between `2022-01-02 00:00` and `2022-01-02 02:00`, the sensor will see that
-              ``c`` will soon require data from `2022-01-02 00:00`. In order to satisfy this
+            * At any time between ``2022-01-02 00:00`` and ``2022-01-02 02:00``, the sensor will see that
+              ``c`` will soon require data from ``2022-01-02 00:00``. In order to satisfy this
               requirement, there must be a materialization for both ``a`` and ``b`` with time >=
-              `2022-01-02 00:00`. If such a materialization does not exist for one of those assets,
+              ``2022-01-02 00:00``. If such a materialization does not exist for one of those assets,
               the missing asset(s) will be executed on this tick, to help satisfy the constraint imposed
               by ``c``. Materializing ``c`` in the same run as those assets will satisfy its
               required data constraint, and so the sensor will kick off a run for ``c`` alongside
