@@ -369,3 +369,42 @@ def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_fil
 
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_namespace")
     assert check_result == ManagedElementDiff()
+
+
+def test_sync_modes(docker_compose_airbyte_instance, airbyte_source_files):
+
+    # First, apply a stack and check that there's no diff after applying it
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert ManagedElementDiff() == check_result
+
+    # Ensure that a different config has a diff
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_alt_sync_mode")
+
+    config_dict = {
+        "local-json-conn": {
+            "streams": {
+                "my_data_stream": {
+                    "syncMode": "incremental",
+                    "cursorField": ["foo"],
+                }
+            },
+        },
+    }
+    dest_dict = {
+        "local-json-conn": {
+            "streams": {
+                "my_data_stream": {
+                    "syncMode": "full_refresh",
+                    "cursorField": [],
+                }
+            },
+        },
+    }
+    expected_result = diff_dicts(
+        config_dict,
+        dest_dict,
+    )
+
+    assert check_result == expected_result
