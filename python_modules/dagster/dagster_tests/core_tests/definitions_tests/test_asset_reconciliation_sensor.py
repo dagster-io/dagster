@@ -20,6 +20,7 @@ from dagster import (
     PartitionsDefinition,
     ResourceDefinition,
     RunRequest,
+    SourceAsset,
     StaticPartitionsDefinition,
     asset,
     build_asset_reconciliation_sensor,
@@ -74,7 +75,9 @@ class AssetReconciliationScenario(NamedTuple):
 
         for run in self.unevaluated_runs:
             assets_in_run = [
-                asset if asset.key in run.asset_keys else asset.to_source_assets()[0]
+                asset
+                if asset.key in run.asset_keys
+                else (asset.to_source_assets()[0] if not isinstance(asset, SourceAsset) else asset)
                 for asset in self.assets
             ]
             materialize_to_memory(
@@ -267,6 +270,10 @@ overlapping_freshness = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=freshness_60m),
 ]
+overlapping_freshness_with_source = [
+    SourceAsset("source_asset"),
+    asset_def("asset1", ["source_asset"]),
+] + overlapping_freshness[1:]
 overlapping_freshness_inf = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=freshness_inf),
@@ -613,8 +620,13 @@ scenarios = {
         unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
         expected_run_requests=[],
     ),
+    "freshness_overlapping_with_source": AssetReconciliationScenario(
+        assets=overlapping_freshness_with_source,
+        unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
+        expected_run_requests=[],
+    ),
     "freshness_overlapping_runs_half_stale": AssetReconciliationScenario(
-        assets=overlapping_freshness,
+        assets=overlapping_freshness_with_source,
         unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
         # evaluate 35 minutes later, only need to refresh the assets on the shorter freshness policy
         evaluation_delta=datetime.timedelta(minutes=35),
@@ -645,7 +657,7 @@ scenarios = {
 }
 
 
-@pytest.mark.parametrize("scenario", list(scenarios.values())[-2:], ids=list(scenarios.keys())[-2:])
+@pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
     run_requests, _ = scenario.do_scenario(instance)
