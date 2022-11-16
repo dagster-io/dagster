@@ -5,7 +5,6 @@ setup(
     packages=find_packages(exclude=["quickstart_etl_tests"]),
     install_requires=[
         "dagster",
-        "PyGithub",
         "pandas",
         "matplotlib",
         "textblob",

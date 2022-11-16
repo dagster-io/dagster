@@ -7,8 +7,8 @@ from dagster import (
 
 from . import assets
 
-daily_metrics_report_schedule = ScheduleDefinition(
-    job=define_asset_job(name="metrics_report_job"), cron_schedule="0 0 * * *"
+daily_refresh_schedule = ScheduleDefinition(
+    job=define_asset_job(name="all_assets_job"), cron_schedule="0 0 * * *"
 )
 
 
@@ -16,5 +16,5 @@ daily_metrics_report_schedule = ScheduleDefinition(
 def quickstart_etl():
     return [
         load_assets_from_package_module(assets),
-        daily_metrics_report_schedule,
+        daily_refresh_schedule,
     ]

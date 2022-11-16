@@ -23,7 +23,7 @@ This starter includes:
 - [Scaffolded project layout](https://docs.dagster.io/getting-started/create-new-project) that helps you to quickly get started with everything set up.
 
 
-In this project, we're building an ETL pipeline that monitors the popularity of open-source software projects. Here is the Global Asset Lineage you'll find in the UI:
+In this project, we're building an ETL pipeline that explores the popular topics on HackerNews.
 
 <p align="center">
     <img height="500" src="../../docs/next/public/images/quickstarts/basic/global-asset-lineage.png" />
@@ -54,7 +54,7 @@ Bootstrap your own Dagster project with this example:
 dagster project from-example --name my-dagster-project --example quickstart_etl
 ```
 
-First, install your Dagster repository as a Python package. By using the --editable flag, pip will install your repository in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply.
+First, install your Dagster repository as a Python package. By using the --editable flag, pip will install your repository in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply. Check out [Dagster Installation](https://docs.dagster.io/getting-started/install) for more information.
 
 ```bash
 pip install -e ".[dev]"
@@ -214,7 +214,7 @@ Finally, let's refresh our plots every day, so we can monitor the popular topics
 We've defined a daily schedule in [quickstart_etl/repository.py](./quickstart_etl/repository.py) for all assets that are defined in the [quickstart_etl/assets/](./quickstart_etl/assets) sub-module.
 
 <TODO>
-So, now in the UI, click "metrics_report_job". you will find the job has a schedule  . Turn on the schedule.
+So, now in the UI, click "all_assets_job". you will find the job has a schedule  . Turn on the schedule.
 <p align="center">
     <img height="500" src="https://user-images.githubusercontent.com/4531914/200672130-dd2f0cdc-e767-448b-9ed0-b05eaa4a9c69.png">
 </p>
