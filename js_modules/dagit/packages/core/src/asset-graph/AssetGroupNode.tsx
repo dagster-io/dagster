@@ -21,12 +21,7 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
   return (
     <div style={{position: 'relative', width: '100%', height: '100%'}}>
       {scale > EXPERIMENTAL_SCALE && (
-        <Box
-          flex={{alignItems: 'flex-end'}}
-          style={{
-            height: 70,
-          }}
-        >
+        <Box flex={{alignItems: 'flex-end'}} style={{height: 70}}>
           <Mono
             style={{
               fontWeight: 600,
@@ -36,10 +31,14 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
               gap: 6,
             }}
           >
-            <Icon name="asset_group" size={scale > MINIMAL_SCALE ? 20 : 48} />
+            <Icon
+              name="asset_group"
+              color={Colors.Gray400}
+              size={scale > MINIMAL_SCALE ? 20 : 48}
+            />
             <Box flex={{direction: 'column'}}>
               <Link
-                style={{color: Colors.Gray900}}
+                style={{color: Colors.Gray400}}
                 onClick={(e) => e.stopPropagation()}
                 to={workspacePath(
                   repositoryName,
@@ -66,11 +65,8 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
           inset: 0,
           top: 75,
           position: 'absolute',
-          border: `${Math.max(2, 2 / scale)}px dashed ${Colors.Gray300}`,
           background:
-            scale < EXPERIMENTAL_SCALE
-              ? `rgba(243, 243, 243, 1)`
-              : `rgba(223, 223, 223, ${0.4 - Math.max(0, scale - MINIMAL_SCALE) * 0.3})`,
+            scale < EXPERIMENTAL_SCALE ? `rgba(234, 234, 234, 1)` : `rgba(217, 217, 217, 0.25)`,
         }}
       />
 

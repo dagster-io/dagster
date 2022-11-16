@@ -1,18 +1,13 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, Icon, Caption, Subheading, Mono, ConfigTypeSchema, Body} from '@dagster-io/ui';
+import {Body, Box, Caption, Colors, ConfigTypeSchema, Icon, Mono, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {
-  ASSET_NODE_FRAGMENT,
-  CurrentMinutesLateTag,
-  freshnessPolicyDescription,
-} from '../asset-graph/AssetNode';
+import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
-  LiveData,
   isHiddenAssetGroupJob,
-  __ASSET_JOB_PREFIX,
+  LiveData,
   toGraphId,
 } from '../asset-graph/Utils';
 import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
@@ -31,6 +26,7 @@ import {
   metadataForAssetNode,
 } from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
+import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{

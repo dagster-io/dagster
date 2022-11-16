@@ -35,7 +35,7 @@ import {AssetEdges} from './AssetEdges';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
-import {SourceAssetNode} from './ForeignNode';
+import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
   GraphData,
@@ -366,14 +366,12 @@ export const AssetGraphExplorerWithData: React.FC<
                         }}
                         style={{overflow: 'visible'}}
                       >
-                        {false && (!graphNode || !graphNode.definition.opNames.length) ? (
-                          <SourceAssetNode
-                            assetKey={{path}}
-                            selected={selectedAssetValues.includes(path)}
-                          />
+                        {!graphNode ? (
+                          <AssetNodeLink assetKey={{path}} />
                         ) : scale < MINIMAL_SCALE ? (
                           <AssetNodeMinimal
                             definition={graphNode.definition}
+                            liveData={liveDataByNode[graphNode.id]}
                             selected={selectedGraphNodes.includes(graphNode)}
                           />
                         ) : (
