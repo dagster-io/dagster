@@ -151,10 +151,10 @@ GET_ASSET_PARTITIONS = """
 """
 
 GET_PARTITIONS_BY_DIMENSION = """
-    query AssetNodeQuery($assetKeys: [AssetKeyInput!]) {
+    query AssetNodeQuery($assetKeys: [AssetKeyInput!], $primaryDimension: String) {
         assetNodes(assetKeys: $assetKeys) {
             id
-            partitionKeysByDimension {
+            partitionKeysByDimension(primaryDimension: $primaryDimension) {
                 name
                 partitionKeys
             }
@@ -1175,6 +1175,19 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert dimensions[0]["partitionKeys"] == ["1", "2"]
         assert dimensions[1]["name"] == "ab"
         assert dimensions[1]["partitionKeys"] == ["a", "b"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITIONS_BY_DIMENSION,
+            variables={"assetKeys": [{"path": ["multipartitions_1"]}], "primaryDimension": "ab"},
+        )
+        assert result.data
+        dimensions = result.data["assetNodes"][0]["partitionKeysByDimension"]
+        assert len(dimensions) == 2
+        assert dimensions[0]["name"] == "ab"
+        assert dimensions[0]["partitionKeys"] == ["a", "b"]
+        assert dimensions[1]["name"] == "12"
+        assert dimensions[1]["partitionKeys"] == ["1", "2"]
 
     def test_multipartitions_asset_materializations(self, graphql_context):
         _create_partitioned_run(

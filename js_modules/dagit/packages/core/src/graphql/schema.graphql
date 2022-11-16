@@ -678,7 +678,7 @@ type AssetNode {
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
-  partitionKeysByDimension: [DimensionPartitionKeys!]!
+  partitionKeysByDimension(primaryDimension: String): [DimensionPartitionKeys!]!
   projectedLogicalVersion: String
   repository: Repository!
   requiredResources: [ResourceRequirement!]!

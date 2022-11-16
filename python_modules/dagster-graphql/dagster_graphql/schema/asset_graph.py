@@ -186,7 +186,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     opVersion = graphene.String()
     partitionDefinition = graphene.Field(GraphenePartitionDefinition)
     partitionKeys = non_null_list(graphene.String)
-    partitionKeysByDimension = non_null_list(GrapheneDimensionPartitionKeys)
+    partitionKeysByDimension = graphene.Field(
+        non_null_list(GrapheneDimensionPartitionKeys), primaryDimension=graphene.String()
+    )
     projectedLogicalVersion = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
@@ -689,7 +691,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.graph_name
 
     def resolve_partitionKeysByDimension(
-        self, _graphene_info
+        self, _graphene_info, **kwargs
     ) -> Sequence[GrapheneDimensionPartitionKeys]:
         if not self.is_multipartitioned():
             return [
@@ -698,7 +700,10 @@ class GrapheneAssetNode(graphene.ObjectType):
                 )
             ]
 
-        primary_dimension = self.get_default_primary_dimension_name()
+        primary_dimension = kwargs.get("primaryDimension")
+
+        if primary_dimension is None:
+            primary_dimension = self.get_default_primary_dimension_name()
 
         partition_keys_by_dimension = self.get_partition_keys_by_dimension()
         secondary_dimension = next(
