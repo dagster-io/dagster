@@ -18,8 +18,6 @@ from dagster_managed_elements.types import ManagedElementDiff
 from dagster_managed_elements.utils import diff_dicts
 from requests import PreparedRequest
 
-from dagster import build_init_resource_context
-
 
 def ok(contents: Dict[str, Any]) -> Any:
     return (200, {}, json.dumps(contents))
